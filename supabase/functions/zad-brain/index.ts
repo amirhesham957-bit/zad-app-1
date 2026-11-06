@@ -6209,8 +6209,8 @@ export const CHAT_TOOLS: ToolDef[] = [
     input_schema: {
       type: "object",
       properties: {
-        from_currency: { type: "string", description: "مثل: EGP, USD, SAR, TRY (3 أحرف)" },
-        to_currency: { type: "string", description: "مثل: EGP, USD, SAR, TRY (3 أحرف)" },
+        from_currency: { type: "string", description: "مثل: EGP, USD, SAR, EUR, GBP, TRY (3 أحرف)" },
+        to_currency: { type: "string", description: "مثل: EGP, USD, SAR, EUR, GBP, TRY (3 أحرف)" },
       },
       required: ["from_currency", "to_currency"],
     },
@@ -7513,8 +7513,18 @@ async function handleAgentTurnInLane(
       message,
     ].join(" ").slice(-1500),
   };
+  // «ايه اللي ماقولتليش عليه الاسبوع ده؟» (التقييم q_held_back وقع كل ليلة ٣–٦/١١): النية متعرّفة والأداة معروضة،
+  // بس الوكيل الخفيف بيرد من اللقطة («الأسبوع هادي») ومابيناديهاش. قراية من غير مدخلات ومن غير كتابة ⇒ بتتقرا هنا
+  // قبل النداء ونتيجتها في قسم محدود، فالرد مايقدرش يتخطاها.
+  const heldBackRead = intentToolHints(message, priorAssistantText(history)).includes("what_i_held_back")
+    ? await runTool(sb, userId, "what_i_held_back", { days: 7 }, snap, ctx, { source: declaredSource })
+    : "";
   const promptParts: Record<string, string> = {
     soul: soulBlock(snap?.customer?.zad_voice),
+    held_back: heldBackRead
+      ? "\n=== اللي سكتّ عنه (نتيجة what_i_held_back، اتقرت قبل ردك) ===\n" + heldBackRead.slice(0, 2500) +
+        "\n=== نهاية القسم ===\nالعميل بيسأل عن اللي ماقولتلوش. جاوبه من القسم ده بالأسباب، ولو فاضي قول إنك ماسكتّش عن حاجة الأسبوع ده.\n"
+      : "",
     specialist: (specialistPromptBlock(specialist, specialistConsult) ?? "") + "\n",
     lessons: lessonsBlock,
     agent_mail: agentMailBlock(agentMail),
@@ -7559,7 +7569,7 @@ async function handleAgentTurnInLane(
   const proposals: Proposal[] = [];
   // أدوات القراية اللي اتنادت (web_search، find_nearby_stores…) — مش في executed (كتابات بس). فحص
   // القبول بيقرا منها «دوّر قبل ما يرد؟» بدل ما يخمّن من الرد (٢٠٢٦-١٠-١١).
-  const consulted: string[] = [];
+  const consulted: string[] = heldBackRead ? ["what_i_held_back"] : [];
   let modelText = "";
   let anyToolAttempted = false;
 

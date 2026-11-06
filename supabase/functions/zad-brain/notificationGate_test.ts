@@ -212,3 +212,14 @@ Deno.test("the carrier's sign-off is not the merchant — InstaPay 3500 for the 
   });
   assertEquals(fields.merchantName, "BDC");
 });
+
+// eg-bm-transfer-no-decimals: «من حسابكم إلى حساب» = فلوس طالعة، مش تحويل بين حساباته.
+Deno.test("an outgoing transfer to another account reads as a debit", () => {
+  const v = parseGateVerdict('{"kind":"transfer","amount":1500,"confidence":0.9}', "تم تحويل بمبلغ 1500 جنيه من حسابكم إلى حساب رقم ***9012");
+  assertEquals(v?.kind, "debit");
+});
+
+Deno.test("a transfer between the customer's own accounts stays a transfer", () => {
+  const v = parseGateVerdict('{"kind":"transfer","amount":500,"confidence":0.9}', "تم تحويل 500 جنيه من حسابك إلى حسابك الآخر بين حساباتك");
+  assertEquals(v?.kind, "transfer");
+});

@@ -11,6 +11,13 @@ export const REQUIRED_CODES: readonly string[] = [
   "IQD", "SYP", "YER", "ILS", "LYD", "SDG", "MAD", "TND", "DZD", "TRY",
 ];
 
+/**
+ * عملات برّه أسواقنا بس العميل بيسأل عنها («اليورو بكام بالمصري؟» — التقييم الليلي q_euro وقع كل ليلة ٣–٦/١١
+ * لأن EUR مكانش في الجدول، فالأداة كانت بترجع «مفيش سعر»). بتتكتب لو المزوّد رجّعها، ونقصها **مايوقفش** الدفعة:
+ * مش عملة حساب حد، فسعرها القديم مايلخبطش ميزانية.
+ */
+export const OPTIONAL_CODES: readonly string[] = ["EUR", "GBP", "CHF", "CAD", "AUD", "CNY", "INR", "PKR", "PHP"];
+
 export interface FxRow {
   code: string;
   /** كام دولار تساوي وحدة واحدة من العملة — نفس تعريف عمود `usd_rate`. */
@@ -60,6 +67,11 @@ export function parseProviderPayload(payload: unknown): ParseResult {
   }
   if (missing.length > 0) {
     return { ok: false, reason: `missing or invalid: ${missing.join(",")}` };
+  }
+  for (const code of OPTIONAL_CODES) {
+    const raw = rates[code];
+    const perUsd = typeof raw === "number" ? raw : Number(raw);
+    if (Number.isFinite(perUsd) && perUsd > 0) rows.push({ code, usd_rate: 1 / perUsd });
   }
   return { ok: true, rows };
 }

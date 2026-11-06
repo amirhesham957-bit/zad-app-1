@@ -96,3 +96,19 @@ Deno.test("exchangerate-api's keyed response (conversion_rates) parses like open
   const a = parseProviderPayload(open), b = parseProviderPayload(keyed);
   if (!a.ok || !b.ok) throw new Error("both shapes must parse");
 });
+
+// ── «اليورو بكام بالمصري؟» (q_euro) ───────────────────────────────────────────
+
+Deno.test("optional currencies are written when the provider has them", () => {
+  const parsed = parseProviderPayload(payloadWith({ EUR: 0.9, GBP: 0.8 }));
+  assert(parsed.ok);
+  assertEquals(parsed.rows.find((r) => r.code === "EUR")!.usd_rate, 1 / 0.9);
+  assertEquals(parsed.rows.find((r) => r.code === "GBP")!.usd_rate, 1 / 0.8);
+});
+
+Deno.test("a missing optional currency never rejects the batch", () => {
+  const parsed = parseProviderPayload(payloadWith({ EUR: "bad" }));
+  assert(parsed.ok);
+  assertEquals(parsed.rows.find((r) => r.code === "EUR"), undefined);
+  assertEquals(parsed.rows.length, REQUIRED_CODES.length);
+});
