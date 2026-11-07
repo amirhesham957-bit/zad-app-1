@@ -117,3 +117,21 @@ Deno.test("5.9: codes picked by what the house actually does — its apps, any s
   assertEquals(pickDigestCodes(rows, [], none, 4, ["كارفور"]), []);
   assertEquals(pickDigestCodes(rows, ["كيتا"], new Set(["code|" + codeStoreKey("كيتا") + "|KEETA40"]), 1, []).map((r) => r.code), ["KEETA20"]);
 });
+
+import { RAMADAN_NEEDS, SCHOOL_NEEDS, seasonNeeds } from "./seasonDigest.ts";
+
+Deno.test("5.9: a season three weeks ahead is a need before prices rise — Ramadan's basics, school for a house with kids", () => {
+  const base = { country: "SA", kidsCount: 0, bought: [] as string[], schoolStarts: [] as string[] };
+  // 7/11: no season within three weeks.
+  assertEquals(seasonNeeds({ ...base, now: Date.parse("2026-11-07T12:00:00Z") }), []);
+  // Late January 2027: Ramadan 1448 is under three weeks away — dates, yamish and qamar al-din always; the rest if the house buys them.
+  const ramadan = seasonNeeds({ ...base, now: Date.parse("2027-01-25T12:00:00Z"), bought: ["زيت عافية 1.5 لتر", "أرز مصري"] });
+  assertEquals(ramadan, ["تمر", "ياميش", "قمر الدين", "زيت", "رز"]);
+  assertEquals(RAMADAN_NEEDS.slice(0, 3).every((n) => ramadan.includes(n)), true);
+  // School: two weeks before the Gulf window, only for a house with kids, only in a market whose window is known.
+  const school = { now: Date.parse("2026-08-01T12:00:00Z"), bought: [], schoolStarts: ["2026-08-15"] };
+  assertEquals(seasonNeeds({ ...school, country: "SA", kidsCount: 2 }), SCHOOL_NEEDS);
+  assertEquals(seasonNeeds({ ...school, country: "SA", kidsCount: 0 }), []);
+  assertEquals(seasonNeeds({ ...school, country: "EG", kidsCount: 2 }), []);
+  assertEquals(seasonNeeds({ ...school, country: "SA", kidsCount: 2, schoolStarts: ["2026-07-01"] }), []);
+});

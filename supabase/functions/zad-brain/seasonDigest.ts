@@ -15,6 +15,8 @@ import { itemKey } from "./shared.ts";
 import { codeStoreKey } from "./dealCodes.ts";
 import { fetchPreviewImage, previewableUrl } from "../_shared/pagePreview.ts";
 import { deliveryApp } from "../_shared/deliveryApps.ts";
+import { upcomingSeason } from "../_shared/season.ts";
+import { SCHOOL_WINDOW_MARKETS } from "./eventAhead.ts";
 import { customerCity, dealCountry, dealsForCity, FAVORITE_WINDOW_DAYS, favoriteStores, runningOutNames } from "./tasteDeals.ts";
 
 /** أقصى عدد كروت في رسالة الموسم. */
@@ -221,6 +223,38 @@ export function pickDigestCodes(
   return out;
 }
 
+/** كام يوم قبل الموسم احتياجاته تبدأ تدخل اختيار العروض (قبل ما الأسعار تعلى). */
+export const SEASON_LEAD_DAYS = 21;
+/** أساسيات رمضان اللي بتعلى قبله — نفس قايمة upcomingSeasonInstruction. */
+export const RAMADAN_NEEDS = ["تمر", "ياميش", "قمر الدين", "زيت", "سكر", "رز", "مكرونة"];
+export const SCHOOL_NEEDS = ["شنطة مدرسة", "أدوات مدرسية", "كراسات", "زي مدرسي"];
+
+/**
+ * ٥.٩ — قبل الموسم بخطوة: رمضان جوه [SEASON_LEAD_DAYS] يوم ⇒ أساسياته احتياج (التمر والياميش دايماً، والباقي لو البيت
+ * بيجيبه)؛ رجوع المدارس جوه نفس المدة ⇒ أدوات المدرسة، بس لبيت فيه عيال في سوق شباكه معروف (الخليج، زي eventAhead).
+ * بتتضاف بعد الاحتياج الحقيقي (القايمة واللي هيخلص). نقي.
+ */
+export function seasonNeeds(input: {
+  now: number;
+  country: string;
+  kidsCount: number | null | undefined;
+  bought: readonly string[];
+  schoolStarts: readonly string[];
+}): string[] {
+  const out: string[] = [];
+  if (upcomingSeason(new Date(input.now), "UTC", SEASON_LEAD_DAYS)?.kind === "ramadan") {
+    out.push(...RAMADAN_NEEDS.filter((n, i) => i < 3 || input.bought.some((b) => offerMatchesNeed(n, b))));
+  }
+  const ahead = (d: string) => {
+    const t = Date.parse(`${d}T00:00:00Z`);
+    return Number.isFinite(t) && t > input.now && t - input.now <= SEASON_LEAD_DAYS * 86_400_000;
+  };
+  if ((input.kidsCount ?? 0) > 0 && SCHOOL_WINDOW_MARKETS.has(input.country) && input.schoolStarts.some(ahead)) {
+    out.push(...SCHOOL_NEEDS);
+  }
+  return out;
+}
+
 interface DealInputs {
   country: string;
   broke: boolean;
@@ -248,6 +282,12 @@ async function loadDealInputs(sb: SupabaseClient, userId: string, now: number): 
       .then((r) => r.error ? true : isBrokeModeActive(r.data as { ends_at?: string | null; ended_at?: string | null } | null, now), () => true),
     sb.from("zad_deal_digest_sent").select("deal_key").eq("user_id", userId).limit(500),
   ]);
+  // ٥.٩: الموسم الجاي (رمضان، المدارس) — عيال البيت وشباك المدارس. فشل القراية = من غير موسم.
+  const [{ data: profile }, { data: windows }] = await Promise.all([
+    sb.from("zad_customer_profile").select("kids_count").eq("user_id", userId).maybeSingle().then((r) => r, () => ({ data: null })),
+    sb.from("seasonal_event_windows").select("start_date,seasonal_events(slug)")
+      .gte("start_date", new Date(now).toISOString().slice(0, 10)).limit(50).then((r) => r, () => ({ data: null })),
+  ]);
   // ٥.٩: اللي بيفكر فيه — قاله («عايز أشتري») أو سأل عن سعره أو مكانه — احتياج زي القايمة. فشل القراية = من غيرها.
   const { data: intents } = await sb.from("zad_purchase_intents").select("item").eq("user_id", userId).eq("status", "open")
     .gt("expires_at", new Date(now).toISOString()).order("said_at", { ascending: false }).limit(5)
@@ -271,6 +311,13 @@ async function loadDealInputs(sb: SupabaseClient, userId: string, now: number): 
       ...((intents ?? []) as Array<{ item: string | null }>).map((r) => r.item ?? ""),
       ...((shop ?? []) as Array<{ item_name: string }>).map((r) => r.item_name),
       ...runningOutNames((home as { state?: unknown } | null)?.state),
+      ...seasonNeeds({
+        now, country,
+        kidsCount: (profile as { kids_count?: number | null } | null)?.kids_count,
+        bought: ((bought ?? []) as Array<{ item_name: string | null }>).map((r) => r.item_name ?? "").filter(Boolean),
+        schoolStarts: ((windows ?? []) as Array<{ start_date: string; seasonal_events?: { slug?: string } | Array<{ slug?: string }> | null }>)
+          .filter((w) => [w.seasonal_events].flat().some((e) => e?.slug === "back_to_school")).map((w) => w.start_date),
+      }),
     ].filter(Boolean),
     favorites: favoriteStores((txns ?? []) as Array<{ merchant_name: string | null }>),
     merchants: [...new Set(((txns ?? []) as Array<{ merchant_name: string | null }>).map((t) => (t.merchant_name ?? "").trim()).filter(Boolean))],
