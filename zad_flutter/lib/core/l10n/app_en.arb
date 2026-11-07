@@ -874,5 +874,9 @@
   "homeBankOffBanner": "⚠️ Bank message reading has stopped. Tap here to turn it back on so your balance and spending update by themselves.",
   "homeBankStalledHint": "If it is already on: switch it off and on again on the screen that opens.",
   "homeLocationOffBanner": "📍 Your location is off. Turn it on so Zad can match supermarket deals and nearby shops and do its job properly.",
-  "homeLocationLater": "Not now"
+  "homeLocationLater": "Not now",
+  "channelCardTitle": "Zad has no way to reach you",
+  "channelCardBody": "Notifications are off and Telegram isn't linked, so medicine times, bills and budget alerts won't reach you. Either one is enough.",
+  "channelCardNotifications": "Turn on notifications",
+  "channelCardTelegram": "Link Telegram"
 }

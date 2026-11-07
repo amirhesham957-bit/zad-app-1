@@ -137,9 +137,15 @@ void wireScreens() {
   ZadScreens.notificationsAllowed = (ref) async =>
       await ref.read(notificationPermissionProvider).status() ==
       AlertPermission.granted;
-  ZadScreens.askNotifications = (ref) async =>
-      await ref.read(notificationPermissionProvider).request() ==
-      AlertPermission.granted;
+  ZadScreens.askNotifications = (ref) async {
+    final permission = ref.read(notificationPermissionProvider);
+    // Refused for good, the request shows nothing: the settings can.
+    if (await permission.status() == AlertPermission.blocked) {
+      await permission.openSettings();
+      return false;
+    }
+    return await permission.request() == AlertPermission.granted;
+  };
   ZadScreens.showCashExpenseSheet = showCashExpenseSheet;
 }
 

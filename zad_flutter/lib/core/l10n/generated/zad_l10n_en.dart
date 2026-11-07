@@ -2872,4 +2872,17 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get homeLocationLater => 'Not now';
+
+  @override
+  String get channelCardTitle => 'Zad has no way to reach you';
+
+  @override
+  String get channelCardBody =>
+      'Notifications are off and Telegram isn\'t linked, so medicine times, bills and budget alerts won\'t reach you. Either one is enough.';
+
+  @override
+  String get channelCardNotifications => 'Turn on notifications';
+
+  @override
+  String get channelCardTelegram => 'Link Telegram';
 }

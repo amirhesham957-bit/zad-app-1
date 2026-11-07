@@ -2805,4 +2805,17 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get homeLocationLater => 'مش دلوقتي';
+
+  @override
+  String get channelCardTitle => 'مفيش طريقة أوصلك بيها';
+
+  @override
+  String get channelCardBody =>
+      'الإشعارات مقفولة وتليجرام مش مربوط، فمواعيد الدوا والفواتير وتنبيه الميزانية مش هتوصلك. واحدة منهم كفاية.';
+
+  @override
+  String get channelCardNotifications => 'فعّل الإشعارات';
+
+  @override
+  String get channelCardTelegram => 'اربط تليجرام';
 }

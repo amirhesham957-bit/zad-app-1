@@ -182,10 +182,17 @@ final telegramLinkPromptProvider = Provider<TelegramLinkPrompt>(
 @immutable
 class TelegramHomeState {
   /// Creates a state.
-  const new({required this.bannerVisible, required this.promptDue});
+  const new({
+    required this.bannerVisible,
+    required this.promptDue,
+    this.linked,
+  });
 
   /// The home banner.
   final bool bannerVisible;
+
+  /// The last known link status; null when not known yet.
+  final bool? linked;
 
   /// The link sheet, once per session.
   final bool promptDue;
@@ -201,6 +208,7 @@ class TelegramHomeController extends Notifier<TelegramHomeState> {
     return TelegramHomeState(
       bannerVisible: prompt.bannerVisible(),
       promptDue: false,
+      linked: prompt.knownStatus(),
     );
   }
 
@@ -223,6 +231,7 @@ class TelegramHomeController extends Notifier<TelegramHomeState> {
     state = TelegramHomeState(
       bannerVisible: prompt.bannerVisible(),
       promptDue: promptDue,
+      linked: prompt.knownStatus(),
     );
   }
 
@@ -232,13 +241,18 @@ class TelegramHomeController extends Notifier<TelegramHomeState> {
     state = TelegramHomeState(
       bannerVisible: state.bannerVisible,
       promptDue: false,
+      linked: state.linked,
     );
   }
 
   /// «مش دلوقتي» on the banner.
   void snoozeBanner() {
     ref.read(telegramLinkPromptProvider).snoozeBanner();
-    state = TelegramHomeState(bannerVisible: false, promptDue: state.promptDue);
+    state = TelegramHomeState(
+      bannerVisible: false,
+      promptDue: state.promptDue,
+      linked: state.linked,
+    );
   }
 
   /// After the link sheet closes: linked now? Then the banner goes.
@@ -246,7 +260,11 @@ class TelegramHomeController extends Notifier<TelegramHomeState> {
     final status = await ref.read(telegramLinkRemoteProvider).linkStatus();
     if (!ref.mounted || status != true) return;
     ref.read(telegramLinkPromptProvider).recordLinked();
-    state = TelegramHomeState(bannerVisible: false, promptDue: state.promptDue);
+    state = TelegramHomeState(
+      bannerVisible: false,
+      promptDue: state.promptDue,
+      linked: true,
+    );
   }
 }
 

@@ -235,7 +235,8 @@ abstract final class ZadScreens {
   /// Whether this app may post notifications already.
   static late Future<bool> Function(WidgetRef ref) notificationsAllowed;
 
-  /// Shows the system's notification prompt; whether they are on afterwards.
+  /// Shows the system's notification prompt — or the system settings when
+  /// it was refused for good; whether they are on afterwards.
   static late Future<bool> Function(WidgetRef ref) askNotifications;
 
   // ── transactions

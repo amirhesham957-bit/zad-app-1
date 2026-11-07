@@ -5016,6 +5016,30 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'مش دلوقتي'**
   String get homeLocationLater;
+
+  /// No description provided for @channelCardTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش طريقة أوصلك بيها'**
+  String get channelCardTitle;
+
+  /// No description provided for @channelCardBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإشعارات مقفولة وتليجرام مش مربوط، فمواعيد الدوا والفواتير وتنبيه الميزانية مش هتوصلك. واحدة منهم كفاية.'**
+  String get channelCardBody;
+
+  /// No description provided for @channelCardNotifications.
+  ///
+  /// In ar, this message translates to:
+  /// **'فعّل الإشعارات'**
+  String get channelCardNotifications;
+
+  /// No description provided for @channelCardTelegram.
+  ///
+  /// In ar, this message translates to:
+  /// **'اربط تليجرام'**
+  String get channelCardTelegram;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

@@ -19,7 +19,10 @@ import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_motion.dart';
 import 'package:zad/core/design/tokens/zad_palette.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/telegram/data/telegram_link.dart';
+import 'package:zad/shared/navigation/zad_screens.dart';
+import 'package:zad/shared/session/product_events.dart';
 
 const Color _brand = ZadPalette.brandTelegram;
 
@@ -714,15 +717,199 @@ class ZadTelegramCommunityCard extends StatelessWidget {
   }
 }
 
+/// «مفيش طريقة أوصلك بيها» (ZAD_PLAN ٦.٢): notifications off and Telegram
+/// not linked, so every reminder, dose and alert the server sends is lost —
+/// 23% of the proactive moments found no channel (2026-10-24). Both ways in,
+/// side by side, and no «مش دلوقتي»: it goes when either one works.
+class NoChannelCard extends StatelessWidget {
+  /// Creates the card.
+  const new({
+    required this.onNotifications,
+    required this.onTelegram,
+    this.asking = false,
+    super.key,
+  });
+
+  /// فعّل الإشعارات.
+  final VoidCallback onNotifications;
+
+  /// اربط تليجرام.
+  final VoidCallback onTelegram;
+
+  /// The system prompt is open.
+  final bool asking;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final l10n = context.l10n;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: scheme.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: scheme.error.withValues(alpha: 0.45)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: scheme.error.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.notifications_off_outlined,
+                  size: 20,
+                  color: scheme.error,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      l10n.channelCardTitle,
+                      style: ZadType.titleSmall.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: scheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      l10n.channelCardBody,
+                      style: ZadType.bodySmall.copyWith(
+                        color: scheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: <Widget>[
+              FilledButton(
+                onPressed: asking ? null : onNotifications,
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size(0, 44),
+                  shape: const StadiumBorder(),
+                ),
+                child: Text(l10n.channelCardNotifications),
+              ),
+              FilledButton(
+                onPressed: onTelegram,
+                style: FilledButton.styleFrom(
+                  backgroundColor: _brand,
+                  foregroundColor: scheme.onPrimary,
+                  minimumSize: const Size(0, 44),
+                  shape: const StadiumBorder(),
+                ),
+                child: Text(l10n.channelCardTelegram),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Whether home shows [NoChannelCard]: both channels known to be missing.
+/// Unknown (offline, not read yet) never counts — a reachable customer is
+/// never told they are not.
+bool noChannel({required bool? linked, required bool? notificationsOn}) =>
+    linked == false && notificationsOn == false;
+
 /// Home's Telegram blocks under the sections grid (Kotlin's order): the
 /// banner while the account is not linked, then the community card. Also
 /// raises the first-visit link sheet when it is due.
-class HomeTelegramBlocks extends ConsumerWidget {
+class HomeTelegramBlocks extends ConsumerStatefulWidget {
   /// Creates the blocks.
   const new({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomeTelegramBlocks> createState() => _HomeTelegramState();
+}
+
+class _HomeTelegramState extends ConsumerState<HomeTelegramBlocks> {
+  bool? _notificationsOn;
+  bool _asking = false;
+  late final AppLifecycleListener _life;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_readNotifications());
+    // Turned on from the system settings: the card goes on the way back.
+    _life = AppLifecycleListener(
+      onResume: () => unawaited(_readNotifications()),
+    );
+  }
+
+  @override
+  void dispose() {
+    _life.dispose();
+    super.dispose();
+  }
+
+  Future<void> _readNotifications() async {
+    bool? on;
+    try {
+      on = await ZadScreens.notificationsAllowed(ref);
+    } on Object {
+      on = null;
+    }
+    if (mounted) setState(() => _notificationsOn = on);
+  }
+
+  void _log(String name, {Duration every = Duration.zero}) {
+    try {
+      unawaited(
+        ref
+            .read(productEventsProvider)
+            .log(name, every: every)
+            .catchError((Object _) => false),
+      );
+    } on Object {
+      // No recorder (a test host): a statistic, never a feature.
+    }
+  }
+
+  Future<void> _askNotifications() async {
+    if (_asking) return;
+    setState(() => _asking = true);
+    _log('channel.card_notifications');
+    var on = false;
+    try {
+      on = await ZadScreens.askNotifications(ref);
+    } on Object {
+      on = false;
+    }
+    if (!mounted) return;
+    setState(() {
+      _asking = false;
+      if (on) _notificationsOn = true;
+    });
+  }
+
+  Future<void> _linkTelegram() async {
+    _log('channel.card_telegram');
+    await showTelegramBotSheet(context);
+    await ref.read(telegramHomeControllerProvider.notifier).recheckAfterSheet();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     ref.listen(telegramHomeControllerProvider.select((s) => s.promptDue), (
       _,
       due,
@@ -734,24 +921,39 @@ class HomeTelegramBlocks extends ConsumerWidget {
     });
     final state = ref.watch(telegramHomeControllerProvider);
     final controller = ref.read(telegramHomeControllerProvider.notifier);
+    final none = noChannel(
+      linked: state.linked,
+      notificationsOn: _notificationsOn,
+    );
+    if (none) _log('channel.card_shown', every: const Duration(hours: 12));
+    final Widget top;
+    if (none) {
+      top = Padding(
+        padding: const EdgeInsets.only(bottom: 16),
+        child: NoChannelCard(
+          onNotifications: () => unawaited(_askNotifications()),
+          onTelegram: () => unawaited(_linkTelegram()),
+          asking: _asking,
+        ),
+      );
+    } else if (state.bannerVisible) {
+      top = Padding(
+        padding: const EdgeInsets.only(bottom: 16),
+        child: TelegramLinkBanner(
+          onLink: () async {
+            await showTelegramBotSheet(context);
+            await controller.recheckAfterSheet();
+          },
+          onSnooze: controller.snoozeBanner,
+        ),
+      );
+    } else {
+      top = const SizedBox(width: double.infinity);
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        AnimatedSize(
-          duration: const Duration(milliseconds: 300),
-          child: state.bannerVisible
-              ? Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: TelegramLinkBanner(
-                    onLink: () async {
-                      await showTelegramBotSheet(context);
-                      await controller.recheckAfterSheet();
-                    },
-                    onSnooze: controller.snoozeBanner,
-                  ),
-                )
-              : const SizedBox(width: double.infinity),
-        ),
+        AnimatedSize(duration: const Duration(milliseconds: 300), child: top),
         ZadTelegramCommunityCard(onOpened: controller.recheckAfterSheet),
       ],
     );

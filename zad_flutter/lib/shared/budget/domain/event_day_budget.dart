@@ -17,9 +17,7 @@ const double kOutingWeight = 1.5;
 const int kEventHorizonDays = 7;
 
 // l10n: data-begin
-final RegExp _travel = RegExp(
-  'سفر|مسافر|رحل[هة]|مصيف|طيار[هة]|المطار',
-);
+final RegExp _travel = RegExp('سفر|مسافر|رحل[هة]|مصيف|طيار[هة]|المطار');
 final RegExp _outing = RegExp(
   'دكتور|عياد[هة]|مستشفي|مستشفى|تحاليل|[اأ]شع[هة]|خروج[هة]|فسح[هة]|سينما|'
   'مطعم|عزوم[هة]|فرح|عيد ميلاد|ملاهي|مول|النادي',
