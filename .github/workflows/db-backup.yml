@@ -1,0 +1,116 @@
+# نسخة احتياطية ليلية لقاعدة البيانات — بديل الباقة المدفوعة (قرار المالك ٢٠٢٦-١١-٠٧: «فري دلوقتي»).
+#
+# ليه موجودة: باقة سوبابيز المجانية مافيهاش نسخ احتياطية تقدر ترجعها من اللوحة (Pro = آخر ٧ أيام).
+# فهنا كل ليلة: `supabase db dump` (الأدوار + الهيكل + الداتا — طريقة سوبابيز الرسمية للنسخ بالـCLI)،
+# تتضغط وتتشفّر AES-256 بعبارة سر عند المالك بس (`ZAD_BACKUP_PASSPHRASE`)، وتترفع artifact
+# بيتمسح بعد ٧ أيام. الداتا فيها فلوس الناس — **مفيش ملف من غير تشفير بيطلع من الرَنر**.
+#
+# الاسترجاع (docs/agent/DB_BACKUP.md):
+#   gpg -d zad-db-*.tar.gz.gpg | tar xz
+#   psql "$DB_URL" -f roles.sql -f schema.sql -c 'SET session_replication_role = replica' -f data.sql
+#
+# سر ناقص = الرن بيفشل أحمر، مش بيعدّي أخضر: نسخة بتتخطى من غير ما حد ياخد باله أسوأ من مفيش نسخة،
+# لأن الكل فاكرها موجودة.
+name: DB Backup
+
+on:
+  schedule:
+    - cron: '23 2 * * *' # ٢:٢٣ UTC — بعد كرونات الليل الكبيرة، وقبل الصبح في مصر والسعودية
+  workflow_dispatch:
+
+concurrency:
+  group: db-backup
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check backup secrets
+        env:
+          ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          PASSPHRASE: ${{ secrets.ZAD_BACKUP_PASSPHRASE }}
+        run: |
+          missing=""
+          if [ -z "$ACCESS_TOKEN" ]; then missing="$missing SUPABASE_ACCESS_TOKEN"; fi
+          if [ -z "$DB_PASSWORD" ]; then missing="$missing SUPABASE_DB_PASSWORD"; fi
+          if [ -z "$PASSPHRASE" ]; then missing="$missing ZAD_BACKUP_PASSPHRASE"; fi
+          if [ -n "$missing" ]; then
+            echo "::error title=No backup taken::Missing repository secret(s):$missing"
+            echo "### :x: No backup taken — missing secret(s):$missing" >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          # عبارة قصيرة = تشفير يتكسر بالتخمين.
+          if [ "${#PASSPHRASE}" -lt 20 ]; then
+            echo "::error title=No backup taken::ZAD_BACKUP_PASSPHRASE is shorter than 20 characters"
+            exit 1
+          fi
+
+      # نفس النسخة المثبّتة في edge-functions.yml (السبب مكتوب هناك).
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          version: 2.114.0
+
+      - name: Dump
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: |
+          ref="$(grep -oP '(?<=^id = ")[^"]+' supabase/config.toml)"
+          supabase link --project-ref "$ref"
+          mkdir -p "$RUNNER_TEMP/dump"
+          cd "$RUNNER_TEMP/dump"
+          supabase db dump --linked -f roles.sql --role-only
+          supabase db dump --linked -f schema.sql
+          supabase db dump --linked -f data.sql --use-copy --data-only
+          # نسخة فاضية أخطر من فشل: لازم الداتا تكون فيها جداول الحسابات والفلوس فعلاً.
+          for t in 'public.zad_entitlements' 'public.zad_transactions' 'auth.users'; do
+            if ! grep -q "^COPY \"\?${t%%.*}\"\?\.\"\?${t#*.}\"\? " data.sql; then
+              echo "::error title=Backup incomplete::data.sql has no COPY for $t"
+              exit 1
+            fi
+          done
+          ls -l
+
+      - name: Encrypt
+        env:
+          PASSPHRASE: ${{ secrets.ZAD_BACKUP_PASSPHRASE }}
+        run: |
+          stamp="$(date -u +%Y%m%d-%H%M)"
+          out="$RUNNER_TEMP/out"
+          mkdir -p "$out"
+          tar -C "$RUNNER_TEMP/dump" -czf - roles.sql schema.sql data.sql \
+            | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 3 \
+                  --symmetric --cipher-algo AES256 -o "$out/zad-db-$stamp.tar.gz.gpg" 3<<<"$PASSPHRASE"
+          # النص الصريح مايفضلش على الرَنر.
+          rm -rf "$RUNNER_TEMP/dump"
+          # التشفير اتعمل فعلاً: الملف يبتدي بهيدر OpenPGP مش gzip.
+          if [ "$(head -c 2 "$out/zad-db-$stamp.tar.gz.gpg" | od -An -tx1 | tr -d ' ')" = "1f8b" ]; then
+            echo "::error title=Backup not encrypted::output starts with a gzip header"
+            exit 1
+          fi
+          echo "STAMP=$stamp" >> "$GITHUB_ENV"
+          size="$(du -h "$out/zad-db-$stamp.tar.gz.gpg" | cut -f1)"
+          {
+            echo "### :floppy_disk: zad-db-$stamp ($size, encrypted)"
+            echo ""
+            echo "Restore: \`gpg -d zad-db-$stamp.tar.gz.gpg | tar xz\` — then docs/agent/DB_BACKUP.md."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: zad-db-${{ env.STAMP }}
+          path: ${{ runner.temp }}/out/*.gpg
+          retention-days: 7
+          if-no-files-found: error
+          compression-level: 0
