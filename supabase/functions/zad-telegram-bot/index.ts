@@ -35,6 +35,7 @@ import {
 } from "./purchasePhoto.ts";
 import { splitPhotoMedicines } from "./pharmacyPhoto.ts";
 import { needsCheckIn } from "../_shared/consumptionRate.ts";
+import { extendCallback, formatExtend, formatLookup, parseExtendCallback, parseSupportCommand, SUPPORT_TEXT, SUPPORT_USAGE } from "./supportDesk.ts";
 import {
   adCreditKeyboard,
   InlineKeyboardButton, mainMenuKeyboard, dismissKeyboard,
@@ -1123,6 +1124,68 @@ bot.command("menu", async (ctx) => {
 
 /** التحليل الكامل — نفس بيانات الشات، بس السؤال جاهز، عشان العميل ياخد قراءة شاملة
  * من غير ما يكتب سؤال. */
+// ── مكتب الدعم (supportDesk.ts، 20261107123000) — شات الأدمن بس ─────────────────────────────────────────────
+/** الشات ده هو شات الأدمن ومش شات عميل؟ نفس شرط admin_alert. */
+async function isAdminChat(sb: SupabaseClient, chatId: number | undefined): Promise<boolean> {
+  const admin = adminChatId(Deno.env.get("ZAD_ADMIN_CHAT_ID"));
+  if (admin === null || chatId !== admin) return false;
+  return !(await resolveUserId(sb, chatId));
+}
+
+bot.command("support", async (ctx) => {
+  const sb = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+  if (!(await isAdminChat(sb, ctx.chat.id))) return; // صمت: الأمر مش موجود لأي حد تاني
+  const cmd = parseSupportCommand("support", String(ctx.match ?? ""));
+  if (cmd.kind !== "lookup") {
+    await ctx.reply(SUPPORT_USAGE.support);
+    return;
+  }
+  const { data, error } = await sb.rpc("zad_support_lookup", { p_admin_chat: ctx.chat.id, p_query: cmd.query });
+  if (error) {
+    console.error("[support] lookup failed:", error.message);
+    await ctx.reply(SUPPORT_TEXT.lookupFailed);
+    return;
+  }
+  await ctx.reply(formatLookup(data as Record<string, unknown> | null));
+});
+
+bot.command("extend", async (ctx) => {
+  const sb = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+  if (!(await isAdminChat(sb, ctx.chat.id))) return;
+  const cmd = parseSupportCommand("extend", String(ctx.match ?? ""));
+  if (cmd.kind !== "extend") {
+    await ctx.reply(SUPPORT_USAGE.extend);
+    return;
+  }
+  await ctx.reply(`تجديد ${cmd.tier ?? "الباقة الحالية (أو pro)"} ${cmd.days} يوم للحساب ${cmd.userId}؟`, {
+    reply_markup: {
+      inline_keyboard: [[
+        { text: "✅ جدّد", callback_data: extendCallback(cmd.userId, cmd.days, cmd.tier) },
+        { text: "❌ إلغاء", callback_data: "sx:cancel" },
+      ]],
+    },
+  });
+});
+
+bot.callbackQuery(/^sx:/, async (ctx) => {
+  const sb = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+  await ctx.answerCallbackQuery().catch(() => {});
+  if (!(await isAdminChat(sb, ctx.chat?.id))) return;
+  const data = ctx.callbackQuery.data;
+  if (data === "sx:cancel") {
+    await ctx.editMessageText(SUPPORT_TEXT.cancelled).catch(() => {});
+    return;
+  }
+  const req = parseExtendCallback(data);
+  if (!req) return;
+  const { data: res, error } = await sb.rpc("zad_support_extend", {
+    p_admin_chat: ctx.chat!.id, p_user: req.userId, p_days: req.days, p_tier: req.tier,
+  });
+  if (error) console.error("[support] extend failed:", error.message);
+  await ctx.editMessageText(error ? SUPPORT_TEXT.extendFailed : formatExtend(res as Record<string, unknown> | null))
+    .catch(() => {});
+});
+
 bot.command("tahlil", async (ctx) => {
   const sb = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
   const userId = await resolveUserId(sb, ctx.chat.id);
