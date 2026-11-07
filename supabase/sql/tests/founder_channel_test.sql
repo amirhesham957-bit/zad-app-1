@@ -59,6 +59,7 @@ create or replace function public.zad_eval_verdict(p_day date default ((now() at
 
 \i supabase/migrations/20261107101500_founder_channel.sql
 \i supabase/migrations/20261107113000_founder_market_and_problems.sql
+\i supabase/migrations/20261107133000_founder_week_retention_denominator.sql
 
 do $$
 declare
@@ -153,6 +154,8 @@ begin
   insert into zad_product_events (user_id, name, at) values (u[5], 'tab.home', now() - interval '1 hour');
   t := public.zad_founder_dropoff();
   assert t like '%tab.home 1%', 'screens by people: ' || t;
+  -- Everyone here signed up today: none can have a week yet, so the denominator is 0, not 6.
+  assert t like '%بعد أسبوع 0 من 0 عدّى عليهم أسبوع%', 'week retention counts only week-old accounts: ' || t;
 
   -- The weekly report goes to the admin chat, as three messages under Telegram's limit.
   perform public.zad_founder_weekly();
