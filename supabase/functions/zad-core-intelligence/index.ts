@@ -42,7 +42,7 @@ async function callerCountry(req: Request, userId: unknown): Promise<string | nu
   }
 }
 import { googleNearbyAny, googlePlacesKeys } from "./googlePlaces.ts";
-import { brochureEntries, OFFICIAL_FLYER_SITES, OFFICIAL_FLYER_UA, officialFlyerPrompt, robotsAllows, siteForPdf } from "./officialFlyers.ts";
+import { brochureEntries, OFFICIAL_FLYER_SITES, OFFICIAL_FLYER_UA, officialFlyerDeals, officialFlyerPrompt, robotsAllows, siteForPdf } from "./officialFlyers.ts";
 import { DEAL_SEARCH_TIMEOUT_MS, dealQuery, dealsFromHitsPrompt, dealSearchItems, readDeals, readReverseCity, readStoreDeals, reverseCityUrl, sameCurrency, cleanCity, searchStoreName, storeDealsPrompt, storeDealsQuery, videoDealsPrompt, youtubeDealVideos, instagramDealPosts, postDealsPrompt, flyerDealsPrompt, readDealCodes, type DealCode } from "./liveDeals.ts";
 import { fuelPricePrompt, fuelPriceQuery, readFuelPrice } from "./fuelPrice.ts";
 import {
@@ -3173,8 +3173,12 @@ async function handle(req: Request): Promise<Response> {
         if (!read.content) return jsonResponse({ ok: false, reason: read.reason });
         const parsed = (() => { try { return JSON.parse(read.content!); } catch { return null; } })();
         if (parsed === null) return jsonResponse({ ok: false, reason: "bad_json" });
-        const deals = readStoreDeals(parsed, [{ title: `نشرة ${site.store}: ${label}`, url: pdfUrl, snippet: "" }], site.currency, now);
-        return jsonResponse({ ok: true, store: site.store, country: site.country, currency: site.currency, deals, source: "flyer" });
+        // عملة النشرة الرسمية معروفة من الموقع نفسه: أول قراية حية (٧/١١، نشرة جدة) رجّعت صفر بعد الفلترة، والريال
+        // مكتوب في النشرات برموز مالهاش حصر (⃁ الجديد، ﷼، SR، ر.س). فكل عرض بياخد عملة الموقع.
+        const raw = officialFlyerDeals(parsed).map((d) => ({ ...d, currency: site.currency }));
+        const deals = readStoreDeals({ deals: raw }, [{ title: `نشرة ${site.store}: ${label}`, url: pdfUrl, snippet: "" }], site.currency, now);
+        if (raw.length > 0 && deals.length === 0) console.warn("[official_flyers] every deal dropped:", JSON.stringify(raw.slice(0, 3)));
+        return jsonResponse({ ok: true, store: site.store, country: site.country, currency: site.currency, raw: raw.length, deals, source: "flyer" });
       }
 
       // ──────────────────────────────────────────────

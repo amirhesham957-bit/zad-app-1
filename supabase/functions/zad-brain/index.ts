@@ -9323,13 +9323,14 @@ async function handleRequest(req: Request): Promise<Response> {
         if (!error && (data as { ok?: boolean } | null)?.ok) put++;
         else refused++;
       }
-      const ok = reply?.ok === true;
+      // «ok» بس لو النشرة طلّعت عروض فعلاً: صفر = اتسجّل فشل ويتجرب تاني بعد ٢٠ ساعة، مش «اتقرت» للأبد (أول رن حي ٧/١١).
+      const ok = reply?.ok === true && Array.isArray(reply?.deals) && reply.deals.length > 0;
       const { error: logErr } = await sbDeals.from("zad_flyer_reads").upsert({
         pdf_url: next.pdf_url, store: next.store, country: next.country, city: next.city, label: next.label,
-        ok, deals: put, reason: ok ? null : String(reply?.reason ?? "no_reply").slice(0, 60), read_at: new Date().toISOString(),
+        ok, deals: put, reason: ok ? null : String(reply?.reason ?? (reply?.ok ? `empty_raw_${Number(reply?.raw) || 0}` : "no_reply")).slice(0, 60), read_at: new Date().toISOString(),
       }, { onConflict: "pdf_url" });
       if (logErr) console.error("[deals_flyers_run] log failed:", logErr.message);
-      const result = { store: next.store, label: next.label, city: next.city, ok, read: Array.isArray(reply?.deals) ? reply.deals.length : 0, put, refused, reason: reply?.reason ?? null };
+      const result = { store: next.store, label: next.label, city: next.city, ok, raw: Number(reply?.raw) || 0, read: Array.isArray(reply?.deals) ? reply.deals.length : 0, put, refused, reason: reply?.reason ?? null };
       console.log("[deals_flyers_run]", JSON.stringify(result));
       return new Response(JSON.stringify({ ok: true, sites, read: result }), { headers: CORS_HEADERS });
     }

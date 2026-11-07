@@ -147,3 +147,11 @@ export function siteForPdf(url: string): OfficialFlyerSite | null {
 
 /** اسم واضح لزاد في كل طلب لموقع محل — مش متخفّي في متصفح. */
 export const OFFICIAL_FLYER_UA = "ZadDealsBot/1.0 (+https://github.com/amirhesham957-bit/zad-app-1; official flyers only, robots.txt respected)";
+
+/** قايمة العروض من رد الموديل ({deals:[…]} أو […]) زي ما هي، قبل أي فلترة — عشان العدّ يبيّن لو الفلترة شالت كله. */
+export function officialFlyerDeals(parsed: unknown): Array<Record<string, unknown>> {
+  const list = parsed && typeof parsed === "object" && Array.isArray((parsed as { deals?: unknown }).deals)
+    ? (parsed as { deals: unknown[] }).deals
+    : Array.isArray(parsed) ? parsed : [];
+  return list.filter((d): d is Record<string, unknown> => !!d && typeof d === "object" && !Array.isArray(d));
+}
