@@ -469,24 +469,26 @@ export function nearbyPoint(
 
 /**
  * ٤.٣: عروض مدينته الأول وبعدها البلد كله (''). عرض في مدينة تانية بيتشال، ونفس المحل والصنف في مدينته بيغلب
- * صف البلد. من غير مدينة = الصفوف زي ما هي (زي الأول).
+ * صف البلد. من غير مدينة = الصفوف زي ما هي (زي الأول) — إلا نشرة منطقة (٧/١١): سعر نشرة الرياض مش سعر جدة، فمن غير
+ * مدينة معروفة بتوصل نشرات البلد كله بس.
  */
+const CITY_SCOPED_SOURCES = new Set(["search", "flyer"]);
 export function dealsForCity<T extends { city?: string | null; store?: string | null; item_name?: string | null; source_kind?: string | null }>(
   rows: T[] | null | undefined,
   city: string,
 ): T[] {
-  if (!city) return rows ?? [];
+  if (!city) return (rows ?? []).filter((r) => !(r.source_kind === "flyer" && (r.city ?? "") !== ""));
   const key = (r: T) => `${itemKey(r.store ?? "")}|${itemKey(r.item_name ?? "")}`;
   const mine = (rows ?? []).filter((r) => (r.city ?? "") === city);
   const local = new Set(mine.map(key));
   // مدينة الفاتورة كلام حر من الكشف («غير محدد»، «القاهرة»)، والعرض ليه إحداثيات والمشوار بيحكم عليه — فبس صفوف
   // البحث في مدينة تانية هي اللي بتتشال.
   const other = (r: T) => (r.city ?? "") !== "" && (r.city ?? "") !== city;
-  return [...mine, ...(rows ?? []).filter((r) => (r.city ?? "") !== city && !(other(r) && r.source_kind === "search") && !local.has(key(r)))];
+  return [...mine, ...(rows ?? []).filter((r) => (r.city ?? "") !== city && !(other(r) && CITY_SCOPED_SOURCES.has(r.source_kind ?? "")) && !local.has(key(r)))];
 }
 
 /** مدينة العميل (zad_user_city) لو في نفس بلد العرض؛ وإلا ''. فشل = ''. */
-async function customerCity(sb: SupabaseClient, userId: string, country: string): Promise<string> {
+export async function customerCity(sb: SupabaseClient, userId: string, country: string): Promise<string> {
   const { data } = await sb.from("zad_user_city").select("country,city").eq("user_id", userId).maybeSingle();
   const row = data as { country?: string | null; city?: string | null } | null;
   return row && String(row.country ?? "").toUpperCase() === country ? String(row.city ?? "") : "";

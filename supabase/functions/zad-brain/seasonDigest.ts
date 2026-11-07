@@ -14,7 +14,7 @@ import { offerMatchesNeed } from "./productIdentity.ts";
 import { itemKey } from "./shared.ts";
 import { codeStoreKey } from "./dealCodes.ts";
 import { fetchPreviewImage, previewableUrl } from "../_shared/pagePreview.ts";
-import { dealCountry, FAVORITE_WINDOW_DAYS, favoriteStores, runningOutNames } from "./tasteDeals.ts";
+import { customerCity, dealCountry, dealsForCity, FAVORITE_WINDOW_DAYS, favoriteStores, runningOutNames } from "./tasteDeals.ts";
 
 /** أقصى عدد كروت في رسالة الموسم. */
 export const DIGEST_MAX_DEALS = 4;
@@ -33,6 +33,7 @@ export interface DigestDealRow {
   source_kind: string;
   source_url?: string | null;
   valid_until?: string | null;
+  city?: string | null;
 }
 
 export interface DigestCard {
@@ -215,12 +216,14 @@ async function loadDealInputs(sb: SupabaseClient, userId: string, now: number): 
   ]);
   const country = dealCountry(user as { country?: string | null; travel_country?: string | null; travel_since?: string | null } | null, now);
   if (!/^[A-Z]{2}$/.test(country)) return null;
-  const [{ data: deals }, { data: paused }, { data: codes }] = await Promise.all([
-    sb.from("zad_deals").select("store,item_name,price,price_before,currency,source_kind,source_url,valid_until")
-      .eq("country", country).gt("expires_at", new Date(now).toISOString()).limit(400),
+  // ٧/١١: نشرات المناطق (الدانوب) بمدينتها — عرض مدينة تانية مايتبعتش (dealsForCity)، والأحدث الأول عشان الـ٤٠٠ مايتقطعوش عشوائي.
+  const [{ data: deals }, { data: paused }, { data: codes }, city] = await Promise.all([
+    sb.from("zad_deals").select("store,item_name,price,price_before,currency,source_kind,source_url,valid_until,city")
+      .eq("country", country).gt("expires_at", new Date(now).toISOString()).order("found_at", { ascending: false }).limit(400),
     sb.rpc("zad_deal_paused_sources", { p_days: 14 }),
     sb.from("zad_deal_codes").select("store,store_key,code,discount_percent,discount_amount,currency,min_order,valid_until,source_kind,source_url")
       .eq("country", country).gt("expires_at", new Date(now).toISOString()).order("found_at", { ascending: false }).limit(100),
+    customerCity(sb, userId, country).catch(() => ""),
   ]);
   const pausedKinds = new Set(((paused ?? []) as Array<{ source_kind: string }>).map((r) => r.source_kind));
   return {
@@ -233,7 +236,7 @@ async function loadDealInputs(sb: SupabaseClient, userId: string, now: number): 
     favorites: favoriteStores((txns ?? []) as Array<{ merchant_name: string | null }>),
     bought: ((bought ?? []) as Array<{ item_name: string | null }>).map((r) => r.item_name ?? "").filter(Boolean),
     sent: new Set(((sentRows ?? []) as Array<{ deal_key: string }>).map((r) => r.deal_key)),
-    deals: ((deals ?? []) as DigestDealRow[]).filter((d) => !pausedKinds.has(d.source_kind)),
+    deals: dealsForCity((deals ?? []) as DigestDealRow[], city).filter((d) => !pausedKinds.has(d.source_kind)),
     codes: (codes ?? []) as DigestCodeRow[],
   };
 }

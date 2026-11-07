@@ -472,6 +472,19 @@ Deno.test("city: their city's row wins over the country's for the same store and
   assertEquals(dealsForCity(null, "القاهرة"), []);
 });
 
+Deno.test("city: a regional flyer reaches its own city only; with no city known, the country-wide flyer only", () => {
+  const rows = [
+    { store: "الدانوب", item_name: "رز", city: "الرياض", source_kind: "flyer", n: 1 },
+    { store: "الدانوب", item_name: "رز", city: "جدة", source_kind: "flyer", n: 2 },
+    { store: "الدانوب", item_name: "سكر", city: "", source_kind: "flyer", n: 3 },
+    { store: "بنده", item_name: "زيت", city: "جدة", source_kind: "search", n: 4 },
+    // only in Riyadh's flyer: no Jeddah row to win over it, so only the city rule keeps it out.
+    { store: "الدانوب", item_name: "حليب", city: "الرياض", source_kind: "flyer", n: 5 },
+  ];
+  assertEquals(dealsForCity(rows, "جدة").map((r) => r.n), [2, 4, 3]);
+  assertEquals(dealsForCity(rows, "").map((r) => r.n), [3, 4]);
+});
+
 Deno.test("city: the morning deal reads their city's rows; with no city, or a city in another country, as before", async () => {
   dealSource.search = () => Promise.resolve(null);
   const oil = (price: number, city: string) => ({ ...STORED[0], item_name: "زيت عافية", price: String(price), price_before: "100", city, source_kind: "search" });
