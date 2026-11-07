@@ -44,6 +44,13 @@ create table if not exists public.zad_health_daily (
   day date, user_id uuid, brain_runs int, brain_runs_failed int, brain_cost_usd numeric, brain_p90_secs numeric,
   guardian_delivered int, guardian_replied int, guardian_acted int);
 create table if not exists public.zad_eval_nights (day date primary key, run_id uuid);
+create table if not exists public.family_members (user_id uuid, family_id uuid);
+create table if not exists public.zad_transactions (
+  user_id uuid, merchant_name text, is_expense boolean default true, created_at timestamptz default now());
+create table if not exists public.user_behavior_profile (user_id uuid primary key, item_cycles jsonb default '[]');
+create table if not exists public.zad_brain_runs (user_id uuid, status text, error text, started_at timestamptz default now());
+create table if not exists public.zad_support_tickets (
+  user_id uuid, subject text, message text, created_at timestamptz default now());
 -- The verdict, steered by the test.
 create table if not exists public._verdicts (day date primary key, v jsonb);
 create or replace function public.zad_eval_verdict(p_day date default ((now() at time zone 'utc')::date)) returns jsonb
@@ -51,6 +58,7 @@ create or replace function public.zad_eval_verdict(p_day date default ((now() at
                                      jsonb_build_object('finished', false, 'green', false)) $$;
 
 \i supabase/migrations/20261107101500_founder_channel.sql
+\i supabase/migrations/20261107113000_founder_market_and_problems.sql
 
 do $$
 declare
@@ -100,9 +108,57 @@ begin
   assert public.zad_founder_watch() = 1, 'red night alerts';
   assert (select body from _admin_sent where title like '%التقييم%') like '%q_euro%', 'with the failed cases';
 
-  -- The weekly report goes to the admin chat.
+  -- u1 and u2 are one family: one home everywhere below.
+  insert into family_members values (u[1], fam), (u[2], fam);
+
+  -- Market: «زيت» is on 5 homes' lists this week (u1/u2 one home, u3..u6) and on 1 the week before.
+  insert into zad_shopping_list (user_id, item_name, created_at) values (u[3], 'زيت', now() - interval '10 days');
+  t := public.zad_founder_market();
+  assert t like '%EG: زيت (5)%', 'top demanded by homes: ' || t;
+  assert t like '%زيت (1←5)%', 'a spike against last week: ' || t;
+
+  -- A store: 4 homes this week say nothing; a fifth makes it a rising store.
+  insert into zad_transactions (user_id, merchant_name)
+    select x, 'كازيون' from unnest(u) x where x <> u[6];
+  insert into zad_transactions (user_id, merchant_name) values (u[3], 'com.google.android.apps.messaging');
+  t := public.zad_founder_market();
+  assert t not like '%كازيون%', 'four homes (u1+u2 one) stay silent: ' || t;
+  insert into zad_transactions (user_id, merchant_name) values (u[6], 'كازيون');
+  t := public.zad_founder_market();
+  assert t like '%كازيون (0←5 بيت)%', 'a rising store at five homes: ' || t;
+  assert t not like '%com.google%', 'a package name is not a store';
+
+  -- Running out next week, from the cycles: five homes.
+  insert into user_behavior_profile (user_id, item_cycles)
+    select x, '[{"item": "سكر", "due_in_days": 3}, {"item": "رز", "due_in_days": 20}]'::jsonb from unnest(u) x;
+  t := public.zad_founder_market();
+  assert t like '%القاهرة: سكر (5 بيت)%', 'due within a week, by area: ' || t;
+  assert t not like '%رز%', 'not due within a week';
+  for n in 1..6 loop
+    assert position(u[n]::text in t) = 0, 'a user id leaked from the market report';
+  end loop;
+
+  -- Problems: classified, counted.
+  insert into zad_brain_runs (user_id, status, error) values
+    (u[1], 'failed', 'Error: every gemini model unavailable [x]'), (u[2], 'failed', 'Error: every gemini model unavailable'),
+    (u[3], 'failed', 'request timed out'), (probe, 'failed', 'Error: every gemini model unavailable');
+  insert into zad_support_tickets (user_id, subject, message) values (u[4], 'البنك', 'مش بيقرا رسايل البنك');
+  t := public.zad_founder_problems();
+  assert t like '%الذكاء مش متاح (الكوتة المجانية خلصت) 2 مرة (2 شخص)%', 'the probe is out of the problems: ' || t;
+  assert t like '%الرد اتأخر ووقف (timeout) 1 مرة%', t;
+  assert t like '%تذاكر الدعم: 1 — قراية البنك والإشعارات 1%', t;
+  assert t like '%اتقفلت عند 1%', 'bank cut-offs as a count: ' || t;
+
+  -- Drop-off: where people stop, and screens.
+  insert into zad_product_events (user_id, name, at) values (u[5], 'tab.home', now() - interval '1 hour');
+  t := public.zad_founder_dropoff();
+  assert t like '%tab.home 1%', 'screens by people: ' || t;
+
+  -- The weekly report goes to the admin chat, as three messages under Telegram's limit.
   perform public.zad_founder_weekly();
-  assert exists (select 1 from _admin_sent where title = '📊 تقرير زاد الأسبوعي'), 'weekly report sent';
+  assert (select count(*) from _admin_sent where title in
+          ('📊 تقرير زاد الأسبوعي — الناس والمنتج', '🛒 السوق والتنبؤ', '🧯 المشاكل الشائعة')) = 3, 'three messages';
+  assert (select max(length(body)) from _admin_sent) <= 3900, 'each under the Telegram limit';
 
   -- Scheduled.
   assert (select schedule from cron.job where jobname = 'founder-weekly') = '5 5 * * 0', 'sunday';
