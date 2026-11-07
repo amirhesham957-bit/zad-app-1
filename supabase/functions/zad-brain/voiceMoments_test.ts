@@ -494,3 +494,18 @@ Deno.test("salary: no pay day yet and an empty pantry still reads well", () => {
   assertEquals(momentFallback("salary_cycle", { amount: 9000.4, currency: "ر.س", day: 27, pay_day: null, pantry: [] }).text,
     "نزلّك 9000 ر.س. لو ده المرتب، أبدأ دورة الصرف من النهارده (يوم 27)؟");
 });
+
+import { momentSourceUrl } from "./voiceMoments.ts";
+
+Deno.test("a moment's push carries the offer's own link, https only (ZAD_PLAN 4.22)", () => {
+  const video = "https://www.youtube.com/watch?v=abc123";
+  assertEquals(momentSourceUrl({ taste_deal: { item: "زيت", store: "كيو", source: { kind: "youtube", url: video } } }), video);
+  // The deal's link wins over the code's; with no deal link the code's is used.
+  assertEquals(momentSourceUrl({ taste_deal: { source: { url: video } }, deal_code: { url: "https://instagram.com/p/x1" } }), video);
+  assertEquals(momentSourceUrl({ deal_code: { code: "KEETA30", url: "https://instagram.com/p/x1" } }), "https://instagram.com/p/x1");
+  // Nothing to open, or nothing safe to open.
+  assertEquals(momentSourceUrl({ deal_code: { url: "http://example.com/x" } }), null);
+  assertEquals(momentSourceUrl({ deal_code: { url: "javascript:alert(1)" } }), null);
+  assertEquals(momentSourceUrl({ taste_deal: { source: { url: null } } }), null);
+  assertEquals(momentSourceUrl(null), null);
+});

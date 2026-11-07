@@ -1037,6 +1037,8 @@
   "learningTitle": "🧠 اتعلمت إن",
   "learningRight": "✅ صح",
   "learningWrong": "❌ مش صح",
+  "openOfferSource": "🔗 افتح العرض",
+  "@openOfferSource": { "description": "Button on an offer notification: opens the offer's own post or video" },
   "learningKept": "تمام ✅ هفتكرها.",
   "learningCorrected": "تمام، شكراً إنك صحّحتني — مش هقولها تاني.",
   "learningAlready": "تمام، ردك اتسجّل قبل كده.",

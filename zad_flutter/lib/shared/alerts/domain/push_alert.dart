@@ -34,6 +34,7 @@ class PushAlert {
     this.speech,
     this.habitTrial,
     this.houseLearningId,
+    this.sourceUrl,
   });
 
   /// Reads a message: the notification block when there is one, the data
@@ -66,6 +67,7 @@ class PushAlert {
       houseLearningId: data['kind'] == kHouseLearningKind && learning.isNotEmpty
           ? learning
           : null,
+      sourceUrl: sourceUrlFromData(data),
     );
   }
 
@@ -94,6 +96,10 @@ class PushAlert {
   /// notification then carries the two buttons.
   final String? houseLearningId;
 
+  /// The offer's own post or video (`data.source_url`, https only): a tap on
+  /// the notification opens it (ZAD_PLAN ٤.٢٢).
+  final String? sourceUrl;
+
   /// Worth showing at all.
   bool get isShowable => title.isNotEmpty || body.isNotEmpty;
 }
@@ -101,6 +107,50 @@ class PushAlert {
 String? _nonEmpty(String? s) {
   final t = s?.trim() ?? '';
   return t.isEmpty ? null : t;
+}
+
+/// [url] when it is a link the phone may open: https, no spaces, not absurdly
+/// long. The server checks the same; this keeps an older server's or a
+/// tampered value from reaching the browser.
+String? safeSourceUrl(String? url) {
+  final u = url?.trim() ?? '';
+  return RegExp(r'^https://\S{4,500}$').hasMatch(u) ? u : null;
+}
+
+/// The offer link a push's `data` carries, or null.
+String? sourceUrlFromData(Map<String, dynamic> data) =>
+    safeSourceUrl(data['source_url'] as String?);
+
+/// The notification's «🔗 افتح العرض» button.
+const String kOpenSourceActionId = 'zad_open_source';
+
+const String _linkPayloadPrefix = 'link:';
+
+/// [inner] with the offer's link in front of it, so a tap can open the link
+/// and a button can still answer what [inner] asks. A link holds no
+/// whitespace, so a newline ends it.
+String? withSourceLink(String? inner, String? url) {
+  final link = safeSourceUrl(url);
+  return link == null ? inner : '$_linkPayloadPrefix$link\n${inner ?? ''}';
+}
+
+/// The link a payload carries in front, or null.
+String? sourceUrlFromPayload(String? payload) {
+  if (payload == null || !payload.startsWith(_linkPayloadPrefix)) return null;
+  final end = payload.indexOf('\n');
+  return safeSourceUrl(
+    payload.substring(_linkPayloadPrefix.length, end < 0 ? null : end),
+  );
+}
+
+/// The payload without its link in front.
+String? withoutSourceLink(String? payload) {
+  if (payload == null || !payload.startsWith(_linkPayloadPrefix)) {
+    return payload;
+  }
+  final end = payload.indexOf('\n');
+  final rest = end < 0 ? '' : payload.substring(end + 1);
+  return rest.isEmpty ? null : rest;
 }
 
 /// The voice moment notification's «اسمع زاد» button.

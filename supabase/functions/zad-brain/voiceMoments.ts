@@ -1245,6 +1245,9 @@ export async function processVoiceMoments(
 
       const emotion = composed.emotion ?? situationalEmotion(deliveryMoment, row.facts ?? {}, now());
       const data: Record<string, string> = { moment: deliveryMoment, moment_id: row.id };
+      // رابط مصدر العرض (فيديو/بوست المحل): لمسة على الإشعار بتفتحه (ZAD_PLAN ٤.٢٢).
+      const sourceUrl = momentSourceUrl(row.facts);
+      if (sourceUrl) data.source_url = sourceUrl;
       if (voice) {
         data.voice = "1";
         data.speech = composed.speech || composed.text;
@@ -1965,4 +1968,20 @@ async function holdMoment(
   // حالة البيت: فشل القراية = عادي (loadCircumstance مابيرميش).
   const circumstance = await loadCircumstance(sb, row.user_id, nowMs);
   return momentGate(row.moment, hour, sentToday, appointmentsToday, circumstance.mode, quiet);
+}
+
+/**
+ * The link of the offer a moment speaks about — the deal's own post or video, else the code's —
+ * so a tap on the phone's notification opens it (ZAD_PLAN ٤.٢٢). https only; anything else is
+ * dropped rather than handed to the phone to open.
+ */
+export function momentSourceUrl(facts: unknown): string | null {
+  const f = (facts ?? {}) as {
+    taste_deal?: { source?: { url?: unknown } | null } | null;
+    deal_code?: { url?: unknown } | null;
+  };
+  for (const u of [f.taste_deal?.source?.url, f.deal_code?.url]) {
+    if (typeof u === "string" && /^https:\/\/[^\s]{4,500}$/.test(u.trim())) return u.trim();
+  }
+  return null;
 }

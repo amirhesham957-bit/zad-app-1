@@ -1595,6 +1595,9 @@ class ZadL10nAr extends ZadL10n {
   String get learningWrong => '❌ مش صح';
 
   @override
+  String get openOfferSource => '🔗 افتح العرض';
+
+  @override
   String get learningKept => 'تمام ✅ هفتكرها.';
 
   @override

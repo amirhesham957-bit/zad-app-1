@@ -2821,6 +2821,12 @@ abstract class ZadL10n {
   /// **'❌ مش صح'**
   String get learningWrong;
 
+  /// Button on an offer notification: opens the offer's own post or video
+  ///
+  /// In ar, this message translates to:
+  /// **'🔗 افتح العرض'**
+  String get openOfferSource;
+
   /// No description provided for @learningKept.
   ///
   /// In ar, this message translates to:

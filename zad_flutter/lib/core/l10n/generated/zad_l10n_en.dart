@@ -1640,6 +1640,9 @@ class ZadL10nEn extends ZadL10n {
   String get learningWrong => '❌ Not right';
 
   @override
+  String get openOfferSource => '🔗 Open the offer';
+
+  @override
   String get learningKept => 'Got it ✅ I\'ll remember that.';
 
   @override

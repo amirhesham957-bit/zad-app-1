@@ -13,6 +13,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/alerts/domain/push_alert.dart';
 
@@ -180,14 +181,20 @@ Future<void> _showLocal(PushAlert alert) async {
             : alert.houseLearningId != null
             ? _learningActions()
             : alert.speech != null
-            ? const <AndroidNotificationAction>[
+            ? <AndroidNotificationAction>[
                 // Speaking needs the app's player, so the press brings the
                 // app up and زاد says it there (AlertsController).
-                AndroidNotificationAction(
+                const AndroidNotificationAction(
                   kListenActionId,
                   '🔊 اسمع زاد',
                   showsUserInterface: true,
                 ),
+                if (alert.sourceUrl != null)
+                  AndroidNotificationAction(
+                    kOpenSourceActionId,
+                    zadL10nArabic.openOfferSource,
+                    showsUserInterface: true,
+                  ),
               ]
             : alert.proposalId == null
             ? null
@@ -205,16 +212,46 @@ Future<void> _showLocal(PushAlert alert) async {
               ],
       ),
     ),
-    payload: alert.habitTrial != null
-        ? habitTrialPayload(alert.habitTrial!)
-        : alert.houseLearningId != null
-        ? houseLearningPayload(alert.houseLearningId!)
-        : alert.speech != null
-        ? speakPayload(alert.speech!)
-        : alert.proposalId == null
-        ? payloadFor(alert.destination)
-        : proposalPayload(alert.proposalId!),
+    payload: withSourceLink(_innerPayload(alert), alert.sourceUrl),
   );
+}
+
+/// What a tap on [alert]'s notification answers, before any offer link.
+String? _innerPayload(PushAlert alert) => alert.habitTrial != null
+    ? habitTrialPayload(alert.habitTrial!)
+    : alert.houseLearningId != null
+    ? houseLearningPayload(alert.houseLearningId!)
+    : alert.speech != null
+    ? speakPayload(alert.speech!)
+    : alert.proposalId == null
+    ? payloadFor(alert.destination)
+    : proposalPayload(alert.proposalId!);
+
+/// Opens an offer's own post or video in its app (TikTok, Instagram,
+/// YouTube) or the browser. A link that will not open is let go: the
+/// notification has done its part.
+Future<void> openSourceLink(String url) async {
+  final uri = Uri.tryParse(url);
+  if (uri == null) return;
+  try {
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
+  } on Object {
+    // Nothing on the phone opens it.
+  }
+}
+
+/// Where a tapped push goes: the offer's link when it carries one, else the
+/// screen its data names.
+void _openPush(
+  Map<String, dynamic> data,
+  void Function(AlertDestination? destination) onOpened,
+) {
+  final link = sourceUrlFromData(data);
+  if (link != null) {
+    unawaited(openSourceLink(link));
+    return;
+  }
+  onOpened(destinationForData(data));
 }
 
 /// The notice that stays up on a child's phone for as long as their coming
@@ -344,7 +381,33 @@ void routeNotificationResponse({
   void Function(String speech)? onSpeak,
   void Function(HabitTrialRef trial, {required bool yes})? onHabit,
   void Function(String learningId, {required bool yes})? onLearning,
+  void Function(String url)? onLink,
 }) {
+  // The offer's own post or video rides in front (ZAD_PLAN ٤.٢٢): a tap on the
+  // notification, or its «افتح العرض» button, opens it; any other button
+  // answers what the rest of the payload asks.
+  final link = sourceUrlFromPayload(payload);
+  if (link != null &&
+      onLink != null &&
+      (actionId == null ||
+          actionId.isEmpty ||
+          actionId == kOpenSourceActionId)) {
+    onLink(link);
+    return;
+  }
+  if (link != null) {
+    routeNotificationResponse(
+      actionId: actionId,
+      payload: withoutSourceLink(payload),
+      onOpened: onOpened,
+      onAnswer: onAnswer,
+      onDose: onDose,
+      onSpeak: onSpeak,
+      onHabit: onHabit,
+      onLearning: onLearning,
+    );
+    return;
+  }
   final trial = habitTrialFromPayload(payload);
   final yes = habitAnswerFromAction(actionId);
   if (trial != null && yes != null && onHabit != null) {
@@ -443,6 +506,7 @@ class FirebasePushPlatform implements PushPlatform {
         onSpeak: onSpeak,
         onHabit: onHabit,
         onLearning: onLearning,
+        onLink: (url) => unawaited(openSourceLink(url)),
       ),
     );
 
@@ -461,7 +525,7 @@ class FirebasePushPlatform implements PushPlatform {
       )
       ..add(
         FirebaseMessaging.onMessageOpenedApp.listen(
-          (m) => onOpened(destinationForData(m.data)),
+          (m) => _openPush(m.data, onOpened),
         ),
       );
 
@@ -469,7 +533,7 @@ class FirebasePushPlatform implements PushPlatform {
     // was not running at all.
     final initial = await messaging.getInitialMessage();
     if (initial != null) {
-      onOpened(destinationForData(initial.data));
+      _openPush(initial.data, onOpened);
     } else {
       final launch = await _local.getNotificationAppLaunchDetails();
       if (launch?.didNotificationLaunchApp ?? false) {
@@ -482,6 +546,7 @@ class FirebasePushPlatform implements PushPlatform {
           onSpeak: onSpeak,
           onHabit: onHabit,
           onLearning: onLearning,
+          onLink: (url) => unawaited(openSourceLink(url)),
         );
       }
     }
