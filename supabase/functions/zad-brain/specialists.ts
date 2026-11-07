@@ -59,6 +59,8 @@ export const SPECIALISTS: Record<SpecialistId, SpecialistDef> = {
       "انسولين", "فيتامين", "مكمل", "مسكن", "antibiotic", "medicine", "dose", "pill",
       // «ضيف بنادول في الصيدلية علبة» راحت لوكيل المطبخ بسبب «ضيف» (التقييم الحي ٢٠٢٦-١٠-٢٦).
       "صيدلية", "كحة", "بنادول",
+      // add_pharmacy_item خرج من أدوات الرسالة العامة (رجيم ٣.٢، ٧/١١): الدوا من غير كلمة «دوا» لازم يوصل هنا.
+      "علاج", "حبوب", "برشام", "مضاد", "كبسول", "قطرة", "نقط", "اقراص", "مجم", "ملجم",
     ],
   },
   family: {
@@ -488,9 +490,11 @@ const SPECIALIST_TOOL_SCOPE: Record<Exclude<SpecialistId, "general">, string[]> 
 export const GENERAL_CORE_TOOLS: readonly string[] = [
   "read_house", "remember", "update_customer_profile", "web_search",
   "app_command", "add_appointment", "update_appointment",
-  "log_transaction", "add_shopping_item", "add_inventory_item", "update_inventory_qty", "add_pharmacy_item",
+  "log_transaction", "add_shopping_item", "add_inventory_item", "update_inventory_qty",
   "log_pharmacy_dose",
 ];
+// add_pharmacy_item (١٫٩ ألف حرف، تالت أتقل أداة) خرج ٧/١١ (رجيم ٣.٢): رسالة الدوا بتروح لوكيل الصيدلية (كلماته)
+// أو بتجيبه MEDICINE_ADD_INTENT، وسؤال الصبح عن الميعاد بيجيبه في index.ts — فالرسالة العامة مش محتاجاه.
 // برّه الأساسي من ٢٠٢٦-١٠-٠٢ (تشخيص زاد ٢.١): الدهب، العملات، تذكير المكان، الشكوى، وضع الطوارئ،
 // الشيف، المحلات القريبة — ٧ أدوات (~٣ آلاف حرف) كانت بتتبعت مع كل «مرحبا». بتيجي بنية الرسالة
 // (intentToolHints) أو بالوكيل المتخصص، وقواعدها في البرومبت معاها (buildChatSystemPrompt).

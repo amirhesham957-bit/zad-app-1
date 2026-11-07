@@ -8718,7 +8718,7 @@ function ruleLines(...rules: Array<string | null | undefined>): string {
 }
 
 /** نسخة برومبت الشات (٣.٢): بتتسجل مع أحجام كل لفة، فتغيّر في الردود يتربط بتغيّر البرومبت. غيّرها مع أي تعديل في القواعد. */
-export const CHAT_PROMPT_VERSION = "2026-11-04.2";
+export const CHAT_PROMPT_VERSION = "2026-11-07.1";
 
 /**
  * [offered]: أسامي الأدوات المعروضة في اللفة دي. قاعدة عن أداة مش معروضة، أو عن جزء من البيت

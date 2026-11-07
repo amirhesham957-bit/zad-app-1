@@ -231,3 +231,17 @@ Deno.test("intentToolHints: «آه» بعد «أفتكر إن …؟ صح؟» ب�
   assertEquals(intentToolHints("آه", "سلامتها 🤍 أفتكر إن مراتك حامل في الشهر الرابع؟ صح؟").includes("remember"), true);
   assertEquals(intentToolHints("آه", "تحب أضيف الزيت للقايمة؟").includes("remember"), false);
 });
+
+Deno.test("diet 3.2 (7/11): a general turn no longer carries add_pharmacy_item, and every medicine message still reaches it", async () => {
+  const { GENERAL_CORE_TOOLS, intentToolHints, routeSpecialists, scopeToolsForSpecialist } = await import("./specialists.ts");
+  assertEquals(GENERAL_CORE_TOOLS.includes("add_pharmacy_item"), false);
+  const all = ["add_pharmacy_item", "log_pharmacy_dose", "read_house"].map((name) => ({ name }));
+  for (const m of [
+    "ضيف بنادول في الصيدلية علبة", "ضيف شراب كحة لبنتي", "اشتريت علاج الضغط", "عندي حبوب فيتامين د",
+    "ضيف كونكور ٥ مجم", "قطرة للعين خلصت", "مضاد حيوي لابني",
+  ]) {
+    const who = routeSpecialists(m);
+    const names = scopeToolsForSpecialist(all, who.primary, who.secondary, intentToolHints(m)).map((t) => t.name);
+    assert(names.includes("add_pharmacy_item"), `${m} -> ${who.primary}`);
+  }
+});
