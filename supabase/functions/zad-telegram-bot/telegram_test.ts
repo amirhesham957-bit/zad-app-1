@@ -789,3 +789,27 @@ Deno.test("life event card on Telegram: the link, then «سجّله وفكّرن
   assertStringIncludes(lifeEventReply(null), "ماقدرتش");
   assertStringIncludes(lifeEventReply({ ok: false, status: "not_found" }), "مابقاش موجود");
 });
+
+import { parseCheckinTextReply } from "./telegram.ts";
+
+Deno.test("check-in by words (owner 7/11): the buttons are a shortcut, a written reply is understood the same way", () => {
+  const one = [{ id: "p1", item_name: "أرز بسمتي" }];
+  const level = (m: string, prompts = one) => parseCheckinTextReply(m, prompts)?.map((a) => `${a.promptId}:${a.level.fraction}`) ?? null;
+  assertEquals(level("لسه زي ما هي"), ["p1:null"]);
+  assertEquals(level("باقي حبة"), ["p1:0.2"]);
+  assertEquals(level("خلصت البارح"), ["p1:0"]);
+  assertEquals(level("فاضل الربع"), ["p1:0.25"]);
+  assertEquals(level("قرب يخلص"), ["p1:0.2"]);
+  assertEquals(level("لسه ماخلصش"), ["p1:null"]);
+  assertEquals(level("تلت ربع تقريبا"), ["p1:0.75"]);
+  assertEquals(level("نصه"), ["p1:0.5"]);
+  // Two items in one sentence, each with its own level.
+  const two = [{ id: "r", item_name: "أرز بسمتي" }, { id: "z", item_name: "زيت عافية" }];
+  assertEquals(level("الأرز خلص والزيت نصه", two), ["r:0", "z:0.5"]);
+  assertEquals(level("كله زي ما هو", two), ["r:null", "z:null"]);
+  // Not sure = the brain answers as before: no names with two open, a question, or no level at all.
+  assertEquals(level("نصه", two), null);
+  assertEquals(level("الأرز بكام؟"), null);
+  assertEquals(level("صباح الخير"), null);
+  assertEquals(parseCheckinTextReply("خلص", []), null);
+});

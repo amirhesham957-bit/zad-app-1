@@ -50,7 +50,7 @@ import {
   notificationReviewKeyboard,
   parseNotificationReviewCallback,
   confirmMedicationKeyboard, parseMedicationCallback,
-  checkInKeyboard, parseCheckInCallback, checkInPromptMessage, checkInBundleMessage, checkInBundleKeyboard, deferForRecentOutbound, ignoredCheckinStreak, checkinPlan, CHECKIN_OFF_CALLBACK,
+  checkInKeyboard, parseCheckInCallback, parseCheckinTextReply, checkInPromptMessage, checkInBundleMessage, checkInBundleKeyboard, deferForRecentOutbound, ignoredCheckinStreak, checkinPlan, CHECKIN_OFF_CALLBACK,
   confirmToolKeyboard, parseToolCallback,
   isHumanUpdate, type UpdateEnvelope,
   doseKeyboard, parseDoseCallback, DOSE_MOMENTS, type DoseAction,
@@ -546,6 +546,42 @@ async function insertCheckinPrompts(
     prompts.push({ id: (prompt as { id: string }).id, label: sanitizeName(item.item_name), item_name: item.item_name });
   }
   return prompts;
+}
+
+/** أسئلة المخزون المفتوحة آخر ٢٤ ساعة ⇒ الرد المكتوب بيتسجل زي الزرار. true = اترد عليه هنا. */
+async function answerCheckinsByText(ctx: Context, sb: SupabaseClient, userId: string, text: string): Promise<boolean> {
+  const { data: rows, error } = await sb.from("telegram_checkin_prompts")
+    .select("id,item_name,quantity_at_prompt")
+    .eq("user_id", userId).eq("status", "pending")
+    .gt("expires_at", new Date().toISOString())
+    .gte("sent_at", new Date(Date.now() - 24 * 3_600_000).toISOString())
+    .limit(6);
+  if (error || !rows?.length) return false;
+  const prompts = rows as Array<{ id: string; item_name: string; quantity_at_prompt: number }>;
+  const answers = parseCheckinTextReply(text, prompts);
+  if (!answers?.length) return false;
+  const lines: string[] = [];
+  for (const a of answers) {
+    const prompt = prompts.find((p) => p.id === a.promptId)!;
+    const amount = a.level.fraction === null
+      ? { new_qty: prompt.quantity_at_prompt }
+      : a.level.fraction === 0 ? { new_qty: 0 } : { fraction_left: a.level.fraction };
+    const observed = await agentExecute(userId, "update_inventory_qty", {
+      item_name: prompt.item_name, ...amount, reason: "رد العميل بالكلام على سؤال متابعة المخزون",
+    });
+    const label = isolate(sanitizeName(prompt.item_name));
+    if (!observed.ok) {
+      console.error("checkin text: update_inventory_qty refused", prompt.item_name, observed.summary ?? "(no summary)");
+      lines.push(`معلش، مقدرتش أحفظ ${label} — جرّب تاني.`);
+      continue;
+    }
+    await sb.from("telegram_checkin_prompts")
+      .update({ status: a.level.fraction === 0 ? "answered_no" : "answered_yes", answered_at: new Date().toISOString() })
+      .eq("id", prompt.id).eq("status", "pending");
+    lines.push(a.level.fraction === 0 ? `سجلتها خلصت ✅ ${label}` : `تمام ✅ ${label}: ${a.level.label}`);
+  }
+  await ctx.reply(lines.join("\n"));
+  return true;
 }
 
 async function recordCheckinTurn(sb: SupabaseClient, userId: string, items: string[]): Promise<void> {
@@ -1611,6 +1647,10 @@ bot.on("message:text", async (ctx) => {
     }
     // مفيش حاجة معلّقة → كمّل كرسالة عادية للوكيل
   }
+
+  // سؤال المخزون بالكلام (طلب المالك ٧/١١): «لسه زي ما هي»، «باقي حبة»، «الرز خلص والزيت نصه» — بنفس طريق الزرار.
+  // مفيش فهم أكيد = الرسالة بتكمّل للعقل زي الأول.
+  if (await answerCheckinsByText(ctx, sb, userId, ctx.message.text)) return;
 
   await ctx.replyWithChatAction("typing");
 

@@ -489,6 +489,83 @@ export function parseCheckInCallback(
   return { promptId: parts[1], stillInStock: level.fraction > 0, fraction: level.fraction, label: level.label };
 }
 
+// ── سؤال المخزون بالكلام (طلب المالك ٧/١١): الزراير اختيار سريع مش إجباري ──────────────────────────────────────
+// «لسه زي ما هي»، «باقي حبة»، «خلصت امبارح»، «فاضل الربع»، «الرز خلص والزيت نصه» بتتفهم هنا وتتسجل بنفس طريق الزرار
+// (update_inventory_qty). الشك = مفيش فهم، والرسالة بتروح للعقل زي الأول — تخمين كمية غلط أوحش من سؤال.
+
+const foldAr = (s: string) => s.replace(/[ً-ْـ]/g, "").replace(/[أإآ]/g, "ا").replace(/ى/g, "ي").replace(/ة/g, "ه").toLowerCase();
+
+/** null = الكمية زي ما كانت وقت السؤال. */
+export type CheckinTextLevel = { fraction: number | null; label: string };
+
+// الترتيب مهم: «قرب يخلص» قبل «خلص»، و«ماخلصش» قبل «خلص».
+const TEXT_LEVELS: Array<[RegExp, CheckinTextLevel]> = [
+  [/(ما|م)\s?خلص(ش|تش)|لسه (ما|م)خلصش|زي ما (هو|هي|هما)|زي ماهو|زي ماهي|(ما|م)\s?اتحرك(ش|تش)|لسه موجود|لسه فيه|لسه في|لسه كتير|كله موجود|(ما|م)\s?اتلمس(ش|تش)/, { fraction: null, label: "زي ما هو" }],
+  [/قرب يخلص|قربت تخلص|قربو يخلصو|علي وش خلص|تقريبا خلص|باقي حبه|فاضل حبه|حبه واحده|حبتين|شويه صغيرين|شويه|قليل|قليله|علي الاخر|في الاخر/, { fraction: 0.2, label: "قليل" }],
+  [/خلص|خلصت|خلصو|خلصنا|خلصان|خلصانه|نفد|نفذ|مفيش|مافيش|(ما|م)\s?بقاش|(ما|م)\s?فضلش|صفر/, { fraction: 0, label: "خلص" }],
+  [/ربع|الربع/, { fraction: 0.25, label: "الربع" }],
+  [/تلت|التلت|ثلث|الثلث/, { fraction: 0.33, label: "التلت" }],
+  [/تلت ?ربع|تلاته ارباع|ثلاث ارباع/, { fraction: 0.75, label: "تلت ربع" }],
+  [/نص|نصه|نصها|النص/, { fraction: 0.5, label: "نصه" }],
+  [/كتير|كثير|كتيره|مليان|مليانه|لسه جديد|لسه جديده|(ما|م)\s?فتحتوش|كفايه/, { fraction: 0.75, label: "كتير" }],
+];
+
+function levelIn(text: string): CheckinTextLevel | null {
+  // «تلت ربع» قبل «ربع» و«تلت».
+  if (/تلت ?ربع|تلاته ارباع|ثلاث ارباع/.test(text)) return { fraction: 0.75, label: "تلت ربع" };
+  for (const [re, level] of TEXT_LEVELS) if (re.test(text)) return level;
+  return null;
+}
+
+/** كلمات اسم الصنف اللي ممكن تتقال لوحدها («أرز بسمتي» ⇒ «ارز»، «بسمتي»)، من غير «ال» ومن غير الأرقام والوحدات. */
+function itemWords(name: string): string[] {
+  return foldAr(name).replace(/[^\p{L}\s]/gu, " ").split(/\s+/).map((w) => w.replace(/^ال/, ""))
+    .filter((w) => w.length >= 3 && !/^(كيلو|جرام|لتر|علبه|كرتونه|باكو|كيس|عبوه|حجم)$/.test(w));
+}
+
+/** أول مكان اتقال فيه الصنف في الكلام، أو -1. */
+function itemAt(text: string, name: string): number {
+  let at = -1;
+  for (const w of itemWords(name)) {
+    const i = text.search(new RegExp(`(^|\\s|و|ال)${w}`));
+    if (i >= 0 && (at < 0 || i < at)) at = i;
+  }
+  return at;
+}
+
+/**
+ * ردود العميل على أسئلة المخزون المفتوحة. كل صنف اتذكر اسمه بياخد المستوى اللي في جملته؛ رسالة من غير أسامي بتمشي على
+ * سؤال واحد مفتوح، أو على الكل لو قال «كله/الكل/الاتنين/التلاته». غير كده null (العقل يرد).
+ */
+export function parseCheckinTextReply(
+  message: string,
+  prompts: ReadonlyArray<{ id: string; item_name: string }>,
+): Array<{ promptId: string; level: CheckinTextLevel }> | null {
+  if (!prompts.length) return null;
+  const text = foldAr(message);
+  if (text.length > 200 || /[؟?]/.test(text)) return null; // سؤال أو كلام طويل = مش رد على المخزون
+  const named = prompts
+    .map((p) => ({ p, at: itemAt(text, p.item_name) }))
+    .filter((x) => x.at >= 0)
+    .sort((a, b) => a.at - b.at);
+  if (named.length) {
+    const out: Array<{ promptId: string; level: CheckinTextLevel }> = [];
+    for (let i = 0; i < named.length; i++) {
+      const piece = text.slice(named[i].at, i + 1 < named.length ? named[i + 1].at : undefined);
+      const level = levelIn(piece);
+      if (level) out.push({ promptId: named[i].p.id, level });
+    }
+    return out.length ? out : null;
+  }
+  const level = levelIn(text);
+  if (!level) return null;
+  if (prompts.length === 1) return [{ promptId: prompts[0].id, level }];
+  if (/(^|\s)(كله|كلهم|الكل|كلو|الاتنين|التلاته|الحاجات دي|كل الحاجات)(\s|$)/.test(text)) {
+    return prompts.map((p) => ({ promptId: p.id, level }));
+  }
+  return null;
+}
+
 /** [unit] من صف المخزون — السؤال بالوحدة («كام كيلو») عشان العميل يقدر يكتب رقم بدل الزرار. */
 export function checkInPromptMessage(itemName: string, unit?: string | null): string {
   const u = (unit ?? "").trim();
