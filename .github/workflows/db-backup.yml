@@ -68,11 +68,14 @@ jobs:
         run: |
           ref="$(grep -oP '(?<=^id = ")[^"]+' supabase/config.toml)"
           supabase link --project-ref "$ref"
-          mkdir -p "$RUNNER_TEMP/dump"
-          cd "$RUNNER_TEMP/dump"
-          supabase db dump --linked -f roles.sql --role-only
-          supabase db dump --linked -f schema.sql
-          supabase db dump --linked -f data.sql --use-copy --data-only
+          # الربط بيتحفظ في supabase/.temp جوه الريبو، فالـdump لازم يشتغل من هنا (cd لمكان تاني
+          # = «Cannot find project ref»، رن 42373200654)؛ الملفات بس اللي بتتكتب برّه.
+          d="$RUNNER_TEMP/dump"
+          mkdir -p "$d"
+          supabase db dump --linked -f "$d/roles.sql" --role-only
+          supabase db dump --linked -f "$d/schema.sql"
+          supabase db dump --linked -f "$d/data.sql" --use-copy --data-only
+          cd "$d"
           # نسخة فاضية أخطر من فشل: لازم الداتا تكون فيها جداول الحسابات والفلوس فعلاً.
           for t in 'public.zad_entitlements' 'public.zad_transactions' 'auth.users'; do
             if ! grep -q "^COPY \"\?${t%%.*}\"\?\.\"\?${t#*.}\"\? " data.sql; then
