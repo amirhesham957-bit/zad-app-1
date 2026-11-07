@@ -4753,6 +4753,24 @@ abstract class ZadL10n {
   /// **'خصم كبير'**
   String get homeDealsWhyFire;
 
+  /// No description provided for @homeDealsWhyWant.
+  ///
+  /// In ar, this message translates to:
+  /// **'بتدوّر عليه'**
+  String get homeDealsWhyWant;
+
+  /// No description provided for @homeDealsWhySeason.
+  ///
+  /// In ar, this message translates to:
+  /// **'قبل الموسم'**
+  String get homeDealsWhySeason;
+
+  /// No description provided for @homeDealsWhyTop.
+  ///
+  /// In ar, this message translates to:
+  /// **'من أقوى الخصومات'**
+  String get homeDealsWhyTop;
+
   /// No description provided for @homeDealsCode.
   ///
   /// In ar, this message translates to:

@@ -2653,6 +2653,15 @@ class ZadL10nAr extends ZadL10n {
   String get homeDealsWhyFire => 'خصم كبير';
 
   @override
+  String get homeDealsWhyWant => 'بتدوّر عليه';
+
+  @override
+  String get homeDealsWhySeason => 'قبل الموسم';
+
+  @override
+  String get homeDealsWhyTop => 'من أقوى الخصومات';
+
+  @override
   String homeDealsCode(String code) {
     return 'كود $code';
   }

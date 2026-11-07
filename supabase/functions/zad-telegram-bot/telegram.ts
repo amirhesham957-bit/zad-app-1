@@ -1318,7 +1318,7 @@ export function digestCaption(card: DigestCard): string {
   const before = amount(card.price_before);
   const saving = amount(card.saving);
   const currency = text(card.currency, 4);
-  const why = card.why === "need" ? "من قايمتك أو قرّب يخلص عندك" : card.why === "favorite" ? "في محل بتشتري منه" : card.why === "fire" ? "عرض قوي على حاجة بتجيبوها" : card.why === "top" ? "من أقوى خصومات الموسم" : "";
+  const why = card.why === "need" ? "من قايمتك أو قرّب يخلص عندك" : card.why === "want" ? "حاجة سألت عنها أو قلت إنك عايزها" : card.why === "season" ? "قبل الموسم، قبل ما الأسعار تعلى" : card.why === "favorite" ? "في محل بتشتري منه" : card.why === "fire" ? "عرض قوي على حاجة بتجيبوها" : card.why === "top" ? "من أقوى خصومات الموسم" : "";
   const until = typeof card.until === "string" && /^\d{4}-\d{2}-\d{2}$/.test(card.until) ? card.until : "";
   return [
     `🏷️ ${item} — ${store}`,

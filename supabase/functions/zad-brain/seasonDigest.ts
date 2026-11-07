@@ -47,7 +47,8 @@ export interface DigestCard {
   price_before: number | null;
   currency: string;
   saving: number | null;
-  why: "need" | "favorite" | "fire" | "top";
+  /** need = القايمة أو اللي هيخلص؛ want = قال إنه عايزه أو سأل عنه (٥.٩)؛ season = الموسم الجاي (٥.٩). */
+  why: "need" | "want" | "season" | "favorite" | "fire" | "top";
   url: string | null;
   source: string;
   photo: string | null;
@@ -96,6 +97,8 @@ export function pickDigest(
   bought: readonly string[],
   sent: ReadonlySet<string>,
   max = DIGEST_MAX_DEALS,
+  /** من [needs]: اللي هي نية (٥.٩) واللي هي موسم — بيتقال سببها. */
+  tags: { wants?: readonly string[]; season?: readonly string[] } = {},
 ): DigestCard[] {
   const scored: Array<DigestCard & { rank: number }> = [];
   for (const r of rows ?? []) {
@@ -105,17 +108,22 @@ export function pickDigest(
     const saving = Number.isFinite(before) && before > price ? Math.round((before - price) / before * 100) : null;
     const key = digestKey(r.store, r.item_name, price);
     if (sent.has(key)) continue;
-    const need = needs.some((n) => offerMatchesNeed(n, r.item_name));
+    const matched = needs.find((n) => offerMatchesNeed(n, r.item_name));
+    const need = matched !== undefined;
+    const needWhy = !need ? null
+      : tags.wants?.includes(matched) && !tags.season?.includes(matched) ? "want"
+      : tags.season?.includes(matched) && !tags.wants?.includes(matched) ? "season"
+      : "need";
     const favorite = favorites.some((f) => sameStoreName(f, r.store)) && (saving ?? 0) >= FAVORITE_MIN_SAVING;
     const fire = (saving ?? 0) >= FIRE_MIN_SAVING && bought.some((b) => offerMatchesNeed(b, r.item_name));
-    const why = need ? "need" : favorite ? "favorite" : fire ? "fire" : null;
+    const why = needWhy ?? (favorite ? "favorite" : fire ? "fire" : null);
     if (!why) continue;
     const url = typeof r.source_url === "string" && /^https:\/\/\S{4,500}$/.test(r.source_url) ? r.source_url : null;
     scored.push({
       key, item: r.item_name, store: r.store, price, price_before: saving !== null ? before : null,
       currency: String(r.currency ?? ""), saving, why, url, source: r.source_kind,
       photo: digestPhoto(r.source_kind, r.source_url), until: r.valid_until ? r.valid_until.slice(0, 10) : null,
-      rank: (why === "need" ? 0 : why === "favorite" ? 1000 : 2000) - (saving ?? 0),
+      rank: (needWhy ? 0 : why === "favorite" ? 1000 : 2000) - (saving ?? 0),
     });
   }
   scored.sort((a, b) => a.rank - b.rank);
@@ -260,6 +268,9 @@ interface DealInputs {
   broke: boolean;
   needs: string[];
   favorites: string[];
+  /** من needs: النيات والموسم، عشان سبب الكارت يتقال (٥.٩). */
+  wants: string[];
+  season: string[];
   /** كل التجار اللي البيت دفع لهم في [FAVORITE_WINDOW_DAYS] — للأكواد الذكية. */
   merchants: string[];
   bought: string[];
@@ -304,21 +315,25 @@ async function loadDealInputs(sb: SupabaseClient, userId: string, now: number): 
     customerCity(sb, userId, country).catch(() => ""),
   ]);
   const pausedKinds = new Set(((paused ?? []) as Array<{ source_kind: string }>).map((r) => r.source_kind));
+  const wantNames = ((intents ?? []) as Array<{ item: string | null }>).map((r) => r.item ?? "").filter(Boolean);
+  const seasonNames = seasonNeeds({
+    now, country,
+    kidsCount: (profile as { kids_count?: number | null } | null)?.kids_count,
+    bought: ((bought ?? []) as Array<{ item_name: string | null }>).map((r) => r.item_name ?? "").filter(Boolean),
+    schoolStarts: ((windows ?? []) as Array<{ start_date: string; seasonal_events?: { slug?: string } | Array<{ slug?: string }> | null }>)
+      .filter((w) => [w.seasonal_events].flat().some((e) => e?.slug === "back_to_school")).map((w) => w.start_date),
+  });
   return {
     country,
     broke,
     needs: [
-      ...((intents ?? []) as Array<{ item: string | null }>).map((r) => r.item ?? ""),
+      ...wantNames,
       ...((shop ?? []) as Array<{ item_name: string }>).map((r) => r.item_name),
       ...runningOutNames((home as { state?: unknown } | null)?.state),
-      ...seasonNeeds({
-        now, country,
-        kidsCount: (profile as { kids_count?: number | null } | null)?.kids_count,
-        bought: ((bought ?? []) as Array<{ item_name: string | null }>).map((r) => r.item_name ?? "").filter(Boolean),
-        schoolStarts: ((windows ?? []) as Array<{ start_date: string; seasonal_events?: { slug?: string } | Array<{ slug?: string }> | null }>)
-          .filter((w) => [w.seasonal_events].flat().some((e) => e?.slug === "back_to_school")).map((w) => w.start_date),
-      }),
+      ...seasonNames,
     ].filter(Boolean),
+    wants: wantNames,
+    season: seasonNames,
     favorites: favoriteStores((txns ?? []) as Array<{ merchant_name: string | null }>),
     merchants: [...new Set(((txns ?? []) as Array<{ merchant_name: string | null }>).map((t) => (t.merchant_name ?? "").trim()).filter(Boolean))],
     bought: ((bought ?? []) as Array<{ item_name: string | null }>).map((r) => r.item_name ?? "").filter(Boolean),
@@ -338,7 +353,7 @@ export async function loadSeasonDigest(
   if (!input || input.broke) return null;
   const { data: season } = await sb.rpc("zad_deal_season_name", { p_country: input.country });
   if (typeof season !== "string" || !season) return null;
-  const personal = pickDigest(input.deals, input.needs, input.favorites, input.bought, input.sent);
+  const personal = pickDigest(input.deals, input.needs, input.favorites, input.bought, input.sent, DIGEST_MAX_DEALS, input);
   const cards = personal.length ? personal : pickTopDeals(input.deals, input.sent);
   const pickedCodes = pickDigestCodes(input.codes, input.favorites, input.sent, DIGEST_MAX_CODES, input.merchants);
   if (!cards.length && !pickedCodes.length) return null;
@@ -365,14 +380,14 @@ const numOrNull = (v: unknown) => {
  * الحاجات اللي البيت محتاجها فعلاً بس، من غير أكواد ولا عروض محلات.
  */
 export function pickHomeDeals(
-  input: Pick<DealInputs, "broke" | "needs" | "favorites" | "bought" | "deals" | "codes"> & { merchants?: string[] },
+  input: Pick<DealInputs, "broke" | "needs" | "favorites" | "bought" | "deals" | "codes"> & { merchants?: string[]; wants?: string[]; season?: string[] },
 ): { cards: HomeDealCard[]; codes: DigestCodeRow[] } {
   const none = new Set<string>();
-  const personal = pickDigest(input.deals, input.needs, input.broke ? [] : input.favorites, input.broke ? [] : input.bought, none, HOME_MAX_DEALS);
+  const personal = pickDigest(input.deals, input.needs, input.broke ? [] : input.favorites, input.broke ? [] : input.bought, none, HOME_MAX_DEALS, input);
   // مفيش حاجة شخصية ⇒ أقوى الخصومات الحقيقية في البلد، عشان الشريط مايختفيش عن بيت جديد (مراجعة ٦/١١). «أنا مفلس» ⇒ لأ.
   const picked = personal.length || input.broke ? personal : pickTopDeals(input.deals, none, HOME_MAX_DEALS);
   const cards = picked
-    .filter((c) => !input.broke || c.why === "need")
+    .filter((c) => !input.broke || c.why === "need") // «أنا مفلس»: القايمة واللي هيخلص بس — مش رغبات ولا موسم
     .map((c): HomeDealCard => {
       const k = input.broke ? undefined : input.codes.find((r) => sameStoreName(r.store, c.store));
       return {

@@ -135,3 +135,15 @@ Deno.test("5.9: a season three weeks ahead is a need before prices rise — Rama
   assertEquals(seasonNeeds({ ...school, country: "EG", kidsCount: 2 }), []);
   assertEquals(seasonNeeds({ ...school, country: "SA", kidsCount: 2, schoolStarts: ["2026-07-01"] }), []);
 });
+
+Deno.test("5.9: a card says why — what he asked about, the season ahead, or what is short — and broke mode keeps only what is short", () => {
+  const rows: DigestDealRow[] = [
+    { store: "إكسترا", item_name: "لابتوب لينوفو", price: 2000, price_before: 2500, currency: "SAR", source_kind: "search" },
+    { store: "بنده", item_name: "تمر سكري 1 كيلو", price: 20, price_before: 25, currency: "SAR", source_kind: "flyer" },
+    { store: "كارفور", item_name: "زيت عافية", price: 25, price_before: 30, currency: "SAR", source_kind: "flyer" },
+  ];
+  const cards = pickDigest(rows, ["لابتوب", "زيت", "تمر"], [], [], new Set(), 4, { wants: ["لابتوب"], season: ["تمر"] });
+  assertEquals(Object.fromEntries(cards.map((c) => [c.store, c.why])), { "إكسترا": "want", "بنده": "season", "كارفور": "need" });
+  const broke = pickHomeDeals({ broke: true, needs: ["لابتوب", "زيت", "تمر"], wants: ["لابتوب"], season: ["تمر"], favorites: [], bought: [], deals: rows, codes: [] });
+  assertEquals(broke.cards.map((c) => c.why), ["need"]);
+});

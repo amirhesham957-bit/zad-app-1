@@ -17,6 +17,17 @@ enum HomeDealWhy {
 
   /// 40% or more on something the home has bought.
   fire,
+
+  /// Something the customer asked the price of, or said they want (5.9).
+  want,
+
+  /// Ahead of a season — Ramadan's basics, school supplies (5.9).
+  season,
+
+  /// Nothing personal yet: the strongest real discounts in the country. The
+  /// server sends these to a new home so the strip is not empty; an app that
+  /// did not know the word dropped every card.
+  top,
 }
 
 /// A store's discount code on a card.
@@ -69,6 +80,9 @@ List<HomeDeal> homeDealsFromJson(Object? raw) {
       'need' => HomeDealWhy.need,
       'favorite' => HomeDealWhy.favorite,
       'fire' => HomeDealWhy.fire,
+      'want' => HomeDealWhy.want,
+      'season' => HomeDealWhy.season,
+      'top' => HomeDealWhy.top,
       _ => null,
     };
     if (why == null) continue;

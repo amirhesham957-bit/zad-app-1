@@ -33,6 +33,33 @@ void main() {
     expect(d.code?.percent, 10);
   });
 
+  test("every reason the server sends is read — a new home's «top» cards were all dropped (5.9, 7/11)", () {
+    for (final (wire, why) in <(String, HomeDealWhy)>[
+      ('need', HomeDealWhy.need),
+      ('want', HomeDealWhy.want),
+      ('season', HomeDealWhy.season),
+      ('favorite', HomeDealWhy.favorite),
+      ('fire', HomeDealWhy.fire),
+      ('top', HomeDealWhy.top),
+    ]) {
+      final deals = homeDealsFromJson(<String, Object?>{
+        'cards': <Object?>[
+          card(<String, Object?>{'why': wire}),
+        ],
+      });
+      expect(deals.single.why, why, reason: wire);
+    }
+    // A reason from a newer server is still dropped, not guessed.
+    expect(
+      homeDealsFromJson(<String, Object?>{
+        'cards': <Object?>[
+          card(<String, Object?>{'why': 'later'}),
+        ],
+      }),
+      isEmpty,
+    );
+  });
+
   test('a malformed card is dropped, never shown', () {
     final deals = homeDealsFromJson(<String, Object?>{
       'cards': <Object?>[

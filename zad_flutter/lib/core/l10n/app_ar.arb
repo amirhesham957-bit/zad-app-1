@@ -1985,6 +1985,9 @@
   "homeDealsWhyNeed": "ناقص عندك",
   "homeDealsWhyFavorite": "من محلك",
   "homeDealsWhyFire": "خصم كبير",
+  "homeDealsWhyWant": "بتدوّر عليه",
+  "homeDealsWhySeason": "قبل الموسم",
+  "homeDealsWhyTop": "من أقوى الخصومات",
   "homeDealsCode": "كود {code}",
   "@homeDealsCode": {
     "placeholders": {
