@@ -122,6 +122,7 @@ export interface InstagramPost {
 
 type MediaItem = {
   id?: unknown; caption?: unknown; permalink?: unknown; timestamp?: unknown; media_type?: unknown; media_url?: unknown;
+  thumbnail_url?: unknown;
 };
 
 /** الهاشتاج اللي بندوّر بيه على عروض محل: «عروض_كارفور». الهاشتاج مابيقبلش مسافات ولا رموز. */
@@ -173,12 +174,16 @@ function readMediaPosts(data: unknown, opts: { days?: number; max?: number; now?
     const at = Date.parse(String(m.timestamp ?? ""));
     if (!Number.isFinite(at) || at < since) continue;
     const image = m.media_type === "IMAGE" || m.media_type === "CAROUSEL_ALBUM";
+    // A Reel's media_url is the video itself, never read; its cover is the picture, where a code is
+    // often written on screen (ZAD_PLAN ٤.٢٢: the cover for reading only, the video never fetched).
+    const cover = m.media_type === "VIDEO" && typeof m.thumbnail_url === "string" && m.thumbnail_url.startsWith("https://")
+      ? m.thumbnail_url : null;
     posts.push({
       id: m.id,
       caption: String(m.caption ?? "").slice(0, 1500),
       permalink: m.permalink,
       timestamp: String(m.timestamp),
-      image_url: image && typeof m.media_url === "string" && m.media_url.startsWith("https://") ? m.media_url : null,
+      image_url: image && typeof m.media_url === "string" && m.media_url.startsWith("https://") ? m.media_url : cover,
     });
   }
   posts.sort((a, b) => Date.parse(b.timestamp) - Date.parse(a.timestamp));
@@ -221,8 +226,36 @@ export async function instagramAccountPosts(
 ): Promise<SourceResult<InstagramPost> & { account?: StoreAccount }> {
   if (!/^[A-Za-z0-9._]{1,30}$/.test(username)) return { ok: false, status: 0, reason: "bad_username", items: [] };
   const media = opts.media ?? 25;
+  const first = await discover(token, accountId, username, media, !coverRefused);
+  // Meta may not hand a Reel's cover through Business Discovery: a field it refuses fails the whole
+  // call (#100), so it is asked for once more without, and not again in this instance.
+  if (!first.ok && !coverRefused && media > 0 && first.reason === "OAuthException/100") {
+    coverRefused = true;
+    console.warn("[instagram] business_discovery refused thumbnail_url — Reels are read by caption only");
+    return discover(token, accountId, username, media, false, opts);
+  }
+  const { raw, ...result } = first;
+  return media > 0 && result.ok ? { ...result, items: readMediaPosts(raw, opts) } : result;
+}
+
+/** Whether Business Discovery refused `thumbnail_url` once in this instance. */
+let coverRefused = false;
+
+/** For tests: forget a refusal. */
+export function resetCoverRefusal() {
+  coverRefused = false;
+}
+
+async function discover(
+  token: string,
+  accountId: string,
+  username: string,
+  media: number,
+  withCover: boolean,
+  opts?: { days?: number; max?: number; now?: number },
+): Promise<SourceResult<InstagramPost> & { account?: StoreAccount; raw?: unknown }> {
   const inner = media > 0
-    ? `username,followers_count,media.limit(${media}){id,caption,permalink,timestamp,media_type,media_url}`
+    ? `username,followers_count,media.limit(${media}){id,caption,permalink,timestamp,media_type,media_url${withCover ? ",thumbnail_url" : ""}}`
     : "username,followers_count";
   const fields = `business_discovery.username(${username}){${inner}}`;
   let status = 0;
@@ -243,7 +276,9 @@ export async function instagramAccountPosts(
     return { ok: false, status, reason: e ? `${String(e.type ?? "error").slice(0, 40)}${e.code ? `/${e.code}` : ""}` : "no_data", items: [] };
   }
   const account = { username: String(found.username ?? username), followers: Number(found.followers_count) || 0 };
-  return { ok: true, status: 200, account, items: media > 0 ? readMediaPosts(found.media?.data, opts) : [] };
+  return opts
+    ? { ok: true, status: 200, account, items: media > 0 ? readMediaPosts(found.media?.data, opts) : [] }
+    : { ok: true, status: 200, account, items: [], raw: found.media?.data };
 }
 
 // ── التوكن بيتجدد لوحده (٤.١٢، قرار ٤/١١: مفيش خطوة يدوية) ──────────────────────────────────────────────────────

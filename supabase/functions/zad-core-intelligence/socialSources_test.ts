@@ -133,7 +133,7 @@ Deno.test("meta app keys: found under any sensible name, META_ first, never the 
   assertEquals(metaAppKeys({ INSTAGRAM_BUSINESS_ACCOUNT_ID: "999", META_APP_ID: " " }), { id: undefined, secret: undefined, idName: undefined, secretName: undefined });
 });
 
-import { instagramAccountPosts, instagramHandles, MIN_STORE_FOLLOWERS } from "./socialSources.ts";
+import { instagramAccountPosts, instagramHandles, MIN_STORE_FOLLOWERS, resetCoverRefusal } from "./socialSources.ts";
 
 Deno.test("store accounts: handles from search links, never a post, a page of Instagram's own, or a repeat", () => {
   assertEquals(instagramHandles([
@@ -168,5 +168,37 @@ Deno.test("store accounts: business_discovery gives the account and its recent p
   assertEquals(await instagramAccountPosts("TOKEN-SECRET", "178", "someone"), { ok: false, status: 400, reason: "OAuthException/110", items: [] });
   // يوزرنيم فيه حاجة غير الحروف المسموحة مابيتبعتش أصلاً (مايكسرش الـfields).
   assertEquals((await instagramAccountPosts("t", "178", "a){x}")).reason, "bad_username");
+  globalThis.fetch = realFetch;
+});
+
+Deno.test("store accounts: a Reel is read by its caption and its cover — the video itself never (ZAD_PLAN 4.22)", async () => {
+  resetCoverRefusal();
+  const now = Date.parse("2026-11-07T00:00:00Z");
+  const reel = {
+    id: "3", caption: "كود KEETA30 خصم ٣٠٪ على أول طلب", permalink: "https://www.instagram.com/reel/R1/",
+    timestamp: "2026-11-06T10:00:00+0000", media_type: "VIDEO",
+    media_url: "https://scontent.cdninstagram.com/video.mp4", thumbnail_url: "https://scontent.cdninstagram.com/cover.jpg",
+  };
+  const page = { business_discovery: { username: "keeta.ksa", followers_count: MIN_STORE_FOLLOWERS + 1, media: { data: [reel] } } };
+  const seen = stubFetch([[/business_discovery/, 200, page]]);
+  const r = await instagramAccountPosts("t", "178", "keeta.ksa", { now });
+  assertEquals(r.items.map((p) => [p.permalink, p.image_url]), [["https://www.instagram.com/reel/R1/", "https://scontent.cdninstagram.com/cover.jpg"]]);
+  assert(decodeURIComponent(seen[0]).includes("thumbnail_url"));
+  assert(!("raw" in r));
+
+  // Meta refuses the cover field: asked once more without it, the Reel still comes by its caption,
+  // and the refused field is not asked again.
+  resetCoverRefusal();
+  const calls = stubFetch([
+    [/thumbnail_url/, 400, { error: { type: "OAuthException", code: 100 } }],
+    [/business_discovery/, 200, { business_discovery: { ...page.business_discovery, media: { data: [{ ...reel, thumbnail_url: undefined }] } } }],
+  ]);
+  const again = await instagramAccountPosts("t", "178", "keeta.ksa", { now });
+  assertEquals(again.items.map((p) => [p.permalink, p.image_url]), [["https://www.instagram.com/reel/R1/", null]]);
+  assertEquals(calls.length, 2);
+  await instagramAccountPosts("t", "178", "keeta.ksa", { now });
+  assertEquals(calls.length, 3);
+  assert(!decodeURIComponent(calls[2]).includes("thumbnail_url"));
+  resetCoverRefusal();
   globalThis.fetch = realFetch;
 });
