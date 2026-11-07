@@ -152,7 +152,7 @@ import { campaignAndTasteRules, type CampaignRow, pickHomeCampaign, recipeTaste 
 import { loadWeather, weatherForSnapshot, weatherRule } from "./weather.ts";
 import { medicinePrice, medicinePriceReply, pricePayload } from "./medicinePrice.ts";
 import { dealCountry, dealSource, dealsAtPlace, dealsHere, nearbySource, type StoredDealRow } from "./tasteDeals.ts";
-import { dealPutPayload, findCustomerCities, INSTAGRAM_STORES_PER_RUN, searchedDeals, STORES_PER_RUN, YOUTUBE_STORES_PER_RUN } from "./storeDeals.ts";
+import { dealPutPayload, findCustomerCities, type FlyerReadRow, flyerEntries, INSTAGRAM_STORES_PER_RUN, nextFlyer, searchedDeals, STORES_PER_RUN, YOUTUBE_STORES_PER_RUN } from "./storeDeals.ts";
 import { replyCadence, replyCadenceRule } from "./replyCadence.ts";
 import { ENGAGEMENT_WINDOW_DAYS, engagementFrom, type InsightRow } from "./engagement.ts";
 import { monthlyAverages, projectDecision } from "./decisionImpact.ts";
@@ -9286,6 +9286,52 @@ async function handleRequest(req: Request): Promise<Response> {
       }
       console.log(`[deals_youtube_run] ${stores.length}/${targets?.length ?? 0} stores`, JSON.stringify(stores));
       return new Response(JSON.stringify({ ok: true, targets: targets?.length ?? 0, stores }), { headers: CORS_HEADERS });
+    }
+
+    // النشرات الرسمية من موقع المحل (طلب المالك ٧/١١، zad-core-intelligence/officialFlyers.ts): القايمة من صفحة كل
+    // موقع بعد ما robots.txt يسمح، ونشرة واحدة في كل نداء (PDF كبير بياخد أغلب الوقت). اللي اتقرت بتتسجل في
+    // zad_flyer_reads فمابتتقريش تاني؛ النشرة الجديدة بتيجي برابط جديد.
+    if (body.action === "deals_flyers_run") {
+      if (!(await secretMatches(req.headers.get("ZAD-PROACTIVE-CRON-SECRET"), "ZAD_PROACTIVE_CRON_SECRET"))) {
+        return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: CORS_HEADERS });
+      }
+      const sbDeals = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+      const listed = await callCoreIntel("official_flyers", { mode: "list" }, "deals_flyers_run", 30_000);
+      const entries = flyerEntries(listed);
+      const sites = Array.isArray(listed?.sites)
+        ? (listed.sites as Array<Record<string, unknown>>).map((s) => ({ store: s.store, ok: s.ok, reason: s.reason ?? null, flyers: Array.isArray(s.entries) ? s.entries.length : 0 }))
+        : [];
+      if (entries.length === 0) {
+        console.log("[deals_flyers_run] nothing listed", JSON.stringify(sites));
+        return new Response(JSON.stringify({ ok: true, sites, read: null }), { headers: CORS_HEADERS });
+      }
+      const { data: reads, error: readsErr } = await sbDeals.from("zad_flyer_reads")
+        .select("pdf_url, ok, read_at").in("pdf_url", entries.map((e) => e.pdf_url));
+      if (readsErr) {
+        console.error("[deals_flyers_run] reads failed:", readsErr.message);
+        return new Response(JSON.stringify({ error: "reads_failed" }), { status: 500, headers: CORS_HEADERS });
+      }
+      const next = nextFlyer(entries, (reads ?? []) as FlyerReadRow[], new Date());
+      if (!next) {
+        return new Response(JSON.stringify({ ok: true, sites, read: null, pending: 0 }), { headers: CORS_HEADERS });
+      }
+      const reply = await callCoreIntel("official_flyers", { pdf_url: next.pdf_url, label: next.label }, "deals_flyers_run", 110_000);
+      let put = 0;
+      let refused = 0;
+      for (const deal of searchedDeals(reply)) {
+        const { data, error } = await sbDeals.rpc("zad_deal_put", { p: dealPutPayload(next, deal, "flyer") });
+        if (!error && (data as { ok?: boolean } | null)?.ok) put++;
+        else refused++;
+      }
+      const ok = reply?.ok === true;
+      const { error: logErr } = await sbDeals.from("zad_flyer_reads").upsert({
+        pdf_url: next.pdf_url, store: next.store, country: next.country, city: next.city, label: next.label,
+        ok, deals: put, reason: ok ? null : String(reply?.reason ?? "no_reply").slice(0, 60), read_at: new Date().toISOString(),
+      }, { onConflict: "pdf_url" });
+      if (logErr) console.error("[deals_flyers_run] log failed:", logErr.message);
+      const result = { store: next.store, label: next.label, city: next.city, ok, read: Array.isArray(reply?.deals) ? reply.deals.length : 0, put, refused, reason: reply?.reason ?? null };
+      console.log("[deals_flyers_run]", JSON.stringify(result));
+      return new Response(JSON.stringify({ ok: true, sites, read: result }), { headers: CORS_HEADERS });
     }
 
     // عروض إنستجرام الأسبوعية (ZAD_PLAN ٤.١٢): نفس المحلات بأسبوعها لوحده (zad_deal_source_targets بـ'instagram')، بوستات

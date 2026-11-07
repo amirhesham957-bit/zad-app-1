@@ -21,6 +21,55 @@ export const INSTAGRAM_STORES_PER_RUN = 3;
 /** A searched offer is a web page read by a model: below a receipt floor (0.6 at 3 homes). */
 export const SEARCH_CONFIDENCE = 0.5;
 
+/** An offer read off the store's own official flyer (the bot's flyer path uses the same 0.7). */
+export const FLYER_CONFIDENCE = 0.7;
+
+/** A flyer that failed is tried again after this, not on every run. */
+export const FLYER_RETRY_HOURS = 20;
+
+export interface FlyerEntryRow { store: string; country: string; currency: string; label: string; pdf_url: string; city: string }
+export interface FlyerReadRow { pdf_url: string; ok: boolean; read_at: string }
+
+/**
+ * Official flyers (zad-core-intelligence/officialFlyers.ts): the sites' answer to «list» flattened, and the first flyer
+ * not read yet — a flyer read once (ok) is never read again (a new flyer comes with a new link), and a failed one waits
+ * [FLYER_RETRY_HOURS]. Weekly flyers before two-week ones: smaller, and fresher.
+ */
+export function flyerEntries(reply: unknown): FlyerEntryRow[] {
+  const sites = reply && typeof reply === "object" ? (reply as { sites?: unknown }).sites : null;
+  if (!Array.isArray(sites)) return [];
+  const out: FlyerEntryRow[] = [];
+  for (const s of sites) {
+    if (!s || typeof s !== "object" || (s as { ok?: unknown }).ok !== true) continue;
+    const { store, country, currency, entries } = s as Record<string, unknown>;
+    if (typeof store !== "string" || typeof country !== "string" || typeof currency !== "string" || !Array.isArray(entries)) continue;
+    for (const e of entries) {
+      const r = e as Record<string, unknown>;
+      if (typeof r?.pdf_url !== "string" || !r.pdf_url.startsWith("https://")) continue;
+      out.push({
+        store, country, currency,
+        label: typeof r.label === "string" ? r.label : "",
+        pdf_url: r.pdf_url,
+        city: typeof r.city === "string" ? r.city : "",
+      });
+    }
+  }
+  return out;
+}
+
+export function nextFlyer(entries: FlyerEntryRow[], reads: FlyerReadRow[], now: Date): FlyerEntryRow | null {
+  const last = new Map(reads.map((r) => [r.pdf_url, r]));
+  const due = entries.filter((e) => {
+    const r = last.get(e.pdf_url);
+    if (!r) return true;
+    if (r.ok) return false;
+    return now.getTime() - new Date(r.read_at).getTime() >= FLYER_RETRY_HOURS * 3_600_000;
+  });
+  const weekly = (e: FlyerEntryRow) => /الاسبوعية|الأسبوعية|weekly/i.test(e.label) ? 0 : 1;
+  due.sort((a, b) => weekly(a) - weekly(b));
+  return due[0] ?? null;
+}
+
 /** Customers whose city is looked up in one run: LocationIQ's free tier is 2 a second, so one a second. */
 export const CITIES_PER_RUN = 10;
 
@@ -34,7 +83,7 @@ export interface SearchedDeal {
   source_url: string;
 }
 
-export function dealPutPayload(target: DealTarget, deal: SearchedDeal, sourceKind: "search" | "youtube" | "instagram" = "search"): Record<string, unknown> {
+export function dealPutPayload(target: DealTarget, deal: SearchedDeal, sourceKind: "search" | "youtube" | "instagram" | "flyer" = "search"): Record<string, unknown> {
   return {
     country: target.country,
     city: target.city ?? "",
@@ -47,7 +96,7 @@ export function dealPutPayload(target: DealTarget, deal: SearchedDeal, sourceKin
     valid_until: deal.valid_until,
     source_kind: sourceKind,
     source_url: deal.source_url,
-    confidence: SEARCH_CONFIDENCE,
+    confidence: sourceKind === "flyer" ? FLYER_CONFIDENCE : SEARCH_CONFIDENCE,
   };
 }
 

@@ -1,6 +1,6 @@
 import { assertEquals } from "jsr:@std/assert@1";
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
-import { dealPutPayload, findCustomerCities, searchedDeals } from "./storeDeals.ts";
+import { dealPutPayload, findCustomerCities, flyerEntries, nextFlyer, searchedDeals } from "./storeDeals.ts";
 
 const target = { country: "SA", store: "كيو", currency: "SAR" };
 
@@ -110,4 +110,49 @@ Deno.test("cities: a failed read asks nobody", async () => {
   let asked = 0;
   assertEquals(await findCustomerCities(sb, () => { asked++; return Promise.resolve(null); }, { pauseMs: 0 }), 0);
   assertEquals([asked, saved.length], [0, 0]);
+});
+
+// ── النشرات الرسمية (officialFlyers.ts، ٧/١١) ──
+
+const flyer = (n: number, label: string, city = "") => ({
+  store: "الدانوب", country: "SA", currency: "SAR", label, city,
+  pdf_url: `https://d1c124wpoew66.cloudfront.net//spree/content/brochures/${n}/document/original/${"a".repeat(32)}.pdf`,
+});
+
+Deno.test("flyerEntries: only ok sites, only https links", () => {
+  const got = flyerEntries({
+    ok: true,
+    sites: [
+      { store: "الدانوب", country: "SA", currency: "SAR", ok: true, entries: [
+        { label: "المنطقة الوسطى العروض الاسبوعية", pdf_url: flyer(165, "").pdf_url, city: "الرياض" },
+        { label: "x", pdf_url: "http://insecure.example/a.pdf", city: "" },
+      ] },
+      { store: "محل حاجب", ok: false, reason: "robots_403" },
+    ],
+  });
+  assertEquals(got.map((e) => [e.store, e.city]), [["الدانوب", "الرياض"]]);
+  assertEquals(flyerEntries(null), []);
+});
+
+Deno.test("nextFlyer: weekly first, a read flyer never again, a failed one after 20 hours", () => {
+  const now = new Date("2026-11-07T12:00:00Z");
+  const twoWeek = flyer(6, "المنطقة الوسطى عروض الاسبوعين", "الرياض");
+  const weekly = flyer(165, "المنطقة الوسطى العروض الاسبوعية", "الرياض");
+  assertEquals(nextFlyer([twoWeek, weekly], [], now)?.pdf_url, weekly.pdf_url);
+  assertEquals(nextFlyer([twoWeek, weekly], [{ pdf_url: weekly.pdf_url, ok: true, read_at: "2026-11-01T00:00:00Z" }], now)?.pdf_url, twoWeek.pdf_url);
+  const bothDone = [
+    { pdf_url: weekly.pdf_url, ok: true, read_at: "2026-11-07T11:00:00Z" },
+    { pdf_url: twoWeek.pdf_url, ok: false, read_at: "2026-11-07T00:00:00Z" },
+  ];
+  assertEquals(nextFlyer([twoWeek, weekly], bothDone, now), null);
+  assertEquals(nextFlyer([twoWeek, weekly], bothDone, new Date("2026-11-07T20:00:00Z"))?.pdf_url, twoWeek.pdf_url);
+});
+
+Deno.test("dealPutPayload: a flyer deal carries its region's city and 0.7", () => {
+  const p = dealPutPayload(
+    { country: "SA", store: "الدانوب", currency: "SAR", city: "الرياض" },
+    { item_name: "أرز بسمتي ٥ كجم", price: 39.95, price_before: 54.5, valid_until: null, source_url: flyer(165, "").pdf_url },
+    "flyer",
+  );
+  assertEquals([p.source_kind, p.confidence, p.city, p.deal_kind], ["flyer", 0.7, "الرياض", "discount"]);
 });

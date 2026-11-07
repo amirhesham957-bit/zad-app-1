@@ -42,6 +42,7 @@ async function callerCountry(req: Request, userId: unknown): Promise<string | nu
   }
 }
 import { googleNearbyAny, googlePlacesKeys } from "./googlePlaces.ts";
+import { brochureEntries, OFFICIAL_FLYER_SITES, OFFICIAL_FLYER_UA, officialFlyerPrompt, robotsAllows, siteForPdf } from "./officialFlyers.ts";
 import { DEAL_SEARCH_TIMEOUT_MS, dealQuery, dealsFromHitsPrompt, dealSearchItems, readDeals, readReverseCity, readStoreDeals, reverseCityUrl, sameCurrency, cleanCity, searchStoreName, storeDealsPrompt, storeDealsQuery, videoDealsPrompt, youtubeDealVideos, instagramDealPosts, postDealsPrompt, flyerDealsPrompt, readDealCodes, type DealCode } from "./liveDeals.ts";
 import { fuelPricePrompt, fuelPriceQuery, readFuelPrice } from "./fuelPrice.ts";
 import {
@@ -577,6 +578,10 @@ function toGeminiParts(content: string | Array<Record<string, unknown>>): Array<
       const url = (block.image_url as { url?: string } | undefined)?.url || "";
       const m = /^data:([^;]+);base64,(.*)$/s.exec(url);
       if (m) parts.push({ inline_data: { mime_type: m[1], data: m[2] } });
+    } else if (block.type === "file_data") {
+      // ملف اترفع على Files API بنفس المفتاح (نشرة PDF أكبر من حد الطلب، officialFlyers.ts).
+      const f = block.file_data as { mime_type?: string; file_uri?: string } | undefined;
+      if (f?.mime_type && f?.file_uri) parts.push({ file_data: { mime_type: f.mime_type, file_uri: f.file_uri } });
     } else if (block.type === "video_url") {
       // فيديو يوتيوب عام بالرابط (ZAD_PLAN ٤.١١). أول دقيقتين بس، بأقل دقة: فيديو العروض بيعرض الأسعار في الأول،
       // والتوكنز بتتحسب بالثانية — فيديو ١٠ دقايق كامل كان هياكل حد الدقيقة على المفتاح لوحده.
@@ -731,6 +736,81 @@ async function callGeminiPool(opts: {
   }
   console.warn("[CoreIntel] All Gemini keys exhausted");
   return { content: null, ok: false };
+}
+
+/**
+ * نشرة PDF رسمية بالـFiles API (officialFlyers.ts): الملف بيتنقل من موقع المحل لجيميناي **ستريم** من غير ما يتحمّل
+ * في ذاكرة الفانكشن (نشرات الدانوب ١٣–٤٢ ميجا، وحد الطلب العادي ٢٠)، وبعدين بيتقري بنفس المفتاح اللي رفعه — الملف
+ * بيبقى ملك مشروع المفتاح ده بس. مفتاحين بالكتير، والملف بيتمسح بعد القراية.
+ */
+const MAX_FLYER_DOWNLOAD_BYTES = 60_000_000;
+async function readPdfWithGemini(opts: {
+  pdfUrl: string; systemPrompt: string; userText: string; deadline: number;
+}): Promise<{ content: string | null; reason: string | null }> {
+  if (GEMINI_KEYS.length === 0) return { content: null, reason: "no_key" };
+  const api = "https://generativelanguage.googleapis.com";
+  let reason = "no_model";
+  const tries = Math.min(2, GEMINI_KEYS.length);
+  for (let i = 0; i < tries; i++) {
+    if (opts.deadline - Date.now() < 30_000) return { content: null, reason: "out_of_time" };
+    const key = GEMINI_KEYS[nextGeminiKeyIndex()];
+    let fileName: string | null = null;
+    try {
+      const pdf = await fetch(opts.pdfUrl, {
+        headers: { "User-Agent": OFFICIAL_FLYER_UA }, signal: AbortSignal.timeout(30_000),
+      });
+      const length = Number(pdf.headers.get("content-length") ?? "0");
+      const type = (pdf.headers.get("content-type") ?? "").split(";")[0].trim();
+      if (!pdf.ok || !pdf.body || type !== "application/pdf" || !(length > 0) || length > MAX_FLYER_DOWNLOAD_BYTES) {
+        await pdf.body?.cancel();
+        return { content: null, reason: "bad_pdf" };
+      }
+      const up = await fetch(`${api}/upload/v1beta/files?uploadType=media&key=${encodeURIComponent(key)}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/pdf", "Content-Length": String(length) },
+        body: pdf.body,
+        // @ts-ignore Deno: a streamed request body needs half-duplex.
+        duplex: "half",
+        signal: AbortSignal.timeout(45_000),
+      });
+      const upData = await up.json().catch(() => null) as { file?: { name?: string; uri?: string; state?: string } } | null;
+      fileName = upData?.file?.name ?? null;
+      let state = upData?.file?.state ?? "";
+      const uri = upData?.file?.uri ?? "";
+      if (!up.ok || !fileName || !uri) {
+        reason = `upload_${up.status}`;
+        continue;
+      }
+      // الـPDF عادة بيبقى ACTIVE على طول؛ لو لسه بيتجهز نستنى شوية.
+      for (let w = 0; state === "PROCESSING" && w < 10; w++) {
+        await new Promise((r) => setTimeout(r, 2000));
+        const st = await fetch(`${api}/v1beta/${fileName}?key=${encodeURIComponent(key)}`, { signal: AbortSignal.timeout(10_000) });
+        state = ((await st.json().catch(() => null)) as { state?: string } | null)?.state ?? "";
+      }
+      if (state !== "ACTIVE") {
+        reason = `file_${state || "unknown"}`;
+        continue;
+      }
+      const answer = await callGeminiNative({
+        apiKey: key,
+        model: VISION_FALLBACK_MODELS[0] ?? GEMINI_MODEL_ROUTINE,
+        systemPrompt: ZAD_PERSONA_PREFIX + opts.systemPrompt,
+        content: [{ type: "file_data", file_data: { mime_type: "application/pdf", file_uri: uri } }, { type: "text", text: opts.userText }],
+        temperature: 0.1, maxTokens: 6000, jsonMode: true, thinkingBudget: 0,
+        timeoutMs: Math.max(10_000, Math.min(90_000, opts.deadline - Date.now() - 5_000)),
+      });
+      if (answer.ok && answer.content) return { content: answer.content, reason: null };
+      reason = `model_${answer.status}`;
+      if (answer.status !== 429) break; // غير الحصة، المفتاح التاني هيرجع نفس الرد
+    } catch (e) {
+      reason = (e as Error).name === "TimeoutError" ? "timeout" : "fetch_failed";
+    } finally {
+      if (fileName) {
+        fetch(`${api}/v1beta/${fileName}?key=${encodeURIComponent(key)}`, { method: "DELETE" }).then((r) => r.body?.cancel()).catch(() => {});
+      }
+    }
+  }
+  return { content: null, reason };
 }
 
 /**
@@ -3043,6 +3123,58 @@ async function handle(req: Request): Promise<Response> {
         });
         if (saveErr || saved !== true) return jsonResponse({ ok: false, refreshed: false, days_left: daysLeft, reason: "save_failed" });
         return jsonResponse({ ok: true, refreshed: true, expires_at: swapped.expires_at ?? null });
+      }
+
+      // ──────────────────────────────────────────────
+      // OFFICIAL_FLYERS — النشرات الرسمية من موقع المحل نفسه (officialFlyers.ts، طلب المالك ٧/١١). service role بس:
+      // zad-brain (deals_flyers_run) بيسأل الأول عن القايمة (mode "list": صفحة كل موقع، بعد ما robots.txt يسمح)، وبعدين
+      // بيبعت نشرة واحدة في كل نداء ({pdf_url, label, city}) — قراية PDF كبير بتاخد أغلب وقت الفانكشن.
+      // ──────────────────────────────────────────────
+      case "official_flyers": {
+        if (!isServiceRoleToken(bearerToken(req), supabaseKey)) return jsonResponse({ error: "unauthorized" }, 401);
+        if (payload?.mode === "list") {
+          const sites: Array<Record<string, unknown>> = [];
+          for (const site of OFFICIAL_FLYER_SITES) {
+            const page = new URL(site.page);
+            try {
+              const robots = await fetch(new URL("/robots.txt", page), { headers: { "User-Agent": OFFICIAL_FLYER_UA }, signal: AbortSignal.timeout(10_000) });
+              const robotsText = robots.ok ? await robots.text() : (await robots.body?.cancel(), "");
+              // 404 = مفيش قواعد؛ أي رفض تاني (403/429/5xx) = الموقع مش عايز بوتات دلوقتي، نسيبه.
+              if (!robots.ok && robots.status !== 404) {
+                sites.push({ store: site.store, ok: false, reason: `robots_${robots.status}` });
+                continue;
+              }
+              if (!robotsAllows(robotsText, page.pathname)) {
+                sites.push({ store: site.store, ok: false, reason: "robots_disallow" });
+                continue;
+              }
+              const res = await fetch(page, { headers: { "User-Agent": OFFICIAL_FLYER_UA }, signal: AbortSignal.timeout(15_000) });
+              if (!res.ok) {
+                await res.body?.cancel();
+                sites.push({ store: site.store, ok: false, reason: `page_${res.status}` });
+                continue;
+              }
+              const entries = brochureEntries(await res.text(), site);
+              sites.push({ store: site.store, country: site.country, currency: site.currency, ok: true, entries });
+            } catch (e) {
+              sites.push({ store: site.store, ok: false, reason: (e as Error).name === "TimeoutError" ? "timeout" : "fetch_failed" });
+            }
+          }
+          return jsonResponse({ ok: true, sites });
+        }
+        const pdfUrl = typeof payload?.pdf_url === "string" ? payload.pdf_url : "";
+        const site = siteForPdf(pdfUrl);
+        if (!site) return jsonResponse({ ok: false, reason: "bad_pdf_url" }, 400);
+        const label = typeof payload?.label === "string" ? payload.label.slice(0, 80) : "";
+        const market = marketOf(site.country);
+        const now = new Date();
+        const { system, user } = officialFlyerPrompt(site.store, market.name, site.currency, label, now.toISOString().slice(0, 10));
+        const read = await readPdfWithGemini({ pdfUrl, systemPrompt: system, userText: user, deadline: Date.now() + 100_000 });
+        if (!read.content) return jsonResponse({ ok: false, reason: read.reason });
+        const parsed = (() => { try { return JSON.parse(read.content!); } catch { return null; } })();
+        if (parsed === null) return jsonResponse({ ok: false, reason: "bad_json" });
+        const deals = readStoreDeals(parsed, [{ title: `نشرة ${site.store}: ${label}`, url: pdfUrl, snippet: "" }], site.currency, now);
+        return jsonResponse({ ok: true, store: site.store, country: site.country, currency: site.currency, deals, source: "flyer" });
       }
 
       // ──────────────────────────────────────────────
