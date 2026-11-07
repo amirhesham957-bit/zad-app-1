@@ -9306,7 +9306,7 @@ async function handleRequest(req: Request): Promise<Response> {
         return new Response(JSON.stringify({ ok: true, sites, read: null }), { headers: CORS_HEADERS });
       }
       const { data: reads, error: readsErr } = await sbDeals.from("zad_flyer_reads")
-        .select("pdf_url, ok, read_at").in("pdf_url", entries.map((e) => e.pdf_url));
+        .select("pdf_url, ok, read_at, deals").in("pdf_url", entries.map((e) => e.pdf_url));
       if (readsErr) {
         console.error("[deals_flyers_run] reads failed:", readsErr.message);
         return new Response(JSON.stringify({ error: "reads_failed" }), { status: 500, headers: CORS_HEADERS });

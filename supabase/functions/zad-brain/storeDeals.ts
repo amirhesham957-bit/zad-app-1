@@ -28,7 +28,7 @@ export const FLYER_CONFIDENCE = 0.7;
 export const FLYER_RETRY_HOURS = 20;
 
 export interface FlyerEntryRow { store: string; country: string; currency: string; label: string; pdf_url: string; city: string }
-export interface FlyerReadRow { pdf_url: string; ok: boolean; read_at: string }
+export interface FlyerReadRow { pdf_url: string; ok: boolean; read_at: string; deals?: number | null }
 
 /**
  * Official flyers (zad-core-intelligence/officialFlyers.ts): the sites' answer to «list» flattened, and the first flyer
@@ -62,7 +62,8 @@ export function nextFlyer(entries: FlyerEntryRow[], reads: FlyerReadRow[], now: 
   const due = entries.filter((e) => {
     const r = last.get(e.pdf_url);
     if (!r) return true;
-    if (r.ok) return false;
+    // «ok» بصفر عروض = قراية فاضية اتسجلت كنجاح (أول رن حي ٧/١١، قبل ما «ok» يبقى معناه إن فيه عروض): تتقري تاني.
+    if (r.ok) return (r.deals ?? 1) === 0;
     return now.getTime() - new Date(r.read_at).getTime() >= FLYER_RETRY_HOURS * 3_600_000;
   });
   const weekly = (e: FlyerEntryRow) => /الاسبوعية|الأسبوعية|weekly/i.test(e.label) ? 0 : 1;

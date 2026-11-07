@@ -146,6 +146,9 @@ Deno.test("nextFlyer: weekly first, a read flyer never again, a failed one after
   ];
   assertEquals(nextFlyer([twoWeek, weekly], bothDone, now), null);
   assertEquals(nextFlyer([twoWeek, weekly], bothDone, new Date("2026-11-07T20:00:00Z"))?.pdf_url, twoWeek.pdf_url);
+  // an «ok» read with no deals (recorded before ok meant deals) is read again at once.
+  assertEquals(nextFlyer([weekly], [{ pdf_url: weekly.pdf_url, ok: true, read_at: "2026-11-07T11:00:00Z", deals: 0 }], now)?.pdf_url, weekly.pdf_url);
+  assertEquals(nextFlyer([weekly], [{ pdf_url: weekly.pdf_url, ok: true, read_at: "2026-11-07T11:00:00Z", deals: 12 }], now), null);
 });
 
 Deno.test("dealPutPayload: a flyer deal carries its region's city and 0.7", () => {
