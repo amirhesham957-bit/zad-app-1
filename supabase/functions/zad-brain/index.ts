@@ -9467,8 +9467,9 @@ async function handleRequest(req: Request): Promise<Response> {
           const delivered = res.ok && reply?.delivered === true;
           if (delivered) {
             const rows = [
-              ...digest.cards.map((c) => ({ user_id: uid, deal_key: c.key })),
-              ...digest.codes.map((c) => ({ user_id: uid, deal_key: `code|${c.store_key}|${c.code}` })),
+              // ٥.٩: السبب مع كل عرض، عشان يتقاس اللي جه من نية أو موسم.
+              ...digest.cards.map((c) => ({ user_id: uid, deal_key: c.key, why: c.why })),
+              ...digest.codes.map((c) => ({ user_id: uid, deal_key: `code|${c.store_key}|${c.code}`, why: "code" })),
             ];
             const { error: logErr } = await sbSeason.from("zad_deal_digest_sent").upsert(rows, { onConflict: "user_id,deal_key" });
             if (logErr) console.error("[deals_season_digest_run] log failed:", logErr.message);
