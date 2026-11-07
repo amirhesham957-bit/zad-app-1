@@ -2109,5 +2109,21 @@
   "@briefWhyRunningOut": {"placeholders": {"name": {"type": "String"}, "left": {"type": "String"}, "perDay": {"type": "String"}}},
   "briefWhyRunningOutApprox": "{name}: فاضل {left}، واستهلاكك لسه بيتقاس — حوالي {perDay} في اليوم، فده تقدير.",
   "@briefWhyRunningOutApprox": {"placeholders": {"name": {"type": "String"}, "left": {"type": "String"}, "perDay": {"type": "String"}}},
-  "briefWhyFamily": "حد في شات العيلة قال إنها ناقصة، وزاد لقطها وهو بيراجع الشات."
+  "briefWhyFamily": "حد في شات العيلة قال إنها ناقصة، وزاد لقطها وهو بيراجع الشات.",
+  "briefMedicineLow": "{name} هيخلص بعد {days} يوم",
+  "@briefMedicineLow": {"placeholders": {"name": {"type": "String"}, "days": {"type": "String"}}},
+  "briefMedicineLowDetail": "اطلب علبة جديدة قبل ما يخلص",
+  "briefBudgetDanger": "الميزانية في خطر: باقي {daily} في اليوم لـ{days} يوم",
+  "@briefBudgetDanger": {"placeholders": {"daily": {"type": "String"}, "days": {"type": "String"}}},
+  "briefBudgetDangerDetail": "شوف فلوسي — لسه فيه وقت تلحق",
+  "briefSeasonRamadan": "رمضان بعد {days} يوم",
+  "@briefSeasonRamadan": {"placeholders": {"days": {"type": "String"}}},
+  "briefSeasonHijjah": "العشر من ذي الحجة بعد {days} يوم",
+  "@briefSeasonHijjah": {"placeholders": {"days": {"type": "String"}}},
+  "briefSeasonDetail": "جهّز الأساسيات قبل ما الأسعار تعلى",
+  "briefWhyMedicineLow": "{name}: الحبوب اللي فاضلة ÷ الجرعات في اليوم = {days} يوم.",
+  "@briefWhyMedicineLow": {"placeholders": {"name": {"type": "String"}, "days": {"type": "String"}}},
+  "briefWhyBudgetDanger": "المتاح {available} على {days} يوم = {daily} في اليوم، ومعدل صرفك لحد دلوقتي بيقول إنه مش هيكفي.",
+  "@briefWhyBudgetDanger": {"placeholders": {"available": {"type": "String"}, "days": {"type": "String"}, "daily": {"type": "String"}}},
+  "briefWhySeason": "من تقويم أم القرى بتوقيت بلدك — والأسعار بتعلى قبل الموسم."
 }

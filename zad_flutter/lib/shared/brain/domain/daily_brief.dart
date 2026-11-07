@@ -40,7 +40,31 @@ enum BriefKind {
   /// Things still in the house that the usage rate says run out within days
   /// («هيخلص إمتى؟», ZAD_PLAN ٣.٥).
   runningOut,
+
+  /// A medicine with five days or fewer left (the server's home state).
+  medicineLow,
+
+  /// The budget is in danger before it goes below zero (the server's
+  /// home state, `threat = DANGER`).
+  budgetDanger,
+
+  /// A season starts within three weeks (the server's home state).
+  seasonAhead,
 }
+
+/// Where a kind sits in the brief, most urgent first: the server's lines
+/// fall in beside the phone's own of the same weight.
+int briefRank(BriefKind kind) => switch (kind) {
+  BriefKind.doseDue => 0,
+  BriefKind.dosesMissed => 1,
+  BriefKind.medicineLow => 2,
+  BriefKind.overspent || BriefKind.budgetDanger => 3,
+  BriefKind.renewal => 4,
+  BriefKind.shortage => 5,
+  BriefKind.runningOut => 6,
+  BriefKind.familyNeed => 7,
+  BriefKind.seasonAhead => 8,
+};
 
 /// Whole days [group] lasts at its members' rates, and whether any rate is
 /// only an estimate. Null when it is out, or no member has a rate.
@@ -92,6 +116,15 @@ enum BriefWhyKind {
 
   /// Said in the family chat.
   family,
+
+  /// Pills left ÷ doses a day, from the pharmacy (server).
+  medicineLow,
+
+  /// The period's available over its days, against the spending pace.
+  budgetDanger,
+
+  /// From the Umm al-Qura calendar in the account's zone.
+  season,
 }
 
 /// The reason behind one line, with the figures it was decided on.

@@ -6,6 +6,7 @@
 /// the number with a mark on it.
 library;
 
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -44,6 +45,7 @@ import 'package:zad/features/home/presentation/tasbiha_home_widget.dart';
 import 'package:zad/features/home/presentation/travel_banner.dart';
 import 'package:zad/features/home/presentation/urgent_recipe_card.dart';
 import 'package:zad/features/home/presentation/who_are_you_card.dart';
+import 'package:zad/shared/brain/data/home_signals_controller.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/budget/data/upcoming_outings.dart';
 import 'package:zad/shared/budget/domain/budget_snapshot.dart';
@@ -82,8 +84,13 @@ class HomeScreen extends ConsumerWidget {
       // force: the cooldown exists to stop *automatic* refetching on every
       // re-entry. A user who pulled the screen down asked for it, and being
       // told "not yet" would just make them pull again.
-      onRefresh: () =>
-          ref.read(budgetControllerProvider.notifier).refresh(force: true),
+      onRefresh: () async {
+        // «حالة البيت» too (ZAD_PLAN ٦.٤): the brief's server lines.
+        unawaited(
+          ref.read(homeSignalsControllerProvider.notifier).refresh(force: true),
+        );
+        await ref.read(budgetControllerProvider.notifier).refresh(force: true);
+      },
       child: ListView(
         // Keeps the offset if the shell rebuilds this subtree (the budget
         // gate, kids mode) instead of starting over at the top.

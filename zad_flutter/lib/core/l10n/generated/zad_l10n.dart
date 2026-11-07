@@ -5094,6 +5094,66 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'حد في شات العيلة قال إنها ناقصة، وزاد لقطها وهو بيراجع الشات.'**
   String get briefWhyFamily;
+
+  /// No description provided for @briefMedicineLow.
+  ///
+  /// In ar, this message translates to:
+  /// **'{name} هيخلص بعد {days} يوم'**
+  String briefMedicineLow(String name, String days);
+
+  /// No description provided for @briefMedicineLowDetail.
+  ///
+  /// In ar, this message translates to:
+  /// **'اطلب علبة جديدة قبل ما يخلص'**
+  String get briefMedicineLowDetail;
+
+  /// No description provided for @briefBudgetDanger.
+  ///
+  /// In ar, this message translates to:
+  /// **'الميزانية في خطر: باقي {daily} في اليوم لـ{days} يوم'**
+  String briefBudgetDanger(String daily, String days);
+
+  /// No description provided for @briefBudgetDangerDetail.
+  ///
+  /// In ar, this message translates to:
+  /// **'شوف فلوسي — لسه فيه وقت تلحق'**
+  String get briefBudgetDangerDetail;
+
+  /// No description provided for @briefSeasonRamadan.
+  ///
+  /// In ar, this message translates to:
+  /// **'رمضان بعد {days} يوم'**
+  String briefSeasonRamadan(String days);
+
+  /// No description provided for @briefSeasonHijjah.
+  ///
+  /// In ar, this message translates to:
+  /// **'العشر من ذي الحجة بعد {days} يوم'**
+  String briefSeasonHijjah(String days);
+
+  /// No description provided for @briefSeasonDetail.
+  ///
+  /// In ar, this message translates to:
+  /// **'جهّز الأساسيات قبل ما الأسعار تعلى'**
+  String get briefSeasonDetail;
+
+  /// No description provided for @briefWhyMedicineLow.
+  ///
+  /// In ar, this message translates to:
+  /// **'{name}: الحبوب اللي فاضلة ÷ الجرعات في اليوم = {days} يوم.'**
+  String briefWhyMedicineLow(String name, String days);
+
+  /// No description provided for @briefWhyBudgetDanger.
+  ///
+  /// In ar, this message translates to:
+  /// **'المتاح {available} على {days} يوم = {daily} في اليوم، ومعدل صرفك لحد دلوقتي بيقول إنه مش هيكفي.'**
+  String briefWhyBudgetDanger(String available, String days, String daily);
+
+  /// No description provided for @briefWhySeason.
+  ///
+  /// In ar, this message translates to:
+  /// **'من تقويم أم القرى بتوقيت بلدك — والأسعار بتعلى قبل الموسم.'**
+  String get briefWhySeason;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

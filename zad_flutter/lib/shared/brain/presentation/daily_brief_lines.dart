@@ -13,8 +13,11 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/app_language.dart';
 import 'package:zad/core/l10n/l10n.dart';
+import 'package:zad/shared/brain/data/home_signals_controller.dart';
 import 'package:zad/shared/brain/domain/daily_brief.dart';
+import 'package:zad/shared/brain/domain/home_signals.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/insights/application/insights_controller.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart';
@@ -41,7 +44,7 @@ final Provider<List<BriefItem>> dailyBriefProvider = Provider<List<BriefItem>>((
   final budget = ref.watch(budgetControllerProvider);
   final needs = ref.watch(familyNeedsProvider);
   final rates = ref.watch(consumptionRatesProvider).value;
-  return dailyBrief(
+  final local = dailyBrief(
     pantry: pantry,
     doses: doses,
     subscriptions: subs.items,
@@ -53,7 +56,102 @@ final Provider<List<BriefItem>> dailyBriefProvider = Provider<List<BriefItem>>((
     rates: rates ?? const {},
     max: 1 << 20,
   );
+  HomeSignals? signals;
+  try {
+    signals = ref.watch(homeSignalsControllerProvider);
+  } on Object {
+    // The brief never fails because one of its sources did.
+    signals = null;
+  }
+  return withHomeSignals(local, signals, ref.watch(zadL10nProvider));
 });
+
+String _amount(double v) =>
+    NumberFormat(v % 1 == 0 ? '#,##0' : '#,##0.##', 'en').format(v);
+
+/// The phone's brief with what only the server's «حالة البيت» knows
+/// (ZAD_PLAN ٦.٤), each line beside the phone's own of the same weight:
+/// a medicine running out after the doses, the budget in danger where
+/// «صرفت أكتر» would be — never both — and the season ahead last.
+List<BriefItem> withHomeSignals(
+  List<BriefItem> local,
+  HomeSignals? s,
+  ZadL10n l10n,
+) {
+  if (s == null) return local;
+  final extra = <BriefItem>[];
+  if (s.medicinesLow.isNotEmpty) {
+    final first = s.medicinesLow.first;
+    extra.add(
+      BriefItem(
+        kind: BriefKind.medicineLow,
+        title: l10n.briefMedicineLow(first.name, '${first.days}'),
+        detail: l10n.briefMedicineLowDetail,
+        why: BriefWhy(
+          BriefWhyKind.medicineLow,
+          name: first.name,
+          count: first.days,
+        ),
+      ),
+    );
+  }
+  final overspent = local.any((b) => b.kind == BriefKind.overspent);
+  final available = s.available;
+  final daily = s.dailyLeft;
+  final days = s.daysLeft;
+  if (s.threat == 'DANGER' &&
+      !overspent &&
+      available != null &&
+      available >= 0 &&
+      daily != null &&
+      days != null) {
+    final cur = s.currency;
+    extra.add(
+      BriefItem(
+        kind: BriefKind.budgetDanger,
+        title: l10n.briefBudgetDanger('${_amount(daily)} $cur'.trim(), '$days'),
+        detail: l10n.briefBudgetDangerDetail,
+        why: BriefWhy(
+          BriefWhyKind.budgetDanger,
+          name: cur,
+          left: available,
+          perDay: daily,
+          count: days,
+        ),
+      ),
+    );
+  }
+  final ahead = s.seasonAhead;
+  if (s.seasonNow == null &&
+      ahead != null &&
+      ahead.inDays >= 0 &&
+      ahead.inDays <= 21) {
+    final title = switch (ahead.kind) {
+      'ramadan' => l10n.briefSeasonRamadan('${ahead.inDays}'),
+      'dhul_hijjah' => l10n.briefSeasonHijjah('${ahead.inDays}'),
+      _ => null,
+    };
+    if (title != null) {
+      extra.add(
+        BriefItem(
+          kind: BriefKind.seasonAhead,
+          title: title,
+          detail: l10n.briefSeasonDetail,
+          why: BriefWhy(BriefWhyKind.season, name: ahead.kind),
+        ),
+      );
+    }
+  }
+  if (extra.isEmpty) return local;
+  final all = <BriefItem>[...local, ...extra];
+  final indexed =
+      <(int, BriefItem)>[for (var i = 0; i < all.length; i++) (i, all[i])]
+        ..sort((a, b) {
+          final r = briefRank(a.$2.kind).compareTo(briefRank(b.$2.kind));
+          return r != 0 ? r : a.$1.compareTo(b.$1);
+        });
+  return <BriefItem>[for (final (_, item) in indexed) item];
+}
 
 /// The family-chat needs the nightly review left as suggestions. Empty when
 /// the insights cannot be read: the brief is read on every open of Home and
@@ -113,13 +211,18 @@ class DailyBriefLines extends ConsumerWidget {
     }
 
     void tap(BriefItem item) => switch (item.kind) {
-      BriefKind.doseDue || BriefKind.dosesMissed => unawaited(
+      BriefKind.doseDue ||
+      BriefKind.dosesMissed ||
+      BriefKind.medicineLow => unawaited(
         ZadScreens.showHouseholdSection(context, HouseholdSection.pharmacy),
       ),
-      BriefKind.overspent || BriefKind.renewal => open(ShellTab.money),
+      BriefKind.overspent ||
+      BriefKind.budgetDanger ||
+      BriefKind.renewal => open(ShellTab.money),
       BriefKind.shortage ||
       BriefKind.familyNeed ||
-      BriefKind.runningOut => open(ShellTab.household),
+      BriefKind.runningOut ||
+      BriefKind.seasonAhead => open(ShellTab.household),
     };
 
     return Column(
@@ -170,6 +273,16 @@ String briefWhyText(ZadL10n l10n, BriefWhy why) {
       n(why.perDay),
     ),
     BriefWhyKind.family => l10n.briefWhyFamily,
+    BriefWhyKind.medicineLow => l10n.briefWhyMedicineLow(
+      why.name,
+      '${why.count}',
+    ),
+    BriefWhyKind.budgetDanger => l10n.briefWhyBudgetDanger(
+      '${n(why.left)} ${why.name}'.trim(),
+      '${why.count}',
+      '${n(why.perDay)} ${why.name}'.trim(),
+    ),
+    BriefWhyKind.season => l10n.briefWhySeason,
   };
 }
 
@@ -201,6 +314,9 @@ class _LineState extends State<_Line> {
     BriefKind.shortage => (ZadIcons.shopping, ZadColors.forestEmerald),
     BriefKind.familyNeed => (ZadIcons.family, ZadColors.forestEmerald),
     BriefKind.runningOut => (ZadIcons.shopping, ZadColors.mustardOchre),
+    BriefKind.medicineLow => (ZadIcons.pharmacy, ZadColors.mustardOchre),
+    BriefKind.budgetDanger => (ZadIcons.budget, ZadColors.mustardOchre),
+    BriefKind.seasonAhead => (ZadIcons.timetable, ZadColors.info),
   };
 
   @override

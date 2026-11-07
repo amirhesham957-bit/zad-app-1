@@ -2859,4 +2859,47 @@ class ZadL10nAr extends ZadL10n {
   @override
   String get briefWhyFamily =>
       'حد في شات العيلة قال إنها ناقصة، وزاد لقطها وهو بيراجع الشات.';
+
+  @override
+  String briefMedicineLow(String name, String days) {
+    return '$name هيخلص بعد $days يوم';
+  }
+
+  @override
+  String get briefMedicineLowDetail => 'اطلب علبة جديدة قبل ما يخلص';
+
+  @override
+  String briefBudgetDanger(String daily, String days) {
+    return 'الميزانية في خطر: باقي $daily في اليوم لـ$days يوم';
+  }
+
+  @override
+  String get briefBudgetDangerDetail => 'شوف فلوسي — لسه فيه وقت تلحق';
+
+  @override
+  String briefSeasonRamadan(String days) {
+    return 'رمضان بعد $days يوم';
+  }
+
+  @override
+  String briefSeasonHijjah(String days) {
+    return 'العشر من ذي الحجة بعد $days يوم';
+  }
+
+  @override
+  String get briefSeasonDetail => 'جهّز الأساسيات قبل ما الأسعار تعلى';
+
+  @override
+  String briefWhyMedicineLow(String name, String days) {
+    return '$name: الحبوب اللي فاضلة ÷ الجرعات في اليوم = $days يوم.';
+  }
+
+  @override
+  String briefWhyBudgetDanger(String available, String days, String daily) {
+    return 'المتاح $available على $days يوم = $daily في اليوم، ومعدل صرفك لحد دلوقتي بيقول إنه مش هيكفي.';
+  }
+
+  @override
+  String get briefWhySeason =>
+      'من تقويم أم القرى بتوقيت بلدك — والأسعار بتعلى قبل الموسم.';
 }

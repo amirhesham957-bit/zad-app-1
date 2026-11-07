@@ -887,5 +887,15 @@
   "briefWhyShortage": "{name}: {left} left, which is where it counts as low ({threshold}).",
   "briefWhyRunningOut": "{name}: {left} left, and you use about {perDay} a day.",
   "briefWhyRunningOutApprox": "{name}: {left} left; your usage is still being measured — about {perDay} a day, so this is an estimate.",
-  "briefWhyFamily": "Someone in the family chat said it's needed, and Zad picked it up reviewing the chat."
+  "briefWhyFamily": "Someone in the family chat said it's needed, and Zad picked it up reviewing the chat.",
+  "briefMedicineLow": "{name} runs out in {days} days",
+  "briefMedicineLowDetail": "Get a new box before it runs out",
+  "briefBudgetDanger": "Budget at risk: {daily} a day left for {days} days",
+  "briefBudgetDangerDetail": "Open money — there's still time to catch up",
+  "briefSeasonRamadan": "Ramadan in {days} days",
+  "briefSeasonHijjah": "The first ten days of Dhul Hijjah in {days} days",
+  "briefSeasonDetail": "Get the basics in before prices go up",
+  "briefWhyMedicineLow": "{name}: pills left ÷ doses a day = {days} days.",
+  "briefWhyBudgetDanger": "{available} available over {days} days = {daily} a day, and your spending so far says it won't last.",
+  "briefWhySeason": "From the Umm al-Qura calendar in your country's time — prices rise before the season."
 }
