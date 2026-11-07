@@ -17,6 +17,10 @@ on:
   schedule:
     - cron: '23 2 * * *' # ٢:٢٣ UTC — بعد كرونات الليل الكبيرة، وقبل الصبح في مصر والسعودية
   workflow_dispatch:
+  # أي تعديل على الملف ده بيتجرب فوراً بنسخة حقيقية، بدل ما يستنى الليل أو إيد تدوس Run.
+  push:
+    branches: [main]
+    paths: ['.github/workflows/db-backup.yml']
 
 concurrency:
   group: db-backup
