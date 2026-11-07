@@ -7670,7 +7670,9 @@ async function handleAgentTurnInLane(
       // بيحصل فعلياً (let معرّف قبل الحلقة)، فمفيش TDZ هنا.
       input_tokens: inputTokens, output_tokens: outputTokens,
       // ونفس الكلام لـ calls: finishRun بتتنادى بعد الحلقة أو جوه catch بتاعها بس.
-      prompt_sizes: { ...turnSizes, calls, prompt_version: CHAT_PROMPT_VERSION },
+      // ٣.٢ (٧/١١): الأدوات اللي اتنادت فعلاً في اللفة (اتحققت — قراية، كتابة، أو اقتراح فلوس). agent_actions بيسجّل الكتابة
+      // اللي ليها تراجع بس، فـlog_transaction نفسه كان «صفر نداء في ٣٠ يوم» هناك — قص الأدوات لازم يتبني على ده.
+      prompt_sizes: { ...turnSizes, calls, tools_called: { ...ctx.counts }, prompt_version: CHAT_PROMPT_VERSION },
     }).eq("id", runId);
   };
 
