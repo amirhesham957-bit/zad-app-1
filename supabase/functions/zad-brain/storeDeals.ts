@@ -19,6 +19,28 @@ export const YOUTUBE_STORES_PER_RUN = 3;
 export const INSTAGRAM_STORES_PER_RUN = 3;
 
 /**
+ * Monday and Thursday (UTC): the days a store with no Instagram account of its own is looked up by its hashtag.
+ * Meta allows 30 different hashtags a week; a store's own account (Business Discovery) does not count, so it is
+ * read every day.
+ */
+export function isInstagramHashtagDay(now: Date): boolean {
+  const day = now.getUTCDay();
+  return day === 1 || day === 4;
+}
+
+const sameStore = (a: string, b: string) => a.trim().replace(/\s+/g, " ") === b.trim().replace(/\s+/g, " ");
+
+/** On the other days: the stores not known to lack an account, [INSTAGRAM_STORES_PER_RUN] at most, in their turn. */
+export function accountDayTargets<T extends { country: string; store: string }>(
+  targets: T[],
+  noAccount: ReadonlyArray<{ country: string; store: string }>,
+): T[] {
+  return targets
+    .filter((t) => !noAccount.some((n) => n.country === t.country && sameStore(n.store, t.store)))
+    .slice(0, INSTAGRAM_STORES_PER_RUN);
+}
+
+/**
  * Stores looked up on TikTok in one run (7/11): one search each (site:tiktok.com) plus up to three short model reads of
  * the results' text — nothing is asked of TikTok itself. Six runs a day × 4 = 24 searches, inside the free search quota.
  */

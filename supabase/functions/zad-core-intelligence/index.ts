@@ -3100,6 +3100,8 @@ async function handle(req: Request): Promise<Response> {
         // أكونت المحل نفسه الأول (Business Discovery)، والهاشتاج لو المحل مالوش أكونت أو Meta رفضت.
         const handle = await storeInstagramAccount(igToken, igAccount, country, store, market.name);
         const own = handle ? await instagramAccountPosts(igToken, igAccount, handle, { days: 10, max: 15 }) : null;
+        // Not a hashtag day (zad-brain's isInstagramHashtagDay): a store with no readable account waits for one.
+        if (payload?.account_only === true && !own?.ok) return jsonResponse({ ok: false, reason: "no_account_today" });
         if (own && !own.ok) console.warn(`[store_deals_instagram] @${handle}: ${own.reason ?? own.status} — hashtag instead`);
         const via = own?.ok ? "account" : "hashtag";
         const tag = storeHashtag(searchStoreName(store));

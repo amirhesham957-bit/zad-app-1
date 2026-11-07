@@ -152,7 +152,7 @@ import { campaignAndTasteRules, type CampaignRow, pickHomeCampaign, recipeTaste 
 import { loadWeather, weatherForSnapshot, weatherRule } from "./weather.ts";
 import { medicinePrice, medicinePriceReply, pricePayload } from "./medicinePrice.ts";
 import { dealCountry, dealSource, dealsAtPlace, dealsHere, nearbySource, type StoredDealRow } from "./tasteDeals.ts";
-import { dealPutPayload, findCustomerCities, type FlyerReadRow, flyerEntries, INSTAGRAM_STORES_PER_RUN, nextFlyer, searchedDeals, STORES_PER_RUN, TIKTOK_STORES_PER_RUN, YOUTUBE_STORES_PER_RUN } from "./storeDeals.ts";
+import { dealPutPayload, findCustomerCities, type FlyerReadRow, flyerEntries, INSTAGRAM_STORES_PER_RUN, accountDayTargets, isInstagramHashtagDay, nextFlyer, searchedDeals, STORES_PER_RUN, TIKTOK_STORES_PER_RUN, YOUTUBE_STORES_PER_RUN } from "./storeDeals.ts";
 import { replyCadence, replyCadenceRule } from "./replyCadence.ts";
 import { ENGAGEMENT_WINDOW_DAYS, engagementFrom, type InsightRow } from "./engagement.ts";
 import { monthlyAverages, projectDecision } from "./decisionImpact.ts";
@@ -9386,16 +9386,31 @@ async function handleRequest(req: Request): Promise<Response> {
         return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: CORS_HEADERS });
       }
       const sbDeals = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
-      const { data: targets, error: targetErr } = await sbDeals.rpc("zad_deal_source_targets", { p_limit: INSTAGRAM_STORES_PER_RUN, p_source: "instagram" });
+      // The store's own account (Business Discovery) every day; the hashtag — Meta's 30 a week — only on its two days.
+      const hashtagDay = isInstagramHashtagDay(new Date());
+      const { data: picked, error: targetErr } = await sbDeals.rpc("zad_deal_source_targets", {
+        p_limit: hashtagDay ? INSTAGRAM_STORES_PER_RUN : INSTAGRAM_STORES_PER_RUN * 4, p_source: "instagram",
+      });
       if (targetErr) {
         console.error("[deals_instagram_run] targets failed:", targetErr.message);
         return new Response(JSON.stringify({ error: "targets_failed" }), { status: 500, headers: CORS_HEADERS });
       }
+      let targets = (picked ?? []) as Array<{ country: string; store: string; currency: string }>;
+      if (!hashtagDay) {
+        // A store known to have no account would only be its hashtag: it waits for Monday or Thursday.
+        const { data: none } = await sbDeals.from("zad_deal_store_accounts")
+          .select("country,store").eq("platform", "instagram").is("username", null);
+        targets = accountDayTargets(targets, (none ?? []) as Array<{ country: string; store: string }>);
+      }
       const started = Date.now();
       const stores: Array<Record<string, unknown>> = [];
-      for (const t of (targets ?? []) as Array<{ country: string; store: string; currency: string }>) {
+      for (const t of targets) {
         if (Date.now() - started > 90_000) break;
-        const reply = await callCoreIntel("store_deals_instagram", t, "deals_instagram_run", 60_000);
+        const reply = await callCoreIntel("store_deals_instagram", { ...t, account_only: !hashtagDay }, "deals_instagram_run", 60_000);
+        if (reply?.reason === "no_account_today") {
+          stores.push({ country: t.country, store: t.store, ok: false, reason: "no_account_today" });
+          continue;
+        }
         if (reply?.reason === "no_key") {
           stores.push({ country: t.country, store: t.store, ok: false, reason: "no_key" });
           break;

@@ -159,3 +159,20 @@ Deno.test("dealPutPayload: a flyer deal carries its region's city and 0.7", () =
   );
   assertEquals([p.source_kind, p.confidence, p.city, p.deal_kind], ["flyer", 0.7, "الرياض", "discount"]);
 });
+
+import { accountDayTargets, INSTAGRAM_STORES_PER_RUN, isInstagramHashtagDay } from "./storeDeals.ts";
+
+Deno.test("instagram: the store's own account every day, the hashtag on Monday and Thursday only", () => {
+  // 2026-11-09 Monday, 11-12 Thursday; the rest of that week is account-only.
+  const days = [9, 10, 11, 12, 13, 14, 15].map((d) => isInstagramHashtagDay(new Date(Date.UTC(2026, 10, d, 8, 7))));
+  assertEquals(days, [true, false, false, true, false, false, false]);
+  const targets = [
+    { country: "SA", store: "لولو" }, { country: "SA", store: "كيتا" }, { country: "AE", store: "لولو" },
+    { country: "SA", store: "نينجا" }, { country: "EG", store: "كازيون" },
+  ];
+  // Saudi Lulu has no account: skipped on an account day; the UAE's Lulu is a different store.
+  assertEquals(
+    accountDayTargets(targets, [{ country: "SA", store: " لولو " }]).map((t) => `${t.country} ${t.store}`),
+    ["SA كيتا", "AE لولو", "SA نينجا"].slice(0, INSTAGRAM_STORES_PER_RUN),
+  );
+});
