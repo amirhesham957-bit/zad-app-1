@@ -233,6 +233,7 @@ jobs:
           supabase/sql/tests/scratch_scaffold.sql supabase/sql/tests/three_ads_one_attempt_test.sql
           supabase/sql/tests/scratch_scaffold.sql supabase/sql/tests/three_voice_questions_a_day_test.sql
           supabase/sql/tests/scratch_scaffold.sql supabase/sql/tests/past_appointments_scaffold.sql supabase/migrations/20261028030000_past_appointments.sql supabase/sql/tests/past_appointments_test.sql
+          supabase/sql/tests/founder_channel_test.sql
           LIST
 
   # النشر من الريبو، بعد ما الفحص يعدي — مش من على جهاز حد.
