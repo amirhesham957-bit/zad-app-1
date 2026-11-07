@@ -213,5 +213,6 @@ void wireSlots() {
   ZadSlots.subscriptionsScreen = ({embedded = false, initialTab = 0}) =>
       SubscriptionsScreen(embedded: embedded, initialTab: initialTab);
   ZadSlots.homeTelegramBlocks = () => const HomeTelegramBlocks();
-  ZadSlots.telegramBindingSection = () => const TelegramBindingSection();
+  ZadSlots.telegramBindingSection = ({onLinked}) =>
+      TelegramBindingSection(onLinked: onLinked);
 }

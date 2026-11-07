@@ -24,6 +24,7 @@ import 'package:zad/shared/chat/application/voice_input_controller.dart';
 import 'package:zad/shared/navigation/shell_navigation.dart';
 import 'package:zad/shared/proposals/application/proposals_controller.dart';
 import 'package:zad/shared/proposals/domain/transaction_proposal.dart';
+import 'package:zad/shared/session/product_events.dart';
 import 'package:zad/shared/voice/application/voice_output_controller.dart';
 import 'package:zad/shared/voice/data/voice_player.dart';
 import 'package:zad/shared/voice/data/voice_synthesizer.dart';
@@ -182,6 +183,7 @@ void main() {
   late ProviderContainer container;
   late Outbox outbox;
   late _Synth synth;
+  late List<String> events;
   var run = 0;
 
   Future<void> build(AlertPermission starting) async {
@@ -198,6 +200,7 @@ void main() {
     permission = _Permission(starting);
     outbox = Outbox(box: box, send: (_) async {});
     synth = _Synth();
+    events = <String>[];
     final store = ZadLocalStore(
       outbox: box,
       transactions: box,
@@ -212,6 +215,12 @@ void main() {
     container = ProviderContainer(
       overrides: [
         localStoreProvider.overrideWithValue(store),
+        productEventsProvider.overrideWithValue(
+          ProductEvents(
+            send: (name) async => events.add(name),
+            signedIn: () => true,
+          ),
+        ),
         pushPlatformProvider.overrideWithValue(platform),
         habitTrialAnswersProvider.overrideWithValue(answers),
         houseLearningAnswersProvider.overrideWithValue(learnings),
@@ -269,6 +278,40 @@ void main() {
       );
     },
   );
+
+  // ZAD_PLAN ٦.٢: the token goes up whatever the permission says, so the
+  // server needs the permission on its own to know a push can be seen.
+  test(
+    'the permission is recorded on start, and again when it changes',
+    () async {
+      await build(AlertPermission.denied);
+      final alerts = container.read(alertsControllerProvider.notifier);
+      await alerts.start();
+      await pumpEventQueue();
+      expect(events, contains('push.permission.denied'));
+
+      await alerts.start();
+      await pumpEventQueue();
+      expect(
+        events.where((e) => e == 'push.permission.denied'),
+        hasLength(1),
+        reason: 'the same reading is not sent twice in one run',
+      );
+
+      await alerts.askOnce();
+      await pumpEventQueue();
+      expect(events, contains('push.permission.granted'));
+    },
+  );
+
+  test('an unknown permission records nothing', () async {
+    await build(AlertPermission.unknown);
+    await container.read(alertsControllerProvider.notifier).refreshPermission();
+    await pumpEventQueue();
+    expect(events, isEmpty);
+    expect(permissionEvent(AlertPermission.unknown), isNull);
+    expect(permissionEvent(AlertPermission.blocked), 'push.permission.blocked');
+  });
 
   test('the prompt is shown once per phone, never again', () async {
     await build(AlertPermission.denied);

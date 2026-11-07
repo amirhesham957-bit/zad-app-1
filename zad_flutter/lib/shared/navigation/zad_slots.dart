@@ -162,5 +162,8 @@ abstract final class ZadSlots {
   static late SlotBuilder homeTelegramBlocks;
 
   /// The link card: the bot, the binding code, and whether it is linked.
-  static late SlotBuilder telegramBindingSection;
+  /// `onLinked` fires once, the first time the card reads the account as
+  /// linked; its argument says whether it already was when the card opened.
+  static late Widget Function({ValueChanged<bool>? onLinked})
+  telegramBindingSection;
 }

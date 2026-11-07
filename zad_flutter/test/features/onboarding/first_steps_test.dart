@@ -50,11 +50,12 @@ final _coffee = ZadTransaction.fromJson(<String, dynamic>{
 
 void main() {
   late List<String> events;
+  ValueChanged<bool>? linkedCallback;
   late bool allowed;
   late int asked;
   late Future<bool> Function(WidgetRef) savedAllowed;
   late Future<bool> Function(WidgetRef) savedAsk;
-  late SlotBuilder savedTelegram;
+  late Widget Function({ValueChanged<bool>? onLinked}) savedTelegram;
 
   setUp(() {
     events = <String>[];
@@ -69,7 +70,10 @@ void main() {
       allowed = true;
       return true;
     };
-    ZadSlots.telegramBindingSection = () => const Text('telegram-card');
+    ZadSlots.telegramBindingSection = ({onLinked}) {
+      linkedCallback = onLinked;
+      return const Text('telegram-card');
+    };
   });
 
   tearDown(() {
@@ -157,6 +161,22 @@ void main() {
     await tester.pump();
     expect(find.text('متفعّلة ✓'), findsOneWidget);
     expect(asked, 0);
+    // Allowed before the screen still leaves a trace (ZAD_PLAN ٦.٢).
+    expect(events, contains('onboarding.notifications_already'));
+    expect(events, isNot(contains('onboarding.notifications_on')));
+  });
+
+  testWidgets('linking Telegram here and already linked are told apart', (
+    tester,
+  ) async {
+    await pump(tester);
+    expect(events, isNot(contains('onboarding.notifications_already')));
+    linkedCallback!(false);
+    await tester.pump();
+    expect(events, contains('onboarding.telegram_linked'));
+    linkedCallback!(true);
+    await tester.pump();
+    expect(events, contains('onboarding.telegram_already'));
   });
 
   test('never in kids mode', () {

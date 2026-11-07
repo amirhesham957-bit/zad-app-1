@@ -47,8 +47,17 @@ class _FirstStepsState extends ConsumerState<FirstStepsScreen> {
 
   Future<void> _readNotifications() async {
     final on = await ZadScreens.notificationsAllowed(ref);
-    if (mounted && on) setState(() => _notificationsOn = true);
+    if (!mounted || !on) return;
+    setState(() => _notificationsOn = true);
+    // Allowed before this screen (the shell asks at first open): without
+    // this the step left no trace, and «notifications_on» read zero for ten
+    // accounts that saw the steps (measured 2026-11-07).
+    _log('onboarding.notifications_already');
   }
+
+  void _telegramLinked(bool already) => _log(
+    already ? 'onboarding.telegram_already' : 'onboarding.telegram_linked',
+  );
 
   Future<void> _firstExpense() async {
     final before = ref.read(transactionsControllerProvider).rows.length;
@@ -140,7 +149,7 @@ class _FirstStepsState extends ConsumerState<FirstStepsScreen> {
                         'برّه التطبيق.',
                   ),
                   const SizedBox(height: ZadSpacing.sm),
-                  ZadSlots.telegramBindingSection(),
+                  ZadSlots.telegramBindingSection(onLinked: _telegramLinked),
                 ],
               ),
             ),

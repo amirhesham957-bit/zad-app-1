@@ -23,6 +23,7 @@ import 'package:zad/shared/pharmacy/application/pharmacy_controller.dart';
 import 'package:zad/shared/pharmacy/domain/dose_slot.dart';
 import 'package:zad/shared/proposals/application/proposals_controller.dart';
 import 'package:zad/shared/proposals/domain/transaction_proposal.dart';
+import 'package:zad/shared/session/product_events.dart';
 import 'package:zad/shared/voice/application/voice_output_controller.dart';
 
 /// What the settings row shows.
@@ -33,6 +34,17 @@ class AlertsView {
   /// Whether alerts can be shown.
   final AlertPermission permission;
 }
+
+/// How often the permission reading is recorded per run of the app.
+const Duration kPermissionEventEvery = Duration(hours: 12);
+
+/// The product event for one permission reading; null when unknown.
+String? permissionEvent(AlertPermission status) => switch (status) {
+  AlertPermission.granted => 'push.permission.granted',
+  AlertPermission.denied => 'push.permission.denied',
+  AlertPermission.blocked => 'push.permission.blocked',
+  AlertPermission.unknown => null,
+};
 
 /// Holds the alerts.
 class AlertsController extends Notifier<AlertsView> {
@@ -84,7 +96,27 @@ class AlertsController extends Notifier<AlertsView> {
   /// Reads where the permission stands.
   Future<void> refreshPermission() async {
     final status = await ref.read(notificationPermissionProvider).status();
-    if (ref.mounted) state = AlertsView(permission: status);
+    if (!ref.mounted) return;
+    state = AlertsView(permission: status);
+    _recordPermission(status);
+  }
+
+  /// The token is registered whatever the permission says, so a phone with
+  /// alerts blocked still reads as «has a channel» on the server (ZAD_PLAN
+  /// ٦.٢, 2026-11-07). This says which phones can actually show one.
+  void _recordPermission(AlertPermission status) {
+    final name = permissionEvent(status);
+    if (name == null) return;
+    try {
+      unawaited(
+        ref
+            .read(productEventsProvider)
+            .log(name, every: kPermissionEventEvery)
+            .catchError((Object _) => false),
+      );
+    } on Object {
+      // No recorder (a test host): a statistic, never a feature.
+    }
   }
 
   /// Shows the system prompt once per device, the first time it could help.
@@ -95,7 +127,9 @@ class AlertsController extends Notifier<AlertsView> {
     if (await permission.status() != AlertPermission.denied) return;
     await device.put(askedKey, DateTime.now().toUtc().toIso8601String());
     final after = await permission.request();
-    if (ref.mounted) state = AlertsView(permission: after);
+    if (!ref.mounted) return;
+    state = AlertsView(permission: after);
+    _recordPermission(after);
   }
 
   /// The settings row's button: the prompt when Android will still show it,
@@ -108,7 +142,9 @@ class AlertsController extends Notifier<AlertsView> {
       return;
     }
     final after = await permission.request();
-    if (ref.mounted) state = AlertsView(permission: after);
+    if (!ref.mounted) return;
+    state = AlertsView(permission: after);
+    _recordPermission(after);
   }
 
   /// A voice moment — a dose, an appointment, the morning greeting — said

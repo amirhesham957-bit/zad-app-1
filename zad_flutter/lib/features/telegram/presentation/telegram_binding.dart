@@ -41,7 +41,11 @@ Future<void> _openUrl(BuildContext context, Uri uri) async {
 /// Kotlin's `TelegramBindingSection`.
 class TelegramBindingSection extends ConsumerStatefulWidget {
   /// Creates the section.
-  const new({super.key});
+  const new({this.onLinked, super.key});
+
+  /// Called once, the first time the account reads as linked: `true` when it
+  /// already was on the first reading, `false` when it became linked here.
+  final ValueChanged<bool>? onLinked;
 
   @override
   ConsumerState<TelegramBindingSection> createState() => _BindingState();
@@ -76,7 +80,10 @@ class _BindingState extends ConsumerState<TelegramBindingSection> {
     final remote = ref.read(telegramLinkRemoteProvider);
     final linked = await remote.linkStatus() ?? false;
     if (!mounted) return;
+    final before = _linked;
     setState(() => _linked = linked);
+    // Resume stops reloading once linked, so this fires once per card.
+    if (linked && before != true) widget.onLinked?.call(before == null);
     // Only mint a code when there is something to bind — otherwise every
     // visit would insert a throwaway row.
     if (!linked && _code == null) {
