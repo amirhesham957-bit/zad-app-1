@@ -14,6 +14,7 @@
 // chat_id null); this function only trusts a chat_id once it's bound to that exact
 // code via /start <code>. Every subsequent request is authorized by chat_id → user_id
 // through that table, never by anything the client claims about itself.
+import { decideLifeEvent } from "../_shared/lifeEventDecide.ts";
 import { secretMatches } from "../_shared/cronSecret.ts";
 import { recentOutbound } from "../_shared/outbound.ts";
 import { proactiveTurn, recordConversation, trimProactive } from "../_shared/conversationLog.ts";
@@ -54,7 +55,7 @@ import {
   isHumanUpdate, type UpdateEnvelope,
   doseKeyboard, parseDoseCallback, DOSE_MOMENTS, type DoseAction,
   closeDayKeyboard, closeDayReply, parseCloseDayCallback, salaryKeyboard, parseSalaryCallback, salaryReply, nightMessage,
-  dealKeyboard, dealPhotoUrl, dealSourceRow, parseDealCallback, dealReply,
+  dealKeyboard, dealPhotoUrl, dealSourceRow, parseDealCallback, dealReply, lifeEventKeyboard, lifeEventReply, parseLifeEventCallback,
   type DigestCard, type DigestCode, digestButtons, digestCaption, digestCodesMessage, digestHeader, digestPhoto,
   welcomeSpeech, isFlyerPhoto, parseFlyerCaption, pickFlyerStore, flyerDealPayload, flyerReply, FLYER_HOW_TO, FLYER_SAVE_FAILED, type FlyerStoreRow,
   learningKeyboard, parseLearningCallback, learningReply,
@@ -2233,6 +2234,18 @@ bot.on("callback_query:data", async (ctx) => {
     return;
   }
 
+  // حدث حياة (ZAD_PLAN ٢.٨): «سجّله وفكّرني» / «لأ» — نفس القرار بتاع كارت التطبيق، والملكية بـuser_id.
+  const lifeEvent = parseLifeEventCallback(data);
+  if (lifeEvent) {
+    await ctx.editMessageReplyMarkup({ reply_markup: { inline_keyboard: [] } }).catch(() => {});
+    const result = await decideLifeEvent(sb, userId, lifeEvent.id, lifeEvent.yes).catch((e) => {
+      console.error("[life_event] decide failed:", (e as Error)?.message);
+      return null;
+    });
+    await ctx.reply(lifeEventReply(result));
+    return;
+  }
+
   // عرض الصبح (ZAD_PLAN ٤.٢٠): «ضيفه لقايمتي» / «مش مهتم» — الملكية والكتابة جوه الـRPC، والرد بعدين.
   const deal = parseDealCallback(data);
   if (deal) {
@@ -3158,7 +3171,9 @@ Deno.serve(async (req: Request) => {
     }
     try {
       const payload = await req.json();
-      const { user_id, title, body, dismiss_task_id, speech, dose_moment_id, close_day_moment_id, salary_moment_id, deal_moment_id, map_url, amazon_links, pet_need } = payload as {
+      const { user_id, title, body, dismiss_task_id, speech, dose_moment_id, close_day_moment_id, salary_moment_id, deal_moment_id, map_url, amazon_links, pet_need, life_event_id, life_event_offer, life_event_link } = payload as {
+        // اختياري: حدث حياة (٢.٨) — زرار الرابط و[سجّله وفكّرني] [لأ] لو فيه ميعاد جاي.
+        life_event_id?: string; life_event_offer?: boolean; life_event_link?: unknown;
         user_id?: string; title?: string; body?: string; dismiss_task_id?: string;
         // اختياري: نداء الرفيق — أزراره هو ([🍖 أكّله]/[💧 اسقيه] [🔕 بلاش تفكرني بيه]) بدل أزرار الرفض.
         pet_need?: string;
@@ -3236,7 +3251,12 @@ Deno.serve(async (req: Request) => {
         dealSource.photo = dealPhotoUrl(deal?.source, FLYER_PREFIX);
         dealSource.caption = `🏷️ ${String(deal?.item ?? "")}${deal?.store ? ` — ${String(deal.store)}` : ""}`;
       }
-      const keyboard = dose_moment_id && /^[0-9a-fA-F-]{36}$/.test(dose_moment_id)
+      const lifeRows = life_event_id && /^[0-9a-fA-F-]{36}$/.test(life_event_id)
+        ? lifeEventKeyboard(life_event_id, life_event_offer === true, life_event_link)
+        : [];
+      const keyboard = lifeRows.length
+        ? lifeRows
+        : dose_moment_id && /^[0-9a-fA-F-]{36}$/.test(dose_moment_id)
         ? doseKeyboard(dose_moment_id)
         : closeDay
         ? [...closeDayKeyboard(close_day_moment_id!), ...(nightQuestions?.rows ?? [])]

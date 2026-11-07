@@ -1,4 +1,4 @@
-import { assert, assertEquals } from "jsr:@std/assert@1";
+import { assert, assertEquals, assertStringIncludes } from "jsr:@std/assert@1";
 import * as telegramModule from "./telegram.ts";
 import {
   dealPhotoUrl, dealSourceRow,
@@ -765,4 +765,27 @@ Deno.test("a pet call has its own buttons: feed or water it here, or stop the ca
   for (const b of [...thirsty, ...hungry].flat()) assert(new TextEncoder().encode((b as { callback_data: string }).callback_data).length <= 64);
   assertEquals(telegramModule.parsePetCareCallback(`pc:${id}:x`), null);
   assertEquals(telegramModule.parsePetCareCallback("pc:not-a-uuid:f"), null);
+});
+
+import { lifeEventKeyboard, lifeEventReply, parseLifeEventCallback } from "./telegram.ts";
+
+Deno.test("life event card on Telegram: the link, then «سجّله وفكّرني / لأ» only when a date is ahead (ZAD_PLAN 2.8)", () => {
+  const id = "0b9d3c1e-1f2a-4c3b-9d8e-7f6a5b4c3d2e";
+  const rows = lifeEventKeyboard(id, true, "https://absher.sa/x");
+  assertEquals(rows.length, 2);
+  assertEquals((rows[0][0] as { url?: string }).url, "https://absher.sa/x");
+  assertEquals(rows[1].map((b) => (b as { callback_data?: string }).callback_data), [`le:${id}:y`, `le:${id}:n`]);
+  for (const b of rows[1]) assert(((b as { callback_data: string }).callback_data).length <= 64);
+  // No date ahead (a result is ready): the link alone; no link that is not https.
+  assertEquals(lifeEventKeyboard(id, false, "https://lab.example/r").length, 1);
+  assertEquals(lifeEventKeyboard(id, false, "http://lab.example/r"), []);
+  assertEquals(lifeEventKeyboard(id, true, null).length, 1);
+  assertEquals(parseLifeEventCallback(`le:${id}:y`), { id, yes: true });
+  assertEquals(parseLifeEventCallback(`le:${id}:n`), { id, yes: false });
+  assertEquals(parseLifeEventCallback("le:not-a-uuid:y"), null);
+  assertEquals(parseLifeEventCallback(`dl:${id}:a`), null);
+  assertStringIncludes(lifeEventReply({ ok: true, status: "confirmed" }), "سجّلته");
+  assertStringIncludes(lifeEventReply({ ok: true, status: "dismissed" }), "مش هسجّله");
+  assertStringIncludes(lifeEventReply(null), "ماقدرتش");
+  assertStringIncludes(lifeEventReply({ ok: false, status: "not_found" }), "مابقاش موجود");
 });

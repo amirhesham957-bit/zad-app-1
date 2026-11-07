@@ -12,7 +12,9 @@
 import { redactForModel } from "./redact.ts";
 import type { GateKind } from "./notificationGate.ts";
 
-export type LifeKind = "appointment" | "government" | "result_ready" | "shipment";
+import type { LifeKind } from "../_shared/lifeEventDecide.ts";
+export type { LifeKind };
+export { appointmentKindFor, remindMinutesFor } from "../_shared/lifeEventDecide.ts";
 
 export function lifeKindOf(kind: GateKind): LifeKind | null {
   switch (kind) {
@@ -126,17 +128,9 @@ export function parseLifeEvent(raw: string, kind: LifeKind, rawText: string): Li
   };
 }
 
-const MEDICAL = /مستشف|عياد|معمل|مختبر|تحليل|تحاليل|أشع|اشع|سونار|رنين|أسنان|اسنان|دكتور|طبيب|صحتي|موعد طبي|hospital|clinic|lab|radiology|dental/i;
 
 /** نوع الميعاد في zad_appointments (APPOINTMENT_KINDS). */
-export function appointmentKindFor(ev: Pick<LifeEvent, "kind" | "title" | "place">): "medical" | "errand" {
-  return ev.kind === "appointment" && MEDICAL.test(`${ev.title} ${ev.place ?? ""}`) ? "medical" : "errand";
-}
 
-/** التذكير قبلها بكام دقيقة: موعد ساعتين، حكومي (موعد نهائي) يوم، استلام شحنة ساعة. */
-export function remindMinutesFor(kind: LifeKind): number {
-  return kind === "government" ? 1440 : kind === "shipment" ? 60 : 120;
-}
 
 /**
  * لحظة الحدث UTC من الوقت المحلي، أو null. تاريخ من غير ساعة: موعد/استلام ٩ الصبح، موعد نهائي حكومي آخر اليوم

@@ -816,6 +816,35 @@ export function dealPhotoUrl(source: DealSource, flyerPrefix = ""): string | nul
   return id ? `https://i.ytimg.com/vi/${id}/hqdefault.jpg` : null;
 }
 
+// حدث حياة (ZAD_PLAN ٢.٨): "le:" + uuid(36) + ":" + حرف = ٤١ بايت. الرابط زرار لوحده (https بس).
+
+/** The life event card's buttons: its link (https only), then the two answers when there is a date ahead. */
+export function lifeEventKeyboard(id: string, offered: boolean, link: unknown): InlineKeyboardButton[][] {
+  const url = typeof link === "string" ? link.trim() : "";
+  return [
+    ...(/^https:\/\/[^\s]{4,300}$/.test(url) ? [[{ text: "🔗 افتح الرابط", url }]] : []),
+    ...(offered
+      ? [[{ text: "✅ سجّله وفكّرني", callback_data: `le:${id}:y` }, { text: "🙅 لأ", callback_data: `le:${id}:n` }]]
+      : []),
+  ];
+}
+
+export function parseLifeEventCallback(data: string): { id: string; yes: boolean } | null {
+  const parts = data.split(":");
+  if (parts.length !== 3 || parts[0] !== "le" || (parts[2] !== "y" && parts[2] !== "n")) return null;
+  if (!/^[0-9a-fA-F-]{36}$/.test(parts[1])) return null;
+  return { id: parts[1], yes: parts[2] === "y" };
+}
+
+/** The reply after the decision; `null` = it could not be written — said plainly. */
+export function lifeEventReply(result: { ok: boolean; status: string } | null): string {
+  if (!result || !result.ok) {
+    return result?.status === "not_found" ? "الحدث ده مابقاش موجود." : "معلش، ماقدرتش أسجّل ده دلوقتي — جرّب تاني بعد شوية.";
+  }
+  if (result.status === "confirmed") return "تمام ✅ سجّلته في مواعيدك وهفكّرك قبلها.";
+  return "تمام، مش هسجّله.";
+}
+
 /** `wrong` = «العرض ده غلط» (ZAD_PLAN ٤.١٩): بلاغ بيدخل قياس الدقة، مش جواب «ضيفه/مش مهتم». */
 export function parseDealCallback(data: string): { momentId: string; add: boolean; wrong: boolean } | null {
   const parts = data.split(":");

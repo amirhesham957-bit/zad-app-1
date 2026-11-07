@@ -110,7 +110,8 @@ import { rateConfidence } from "../_shared/consumptionRate.ts";
 import { buildGroqSystemPrompt, groqToolOrder } from "./groqPrompt.ts";
 import { ANSWER_FROM_RESULTS_NOTE, historyForAnswer, isWrite, needsAnswerAfterTools, recordCall, silentWriteFallback, visibleReceipts } from "./receipts.ts";
 import { decideGate, GATE_RESPONSE_SCHEMA, gatePrompt, type GateVerdict, knownFinancialSender, looksLikeMoneyMoved, parseGateVerdict, proposalFieldsFromVerdict, ruleGate, txnKindFor } from "./notificationGate.ts";
-import { appointmentKindFor, eventInstant, LIFE_EVENT_SCHEMA, type LifeEvent, type LifeKind, lifeEventCard, lifeEventPrompt, lifeKindOf, parseLifeEvent, remindMinutesFor } from "./lifeEvents.ts";
+import { decideLifeEvent } from "../_shared/lifeEventDecide.ts";
+import { eventInstant, LIFE_EVENT_SCHEMA, type LifeEvent, type LifeKind, lifeEventCard, lifeEventPrompt, lifeKindOf, parseLifeEvent } from "./lifeEvents.ts";
 // المرحلة ٣ — الوكلاء المتخصصون: توجيه + هوية في البرومبت + trace في zad_brain_runs.
 import { intentToolHints, priorAssistantText, shouldWidenTools, LIMIT_NOT_CHANGED_REPLY, SNAPSHOT_REFUSAL_REPLY, snapshotLeak, unbackedLimitClaim, unbackedReminderClaim, unbackedWriteClaim, WRITE_NOT_DONE_REPLY, unbackedDeleteClaim, DELETE_NOT_DONE_REPLY, recordSpecialistTrace, routeSpecialists, specialistPromptBlock, scopeToolsForSpecialist } from "./specialists.ts";
 // Phase 3 — صندوق بريد الأيدجنتس: تقرير كل تنفيذ ناجح يوصل للعقل، والعقل بيقرا غير المقروء.
@@ -8255,46 +8256,13 @@ async function recordLifeEvent(
     about_item: `life_event:${id}`,
     status: "pending", updated_at: new Date().toISOString(),
   }, { onConflict: "user_id,dedupe_key" });
+  // The same card on Telegram, with its two answers — the app's card waits for the app to open (ZAD_PLAN ٢.٨).
+  pushToTelegram(userId, card.title, card.body, fetch, undefined, false, undefined, undefined, undefined, undefined,
+    undefined, undefined, undefined, { id, offered, link: ev.link })
+    .catch((e) => console.warn("[life_event] telegram failed:", (e as Error)?.message));
   return { life_event_id: id, offered };
 }
 
-/** «أيوة/لأ» على كارت حدث حياة: أيوة ⇐ ميعاد بتذكير في zad_appointments (والمتابعة بعده من تحية الصبح). */
-async function decideLifeEvent(sb: SupabaseClient, userId: string, id: string, yes: boolean): Promise<{ ok: boolean; status: string; appointment_id?: string }> {
-  const { data: ev } = await sb.from("zad_life_events")
-    .select("id,kind,title,event_at,place,action_hint,link,status,appointment_id")
-    .eq("id", id).eq("user_id", userId).maybeSingle();
-  const row = ev as {
-    id: string; kind: LifeKind; title: string; event_at: string | null;
-    place: string | null; action_hint: string | null; link: string | null; status: string; appointment_id: string | null;
-  } | null;
-  if (!row) return { ok: false, status: "not_found" };
-  if (row.status !== "proposed") return { ok: true, status: row.status, ...(row.appointment_id ? { appointment_id: row.appointment_id } : {}) };
-  const decidedAt = new Date().toISOString();
-  if (!yes || !row.event_at || Date.parse(row.event_at) <= Date.now() || row.kind === "result_ready") {
-    await sb.from("zad_life_events").update({ status: "dismissed", decided_at: decidedAt }).eq("id", id).eq("user_id", userId).eq("status", "proposed");
-    return { ok: true, status: "dismissed" };
-  }
-  const notes = [row.action_hint, row.link].filter(Boolean).join(" — ").slice(0, 500) || null;
-  const { data: appt, error } = await sb.from("zad_appointments").insert({
-    user_id: userId,
-    title: row.title,
-    kind: appointmentKindFor(row),
-    starts_at: row.event_at,
-    place_label: row.place,
-    remind_minutes_before: remindMinutesFor(row.kind),
-    recurrence: "once",
-    source: "notification",
-    notes,
-  }).select("id").maybeSingle();
-  if (error || !appt) {
-    console.error("[life_event_decide] appointment insert failed:", error?.message ?? "no row");
-    return { ok: false, status: "appointment_failed" };
-  }
-  const apptId = (appt as { id: string }).id;
-  await sb.from("zad_life_events").update({ status: "confirmed", appointment_id: apptId, decided_at: decidedAt })
-    .eq("id", id).eq("user_id", userId).eq("status", "proposed");
-  return { ok: true, status: "confirmed", appointment_id: apptId };
-}
 
 async function handleNotificationIngest(sb: SupabaseClient, userId: string, body: any): Promise<Response> {
   const packageName = String(body.package_name ?? "").trim();
