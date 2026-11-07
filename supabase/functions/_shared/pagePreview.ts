@@ -6,7 +6,7 @@
 // ممنوع هنا: صفحات أمازون — شروط Amazon Associates بتسمح بصور المنتج من PA-API أو SiteStripe بس، والسحب من
 // الصفحة ممكن يقفل التاج (zad0b-21 / zad04-21). وإنستجرام بيرجّع صفحة دخول، وروابط صوره بتنتهي بعد ساعات.
 
-const SKIP_HOSTS = /(^|\.)(amazon\.[a-z.]+|media-amazon\.com|ssl-images-amazon\.com|images-amazon\.com|amzn\.[a-z]+|instagram\.com|cdninstagram\.com|facebook\.com|fbcdn\.net)$/i;
+const SKIP_HOSTS = /(^|\.)(amazon\.[a-z.]+|media-amazon\.com|ssl-images-amazon\.com|images-amazon\.com|amzn\.[a-z]+|instagram\.com|cdninstagram\.com|facebook\.com|fbcdn\.net|tiktok\.com|tiktokcdn\.com|tiktokcdn-[a-z0-9-]+\.com)$/i;
 const MAX_BYTES = 300_000;
 
 /** رابط https عادي لاسم دومين (مش IP ولا localhost)، ومش من المصادر الممنوعة. */

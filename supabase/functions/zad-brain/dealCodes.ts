@@ -34,7 +34,7 @@ export interface FoundCode {
 export function dealCodeRows(
   target: { country: string; store: string; currency?: string | null },
   codes: unknown,
-  source: "instagram" | "youtube",
+  source: "instagram" | "youtube" | "tiktok",
   now = Date.now(),
 ): Array<Record<string, unknown>> {
   if (!Array.isArray(codes)) return [];

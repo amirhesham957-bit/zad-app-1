@@ -42,6 +42,7 @@ async function callerCountry(req: Request, userId: unknown): Promise<string | nu
   }
 }
 import { googleNearbyAny, googlePlacesKeys } from "./googlePlaces.ts";
+import { tiktokDealHits, tiktokDealsPrompt, tiktokQuery } from "./tiktokDeals.ts";
 import { brochureEntries, OFFICIAL_FLYER_SITES, OFFICIAL_FLYER_UA, officialFlyerDeals, officialFlyerPrompt, robotsAllows, siteForPdf } from "./officialFlyers.ts";
 import { DEAL_SEARCH_TIMEOUT_MS, dealQuery, dealsFromHitsPrompt, dealSearchItems, readDeals, readReverseCity, readStoreDeals, reverseCityUrl, sameCurrency, cleanCity, searchStoreName, storeDealsPrompt, storeDealsQuery, videoDealsPrompt, youtubeDealVideos, instagramDealPosts, postDealsPrompt, flyerDealsPrompt, readDealCodes, type DealCode } from "./liveDeals.ts";
 import { fuelPricePrompt, fuelPriceQuery, readFuelPrice } from "./fuelPrice.ts";
@@ -3049,6 +3050,43 @@ async function handle(req: Request): Promise<Response> {
       // («#عروض_<المحل>»); the post's caption and its picture are read, the deal keeps the post's link — the
       // picture itself is never stored. Each new hashtag counts against 30 a week on the account.
       // ──────────────────────────────────────────────
+      // ──────────────────────────────────────────────
+      // STORE_DEALS_TIKTOK — عروض وأكواد المحل من تيك توك من غير كشط (tiktokDeals.ts، طلب المالك ٧/١١). service role بس:
+      // zad-brain (deals_tiktok_run). محرك البحث بـsite:tiktok.com ⇐ نتايج الفيديوهات بعنوانها ووصفها ⇐ جيميناي.
+      // مفيش طلب لتيك توك نفسه.
+      // ──────────────────────────────────────────────
+      case "store_deals_tiktok": {
+        if (!isServiceRoleToken(bearerToken(req), supabaseKey)) return jsonResponse({ error: "unauthorized" }, 401);
+        const store = typeof payload?.store === "string" ? payload.store.trim().replace(/\s+/g, " ") : "";
+        if (store.length < 2 || store.length > 60) return jsonResponse({ ok: false, reason: "bad_store" }, 400);
+        const market = marketOf(payload?.country);
+        const currency = typeof payload?.currency === "string" ? payload.currency.toUpperCase() : market.currency;
+        const country = typeof payload?.country === "string" ? payload.country.toUpperCase() : market.code;
+        const city = typeof payload?.city === "string" ? payload.city : "";
+        const found = await webSearchSnippets(tiktokQuery(store, market.name, city), 10, country);
+        const videos = tiktokDealHits(found, store, country, 3);
+        const today = new Date().toISOString().slice(0, 10);
+        const deals: ReturnType<typeof readStoreDeals> = [];
+        const codes: DealCode[] = [];
+        let read = 0;
+        for (const hit of videos) {
+          const { system, user } = tiktokDealsPrompt(store, market.name, currency, hit, today);
+          const answer = await callGeminiPool({
+            model: GEMINI_MODEL_ROUTINE, systemPrompt: system, content: user,
+            temperature: 0.1, maxTokens: 1200, jsonMode: true, thinkingBudget: 0, timeoutMs: 25_000,
+            deadline: Date.now() + 30_000,
+          });
+          if (!answer.ok || !answer.content) continue;
+          read++;
+          const parsed = (() => { try { return JSON.parse(answer.content!); } catch { return null; } })();
+          deals.push(...readStoreDeals(parsed, [hit], currency, new Date()));
+          codes.push(...readDealCodes(parsed, hit.url, new Date()));
+        }
+        return jsonResponse({
+          ok: true, deals, codes, hits: found.length, videos: videos.length, read, source: "tiktok", search: lastWebSearchSource,
+        });
+      }
+
       case "store_deals_instagram": {
         if (!isServiceRoleToken(bearerToken(req), supabaseKey)) return jsonResponse({ error: "unauthorized" }, 401);
         const igToken = await instagramToken();

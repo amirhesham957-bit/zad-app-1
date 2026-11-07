@@ -22,7 +22,7 @@ Deno.test("http image is upgraded, a page without one gives null", () => {
 
 Deno.test("Amazon, Instagram, IPs, localhost and http pages are never fetched", () => {
   for (const u of [
-    "https://www.amazon.sa/dp/B07F2XB1V5", "https://amzn.to/abc", "https://www.instagram.com/p/DfH1gEWDeaG/",
+    "https://www.amazon.sa/dp/B07F2XB1V5", "https://amzn.to/abc", "https://www.instagram.com/p/DfH1gEWDeaG/", "https://www.tiktok.com/@shop/video/7434567890123456789", "https://p16-sign-va.tiktokcdn.com/x.jpeg",
     "https://127.0.0.1/x", "https://localhost/x", "http://3orood.net/x", "https://user:pw@3orood.net/x", "not a url",
   ]) assertEquals(previewableUrl(u), null, u);
   assertEquals(previewableUrl("https://www.kheirzaman.com")?.hostname, "www.kheirzaman.com");

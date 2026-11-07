@@ -152,7 +152,7 @@ import { campaignAndTasteRules, type CampaignRow, pickHomeCampaign, recipeTaste 
 import { loadWeather, weatherForSnapshot, weatherRule } from "./weather.ts";
 import { medicinePrice, medicinePriceReply, pricePayload } from "./medicinePrice.ts";
 import { dealCountry, dealSource, dealsAtPlace, dealsHere, nearbySource, type StoredDealRow } from "./tasteDeals.ts";
-import { dealPutPayload, findCustomerCities, type FlyerReadRow, flyerEntries, INSTAGRAM_STORES_PER_RUN, nextFlyer, searchedDeals, STORES_PER_RUN, YOUTUBE_STORES_PER_RUN } from "./storeDeals.ts";
+import { dealPutPayload, findCustomerCities, type FlyerReadRow, flyerEntries, INSTAGRAM_STORES_PER_RUN, nextFlyer, searchedDeals, STORES_PER_RUN, TIKTOK_STORES_PER_RUN, YOUTUBE_STORES_PER_RUN } from "./storeDeals.ts";
 import { replyCadence, replyCadenceRule } from "./replyCadence.ts";
 import { ENGAGEMENT_WINDOW_DAYS, engagementFrom, type InsightRow } from "./engagement.ts";
 import { monthlyAverages, projectDecision } from "./decisionImpact.ts";
@@ -9333,6 +9333,48 @@ async function handleRequest(req: Request): Promise<Response> {
       const result = { store: next.store, label: next.label, city: next.city, ok, raw: Number(reply?.raw) || 0, read: Array.isArray(reply?.deals) ? reply.deals.length : 0, put, refused, reason: reply?.reason ?? null };
       console.log("[deals_flyers_run]", JSON.stringify(result));
       return new Response(JSON.stringify({ ok: true, sites, read: result }), { headers: CORS_HEADERS });
+    }
+
+    // تيك توك من غير كشط (طلب المالك ٧/١١، zad-core-intelligence/tiktokDeals.ts): نفس المحلات بدورها (zad_deal_source_targets
+    // بـ'tiktok')، محرك البحث بـsite:tiktok.com ونص نتايج الفيديوهات بيتقري، وكل عرض برابط الفيديو وكل كود في zad_deal_codes.
+    if (body.action === "deals_tiktok_run") {
+      if (!(await secretMatches(req.headers.get("ZAD-PROACTIVE-CRON-SECRET"), "ZAD_PROACTIVE_CRON_SECRET"))) {
+        return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: CORS_HEADERS });
+      }
+      const sbDeals = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+      const { data: targets, error: targetErr } = await sbDeals.rpc("zad_deal_source_targets", { p_limit: TIKTOK_STORES_PER_RUN, p_source: "tiktok" });
+      if (targetErr) {
+        console.error("[deals_tiktok_run] targets failed:", targetErr.message);
+        return new Response(JSON.stringify({ error: "targets_failed" }), { status: 500, headers: CORS_HEADERS });
+      }
+      const started = Date.now();
+      const stores: Array<Record<string, unknown>> = [];
+      for (const t of (targets ?? []) as Array<{ country: string; store: string; currency: string; city?: string }>) {
+        if (Date.now() - started > 100_000) break;
+        const reply = await callCoreIntel("store_deals_tiktok", t, "deals_tiktok_run", 60_000);
+        let put = 0;
+        let refused = 0;
+        for (const deal of searchedDeals(reply)) {
+          const { data, error } = await sbDeals.rpc("zad_deal_put", { p: dealPutPayload(t, deal, "tiktok") });
+          if (!error && (data as { ok?: boolean } | null)?.ok) put++;
+          else refused++;
+        }
+        const codeRows = dealCodeRows(t, reply?.codes, "tiktok");
+        if (codeRows.length) {
+          const { error: codeErr } = await sbDeals.from("zad_deal_codes").upsert(codeRows, { onConflict: "country,store_key,code" });
+          if (codeErr) console.error("[deals_tiktok_run] codes failed:", codeErr.message);
+        }
+        stores.push({ country: t.country, store: t.store, ok: reply?.ok ?? false, hits: reply?.hits ?? 0, videos: reply?.videos ?? 0, read: reply?.read ?? 0, put, refused, codes: codeRows.length, search: reply?.search ?? null, reason: reply?.reason ?? null });
+        // A store looked up — even with nothing found — waits for its next turn instead of being searched again now.
+        if (reply?.ok) {
+          const { error: logErr } = await sbDeals.from("zad_deal_search_log").insert({
+            country: t.country, store_key: productNameKey(t.store), hits: Number(reply?.videos) || 0, put, source: "tiktok",
+          });
+          if (logErr) console.error("[deals_tiktok_run] log failed:", logErr.message);
+        }
+      }
+      console.log(`[deals_tiktok_run] ${stores.length}/${targets?.length ?? 0} stores`, JSON.stringify(stores));
+      return new Response(JSON.stringify({ ok: true, targets: targets?.length ?? 0, stores }), { headers: CORS_HEADERS });
     }
 
     // عروض إنستجرام الأسبوعية (ZAD_PLAN ٤.١٢): نفس المحلات بأسبوعها لوحده (zad_deal_source_targets بـ'instagram')، بوستات

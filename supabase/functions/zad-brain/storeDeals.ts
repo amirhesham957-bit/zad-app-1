@@ -18,6 +18,12 @@ export const YOUTUBE_STORES_PER_RUN = 3;
  */
 export const INSTAGRAM_STORES_PER_RUN = 3;
 
+/**
+ * Stores looked up on TikTok in one run (7/11): one search each (site:tiktok.com) plus up to three short model reads of
+ * the results' text — nothing is asked of TikTok itself. Six runs a day × 4 = 24 searches, inside the free search quota.
+ */
+export const TIKTOK_STORES_PER_RUN = 4;
+
 /** A searched offer is a web page read by a model: below a receipt floor (0.6 at 3 homes). */
 export const SEARCH_CONFIDENCE = 0.5;
 
@@ -84,7 +90,7 @@ export interface SearchedDeal {
   source_url: string;
 }
 
-export function dealPutPayload(target: DealTarget, deal: SearchedDeal, sourceKind: "search" | "youtube" | "instagram" | "flyer" = "search"): Record<string, unknown> {
+export function dealPutPayload(target: DealTarget, deal: SearchedDeal, sourceKind: "search" | "youtube" | "instagram" | "flyer" | "tiktok" = "search"): Record<string, unknown> {
   return {
     country: target.country,
     city: target.city ?? "",
