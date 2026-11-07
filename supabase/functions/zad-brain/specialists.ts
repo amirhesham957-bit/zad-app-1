@@ -160,6 +160,8 @@ const MEMORY_INTENT = /افتكر|افتكري|خليك فاكر|خليكي فا
 // نوايا الأدوات اللي خرجت من الأساسي (٢٠٢٦-١٠-٠٢). النص متطبّع (normalize): ة→ه، أ/إ/آ→ا، ى→ي.
 const BROKE_INTENT = /مفلس|طفران|خلصت فلوسي|فلوسي خلصت|مفيش فلوس|معيش فلوس|معنديش فلوس|ماعنديش فلوس|مخلص فلوسي/;
 const RECIPE_INTENT = /اطبخ|نطبخ|تطبخ|طبخه|وصفه|وصفات|(اعمل|نعمل|ناكل|اكل)\s*(اكل)?\s*ايه|(غدا|عشا|فطار|سحور)\s*(ايه|النهارده)|شيف/;
+// «هاتلي عروض كيتا»، «فيه عروض إيه؟»، «في كود خصم لطلبات؟» (طلب المالك ٧/١١): من غيرها الوكيل كان بيرد بنصيحة ميزانية.
+const DEALS_INTENT = /عروض|عرض (علي|في|ل)|اوفر|اوفرات|خصومات|تخفيضات|كود خصم|كود (ل|علي)|كوبون|برومو|deals?|offers?|promo|coupon/;
 const NEARBY_INTENT = /اقرب|قريب مني|قريبه مني|جنبي|حواليا|فين الاقي|فين القي|محلات قريبه/;
 // «عاوز اتواصل مع موظف» ماكانتش بتعدّي (٢٠٢٦-١٠-٠٢ ٠١:٢٥): الأداة ماتعرضتش والموديل قال «فتحت لك تيكت» من غير تيكت.
 // «تحدي توفير ٣٠ يوم»، «ساعدني أوفّر»، «وقف التحدي» (قاعدة ١٣ في البرومبت).
@@ -240,6 +242,7 @@ export function intentToolHints(message: string, priorReply = ""): string[] {
   if (SAVINGS_CHALLENGE_INTENT.test(norm)) tools.push("start_savings_challenge", "stop_savings_challenge");
   if (RECIPE_INTENT.test(norm)) tools.push("suggest_recipes");
   if (NEARBY_INTENT.test(norm)) tools.push("find_nearby_stores");
+  if (DEALS_INTENT.test(norm)) tools.push("find_deals");
   if (SUPPORT_INTENT.test(norm)) tools.push("open_support_ticket");
   // «آه» على «أحذف الدواء خالص من الصيدلية؟» (حساب المالك ٢/١١): الرسالة مافيهاش نية، السؤال اللي قبلها فيه —
   // من غير أداة المسح الموديل عدّل الكمية لصفر وقال «شلتهولك».

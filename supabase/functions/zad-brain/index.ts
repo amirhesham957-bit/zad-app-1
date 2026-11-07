@@ -87,6 +87,7 @@ import { txnSourceType } from "./provenance.ts";
 import { productNameKey } from "./productIdentity.ts";
 import { dealCodeRows } from "./dealCodes.ts";
 import { loadHomeDeals, loadSeasonDigest } from "./seasonDigest.ts";
+import { findChatDeals } from "./chatDeals.ts";
 import { webPrice, webPriceReply } from "./webPrice.ts";
 import { brokeModePlan, isBrokeModeActive } from "../_shared/brokeMode.ts";
 import { challengeDayIndex, suggestChallengeCap } from "../_shared/savingsChallenge.ts";
@@ -4587,6 +4588,12 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       return JSON.stringify(data);
     }
 
+    case "find_deals": {
+      const store = String(input?.store ?? "").trim().slice(0, 60);
+      const item = String(input?.item_name ?? "").trim().slice(0, 60);
+      return await findChatDeals(sb, userId, store, item);
+    }
+
     case "where_to_buy": {
       // «ألاقيه فين بسعر كويس؟» — صنف واحد: عروض المحلات + فواتير عملاء زاد في مدينته (whereToBuy.ts، أرضية ٣ بيوت).
       const item = String(input?.item_name ?? "").trim().slice(0, 60);
@@ -6309,6 +6316,20 @@ export const CHAT_TOOLS: ToolDef[] = [
       type: "object",
       properties: { item_name: { type: "string", description: "اسم الصنف زي ما العميل قاله، مثلاً «زيت عافية»" } },
       required: ["item_name"],
+    },
+  },
+  {
+    // «هاتلي عروض كيتا»، «فيه عروض إيه؟» (طلب المالك ٧/١١): العروض والأكواد المتخزنة في بلده — chatDeals.ts.
+    name: "find_deals",
+    description:
+      "العروض وأكواد الخصم الشغالة في بلد العميل (من صفحات المحلات وفيديوهاتهم وبحثنا)، بأسعارها ولينكاتها. نادِها لما يطلب " +
+      "عروض أو كود خصم، لمحل أو تطبيق («عروض كارفور»، «كود كيتا») أو لصنف («عروض على الزيت») أو من غير تحديد.",
+    input_schema: {
+      type: "object",
+      properties: {
+        store: { type: "string", description: "اسم المحل أو التطبيق لو قاله" },
+        item_name: { type: "string", description: "الصنف لو قاله" },
+      },
     },
   },
   {
@@ -8718,7 +8739,7 @@ function ruleLines(...rules: Array<string | null | undefined>): string {
 }
 
 /** نسخة برومبت الشات (٣.٢): بتتسجل مع أحجام كل لفة، فتغيّر في الردود يتربط بتغيّر البرومبت. غيّرها مع أي تعديل في القواعد. */
-export const CHAT_PROMPT_VERSION = "2026-11-07.1";
+export const CHAT_PROMPT_VERSION = "2026-11-07.2";
 
 /**
  * [offered]: أسامي الأدوات المعروضة في اللفة دي. قاعدة عن أداة مش معروضة، أو عن جزء من البيت
@@ -8803,7 +8824,8 @@ ${(offers("set_broke_mode") || snap?.broke_mode) ? `12. **وضع الطوارئ 
 ${(offers("start_savings_challenge") || snap?.savings_challenge) ? `13. **تحدي التوفير (savings_challenge)**: «تحدي توفير/ساعدني أوفّر/تحدي ٣٠ يوم» ⇒ start_savings_challenge. لو فيه تحدي شغال: اذكر اليوم (day من length_days) والسلسلة (streak) لما يكون ليها معنى، شجّعه يفضل تحت daily_cap، ولو سأل «ينفع أشتري كذا؟» قارن بالسقف اليومي.` : ""}
 ${(snap?.season_ahead) ? `13ب. **الموسم الجاي (season_ahead)**: اتبع season_ahead.instruction مرة في المحادثة لو الكلام عن البيت أو الشراء أو الميزانية — مش في كل رد، ومش في أول سطر.
 ` : ""}${(snap?.season) ? `14. **المواسم (season)**: لو season مش null، اتبع season.instruction في كل كلامك واقتراحاتك (رمضان: مفيش أكل بالنهار، فطار وسحور؛ العيد: العيدية والعزومات متوقعة). متفترضش إن العميل صايم أو بيحتفل لو قال غير كده.` : ""}
-${(offers("suggest_recipes")) ? `15. **شيف زاد (suggest_recipes)**: «أطبخ إيه؟/أعمل أكل إيه من اللي عندي؟» ⇒ نادِ suggest_recipes واعرض من الوصفات اللي رجعت بس، باختصار — ممنوع تخترع وصفة من عندك. «افتحلي الشيف/صفحة الوصفات» ⇒ app_command(screen=recipes).` : ""}
+${(offers("find_deals")) ? `15أ. **العروض (find_deals)**: «هاتلي عروض/دوّرلي على عرض/فيه عروض إيه/كود خصم» ⇒ نادِ find_deals الأول واعرض العروض بأسعارها ولينكاتها. الميزانية عمرها ما تكون سبب ترفض أو تأجّل بيه البحث أو تقول «انزل بص بنفسك» — ممكن يكون بيخطط للشهر الجاي أو عنده فلوس تانية. نصيحة الفلوس لو لازمة: سطر واحد في آخر الرد بعد العروض.
+` : ""}${(offers("suggest_recipes")) ? `15. **شيف زاد (suggest_recipes)**: «أطبخ إيه؟/أعمل أكل إيه من اللي عندي؟» ⇒ نادِ suggest_recipes واعرض من الوصفات اللي رجعت بس، باختصار — ممنوع تخترع وصفة من عندك. «افتحلي الشيف/صفحة الوصفات» ⇒ app_command(screen=recipes).` : ""}
 
 === SNAPSHOT ===
 ${JSON.stringify(promptSnapshot(snap))}
