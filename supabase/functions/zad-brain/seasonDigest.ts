@@ -14,6 +14,7 @@ import { offerMatchesNeed } from "./productIdentity.ts";
 import { itemKey } from "./shared.ts";
 import { codeStoreKey } from "./dealCodes.ts";
 import { fetchPreviewImage, previewableUrl } from "../_shared/pagePreview.ts";
+import { deliveryApp } from "../_shared/deliveryApps.ts";
 import { customerCity, dealCountry, dealsForCity, FAVORITE_WINDOW_DAYS, favoriteStores, runningOutNames } from "./tasteDeals.ts";
 
 /** أقصى عدد كروت في رسالة الموسم. */
@@ -178,15 +179,46 @@ export function pickTopDeals(
   return out;
 }
 
-/** أكواد تطبيقات ومحلات البيت، الأحدث الأول، اللي ماتبعتتش في الموسم. */
+/** قيمة الكود للترتيب: النسبة، أو المبلغ كنسبة تقريبية من طلب ١٥٠ لو مالوش نسبة. */
+function codeValue(r: DigestCodeRow): number {
+  const pct = Number(r.discount_percent);
+  if (Number.isFinite(pct) && pct > 0) return pct;
+  const amount = Number(r.discount_amount);
+  return Number.isFinite(amount) && amount > 0 ? Math.min(60, amount / 150 * 100) : 0;
+}
+
+/**
+ * أكواد البيت بالترتيب الذكي (ZAD_PLAN ٥.٩، طلب المالك ٧/١١ «الذكاء يختار مش الإعدادات»):
+ *   ٠. محلاته وتطبيقاته اللي بيطلب منها على طول ([favorites]، ٣ مرات في ٦٠ يوم) — زي الأول.
+ *   ١. أي محل أو تطبيق دفع له ولو مرة في الـ٦٠ يوم ([merchants]).
+ *   ٢. البيت بيطلب دليفري أصلاً (تاجر من تطبيقات التوصيل في البنك) ⇒ أقوى أكواد تطبيقات التوصيل، ولو مابيطلبش منها.
+ * جوه كل درجة: الخصم الأكبر الأول. اللي اتبعت في الموسم مايتبعتش تاني. ده الاختيار للرسايل بس — صفحة «العروض» بتعرض كله.
+ */
 export function pickDigestCodes(
   rows: readonly DigestCodeRow[] | null | undefined,
   favorites: readonly string[],
   sent: ReadonlySet<string>,
   max = DIGEST_MAX_CODES,
+  merchants: readonly string[] = [],
 ): DigestCodeRow[] {
-  const keys = new Set(favorites.map(codeStoreKey).filter((k) => k.length >= 2));
-  return (rows ?? []).filter((r) => keys.has(r.store_key) && !sent.has(`code|${r.store_key}|${r.code}`)).slice(0, max);
+  const fav = new Set(favorites.map(codeStoreKey).filter((k) => k.length >= 2));
+  const paid = new Set(merchants.map(codeStoreKey).filter((k) => k.length >= 2));
+  const ordersDelivery = merchants.some((m) => deliveryApp(m) !== null);
+  const tier = (r: DigestCodeRow) =>
+    fav.has(r.store_key) ? 0 : paid.has(r.store_key) ? 1 : ordersDelivery && deliveryApp(r.store) !== null ? 2 : null;
+  const ranked = (rows ?? [])
+    .map((r, i) => ({ r, i, t: tier(r) }))
+    .filter((x) => x.t !== null && !sent.has(`code|${x.r.store_key}|${x.r.code}`))
+    .sort((a, b) => a.t! - b.t! || codeValue(b.r) - codeValue(a.r) || a.i - b.i);
+  const out: DigestCodeRow[] = [];
+  const stores = new Set<string>();
+  for (const { r } of ranked) {
+    if (stores.has(r.store_key)) continue; // كود واحد لكل تطبيق في الرسالة
+    stores.add(r.store_key);
+    out.push(r);
+    if (out.length >= max) break;
+  }
+  return out;
 }
 
 interface DealInputs {
@@ -194,6 +226,8 @@ interface DealInputs {
   broke: boolean;
   needs: string[];
   favorites: string[];
+  /** كل التجار اللي البيت دفع لهم في [FAVORITE_WINDOW_DAYS] — للأكواد الذكية. */
+  merchants: string[];
   bought: string[];
   sent: Set<string>;
   deals: DigestDealRow[];
@@ -214,6 +248,10 @@ async function loadDealInputs(sb: SupabaseClient, userId: string, now: number): 
       .then((r) => r.error ? true : isBrokeModeActive(r.data as { ends_at?: string | null; ended_at?: string | null } | null, now), () => true),
     sb.from("zad_deal_digest_sent").select("deal_key").eq("user_id", userId).limit(500),
   ]);
+  // ٥.٩: اللي بيفكر فيه — قاله («عايز أشتري») أو سأل عن سعره أو مكانه — احتياج زي القايمة. فشل القراية = من غيرها.
+  const { data: intents } = await sb.from("zad_purchase_intents").select("item").eq("user_id", userId).eq("status", "open")
+    .gt("expires_at", new Date(now).toISOString()).order("said_at", { ascending: false }).limit(5)
+    .then((r) => r, () => ({ data: null }));
   const country = dealCountry(user as { country?: string | null; travel_country?: string | null; travel_since?: string | null } | null, now);
   if (!/^[A-Z]{2}$/.test(country)) return null;
   // ٧/١١: نشرات المناطق (الدانوب) بمدينتها — عرض مدينة تانية مايتبعتش (dealsForCity)، والأحدث الأول عشان الـ٤٠٠ مايتقطعوش عشوائي.
@@ -230,10 +268,12 @@ async function loadDealInputs(sb: SupabaseClient, userId: string, now: number): 
     country,
     broke,
     needs: [
+      ...((intents ?? []) as Array<{ item: string | null }>).map((r) => r.item ?? ""),
       ...((shop ?? []) as Array<{ item_name: string }>).map((r) => r.item_name),
       ...runningOutNames((home as { state?: unknown } | null)?.state),
     ].filter(Boolean),
     favorites: favoriteStores((txns ?? []) as Array<{ merchant_name: string | null }>),
+    merchants: [...new Set(((txns ?? []) as Array<{ merchant_name: string | null }>).map((t) => (t.merchant_name ?? "").trim()).filter(Boolean))],
     bought: ((bought ?? []) as Array<{ item_name: string | null }>).map((r) => r.item_name ?? "").filter(Boolean),
     sent: new Set(((sentRows ?? []) as Array<{ deal_key: string }>).map((r) => r.deal_key)),
     deals: dealsForCity((deals ?? []) as DigestDealRow[], city).filter((d) => !pausedKinds.has(d.source_kind)),
@@ -253,7 +293,7 @@ export async function loadSeasonDigest(
   if (typeof season !== "string" || !season) return null;
   const personal = pickDigest(input.deals, input.needs, input.favorites, input.bought, input.sent);
   const cards = personal.length ? personal : pickTopDeals(input.deals, input.sent);
-  const pickedCodes = pickDigestCodes(input.codes, input.favorites, input.sent);
+  const pickedCodes = pickDigestCodes(input.codes, input.favorites, input.sent, DIGEST_MAX_CODES, input.merchants);
   if (!cards.length && !pickedCodes.length) return null;
   return { season, cards, codes: pickedCodes };
 }
@@ -278,7 +318,7 @@ const numOrNull = (v: unknown) => {
  * الحاجات اللي البيت محتاجها فعلاً بس، من غير أكواد ولا عروض محلات.
  */
 export function pickHomeDeals(
-  input: Pick<DealInputs, "broke" | "needs" | "favorites" | "bought" | "deals" | "codes">,
+  input: Pick<DealInputs, "broke" | "needs" | "favorites" | "bought" | "deals" | "codes"> & { merchants?: string[] },
 ): { cards: HomeDealCard[]; codes: DigestCodeRow[] } {
   const none = new Set<string>();
   const personal = pickDigest(input.deals, input.needs, input.broke ? [] : input.favorites, input.broke ? [] : input.bought, none, HOME_MAX_DEALS);
@@ -297,7 +337,7 @@ export function pickHomeDeals(
     });
   if (input.broke) return { cards, codes: [] };
   const stores = [...input.favorites, ...cards.map((c) => c.store)];
-  return { cards, codes: pickDigestCodes(input.codes, stores, none, HOME_MAX_CODES) };
+  return { cards, codes: pickDigestCodes(input.codes, stores, none, HOME_MAX_CODES, input.merchants ?? []) };
 }
 
 /** شريط الرئيسية لعميل واحد. country null = بلده مش معروف (مفيش عروض تتعرض). */

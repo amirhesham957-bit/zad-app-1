@@ -103,3 +103,24 @@ Deno.test("intent: the morning deal looks for what they said they want first, an
   assertEquals([tight?.store, tight?.intent], ["كارفور مصر", undefined]);
   dealSource.search = () => Promise.resolve(null);
 });
+
+import { searchIntentFrom } from "./purchaseIntent.ts";
+
+Deno.test("5.9: a price, place or offer question is something he is thinking of buying", () => {
+  const cases: Array<[string, string | null]> = [
+    ["بكام اللابتوب ده؟", "لابتوب"],
+    ["سعر التكييف كام دلوقتي", "تكييف"],
+    ["فين ألاقي زيت زيتون", "زيت زيتون"],
+    ["بدوّر على شنطة مدرسة", "شنطة مدرسة"],
+    ["فيه عروض على الغسالات؟", "غسالات"],
+    ["هو الآيفون ١٥ بكام؟", "الآيفون ١٥"],
+    // Money itself, his own money, and health are never a product interest.
+    ["الدولار بكام النهارده", null],
+    ["الدهب عيار ٢١ بكام", null],
+    ["صرفت كام الشهر ده", null],
+    ["البنادول بكام", null],
+    ["سعر علاج الضغط", null],
+    ["مرحبا", null],
+  ];
+  for (const [m, want] of cases) assertEquals(searchIntentFrom(m), want, m);
+});

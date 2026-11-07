@@ -8,6 +8,7 @@
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { itemKey } from "./shared.ts";
 import { offerMatchesNeed } from "./productIdentity.ts";
+import { routeSpecialists } from "./specialists.ts";
 
 export const INTENT_DAYS = 60;
 /** نيتين بالكتير في أصناف العرض — الباقي لقايمة الشرا واللي هيخلص. */
@@ -24,7 +25,7 @@ const NEGATED = /(^|\s)(مش|مو|ما|مب|لا)\s*$/;
 
 /** كلمات بتقفل اسم الحاجة: ميعاد، سبب، سعر، مكان — اللي بعدها مش اسم الصنف. */
 const STOP = new Set([
-  "بكام", "بكم", "من", "عشان", "علشان", "لان", "بس", "لما", "لو", "قبل", "بعد", "الشهر", "الاسبوع", "بكره",
+  "بكام", "بكم", "كام", "كم", "من", "عشان", "علشان", "لان", "بس", "لما", "لو", "قبل", "بعد", "الشهر", "الاسبوع", "بكره",
   "بكرا", "النهارده", "اليوم", "قريب", "قريبا", "في", "فى", "و", "او", "ولا", "ب", "بحدود", "حدود", "ميزانيه", "تقريبا",
   "جديد", "جديده", "الجاي", "الجايه", "ده", "دي", "دا", "هنا", "عليه", "عليها", "ازاي", "فين", "امتي", "ايه", "منين",
 ]);
@@ -41,7 +42,46 @@ export function purchaseIntentFrom(message: string | null | undefined): string |
   const before = text.slice(0, m.index + m[1].length);
   if (NEGATED.test(before)) return null;
   const start = m.index + m[0].length - m[3].length;
-  const words = raw.slice(start, start + m[3].length).trim().split(/\s+/);
+  return itemAt(raw, start, m[3].length);
+}
+
+// ٥.٩ (طلب المالك ٧/١١: «يعرض اللي بيفكر فيه قبل ما يطلبه»): سؤال سعر أو مكان أو عرض على حاجة = بيفكر فيها.
+// «بكام اللابتوب ده؟»، «سعر التكييف»، «فين ألاقي زيت زيتون»، «بدوّر على شنطة مدرسة»، «فيه عروض على الغسالات؟».
+const ASK = "عروض علي|عرض علي|اسعار|سعر|بكام|بكم|ارخص|عروض|فين القي|فين الاقي|منين اجيب|بدور علي|بادور علي|ادور علي";
+const SEARCH_AFTER = new RegExp(`(^|[\\s،,.!؟?])(?:${ASK})\\s+(?:ال)?([^\\n.!؟?،,]{2,60})`);
+const SEARCH_BEFORE = /([^\n.!؟?،,]{2,40}?)\s+(?:بكام|بكم)\s*(?:[؟?!.]|ده|دي|دلوقتي|النهارده|$)/;
+/**
+ * مش بحث عن منتج: الفلوس نفسها (الدولار، الدهب، البنزين — ليهم أدواتهم)، فلوسه هو (صرفت كام، الميزانية)، والدوا والعلاج —
+ * صحة العميل مابتتبنيش منها عروض ولا بتتحفظ كاهتمام (نفس قاعدة الأسرار الحساسة).
+ */
+const NOT_A_PRODUCT = /دولار|يورو|استرليني|ريال|درهم|دينار|جنيه|دهب|ذهب|عيار|سبيكه|بنزين|سولار|صرفت|دفعت|فاضل|باقي|ميزانيه|مرتب|راتب|قسط|دوا|دواء|علاج|حبوب|اقراص|برشام|مضاد|كبسول|شراب|حقن|تحليل|اشعه|دكتور/;
+
+/** الحاجة اللي العميل بيسأل عن سعرها أو مكانها أو عروضها، أو null. */
+export function searchIntentFrom(message: string | null | undefined): string | null {
+  const raw = strip(String(message ?? ""));
+  const text = fold(raw);
+  if (NOT_A_PRODUCT.test(text)) return null;
+  // دوا باسمه («البنادول بكام»): رسالة بتروح لوكيل الصيدلية مش اهتمام بمنتج.
+  const route = routeSpecialists(raw);
+  if (route.primary === "pharmacy" || route.secondary === "pharmacy") return null;
+  const after = SEARCH_AFTER.exec(text);
+  if (after) {
+    const start = after.index + after[0].length - after[2].length;
+    const item = itemAt(raw, start, after[2].length);
+    if (item) return item;
+  }
+  const before = SEARCH_BEFORE.exec(text);
+  if (!before) return null;
+  const words = raw.slice(before.index, before.index + before[1].length).trim().split(/\s+/);
+  // الكلمات اللي قبل «بكام»: آخر ٣ كلمات بعد ما الأفعال والأسئلة تتشال («هو اللابتوب ده بكام» ⇒ «اللابتوب»).
+  const tail = words.filter((w) => !STOP.has(fold(w).replace(/[^\p{L}\p{N}]/gu, "")) && !/^(هو|هي|طب|يا|زاد)$/.test(fold(w))).slice(-3);
+  const item = itemAt(tail.join(" "), 0, tail.join(" ").length);
+  return item;
+}
+
+/** اسم الصنف من [start] لحد أول كلمة بتقفله، ٣ كلمات بالكتير، أو null لو مش صنف. */
+function itemAt(raw: string, start: number, length: number): string | null {
+  const words = raw.slice(start, start + length).trim().split(/\s+/);
   const kept: string[] = [];
   for (const w of words) {
     const f = fold(w).replace(/[^\p{L}\p{N}]/gu, "");
@@ -63,12 +103,18 @@ export function intentBought(
   return bought.some((b) => !!b.name && Date.parse(b.at ?? "") >= since && offerMatchesNeed(intent.item, b.name));
 }
 
+/** سؤال السعر أقل من «ناوي أشتري»: بيفضل مفتوح ٣٠ يوم مش ٦٠. */
+export const SEARCH_INTENT_DAYS = 30;
+
 /** يحفظ النية لو الرسالة فيها واحدة. نفس الحاجة مفتوحة ⇒ ميعادها يتجدد. ماتوقفش اللفة أبداً. */
 export async function notePurchaseIntent(sb: SupabaseClient, userId: string, message: string): Promise<string | null> {
-  const item = purchaseIntentFrom(message);
+  const said = purchaseIntentFrom(message);
+  const item = said ?? searchIntentFrom(message);
   if (!item) return null;
   try {
-    const { error } = await sb.rpc("zad_purchase_intent_note", { p_user: userId, p_item: item, p_key: itemKey(item), p_days: INTENT_DAYS });
+    const { error } = await sb.rpc("zad_purchase_intent_note", {
+      p_user: userId, p_item: item, p_key: itemKey(item), p_days: said ? INTENT_DAYS : SEARCH_INTENT_DAYS,
+    });
     if (error) console.warn("[purchase_intent] note failed:", error.message);
   } catch (e) {
     console.warn("[purchase_intent] note failed:", (e as Error)?.message);

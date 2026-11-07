@@ -1,5 +1,6 @@
 import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import { type DigestCodeRow, type DigestDealRow, digestKey, digestPhoto, pickDigest, pickDigestCodes, pickHomeDeals } from "./seasonDigest.ts";
+import { codeStoreKey } from "./dealCodes.ts";
 
 const row = (o: Partial<DigestDealRow>): DigestDealRow => ({
   store: "كارفور", item_name: "زيت عافية 1.5 لتر", price: 30, price_before: 40, currency: "EGP",
@@ -96,4 +97,23 @@ Deno.test("nothing personal ⇒ the season's strongest real discounts, pictures 
     row({ item_name: "قهوة", store: "بيم", price: 95, price_before: 100 }), // 5%
   ], new Set());
   assertEquals(top.map((c) => [c.item, c.why, c.saving]), [["ارز غدير 5 ك", "top", 17], ["رمان 1 كيلو", "top", 31]]);
+});
+
+Deno.test("5.9: codes picked by what the house actually does — its apps, any store it paid, then the best delivery code", () => {
+  const mk = (store: string, code: string, pct: number | null, amount: number | null = null): DigestCodeRow => ({
+    store, store_key: codeStoreKey(store), code, discount_percent: pct, discount_amount: amount, currency: "SAR",
+    min_order: null, valid_until: null, source_kind: "instagram", source_url: "https://www.instagram.com/p/x/",
+  });
+  const rows = [
+    mk("نينجا", "NINJA10", 10), mk("كيتا", "KEETA40", 40), mk("جاهز", "JAHEZ25", 25),
+    mk("هنقرستيشن", "HS15", 15), mk("كيتا", "KEETA20", 20), mk("بنده", "PANDA5", 5),
+  ];
+  const none = new Set<string>();
+  // A regular at Ninja who once paid at Panda: Ninja first, Panda next, then the best delivery code (Keeta 40%).
+  assertEquals(pickDigestCodes(rows, ["نينجا"], none, 3, ["نينجا", "بنده"]).map((r) => r.code), ["NINJA10", "PANDA5", "KEETA40"]);
+  // One code per app, biggest first.
+  assertEquals(pickDigestCodes(rows, [], none, 4, ["Keeta"]).map((r) => r.code), ["KEETA40", "JAHEZ25", "HS15", "NINJA10"]);
+  // A house that never orders delivery gets no delivery code it never asked for; what was sent is not sent again.
+  assertEquals(pickDigestCodes(rows, [], none, 4, ["كارفور"]), []);
+  assertEquals(pickDigestCodes(rows, ["كيتا"], new Set(["code|" + codeStoreKey("كيتا") + "|KEETA40"]), 1, []).map((r) => r.code), ["KEETA20"]);
 });
