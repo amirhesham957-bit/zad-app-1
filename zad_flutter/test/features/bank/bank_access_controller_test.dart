@@ -223,7 +223,9 @@ void main() {
   );
 
   test('a quiet day is not a stopped listener', () async {
-    await build(lastSeenAnyAt: now.subtract(const Duration(hours: 30)));
+    // No bank message for five days, but the listener heard something within
+    // the stall window (12 h): an 8-hour quiet night stays green.
+    await build(lastSeenAnyAt: now.subtract(const Duration(hours: 8)));
     await container
         .read(bankCaptureMarkerProvider)
         .sawCapture(DateTime.utc(2026, 10, 5));
