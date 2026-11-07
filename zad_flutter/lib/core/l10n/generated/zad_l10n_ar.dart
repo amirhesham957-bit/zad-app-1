@@ -2778,4 +2778,19 @@ class ZadL10nAr extends ZadL10n {
   String patternEditSaved(String item) {
     return 'اتحفظ — زاد هيحسب $item على كده';
   }
+
+  @override
+  String get homeBankOffBanner =>
+      '⚠️ قراءة رسائل البنك متوقفة.. اضغط هنا لإعادة تفعيلها لتحديث رصيدك ومصاريفك تلقائياً';
+
+  @override
+  String get homeBankStalledHint =>
+      'لو هي مفعّلة: اطفيها وشغّلها تاني من الصفحة اللي هتفتح.';
+
+  @override
+  String get homeLocationOffBanner =>
+      '📍 موقعك غير مفعّل.. فعّل اللوكيشن عشان زاد يربط عروض السوبرماركت والمحلات القريبة منك ويقوم بمهامه صح';
+
+  @override
+  String get homeLocationLater => 'مش دلوقتي';
 }

@@ -4968,6 +4968,30 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'اتحفظ — زاد هيحسب {item} على كده'**
   String patternEditSaved(String item);
+
+  /// No description provided for @homeBankOffBanner.
+  ///
+  /// In ar, this message translates to:
+  /// **'⚠️ قراءة رسائل البنك متوقفة.. اضغط هنا لإعادة تفعيلها لتحديث رصيدك ومصاريفك تلقائياً'**
+  String get homeBankOffBanner;
+
+  /// No description provided for @homeBankStalledHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'لو هي مفعّلة: اطفيها وشغّلها تاني من الصفحة اللي هتفتح.'**
+  String get homeBankStalledHint;
+
+  /// No description provided for @homeLocationOffBanner.
+  ///
+  /// In ar, this message translates to:
+  /// **'📍 موقعك غير مفعّل.. فعّل اللوكيشن عشان زاد يربط عروض السوبرماركت والمحلات القريبة منك ويقوم بمهامه صح'**
+  String get homeLocationOffBanner;
+
+  /// No description provided for @homeLocationLater.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش دلوقتي'**
+  String get homeLocationLater;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

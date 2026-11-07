@@ -36,6 +36,7 @@ import 'package:zad/features/home/presentation/home_blocks.dart';
 import 'package:zad/features/home/presentation/inventory_check_in_card.dart';
 import 'package:zad/features/home/presentation/metrics_duo.dart';
 import 'package:zad/features/home/presentation/occasion_card.dart';
+import 'package:zad/features/home/presentation/permission_banners.dart';
 import 'package:zad/features/home/presentation/quiet_banner.dart';
 import 'package:zad/features/home/presentation/sections_grid.dart';
 import 'package:zad/features/home/presentation/subscribe_pulse_card.dart';
@@ -102,6 +103,9 @@ class HomeScreen extends ConsumerWidget {
           const TravelBannerSlot(),
           const GroceryPurchasePromptHost(),
           const HomeOfflineBanner(),
+          // «قراءة رسائل البنك متوقفة» / «موقعك غير مفعّل» (owner 7/11): at
+          // the top, each one tap from the screen that fixes it.
+          const PermissionBanners(),
           // «حكايات زاد»: the occasion's story, when it has one.
           const CampaignStoriesStrip(),
           ZadAppearOnEntry(

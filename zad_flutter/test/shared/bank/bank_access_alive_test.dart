@@ -32,12 +32,20 @@ void main() {
     expect(s.isAlive(now), isTrue);
   });
 
-  test('two days without a single notification — stopped', () {
+  test('twelve hours without a single notification — stopped', () {
     final s = state(
       connected: now.subtract(const Duration(days: 3)),
-      seen: now.subtract(const Duration(days: 2)),
+      seen: now.subtract(const Duration(hours: 12)),
     );
     expect(s.isAlive(now), isFalse);
+  });
+
+  test('a quiet night (eight hours) is still listening', () {
+    final s = state(
+      connected: now.subtract(const Duration(days: 3)),
+      seen: now.subtract(const Duration(hours: 8)),
+    );
+    expect(s.isAlive(now), isTrue);
   });
 
   test('never bound — stopped', () {

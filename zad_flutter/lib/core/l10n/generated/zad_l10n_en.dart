@@ -2845,4 +2845,19 @@ class ZadL10nEn extends ZadL10n {
   String patternEditSaved(String item) {
     return 'Saved — Zad will plan $item by that';
   }
+
+  @override
+  String get homeBankOffBanner =>
+      '⚠️ Bank message reading has stopped. Tap here to turn it back on so your balance and spending update by themselves.';
+
+  @override
+  String get homeBankStalledHint =>
+      'If it is already on: switch it off and on again on the screen that opens.';
+
+  @override
+  String get homeLocationOffBanner =>
+      '📍 Your location is off. Turn it on so Zad can match supermarket deals and nearby shops and do its job properly.';
+
+  @override
+  String get homeLocationLater => 'Not now';
 }

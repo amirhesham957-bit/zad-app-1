@@ -35,8 +35,11 @@ internal object ListenerWatchdog {
 
     enum class Verdict { FINE, REVOKED, STALLED }
 
-    /** نفس [kListenerStallAfter] في Dart: الخدمة بتشوف كل إشعارات الموبايل، فيومين صمت = ميتة. */
-    const val STALL_AFTER_MS = 2L * 24 * 60 * 60 * 1000
+    /**
+     * نفس [kListenerStallAfter] في Dart: الخدمة بتشوف كل إشعارات الموبايل، فـ١٢ ساعة صمت = ميتة. كانت يومين؛ شاومي
+     * المالك كانت بتوقفها كل يوم ودفعة BDC يوم ٦/١١ ماوصلتش، فالتنبيه كان بيجي بعد يومين مصاريف (٧/١١).
+     */
+    const val STALL_AFTER_MS = 12L * 60 * 60 * 1000
 
     /** تنبيه واحد في اليوم بالكتير، مهما الحارس صحي. */
     const val ALERT_EVERY_MS = 24L * 60 * 60 * 1000

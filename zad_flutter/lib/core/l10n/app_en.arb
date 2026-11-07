@@ -866,5 +866,9 @@
         "type": "String"
       }
     }
-  }
+  },
+  "homeBankOffBanner": "⚠️ Bank message reading has stopped. Tap here to turn it back on so your balance and spending update by themselves.",
+  "homeBankStalledHint": "If it is already on: switch it off and on again on the screen that opens.",
+  "homeLocationOffBanner": "📍 Your location is off. Turn it on so Zad can match supermarket deals and nearby shops and do its job properly.",
+  "homeLocationLater": "Not now"
 }

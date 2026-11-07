@@ -67,7 +67,14 @@ const int kBankBacklogAt = 5;
 
 /// How long without any notification seen before the listener counts as
 /// stopped.
-const Duration kListenerStallAfter = Duration(days: 2);
+///
+/// Twelve hours, not two days (owner, 2026-11-07): the listener sees every
+/// notification on the phone, not only the bank's, and the owner's Xiaomi
+/// stopped it daily — a BDC payment at 15:22 on 6/11 never reached the server,
+/// and two days of silence meant the banner and the watchdog's «اضغط للإصلاح»
+/// came two days of payments too late. Same value as the Kotlin watchdog's
+/// `STALL_AFTER_MS`.
+const Duration kListenerStallAfter = Duration(hours: 12);
 
 /// What the screen draws.
 class BankAccessState {

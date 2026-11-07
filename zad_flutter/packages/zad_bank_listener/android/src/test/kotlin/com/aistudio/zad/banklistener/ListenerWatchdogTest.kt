@@ -26,9 +26,15 @@ class ListenerWatchdogTest {
     }
 
     @Test
-    fun `two days without any notification is stalled`() {
+    fun `twelve hours without any notification is stalled`() {
+        assertEquals(12L * hour, ListenerWatchdog.STALL_AFTER_MS)
         val old = now - ListenerWatchdog.STALL_AFTER_MS
         assertEquals(Verdict.STALLED, ListenerWatchdog.verdict(true, old, old, now))
+    }
+
+    @Test
+    fun `a quiet night of eight hours is fine`() {
+        assertEquals(Verdict.FINE, ListenerWatchdog.verdict(true, now - 3 * 24 * hour, now - 8 * hour, now))
     }
 
     @Test
