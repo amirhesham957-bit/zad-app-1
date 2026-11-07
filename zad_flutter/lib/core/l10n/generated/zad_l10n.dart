@@ -5040,6 +5040,60 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'اربط تليجرام'**
   String get channelCardTelegram;
+
+  /// No description provided for @briefWhy.
+  ///
+  /// In ar, this message translates to:
+  /// **'ليه؟'**
+  String get briefWhy;
+
+  /// No description provided for @briefWhyDose.
+  ///
+  /// In ar, this message translates to:
+  /// **'من جدول {name}: جرعة الساعة {time}، ومفيش تسجيل إنها اتاخدت.'**
+  String briefWhyDose(String name, String time);
+
+  /// No description provided for @briefWhyMissed.
+  ///
+  /// In ar, this message translates to:
+  /// **'جرعات النهارده اللي عدّى ميعادها ومااتسجلتش: {count}.'**
+  String briefWhyMissed(String count);
+
+  /// No description provided for @briefWhyOverspent.
+  ///
+  /// In ar, this message translates to:
+  /// **'المتاح للدورة دي تحت الصفر: رصيد أول الدورة ناقص اللي اتصرف والالتزامات الثابتة.'**
+  String get briefWhyOverspent;
+
+  /// No description provided for @briefWhyRenewal.
+  ///
+  /// In ar, this message translates to:
+  /// **'«{name}» متسجل في اشتراكاتك، وده ميعاد تجديده الجاي.'**
+  String briefWhyRenewal(String name);
+
+  /// No description provided for @briefWhyShortage.
+  ///
+  /// In ar, this message translates to:
+  /// **'{name}: فاضل {left}، وده الحد اللي بيبقى عنده ناقص ({threshold}).'**
+  String briefWhyShortage(String name, String left, String threshold);
+
+  /// No description provided for @briefWhyRunningOut.
+  ///
+  /// In ar, this message translates to:
+  /// **'{name}: فاضل {left}، وبتستهلك حوالي {perDay} في اليوم.'**
+  String briefWhyRunningOut(String name, String left, String perDay);
+
+  /// No description provided for @briefWhyRunningOutApprox.
+  ///
+  /// In ar, this message translates to:
+  /// **'{name}: فاضل {left}، واستهلاكك لسه بيتقاس — حوالي {perDay} في اليوم، فده تقدير.'**
+  String briefWhyRunningOutApprox(String name, String left, String perDay);
+
+  /// No description provided for @briefWhyFamily.
+  ///
+  /// In ar, this message translates to:
+  /// **'حد في شات العيلة قال إنها ناقصة، وزاد لقطها وهو بيراجع الشات.'**
+  String get briefWhyFamily;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

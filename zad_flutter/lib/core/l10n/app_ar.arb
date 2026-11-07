@@ -2094,5 +2094,20 @@
   "channelCardTitle": "مفيش طريقة أوصلك بيها",
   "channelCardBody": "الإشعارات مقفولة وتليجرام مش مربوط، فمواعيد الدوا والفواتير وتنبيه الميزانية مش هتوصلك. واحدة منهم كفاية.",
   "channelCardNotifications": "فعّل الإشعارات",
-  "channelCardTelegram": "اربط تليجرام"
+  "channelCardTelegram": "اربط تليجرام",
+  "briefWhy": "ليه؟",
+  "briefWhyDose": "من جدول {name}: جرعة الساعة {time}، ومفيش تسجيل إنها اتاخدت.",
+  "@briefWhyDose": {"placeholders": {"name": {"type": "String"}, "time": {"type": "String"}}},
+  "briefWhyMissed": "جرعات النهارده اللي عدّى ميعادها ومااتسجلتش: {count}.",
+  "@briefWhyMissed": {"placeholders": {"count": {"type": "String"}}},
+  "briefWhyOverspent": "المتاح للدورة دي تحت الصفر: رصيد أول الدورة ناقص اللي اتصرف والالتزامات الثابتة.",
+  "briefWhyRenewal": "«{name}» متسجل في اشتراكاتك، وده ميعاد تجديده الجاي.",
+  "@briefWhyRenewal": {"placeholders": {"name": {"type": "String"}}},
+  "briefWhyShortage": "{name}: فاضل {left}، وده الحد اللي بيبقى عنده ناقص ({threshold}).",
+  "@briefWhyShortage": {"placeholders": {"name": {"type": "String"}, "left": {"type": "String"}, "threshold": {"type": "String"}}},
+  "briefWhyRunningOut": "{name}: فاضل {left}، وبتستهلك حوالي {perDay} في اليوم.",
+  "@briefWhyRunningOut": {"placeholders": {"name": {"type": "String"}, "left": {"type": "String"}, "perDay": {"type": "String"}}},
+  "briefWhyRunningOutApprox": "{name}: فاضل {left}، واستهلاكك لسه بيتقاس — حوالي {perDay} في اليوم، فده تقدير.",
+  "@briefWhyRunningOutApprox": {"placeholders": {"name": {"type": "String"}, "left": {"type": "String"}, "perDay": {"type": "String"}}},
+  "briefWhyFamily": "حد في شات العيلة قال إنها ناقصة، وزاد لقطها وهو بيراجع الشات."
 }

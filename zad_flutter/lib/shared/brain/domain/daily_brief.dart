@@ -44,7 +44,7 @@ enum BriefKind {
 
 /// Whole days [group] lasts at its members' rates, and whether any rate is
 /// only an estimate. Null when it is out, or no member has a rate.
-({int days, bool approximate})? _daysLeft(
+({int days, bool approximate, double perDay})? _daysLeft(
   PantryGroup group,
   Map<String, ConsumptionRate> rates,
 ) {
@@ -58,7 +58,75 @@ enum BriefKind {
     approximate = approximate || !rate.known;
   }
   if (perDay <= 0) return null;
-  return (days: (group.total / perDay).floor(), approximate: approximate);
+  return (
+    days: (group.total / perDay).floor(),
+    approximate: approximate,
+    perDay: perDay,
+  );
+}
+
+/// Where one line of the brief came from (ZAD_PLAN ٦.٤, «ليه؟»): the screen
+/// words it, so the numbers here are the ones the line was decided on — the
+/// customer can check them, and a wrong one is visible.
+enum BriefWhyKind {
+  /// From the medicine's schedule.
+  dose,
+
+  /// Doses whose window passed with nothing recorded.
+  missed,
+
+  /// The period's available money is below zero.
+  overspent,
+
+  /// From a subscription the customer recorded.
+  renewal,
+
+  /// At or under the threshold set for it.
+  shortage,
+
+  /// What is left ÷ the measured daily usage.
+  runningOut,
+
+  /// The same, from a usage that is still an estimate.
+  runningOutApprox,
+
+  /// Said in the family chat.
+  family,
+}
+
+/// The reason behind one line, with the figures it was decided on.
+class BriefWhy {
+  /// Creates a reason.
+  const new(
+    this.kind, {
+    this.name = '',
+    this.time = '',
+    this.count = 0,
+    this.left = 0,
+    this.perDay = 0,
+    this.threshold = 0,
+  });
+
+  /// Which reason.
+  final BriefWhyKind kind;
+
+  /// The medicine, subscription or item it is about.
+  final String name;
+
+  /// The dose's time.
+  final String time;
+
+  /// Missed doses.
+  final int count;
+
+  /// What is left in the house, in the item's own unit.
+  final double left;
+
+  /// The daily usage it runs out at.
+  final double perDay;
+
+  /// The threshold an item counts as low at.
+  final double threshold;
 }
 
 /// A family-chat need: the insight it came as, the item, and who said it.
@@ -71,9 +139,13 @@ class BriefItem {
     required this.kind,
     required this.title,
     required this.detail,
+    this.why,
     this.dose,
     this.needs = const <FamilyNeed>[],
   });
+
+  /// «ليه؟» — where the line came from; null when there is nothing to add.
+  final BriefWhy? why;
 
   /// What it is about, which decides where a tap goes.
   final BriefKind kind;
@@ -140,6 +212,11 @@ List<BriefItem> dailyBrief({
         kind: BriefKind.doseDue,
         title: 'وقت جرعة ${due.medicine.name}',
         detail: 'ميعادها ${due.time} — دوس «خدتها» لما تاخدها',
+        why: BriefWhy(
+          BriefWhyKind.dose,
+          name: due.medicine.name,
+          time: '${due.time}',
+        ),
         dose: due,
       ),
     );
@@ -150,6 +227,7 @@ List<BriefItem> dailyBrief({
         kind: BriefKind.dosesMissed,
         title: missed == 1 ? 'جرعة فاتت' : '$missed جرعات فاتوا',
         detail: 'افتح الصيدلية وسجّل اللي اتاخد',
+        why: BriefWhy(BriefWhyKind.missed, count: missed),
       ),
     );
   }
@@ -160,6 +238,7 @@ List<BriefItem> dailyBrief({
         kind: BriefKind.overspent,
         title: 'صرفت أكتر من المتاح بـ${_money(-spendable, currency)}',
         detail: 'شوف فلوسي — زاد يقدر يقترح تقلل منين',
+        why: const BriefWhy(BriefWhyKind.overspent),
       ),
     );
   }
@@ -181,6 +260,7 @@ List<BriefItem> dailyBrief({
             ? 'قسط ${bnpl.name} ${_whenIn(days)}'
             : '${s.title} ${_whenIn(days)}',
         detail: _money(s.amount, currency),
+        why: BriefWhy(BriefWhyKind.renewal, name: s.title),
       ),
     );
   }
@@ -188,14 +268,27 @@ List<BriefItem> dailyBrief({
   // An item with a forecast is said once, with its day, not again as «ناقصك».
   // One bought every couple of months is neither (ZAD_PLAN ٣.١٠).
   final short = <String>[];
-  final runningOut = <(String, int, bool)>[];
+  BriefWhy? shortWhy;
+  final runningOut = <(String, int, bool, double, double)>[];
   for (final g in groupPantry(pantry)) {
     if (g.isOccasional) continue;
     final left = _daysLeft(g, rates);
     if (left != null && left.days <= runOutWithinDays) {
-      runningOut.add((g.name, left.days, left.approximate));
+      runningOut.add((
+        g.name,
+        left.days,
+        left.approximate,
+        g.total,
+        left.perDay,
+      ));
     } else if (g.isLow) {
       short.add(g.name);
+      shortWhy ??= BriefWhy(
+        BriefWhyKind.shortage,
+        name: g.name,
+        left: g.total,
+        threshold: g.threshold,
+      );
     }
   }
   runningOut.sort((a, b) => a.$2.compareTo(b.$2));
@@ -207,6 +300,7 @@ List<BriefItem> dailyBrief({
         kind: BriefKind.shortage,
         title: 'ناقصك $named$more',
         detail: 'افتح بيتي وضيفهم لقايمة التسوق',
+        why: shortWhy,
       ),
     );
   }
@@ -224,6 +318,15 @@ List<BriefItem> dailyBrief({
         detail: runningOut.any((r) => r.$3)
             ? 'تقدير من استهلاكك لحد دلوقتي — ضيفهم لقايمة التسوق؟'
             : 'من معدل استهلاكك — ضيفهم لقايمة التسوق؟',
+        // The soonest one, with its own figures.
+        why: BriefWhy(
+          runningOut.first.$3
+              ? BriefWhyKind.runningOutApprox
+              : BriefWhyKind.runningOut,
+          name: runningOut.first.$1,
+          left: runningOut.first.$4,
+          perDay: runningOut.first.$5,
+        ),
       ),
     );
   }
@@ -245,6 +348,7 @@ List<BriefItem> dailyBrief({
             ? 'اتقال إنهم ناقصين — ضيفهم لقايمة التسوق؟'
             : '${who.join(' و')} ${who.length == 1 ? 'قال' : 'قالوا'} إنهم '
                   'ناقصين — ضيفهم لقايمة التسوق؟',
+        why: const BriefWhy(BriefWhyKind.family),
         needs: familyNeeds,
       ),
     );

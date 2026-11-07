@@ -878,5 +878,14 @@
   "channelCardTitle": "Zad has no way to reach you",
   "channelCardBody": "Notifications are off and Telegram isn't linked, so medicine times, bills and budget alerts won't reach you. Either one is enough.",
   "channelCardNotifications": "Turn on notifications",
-  "channelCardTelegram": "Link Telegram"
+  "channelCardTelegram": "Link Telegram",
+  "briefWhy": "Why?",
+  "briefWhyDose": "From {name}'s schedule: the {time} dose, with nothing recorded yet.",
+  "briefWhyMissed": "Today's doses past their time with nothing recorded: {count}.",
+  "briefWhyOverspent": "This period's available money is below zero: the opening balance minus what was spent and the fixed commitments.",
+  "briefWhyRenewal": "«{name}» is in your subscriptions, and this is its next renewal.",
+  "briefWhyShortage": "{name}: {left} left, which is where it counts as low ({threshold}).",
+  "briefWhyRunningOut": "{name}: {left} left, and you use about {perDay} a day.",
+  "briefWhyRunningOutApprox": "{name}: {left} left; your usage is still being measured — about {perDay} a day, so this is an estimate.",
+  "briefWhyFamily": "Someone in the family chat said it's needed, and Zad picked it up reviewing the chat."
 }

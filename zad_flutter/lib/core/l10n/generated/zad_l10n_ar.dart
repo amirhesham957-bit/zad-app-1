@@ -2818,4 +2818,45 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get channelCardTelegram => 'اربط تليجرام';
+
+  @override
+  String get briefWhy => 'ليه؟';
+
+  @override
+  String briefWhyDose(String name, String time) {
+    return 'من جدول $name: جرعة الساعة $time، ومفيش تسجيل إنها اتاخدت.';
+  }
+
+  @override
+  String briefWhyMissed(String count) {
+    return 'جرعات النهارده اللي عدّى ميعادها ومااتسجلتش: $count.';
+  }
+
+  @override
+  String get briefWhyOverspent =>
+      'المتاح للدورة دي تحت الصفر: رصيد أول الدورة ناقص اللي اتصرف والالتزامات الثابتة.';
+
+  @override
+  String briefWhyRenewal(String name) {
+    return '«$name» متسجل في اشتراكاتك، وده ميعاد تجديده الجاي.';
+  }
+
+  @override
+  String briefWhyShortage(String name, String left, String threshold) {
+    return '$name: فاضل $left، وده الحد اللي بيبقى عنده ناقص ($threshold).';
+  }
+
+  @override
+  String briefWhyRunningOut(String name, String left, String perDay) {
+    return '$name: فاضل $left، وبتستهلك حوالي $perDay في اليوم.';
+  }
+
+  @override
+  String briefWhyRunningOutApprox(String name, String left, String perDay) {
+    return '$name: فاضل $left، واستهلاكك لسه بيتقاس — حوالي $perDay في اليوم، فده تقدير.';
+  }
+
+  @override
+  String get briefWhyFamily =>
+      'حد في شات العيلة قال إنها ناقصة، وزاد لقطها وهو بيراجع الشات.';
 }

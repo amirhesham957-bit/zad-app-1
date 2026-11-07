@@ -78,6 +78,17 @@ void main() {
     expect(brief[3].title, 'قسط تابي بكرة');
     // Two brands of water are one shortage, under the staple's name.
     expect(brief[4].title, 'ناقصك مياه');
+    // ZAD_PLAN ٦.٤: every line says where it came from.
+    expect(brief.map((b) => b.why?.kind), <BriefWhyKind>[
+      BriefWhyKind.dose,
+      BriefWhyKind.missed,
+      BriefWhyKind.overspent,
+      BriefWhyKind.renewal,
+      BriefWhyKind.shortage,
+    ]);
+    expect((brief[0].why!.name, brief[0].why!.time), ('بنادول', '09:00'));
+    expect(brief[1].why!.count, 1);
+    expect(brief[3].why!.name, 'Tabby نون');
   });
 
   test('a renewal further than three days away waits', () {
@@ -172,6 +183,21 @@ void main() {
       expect(lines[0].title, 'ناقصك مياه نوفا');
       expect(lines[1].title, 'هيخلص قريب: جبنة بكرة، توست حوالي بعد 3 أيام');
       expect(lines[1].detail, startsWith('تقدير'));
+      // «ليه؟» on the forecast: the soonest one's own figures.
+      final why = lines[1].why!;
+      expect(why.kind, BriefWhyKind.runningOut);
+      expect((why.name, why.left, why.perDay), ('جبنة', 1.0, 0.70));
+      // «ناقصك»: what is left against the threshold it counts as low at.
+      expect(lines[0].why!.kind, BriefWhyKind.shortage);
+      expect((lines[0].why!.left, lines[0].why!.threshold), (0.0, 2.0));
+    });
+
+    test('a forecast from an estimated usage says it is one', () {
+      final lines = brief(
+        <InventoryItem>[_item('توست', 1)],
+        <String, ConsumptionRate>{rateKey('توست'): (perDay: 0.5, known: false)},
+      );
+      expect(lines.single.why!.kind, BriefWhyKind.runningOutApprox);
     });
 
     test('far off is not news, and no rate keeps the plain line', () {

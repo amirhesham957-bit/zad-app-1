@@ -2885,4 +2885,45 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get channelCardTelegram => 'Link Telegram';
+
+  @override
+  String get briefWhy => 'Why?';
+
+  @override
+  String briefWhyDose(String name, String time) {
+    return 'From $name\'s schedule: the $time dose, with nothing recorded yet.';
+  }
+
+  @override
+  String briefWhyMissed(String count) {
+    return 'Today\'s doses past their time with nothing recorded: $count.';
+  }
+
+  @override
+  String get briefWhyOverspent =>
+      'This period\'s available money is below zero: the opening balance minus what was spent and the fixed commitments.';
+
+  @override
+  String briefWhyRenewal(String name) {
+    return '«$name» is in your subscriptions, and this is its next renewal.';
+  }
+
+  @override
+  String briefWhyShortage(String name, String left, String threshold) {
+    return '$name: $left left, which is where it counts as low ($threshold).';
+  }
+
+  @override
+  String briefWhyRunningOut(String name, String left, String perDay) {
+    return '$name: $left left, and you use about $perDay a day.';
+  }
+
+  @override
+  String briefWhyRunningOutApprox(String name, String left, String perDay) {
+    return '$name: $left left; your usage is still being measured — about $perDay a day, so this is an estimate.';
+  }
+
+  @override
+  String get briefWhyFamily =>
+      'Someone in the family chat said it\'s needed, and Zad picked it up reviewing the chat.';
 }

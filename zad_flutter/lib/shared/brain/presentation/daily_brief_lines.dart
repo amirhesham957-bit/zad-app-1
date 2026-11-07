@@ -7,11 +7,13 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart' show NumberFormat;
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/brain/domain/daily_brief.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/insights/application/insights_controller.dart';
@@ -143,13 +145,53 @@ class DailyBriefLines extends ConsumerWidget {
   }
 }
 
-class _Line extends StatelessWidget {
+/// «ليه؟» in words, from the figures the line was decided on.
+String briefWhyText(ZadL10n l10n, BriefWhy why) {
+  String n(double v) =>
+      NumberFormat(v % 1 == 0 ? '#,##0' : '#,##0.##', 'en').format(v);
+  return switch (why.kind) {
+    BriefWhyKind.dose => l10n.briefWhyDose(why.name, why.time),
+    BriefWhyKind.missed => l10n.briefWhyMissed('${why.count}'),
+    BriefWhyKind.overspent => l10n.briefWhyOverspent,
+    BriefWhyKind.renewal => l10n.briefWhyRenewal(why.name),
+    BriefWhyKind.shortage => l10n.briefWhyShortage(
+      why.name,
+      n(why.left),
+      n(why.threshold),
+    ),
+    BriefWhyKind.runningOut => l10n.briefWhyRunningOut(
+      why.name,
+      n(why.left),
+      n(why.perDay),
+    ),
+    BriefWhyKind.runningOutApprox => l10n.briefWhyRunningOutApprox(
+      why.name,
+      n(why.left),
+      n(why.perDay),
+    ),
+    BriefWhyKind.family => l10n.briefWhyFamily,
+  };
+}
+
+class _Line extends StatefulWidget {
   const new({required this.item, required this.onTap, this.onTake, this.onAdd});
 
   final BriefItem item;
   final VoidCallback onTap;
   final VoidCallback? onTake;
   final VoidCallback? onAdd;
+
+  @override
+  State<_Line> createState() => _LineState();
+}
+
+class _LineState extends State<_Line> {
+  bool _why = false;
+
+  BriefItem get item => widget.item;
+  VoidCallback get onTap => widget.onTap;
+  VoidCallback? get onTake => widget.onTake;
+  VoidCallback? get onAdd => widget.onAdd;
 
   (IconData, Color) get _look => switch (item.kind) {
     BriefKind.doseDue => (ZadIcons.pharmacy, ZadColors.terracottaRust),
@@ -191,6 +233,28 @@ class _Line extends StatelessWidget {
                         color: ZadColors.inkMuted,
                       ),
                     ),
+                    if (item.why case final why? when _why)
+                      Padding(
+                        padding: const EdgeInsets.only(top: ZadSpacing.xs),
+                        child: Text(
+                          briefWhyText(context.l10n, why),
+                          style: ZadType.bodySmall.copyWith(
+                            color: ZadColors.ink,
+                          ),
+                        ),
+                      )
+                    else if (item.why != null)
+                      TextButton(
+                        onPressed: () => setState(() => _why = true),
+                        style: TextButton.styleFrom(
+                          minimumSize: const Size(44, 44),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: ZadSpacing.xs,
+                          ),
+                          alignment: AlignmentDirectional.centerStart,
+                        ),
+                        child: Text(context.l10n.briefWhy),
+                      ),
                   ],
                 ),
               ),
