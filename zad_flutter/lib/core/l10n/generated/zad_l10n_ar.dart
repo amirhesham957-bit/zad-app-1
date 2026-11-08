@@ -440,6 +440,9 @@ class ZadL10nAr extends ZadL10n {
   String get drawerAllFeatures => 'كل المزايا';
 
   @override
+  String get memoryGraphResetView => 'رجّع الشبكة مكانها';
+
+  @override
   String get drawerGroupMore => 'أكتر';
 
   @override

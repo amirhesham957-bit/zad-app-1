@@ -877,6 +877,12 @@ abstract class ZadL10n {
   /// **'كل المزايا'**
   String get drawerAllFeatures;
 
+  /// No description provided for @memoryGraphResetView.
+  ///
+  /// In ar, this message translates to:
+  /// **'رجّع الشبكة مكانها'**
+  String get memoryGraphResetView;
+
   /// No description provided for @drawerGroupMore.
   ///
   /// In ar, this message translates to:

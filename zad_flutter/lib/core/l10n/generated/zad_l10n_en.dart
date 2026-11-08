@@ -446,6 +446,9 @@ class ZadL10nEn extends ZadL10n {
   String get drawerAllFeatures => 'All features';
 
   @override
+  String get memoryGraphResetView => 'Put the graph back';
+
+  @override
   String get drawerGroupMore => 'More';
 
   @override
