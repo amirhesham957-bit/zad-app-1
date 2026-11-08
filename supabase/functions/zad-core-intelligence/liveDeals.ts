@@ -216,6 +216,9 @@ export function fillMarketCurrency(parsed: unknown, currency: string): unknown {
   };
 }
 
+/** A monthly instalment is not the item's price (Carrefour Qatar's 75" TV stored at 299.75 beside its real 1199, 8/11). */
+const INSTALLMENT_NAME = /قسط|اقساط|أقساط|تقسيط|شهريا|شهرياً|installment|instalment|per month|monthly|\/\s?mo\b/i;
+
 export function readStoreDeals(parsed: unknown, hits: DealHit[], currency: string, now: Date): StoreDeal[] {
   const list = parsed && typeof parsed === "object" && Array.isArray((parsed as { deals?: unknown }).deals)
     ? (parsed as { deals: unknown[] }).deals
@@ -229,6 +232,7 @@ export function readStoreDeals(parsed: unknown, hits: DealHit[], currency: strin
     const price = Number(r.price);
     const hit = hits[Number(r.source) - 1];
     if (item.length < 2 || item.length > 80 || !Number.isFinite(price) || price <= 0 || price > 1_000_000) continue;
+    if (INSTALLMENT_NAME.test(item)) continue;
     if (!hit || !/^https:\/\//.test(hit.url) || hit.url.length > 500) continue;
     if (!sameCurrency(currency, typeof r.currency === "string" ? r.currency : "")) continue;
     const before = Number(r.price_before);
@@ -337,7 +341,8 @@ export const SOCIAL_DEAL_RULE =
   "خُد أي صنف أو وجبة أو كومبو أو باقة ليها سعر مكتوب، في الكلام أو في الصورة أو على غلاف الفيديو أو الشاشة، بأي شكل " +
   "(٣٩، 39 ر.س، ⃁39، «بـ٣٩»، «قبل وبعد»، «٢ بسعر ١»). الباقة اسمها زي ما هو مكتوب ومعاها شكل العرض، وسعرها المكتوب هو price، " +
   "والسعر المشطوب أو «بدل» هو price_before. ممنوع تخمّن سعر مش مكتوب أو تحسبه من نسبة أو تكمّل من معلوماتك؛ خصم بنسبة من غير سعر " +
-  "ولا كود مايتسجلش. ";
+  "ولا كود مايتسجلش. القسط الشهري مش سعر (تقسيط، قسط، شهرياً، installment، per month، /mo): خُد السعر الكامل لو مكتوب، ولو القسط بس المكتوب " +
+  "سيب الصنف ده. ";
 
 export const CODES_RULE =
   "codes = أكواد الخصم (بروموكود/كوبون) المكتوبة أو الظاهرة حرف بحرف بس، كل كود بخصمه: percent = النسبة لو مكتوبة، " +

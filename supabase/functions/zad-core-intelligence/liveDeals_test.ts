@@ -230,3 +230,13 @@ Deno.test("social prompts take any written price but still forbid guessing", () 
   assert(system.includes("كومبو") && system.includes("ممنوع تخمّن"));
   assert(videoDealsPrompt("كيو", "السعودية", "SAR", "x", "2026-11-08").system.includes("ممنوع تخمّن"));
 });
+
+Deno.test("a monthly instalment is never stored as a price (8/11)", () => {
+  const hit = [{ title: "بوست", url: "https://www.instagram.com/p/x/", snippet: "" }];
+  const now = new Date("2026-11-08T00:00:00Z");
+  const names = (item: string) => readStoreDeals({ deals: [{ item, price: 299.75, currency: "QAR", source: 1 }] }, hit, "QAR", now).length;
+  assertEquals(names("Hisense UHD TV 75 (installment offer)"), 0);
+  assertEquals(names("تلفزيون هايسنس قسط شهري"), 0);
+  assertEquals(names("Hisense UHD TV 75"), 1);
+  assert(postDealsPrompt("كيو", "قطر", "QAR", "x", "2026-11-08").system.includes("القسط الشهري مش سعر"));
+});
