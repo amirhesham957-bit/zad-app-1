@@ -2139,6 +2139,8 @@ async function handle(req: Request): Promise<Response> {
         }
         // «اقتراحات جديدة»: الكاش بيتعدّى، واللي اتعرض قبل كده مايتكررش.
         const fresh = payload?.fresh === true;
+        // ٧.٤: «خطة الأسبوع»: ٧ وصفات، واحدة لكل يوم.
+        const week = payload?.week === true;
         // ٧.٤: اللي اتعرض في آخر أسبوعين مايتعرضش تاني، حتى من غير «اقتراحات جديدة».
         let served = new Set<string>();
         let servedNames: string[] = [];
@@ -2165,7 +2167,7 @@ async function handle(req: Request): Promise<Response> {
           console.error("[CoreIntel] meal_suggestions broke mode lookup failed:", (e as Error).message);
         }
         const cacheKey = mealSuggestionsCacheKey({
-          userId: user_id, dialect: dialectPrefix, person: personTag, brokeMode, items: items || "",
+          userId: user_id, dialect: dialectPrefix, person: personTag, brokeMode, items: (week ? "week|" : "") + (items || ""),
         });
         const cached = fresh ? null : await getCachedAiResponse(cacheKey);
         if (cached) return jsonResponse(cached);
@@ -2340,12 +2342,16 @@ async function handle(req: Request): Promise<Response> {
             ? "العميل شاف الوصفات دي وطلب اقتراحات جديدة — **متكرريش ولا واحدة منها ولا نفس الأكلة باسم تاني**: " +
               avoid.join("، ") + ".\n"
             : "") +
+          (week
+            ? "⬅️ المطلوب المرة دي خطة أسبوع: ٧ وصفات مختلفة بالظبط في `recipes`، واحدة لكل يوم بالترتيب، بدل المجموعات اللي فوق. " +
+              "أول الأيام للأصناف اللي قرب تنتهي صلاحيتها، والوصفات تتنوّع ومايتكررش فيها نفس البروتين يومين ورا بعض.\n"
+            : "") +
           `الشهر الحالي: ${seasonMonthAr} — لو فيه مناسبة موسمية معروفة (رمضان، الصيف، الشتاء، الأعياد) خدي بالك منها في اقتراحاتك، من غير ما تفرضيها لو المخزون مش مناسب.\n`;
         const userPrompt = "=== المخزون ===\n" + (items || "لا يوجد مخزون") + "\n=== نهاية المخزون ===" +
           (expiring.length > 0 ? "\n" + expiringBlock(expiring) : "") +
           (liveDeals.length > 0 ? "\n" + dealsBlock(liveDeals) : "") +
           (trends ? "\n" + trends : "");
-        const result = await logged(user_id, action, "callJsonModel", { args: [systemPrompt, userPrompt] }, () => callJsonModel(systemPrompt, userPrompt));
+        const result = await logged(user_id, action, "callJsonModel", { args: [systemPrompt, userPrompt] }, () => callJsonModel(systemPrompt, userPrompt, week ? 4000 : undefined));
         // same honest-failure contract as recipe_details: null/ok:false on a genuine upstream
         // failure instead of baking in Arabic text that looks like a real AI reply. The Kotlin
         // client (ZadAiRepository.suggestMeals) already falls back to its own "لم أتمكن..."
@@ -2362,7 +2368,14 @@ async function handle(req: Request): Promise<Response> {
           ...r, from_inventory: recipeNeedsNoShopping(r?.missing_ingredients_to_buy), trending: !!trends && r?.trending === true,
           deal_items: dealsForMissing(r?.missing_ingredients_to_buy, liveDeals),
         })).sort((a: { from_inventory: boolean }, b: { from_inventory: boolean }) => Number(b.from_inventory) - Number(a.from_inventory));
-        const recipes = flagged.length ? await attachRecipeImages(flagged) : [];
+        // خطة الأسبوع بترتيب الموديل: اليوم من مكان الوصفة، بعد شيل اللي اتكرر.
+        const ordered = week
+          ? withoutRecent(allowedRecipes as Array<{ recipe_name?: unknown; missing_ingredients_to_buy?: unknown }>, served).slice(0, 7).map((r, i) => ({
+            ...r, day: i + 1, from_inventory: recipeNeedsNoShopping(r?.missing_ingredients_to_buy), trending: false,
+            deal_items: dealsForMissing(r?.missing_ingredients_to_buy, liveDeals),
+          }))
+          : flagged;
+        const recipes = ordered.length ? await attachRecipeImages(ordered) : [];
         const response = { text: result?.text || null, recipes, ok: !!result?.text };
         if (response.ok) {
           await setCachedAiResponse(cacheKey, "meal_suggestions", response);

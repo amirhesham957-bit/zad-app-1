@@ -88,6 +88,7 @@ class RecipesView extends ConsumerWidget {
                     ),
                     sliver: SliverToBoxAdapter(child: _ChefLine(text: text)),
                   ),
+                ..._group(context.l10n.recipesWeekGroup, suggestions.weekPlan),
                 ..._group('من مخزونك', suggestions.fromPantry),
                 ..._group(
                   context.l10n.recipesTrendingGroup,
@@ -107,9 +108,10 @@ class RecipesView extends ConsumerWidget {
             ZadSpacing.gutter,
             ZadSpacing.lg,
           ),
-          child: SizedBox(
-            width: double.infinity,
-            child: FilledButton.icon(
+          child: Row(
+            children: <Widget>[
+              Expanded(
+                child: FilledButton.icon(
               onPressed: view.isAsking || !hasStock
                   ? null
                   : () => unawaited(
@@ -131,7 +133,19 @@ class RecipesView extends ConsumerWidget {
                     ? 'وصفات من مخزني'
                     : 'اقتراحات جديدة',
               ),
-            ),
+              ),
+              const SizedBox(width: ZadSpacing.sm),
+              OutlinedButton(
+                onPressed: view.isAsking || !hasStock
+                    ? null
+                    : () => unawaited(
+                        ref
+                            .read(recipesControllerProvider.notifier)
+                            .ask(fresh: true, week: true),
+                      ),
+                child: Text(context.l10n.recipesWeekAction),
+              ),
+            ],
           ),
         ),
       ],
@@ -246,6 +260,13 @@ class _RecipeCard extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
+                if (recipe.day case final day?)
+                  Text(
+                    context.l10n.recipesWeekDay(day),
+                    style: ZadType.labelSmall.copyWith(
+                      color: ZadColors.green700,
+                    ),
+                  ),
                 Text(
                   recipe.name,
                   maxLines: 2,
@@ -257,6 +278,13 @@ class _RecipeCard extends ConsumerWidget {
                   _meta(recipe, currency),
                   style: ZadType.labelSmall.copyWith(color: ZadColors.inkMuted),
                 ),
+                if (recipe.deals.isNotEmpty)
+                  Text(
+                    context.l10n.recipesOnDeal,
+                    style: ZadType.labelSmall.copyWith(
+                      color: ZadColors.green700,
+                    ),
+                  ),
               ],
             ),
           ),
@@ -402,6 +430,18 @@ class RecipeSheet extends ConsumerWidget {
               const _Heading('ناقصك'),
               for (final item in recipe.missing)
                 _Ingredient(name: item, have: false),
+            ],
+            if (recipe.deals.isNotEmpty) ...<Widget>[
+              const SizedBox(height: ZadSpacing.lg),
+              _Heading(context.l10n.recipesOnDeal),
+              for (final d in recipe.deals)
+                Padding(
+                  padding: const EdgeInsets.only(top: ZadSpacing.xs),
+                  child: Text(
+                    '${d.item} · ${d.store} · ${d.price % 1 == 0 ? d.price.toInt() : d.price} ${d.currency}',
+                    style: ZadType.bodySmall,
+                  ),
+                ),
             ],
             if (recipe.steps.isNotEmpty) ...<Widget>[
               const SizedBox(height: ZadSpacing.xl),
