@@ -215,6 +215,38 @@ void main() {
     expect(subs.calls, <String>['paid:a']);
   });
 
+  testWidgets("a card's actions are full targets and fit a small phone", (
+    tester,
+  ) async {
+    tester.view
+      ..physicalSize = const Size(360, 720)
+      ..devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await pump(tester, <Subscription>[
+      _sub('a', 'Netflix Premium Family', renewalDate: '2026-09-25'),
+    ]);
+    await tester.pumpAndSettle();
+
+    for (final tooltip in <Finder>[
+      find.byIcon(Icons.bolt),
+      find.byIcon(Icons.pause_circle),
+      find.byIcon(Icons.edit_note),
+      find.byIcon(Icons.delete_outline),
+    ]) {
+      final target = tester.getSize(
+        find.ancestor(of: tooltip, matching: find.byType(InkResponse)).first,
+      );
+      expect(target.shortestSide, greaterThanOrEqualTo(44));
+    }
+    final paid = tester.getSize(
+      find
+          .ancestor(of: find.text('تم الدفع ✓'), matching: find.byType(InkWell))
+          .first,
+    );
+    expect(paid.height, greaterThanOrEqualTo(44));
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('a stopped row is not offered «تم الدفع ✓»', (tester) async {
     await pump(tester, <Subscription>[
       _sub('b', 'Shahid', renewalDate: '2026-09-25', active: false),
