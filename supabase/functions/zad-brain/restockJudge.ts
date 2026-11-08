@@ -15,7 +15,7 @@ export interface JudgedRow {
 }
 
 /** أعضاء البيت (العميل + عيلته) — المشاهدات متسجلة باسم اللي سجّلها. */
-async function householdUserIds(sb: SupabaseClient, userId: string, familyId: string | null): Promise<string[]> {
+export async function householdUserIds(sb: SupabaseClient, userId: string, familyId: string | null): Promise<string[]> {
   if (!familyId) return [userId];
   const { data } = await sb.from("family_members").select("user_id").eq("family_id", familyId);
   const ids = ((data ?? []) as Array<{ user_id: string | null }>).map((r) => r.user_id).filter((x): x is string => !!x);

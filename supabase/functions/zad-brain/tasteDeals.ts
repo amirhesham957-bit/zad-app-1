@@ -19,6 +19,8 @@ import { meaningfulWords, offerMatchesNeed, stapleGroup, stapleHead } from "./pr
 import { MAX_INTENT_ITEMS, openIntents } from "./purchaseIntent.ts";
 import { haversineKm, type Trip, tripCost, tripEatsSaving, usableFuel } from "./tripCost.ts";
 import { deliveryApp } from "../_shared/deliveryApps.ts";
+import { habitCycleDays, PURCHASE_SOURCES, purchaseDaysByItem } from "../_shared/restockCycle.ts";
+import { householdUserIds } from "./restockJudge.ts";
 import { likedTerms, loadAffinity, rankByRelevance } from "../_shared/dealRelevance.ts";
 
 export const MAX_TASTE_ITEMS = 5;
@@ -75,6 +77,8 @@ export interface TasteDeal {
   multi_buy?: boolean;
   /** الحاجة زي ما العميل قالها في «عايز أشتري …» (ZAD_PLAN ٥.٨ (٣)) — العرض ده على نية مش على احتياج. */
   intent?: string;
+  /** كل كام يوم البيت بيشتري الصنف ده فعلاً (ZAD_PLAN ٤.٢٤). */
+  cycle_days?: number;
   /** صنف + محل — عليه بيتعمل منع التكرار. */
   key: string;
   /** من zad_deals بس: نوع المصدر ورابطه ولحد إمتى. البحث الحي مالوش مصدر متخزّن. */
@@ -615,6 +619,41 @@ export function askedDealKeys(rows: ReadonlyArray<{ facts?: unknown; created_at?
  * [tight] = الميزانية في خطر (OVER/DANGER). هو و«أنا مفلس» مابيقفلوش العرض زي الأول (ZAD_PLAN ٤.٨): بيقصروه على
  * النواقص — اللي هيخلص الأول، وبعده قايمة الشرا — وبأرخص سعر، من غير اهتمامات.
  */
+// ── العرض على دورة الشرا (ZAD_PLAN ٤.٢٤) ─────────────
+// «الزيت اللي بتجيبه كل ١٥ يوم عليه خصم النهاردة»: الدورة من مشترياته هو، مش تخمين.
+
+export const CYCLE_MIN_DAYS = 2;
+export const CYCLE_MAX_DAYS = 120;
+
+/** دورة الشرا للصنف اللي العرض عليه؛ لو أكتر من صنف طابق، الأكتر شرا. */
+export function buyingCycleOf(item: string, days: ReadonlyMap<string, readonly string[]>): number | null {
+  let best: readonly string[] | null = null;
+  for (const [name, bought] of days) {
+    if (offerMatchesNeed(name, item) && (!best || bought.length > best.length)) best = bought;
+  }
+  const cycle = best ? habitCycleDays(best) : null;
+  return cycle !== null && cycle >= CYCLE_MIN_DAYS && cycle <= CYCLE_MAX_DAYS ? cycle : null;
+}
+
+/** بيضيف دورة الشرا على العرض. فشل القراية = العرض زي ما هو، من غير الجملة. */
+export async function withBuyingCycle(sb: SupabaseClient, userId: string, deal: TasteDeal | null, now = Date.now()): Promise<TasteDeal | null> {
+  // الفلوس ضيقة أو عرض أساسي أو حاجة قال إنه عايزها: ليهم جملتهم.
+  if (!deal || deal.tight || deal.staple || deal.intent) return deal;
+  try {
+    const family = await householdFamilyId(sb, userId);
+    const users = await householdUserIds(sb, userId, family);
+    const { data, error } = await sb.from("zad_inventory_observations").select("item_name,observed_at")
+      .in("user_id", users).in("source", [...PURCHASE_SOURCES])
+      .gte("observed_at", new Date(now - 240 * 86_400_000).toISOString()).limit(2000);
+    if (error) throw error;
+    const cycle = buyingCycleOf(deal.item, purchaseDaysByItem((data ?? []) as Array<{ item_name: string | null; observed_at: string | null }>));
+    return cycle === null ? deal : { ...deal, cycle_days: cycle };
+  } catch (e) {
+    console.warn("[taste_deal] buying cycle read failed:", (e as Error)?.message);
+    return deal;
+  }
+}
+
 export async function loadTasteDeal(sb: SupabaseClient, userId: string, now = Date.now(), opts: { tight?: boolean; comfortable?: boolean } = {}): Promise<TasteDeal | null> {
   try {
     const family = await householdFamilyId(sb, userId);

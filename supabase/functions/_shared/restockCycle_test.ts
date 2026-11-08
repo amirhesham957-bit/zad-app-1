@@ -1,5 +1,5 @@
 import { assertEquals } from "jsr:@std/assert@1";
-import { cycleDays, priorCycleDays, purchaseDaysByItem, restockKey, restockVerdict } from "./restockCycle.ts";
+import { cycleDays, priorCycleDays, purchaseDaysByItem, restockKey, restockVerdict, habitCycleDays } from "./restockCycle.ts";
 
 const NOW = Date.parse("2026-11-06T09:00:00Z");
 const ago = (days: number) => new Date(NOW - days * 86_400_000).toISOString();
@@ -74,4 +74,10 @@ Deno.test("the customer's own cycle beats the guess and the learned one", () => 
   assertEquals(restockVerdict({ name: "زيت", quantity: 1, purchaseDays: [ago(12)] }, NOW).due, false);
   // قيمة غلط بتتجاهل.
   assertEquals(restockVerdict({ name: "زيت", quantity: 1, purchaseDays: [ago(12)], cycleOverride: 0 }, NOW).cycleDays, 30);
+});
+
+Deno.test("a habit needs three different purchase days", () => {
+  assertEquals(habitCycleDays(["2026-10-01", "2026-10-16"]), null);
+  assertEquals(habitCycleDays(["2026-10-01T09:00:00Z", "2026-10-01T18:00:00Z", "2026-10-16"]), null);
+  assertEquals(habitCycleDays(["2026-10-01", "2026-10-16", "2026-10-31"]), 15);
 });

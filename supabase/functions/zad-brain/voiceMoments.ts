@@ -23,7 +23,7 @@ import { loadAppointmentFollowUp } from "./appointmentFollowUp.ts";
 import { type DoseHabit, loadDoseHabit } from "./doseHabit.ts";
 import { sameProductAsk } from "./productIdentity.ts";
 import { askedClothesKeys, clothingNudge, loadWeather, weatherAlert, type WeatherFacts } from "./weather.ts";
-import { loadTasteDeal, saysTheDeal } from "./tasteDeals.ts";
+import { loadTasteDeal, saysTheDeal, withBuyingCycle } from "./tasteDeals.ts";
 import { loadDealCode } from "./dealCodes.ts";
 import { budgetComfortable } from "./householdLoad.ts";
 import { familyTime, type FamilyTime, isWeekendEve, weekendOuting, type WeekendOuting } from "./familyTime.ts";
@@ -246,6 +246,7 @@ const MOMENT_GUIDANCE: Record<string, string> = {
     "والفلوس ضيقة: قوليه كده، من غير «فرصة» ولا تشجيع على شرا أكتر من الناقص؛ ولو stock = true فالميزانية مرتاحة والصنف بيتخزّن " +
     "وبيشتروه: قولي إنها فرصة يخزّنوا منه، اقتراح مش ضغط؛ ولو fire = true فده عرض قوي (خصم كبير، أو ١+١ لو multi_buy = true) على حاجة " +
     "بيجيبوها ومش في القايمة: قولي كده، معلومة مش دعوة لشرا؛ ولو staple = true فده عرض على حاجة أساسية في كل بيت وزاد لسه مايعرفش " +
+    "ولو فيه taste_deal.cycle_days: قولي إنهم بيجيبوه كل cycle_days يوم بدل «لو محتاج»، بالرقم زي ما هو. " +
     "اللي ناقص عندهم: قوليه «لو محتاج» من غير ما تقولي إنه ناقص عندهم؛ ولو intent موجود فهو اللي قال قبل كده إنه ناوي يشتري taste_deal.intent: " +
     "فكّريه بكلمته هو، من غير ما تقولي إمتى قالها) — معلومة مش ضغط شراء، ومن غير أي رقم مش موجود. " +
     "ولو فيه taste_deal.trip: قولي المشوار بالعربية رايح جاي trip.km كم بـtrip.cost بنزين، ولو فيه saving التوفير الصافي (saving − trip.cost) — من غير أي رقم تاني. " +
@@ -737,7 +738,7 @@ export function momentFallback(moment: string, facts: Record<string, unknown>): 
       const occasion = occasionLine(facts.occasions);
       const alert = str((facts.weather_alert as { line?: string } | undefined)?.line, 200);
       const clothes = str((facts.weather_clothes as { line?: string } | undefined)?.line, 120);
-      const dealFact = facts.taste_deal as { trip?: { km?: number; cost?: number } | null; delivery?: { app?: string; fee?: number } | null; item?: string; intent?: string; store?: string; price?: number | null; discount_percent?: number | null; price_before?: number | null; saving?: number | null; favorite?: boolean; nearby?: boolean; tight?: boolean; stock?: boolean; fire?: boolean; multi_buy?: boolean; staple?: boolean; brand?: string | null; source?: { until?: string | null } | null } | undefined;
+      const dealFact = facts.taste_deal as { trip?: { km?: number; cost?: number } | null; delivery?: { app?: string; fee?: number } | null; item?: string; intent?: string; store?: string; price?: number | null; discount_percent?: number | null; price_before?: number | null; saving?: number | null; favorite?: boolean; nearby?: boolean; tight?: boolean; stock?: boolean; fire?: boolean; multi_buy?: boolean; staple?: boolean; brand?: string | null; cycle_days?: number; source?: { until?: string | null } | null } | undefined;
       const deal = dealFact?.item && dealFact?.store
         ? (dealFact.tight
           ? `أرخص ${str(dealFact.item, 60)} لقيته في ${str(dealFact.store, 60)}${dealFact.nearby ? " (قريب منك)" : ""}`
@@ -745,6 +746,8 @@ export function momentFallback(moment: string, facts: Record<string, unknown>): 
           ? `قلتلي إنك ناوي تشتري ${str(dealFact.intent, 40)} — لقيت عرض على ${str(dealFact.item, 60)} في ${str(dealFact.store, 60)}${dealFact.favorite ? " (محلك)" : dealFact.nearby ? " (قريب منك)" : ""}`
           : dealFact.fire
           ? `عرض قوي${dealFact.multi_buy ? " (١+١)" : ""} على ${str(dealFact.item, 60)} اللي بتجيبوه في ${str(dealFact.store, 60)}${dealFact.favorite ? " (محلك)" : dealFact.nearby ? " (قريب منك)" : ""}`
+          : dealFact.cycle_days
+          ? `${str(dealFact.item, 60)} اللي بتجيبوه كل ${dealFact.cycle_days} يوم عليه عرض في ${str(dealFact.store, 60)}${dealFact.favorite ? " (محلك)" : dealFact.nearby ? " (قريب منك)" : ""}`
           : `ولو محتاج ${str(dealFact.item, 60)}${dealFact.brand ? " (الماركة اللي بتجيبوها)" : ""}: فيه عرض عليه في ${str(dealFact.store, 60)}${dealFact.favorite ? " (محلك)" : dealFact.nearby ? " (قريب منك)" : ""}`) +
           (dealFact.tight && dealFact.price ? ` بـ${dealFact.price}`
             : dealFact.price && dealFact.price_before && dealFact.saving ? ` بـ${dealFact.price} بدل ${dealFact.price_before} (توفّر ${dealFact.saving})`
@@ -1441,10 +1444,14 @@ export async function morningFacts(
   const threat = String((budget as { threat?: unknown } | null)?.threat ?? "");
   // والميزانية مرتاحة (مؤكدة، SAFE، و٣٠٪ متاح): الأساسي اللي بيتخزّن بيتقال كفرصة تخزين.
   const comfortable = !!budget?.limit_confirmed && budgetComfortable(threat, budget?.available, budget?.monthly_limit);
-  const homeDeal = quiet ? null : await loadTasteDeal(sb, userId, Date.now(), {
-    tight: threat === "OVER" || threat === "DANGER",
-    comfortable,
-  });
+  const homeDeal = quiet ? null : await withBuyingCycle(
+    sb,
+    userId,
+    await loadTasteDeal(sb, userId, Date.now(), {
+      tight: threat === "OVER" || threat === "DANGER",
+      comfortable,
+    }),
+  );
   // وقت العيلة قبل الويك إند (familyTime.ts): مش في ظرف؛ والميزانية في خطر أو «أنا مفلس» ⇒ أفكار ببلاش.
   const together = quiet ? null : await familyTimeFor(sb, userId, local.date, weather, budget, profile ?? null, threat);
   // ٥.٨ (٢): ليلة الويك إند والميزانية مرتاحة ⇒ خانة العرض لخروجة مش لصنف بيت. البيت اللي فيه أكتر من فرد خد
