@@ -61,7 +61,7 @@ import { crossRate, describeRate, rankDeals, summarizePriceTrend } from "./price
 import { homeMap } from "./crowdFloor.ts";
 import { lowStockToAdd, productFamilyOf } from "./lowStock.ts";
 import { deliverRestockLink } from "./restockLink.ts";
-import { CONSOLIDATION_MIN_USER_TURNS, consolidateDay, type DayTurn, type FamilyLine, type KnownNote, SHOPPING_ADD_ACTION, TRAIT_CONFIDENCE, TRAIT_SCOPE } from "./consolidation.ts";
+import { TRACK_DAYS, CONSOLIDATION_MIN_USER_TURNS, consolidateDay, type DayTurn, type FamilyLine, type KnownNote, SHOPPING_ADD_ACTION, TRAIT_CONFIDENCE, TRAIT_SCOPE } from "./consolidation.ts";
 import { loadSharedHistory, markUnanswered, pickHistory, recordSharedTurn, spokenRecord, type SharedTurn } from "./sharedConversation.ts";
 import { runDailyForUsers } from "./dailyBrain.ts";
 import { ACCEPTANCE_CASES, ACCEPTANCE_PROBE, ACCEPTANCE_USER_ID, internalLeak, machineCloser, TEST_CAP_REPLY, testDailyCap } from "./acceptance.ts";
@@ -94,6 +94,7 @@ import { challengeDayIndex, suggestChallengeCap } from "../_shared/savingsChalle
 import { type SavingsAgreement, savingsAgreementFrom } from "../_shared/savingsAgreement.ts";
 import { RECEIPT_REACTIONS_PER_DAY, receiptKey, sanitizeReceiptFacts } from "../_shared/receiptReaction.ts";
 import { runSocialRecipes } from "./socialRecipesRun.ts";
+import { fuelForecast, fuelForecastLine, type FuelTxn } from "./fuelForecast.ts";
 import { AFFINITY_SCOPE, affinityNote, type Polarity, signalTerms, statedPreference } from "../_shared/dealRelevance.ts";
 import { seasonFor, seasonInstruction, upcomingSeason, upcomingSeasonInstruction } from "../_shared/season.ts";
 import { SEASON_PLAN_DAYS, seasonPlanInstruction, upcomingCalendarSeasons } from "../_shared/seasonCalendar.ts";
@@ -1355,6 +1356,12 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
 
   // سؤال صباح الخير اللي اتبعت (ملف أو فضول — curiosity.ts): الجواب بيوصل لفة عادية. ومعاها سؤال
   // بعد الضهر في أول ٧٢ ساعة (newcomer.ts) — الأحدث هو اللي العميل بيجاوب عليه.
+  // البنزين (fuelForecast.ts): عشان الشات يقدر يتكلم عنه. فشل القراية = من غير توقع.
+  const { data: fuelTxns } = await sb.from("zad_transactions").select("amount,title,merchant_name,category,created_at").eq("user_id", userId)
+    .eq("txn_kind", "expense").gte("created_at", new Date(Date.now() - 90 * 86_400_000).toISOString()).limit(400)
+    .then((r) => r, () => ({ data: null }));
+  const fuelLine = fuelForecastLine(fuelForecast((fuelTxns ?? []) as FuelTxn[], Date.parse(`${localNowContext(budgetState.timezone ?? "UTC").date}T00:00:00Z`)));
+
   const { data: morningRow } = await sb.from("zad_voice_moments")
     .select("facts,sent_at")
     .eq("user_id", userId).in("moment", ["morning_greeting", NEWCOMER_MOMENT]).eq("status", "sent")
@@ -1623,6 +1630,7 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
       const up = upcomingSeason(new Date(), budgetState.timezone ?? "UTC");
       return up ? { ...up, instruction: upcomingSeasonInstruction(up) } : null;
     })(),
+    fuel_forecast: fuelLine,
     // ٧.٣: مواسم بلده جوه أسبوعين، بخطة الشرا والتوفير. فاضية = مفيش.
     season_plan: seasonPlanInstruction(upcomingCalendarSeasons(
       budgetState.country ?? userRes.data?.country ?? null, localNowContext(budgetState.timezone ?? "UTC").date, SEASON_PLAN_DAYS,
@@ -8875,7 +8883,7 @@ ${offers("log_pharmacy_dose") ? `   - **«أخدته» / «خدت الدوا» /
 
 ${(offers("set_broke_mode") || snap?.broke_mode) ? `12. **وضع الطوارئ (broke_mode)**: «أنا مفلس/خلصت فلوسي/مفلس باقي الشهر» ⇒ set_broke_mode(active=true) فوراً، ورد بحنية من غير لوم: رقم مصروف اليوم (daily_cap) لو معروف، و٣ خطوات عملية (الأساسيات بس، الأكل من اللي في البيت، أجّل أي شراء مش ضروري). طول ما broke_mode مش null: **ممنوع** تقترح شراء أو عروض أو مطاعم أو اشتراكات جديدة أو تضيف لقايمة الشراء غير لو العميل طلب بنفسه، والوصفات من المخزون بس من غير أي صنف يتشرى. متقترحش إلغاء التزامات ثابتة (إيجار/قسط).` : ""}
 ${(offers("start_savings_challenge") || snap?.savings_challenge) ? `13. **تحدي التوفير (savings_challenge)**: «تحدي توفير/ساعدني أوفّر/تحدي ٣٠ يوم» ⇒ start_savings_challenge. لو فيه تحدي شغال: اذكر اليوم (day من length_days) والسلسلة (streak) لما يكون ليها معنى، شجّعه يفضل تحت daily_cap، ولو سأل «ينفع أشتري كذا؟» قارن بالسقف اليومي.` : ""}
-${snap?.season_plan ? `13ج. **مواسم بلده (season_plan)**: ${snap.season_plan}\n` : ""}${(snap?.season_ahead) ? `13ب. **الموسم الجاي (season_ahead)**: اتبع season_ahead.instruction مرة في المحادثة لو الكلام عن البيت أو الشراء أو الميزانية — مش في كل رد، ومش في أول سطر.
+${snap?.fuel_forecast ? `13د. **البنزين (fuel_forecast)**: ${snap.fuel_forecast}\n` : ""}${snap?.season_plan ? `13ج. **مواسم بلده (season_plan)**: ${snap.season_plan}\n` : ""}${(snap?.season_ahead) ? `13ب. **الموسم الجاي (season_ahead)**: اتبع season_ahead.instruction مرة في المحادثة لو الكلام عن البيت أو الشراء أو الميزانية — مش في كل رد، ومش في أول سطر.
 ` : ""}${(snap?.season) ? `14. **المواسم (season)**: لو season مش null، اتبع season.instruction في كل كلامك واقتراحاتك (رمضان: مفيش أكل بالنهار، فطار وسحور؛ العيد: العيدية والعزومات متوقعة). متفترضش إن العميل صايم أو بيحتفل لو قال غير كده.` : ""}
 ${(offers("find_deals")) ? `15أ. **العروض (find_deals)**: «هاتلي عروض/دوّرلي على عرض/فيه عروض إيه/كود خصم» ⇒ نادِ find_deals الأول واعرض العروض بأسعارها ولينكاتها. الميزانية عمرها ما تكون سبب ترفض أو تأجّل بيه البحث أو تقول «انزل بص بنفسك» — ممكن يكون بيخطط للشهر الجاي أو عنده فلوس تانية. نصيحة الفلوس لو لازمة: سطر واحد في آخر الرد بعد العروض.
 ` : ""}${(offers("suggest_recipes")) ? `15. **شيف زاد (suggest_recipes)**: «أطبخ إيه؟/أعمل أكل إيه من اللي عندي؟» ⇒ نادِ suggest_recipes واعرض من الوصفات اللي رجعت بس، باختصار — ممنوع تخترع وصفة من عندك. «افتحلي الشيف/صفحة الوصفات» ⇒ app_command(screen=recipes).` : ""}
@@ -10137,6 +10145,13 @@ async function handleRequest(req: Request): Promise<Response> {
               },
               markDone: async (at) => {
                 await sbDream.rpc("zad_memory_mark_consolidated", { p_user: u.id, p_at: at });
+              },
+              writeTrack: async (track) => {
+                const { error } = await sbDream.from("zad_life_tracks").insert({
+                  user_id: u.id, question: track.question, because: track.because,
+                  expires_at: new Date(Date.now() + TRACK_DAYS * 86_400_000).toISOString(),
+                });
+                if (error) console.warn("[dream] life track write failed:", error.message);
               },
               // «محتاجين عيش» من شات العيلة ⇒ اقتراح في موجز الصبح (قرار المالك 2026-10-03)، مش رسالة
               // في الشات. التطبيق بيعرف السطر ده من action_type، وبيقوم بيضيفه للقايمة بلمسة. صنف موجود

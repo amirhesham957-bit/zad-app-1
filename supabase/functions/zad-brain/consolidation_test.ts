@@ -13,6 +13,7 @@ import {
   parseConsolidationNeeds,
   parseConsolidationTraits,
   TRAIT_SCOPE,
+  parseLifeTrack,
 } from "./consolidation.ts";
 
 // 2026-10-03 12:00 بتوقيت القاهرة.
@@ -329,4 +330,14 @@ Deno.test("trait: the nightly run writes it, numbered list in the prompt", async
   assertEquals(written, ["مهتم بالأكل الصحي:a,b,c"]);
   assert(prompt.includes("[1] بيشتري خضار كل أسبوع"));
   assert(prompt.includes("[4] بيحب يطبخ في البيت (صفة)"));
+});
+
+Deno.test("a question the model proposes is kept only if it is safe and well formed", () => {
+  const raw = (question: string, because = "قال إنه بدأ يتعلم عود") => JSON.stringify({ track: { question, because } });
+  assertEquals(parseLifeTrack(raw("بدأت تتعلم عود مع مين؟")), { question: "بدأت تتعلم عود مع مين؟", because: "قال إنه بدأ يتعلم عود" });
+  assertEquals(parseLifeTrack(raw("مراتك حامل في الشهر الكام؟")), null);
+  assertEquals(parseLifeTrack(raw("بدأت علاج السكري إزاي؟")), null);
+  assertEquals(parseLifeTrack(raw("كلام من غير سؤال خالص")), null);
+  assertEquals(parseLifeTrack('{"track":null}'), null);
+  assertEquals(parseLifeTrack("junk"), null);
 });
