@@ -8,6 +8,7 @@ import {
   type DatedNote,
   recentlyAskedKeys,
   spendLabel,
+  lifeClues,
 } from "./curiosity.ts";
 
 const DAY = 86_400_000;
@@ -268,4 +269,28 @@ Deno.test("follow-up: goes before a fresh odd amount", () => {
     datedNotes: [{ id: "a", note: "امتحانات يوسف", scope: "general", valid_until: until(1) }],
   });
   assertEquals(c?.kind, "memory_follow_up");
+});
+
+Deno.test("life clues: what is bought is asked about once, as a question", () => {
+  const keys = (names: string[], notes: string[] = [], kids = 0) => lifeClues(names, notes, kids).map((c) => c.key);
+  assertEquals(keys(["رمل قطط ٥ كيلو"]), ["clue:pet"]);
+  assertEquals(keys(["بامبرز مقاس ٣"]), ["clue:baby"]);
+  assertEquals(keys(["شمعة فلتر مية"]).includes("clue:filter"), true);
+  assertEquals(keys(["رز", "زيت"]), []);
+});
+
+Deno.test("life clues: what Zad already knows is not asked", () => {
+  assertEquals(lifeClues(["رمل قطط"], ["عنده قطة اسمها لوسي"]).length, 0);
+  assertEquals(lifeClues(["بامبرز"], [], 2).length, 0);
+});
+
+Deno.test("life clues: nothing about health or pregnancy is ever guessed", () => {
+  for (const name of ["اختبار حمل", "فوليك اسيد", "فيتامين د", "شرايط سكر", "جهاز ضغط", "فوط صحية"]) {
+    assertEquals(lifeClues([name], []), [], name);
+  }
+});
+
+Deno.test("life clues: asked once a year", () => {
+  const rows = [{ facts: { curiosity: { key: "clue:pet" } }, created_at: new Date(Date.now() - 100 * 86_400_000).toISOString() }];
+  assertEquals(recentlyAskedKeys(rows, Date.now()).has("clue:pet"), true);
 });
