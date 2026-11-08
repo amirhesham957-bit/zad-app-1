@@ -34,6 +34,7 @@ import { attentionBudget, type CircumstanceMode, loadCircumstance } from "./circ
 import { schoolDay, type TimetableRow, weekdayOfDate } from "./school.ts";
 import { eventAhead, eventAheadQuestion, SEASON_ASK_DAYS, TRAVEL_ASK_DAYS, type EventAhead } from "./eventAhead.ts";
 import { giftSuggestion, occasionDateLabel, occasionQuestion, type OccasionRow, upcomingOccasions } from "./occasions.ts";
+import { type AskHistory, askHistory, LEDGER_DAYS, mayAsk, occasionAskKey, profileAskKey } from "./askedLedger.ts";
 import { type CadenceAppointment, type ReplyCadence, replyCadence, replyCadenceMomentLine } from "./replyCadence.ts";
 
 export interface VoiceMomentRow {
@@ -1333,15 +1334,26 @@ export const DAILY_QUESTIONS: ReadonlyArray<readonly [string, string]> = [
 export function dailyQuestion(
   profile: Record<string, unknown> | null,
   localDate: string,
+  /** askedLedger.ts: خانة اتسألت ومااتردش عليها تستنى دورها، والفضول ياخد الخانة. */
+  mayAskField: (field: string) => boolean = () => true,
 ): { field: string; question: string } | null {
   const missing = DAILY_QUESTIONS.filter(([field]) => {
     const v = profile?.[field];
-    return v === null || v === undefined || (typeof v === "string" && v.trim() === "");
+    return (v === null || v === undefined || (typeof v === "string" && v.trim() === "")) && mayAskField(field);
   });
   if (missing.length === 0) return null;
   const day = Math.floor(Date.parse(`${localDate}T00:00:00Z`) / 86_400_000);
   const [field, question] = missing[(Number.isFinite(day) ? day : 0) % missing.length];
   return { field, question };
+}
+
+/** الأسئلة اللي اتبعتت فعلاً للعميل. null لو القراية فشلت. */
+async function loadAskHistory(sb: SupabaseClient, userId: string): Promise<AskHistory | null> {
+  const { data, error } = await sb.from("zad_voice_moments").select("facts,created_at")
+    .eq("user_id", userId).eq("status", "sent").in("moment", ["morning_greeting", NEWCOMER_MOMENT])
+    .gte("created_at", new Date(Date.now() - LEDGER_DAYS * 86_400_000).toISOString())
+    .order("created_at", { ascending: false }).limit(800);
+  return error ? null : askHistory(data as Array<{ facts?: unknown; created_at?: string | null }>);
 }
 
 export async function morningFacts(
@@ -1400,11 +1412,18 @@ export async function morningFacts(
   // «روحت الدكتور امبارح؟» (appointmentFollowUp.ts، ZAD_PLAN ٨ج.٦): بعد الهدية والحدث الكبير (ليهم ميعاد)،
   // وقبل الملف والمناسبة والفضول — «امبارح» مالهاش معنى بكرة.
   const followUp = quiet || gift || bigEvent ? null : await loadAppointmentFollowUp(sb, userId, dayStart);
+  // اللي اتسأل قبل كده (askedLedger.ts). فشل القراية = مفيش سؤال النهارده، أحسن من تكرار سؤال اتسأل امبارح.
+  const asked = await loadAskHistory(sb, userId);
+  const nowMs = Date.now();
   // undefined = the read failed: ask nothing rather than ask what may be known.
-  const ask = profile === undefined || quiet || gift || bigEvent || followUp ? null : dailyQuestion(profile, local.date);
+  const ask = profile === undefined || !asked || quiet || gift || bigEvent || followUp
+    ? null
+    : dailyQuestion(profile, local.date, (field) => mayAsk(profileAskKey(field), asked, nowMs));
   // الملف كامل ⇒ الخانة فاضية لحاجة زاد لاحظها في حساباته (curiosity.ts). سؤال واحد في اليوم في الحالتين.
   // الملف كامل ⇒ سؤال عن مناسبة ناقصة والفضول بيتبادلوا يوم بيوم؛ اللي عنده حاجة ياخد اليوم لو التاني فاضي.
-  const occasionAsk = profile === undefined || ask || gift || bigEvent || followUp || quiet ? null : occasionQuestion(occasionRows, people, local.date);
+  const occasionAsk = profile === undefined || !asked || ask || gift || bigEvent || followUp || quiet
+    ? null
+    : occasionQuestion(occasionRows, people, local.date, (who) => mayAsk(occasionAskKey(who), asked, nowMs));
   const occasionDay = Math.floor(Date.parse(`${local.date}T00:00:00Z`) / 86_400_000) % 2 === 0;
   // «دول نفس الحاجة؟» (productIdentity.ts) قبل الفضول العادي: من غير اسم واحد للصنف مفيش معدل
   // استهلاك ولا «هيخلص إمتى؟». نفس الخانة ونفس الشروط — سؤال واحد في اليوم.

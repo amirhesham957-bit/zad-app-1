@@ -165,3 +165,25 @@ Deno.test("profile done, no gift: the morning asks for a birthday, and the answe
   assertEquals(asked?.kind, "occasion");
   assertEquals(asked?.for, "يوسف");
 });
+
+Deno.test("the morning does not repeat what it asked and got no answer to (owner 8/11)", async () => {
+  const now = new Date().toISOString();
+  const asked = (facts: Record<string, unknown>) => ({ created_at: now, facts: { daily_question: "x", ...facts } });
+  const profileFields = ["preferred_name", "gender", "household_role", "pay_day", "cares_for", "occupation"];
+  const allProfile = profileFields.map((f) => asked({ daily_question_kind: "profile", daily_question_field: f }));
+  const self = asked({ daily_question_kind: "occasion", occasion_ask: { for: null } });
+
+  const morning = (rows: unknown[]) => morningFacts(fakeSb({ zad_customer_profile: [PROFILE], zad_voice_moments: rows }, { zad_budget_state: BUDGET }), "u", LOCAL);
+
+  const noLedger = await morning([]);
+  assertEquals(noLedger.daily_question_kind, "profile");
+
+  // Every profile gap already asked: the slot moves to the birthday.
+  const afterProfile = await morning(allProfile);
+  assertEquals(afterProfile.daily_question_kind, "occasion");
+
+  // The birthday asked too: it is not asked again.
+  const afterAll = await morning([...allProfile, self]);
+  assert(afterAll.daily_question_kind !== "profile");
+  assert(afterAll.daily_question_kind !== "occasion");
+});

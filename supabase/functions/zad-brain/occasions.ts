@@ -108,20 +108,22 @@ export function occasionQuestion(
   rows: readonly OccasionRow[],
   people: readonly string[],
   localDate: string,
+  /** askedLedger.ts: اللي اتسأل عنه ومارديش مايتسألش عنه كل يوم. */
+  mayAsk: (person: string | null) => boolean = () => true,
 ): { for: string | null; question: string } | null {
   const known = new Set(
     rows.filter((r) => r.occasion === "birthday").map((r) => (r.occasion_for ?? "").trim().toLowerCase()),
   );
-  const candidates: Array<string | null> = known.has("") ? [] : [null];
+  const unknown: Array<string | null> = known.has("") ? [] : [null];
   const seen = new Set<string>();
   for (const raw of people) {
     const name = raw.trim();
     const key = name.toLowerCase();
     if (!name || known.has(key) || seen.has(key)) continue;
     seen.add(key);
-    candidates.push(name);
-    if (candidates.length >= 6) break;
+    unknown.push(name);
   }
+  const candidates = unknown.filter(mayAsk).slice(0, 6);
   if (candidates.length === 0) return null;
   const day = Math.floor(Date.parse(`${localDate}T00:00:00Z`) / 86_400_000);
   const who = candidates[(Number.isFinite(day) ? day : 0) % candidates.length];
