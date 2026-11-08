@@ -443,6 +443,9 @@ class ZadL10nEn extends ZadL10n {
   String get drawerGroupHome => 'Home and family';
 
   @override
+  String get memoryGraphResetView => 'Put the graph back';
+
+  @override
   String get drawerGroupMore => 'More';
 
   @override
