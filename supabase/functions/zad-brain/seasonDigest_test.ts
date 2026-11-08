@@ -1,4 +1,4 @@
-import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
+import { assert, assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import { type DigestCodeRow, type DigestDealRow, digestKey, digestPhoto, pickDigest, pickDigestCodes, pickHomeDeals } from "./seasonDigest.ts";
 import { codeStoreKey } from "./dealCodes.ts";
 
@@ -146,4 +146,13 @@ Deno.test("5.9: a card says why — what he asked about, the season ahead, or wh
   assertEquals(Object.fromEntries(cards.map((c) => [c.store, c.why])), { "إكسترا": "want", "بنده": "season", "كارفور": "need" });
   const broke = pickHomeDeals({ broke: true, needs: ["لابتوب", "زيت", "تمر"], wants: ["لابتوب"], season: ["تمر"], favorites: [], bought: [], deals: rows, codes: [] });
   assertEquals(broke.cards.map((c) => c.why), ["need"]);
+});
+
+Deno.test("7.3: a country's own season brings its items into the deal pick", () => {
+  const base = { kidsCount: 0, bought: [] as string[], schoolStarts: [] as string[] };
+  const eg = seasonNeeds({ ...base, country: "EG", now: Date.parse("2027-04-25T12:00:00Z") });
+  assert(eg.includes("رنجة"));
+  assertEquals(seasonNeeds({ ...base, country: "SA", now: Date.parse("2027-04-25T12:00:00Z") }).includes("رنجة"), false);
+  assertEquals(seasonNeeds({ ...base, country: "EG", now: Date.parse("2027-09-05T12:00:00Z") }), []);
+  assert(seasonNeeds({ ...base, kidsCount: 1, country: "EG", now: Date.parse("2027-09-05T12:00:00Z") }).includes("كراسات"));
 });
