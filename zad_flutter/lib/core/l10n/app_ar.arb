@@ -247,6 +247,7 @@
   "@placesHabitVisitsOn": {"placeholders": {"count": {"type": "int"}, "day": {"type": "String"}}},
   "placesOrbitNode": "{name}، {count} مرات",
   "@placesOrbitNode": {"placeholders": {"name": {"type": "String"}, "count": {"type": "int"}}},
+  "memoryGraphResetView": "رجّع الشبكة مكانها",
   "drawerGroupMore": "أكتر",
   "drawerKidsMode": "وضع الأطفال",
   "drawerFullMode": "الوضع الكامل",

@@ -134,6 +134,7 @@
   "placesHabitVisits": "{count} visits",
   "placesHabitVisitsOn": "{count} visits · usually {day}",
   "placesOrbitNode": "{name}, {count} visits",
+  "memoryGraphResetView": "Put the graph back",
   "drawerGroupMore": "More",
   "drawerKidsMode": "Kids mode",
   "drawerFullMode": "Full mode",
