@@ -443,6 +443,28 @@ class ZadL10nEn extends ZadL10n {
   String get drawerGroupHome => 'Home and family';
 
   @override
+  String get placesOrbitHome => 'Home';
+
+  @override
+  String get placesOrbitCaption =>
+      'Closest to home means you go most often, not the real distance.';
+
+  @override
+  String placesHabitVisits(int count) {
+    return '$count visits';
+  }
+
+  @override
+  String placesHabitVisitsOn(int count, String day) {
+    return '$count visits · usually $day';
+  }
+
+  @override
+  String placesOrbitNode(String name, int count) {
+    return '$name, $count visits';
+  }
+
+  @override
   String get drawerGroupMore => 'More';
 
   @override

@@ -437,6 +437,28 @@ class ZadL10nAr extends ZadL10n {
   String get drawerGroupHome => 'البيت والعيلة';
 
   @override
+  String get placesOrbitHome => 'البيت';
+
+  @override
+  String get placesOrbitCaption =>
+      'الأقرب للبيت هو اللي بتروحه أكتر، مش المسافة الحقيقية.';
+
+  @override
+  String placesHabitVisits(int count) {
+    return '$count مرات';
+  }
+
+  @override
+  String placesHabitVisitsOn(int count, String day) {
+    return '$count مرات · غالباً $day';
+  }
+
+  @override
+  String placesOrbitNode(String name, int count) {
+    return '$name، $count مرات';
+  }
+
+  @override
   String get drawerGroupMore => 'أكتر';
 
   @override

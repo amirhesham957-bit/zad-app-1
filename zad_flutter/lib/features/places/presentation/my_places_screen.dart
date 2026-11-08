@@ -7,7 +7,8 @@
 /// * «تنبيهات الشارع» — the switch; without it nothing below can fire.
 /// * «لما توصل مكان» — reminders spoken on arriving at a kind of shop.
 /// * «اتعلّمت من خروجاتك» — the shops the customer keeps going back to, and
-///   the day they usually go, from `zad_place_visits`.
+///   the day they usually go, from `zad_place_visits`: an orbit around home
+///   and a row of cards, each opening the shop's own outings.
 /// * «خروجاتك» — the last outings: when, the spend, the shops; each can be
 ///   deleted (RLS lets the owner delete, and the table forgets after 90
 ///   days).
@@ -25,13 +26,16 @@ import 'package:supabase_flutter/supabase_flutter.dart'
 import 'package:timezone/timezone.dart' as tz;
 import 'package:zad/core/data/local/screen_cache.dart';
 import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/design/components/zad_appear.dart';
 import 'package:zad/core/design/components/zad_empty_state.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/places/domain/my_places.dart';
 import 'package:zad/features/places/presentation/keep_alive_guide.dart';
+import 'package:zad/features/places/presentation/places_orbit.dart';
 import 'package:zad/features/places/presentation/street_alerts_section.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
@@ -188,6 +192,47 @@ class _MyPlacesState extends ConsumerState<MyPlacesScreen> {
     await _load();
   }
 
+  void _openHabit(PlaceHabit habit) {
+    final outings = <PlaceVisit>[
+      for (final v in _visits)
+        if (v.stores.contains(habit.name) || v.merchants.contains(habit.name))
+          v,
+    ];
+    unawaited(
+      showModalBottomSheet<void>(
+        context: context,
+        useSafeArea: true,
+        isScrollControlled: true,
+        builder: (_) => DraggableScrollableSheet(
+          expand: false,
+          builder: (_, scroll) => ListView(
+            controller: scroll,
+            padding: const EdgeInsets.all(ZadSpacing.xl),
+            children: <Widget>[
+              Text(habit.name, style: ZadType.titleLarge),
+              Text(
+                habit.usualWeekday == null
+                    ? context.l10n.placesHabitVisits(habit.visits)
+                    : context.l10n.placesHabitVisitsOn(
+                        habit.visits,
+                        weekdayLabel(habit.usualWeekday!),
+                      ),
+                style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
+              ),
+              const SizedBox(height: ZadSpacing.lg),
+              for (final v in outings.take(10))
+                _VisitCard(
+                  when: _whenLabel(v),
+                  away: _awayLabel(v),
+                  spent: _spentLabel(v),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final habits = placeHabits(_visits, _local);
@@ -207,68 +252,68 @@ class _MyPlacesState extends ConsumerState<MyPlacesScreen> {
               120,
             ),
             children: <Widget>[
-              _PlaceReminders(
-                reminders: _reminders,
-                onAdd: () => unawaited(_add()),
-                onCancel: (r) => unawaited(_cancel(r)),
+              ZadAppearOnEntry(
+                child: _PlaceReminders(
+                  reminders: _reminders,
+                  onAdd: () => unawaited(_add()),
+                  onCancel: (r) => unawaited(_cancel(r)),
+                ),
               ),
               const SizedBox(height: ZadSpacing.lg),
               const KeepAliveGuide(),
               const SizedBox(height: ZadSpacing.lg),
-              _Section(
-                icon: ZadIcons.brain,
-                title: 'اتعلّمت من خروجاتك',
-                child: habits.isEmpty
-                    ? Text(
-                        _loading
-                            ? 'بنشوف خروجاتك…'
-                            : 'لسه بتعلّم — بعد كام خروجة هعرف المحلات اللي '
-                                  'بتروحها على طول وأفكّرك بالناقص قبلها.',
-                        style: ZadType.bodySmall.copyWith(
-                          color: ZadColors.inkMuted,
+              ZadAppearOnEntry(
+                delayMs: 80,
+                child: _Section(
+                  icon: ZadIcons.brain,
+                  title: 'اتعلّمت من خروجاتك',
+                  child: habits.isEmpty
+                      ? Text(
+                          _loading
+                              ? 'بنشوف خروجاتك…'
+                              : 'لسه بتعلّم — بعد كام خروجة هعرف المحلات اللي '
+                                    'بتروحها على طول وأفكّرك بالناقص قبلها.',
+                          style: ZadType.bodySmall.copyWith(
+                            color: ZadColors.inkMuted,
+                          ),
+                        )
+                      : Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: <Widget>[
+                            PlacesOrbit(habits: habits, onOpen: _openHabit),
+                            const SizedBox(height: ZadSpacing.lg),
+                            PlaceHabitCards(habits: habits, onOpen: _openHabit),
+                          ],
                         ),
-                      )
-                    : Column(
-                        children: <Widget>[
-                          for (final h in habits.take(5))
-                            _Line(
-                              icon: ZadIcons.store,
-                              title: h.name,
-                              detail: h.usualWeekday == null
-                                  ? '${h.visits} مرات'
-                                  : '${h.visits} مرات — غالباً يوم '
-                                        '${weekdayLabel(h.usualWeekday!)}',
-                            ),
-                        ],
-                      ),
+                ),
               ),
               const SizedBox(height: ZadSpacing.lg),
-              _Section(
-                icon: Icons.directions_walk,
-                title: 'خروجاتك',
-                child: _visits.isEmpty
-                    ? const ZadEmptyState(
-                        icon: Icons.directions_walk,
-                        title: 'مفيش خروجات متسجّلة',
-                        message:
-                            'لما تفعّل تنبيهات الشارع، زاد يعرف إمتى خرجت '
-                            'ورجعت وصرفت كام — من غير ما مكان بيتك يسيب '
-                            'موبايلك.',
-                      )
-                    : Column(
-                        children: <Widget>[
-                          for (final v in _visits.take(10))
-                            _Line(
-                              icon: Icons.schedule,
-                              title: DateFormat(
-                                'EEEE d MMM · h:mm a',
-                                'ar',
-                              ).format(_local(v.leftAt)),
-                              detail: _visitDetail(v),
-                              onDelete: () => unawaited(_forget(v)),
-                            ),
-                        ],
-                      ),
+              ZadAppearOnEntry(
+                delayMs: 160,
+                child: _Section(
+                  icon: Icons.directions_walk,
+                  title: 'خروجاتك',
+                  child: _visits.isEmpty
+                      ? const ZadEmptyState(
+                          icon: Icons.directions_walk,
+                          title: 'مفيش خروجات متسجّلة',
+                          message:
+                              'لما تفعّل تنبيهات الشارع، زاد يعرف إمتى خرجت '
+                              'ورجعت وصرفت كام — من غير ما مكان بيتك يسيب '
+                              'موبايلك.',
+                        )
+                      : Column(
+                          children: <Widget>[
+                            for (final v in _visits.take(10))
+                              _VisitCard(
+                                when: _whenLabel(v),
+                                away: _awayLabel(v),
+                                spent: _spentLabel(v),
+                                onDelete: () => unawaited(_forget(v)),
+                              ),
+                          ],
+                        ),
+                ),
               ),
               const SizedBox(height: ZadSpacing.lg),
               OutlinedButton.icon(
@@ -288,22 +333,23 @@ class _MyPlacesState extends ConsumerState<MyPlacesScreen> {
     );
   }
 
-  String _visitDetail(PlaceVisit v) {
+  String _whenLabel(PlaceVisit v) =>
+      DateFormat('EEEE d MMM · h:mm a', 'ar').format(_local(v.leftAt));
+
+  String _awayLabel(PlaceVisit v) {
     final minutes = v.returnedAt.difference(v.leftAt).inMinutes;
     final away = minutes >= 60
         ? '${minutes ~/ 60} س ${minutes % 60} د'
         : '$minutes د';
     final places = <String>{...v.stores, ...v.merchants}.take(3).join('، ');
-    final spent = v.spent > 0
-        ? 'صرفت ${NumberFormat('#,##0.##', 'en').format(v.spent)} '
-              '${v.currency ?? ''}'
-        : 'من غير صرف';
-    return <String>[
-      'برّه $away',
-      spent.trim(),
-      if (places.isNotEmpty) places,
-    ].join(' · ');
+    return <String>['برّه $away', if (places.isNotEmpty) places].join(' · ');
   }
+
+  String _spentLabel(PlaceVisit v) => v.spent > 0
+      ? '${NumberFormat('#,##0.##', 'en').format(v.spent)} '
+                '${v.currency ?? ''}'
+            .trim()
+      : 'من غير صرف';
 }
 
 class _Section extends StatelessWidget {
@@ -317,7 +363,7 @@ class _Section extends StatelessWidget {
   Widget build(BuildContext context) => DecoratedBox(
     decoration: BoxDecoration(
       color: ZadColors.surface,
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(ZadRadii.cardLarge),
       border: Border.all(color: ZadColors.outlineVariant),
     ),
     child: Padding(
@@ -347,37 +393,55 @@ class _Section extends StatelessWidget {
   );
 }
 
-class _Line extends StatelessWidget {
+/// One outing: when, how long and where, and what it cost.
+class _VisitCard extends StatelessWidget {
   const new({
-    required this.icon,
-    required this.title,
-    required this.detail,
+    required this.when,
+    required this.away,
+    required this.spent,
     this.onDelete,
   });
 
-  final IconData icon;
-  final String title;
-  final String detail;
+  final String when;
+  final String away;
+  final String spent;
   final VoidCallback? onDelete;
 
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: ZadSpacing.xs),
+  Widget build(BuildContext context) => Container(
+    margin: const EdgeInsets.only(bottom: ZadSpacing.sm),
+    padding: const EdgeInsetsDirectional.fromSTEB(
+      ZadSpacing.md,
+      ZadSpacing.sm,
+      ZadSpacing.xs,
+      ZadSpacing.sm,
+    ),
+    decoration: BoxDecoration(
+      color: ZadColors.surfaceVariant,
+      borderRadius: BorderRadius.circular(ZadRadii.card),
+    ),
     child: Row(
       children: <Widget>[
-        Icon(icon, size: 18, color: ZadColors.inkMuted),
-        const SizedBox(width: ZadSpacing.md),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               Text(
-                title,
+                when,
                 style: ZadType.bodyMedium.copyWith(fontWeight: FontWeight.w600),
               ),
+              const SizedBox(height: ZadSpacing.xs),
               Text(
-                detail,
+                away,
                 style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
+              ),
+              const SizedBox(height: ZadSpacing.xs),
+              Text(
+                spent,
+                style: ZadType.labelSmall.copyWith(
+                  color: ZadColors.green700,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ],
           ),
@@ -408,7 +472,7 @@ class _PlaceReminders extends StatelessWidget {
   Widget build(BuildContext context) => DecoratedBox(
     decoration: BoxDecoration(
       color: ZadColors.surface,
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(ZadRadii.cardLarge),
       border: Border.all(color: ZadColors.outlineVariant),
     ),
     child: Padding(
@@ -446,16 +510,29 @@ class _PlaceReminders extends StatelessWidget {
             )
           else
             for (final r in reminders)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: ZadSpacing.xs),
+              Container(
+                margin: const EdgeInsets.only(top: ZadSpacing.sm),
+                padding: const EdgeInsetsDirectional.fromSTEB(
+                  ZadSpacing.md,
+                  ZadSpacing.sm,
+                  ZadSpacing.xs,
+                  ZadSpacing.sm,
+                ),
+                decoration: BoxDecoration(
+                  color: _placeAccent(r.place).withValues(alpha: 0.06),
+                  borderRadius: BorderRadius.circular(ZadRadii.card),
+                  border: Border.all(
+                    color: _placeAccent(r.place).withValues(alpha: 0.18),
+                  ),
+                ),
                 child: Row(
                   children: <Widget>[
                     Container(
-                      width: 36,
-                      height: 36,
+                      width: 44,
+                      height: 44,
                       decoration: BoxDecoration(
                         color: _placeAccent(r.place).withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(ZadRadii.chip),
                       ),
                       child: Icon(
                         _placeIcon(r.place),

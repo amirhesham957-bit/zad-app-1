@@ -9,6 +9,8 @@
 /// `shared/places/domain/places.dart`).
 library;
 
+import 'dart:math' as math;
+
 /// The places a place reminder can wait for. Stored values.
 const List<String> kPlaceReminderPlaces = <String>[
   'pharmacy',
@@ -108,6 +110,36 @@ int? _usual(List<int> weekdays) {
   }
   final top = counts.entries.reduce((a, b) => b.value > a.value ? b : a);
   return top.value * 2 >= weekdays.length ? top.key : null;
+}
+
+/// One shop's place on the orbit around home.
+typedef PlaceOrbitNode = ({
+  PlaceHabit habit,
+
+  /// Radians around home.
+  double angle,
+
+  /// 0.45 (the most visited) to 1 (the least) of the orbit's reach.
+  double distance,
+});
+
+/// The first [max] of [habits] (most visited first) laid out around home. How
+/// close means how often: visits hold no coordinates.
+List<PlaceOrbitNode> placeOrbit(List<PlaceHabit> habits, {int max = 8}) {
+  final shown = habits.take(max).toList();
+  if (shown.isEmpty) return const <PlaceOrbitNode>[];
+  final most = shown.first.visits;
+  final least = shown.last.visits;
+  final span = most - least;
+  return <PlaceOrbitNode>[
+    for (final (i, h) in shown.indexed)
+      (
+        habit: h,
+        // The golden angle: however many shops, they never line up.
+        angle: -math.pi / 2 + i * 2.399963,
+        distance: span == 0 ? 0.45 : 0.45 + 0.55 * (most - h.visits) / span,
+      ),
+  ];
 }
 
 /// Arabic weekday names, Monday first.
