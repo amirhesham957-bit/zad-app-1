@@ -14,13 +14,14 @@
 
 import { eventWeight, TRAVEL_WEIGHT, type EventAppointment } from "./eventDayBudget.ts";
 import { seasonFor } from "../_shared/season.ts";
+import { seasonDueToday } from "../_shared/seasonCalendar.ts";
 
 export const SEASON_ASK_DAYS = 14;
 export const TRAVEL_ASK_DAYS = 3;
 /** البلاد اللي شباك رجوع المدارس (١٥ أغسطس) قريب من بدايتها فعلاً. */
 export const SCHOOL_WINDOW_MARKETS = new Set(["SA", "AE", "KW", "QA", "BH", "OM"]);
 
-export type EventAheadKind = "ramadan" | "dhul_hijjah" | "back_to_school" | "travel";
+export type EventAheadKind = "ramadan" | "dhul_hijjah" | "back_to_school" | "travel" | "season";
 
 export interface EventAhead {
   kind: EventAheadKind;
@@ -75,13 +76,16 @@ export function eventAhead(input: {
     input.seasonWindows.some((w) => w.slug === "back_to_school" && w.start_date === seasonDay)) {
     return { kind: "back_to_school", title: `مصاريف المدارس ${seasonDay.slice(0, 4)}`, on: seasonDay, in_days: SEASON_ASK_DAYS };
   }
-  return null;
+  // ٧.٣: باقي مواسم بلده (seasonCalendar.ts).
+  const due = seasonDueToday(country, input.localDate, Number(input.kidsCount) || 0);
+  return due ? { kind: "season", title: `${due.name} ${due.on.slice(0, 4)}`, on: due.on, in_days: due.in_days } : null;
 }
 
 const ASK: Record<EventAheadKind, (e: EventAhead) => string> = {
   ramadan: (e) => `رمضان بعد ${e.in_days} يوم، والياميش والأساسيات أسعارها بتعلى قبله. تحب نحجز مبلغ ليه من دلوقتي؟ قولّي قد إيه.`,
   dhul_hijjah: (e) => `ذي الحجة بعد ${e.in_days} يوم والعيد بعدها بعشرة. هتضحّوا السنة دي؟ لو آه، نحجز مبلغ ليه من دلوقتي؟`,
   back_to_school: (e) => `المدارس بتبدأ بعد حوالي ${e.in_days} يوم (شنط، كتب، هدوم). تحب نحجز مبلغ ليها من دلوقتي؟ قولّي قد إيه.`,
+  season: (e) => `${e.title.replace(/ \d{4}$/, "")} بعد ${e.in_days} يوم. تحب نحجز مبلغ ليه من دلوقتي؟ قولّي قد إيه، وهدوّر لك على العروض قبله.`,
   travel: (e) => `${e.title} بعد ${e.in_days} أيام. تحب نحجز مبلغ للسفر عشان باقي الأيام تتوزع صح؟ قولّي قد إيه.`,
 };
 

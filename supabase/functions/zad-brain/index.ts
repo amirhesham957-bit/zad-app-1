@@ -94,6 +94,7 @@ import { challengeDayIndex, suggestChallengeCap } from "../_shared/savingsChalle
 import { type SavingsAgreement, savingsAgreementFrom } from "../_shared/savingsAgreement.ts";
 import { RECEIPT_REACTIONS_PER_DAY, receiptKey, sanitizeReceiptFacts } from "../_shared/receiptReaction.ts";
 import { seasonFor, seasonInstruction, upcomingSeason, upcomingSeasonInstruction } from "../_shared/season.ts";
+import { SEASON_PLAN_DAYS, seasonPlanInstruction, upcomingCalendarSeasons } from "../_shared/seasonCalendar.ts";
 import { type FastIntent, formatBalanceReply, parseFastPath } from "./fastPath.ts";
 import { AgentSource, AuditScope, recordAction, writeRows } from "./audit.ts";
 import { redactNotificationText } from "./redact.ts";
@@ -1609,6 +1610,10 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
       const up = upcomingSeason(new Date(), budgetState.timezone ?? "UTC");
       return up ? { ...up, instruction: upcomingSeasonInstruction(up) } : null;
     })(),
+    // ٧.٣: مواسم بلده جوه أسبوعين، بخطة الشرا والتوفير. فاضية = مفيش.
+    season_plan: seasonPlanInstruction(upcomingCalendarSeasons(
+      budgetState.country ?? userRes.data?.country ?? null, localNowContext(budgetState.timezone ?? "UTC").date, SEASON_PLAN_DAYS,
+    )),
     // مواعيد العميل الجاية (١٤ يوم). id للتعديل/الإلغاء بـ update_appointment. for_person = لمين.
     appointments: (apptRows ?? []) as Array<Record<string, unknown>>,
     // أدوية البيت كلها، ولمين كل دوا (for: null = العميل نفسه) — «دوا مامتك الساعة ٤». قبل كده
@@ -8834,7 +8839,7 @@ ${offers("log_pharmacy_dose") ? `   - **«أخدته» / «خدت الدوا» /
 
 ${(offers("set_broke_mode") || snap?.broke_mode) ? `12. **وضع الطوارئ (broke_mode)**: «أنا مفلس/خلصت فلوسي/مفلس باقي الشهر» ⇒ set_broke_mode(active=true) فوراً، ورد بحنية من غير لوم: رقم مصروف اليوم (daily_cap) لو معروف، و٣ خطوات عملية (الأساسيات بس، الأكل من اللي في البيت، أجّل أي شراء مش ضروري). طول ما broke_mode مش null: **ممنوع** تقترح شراء أو عروض أو مطاعم أو اشتراكات جديدة أو تضيف لقايمة الشراء غير لو العميل طلب بنفسه، والوصفات من المخزون بس من غير أي صنف يتشرى. متقترحش إلغاء التزامات ثابتة (إيجار/قسط).` : ""}
 ${(offers("start_savings_challenge") || snap?.savings_challenge) ? `13. **تحدي التوفير (savings_challenge)**: «تحدي توفير/ساعدني أوفّر/تحدي ٣٠ يوم» ⇒ start_savings_challenge. لو فيه تحدي شغال: اذكر اليوم (day من length_days) والسلسلة (streak) لما يكون ليها معنى، شجّعه يفضل تحت daily_cap، ولو سأل «ينفع أشتري كذا؟» قارن بالسقف اليومي.` : ""}
-${(snap?.season_ahead) ? `13ب. **الموسم الجاي (season_ahead)**: اتبع season_ahead.instruction مرة في المحادثة لو الكلام عن البيت أو الشراء أو الميزانية — مش في كل رد، ومش في أول سطر.
+${snap?.season_plan ? `13ج. **مواسم بلده (season_plan)**: ${snap.season_plan}\n` : ""}${(snap?.season_ahead) ? `13ب. **الموسم الجاي (season_ahead)**: اتبع season_ahead.instruction مرة في المحادثة لو الكلام عن البيت أو الشراء أو الميزانية — مش في كل رد، ومش في أول سطر.
 ` : ""}${(snap?.season) ? `14. **المواسم (season)**: لو season مش null، اتبع season.instruction في كل كلامك واقتراحاتك (رمضان: مفيش أكل بالنهار، فطار وسحور؛ العيد: العيدية والعزومات متوقعة). متفترضش إن العميل صايم أو بيحتفل لو قال غير كده.` : ""}
 ${(offers("find_deals")) ? `15أ. **العروض (find_deals)**: «هاتلي عروض/دوّرلي على عرض/فيه عروض إيه/كود خصم» ⇒ نادِ find_deals الأول واعرض العروض بأسعارها ولينكاتها. الميزانية عمرها ما تكون سبب ترفض أو تأجّل بيه البحث أو تقول «انزل بص بنفسك» — ممكن يكون بيخطط للشهر الجاي أو عنده فلوس تانية. نصيحة الفلوس لو لازمة: سطر واحد في آخر الرد بعد العروض.
 ` : ""}${(offers("suggest_recipes")) ? `15. **شيف زاد (suggest_recipes)**: «أطبخ إيه؟/أعمل أكل إيه من اللي عندي؟» ⇒ نادِ suggest_recipes واعرض من الوصفات اللي رجعت بس، باختصار — ممنوع تخترع وصفة من عندك. «افتحلي الشيف/صفحة الوصفات» ⇒ app_command(screen=recipes).` : ""}
