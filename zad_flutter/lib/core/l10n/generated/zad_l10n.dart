@@ -5221,6 +5221,18 @@ abstract class ZadL10n {
   /// **'رفيقك'**
   String get settingsCompanionSection;
 
+  /// No description provided for @settingsFoodPatternTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'صورة أكل البيت'**
+  String get settingsFoodPatternTitle;
+
+  /// No description provided for @settingsFoodPatternBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'مرة في الشهر بالكتير، زاد يوصف أكل البيت من المشتريات المتسجلة ويقترح إضافات. وصف مشتريات مش نصيحة طبية.'**
+  String get settingsFoodPatternBody;
+
   /// No description provided for @settingsPetCallsTitle.
   ///
   /// In ar, this message translates to:

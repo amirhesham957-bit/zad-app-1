@@ -24,6 +24,7 @@ class AccountSettings {
     this.currency,
     this.country,
     this.petCallsEnabled = true,
+    this.foodPatternEnabled = false,
   });
 
   /// Reads a `zad_users` row.
@@ -38,10 +39,15 @@ class AccountSettings {
     currency: json['currency'] as String?,
     country: json['country'] as String?,
     petCallsEnabled: json['pet_calls_enabled'] as bool? ?? true,
+    foodPatternEnabled: json['food_pattern_enabled'] as bool? ?? false,
   );
 
   /// Whether the pet may call the customer on Telegram and by notification.
   final bool petCallsEnabled;
+
+  /// Whether Zad may describe the home's food from its purchases. Off until
+  /// the customer turns it on.
+  final bool foodPatternEnabled;
 
   /// The ceiling the customer says they have for a cycle.
   ///
@@ -99,6 +105,7 @@ class AccountSettings {
     String? currency,
     String? country,
     bool? petCallsEnabled,
+    bool? foodPatternEnabled,
     bool clearCycleStartDay = false,
   }) => AccountSettings(
     monthlyLimit: monthlyLimit ?? this.monthlyLimit,
@@ -110,6 +117,7 @@ class AccountSettings {
     currency: currency ?? this.currency,
     country: country ?? this.country,
     petCallsEnabled: petCallsEnabled ?? this.petCallsEnabled,
+    foodPatternEnabled: foodPatternEnabled ?? this.foodPatternEnabled,
   );
 
   /// Round-trips through the cache.
@@ -121,6 +129,7 @@ class AccountSettings {
     'currency': currency,
     'country': country,
     'pet_calls_enabled': petCallsEnabled,
+    'food_pattern_enabled': foodPatternEnabled,
   };
 
   /// The columns a settings read asks the server for.
@@ -135,5 +144,6 @@ class AccountSettings {
     'currency',
     'country',
     'pet_calls_enabled',
+    'food_pattern_enabled',
   ];
 }

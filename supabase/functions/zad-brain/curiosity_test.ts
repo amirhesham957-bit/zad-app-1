@@ -294,3 +294,10 @@ Deno.test("life clues: asked once a year", () => {
   const rows = [{ facts: { curiosity: { key: "clue:pet" } }, created_at: new Date(Date.now() - 100 * 86_400_000).toISOString() }];
   assertEquals(recentlyAskedKeys(rows, Date.now()).has("clue:pet"), true);
 });
+
+Deno.test("food picture: at most one in a month, whichever note it was", () => {
+  const note = { key: "food:fruit", kind: "food_pattern" as const, question: "q", record: "r" };
+  const base = { txns: [], now: Date.now(), todayStart: Date.now(), foodNote: note };
+  assertEquals(curiosityFor({ ...base, askedKeys: new Set() })?.key, "food:fruit");
+  assertEquals(curiosityFor({ ...base, askedKeys: new Set(["food:veg"]) }), null);
+});

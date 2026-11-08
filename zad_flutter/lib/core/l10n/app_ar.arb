@@ -2144,6 +2144,8 @@
   "accountRestoreYes": "رجّع حسابي",
   "accountRestoreFailed": "تعذر استرجاع الحساب دلوقتي. افتح التطبيق تاني وجرّب.",
   "settingsCompanionSection": "رفيقك",
+  "settingsFoodPatternTitle": "صورة أكل البيت",
+  "settingsFoodPatternBody": "مرة في الشهر بالكتير، زاد يوصف أكل البيت من المشتريات المتسجلة ويقترح إضافات. وصف مشتريات مش نصيحة طبية.",
   "settingsPetCallsTitle": "نداءات زادو",
   "settingsPetCallsBody": "زادو بيبعتلك لما يجوع أو يعطش، على تليجرام والإشعارات. قفلها مش بيوقف تحية الصبح ولا العروض."
 }
