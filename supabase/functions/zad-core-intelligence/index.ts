@@ -51,7 +51,7 @@ import {
   youtubeProbe, youtubeSearch,
 } from "./socialSources.ts";
 import { tavilyProbe, tavilySearch } from "./tavily.ts";
-import { avoidNames, chefPantryLine, type PantryRow, trendBlock, trendCacheKey, trendQuery } from "./chefInputs.ts";
+import { avoidNames, chefDeals, type ChefDeal, type ChefDealRow, chefExpiring, chefPantryLine, dealsBlock, dealsForMissing, dishKey, type ExpiringItem, expiringBlock, NO_REPEAT_DAYS, type PantryRow, trendBlock, trendCacheKey, trendQuery, withoutRecent } from "./chefInputs.ts";
 import { householdFamilyId, householdFilter } from "../_shared/household.ts";
 import { budgetUsage, dailyCap, encyclopediaFirstForLatest, groundingPlan, KEY_REST_MS, keyRefused, paidQuotaExhausted, takeSearchBudget, tavilyFirstWhileGroundingRests, withPaidGroundingFirst } from "./paidSearch.ts";
 
@@ -2125,18 +2125,32 @@ async function handle(req: Request): Promise<Response> {
         // المخزن من السيرفر (chefInputs.ts): نسخة التطبيق المحلية ممكن تكون متأخرة — بلاغ المالك ٦/١١ شاف «حليب ومياه»
         // والمخزن فيه ٨ أصناف. فشل القراية أو مخزن فاضي على السيرفر = نص التطبيق زي ما هو.
         let items = String(payload?.items ?? "");
+        // ٧.٤: اللي قرب تنتهي صلاحيته، من نفس قراية المخزن.
+        let expiring: ExpiringItem[] = [];
         try {
           const familyId = await householdFamilyId(supabase as never, user_id);
-          const { data: pantryRows } = await supabase.from("zad_inventory").select("item_name,quantity")
+          const { data: pantryRows } = await supabase.from("zad_inventory").select("item_name,quantity,expiry_date")
             .or(householdFilter(user_id, familyId)).gt("quantity", 0).limit(200);
           const serverLine = chefPantryLine((pantryRows ?? []) as PantryRow[]);
           if (serverLine) items = serverLine;
+          expiring = chefExpiring((pantryRows ?? []) as PantryRow[], new Date().toISOString().slice(0, 10));
         } catch (e) {
           console.error("[CoreIntel] meal_suggestions pantry read failed:", (e as Error).message);
         }
         // «اقتراحات جديدة»: الكاش بيتعدّى، واللي اتعرض قبل كده مايتكررش.
         const fresh = payload?.fresh === true;
-        const avoid = avoidNames(payload?.avoid);
+        // ٧.٤: اللي اتعرض في آخر أسبوعين مايتعرضش تاني، حتى من غير «اقتراحات جديدة».
+        let served = new Set<string>();
+        let servedNames: string[] = [];
+        try {
+          const { data: servedRows } = await supabase.from("zad_chef_served").select("recipe_name,name_key").eq("user_id", user_id)
+            .gte("served_at", new Date(Date.now() - NO_REPEAT_DAYS * 86_400_000).toISOString()).order("served_at", { ascending: false }).limit(40);
+          served = new Set(((servedRows ?? []) as Array<{ name_key: string }>).map((r) => r.name_key));
+          servedNames = ((servedRows ?? []) as Array<{ recipe_name: string }>).map((r) => r.recipe_name);
+        } catch (e) {
+          console.error("[CoreIntel] meal_suggestions served read failed:", (e as Error).message);
+        }
+        const avoid = [...new Set([...avoidNames(payload?.avoid), ...avoidNames(servedNames.slice(0, 12)), ...avoidNames(servedNames.slice(12, 24))])];
         // الكاش بقى شخصي: الرد بقى فيه تفضيلات العميلة (تحت)، فمشاركته بين عملاء مختلف
         // مخزونهم زي بعضه كانت هتسرّب اقتراح مبني على حد تاني، أو تتجاهل تفضيلات العميلة
         // دي وترجّع رد حد تاني اتخزن الأول.
@@ -2173,6 +2187,30 @@ async function handle(req: Request): Promise<Response> {
           trends = trendBlock(hits);
         } catch (e) {
           console.error("[CoreIntel] meal_suggestions trends failed:", (e as Error).message);
+        }
+
+        // ٧.٤: عروض البقالة الشغالة في بلده ومدينته: مش في وضع الطوارئ، لأن العرض دعوة للشرا. فشل القراية = من غير عروض.
+        let liveDeals: ChefDeal[] = [];
+        if (!brokeMode) {
+          try {
+            const { data: who } = await supabase.from("zad_users").select("country,travel_country").eq("id", user_id).maybeSingle();
+            const dealCountry = String((who as { travel_country?: string | null } | null)?.travel_country || (who as { country?: string | null } | null)?.country || "").toUpperCase();
+            if (/^[A-Z]{2}$/.test(dealCountry)) {
+              const [{ data: stores }, { data: place }] = await Promise.all([
+                supabase.from("zad_deal_seed_stores").select("store").eq("country", dealCountry).eq("kind", "grocery").limit(80),
+                supabase.from("zad_user_city").select("city").eq("user_id", user_id).eq("country", dealCountry).maybeSingle(),
+              ]);
+              const names = ((stores ?? []) as Array<{ store: string }>).map((r) => r.store);
+              if (names.length) {
+                const { data: dealRows } = await supabase.from("zad_deals")
+                  .select("store,item_name,price,price_before,currency,city").eq("country", dealCountry).in("store", names)
+                  .gt("expires_at", new Date().toISOString()).limit(200);
+                liveDeals = chefDeals((dealRows ?? []) as ChefDealRow[], String((place as { city?: string } | null)?.city ?? ""));
+              }
+            }
+          } catch (e) {
+            console.error("[CoreIntel] meal_suggestions deals failed:", (e as Error).message);
+          }
         }
 
         // تقوية شيف زاد: آخر آراء العميلة على وصفات قبل كده — إعجاب وعدم إعجاب بس، مش
@@ -2268,6 +2306,12 @@ async function handle(req: Request): Promise<Response> {
           // السبب اللي التطبيق موجود عشانه.
           "رتّبي اقتراحاتك على أساس الأصناف اللي قرب تخلص أو قرب تنتهي صلاحيتها (لو متعلّمة " +
           "في المخزون) قبل أي حاجة تانية.\n" +
+          (expiring.length > 0
+            ? "الأصناف في قسم === قرب تنتهي صلاحيته === أول حاجة: أول وصفة لازم تستخدم منها، واللي مش هيلحق يتطبخ قولي في `text` إنه يتجمّد.\n"
+            : "") +
+          (liveDeals.length > 0
+            ? "قسم === عروض شغالة === فيه أصناف عليها خصم فعلاً: في «وجبات تانية» فضّلي الناقص يبقى منها. متذكريش عرض مش في القسم ده، ومتكتبيش سعر من عندك.\n"
+            : "") +
           "لكل وجبة: `missing_ingredients` لازم تبقى بالظبط اللي ناقص مش موجود في المخزون — " +
           "دي بتتحوّل لقائمة تسوق بضغطة واحدة، فأي صنف زيادة فيها بيكلّف العميل فلوس بلا داعي.\n" +
           "`image_keyword_en` اسم الأكلة بالإنجليزي بكلمتين أو تلاتة للبحث عن صورة " +
@@ -2298,6 +2342,8 @@ async function handle(req: Request): Promise<Response> {
             : "") +
           `الشهر الحالي: ${seasonMonthAr} — لو فيه مناسبة موسمية معروفة (رمضان، الصيف، الشتاء، الأعياد) خدي بالك منها في اقتراحاتك، من غير ما تفرضيها لو المخزون مش مناسب.\n`;
         const userPrompt = "=== المخزون ===\n" + (items || "لا يوجد مخزون") + "\n=== نهاية المخزون ===" +
+          (expiring.length > 0 ? "\n" + expiringBlock(expiring) : "") +
+          (liveDeals.length > 0 ? "\n" + dealsBlock(liveDeals) : "") +
           (trends ? "\n" + trends : "");
         const result = await logged(user_id, action, "callJsonModel", { args: [systemPrompt, userPrompt] }, () => callJsonModel(systemPrompt, userPrompt));
         // same honest-failure contract as recipe_details: null/ok:false on a genuine upstream
@@ -2312,12 +2358,22 @@ async function handle(req: Request): Promise<Response> {
         // حارس فوق البرومبت: في وضع الطوارئ أي وصفة محتاجة شراء بتتشال، مش بتتعرض.
         const allowedRecipes = brokeMode ? rawRecipes.filter((r: { missing_ingredients_to_buy?: unknown }) => recipeNeedsNoShopping(r?.missing_ingredients_to_buy)) : rawRecipes;
         // «من مخزونك» الأول، وكل وصفة معلّمة: التطبيق بيعرض «مكتملة من مخزونك» أو «ناقصك …».
-        const flagged = allowedRecipes.map((r: { missing_ingredients_to_buy?: unknown; trending?: unknown }) => ({
+        const flagged = withoutRecent(allowedRecipes as Array<{ recipe_name?: unknown; missing_ingredients_to_buy?: unknown; trending?: unknown }>, served).map((r) => ({
           ...r, from_inventory: recipeNeedsNoShopping(r?.missing_ingredients_to_buy), trending: !!trends && r?.trending === true,
+          deal_items: dealsForMissing(r?.missing_ingredients_to_buy, liveDeals),
         })).sort((a: { from_inventory: boolean }, b: { from_inventory: boolean }) => Number(b.from_inventory) - Number(a.from_inventory));
         const recipes = flagged.length ? await attachRecipeImages(flagged) : [];
         const response = { text: result?.text || null, recipes, ok: !!result?.text };
-        if (response.ok) await setCachedAiResponse(cacheKey, "meal_suggestions", response);
+        if (response.ok) {
+          await setCachedAiResponse(cacheKey, "meal_suggestions", response);
+          // ٧.٤: اللي اتعرض دلوقتي مايتعرضش تاني قبل ١٤ يوم.
+          const servedNow = (recipes as Array<{ recipe_name?: unknown }>).map((r) => String(r?.recipe_name ?? "").trim().slice(0, 120)).filter(Boolean)
+            .map((recipe_name) => ({ user_id, name_key: dishKey(recipe_name), recipe_name, served_at: new Date().toISOString() }));
+          if (servedNow.length) {
+            const { error: servedErr } = await supabase.from("zad_chef_served").upsert(servedNow, { onConflict: "user_id,name_key" });
+            if (servedErr) console.error("[CoreIntel] meal_suggestions served write failed:", servedErr.message);
+          }
+        }
         return jsonResponse(response);
       }
 
