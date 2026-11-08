@@ -19,6 +19,7 @@ import { meaningfulWords, offerMatchesNeed, stapleGroup, stapleHead } from "./pr
 import { MAX_INTENT_ITEMS, openIntents } from "./purchaseIntent.ts";
 import { haversineKm, type Trip, tripCost, tripEatsSaving, usableFuel } from "./tripCost.ts";
 import { deliveryApp } from "../_shared/deliveryApps.ts";
+import { likedTerms, loadAffinity, rankByRelevance } from "../_shared/dealRelevance.ts";
 
 export const MAX_TASTE_ITEMS = 5;
 export const FAVORITE_MIN_VISITS = 3;
@@ -647,9 +648,11 @@ export async function loadTasteDeal(sb: SupabaseClient, userId: string, now = Da
       ...((bought ?? []) as Array<{ item_name: string | null; created_at?: string | null }>).map((b) => ({ name: b.item_name, at: b.created_at ?? null })),
     ];
     const wants = tight ? [] : (await openIntents(sb, userId, boughtRows, now)).slice(0, MAX_INTENT_ITEMS).map((i) => i.item);
+    // تفضيلاته (dealRelevance.ts): اللي بيحبه يدخل البحث بعد احتياجه، واللي قال إنه مش بيحبه مايتبعتش.
+    const affinity = await loadAffinity(sb, userId, now);
     const items = tight
       ? tasteItems([...runningOut, ...shopping], [])
-      : tasteItems([...wants, ...shopping, ...runningOut], Array.isArray(interests) ? interests.map(String) : []);
+      : tasteItems([...wants, ...shopping, ...runningOut], [...(Array.isArray(interests) ? interests.map(String) : []), ...likedTerms(affinity)]);
     // ٣.١٤: وهو مسافر، العرض من البلد اللي هو فيه — عرض في محل في بلده مالوش لازمة وهو برّه.
     const country = dealCountry(user as { country?: string | null; travel_country?: string | null; travel_since?: string | null } | null, now);
     const boughtNames = ((bought ?? []) as Array<{ item_name: string | null }>).map((r) => r.item_name ?? "");
@@ -704,12 +707,13 @@ export async function loadTasteDeal(sb: SupabaseClient, userId: string, now = Da
     if (feeErr) console.warn("[taste_deal] delivery fees read failed:", feeErr.message);
     const deliveryFor = (r: StoredDealRow & { currency?: string | null }) =>
       deliveryOf(feeRows as Array<{ app_key?: string; fee?: number; currency?: string }> | null, r.store, r.currency ?? null);
-    const storedRaw = storedDeals(stored as StoredDealRow[] | null, tripOf, deliveryFor);
+    const storedRaw = rankByRelevance(storedDeals(stored as StoredDealRow[] | null, tripOf, deliveryFor) as Array<{ item?: unknown; store?: unknown }>, affinity);
     const fromStore = items.length ? pick(storedRaw) : null;
     if (fromStore) return fromStore;
     if (items.length) {
       const res = await dealSource.search({ items, location: countryNameAr(country), country }, userId);
-      const live = pick((res as { deals?: unknown } | null)?.deals);
+      const liveRaw = (res as { deals?: unknown } | null)?.deals;
+      const live = pick(Array.isArray(liveRaw) ? rankByRelevance(liveRaw as Array<{ item?: unknown; store?: unknown }>, affinity) : liveRaw);
       if (live) return live;
     }
     // الاحتياج الأول دايماً؛ العرض الناري بس لما مفيش عرض على حاجة ناقصة، وبعده عرض أساسي لأي بيت.

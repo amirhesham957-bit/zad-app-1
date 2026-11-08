@@ -147,3 +147,10 @@ Deno.test("5.9: a card says why — what he asked about, the season ahead, or wh
   const broke = pickHomeDeals({ broke: true, needs: ["لابتوب", "زيت", "تمر"], wants: ["لابتوب"], season: ["تمر"], favorites: [], bought: [], deals: rows, codes: [] });
   assertEquals(broke.cards.map((c) => c.why), ["need"]);
 });
+
+Deno.test("a deal on what he said he does not eat stays out of the digest (preferences)", async () => {
+  const { dealRelevance, parseAffinity, affinityNote } = await import("../_shared/dealRelevance.ts");
+  const a = parseAffinity([{ note: affinityNote("dislike", "تونة"), evidence_count: 1, last_seen: new Date().toISOString() }]);
+  assertEquals(dealRelevance({ item: "تونة قطع", store: "كارفور" }, a).blocked, true);
+  assertEquals(dealRelevance({ item: "زيت", store: "كارفور" }, a).blocked, false);
+});

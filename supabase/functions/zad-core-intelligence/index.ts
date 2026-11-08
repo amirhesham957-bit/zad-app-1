@@ -42,6 +42,7 @@ async function callerCountry(req: Request, userId: unknown): Promise<string | nu
   }
 }
 import { googleNearbyAny, googlePlacesKeys } from "./googlePlaces.ts";
+import { loadAffinity, rankByRelevance } from "../_shared/dealRelevance.ts";
 import { tiktokDealHits, tiktokDealsPrompt, tiktokQuery } from "./tiktokDeals.ts";
 import { brochureEntries, OFFICIAL_FLYER_SITES, OFFICIAL_FLYER_UA, officialFlyerDeals, officialFlyerPrompt, robotsAllows, siteForPdf } from "./officialFlyers.ts";
 import { fillMarketCurrency, DEAL_SEARCH_TIMEOUT_MS, dealQuery, dealsFromHitsPrompt, dealSearchItems, readDeals, readReverseCity, readStoreDeals, reverseCityUrl, sameCurrency, cleanCity, searchStoreName, storeDealsPrompt, storeDealsQuery, videoDealsPrompt, youtubeDealVideos, instagramDealPosts, postDealsPrompt, flyerDealsPrompt, readDealCodes, type DealCode } from "./liveDeals.ts";
@@ -3069,21 +3070,24 @@ async function handle(req: Request): Promise<Response> {
         const { location } = payload || {};
         const items = dealSearchItems(payload?.items);
         if (items.length === 0) return jsonResponse({ deals: [], ok: true });
+        // تفضيلات العميل قبل ما العرض يوصل لزادو أو لإشعار (dealRelevance.ts): اللي قال إنه مش بيحبه بيتشال، واللي بيحبه يطلع فوق.
+        const affinity = user_id ? await loadAffinity(supabase as never, user_id) : [];
+        const relevant = <T extends { item?: unknown; store?: unknown }>(list: T[]) => rankByRelevance(list, affinity);
         const systemPrompt = "أنت باحث عروض تسوق حقيقي. ابحث في الويب عن أحدث العروض والتخفيضات الفعلية المتاحة الآن من متاجر ومحلات سوبرماركت معروفة في المنطقة المحددة للأصناف المطلوبة. لا تخترع أي متجر أو سعر أو نسبة خصم أبداً — إذا لم تجد عرضاً حقيقياً موثقاً لصنف معين، تجاهله تماماً. أجب فقط بمصفوفة JSON بدون أي نص إضافي بالشكل: [{\"item\":\"\",\"store\":\"\",\"price\":0.0,\"discount_percent\":0.0,\"note\":\"\"}]. إذا لم تجد أي عروض حقيقية لأي صنف، أرجع مصفوفة فارغة [].";
         const userPrompt = "المنطقة: " + (location || "السعودية") + " | الأصناف المطلوب البحث عن عروض لها: " + items.join("، ");
         // Google-grounded Gemini first (10 keys), compound-mini only when it did not answer.
         const grounded = await logged(user_id, action, "callGroundedJson", { args: [systemPrompt, userPrompt] }, () => callGroundedJson(systemPrompt, userPrompt));
         if (grounded.ok && Array.isArray(grounded.parsed)) {
-          return jsonResponse({ deals: grounded.parsed, sources: [], ok: true, source: "gemini_google_search" });
+          return jsonResponse({ deals: relevant(grounded.parsed as Array<{ item?: unknown; store?: unknown }>), sources: [], ok: true, source: "gemini_google_search" });
         }
         // Grounding out of quota: the ordinary search chain, read by the ordinary model pool.
         const searched = await logged(user_id, action, "dealsFromWebSearch", { args: [items] }, () => dealsFromWebSearch(items, String(location ?? ""), payload?.country));
         if (searched !== null) {
-          return jsonResponse({ deals: searched.deals, sources: searched.sources, ok: true, source: "web_search" });
+          return jsonResponse({ deals: relevant(searched.deals as Array<{ item?: unknown; store?: unknown }>), sources: searched.sources, ok: true, source: "web_search" });
         }
         const result = await logged(user_id, action, "callCompoundSearch", { args: [systemPrompt, userPrompt] }, () => callCompoundSearch(systemPrompt, userPrompt, 1500, DEAL_SEARCH_TIMEOUT_MS));
         const deals = Array.isArray(result?.parsed) ? result.parsed : [];
-        return jsonResponse({ deals, sources: result?.executedTools || [], ok: result?.ok !== false });
+        return jsonResponse({ deals: relevant(deals as Array<{ item?: unknown; store?: unknown }>), sources: result?.executedTools || [], ok: result?.ok !== false });
       }
 
       // ──────────────────────────────────────────────

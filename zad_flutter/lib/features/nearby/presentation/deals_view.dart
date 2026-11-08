@@ -21,6 +21,7 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/l10n/l10n.dart';
+import 'package:zad/features/nearby/data/deal_signal.dart';
 import 'package:zad/features/nearby/domain/store_deals.dart';
 import 'package:zad/shared/affiliate/data/affiliate_repository.dart';
 import 'package:zad/shared/affiliate/domain/affiliate.dart';
@@ -157,7 +158,10 @@ class _DealCard extends ConsumerWidget {
     );
     final l = context.l10n;
     return ZadCard(
-      onTap: () => openAmazonLink(deal.url),
+      onTap: () {
+        sendDealOpened(ref, item: deal.item, store: deal.store);
+        unawaited(openAmazonLink(deal.url));
+      },
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
