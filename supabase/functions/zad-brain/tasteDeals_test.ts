@@ -526,3 +526,7 @@ Deno.test("a deal counts as offered only when the greeting said it and it was de
   // A customer's answer always counts.
   assert(askedDealKeys([row("الجو غيم", "no")], now).has("need:زيت"));
 });
+
+Deno.test("tasteItems: a word for all the groceries is not an item to hunt", () => {
+  assertEquals(tasteItems(["المقاضي", "زيت", "خزين البيت"], []), ["زيت"]);
+});
