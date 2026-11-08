@@ -1,5 +1,5 @@
 import { assertEquals } from "jsr:@std/assert@1";
-import { cycleDays, priorCycleDays, purchaseDaysByItem, restockKey, restockVerdict, habitCycleDays } from "./restockCycle.ts";
+import { cycleDays, priorCycleDays, purchaseDaysByItem, restockKey, restockVerdict, habitCycleDays, DUE_AT, dueAfterDays } from "./restockCycle.ts";
 
 const NOW = Date.parse("2026-11-06T09:00:00Z");
 const ago = (days: number) => new Date(NOW - days * 86_400_000).toISOString();
@@ -80,4 +80,18 @@ Deno.test("a habit needs three different purchase days", () => {
   assertEquals(habitCycleDays(["2026-10-01", "2026-10-16"]), null);
   assertEquals(habitCycleDays(["2026-10-01T09:00:00Z", "2026-10-01T18:00:00Z", "2026-10-16"]), null);
   assertEquals(habitCycleDays(["2026-10-01", "2026-10-16", "2026-10-31"]), 15);
+
+Deno.test("a long cycle warns three days before it runs out, not earlier", () => {
+  // زيت: دورة ٣٠ يوم.
+  assertEquals(restockVerdict({ name: "زيت", quantity: 3, purchaseDays: [ago(26)] }, NOW).due, false);
+  assertEquals(restockVerdict({ name: "زيت", quantity: 3, purchaseDays: [ago(27)] }, NOW).due, true);
+  // منظف: دورة طويلة، ولا هو قبلها بأسبوع.
+  assertEquals(restockVerdict({ name: "زيت", quantity: 3, purchaseDays: [ago(50)], cycleOverride: 60 }, NOW).due, false);
+  assertEquals(restockVerdict({ name: "زيت", quantity: 3, purchaseDays: [ago(57)], cycleOverride: 60 }, NOW).due, true);
+});
+
+Deno.test("a short cycle keeps its share: three days ahead would mean always", () => {
+  assertEquals(dueAfterDays(2), 2 * DUE_AT);
+  assertEquals(dueAfterDays(10), 10 * DUE_AT);
+  assertEquals(dueAfterDays(30), 27);
 });

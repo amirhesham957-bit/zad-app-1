@@ -15,6 +15,18 @@ const DAY_MS = 86_400_000;
 /** نسبة الدورة اللي بعدها الصنف يتعرض كناقص (قبل ما يخلص بشوية). */
 export const DUE_AT = 0.85;
 
+/** التنبيه مايسبقش النفاد بأكتر من ٣ أيام (طلب المالك ٨/١١، ZAD_PLAN ٤.٢٦). */
+export const WARN_DAYS = 3;
+
+/**
+ * بعد كام يوم من الشرا الصنف يتعرض كناقص. نسبة ٨٥٪ لوحدها كانت بتنبّه بدري في
+ * الدورات الطويلة: ٣٠ يوم قبلها بـ٤٫٥، و٦٠ يوم قبلها بـ٩. والدورات القصيرة
+ * (عيش كل يومين) بتفضل على النسبة لأن «٣ أيام قبل» معناها كل يوم.
+ */
+export function dueAfterDays(cycle: number): number {
+  return Math.max(cycle * DUE_AT, cycle - WARN_DAYS);
+}
+
 const norm = (s: string) =>
   s.toLowerCase().replace(/[ًٌٍَُِّْـ]/g, "").replace(/[أإآ]/g, "ا").replace(/ة/g, "ه").replace(/ى/g, "ي").replace(/\s+/g, " ").trim();
 
@@ -121,7 +133,7 @@ export function restockVerdict(input: RestockInput, now = Date.now()): RestockVe
   if (input.restockMode === "occasional") return out(false, "occasional");
   if (Number.isFinite(qty) && qty <= 0) return out(true, "empty");
   if (since === null) return out(Number.isFinite(qty) && qty <= threshold, Number.isFinite(qty) && qty <= threshold ? "threshold" : "stocked");
-  if (since >= cycle * DUE_AT) return out(true, "cycle");
+  if (since >= dueAfterDays(cycle)) return out(true, "cycle");
   if (Number.isFinite(qty) && qty <= threshold && since >= cycle * 0.5) return out(true, "used_up");
   return out(false, "fresh");
 }
