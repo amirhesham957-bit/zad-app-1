@@ -1,7 +1,7 @@
 // العروض حسب الذوق (tasteDeals.ts، الموجة ٤): مرة في الصبح، لو طابقت ذوقه بس، ومحلاته الأول.
 import { assert, assertEquals, assertStringIncludes } from "jsr:@std/assert@1";
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
-import { askedDealKeys, dealSource, favoriteStores, loadTasteDeal, pickDeal, tasteItems } from "./tasteDeals.ts";
+import { askedDealKeys, buyingCycleOf, withBuyingCycle, dealSource, favoriteStores, loadTasteDeal, pickDeal, tasteItems } from "./tasteDeals.ts";
 import { momentFallback, morningFacts } from "./voiceMoments.ts";
 import { weatherSource } from "./weather.ts";
 
@@ -525,6 +525,26 @@ Deno.test("a deal counts as offered only when the greeting said it and it was de
   assert(askedDealKeys([row("ا".repeat(300))], now).has(key));
   // A customer's answer always counts.
   assert(askedDealKeys([row("الجو غيم", "no")], now).has("need:زيت"));
+});
+
+Deno.test("buyingCycleOf: the offer's item, from what this home really bought", () => {
+  const days = new Map<string, string[]>([
+    ["زيت عباد الشمس", ["2026-10-01", "2026-10-16", "2026-10-31"]],
+    ["رز", ["2026-10-01", "2026-10-20"]],
+    ["كاتشب", ["2026-01-01", "2026-06-01", "2026-11-01"]],
+  ]);
+  assertEquals(buyingCycleOf("زيت عباد الشمس 1.5 لتر", days), 15);
+  assertEquals(buyingCycleOf("رز بسمتي", days), null); // مسافة واحدة مش عادة
+  assertEquals(buyingCycleOf("كاتشب هاينز", days), null); // أبعد من إن نسميها دورة
+  assertEquals(buyingCycleOf("شاي", days), null);
+});
+
+Deno.test("withBuyingCycle: a tight budget or a stated want keeps its own sentence", async () => {
+  const sb = {} as never; // ما يتلمسش: الحالات دي بترجع قبل أي قراية
+  const base = { item: "زيت", store: "بيم", price: 50, discount_percent: 25, note: null, favorite: false, key: "k" };
+  assertEquals(await withBuyingCycle(sb, "u", null), null);
+  assertEquals(await withBuyingCycle(sb, "u", { ...base, tight: true }), { ...base, tight: true });
+  assertEquals(await withBuyingCycle(sb, "u", { ...base, intent: "زيت" }), { ...base, intent: "زيت" });
 });
 
 Deno.test("tasteItems: a word for all the groceries is not an item to hunt", () => {

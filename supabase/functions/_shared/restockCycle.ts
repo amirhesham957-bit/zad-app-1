@@ -85,6 +85,16 @@ export function cycleDays(prior: number | null, purchaseDays: readonly string[])
   return Math.max(1, Math.round(s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2));
 }
 
+/**
+ * كل كام يوم البيت بيشتري الصنف ده فعلاً (ZAD_PLAN ٤.٢٤): الوسيط من ٣ أيام شرا مختلفة
+ * أو أكتر. أقل من كده = null: «بتجيبه كل ١٥ يوم» جملة عن عادة، ومسافة واحدة مش عادة.
+ */
+export function habitCycleDays(purchaseDays: readonly string[]): number | null {
+  const days = [...new Set(purchaseDays.map((d) => d.slice(0, 10)).filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d)))];
+  if (days.length < 3) return null;
+  return cycleDays(1, days);
+}
+
 export interface RestockInput {
   name: string;
   category?: string | null;
