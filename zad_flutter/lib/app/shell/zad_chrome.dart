@@ -453,6 +453,35 @@ String _drawerGroupMoney(ZadL10n l) => l.drawerGroupMoney;
 String _drawerGroupHome(ZadL10n l) => l.drawerGroupHome;
 String _drawerGroupMore(ZadL10n l) => l.drawerGroupMore;
 
+/// Always in the drawer, opened or not: the bar's places, the companion, the
+/// brain and the customer's own account.
+const Set<String> kDrawerAlways = <String>{
+  'home',
+  'companion',
+  'assistant',
+  'budget',
+  'inventory',
+  'family',
+  'notifications',
+  'profile',
+};
+
+/// Splits [entries], in their order, into what the drawer shows and what waits
+/// under «كل المزايا» (ZAD_PLAN 6.5): the basics, whatever this customer has
+/// [touched], and the section that is [current]. Nothing is removed.
+({List<ZadDrawerEntry> shown, List<ZadDrawerEntry> more}) focusDrawer(
+  List<ZadDrawerEntry> entries,
+  Set<String> touched,
+  String? current,
+) {
+  bool keep(ZadDrawerEntry e) =>
+      kDrawerAlways.contains(e.id) || touched.contains(e.id) || e.id == current;
+  return (
+    shown: <ZadDrawerEntry>[...entries.where(keep)],
+    more: <ZadDrawerEntry>[...entries.where((e) => !keep(e))],
+  );
+}
+
 /// The drawer: everything, grouped by the bar's four places (2026-09-30) —
 /// زاد and what the brain knows, then فلوسي, بيتي, عيلتي, and the rest. رفيق
 /// زاد sits second, under الرئيسية (owner, 2026-10-13: it was missing).
@@ -594,6 +623,7 @@ class ZadDrawer extends StatefulWidget {
     required this.entries,
     required this.onNavigate,
     required this.onProfile,
+    this.more = const <ZadDrawerEntry>[],
     this.userName,
     this.avatarUrl,
     super.key,
@@ -602,8 +632,11 @@ class ZadDrawer extends StatefulWidget {
   /// The route showing, lit in the list.
   final String? current;
 
-  /// The rows — all of them, or home and family in kids mode.
+  /// The rows shown straight away.
   final List<ZadDrawerEntry> entries;
+
+  /// The rows waiting under «كل المزايا»; none means no such row.
+  final List<ZadDrawerEntry> more;
 
   /// A row was tapped.
   final ValueChanged<String> onNavigate;
@@ -624,6 +657,8 @@ class ZadDrawer extends StatefulWidget {
 class _ZadDrawerState extends State<ZadDrawer>
     with SingleTickerProviderStateMixin {
   static const Color _rule = Color(0x0F000000);
+
+  bool _moreOpen = false;
 
   // The drawer is built when it opens, so the cascade plays on every open.
   late final AnimationController _enter = AnimationController(
@@ -676,13 +711,19 @@ class _ZadDrawerState extends State<ZadDrawer>
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
+  /// [entries] as rows under their headings, from cascade position [first]
+  /// of [n].
+  List<Widget> _rowsOf(
+    BuildContext context,
+    List<ZadDrawerEntry> entries,
+    int first,
+    int n, {
+    required bool startsList,
+  }) {
     final rows = <Widget>[];
-    var index = 0;
-    final n = widget.entries.length;
+    var index = first;
     String? group;
-    for (final e in widget.entries) {
+    for (final e in entries) {
       final heading = e.group?.call(context.l10n);
       if (heading != null && heading != group) {
         group = heading;
@@ -693,7 +734,7 @@ class _ZadDrawerState extends State<ZadDrawer>
             Padding(
               padding: EdgeInsetsDirectional.fromSTEB(
                 ZadSpacing.md,
-                rows.isEmpty ? ZadSpacing.xs : ZadSpacing.lg,
+                rows.isEmpty && startsList ? ZadSpacing.xs : ZadSpacing.lg,
                 ZadSpacing.md,
                 ZadSpacing.xs,
               ),
@@ -720,6 +761,68 @@ class _ZadDrawerState extends State<ZadDrawer>
         ),
       );
       index++;
+    }
+    return rows;
+  }
+
+  Widget _moreToggle(BuildContext context) => InkWell(
+    borderRadius: BorderRadius.circular(ZadRadii.chip),
+    onTap: () => setState(() => _moreOpen = !_moreOpen),
+    child: ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 48),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: ZadSpacing.md),
+        child: Row(
+          children: <Widget>[
+            Icon(Icons.apps_rounded, size: 20, color: _textTertiary),
+            const SizedBox(width: ZadSpacing.md),
+            Expanded(
+              child: Text(
+                context.l10n.drawerAllFeatures,
+                style: ZadType.titleSmall.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: kShellTextPrimary,
+                ),
+              ),
+            ),
+            AnimatedRotation(
+              turns: _moreOpen ? 0.5 : 0,
+              duration: ZadDuration.quick,
+              curve: ZadCurves.standard,
+              child: Icon(Icons.expand_more, color: _textTertiary),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    final n = widget.entries.length + 1;
+    final rows = _rowsOf(context, widget.entries, 0, n, startsList: true);
+    if (widget.more.isNotEmpty) {
+      final waiting = _moreOpen
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: _rowsOf(context, widget.more, n, n, startsList: false),
+            )
+          : const SizedBox(width: double.infinity);
+      rows
+        ..add(const SizedBox(height: ZadSpacing.sm))
+        ..add(_staggered(n - 1, n, _moreToggle(context)))
+        ..add(
+          // No AnimatedSize at all for reduced motion: at a zero duration it
+          // finishes inside its own layout, which is an assertion.
+          MediaQuery.disableAnimationsOf(context)
+              ? waiting
+              : AnimatedSize(
+                  duration: ZadDuration.enter,
+                  curve: ZadCurves.standard,
+                  alignment: AlignmentDirectional.topStart,
+                  child: waiting,
+                ),
+        );
     }
 
     return Drawer(

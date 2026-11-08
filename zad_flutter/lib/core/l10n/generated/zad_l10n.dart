@@ -871,6 +871,12 @@ abstract class ZadL10n {
   /// **'البيت والعيلة'**
   String get drawerGroupHome;
 
+  /// No description provided for @drawerAllFeatures.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل المزايا'**
+  String get drawerAllFeatures;
+
   /// No description provided for @drawerGroupMore.
   ///
   /// In ar, this message translates to:

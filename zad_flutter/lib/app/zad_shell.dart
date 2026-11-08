@@ -58,6 +58,7 @@ import 'package:zad/shared/family/application/family_controller.dart';
 import 'package:zad/shared/kids/application/kids_mode_controller.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/navigation/shell_navigation.dart';
+import 'package:zad/shared/navigation/touched_sections.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
 import 'package:zad/shared/navigation/zad_slots.dart';
 import 'package:zad/shared/notifications/application/notifications_controller.dart';
@@ -278,6 +279,7 @@ class _ZadShellState extends ConsumerState<ZadShell> {
   /// A route id from the drawer or a section tile.
   Future<void> _go(String id) async {
     unawaited(ref.read(productEventsProvider).log('section.$id'));
+    ref.read(touchedSectionsProvider.notifier).touch(id);
     switch (id) {
       case 'home':
         _show(ZadNavDestination.home);
@@ -380,6 +382,11 @@ class _ZadShellState extends ConsumerState<ZadShell> {
 
     // Kids mode replaces the whole shell: home and family, nothing else.
     if (ref.watch(kidsModeActiveProvider)) return const KidsShell();
+    final drawer = focusDrawer(
+      zadDrawerEntries,
+      ref.watch(touchedSectionsProvider),
+      _tab.name,
+    );
 
     // Kotlin's BudgetGateScreen: no money screen before the ceiling is
     // confirmed — decided only once the server has said so.
@@ -418,7 +425,8 @@ class _ZadShellState extends ConsumerState<ZadShell> {
           backgroundColor: Colors.transparent,
           drawer: ZadDrawer(
             current: _tab.name,
-            entries: zadDrawerEntries,
+            entries: drawer.shown,
+            more: drawer.more,
             userName: name,
             avatarUrl: avatar,
             onNavigate: (id) {

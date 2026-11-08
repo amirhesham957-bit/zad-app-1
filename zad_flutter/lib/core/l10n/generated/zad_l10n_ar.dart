@@ -437,6 +437,9 @@ class ZadL10nAr extends ZadL10n {
   String get drawerGroupHome => 'البيت والعيلة';
 
   @override
+  String get drawerAllFeatures => 'كل المزايا';
+
+  @override
   String get drawerGroupMore => 'أكتر';
 
   @override
