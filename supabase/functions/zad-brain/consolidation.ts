@@ -17,6 +17,7 @@
 // بتتكتب في scope «trait» ومربوطة بأدلتها (explains: الصفة بتفسّر كل دليل)، فالعقل يقدر يقول «ليه بقول كده».
 // ممنوع تستنتج صحة أو دين أو سياسة أو مزاج أو ضيقة فلوس — دي بتتقال صريح بس، مش بتتستنتج (نفس رفض المزاج في §٨).
 
+import { sensitiveTopic } from "./sensitiveMemory.ts";
 import { itemKey, type MemoryEntity, normalizeMemoryEntities, resolveValidUntil } from "./shared.ts";
 
 /** أقل عدد رسايل من العميل عشان اليوم يستاهل مراجعة. نفس الرقم في zad_memory_consolidation_due. */
@@ -95,6 +96,9 @@ export function buildConsolidationPrompt(o: {
       "(مش من محادثة اليوم). مثال: «مهتم بالأكل الصحي» من «بيشتري خضار كل أسبوع» و«بطّل المشروبات الغازية» و«بيسأل عن السعرات». " +
       "تفضيلات وعادات وأسلوب بس — **ممنوع** أي صفة عن الصحة أو المرض أو المزاج أو الدين أو السياسة أو العلاقات أو ضيقة الفلوس، دي بتتقال صريح مش بتتستنتج. " +
       `ماتكتبش صفة موجودة بالمعنى. ${CONSOLIDATION_MAX_TRAITS} بالكتير؛ لو الأدلة مش كفاية، traits فاضية.`,
+    "track = سؤال واحد صغير يكمّل معرفتك بحياة العميل ده بالذات، طالع من حاجة قالها هو ومايتسألش لأي عميل تاني: هواية بدأها، مشروع، حد ذكره، عادة، حاجة ناوي عليها. " +
+      "because = الجملة اللي قالها وطلّعت السؤال. من محادثة العميل و«اللي زاد عارفه» بس، **مش من شات العيلة**. ممنوع عن الصحة أو المرض أو الحمل أو الدين أو العلاقات أو الفلوس الضيقة. " +
+      'زوّد في نفس الـJSON مفتاح "track":{"question":"","because":""}، أو "track":null لو مفيش حاجة تستاهل.',
     'رد بـJSON بس من غير أي كلام تاني: {"facts":[{"note":"جملة عربية قصيرة","about":[{"kind":"person","name":"ماما"}],"until":null,"confidence":0.5}],"needs":[{"item":"عيش","who":"ماما"}],"traits":[{"note":"مهتم بالأكل الصحي","because":[1,4,7]}]}',
   ].join("\n");
 
@@ -228,6 +232,28 @@ export function parseConsolidationTraits(raw: string, known: readonly KnownNote[
   return out;
 }
 
+export const TRACK_DAYS = 14;
+export interface LifeTrack {
+  question: string;
+  because: string;
+}
+
+/** السؤال اللي الموديل ولّده، لو صالح. الموديل بيقترح والكود بيفلتر: الحساس بيتساب هنا مش بالاعتماد على البرومبت. */
+export function parseLifeTrack(raw: string): LifeTrack | null {
+  const start = raw.indexOf("{"), end = raw.lastIndexOf("}");
+  if (start < 0 || end <= start) return null;
+  let t: { question?: unknown; because?: unknown } | null | undefined;
+  try {
+    t = (JSON.parse(raw.slice(start, end + 1)) as { track?: typeof t }).track;
+  } catch {
+    return null;
+  }
+  const question = typeof t?.question === "string" ? t.question.replace(/[\n\r=]+/g, " ").trim() : "";
+  const because = typeof t?.because === "string" ? t.because.replace(/[\n\r=]+/g, " ").trim().slice(0, 200) : "";
+  if (question.length < 10 || question.length > 140 || !/[؟?]/.test(question) || because.length < 3) return null;
+  return sensitiveTopic(question) || sensitiveTopic(because) ? null : { question, because };
+}
+
 export interface ConsolidationDeps {
   /** لفات من آخر مراجعة لو اليوم يستاهل، وإلا فاضية (zad_memory_consolidation_due). */
   dueTurns(): Promise<DayTurn[]>;
@@ -245,6 +271,8 @@ export interface ConsolidationDeps {
   writeNeed(need: ConsolidatedNeed): Promise<boolean>;
   /** صفة مجرّدة: تتكتب في scope «trait» وتترابط بأدلتها (explains). true = اتكتبت. */
   writeTrait(trait: ConsolidatedTrait): Promise<boolean>;
+  /** سؤال جديد يكمّل معرفته بيه (zad_life_tracks). */
+  writeTrack?(track: LifeTrack): Promise<void>;
   today: string;
   timeZone: string;
   nowMs: number;
@@ -284,6 +312,9 @@ export async function consolidateDay(
   for (const trait of parseConsolidationTraits(reply, known)) {
     if (await d.writeTrait(trait)) traits++;
   }
+  // من شات العيلة بس (من غير كلام العميل) = مفيش سؤال: مصدره مش هو.
+  const track = enoughTurns ? parseLifeTrack(reply) : null;
+  if (track) await d.writeTrack?.(track);
   if (enoughTurns) await d.markDone(turns[turns.length - 1].at);
   return { status: "done", written, refused, needs, traits };
 }

@@ -301,3 +301,20 @@ Deno.test("food picture: at most one in a month, whichever note it was", () => {
   assertEquals(curiosityFor({ ...base, askedKeys: new Set() })?.key, "food:fruit");
   assertEquals(curiosityFor({ ...base, askedKeys: new Set(["food:veg"]) }), null);
 });
+
+Deno.test("a question from the customer's own words comes before the templates, once", () => {
+  const t = { key: "track:1", kind: "life_track" as const, question: "بدأت تتعلم عود إزاي؟", record: "r" };
+  const base = { txns: [], now: Date.now(), todayStart: Date.now(), lifeTracks: [t] };
+  assertEquals(curiosityFor({ ...base, askedKeys: new Set() })?.key, "track:1");
+  assertEquals(curiosityFor({ ...base, askedKeys: new Set(["track:1"]) }), null);
+  const old = [{ facts: { curiosity: { key: "track:1" } }, created_at: new Date(Date.now() - 100 * 86_400_000).toISOString() }];
+  assertEquals(recentlyAskedKeys(old, Date.now()).has("track:1"), true);
+});
+
+Deno.test("fuel: asked around the expected day, once per fill", () => {
+  const today = Date.parse("2026-11-08T00:00:00Z");
+  const txn = (d: number) => ({ id: String(d), amount: 500, title: "بنزين", category: "عربية", merchant_name: null, is_expense: true, txn_kind: "expense", source_type: null, created_at: new Date(today - d * 86_400_000 + 3_600_000).toISOString() });
+  const at = (days: number[]) => curiosityFor({ txns: days.map(txn) as CuriosityTxn[], now: today, todayStart: today, askedKeys: new Set() })?.kind;
+  assertEquals(at([27, 20, 13, 6]), "fuel_due");
+  assertEquals(at([22, 15, 8, 1]) === "fuel_due", false);
+});

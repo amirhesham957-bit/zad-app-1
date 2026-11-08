@@ -17,6 +17,7 @@ import { itemKey } from "./shared.ts";
 import { activeShifts, type ShiftRow } from "./lifeShift.ts";
 import { sensitiveTopic } from "./sensitiveMemory.ts";
 import { householdFamilyId, householdFilter } from "../_shared/household.ts";
+import { FUEL_ASK_AFTER_DAYS, FUEL_ASK_BEFORE_DAYS, fuelForecast } from "./fuelForecast.ts";
 import { type FoodBought, foodPatternInvite, foodPatternNote } from "./foodPattern.ts";
 
 const DAY_MS = 86_400_000;
@@ -58,7 +59,7 @@ export interface CuriosityTxn {
   created_at: string;
 }
 
-export type CuriosityKind = "amount_outlier" | "label_gone_quiet" | "category_surge" | "unlabelled_spend" | "same_product" | "weekly_ritual" | "memory_follow_up" | "life_clue" | "food_pattern";
+export type CuriosityKind = "amount_outlier" | "label_gone_quiet" | "category_surge" | "unlabelled_spend" | "same_product" | "weekly_ritual" | "memory_follow_up" | "life_clue" | "food_pattern" | "fuel_due" | "life_track";
 
 export interface Curiosity {
   /** ثابت لنفس الفرضية — عليه بيتعمل منع التكرار. */
@@ -366,6 +367,17 @@ export function lifeClues(names: readonly string[], knownNotes: readonly string[
     .map((c) => ({ key: c.key, kind: "life_clue" as const, question: c.question, record: c.record }));
 }
 
+/** البنزين قرب يخلص بتقدير من تفويلاته (fuelForecast.ts). المفتاح بآخر تفويلة، فمرة لكل تفويلة. */
+export function fuelDue(spends: readonly CuriosityTxn[], todayStart: number): Curiosity[] {
+  const f = fuelForecast(spends, todayStart);
+  if (!f || f.in_days > FUEL_ASK_BEFORE_DAYS || f.in_days < -FUEL_ASK_AFTER_DAYS) return [];
+  return [{
+    key: `fuel:${f.last_fill}`, kind: "fuel_due",
+    question: `العربية غالباً قربت تحتاج بنزين: بتفوّل كل حوالي ${f.every_days} يوم، وآخر مرة من ${f.last_days_ago} يوم. لسه معاك ولا فوّلت؟`,
+    record: "فوّل ⇒ سجّل المصروف بأداته لو قال المبلغ. لسه معاه ⇒ قوله إنك هتظبط الحساب من غير ما تسجل حاجة. ده تقدير من فلوس التفويلات، مش قراية عداد.",
+  }];
+}
+
 export function curiosityFor(input: {
   txns: readonly CuriosityTxn[];
   now: number;
@@ -384,6 +396,8 @@ export function curiosityFor(input: {
   /** أسامي مشتريات البيت (المخزن وقايمة الشرا). */
   boughtNames?: readonly string[];
   kidsCount?: number;
+  /** سؤال ولّده التأمل الليلي من كلام العميل نفسه (zad_life_tracks). */
+  lifeTracks?: readonly Curiosity[];
   /** صورة أكل البيت أو عرض تفعيلها (foodPattern.ts). */
   foodNote?: Curiosity | null;
 }): Curiosity | null {
@@ -398,6 +412,9 @@ export function curiosityFor(input: {
   const candidates = [
     // ميعادها بيفوت في ٣ أيام، ومفيش حاجة تانية هنا مستعجلة زيها.
     ...memoryFollowUp(input.datedNotes ?? [], input.now),
+    ...fuelDue(spends, input.todayStart),
+    // سؤال مبني على كلامه هو: أغلى من أي قالب.
+    ...(input.lifeTracks ?? []),
     // حركة بعينها لسه طازة — قبل الفرضيات عن العادات.
     ...amountOutlier(spends, input.now, input.todayStart),
     ...labelGoneQuiet(spends, input.now, input.knownNotes ?? []),
@@ -429,7 +446,7 @@ export function recentlyAskedKeys(
 ): Set<string> {
   const cut = now - ASK_AGAIN_AFTER_DAYS * DAY_MS;
   const keys = askedCuriosityKeys((rows ?? []).filter((r) => !(Date.parse(r.created_at ?? "") < cut)));
-  for (const key of askedCuriosityKeys(rows)) if (key.startsWith("ritual:") || key.startsWith("clue:")) keys.add(key);
+  for (const key of askedCuriosityKeys(rows)) if (key.startsWith("ritual:") || key.startsWith("clue:") || key.startsWith("track:")) keys.add(key);
   return keys;
 }
 
@@ -445,7 +462,7 @@ export async function curiosityQuestion(
 ): Promise<Curiosity | null> {
   try {
     const family = await householdFamilyId(sb, userId).catch(() => null);
-    const [txRes, askedRes, notesRes, shiftRes, invRes, shopRes, profileRes, foodRes] = await Promise.all([
+    const [txRes, askedRes, notesRes, shiftRes, invRes, shopRes, profileRes, foodRes, trackRes] = await Promise.all([
       sb.from("zad_transactions")
         .select("id,amount,title,category,merchant_name,is_expense,txn_kind,source_type,created_at")
         .eq("user_id", userId).gte("created_at", new Date(now - LOOKBACK_DAYS * DAY_MS).toISOString())
@@ -465,6 +482,8 @@ export async function curiosityQuestion(
       sb.from("zad_shopping_list").select("item_name").or(householdFilter(userId, family)).limit(100),
       sb.from("zad_customer_profile").select("kids_count").eq("user_id", userId).maybeSingle(),
       sb.from("zad_users").select("food_pattern_enabled").eq("id", userId).maybeSingle(),
+      sb.from("zad_life_tracks").select("id,question,because").eq("user_id", userId).gt("expires_at", new Date(now).toISOString())
+        .order("created_at", { ascending: false }).limit(5),
     ]);
     const bought: FoodBought[] = ((invRes.data ?? []) as Array<{ item_name: string | null; created_at?: string | null }>)
       .map((r) => ({ name: r.item_name, at: r.created_at }));
@@ -482,6 +501,11 @@ export async function curiosityQuestion(
       shifts: (shiftRes.data ?? []) as ShiftRow[],
       boughtNames: [...((invRes.data ?? []) as Array<{ item_name: string | null }>), ...((shopRes.data ?? []) as Array<{ item_name: string | null }>)]
         .map((r) => r.item_name ?? ""),
+      // فشل القراية = من غيرها.
+      lifeTracks: ((trackRes.data ?? []) as Array<{ id: string; question: string; because: string | null }>).map((t) => ({
+        key: `track:${t.id}`, kind: "life_track" as const, question: t.question,
+        record: `الجواب ⇒ remember بكلامه هو. سبب السؤال: ${t.because ?? ""}. متفترضش اللي ماقالوش.`,
+      })),
       foodNote: foodRes.error ? null : foodOn ? foodPatternNote(bought, now) : foodPatternInvite(bought, now),
       kidsCount: Number((profileRes.data as { kids_count?: number | null } | null)?.kids_count) || 0,
     });
