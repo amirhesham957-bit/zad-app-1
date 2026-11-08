@@ -115,6 +115,14 @@
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="com.aistudio.zad.wrtqvx" android:host="reset-password"/>
             </intent-filter>
+            <!-- Telegram's «افتح زاد» buttons, through the bot's redirect
+                 (telegram.ts appLinkRedirect). MainActivity.readLink. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="zad" android:host="open"/>
+            </intent-filter>
             <!-- «شارك لزاد» (ZAD_PLAN ٣.٣): a bank message, a receipt photo or a
                  statement PDF/CSV from any app. MainActivity.readShare copies it;
                  nothing is recorded before the customer reviews it. -->

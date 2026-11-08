@@ -21,9 +21,30 @@ class MainActivity : FlutterActivity() {
     private var pendingRingtone: MethodChannel.Result? = null
     private var shareChannel: MethodChannel? = null
     private var pendingShare: Map<String, Any?>? = null
+    private var linkChannel: MethodChannel? = null
+    private var pendingLink: String? = null
+
+    // zad://open is read by readLink. Flutter's own deep linking would push it
+    // as a route the app does not have; every other link stays as it was.
+    override fun shouldHandleDeeplinking(): Boolean =
+        !isAppLink(intent) && super.shouldHandleDeeplinking()
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        // Telegram's «افتح زاد» (lib/app/link/app_link.dart): same shape as the
+        // share below — a link waiting for sign-in stays here until it is taken.
+        linkChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "zad/link")
+            .also { channel ->
+                channel.setMethodCallHandler { call, result ->
+                    if (call.method != "take") {
+                        result.notImplemented()
+                        return@setMethodCallHandler
+                    }
+                    result.success(pendingLink)
+                    pendingLink = null
+                }
+            }
+        readLink(intent)
         // «شارك لزاد» (lib/app/share/share_intake.dart): Dart takes the share
         // when the shell is up, and is told "shared" when one arrives while it
         // runs. A share waiting for sign-in stays here until it is taken.
@@ -128,9 +149,22 @@ class MainActivity : FlutterActivity() {
     }
 
     override fun onNewIntent(intent: Intent) {
-        super.onNewIntent(intent)
+        // Before super: it asks shouldHandleDeeplinking, which reads this intent.
         setIntent(intent)
+        super.onNewIntent(intent)
         readShare(intent)
+        readLink(intent)
+    }
+
+    private fun isAppLink(intent: Intent?): Boolean =
+        intent?.action == Intent.ACTION_VIEW && intent.data?.scheme == "zad" && intent.data?.host == "open"
+
+    /** Marked so a recreated activity does not open the same link twice. */
+    private fun readLink(intent: Intent?) {
+        if (!isAppLink(intent) || intent!!.getBooleanExtra(LINK_TAKEN, false)) return
+        intent.putExtra(LINK_TAKEN, true)
+        pendingLink = intent.data?.getQueryParameter("to") ?: return
+        linkChannel?.invokeMethod("link", null)
     }
 
     /**
@@ -274,6 +308,7 @@ class MainActivity : FlutterActivity() {
     private companion object {
         const val RINGTONE_REQUEST = 4711
         const val SHARE_TAKEN = "zad_share_taken"
+        const val LINK_TAKEN = "zad_link_taken"
         const val MAX_SHARED_TEXT = 4000
         // The statement import's own cap (statement_import_screen.dart).
         const val MAX_SHARED_BYTES = 10L * 1024 * 1024

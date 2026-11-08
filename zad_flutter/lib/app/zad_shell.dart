@@ -13,6 +13,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:zad/app/link/app_link.dart';
 import 'package:zad/app/share/share_intake.dart';
 import 'package:zad/app/share/share_router.dart';
 import 'package:zad/app/shell/last_tab.dart';
@@ -127,6 +128,9 @@ class _ZadShellState extends ConsumerState<ZadShell> {
           if (mounted) unawaited(openShared(context, ref, item));
         }),
       );
+      final links = ref.read(appLinkIntakeProvider);
+      _links = links;
+      unawaited(links.listen(_openAppLink));
       final alerts = ref.read(alertsControllerProvider.notifier);
       await alerts.start();
       if (mounted) await alerts.askOnce();
@@ -219,10 +223,22 @@ class _ZadShellState extends ConsumerState<ZadShell> {
   late final AppLifecycleListener _lifecycle;
   LiveSync? _live;
   ShareIntake? _share;
+  AppLinkIntake? _links;
+
+  /// Telegram's «افتح زاد». Kids mode has neither place.
+  void _openAppLink(AppLinkTarget target) {
+    if (!mounted || ref.read(kidsModeActiveProvider)) return;
+    Navigator.of(context).popUntil((route) => route.isFirst);
+    unawaited(switch (target) {
+      AppLinkTarget.pet => showCompanionCareSheet(context),
+      AppLinkTarget.deals => showNearbyDealsScreen(context),
+    });
+  }
 
   @override
   void dispose() {
     _share?.close();
+    _links?.close();
     unawaited(_live?.stop());
     unawaited(_billed?.cancel());
     _lifecycle.dispose();

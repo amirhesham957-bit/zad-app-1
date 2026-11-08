@@ -62,18 +62,33 @@ export function proactiveDismissKeyboard(taskId: string): InlineKeyboardButton[]
   }))];
 }
 
+/** الأماكن اللي زرار تليجرام يقدر يفتحها في التطبيق. قايمة مقفولة: الرابط عام ومن غير تسجيل دخول. */
+export type AppLinkTarget = "pet" | "deals";
+
+const APP_PACKAGE = "com.aistudio.zad.wrtqvx";
+
 /**
- * أزرار نداء الرفيق («زادو عطشان»): الزرار بيعمل اللي الرسالة طالباه — أكّله أو اسقيه من تليجرام — وزرار
- * بيوقف النداءات دي (`pd:…:n` نفس مسار «مش مهم»). المالك ٤/١١: التلات أزرار العامة كانوا تحتها، و«عرفت خلاص»
- * و«الرقم غلط» مالهمش معنى لرفيق، وأي واحد فيهم كان بيرد «مش هكرر قبل ٣ أيام».
- * `pc:` + uuid (36) + `:` + حرف = 41 بايت، تحت سقف تليجرام 64.
+ * رابط زرار «افتح زاد». تليجرام مابيقبلش zad:// في الأزرار، وzad.app مش دومينّا (صفحة مركونة، ٨/١١)، فالزرار
+ * بيروح لفانكشن البوت وهي بتحوّله للتطبيق (appLinkRedirect).
  */
-export function petCallKeyboard(taskId: string, need: "hungry" | "thirsty"): InlineKeyboardButton[][] {
+export function appLinkUrl(supabaseUrl: string, to: AppLinkTarget): string {
+  return `${supabaseUrl.replace(/\/+$/, "")}/functions/v1/zad-telegram-bot?open=${to}`;
+}
+
+/** عنوان التحويل لمكان معروف، وnull لأي حاجة تانية. لو التطبيق مش متسطب، أندرويد بيفتح صفحته على بلاي. */
+export function appLinkRedirect(to: string | null): string | null {
+  if (to !== "pet" && to !== "deals") return null;
+  return `intent://open?to=${to}#Intent;scheme=zad;package=${APP_PACKAGE};end`;
+}
+
+/**
+ * أزرار نداء الرفيق («زادو عطشان»): الاتنين بيفتحوا التطبيق (المالك ٨/١١): الرعاية بقت جوه زاد بس، ومفيش زرار
+ * كتم تحت رسايل زادو. رسايل قديمة لسه عليها `pc:` و`pd:` بتفضل شغالة من الراوتر.
+ */
+export function petCallKeyboard(need: "hungry" | "thirsty", supabaseUrl: string): InlineKeyboardButton[][] {
   return [
-    [need === "hungry"
-      ? { text: "🍖 أكّله", callback_data: `pc:${taskId}:f` }
-      : { text: "💧 اسقيه", callback_data: `pc:${taskId}:w` }],
-    [{ text: "🔕 بلاش تفكرني بيه", callback_data: `pd:${taskId}:n` }],
+    [{ text: need === "hungry" ? "🍖 افتح زاد وأكّله" : "💧 افتح زاد واسقيه", url: appLinkUrl(supabaseUrl, "pet") }],
+    [{ text: "🎁 شوف عرض النهاردة", url: appLinkUrl(supabaseUrl, "deals") }],
   ];
 }
 

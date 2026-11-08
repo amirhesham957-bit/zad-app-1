@@ -41,7 +41,7 @@ import {
   adCreditKeyboard,
   InlineKeyboardButton, mainMenuKeyboard, dismissKeyboard,
   proactiveDismissKeyboard, parseProactiveDismissCallback, proactiveDismissReply,
-  reasonForCode, parseDismissCallback, petCallKeyboard, parsePetCareCallback, petCareReply, normalizeBindingCode, bindingReply, isFamilyInviteCode, looksLikeLinkCode, FAMILY_CODE_REPLY, adminChatId, mapButtonRow, amazonButtonRows, type BindingStatus, unlinkReply, memoryNoteForDismissal,
+  reasonForCode, parseDismissCallback, appLinkRedirect, petCallKeyboard, parsePetCareCallback, petCareReply, normalizeBindingCode, bindingReply, isFamilyInviteCode, looksLikeLinkCode, FAMILY_CODE_REPLY, adminChatId, mapButtonRow, amazonButtonRows, type BindingStatus, unlinkReply, memoryNoteForDismissal,
   formatBalanceMessage, type BudgetStateRow, formatTransactionsMessage, formatInsightTitle,
   confirmSpendKeyboard, parseSpendCallback, pendingQuestionAnswered, refusedSpendReply,
   transactionProposalKeyboard, parseTransactionProposalCallback,
@@ -2968,6 +2968,14 @@ Deno.serve(async (req: Request) => {
   // GET is not a Telegram update — it's the health/registration probe. Reports whether
   // the webhook is wired up, without ever echoing the token or the secret itself.
   if (req.method === "GET") {
+    // زرار «افتح زاد» تحت رسايل الرفيق (telegram.ts): تحويل لمكان من قايمة مقفولة.
+    const open = new URL(req.url).searchParams.get("open");
+    if (open !== null) {
+      const location = appLinkRedirect(open);
+      return location
+        ? new Response(null, { status: 302, headers: { Location: location, "Cache-Control": "no-store" } })
+        : new Response("not found", { status: 404 });
+    }
     const status = await ensureWebhook(new URL(req.url).searchParams.get("force") === "1");
     return new Response(
       JSON.stringify({
@@ -3215,7 +3223,7 @@ Deno.serve(async (req: Request) => {
         // اختياري: حدث حياة (٢.٨) — زرار الرابط و[سجّله وفكّرني] [لأ] لو فيه ميعاد جاي.
         life_event_id?: string; life_event_offer?: boolean; life_event_link?: unknown;
         user_id?: string; title?: string; body?: string; dismiss_task_id?: string;
-        // اختياري: نداء الرفيق — أزراره هو ([🍖 أكّله]/[💧 اسقيه] [🔕 بلاش تفكرني بيه]) بدل أزرار الرفض.
+        // اختياري: نداء الرفيق — أزراره بتفتح التطبيق (petCallKeyboard) بدل أزرار الرفض.
         pet_need?: string;
         // اختياري: كلام الفويس لو مختلف عن نص الرسالة (كلام بلهجة وإحساس بدل عنوان وأرقام).
         speech?: string;
@@ -3248,7 +3256,7 @@ Deno.serve(async (req: Request) => {
       const amazonRows = amazonButtonRows(amazon_links);
       const validTask = !!dismiss_task_id && /^[0-9a-fA-F-]{36}$/.test(dismiss_task_id);
       const petRows = validTask && (pet_need === "hungry" || pet_need === "thirsty")
-        ? petCallKeyboard(dismiss_task_id!, pet_need)
+        ? petCallKeyboard(pet_need, SUPABASE_URL)
         : [];
       const dismissRows = validTask && !petRows.length ? proactiveDismissKeyboard(dismiss_task_id!) : [];
       // «اتعلمت إن» (٥.٢): الملخص الأسبوعي اللي قال نمط بياخد «صح / مش صح» فوق أزرار الرفض. فشل القراية = من غيرهم.
