@@ -323,7 +323,36 @@ export const validateReconcileCashBalance: Validator = (input, snap, ctx) => {
 /** أقصى مبلغ في معاملة واحدة من محادثة — رقم شارد من الموديل أو سوء فهم لجملة. */
 const MAX_TRANSACTION_AMOUNT = 1_000_000;
 
-export const validateLogTransaction: Validator = (input, _snap, ctx) => {
+/**
+ * `occurred_on` (YYYY-MM-DD, the account's civil date) → the instant to store in
+ * `created_at`, the only date the budget counts by. Noon local, so the day survives any
+ * offset. `null` = not given or today (the insert keeps its default now); `"invalid"` =
+ * not a real date, in the future, or more than 400 days back.
+ *
+ * Why (owner, 2026-09-28): «حاجات من شهور قديمة مضافة كأنها الشهر ده». "دفعت الإيجار
+ * الشهر اللي فات" was written with today's created_at, and the budget — which sums
+ * `created_at >= cycle_start` — counted it against this month.
+ */
+export function occurredAtIso(
+  occurredOn: unknown,
+  today: string | undefined,
+  utcOffset: string | undefined,
+): string | null | "invalid" {
+  if (occurredOn === undefined || occurredOn === null || occurredOn === "") return null;
+  const d = latinDigits(String(occurredOn).trim());
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return "invalid";
+  const asDate = new Date(`${d}T00:00:00Z`);
+  if (Number.isNaN(asDate.getTime()) || asDate.toISOString().slice(0, 10) !== d) return "invalid";
+  const todayStr = today && /^\d{4}-\d{2}-\d{2}$/.test(today) ? today : new Date().toISOString().slice(0, 10);
+  if (d > todayStr) return "invalid";
+  if (d === todayStr) return null;
+  const ageDays = (new Date(`${todayStr}T00:00:00Z`).getTime() - asDate.getTime()) / 86_400_000;
+  if (ageDays > 400) return "invalid";
+  const offset = utcOffset && /^[+-]\d{2}:\d{2}$/.test(utcOffset) ? utcOffset : "+00:00";
+  return new Date(`${d}T12:00:00${offset}`).toISOString();
+}
+
+export const validateLogTransaction: Validator = (input, snap, ctx) => {
   if ((ctx.counts["log_transaction"] ?? 0) >= 5) return { ok: false, reason: "وصلت لحد أقصى ٥ معاملات في المرة" };
   const amount = input.amount;
   if (typeof amount !== "number" || !Number.isFinite(amount) || amount <= 0) {
@@ -338,6 +367,10 @@ export const validateLogTransaction: Validator = (input, _snap, ctx) => {
   }
   if (isGuessedTitle(String(input.title))) {
     return { ok: false, reason: "الوصف ده تخمين — اسأل العميل الفلوس دي راحت على إيه (ask_user) قبل ما تسجلها" };
+  }
+  const nowLocal = (snap as { now_local?: { date?: string; utc_offset?: string } } | undefined)?.now_local;
+  if (occurredAtIso(input.occurred_on, nowLocal?.date, nowLocal?.utc_offset) === "invalid") {
+    return { ok: false, reason: "occurred_on لازم يكون تاريخ YYYY-MM-DD فات أو النهارده، ومش أقدم من سنة" };
   }
   if (input.lines !== undefined) {
     if (!Array.isArray(input.lines)) return { ok: false, reason: "lines لازم تبقى قايمة أصناف" };

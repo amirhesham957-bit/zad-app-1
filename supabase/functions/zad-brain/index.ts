@@ -72,7 +72,7 @@ import { type BankCase, type BankCaseResult, failureOf, judgeBankCase, summarize
 import bankCorpus from "./testdata/bank_corpus.json" with { type: "json" };
 import { explainData, explainSystem, isExplainTopic } from "./explain.ts";
 import { buildSupportEmail, DEFAULT_SUPPORT_INBOX, sendSupportEmail } from "../zad-support/email.ts";
-import { CONFIRM_REQUIRED_TOOLS, freshContext, latinDigits, looksLikeAnsweredQuestion, RunContext, validateTool , APPOINTMENT_KINDS , APPOINTMENT_RECURRENCES, APP_COMMAND_SCREENS, PLACE_REMINDER_PLACE_VALUES } from "./validators.ts";
+import { CONFIRM_REQUIRED_TOOLS, freshContext, latinDigits, occurredAtIso, looksLikeAnsweredQuestion, RunContext, validateTool , APPOINTMENT_KINDS , APPOINTMENT_RECURRENCES, APP_COMMAND_SCREENS, PLACE_REMINDER_PLACE_VALUES } from "./validators.ts";
 import { callModel, embedText, embedSelfTest, hasEvalKey, hasGroq, inLane, smokeTestTools, streamGeminiTurn, Turn, ToolDef } from "./callModel.ts";
 import { type Lane, laneFor } from "./keyLanes.ts";
 import { chatLane, FREE_BUSY_REPLY, freeDailyBudget, gateReply, historyWindow, turnsPerMinute } from "./freeLane.ts";
@@ -2515,6 +2515,11 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
     }
     case "log_transaction": {
       const isExpense = input.txn_kind === "expense";
+      // عملية بتاريخ فات (occurred_on): بتتكتب في شهرها. مابتدخلش دمج صف البنك ولا نافذة التكرار
+      // (الاتنين عن اللي حصل دلوقتي) ولا باب الشرا (أصناف قديمة مابتملاش مخزن النهارده).
+      const occurredAt = occurredAtIso(input.occurred_on, snap?.now_local?.date, snap?.now_local?.utc_offset);
+      if (occurredAt === "invalid") return "مرفوض: تاريخ العملية مش مفهوم أو في المستقبل — اسأل العميل حصلت إمتى.";
+      const backdated = occurredAt !== null;
 
       // Idempotent by (user, kind, amount) inside a short window. add_shopping_item and
       // add_pharmacy_item both got this guard; the tool that writes *money* did not, which
@@ -2537,7 +2542,7 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       // صف البنك لنفس الدفعة، لسه من غير فئة (20261102060000): «إيجار شقة 3500» بعد إشعار BDC بـ3500 هو نفس
       // الفلوس — الصف بياخد الاسم والفئة بدل ما الدفعة تتحسب مرتين (حساب المالك ١/١١). الأصناف بتعدّي على
       // باب الشرا وهو بيدمج لوحده؛ الكاش و«دي عملية تانية» مابيتدمجوش.
-      if (isExpense && input.allow_duplicate !== true && input.wallet !== "cash" && toolPurchaseLines(input.lines).length === 0) {
+      if (!backdated && isExpense && input.allow_duplicate !== true && input.wallet !== "cash" && toolPurchaseLines(input.lines).length === 0) {
         const { data: twinId, error: twinErr } = await sb.rpc("zad_bank_twin_service", { p_user: userId, p_amount: input.amount });
         if (twinErr) console.error("[log_transaction] bank twin read failed:", twinErr.message);
         if (!twinErr && typeof twinId === "string") {
@@ -2566,7 +2571,7 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
         }
       }
 
-      if (input.allow_duplicate !== true) {
+      if (!backdated && input.allow_duplicate !== true) {
         const windowStart = new Date(Date.now() - 10 * 60 * 1000).toISOString();
         const { data: recent } = await sb.from("zad_transactions")
           .select("id,title,amount,created_at")
@@ -2591,7 +2596,7 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
 
       // مصروف فيه أصناف = شرا واحد (ZAD_PLAN ٣.٦ د، purchaseDoor.ts): الفلوس والمخزن والصيدلية والأسعار
       // في ترانزاكشن واحدة، فمفيش «الفلوس اتسجلت والأصناف لأ» لو add_inventory_item اتنسى أو وقع.
-      const purchaseLines = isExpense ? toolPurchaseLines(input.lines) : [];
+      const purchaseLines = isExpense && !backdated ? toolPurchaseLines(input.lines) : [];
       if (purchaseLines.length > 0) {
         const amount = Math.round(input.amount * 100) / 100;
         const title = String(input.title).trim().slice(0, 80);
@@ -2646,6 +2651,7 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
           merchant_name: input.merchant_name ? String(input.merchant_name).trim().slice(0, 80) || null : null,
           // لمين في البيت (ZAD_PLAN ٥.٣) — مصروف بس.
           for_person: isExpense ? normalizeForPerson(input.for_person) : null,
+          ...(occurredAt ? { created_at: occurredAt } : {}),
         }).select("id,amount,title,category,txn_kind,for_person"),
         "تسجيل المعاملة",
       );
@@ -2656,7 +2662,8 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
         tool: name, input, table: "zad_transactions", targetId: (w.rows[0] as any).id,
         previous: null, next: w.rows[0],
       });
-      return `اتسجلت المعاملة: ${input.title} — ${input.amount}`;
+      return `اتسجلت المعاملة: ${input.title} — ${input.amount}` +
+        (occurredAt ? ` بتاريخ ${String(input.occurred_on)} (اتحسبت في شهرها، مش الشهر ده)` : "");
     }
     case "update_transaction": {
       const { data: before } = await sb.from("zad_transactions")
@@ -5088,6 +5095,13 @@ export const CHAT_TOOLS: ToolDef[] = [
         category: { type: "string", description: "واحدة من: البقالة، المطاعم، الفواتير، المواصلات، الوقود، الاشتراكات، الأقساط، الرعاية الصحية، التعليم، الترفيه، الملابس، تحويلات، أخرى — نفس أسامي التطبيق والماسح (السيرفر بيوحّد أي صيغة تانية)" },
         wallet: { type: "string", enum: ["card", "cash"], description: "cash لو العميل قال إنه دفع كاش" },
         for_person: { type: "string", description: "لمين في البيت؛ فاضي = العميل/البيت" },
+        occurred_on: {
+          type: "string",
+          description:
+            "YYYY-MM-DD بتاريخ العميل المحلي (now_local.date في الـ snapshot هو النهارده). ابعته بس لو " +
+            "العميل قال إن العملية حصلت في يوم فات: «امبارح»، «الشهر اللي فات»، «يوم ٥». من غيره المعاملة " +
+            "بتتحسب في الشهر الحالي. سيبه فاضي لو حصلت النهارده.",
+        },
         lines: {
           type: "array",
           description:
@@ -6416,8 +6430,9 @@ function describeProposal(tool: string, input: any, currency: string): string {
     case "log_transaction": {
       const lines = input.txn_kind === "income" ? [] : toolPurchaseLines(input.lines);
       return `${input.txn_kind === "income" ? "دخل" : "مصروف"}: ${money(input.amount)} — ${input.title}` +
+        (input.occurred_on ? ` — بتاريخ ${input.occurred_on}` : "") +
         (input.category ? ` (${input.category})` : "") +
-        (lines.length ? ` + ${lines.map((l) => l.name).join("، ")}` : "");
+        (lines.length && !input.occurred_on ? ` + ${lines.map((l) => l.name).join("، ")}` : "");
     }
     case "update_transaction": {
       const parts: string[] = [];
