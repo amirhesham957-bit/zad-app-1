@@ -1,5 +1,5 @@
 import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { aiDataTier, freeGeminiKeys, geminiKeys, groqKeys, MAX_KEYS } from "./keyPool.ts";
+import { publicContentKeys, aiDataTier, freeGeminiKeys, geminiKeys, groqKeys, MAX_KEYS } from "./keyPool.ts";
 
 const envOf = (vars: Record<string, string>) => (n: string) => vars[n];
 
@@ -58,4 +58,10 @@ Deno.test("a paid key carries customer data alone; the free keys stay readable f
   assertEquals(freeGeminiKeys(env), ["f1", "f2"]);
   assertEquals(aiDataTier(env), "paid");
   assertEquals(freeGeminiKeys(envOf({ GEMINI_API_KEY: "old" })), ["old"]);
+});
+
+Deno.test("public-content keys: the free pool first, the paid key last, no customer-data pool change", () => {
+  const env = (n: string) => ({ ZAD_API_KEY_1: "f1", ZAD_API_KEY_2: "f2", ZAD_PAID_KEY_1: "p1" } as Record<string, string>)[n];
+  assertEquals(publicContentKeys(env), ["f1", "f2", "p1"]);
+  assertEquals(geminiKeys(env), ["p1"]);
 });

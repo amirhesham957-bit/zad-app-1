@@ -61,6 +61,16 @@ export function freeGeminiKeys(env: Env): string[] {
   return legacy ? [legacy] : [];
 }
 
+/**
+ * Keys for reading PUBLIC content only — store flyers, Instagram posts, YouTube videos: no customer's data goes in
+ * those requests, so the free pool's terms don't bite. The paid lane is one key (ZAD_PLAN 8.2), and on 2026-11-08 its
+ * model buckets were spent by morning: 6 of 11 flyers failed and YouTube read 0 of its videos. Paid goes last, as a spare.
+ * Never pass customer data through this list.
+ */
+export function publicContentKeys(env: Env): string[] {
+  return unique([...freeGeminiKeys(env), ...paidGeminiKeys(env)]);
+}
+
 /** مفاتيح جروك: `GROQ_API_KEY_1..20` ثم المفرد الأصلي `GROQ_API_KEY`، من غير تكرار. */
 export function groqKeys(env: Env): string[] {
   const single = env("GROQ_API_KEY")?.trim();

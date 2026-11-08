@@ -1,5 +1,5 @@
 import { assert, assertEquals, assertStringIncludes } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { cleanCity, dealQuery, readReverseCity, reverseCityUrl, dealsFromHitsPrompt, dealSearchItems, MAX_DEAL_ITEMS, readDeals, readStoreDeals, searchStoreName, storeDealsPrompt, storeDealsQuery, videoDealsPrompt, youtubeDealVideos, instagramDealPosts, postDealsPrompt } from "./liveDeals.ts";
+import { cleanCity, dealQuery, readReverseCity, reverseCityUrl, dealsFromHitsPrompt, dealSearchItems, MAX_DEAL_ITEMS, readDeals, readStoreDeals, fillMarketCurrency, searchStoreName, storeDealsPrompt, storeDealsQuery, videoDealsPrompt, youtubeDealVideos, instagramDealPosts, postDealsPrompt } from "./liveDeals.ts";
 import { isLiveQuery } from "./searchQuality.ts";
 
 Deno.test("duplicates and blanks are dropped, order kept", () => {
@@ -212,4 +212,21 @@ Deno.test("a video naming another country is not read for this one (Carrefour Mo
   assertEquals(namesOtherCountry("عروض بنده الرياض", "SA"), false);
   assertEquals(namesOtherCountry("عروض لولو الإمارات", "SA"), true);
   assertEquals(namesOtherCountry("عروض كارفور عمّان", "JO"), false);
+});
+
+Deno.test("a post with no spelled currency keeps its deal; another country's is still refused (8/11)", () => {
+  const hit = [{ title: "بوست", url: "https://www.instagram.com/p/x/", snippet: "" }];
+  const now = new Date("2026-11-08T00:00:00Z");
+  const read = (currency: string) =>
+    readStoreDeals(fillMarketCurrency({ deals: [{ item: "وجبة دجاج", price: 39, currency, source: 1 }] }, "SAR"), hit, "SAR", now).length;
+  assertEquals(read(""), 1);
+  assertEquals(read("⃁"), 1);
+  assertEquals(read("ر.س"), 1);
+  assertEquals(read("جنيه"), 0);
+});
+
+Deno.test("social prompts take any written price but still forbid guessing", () => {
+  const { system } = postDealsPrompt("كيو", "السعودية", "SAR", "x", "2026-11-08");
+  assert(system.includes("كومبو") && system.includes("ممنوع تخمّن"));
+  assert(videoDealsPrompt("كيو", "السعودية", "SAR", "x", "2026-11-08").system.includes("ممنوع تخمّن"));
 });

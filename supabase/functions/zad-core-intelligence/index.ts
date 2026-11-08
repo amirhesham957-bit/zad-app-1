@@ -3,7 +3,7 @@ import { buildTicker, countryForLocation } from "./liveTicker.ts";
 import { asksLatest, bingNewsUrl, cacheTtlMs, englishTwin, type GoldQuote, GOOGLE_CONSENT_COOKIE, goldQuotes, googleNewsUrl, isLiveQuery, keepAnswering, latestFirst, marketOf, topicOf, withTwin } from "./searchQuality.ts";
 import { spokenText, WHISPER_DEFAULT_MODEL, type WhisperOptions, whisperOptions, whisperWithFallback } from "./whisper.ts";
 import { DeadKeys } from "../_shared/deadKeys.ts";
-import { geminiKeys, groqKeys } from "../_shared/keyPool.ts";
+import { geminiKeys, groqKeys, publicContentKeys } from "../_shared/keyPool.ts";
 import { recipeNeedsNoShopping } from "../_shared/brokeMode.ts";
 import { seasonFor } from "../_shared/season.ts";
 import { deliveryApp, deliveryFee } from "../_shared/deliveryApps.ts";
@@ -44,7 +44,7 @@ async function callerCountry(req: Request, userId: unknown): Promise<string | nu
 import { googleNearbyAny, googlePlacesKeys } from "./googlePlaces.ts";
 import { tiktokDealHits, tiktokDealsPrompt, tiktokQuery } from "./tiktokDeals.ts";
 import { brochureEntries, OFFICIAL_FLYER_SITES, OFFICIAL_FLYER_UA, officialFlyerDeals, officialFlyerPrompt, robotsAllows, siteForPdf } from "./officialFlyers.ts";
-import { DEAL_SEARCH_TIMEOUT_MS, dealQuery, dealsFromHitsPrompt, dealSearchItems, readDeals, readReverseCity, readStoreDeals, reverseCityUrl, sameCurrency, cleanCity, searchStoreName, storeDealsPrompt, storeDealsQuery, videoDealsPrompt, youtubeDealVideos, instagramDealPosts, postDealsPrompt, flyerDealsPrompt, readDealCodes, type DealCode } from "./liveDeals.ts";
+import { fillMarketCurrency, DEAL_SEARCH_TIMEOUT_MS, dealQuery, dealsFromHitsPrompt, dealSearchItems, readDeals, readReverseCity, readStoreDeals, reverseCityUrl, sameCurrency, cleanCity, searchStoreName, storeDealsPrompt, storeDealsQuery, videoDealsPrompt, youtubeDealVideos, instagramDealPosts, postDealsPrompt, flyerDealsPrompt, readDealCodes, type DealCode } from "./liveDeals.ts";
 import { fuelPricePrompt, fuelPriceQuery, readFuelPrice } from "./fuelPrice.ts";
 import {
   exchangeLongLivedToken, instagramAccountPosts, instagramHandles, instagramHashtagPosts, metaAppKeys, MIN_STORE_FOLLOWERS, instagramProbe, instagramTokenInfo, storeHashtag, tokenDaysLeft, tokenNeedsRefresh,
@@ -125,6 +125,14 @@ function nextGroqKeyIndex(): number {
 // ZAD_API_KEY_1..20 now (_shared/keyPool.ts); a sixth key used to be silently ignored.
 const GEMINI_KEYS: string[] = geminiKeys((n) => Deno.env.get(n));
 let geminiKeyCursor = 0;
+// Public content only (flyers, posts, videos) — see publicContentKeys. Its own cursor: GEMINI_KEYS may be one key.
+const PUBLIC_DEAL_KEYS: string[] = publicContentKeys((n) => Deno.env.get(n));
+let publicKeyCursor = 0;
+function nextPublicKeyIndex(): number {
+  const i = publicKeyCursor % Math.max(PUBLIC_DEAL_KEYS.length, 1);
+  publicKeyCursor = (publicKeyCursor + 1) % Math.max(PUBLIC_DEAL_KEYS.length, 1);
+  return i;
+}
 // TTS يستخدم نفس مسبح المفاتيح — أول مفتاح متاح
 const GEMINI_API_KEY = GEMINI_KEYS[0] ?? Deno.env.get("GEMINI_API_KEY") ?? "";
 // احتياطي الصوت لما مسبح Gemini TTS كله يقع — null لو الأسرار مش متظبطة (azureVoice.ts).
@@ -697,21 +705,24 @@ async function callGeminiPool(opts: {
    * wall clock before the chain ever reaches a second model.
    */
   deadline?: number;
+  /** Public content only: walk PUBLIC_DEAL_KEYS instead of the customer-data pool. */
+  publicContent?: boolean;
 }): Promise<{ content: string | null; ok: boolean }> {
-  if (GEMINI_KEYS.length === 0) {
+  const pool = opts.publicContent ? PUBLIC_DEAL_KEYS : GEMINI_KEYS;
+  if (pool.length === 0) {
     console.error("[CoreIntel] No Gemini keys configured (ZAD_API_KEY_1..20 / GEMINI_API_KEY all unset)");
     return { content: null, ok: false };
   }
-  const start = nextGeminiKeyIndex();
-  for (let i = 0; i < GEMINI_KEYS.length; i++) {
+  const start = opts.publicContent ? nextPublicKeyIndex() : nextGeminiKeyIndex();
+  for (let i = 0; i < pool.length; i++) {
     const left = opts.deadline == null ? null : opts.deadline - Date.now();
     if (left != null && left < 5000) {
       console.warn(`[CoreIntel] ${opts.model}: out of time after ${i} key(s)`);
       return { content: null, ok: false };
     }
-    const keyIndex = (start + i) % GEMINI_KEYS.length;
+    const keyIndex = (start + i) % pool.length;
     const result = await callGeminiNative({
-      apiKey: GEMINI_KEYS[keyIndex],
+      apiKey: pool[keyIndex],
       model: opts.model,
       systemPrompt: ZAD_PERSONA_PREFIX + opts.systemPrompt,
       content: opts.content,
@@ -748,13 +759,14 @@ const MAX_FLYER_DOWNLOAD_BYTES = 60_000_000;
 async function readPdfWithGemini(opts: {
   pdfUrl: string; systemPrompt: string; userText: string; deadline: number;
 }): Promise<{ content: string | null; reason: string | null }> {
-  if (GEMINI_KEYS.length === 0) return { content: null, reason: "no_key" };
+  if (PUBLIC_DEAL_KEYS.length === 0) return { content: null, reason: "no_key" };
   const api = "https://generativelanguage.googleapis.com";
   let reason = "no_model";
-  const tries = Math.min(2, GEMINI_KEYS.length);
+  // Each key means a fresh upload (a file belongs to its key's project), so a few at most.
+  const tries = Math.min(3, PUBLIC_DEAL_KEYS.length);
   for (let i = 0; i < tries; i++) {
     if (opts.deadline - Date.now() < 30_000) return { content: null, reason: "out_of_time" };
-    const key = GEMINI_KEYS[nextGeminiKeyIndex()];
+    const key = PUBLIC_DEAL_KEYS[nextPublicKeyIndex()];
     let fileName: string | null = null;
     try {
       const pdf = await fetch(opts.pdfUrl, {
@@ -792,17 +804,25 @@ async function readPdfWithGemini(opts: {
         reason = `file_${state || "unknown"}`;
         continue;
       }
-      const answer = await callGeminiNative({
-        apiKey: key,
-        model: VISION_FALLBACK_MODELS[0] ?? GEMINI_MODEL_ROUTINE,
-        systemPrompt: ZAD_PERSONA_PREFIX + opts.systemPrompt,
-        content: [{ type: "file_data", file_data: { mime_type: "application/pdf", file_uri: uri } }, { type: "text", text: opts.userText }],
-        temperature: 0.1, maxTokens: 6000, jsonMode: true, thinkingBudget: 0,
-        timeoutMs: Math.max(10_000, Math.min(90_000, opts.deadline - Date.now() - 5_000)),
-      });
-      if (answer.ok && answer.content) return { content: answer.content, reason: null };
-      reason = `model_${answer.status}`;
-      if (answer.status !== 429) break; // غير الحصة، المفتاح التاني هيرجع نفس الرد
+      // Quota is per key AND per model, so the same uploaded file gets every model on this key first.
+      let quotaOnly = true;
+      for (const model of dealVisionChain()) {
+        if (opts.deadline - Date.now() < 15_000) return { content: null, reason: "out_of_time" };
+        const answer = await callGeminiNative({
+          apiKey: key,
+          model,
+          systemPrompt: ZAD_PERSONA_PREFIX + opts.systemPrompt,
+          content: [{ type: "file_data", file_data: { mime_type: "application/pdf", file_uri: uri } }, { type: "text", text: opts.userText }],
+          temperature: 0.1, maxTokens: 6000, jsonMode: true, thinkingBudget: 0,
+          timeoutMs: Math.max(10_000, Math.min(90_000, opts.deadline - Date.now() - 5_000)),
+        });
+        if (answer.ok && answer.content) return { content: answer.content, reason: null };
+        reason = `model_${answer.status}`;
+        if (answer.status === 429 || answer.status === 503 || answer.status === 404) continue;
+        quotaOnly = false;
+        break;
+      }
+      if (!quotaOnly) break; // غير الحصة، المفتاح التاني هيرجع نفس الرد
     } catch (e) {
       reason = (e as Error).name === "TimeoutError" ? "timeout" : "fetch_failed";
     } finally {
@@ -858,6 +878,46 @@ async function callGeminiChain(
     console.warn(`[CoreIntel] ${model} failed on the whole pool — next model in the chain`);
   }
   return { content: null, ok: false };
+}
+
+/** Models for reading public deal pictures, videos and flyers: each one is a fresh bucket on every key. */
+function dealVisionChain(): string[] {
+  return [...new Set([...VISION_FALLBACK_MODELS, GEMINI_MODEL_ROUTINE])];
+}
+
+/**
+ * One public post, video or search hit read for deals: every model on the public keys. Only plain text may go on to
+ * Groq ([groqText]): Groq can't take a picture or a video with JSON mode, so an image post falls back to its caption
+ * and a video has no fallback at all.
+ */
+async function readPublicDeals(opts: {
+  systemPrompt: string;
+  content: string | Array<Record<string, unknown>>;
+  maxTokens: number;
+  timeoutMs: number;
+  deadline: number;
+  groqText?: string;
+}): Promise<{ content: string | null; ok: boolean }> {
+  for (const model of dealVisionChain()) {
+    if (opts.deadline - Date.now() < 3000) break;
+    const answer = await callGeminiPool({
+      model, systemPrompt: opts.systemPrompt, content: opts.content, temperature: 0.1, maxTokens: opts.maxTokens,
+      jsonMode: true, thinkingBudget: 0, timeoutMs: opts.timeoutMs, deadline: opts.deadline, publicContent: true,
+    });
+    if (answer.ok && answer.content) return answer;
+  }
+  if (!opts.groqText) return { content: null, ok: false };
+  console.warn("[CoreIntel] public deal read: every Gemini model failed — Groq on the text only");
+  return callGroqPool({
+    model: GROQ_TEXT_MODEL, systemPrompt: opts.systemPrompt, content: opts.groqText,
+    temperature: 0.1, maxTokens: opts.maxTokens, jsonMode: true,
+  });
+}
+
+/** A read that kept nothing: what the post said and what the model answered, so a zero can be told from a filter. Public text only. */
+function logEmptyDealRead(source: string, store: string, shown: string, answer: string, raw: unknown) {
+  const count = Array.isArray((raw as { deals?: unknown } | null)?.deals) ? ((raw as { deals: unknown[] }).deals.length) : -1;
+  console.log(`[deal_read_empty] ${JSON.stringify({ source, store, model_deals: count, shown: shown.slice(0, 240), answer: answer.slice(0, 400) })}`);
 }
 
 async function callTextModel(
@@ -3029,17 +3089,19 @@ async function handle(req: Request): Promise<Response> {
         let read = 0;
         for (const video of videos) {
           const { system, user } = videoDealsPrompt(store, market.name, currency, video.title, today);
-          const answer = await callGeminiPool({
-            model: VISION_FALLBACK_MODELS[0] ?? GEMINI_MODEL_ROUTINE, systemPrompt: system,
+          const answer = await readPublicDeals({
+            systemPrompt: system,
             content: [{ type: "video_url", video_url: { url: video.url } }, { type: "text", text: user }],
-            temperature: 0.1, maxTokens: 1500, jsonMode: true, thinkingBudget: 0, timeoutMs: 50_000,
-            deadline: Date.now() + 55_000,
+            maxTokens: 1500, timeoutMs: 50_000, deadline: Date.now() + 55_000,
           });
           if (!answer.ok || !answer.content) continue;
           read++;
-          const parsed = (() => { try { return JSON.parse(answer.content!); } catch { return null; } })();
-          deals.push(...readStoreDeals(parsed, [{ title: video.title, url: video.url, snippet: "" }], currency, new Date()));
-          codes.push(...readDealCodes(parsed, video.url, new Date()));
+          const parsed = fillMarketCurrency((() => { try { return JSON.parse(answer.content!); } catch { return null; } })(), currency);
+          const videoDeals = readStoreDeals(parsed, [{ title: video.title, url: video.url, snippet: "" }], currency, new Date());
+          const videoCodes = readDealCodes(parsed, video.url, new Date());
+          if (videoDeals.length === 0 && videoCodes.length === 0) logEmptyDealRead("youtube", store, video.title, answer.content, parsed);
+          deals.push(...videoDeals);
+          codes.push(...videoCodes);
         }
         return jsonResponse({ ok: true, deals, codes, hits: found.items.length, videos: videos.length, read, source: "youtube" });
       }
@@ -3071,14 +3133,12 @@ async function handle(req: Request): Promise<Response> {
         let read = 0;
         for (const hit of videos) {
           const { system, user } = tiktokDealsPrompt(store, market.name, currency, hit, today);
-          const answer = await callGeminiPool({
-            model: GEMINI_MODEL_ROUTINE, systemPrompt: system, content: user,
-            temperature: 0.1, maxTokens: 1200, jsonMode: true, thinkingBudget: 0, timeoutMs: 25_000,
-            deadline: Date.now() + 30_000,
+          const answer = await readPublicDeals({
+            systemPrompt: system, content: user, maxTokens: 1200, timeoutMs: 25_000, deadline: Date.now() + 30_000, groqText: user,
           });
           if (!answer.ok || !answer.content) continue;
           read++;
-          const parsed = (() => { try { return JSON.parse(answer.content!); } catch { return null; } })();
+          const parsed = fillMarketCurrency((() => { try { return JSON.parse(answer.content!); } catch { return null; } })(), currency);
           deals.push(...readStoreDeals(parsed, [hit], currency, new Date()));
           codes.push(...readDealCodes(parsed, hit.url, new Date()));
         }
@@ -3117,16 +3177,18 @@ async function handle(req: Request): Promise<Response> {
           const content: Array<Record<string, unknown>> = [{ type: "text", text: user }];
           const picture = post.image_url ? await pictureAsDataUrl(post.image_url) : null;
           if (picture) content.unshift({ type: "image_url", image_url: { url: picture } });
-          const answer = await callGeminiPool({
-            model: VISION_FALLBACK_MODELS[0] ?? GEMINI_MODEL_ROUTINE, systemPrompt: system, content,
-            temperature: 0.1, maxTokens: 1500, jsonMode: true, thinkingBudget: 0, timeoutMs: 30_000,
-            deadline: Date.now() + 35_000,
+          const answer = await readPublicDeals({
+            systemPrompt: system, content, maxTokens: 1500, timeoutMs: 30_000, deadline: Date.now() + 35_000,
+            groqText: post.caption.trim().length >= 20 ? user : undefined,
           });
           if (!answer.ok || !answer.content) continue;
           read++;
-          const parsed = (() => { try { return JSON.parse(answer.content!); } catch { return null; } })();
-          deals.push(...readStoreDeals(parsed, [{ title: post.caption.slice(0, 120), url: post.permalink, snippet: "" }], currency, new Date()));
-          codes.push(...readDealCodes(parsed, post.permalink, new Date()));
+          const parsed = fillMarketCurrency((() => { try { return JSON.parse(answer.content!); } catch { return null; } })(), currency);
+          const postDeals = readStoreDeals(parsed, [{ title: post.caption.slice(0, 120), url: post.permalink, snippet: "" }], currency, new Date());
+          const postCodes = readDealCodes(parsed, post.permalink, new Date());
+          if (postDeals.length === 0 && postCodes.length === 0) logEmptyDealRead("instagram", store, post.caption, answer.content, parsed);
+          deals.push(...postDeals);
+          codes.push(...postCodes);
         }
         return jsonResponse({
           ok: true, deals, codes, hits: found.items.length, posts: posts.length, read, source: "instagram", via,
