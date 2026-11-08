@@ -443,6 +443,9 @@ class ZadL10nEn extends ZadL10n {
   String get drawerGroupHome => 'Home and family';
 
   @override
+  String get drawerAllFeatures => 'All features';
+
+  @override
   String get placesOrbitHome => 'Home';
 
   @override

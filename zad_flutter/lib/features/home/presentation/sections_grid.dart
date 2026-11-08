@@ -3,6 +3,8 @@
 ///
 library;
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/design/components/zad_pressable.dart';
@@ -15,6 +17,7 @@ import 'package:zad/shared/inventory/application/pantry_controller.dart';
 import 'package:zad/shared/inventory/application/shopping_controller.dart';
 import 'package:zad/shared/navigation/destinations.dart';
 import 'package:zad/shared/navigation/shell_navigation.dart';
+import 'package:zad/shared/navigation/touched_sections.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
 import 'package:zad/shared/subscriptions/application/subscriptions_controller.dart';
 
@@ -428,7 +431,7 @@ class _Rows extends StatelessWidget {
 
 /// One tile: a tinted rounded square with the icon, a badge on its corner,
 /// the name under it.
-class SectionTile extends StatelessWidget {
+class SectionTile extends ConsumerWidget {
   /// Creates a tile.
   const new({required this.section, this.badge = 0, super.key});
 
@@ -439,8 +442,12 @@ class SectionTile extends StatelessWidget {
   final int badge;
 
   @override
-  Widget build(BuildContext context) => ZadPressable(
-    onPressed: () => section.open(context),
+  Widget build(BuildContext context, WidgetRef ref) => ZadPressable(
+    onPressed: () {
+      // Opened from here counts the same as from the drawer.
+      ref.read(touchedSectionsProvider.notifier).touch(section.id);
+      unawaited(section.open(context));
+    },
     semanticLabel: badge > 0
         ? context.l10n.sectionWithBadge(section.label(context.l10n), badge)
         : section.label(context.l10n),

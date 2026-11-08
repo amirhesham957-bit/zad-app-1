@@ -129,6 +129,7 @@
   "drawerGroupZad": "Zad",
   "drawerGroupMoney": "Money",
   "drawerGroupHome": "Home and family",
+  "drawerAllFeatures": "All features",
   "placesOrbitHome": "Home",
   "placesOrbitCaption": "Closest to home means you go most often, not the real distance.",
   "placesHabitVisits": "{count} visits",
