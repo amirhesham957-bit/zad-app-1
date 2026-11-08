@@ -871,6 +871,36 @@ abstract class ZadL10n {
   /// **'البيت والعيلة'**
   String get drawerGroupHome;
 
+  /// No description provided for @placesOrbitHome.
+  ///
+  /// In ar, this message translates to:
+  /// **'البيت'**
+  String get placesOrbitHome;
+
+  /// No description provided for @placesOrbitCaption.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأقرب للبيت هو اللي بتروحه أكتر، مش المسافة الحقيقية.'**
+  String get placesOrbitCaption;
+
+  /// No description provided for @placesHabitVisits.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} مرات'**
+  String placesHabitVisits(int count);
+
+  /// No description provided for @placesHabitVisitsOn.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} مرات · غالباً {day}'**
+  String placesHabitVisitsOn(int count, String day);
+
+  /// No description provided for @placesOrbitNode.
+  ///
+  /// In ar, this message translates to:
+  /// **'{name}، {count} مرات'**
+  String placesOrbitNode(String name, int count);
+
   /// No description provided for @memoryGraphResetView.
   ///
   /// In ar, this message translates to:
