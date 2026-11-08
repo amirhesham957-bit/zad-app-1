@@ -72,7 +72,7 @@ import { type BankCase, type BankCaseResult, failureOf, judgeBankCase, summarize
 import bankCorpus from "./testdata/bank_corpus.json" with { type: "json" };
 import { explainData, explainSystem, isExplainTopic } from "./explain.ts";
 import { buildSupportEmail, DEFAULT_SUPPORT_INBOX, sendSupportEmail } from "../zad-support/email.ts";
-import { CONFIRM_REQUIRED_TOOLS, freshContext, latinDigits, looksLikeAnsweredQuestion, RunContext, validateTool , APPOINTMENT_KINDS , APPOINTMENT_RECURRENCES, APP_COMMAND_SCREENS, PLACE_REMINDER_PLACE_VALUES } from "./validators.ts";
+import { CONFIRM_REQUIRED_TOOLS, freshContext, latinDigits, occurredAtIso, looksLikeAnsweredQuestion, RunContext, validateTool , APPOINTMENT_KINDS , APPOINTMENT_RECURRENCES, APP_COMMAND_SCREENS, PLACE_REMINDER_PLACE_VALUES } from "./validators.ts";
 import { callModel, embedText, embedSelfTest, hasEvalKey, hasGroq, inLane, smokeTestTools, streamGeminiTurn, Turn, ToolDef } from "./callModel.ts";
 import { type Lane, laneFor } from "./keyLanes.ts";
 import { chatLane, FREE_BUSY_REPLY, freeDailyBudget, gateReply, historyWindow, turnsPerMinute } from "./freeLane.ts";
@@ -96,6 +96,7 @@ import { RECEIPT_REACTIONS_PER_DAY, receiptKey, sanitizeReceiptFacts } from "../
 import { runSocialRecipes } from "./socialRecipesRun.ts";
 import { AFFINITY_SCOPE, affinityNote, type Polarity, signalTerms, statedPreference } from "../_shared/dealRelevance.ts";
 import { seasonFor, seasonInstruction, upcomingSeason, upcomingSeasonInstruction } from "../_shared/season.ts";
+import { SEASON_PLAN_DAYS, seasonPlanInstruction, upcomingCalendarSeasons } from "../_shared/seasonCalendar.ts";
 import { type FastIntent, formatBalanceReply, parseFastPath } from "./fastPath.ts";
 import { AgentSource, AuditScope, recordAction, writeRows } from "./audit.ts";
 import { redactNotificationText } from "./redact.ts";
@@ -106,7 +107,7 @@ import { resolveDeviceKeyUser } from "./deviceKey.ts";
 import { secretMatches } from "../_shared/cronSecret.ts";
 import { HABIT_TRIAL_KINDS, habitTrialForTask, habitTrialPush } from "./habitTrialPush.ts";
 import { HOUSE_LEARNING_KIND, houseLearningForTask, houseLearningPush } from "./houseLearningPush.ts";
-import { childToneBlock, conversationProfile, dropServiceCloser, nameAskedIn, purchaseCheckBlock, voiceModeInstruction } from "./persona.ts";
+import { INITIATIVE_RULE, childToneBlock, conversationProfile, dropServiceCloser, nameAskedIn, purchaseCheckBlock, voiceModeInstruction } from "./persona.ts";
 import { dialectPromptBlock, dialectReminder } from "../_shared/dialect.ts";
 import { customerCard, IDENTITY_MEMORY_SCOPES, identityOverwrites, sanitizeProfilePatch } from "../_shared/customerProfile.ts";
 import { rateConfidence } from "../_shared/consumptionRate.ts";
@@ -173,7 +174,7 @@ import { familyPushText } from "./familyPush.ts";
 import { inventoryOwnerFilter, pickInventoryRow } from "./inventoryRow.ts";
 import { householdFamilyId, householdFilter } from "../_shared/household.ts";
 import { CLIENT_MOMENTS, MAX_OUTING_MS, MIN_OUTING_MS, morningFacts, NEWCOMER_MOMENT, processVoiceMoments, summarizeOuting, tasbihaFacts, UNCOUNTED_MOMENTS } from "./voiceMoments.ts";
-import { occasionDateLabel, occasionMd, occasionNote, type OccasionKind } from "./occasions.ts";
+import { occasionDateLabel, occasionMd, occasionNote, type OccasionKind, parseOccasionAnswer } from "./occasions.ts";
 import { leanTools, promptSizes } from "./promptBudget.ts";
 import { recentOutbound } from "../_shared/outbound.ts";
 import { proactiveTurn, recordConversation } from "../_shared/conversationLog.ts";
@@ -1622,6 +1623,10 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
       const up = upcomingSeason(new Date(), budgetState.timezone ?? "UTC");
       return up ? { ...up, instruction: upcomingSeasonInstruction(up) } : null;
     })(),
+    // ٧.٣: مواسم بلده جوه أسبوعين، بخطة الشرا والتوفير. فاضية = مفيش.
+    season_plan: seasonPlanInstruction(upcomingCalendarSeasons(
+      budgetState.country ?? userRes.data?.country ?? null, localNowContext(budgetState.timezone ?? "UTC").date, SEASON_PLAN_DAYS,
+    )),
     // مواعيد العميل الجاية (١٤ يوم). id للتعديل/الإلغاء بـ update_appointment. for_person = لمين.
     appointments: (apptRows ?? []) as Array<Record<string, unknown>>,
     // أدوية البيت كلها، ولمين كل دوا (for: null = العميل نفسه) — «دوا مامتك الساعة ٤». قبل كده
@@ -2523,6 +2528,11 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
     }
     case "log_transaction": {
       const isExpense = input.txn_kind === "expense";
+      // عملية بتاريخ فات (occurred_on): بتتكتب في شهرها. مابتدخلش دمج صف البنك ولا نافذة التكرار
+      // (الاتنين عن اللي حصل دلوقتي) ولا باب الشرا (أصناف قديمة مابتملاش مخزن النهارده).
+      const occurredAt = occurredAtIso(input.occurred_on, snap?.now_local?.date, snap?.now_local?.utc_offset);
+      if (occurredAt === "invalid") return "مرفوض: تاريخ العملية مش مفهوم أو في المستقبل — اسأل العميل حصلت إمتى.";
+      const backdated = occurredAt !== null;
 
       // Idempotent by (user, kind, amount) inside a short window. add_shopping_item and
       // add_pharmacy_item both got this guard; the tool that writes *money* did not, which
@@ -2545,7 +2555,7 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       // صف البنك لنفس الدفعة، لسه من غير فئة (20261102060000): «إيجار شقة 3500» بعد إشعار BDC بـ3500 هو نفس
       // الفلوس — الصف بياخد الاسم والفئة بدل ما الدفعة تتحسب مرتين (حساب المالك ١/١١). الأصناف بتعدّي على
       // باب الشرا وهو بيدمج لوحده؛ الكاش و«دي عملية تانية» مابيتدمجوش.
-      if (isExpense && input.allow_duplicate !== true && input.wallet !== "cash" && toolPurchaseLines(input.lines).length === 0) {
+      if (!backdated && isExpense && input.allow_duplicate !== true && input.wallet !== "cash" && toolPurchaseLines(input.lines).length === 0) {
         const { data: twinId, error: twinErr } = await sb.rpc("zad_bank_twin_service", { p_user: userId, p_amount: input.amount });
         if (twinErr) console.error("[log_transaction] bank twin read failed:", twinErr.message);
         if (!twinErr && typeof twinId === "string") {
@@ -2574,7 +2584,7 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
         }
       }
 
-      if (input.allow_duplicate !== true) {
+      if (!backdated && input.allow_duplicate !== true) {
         const windowStart = new Date(Date.now() - 10 * 60 * 1000).toISOString();
         const { data: recent } = await sb.from("zad_transactions")
           .select("id,title,amount,created_at")
@@ -2599,7 +2609,7 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
 
       // مصروف فيه أصناف = شرا واحد (ZAD_PLAN ٣.٦ د، purchaseDoor.ts): الفلوس والمخزن والصيدلية والأسعار
       // في ترانزاكشن واحدة، فمفيش «الفلوس اتسجلت والأصناف لأ» لو add_inventory_item اتنسى أو وقع.
-      const purchaseLines = isExpense ? toolPurchaseLines(input.lines) : [];
+      const purchaseLines = isExpense && !backdated ? toolPurchaseLines(input.lines) : [];
       if (purchaseLines.length > 0) {
         const amount = Math.round(input.amount * 100) / 100;
         const title = String(input.title).trim().slice(0, 80);
@@ -2654,6 +2664,7 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
           merchant_name: input.merchant_name ? String(input.merchant_name).trim().slice(0, 80) || null : null,
           // لمين في البيت (ZAD_PLAN ٥.٣) — مصروف بس.
           for_person: isExpense ? normalizeForPerson(input.for_person) : null,
+          ...(occurredAt ? { created_at: occurredAt } : {}),
         }).select("id,amount,title,category,txn_kind,for_person"),
         "تسجيل المعاملة",
       );
@@ -2664,7 +2675,8 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
         tool: name, input, table: "zad_transactions", targetId: (w.rows[0] as any).id,
         previous: null, next: w.rows[0],
       });
-      return `اتسجلت المعاملة: ${input.title} — ${input.amount}`;
+      return `اتسجلت المعاملة: ${input.title} — ${input.amount}` +
+        (occurredAt ? ` بتاريخ ${String(input.occurred_on)} (اتحسبت في شهرها، مش الشهر ده)` : "");
     }
     case "update_transaction": {
       const { data: before } = await sb.from("zad_transactions")
@@ -5098,6 +5110,13 @@ export const CHAT_TOOLS: ToolDef[] = [
         category: { type: "string", description: "واحدة من: البقالة، المطاعم، الفواتير، المواصلات، الوقود، الاشتراكات، الأقساط، الرعاية الصحية، التعليم، الترفيه، الملابس، تحويلات، أخرى — نفس أسامي التطبيق والماسح (السيرفر بيوحّد أي صيغة تانية)" },
         wallet: { type: "string", enum: ["card", "cash"], description: "cash لو العميل قال إنه دفع كاش" },
         for_person: { type: "string", description: "لمين في البيت؛ فاضي = العميل/البيت" },
+        occurred_on: {
+          type: "string",
+          description:
+            "YYYY-MM-DD بتاريخ العميل المحلي (now_local.date في الـ snapshot هو النهارده). ابعته بس لو " +
+            "العميل قال إن العملية حصلت في يوم فات: «امبارح»، «الشهر اللي فات»، «يوم ٥». من غيره المعاملة " +
+            "بتتحسب في الشهر الحالي. سيبه فاضي لو حصلت النهارده.",
+        },
         lines: {
           type: "array",
           description:
@@ -6426,8 +6445,9 @@ function describeProposal(tool: string, input: any, currency: string): string {
     case "log_transaction": {
       const lines = input.txn_kind === "income" ? [] : toolPurchaseLines(input.lines);
       return `${input.txn_kind === "income" ? "دخل" : "مصروف"}: ${money(input.amount)} — ${input.title}` +
+        (input.occurred_on ? ` — بتاريخ ${input.occurred_on}` : "") +
         (input.category ? ` (${input.category})` : "") +
-        (lines.length ? ` + ${lines.map((l) => l.name).join("، ")}` : "");
+        (lines.length && !input.occurred_on ? ` + ${lines.map((l) => l.name).join("، ")}` : "");
     }
     case "update_transaction": {
       const parts: string[] = [];
@@ -7878,6 +7898,18 @@ async function handleAgentTurnInLane(
     }
   }
 
+  // «19-8» ردّ على سؤال عيد الميلاد، والموديل قال «سجلته» من غير ما ينادي الأداة (بلاغ المالك ٨/١١: فضل يتسأل).
+  // الجواب هو التاريخ بالظبط، فالكود اللي بيحفظه.
+  const occasionAsked = snap?.asked_this_morning?.kind === "occasion" ? snap.asked_this_morning : null;
+  const occasionReply = occasionAsked && !(ctx.counts["remember_occasion"] ?? 0) ? parseOccasionAnswer(message) : null;
+  if (occasionReply) {
+    const saved = await runTool(sb, userId, "remember_occasion", {
+      occasion: "birthday", ...occasionReply, ...(occasionAsked?.for ? { person: occasionAsked.for } : {}),
+    }, snap, ctx, scope);
+    if (saved.startsWith("مرفوض:")) console.warn("[agent_turn] occasion answer rejected:", saved);
+    else recordCall(executed, consulted, "remember_occasion", saved, true);
+  }
+
   // «فكرني بكرة الساعة 9 الصبح اكلم الدكتور»، «ضيف شراب كحة لبنتي في الصيدلية»، «زود عيش ع اللسته» والموديل رد
   // «سويت/ضفت» من غير أداة، حتى بعد إعادة النية (forcedIntent.ts، التقييم ٢٥/١٠–٢/١١). محاولة واحدة بالأداة دي بس
   // والنداء إجباري؛ runTool بيتحقق زي أي نداء، والإيصال بيقول اللي اتسجل فعلاً.
@@ -8789,7 +8821,7 @@ ${snap?.customer?.cares_for != null ? `   - **customer.cares_for = مين في �
    - أي حاجة يقولها عن نفسه (اسمه، شغله، قبضه، عياله، مدينته، لهجته) ⇒ update_customer_profile في نفس الرد من غير ما تعلن إنك سجلت (مش remember — remember للي مالوش خانة).
 ${snap?.name_asked_in_conversation !== true && (!Array.isArray(((snap?.customer?.missing_important ?? null) as string[] | null)) || ((snap?.customer?.missing_important ?? null) as string[] | null)!.some((k) => k === "preferred_name" || k === "gender")) ? `   - **الاسم والنوع ليهم علاقة بكل رد**: لو preferred_name أو gender في customer.missing_important ومحدش سأل عنهم في المحادثة دي، اسأل في آخر ردك سؤال واحد خفيف بلهجته — «أناديك بإيه؟» ولو النوع مجهول كمان «وأكلمك بصيغة راجل ولا ست؟». ولو سأل «إنت تعرف اسمي؟» أو «ليه مش عارف أنا مين؟» قول بصراحة إنه لسه ماقالكش واسأله على طول، ونبّهه إنه يقدر يكتبهم في «ملفي» من صفحة البروفايل. متألّفش اسم ولا نوع أبداً.\n` : ""}${(!Array.isArray(((snap?.customer?.missing_important ?? null) as string[] | null)) || ((snap?.customer?.missing_important ?? null) as string[] | null)!.some((k) => k !== "preferred_name" && k !== "gender")) ? `   - لو فيه حاجة تانية في customer.missing_important ليها علاقة بالكلام دلوقتي (مثلاً بيسأل عن الميزانية وpay_day مش معروف)، اسأل عنها **سؤال واحد خفيف** في آخر ردك — مش استجواب، ومش أكتر من سؤال في المحادثة، ومتسألش عن حاجة اتسألت قبل كده في نفس المحادثة.\n` : ""}   - **صوتك (customer.zad_voice)**: بنت أو ولد، العميل بيختاره من «ملفي» (عقل زاد ← «إنت مين عند زاد» ← تعديل ← «صوت زاد»). طلب يغيّره ⇒ قوله المكان ده بجملة؛ ماتقولش إنك غيّرته ومتقترحش صوت حسب نوعه.
 ${snap?.asked_this_morning ? `   - **asked_this_morning** (لو مش null) = السؤال اللي إنت سألته للعميل في تحية الصبح (أو بعد الضهر في أول أيامه). لو رسالته جواب عليه («يوم ٢٥»، «بطّلتها»، «دي كانت كهربا»)، سجّل الجواب في نفس الرد، وقول في جملة واحدة إيه اللي اتسجل وهيتعمل بيه إيه («تمام، يوم ٢٥ — هبدأ شهرك منه») عشان يعرف إنك فهمت: kind = profile ⇒ update_customer_profile في الخانة field؛ kind = curiosity ⇒ اتبع record (وtransaction_id لو موجود)؛ kind = occasion ⇒ سألته عن عيد ميلاد for (غايب = هو نفسه): التاريخ اللي قاله ⇒ remember_occasion (person = for، وفاضي لو هو نفسه)؛ kind = gift ⇒ عرضت تحجز amount لهدية for: لو وافق (أو قال مبلغ تاني) نادِ set_life_goal بعنوان «هدية عيد ميلاد <for>» وtarget_value المبلغ وdeadline_date = deadline، واقترح فكرتين هدية في حدود المبلغ؛ kind = event_reserve ⇒ سألته يحجز مبلغ لحدث جاي (for = اسمه، deadline = يومه): لو قال مبلغ نادِ set_life_goal بعنوان for بالظبط وtarget_value المبلغ وdeadline_date = deadline، وقوله إن المبلغ ده متشال لـfor، ولو قال لأ سيبه؛ kind = appointment_follow_up ⇒ سألته عن ميعاد for اللي كان يوم on: جوابه ⇒ remember بملاحظة فيها اسم الميعاد ويومه واللي حصل بكلامه هو (اتقاله إيه، الخطوة الجاية) — من غير تشخيص ولا رأي طبي من عندك؛ قال ميعاد متابعة بيوم ⇒ add_appointment؛ مارحش أو اتأجل ⇒ اعرض تحجزله ميعاد جديد، ومتحجزش من غير ما يقول الوقت؛ الدكتور كتبله دوا ⇒ اعرض تضيفه للصيدلية (add_pharmacy_item). ماتعيدش السؤال ولا تفتح موضوعه لو رسالته عن حاجة تانية، ولو قال مش عايز يتكلم فيه سيبه.\n` : ""}${offers("store_location") ? "   - **لوكيشن المحل**: «هات اللوكيشن» أو «فين المحل ده؟» بعد تنبيه محل ⇒ store_location وابعت map_url زي ما رجع. ماتسألوش هو في أنهي منطقة، وماتألّفش عنوان.\n" : ""}${offers("remember_occasion") ? "   - **المناسبات**: لما العميل يقول تاريخ عيد ميلاد أو ذكرى جواز (ليه أو لحد من عيلته) ⇒ remember_occasion، مش remember. الشهر واليوم بس، ومن غير ما تخمّن يوم ماقالهوش.\n" : ""}${(offers("set_life_circumstance") || offers("end_life_circumstance") || (snap?.circumstance?.mode ?? "normal") !== "normal") ? `   - **حالة البيت (circumstance)**: لو العميل قال إن حد عيان أو عندهم طوارئ أو امتحانات، اسأله «أهدّي التنبيهات كام يوم؟» أو سجّل على طول بـset_life_circumstance لو طلبها؛ ولو قال «رجّع» ⇒ end_life_circumstance. **ماتستنتجش ظرف من مشتريات أو نبرة.** لو circumstance.mode = exceptional: ردود أقصر، ماتفتحش مواضيع جديدة، ماتسألش أسئلة فضول، وأي اقتراح صرف أو توفير أو عرض يستنى إلا لو سأل — والصحة والمواعيد والأمان زي ما هم؛ ماتذكرش «إيه الظرف» لو هو مقالوش في المحادثة. لو recovery: خفيف، موضوع واحد بالكتير من عندك.\n` : ""}${snap?.life_shift ? `   - **التحول السلوكي (life_shift)**: لو فيه تحول confirmed = null، اسأله مرة واحدة خفيفة لو الكلام قريب («لاحظت إن مصاريف الأسبوع بقت حوالي X بدل Y — حصل تغيير في البيت؟») من غير ما تفترض السبب، وجوابه ⇒ confirm_life_shift. طول ما التحول قايم، ماتعاملش الطبيعي الجديد كأنه «صرف زيادة» أو «غريب»، ومتوسطات القرارات والسقف المقترح بتتحسب من يومه لوحدها.\n` : ""}${offers("household_resilience") ? `   - **شهر صعب**: لو العميل قلقان («الشهر ده تقيل»، «مش هنعدّي») نادِ household_resilience: لو تاريخه فيه شهر زي ده رجع منه، قولها كحقيقة منه — طمأنة مش وعظ ولا وعد.\n` : ""}${(offers("decision_impact") || offers("log_decision")) ? `   - **القرارات الكبيرة**: «لو اشتريت…» أو «أفكر أنقل…» = decision_impact بس. لما يقول إنه **عمل** القرار فعلاً («خلاص اشتريتها»، «قررنا ننقله») ⇒ log_decision بنفس الأرقام، وقوله إنك هتراجع معاه بعد شهر وبعد ٣ شهور. **decisions** (لو مش null) = اللي اتسجّل، ومعاه last_review لو اتراجع — ماتسجّلش اللي موجود تاني.\n` : ""}2. **اللغة واللهجة (${profile.locale})**: اتبع بلوك «اللهجة» اللي فوق في كل رد — مش أول جملة بس.
-   - طابق درجة الرسمية والمفردات مع أسلوب المستخدم، ولا تحشر تعبيرات محلية في كل جملة.
+${INITIATIVE_RULE}   - طابق درجة الرسمية والمفردات مع أسلوب المستخدم، ولا تحشر تعبيرات محلية في كل جملة.
    - ${voiceModeInstruction(voiceMode, snap?.customer?.zad_voice)}
 2ب. **واعي بالبيت وبالبلد**:
 ${Array.isArray(snap?.stock_totals) && snap.stock_totals.length > 0 ? `   - **stock_totals** = سلعة ليها كذا ماركة (مية، رز، سكر…): اتكلم عن **الإجمالي** («عندك ٨ إزايز مية»)، مش عن ماركة واحدة كأنها كل اللي في البيت.
@@ -8843,7 +8875,7 @@ ${offers("log_pharmacy_dose") ? `   - **«أخدته» / «خدت الدوا» /
 
 ${(offers("set_broke_mode") || snap?.broke_mode) ? `12. **وضع الطوارئ (broke_mode)**: «أنا مفلس/خلصت فلوسي/مفلس باقي الشهر» ⇒ set_broke_mode(active=true) فوراً، ورد بحنية من غير لوم: رقم مصروف اليوم (daily_cap) لو معروف، و٣ خطوات عملية (الأساسيات بس، الأكل من اللي في البيت، أجّل أي شراء مش ضروري). طول ما broke_mode مش null: **ممنوع** تقترح شراء أو عروض أو مطاعم أو اشتراكات جديدة أو تضيف لقايمة الشراء غير لو العميل طلب بنفسه، والوصفات من المخزون بس من غير أي صنف يتشرى. متقترحش إلغاء التزامات ثابتة (إيجار/قسط).` : ""}
 ${(offers("start_savings_challenge") || snap?.savings_challenge) ? `13. **تحدي التوفير (savings_challenge)**: «تحدي توفير/ساعدني أوفّر/تحدي ٣٠ يوم» ⇒ start_savings_challenge. لو فيه تحدي شغال: اذكر اليوم (day من length_days) والسلسلة (streak) لما يكون ليها معنى، شجّعه يفضل تحت daily_cap، ولو سأل «ينفع أشتري كذا؟» قارن بالسقف اليومي.` : ""}
-${(snap?.season_ahead) ? `13ب. **الموسم الجاي (season_ahead)**: اتبع season_ahead.instruction مرة في المحادثة لو الكلام عن البيت أو الشراء أو الميزانية — مش في كل رد، ومش في أول سطر.
+${snap?.season_plan ? `13ج. **مواسم بلده (season_plan)**: ${snap.season_plan}\n` : ""}${(snap?.season_ahead) ? `13ب. **الموسم الجاي (season_ahead)**: اتبع season_ahead.instruction مرة في المحادثة لو الكلام عن البيت أو الشراء أو الميزانية — مش في كل رد، ومش في أول سطر.
 ` : ""}${(snap?.season) ? `14. **المواسم (season)**: لو season مش null، اتبع season.instruction في كل كلامك واقتراحاتك (رمضان: مفيش أكل بالنهار، فطار وسحور؛ العيد: العيدية والعزومات متوقعة). متفترضش إن العميل صايم أو بيحتفل لو قال غير كده.` : ""}
 ${(offers("find_deals")) ? `15أ. **العروض (find_deals)**: «هاتلي عروض/دوّرلي على عرض/فيه عروض إيه/كود خصم» ⇒ نادِ find_deals الأول واعرض العروض بأسعارها ولينكاتها. الميزانية عمرها ما تكون سبب ترفض أو تأجّل بيه البحث أو تقول «انزل بص بنفسك» — ممكن يكون بيخطط للشهر الجاي أو عنده فلوس تانية. نصيحة الفلوس لو لازمة: سطر واحد في آخر الرد بعد العروض.
 ` : ""}${(offers("suggest_recipes")) ? `15. **شيف زاد (suggest_recipes)**: «أطبخ إيه؟/أعمل أكل إيه من اللي عندي؟» ⇒ نادِ suggest_recipes واعرض من الوصفات اللي رجعت بس، باختصار — ممنوع تخترع وصفة من عندك. «افتحلي الشيف/صفحة الوصفات» ⇒ app_command(screen=recipes).` : ""}

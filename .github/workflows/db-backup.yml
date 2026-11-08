@@ -99,6 +99,21 @@ jobs:
           tar -C "$RUNNER_TEMP/dump" -czf - roles.sql schema.sql data.sql \
             | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 3 \
                   --symmetric --cipher-algo AES256 -o "$out/zad-db-$stamp.tar.gz.gpg" 3<<<"$PASSPHRASE"
+          # ٨.١: النسخة لازم تتفتح بالعبارة نفسها وتطلع زي الأصل حرف بحرف، قبل ما نمسح الأصل. نسخة ماتتفتحش زي مفيش نسخة.
+          set -o pipefail
+          want="$(sha256sum "$RUNNER_TEMP/dump/data.sql" | cut -d' ' -f1)"
+          got="$(gpg --batch --quiet --pinentry-mode loopback --passphrase-fd 3 -d "$out/zad-db-$stamp.tar.gz.gpg" 3<<<"$PASSPHRASE" \
+            | tar xzO data.sql | sha256sum | cut -d' ' -f1)" || got=""
+          if [ -z "$got" ] || [ "$got" != "$want" ]; then
+            echo "::error title=Backup cannot be restored::decrypting the file did not give back data.sql"
+            exit 1
+          fi
+          listed="$(gpg --batch --quiet --pinentry-mode loopback --passphrase-fd 3 -d "$out/zad-db-$stamp.tar.gz.gpg" 3<<<"$PASSPHRASE" | tar tz | sort | tr '\n' ' ')"
+          if [ "$listed" != "data.sql roles.sql schema.sql " ]; then
+            echo "::error title=Backup cannot be restored::unexpected contents: $listed"
+            exit 1
+          fi
+          echo "Decrypt check passed: data.sql sha256 $want"
           # النص الصريح مايفضلش على الرَنر.
           rm -rf "$RUNNER_TEMP/dump"
           # التشفير اتعمل فعلاً: الملف يبتدي بهيدر OpenPGP مش gzip.

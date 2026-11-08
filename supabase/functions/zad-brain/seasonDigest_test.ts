@@ -1,4 +1,4 @@
-import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
+import { assert, assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import { type DigestCodeRow, type DigestDealRow, digestKey, digestPhoto, pickDigest, pickDigestCodes, pickHomeDeals } from "./seasonDigest.ts";
 import { codeStoreKey } from "./dealCodes.ts";
 
@@ -153,4 +153,13 @@ Deno.test("a deal on what he said he does not eat stays out of the digest (prefe
   const a = parseAffinity([{ note: affinityNote("dislike", "تونة"), evidence_count: 1, last_seen: new Date().toISOString() }]);
   assertEquals(dealRelevance({ item: "تونة قطع", store: "كارفور" }, a).blocked, true);
   assertEquals(dealRelevance({ item: "زيت", store: "كارفور" }, a).blocked, false);
+});
+
+Deno.test("7.3: a country's own season brings its items into the deal pick", () => {
+  const base = { kidsCount: 0, bought: [] as string[], schoolStarts: [] as string[] };
+  const eg = seasonNeeds({ ...base, country: "EG", now: Date.parse("2027-04-25T12:00:00Z") });
+  assert(eg.includes("رنجة"));
+  assertEquals(seasonNeeds({ ...base, country: "SA", now: Date.parse("2027-04-25T12:00:00Z") }).includes("رنجة"), false);
+  assertEquals(seasonNeeds({ ...base, country: "EG", now: Date.parse("2027-09-05T12:00:00Z") }), []);
+  assert(seasonNeeds({ ...base, kidsCount: 1, country: "EG", now: Date.parse("2027-09-05T12:00:00Z") }).includes("كراسات"));
 });

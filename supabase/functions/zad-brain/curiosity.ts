@@ -16,6 +16,7 @@ import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { itemKey } from "./shared.ts";
 import { activeShifts, type ShiftRow } from "./lifeShift.ts";
 import { sensitiveTopic } from "./sensitiveMemory.ts";
+import { householdFamilyId, householdFilter } from "../_shared/household.ts";
 
 const DAY_MS = 86_400_000;
 
@@ -56,7 +57,7 @@ export interface CuriosityTxn {
   created_at: string;
 }
 
-export type CuriosityKind = "amount_outlier" | "label_gone_quiet" | "category_surge" | "unlabelled_spend" | "same_product" | "weekly_ritual" | "memory_follow_up";
+export type CuriosityKind = "amount_outlier" | "label_gone_quiet" | "category_surge" | "unlabelled_spend" | "same_product" | "weekly_ritual" | "memory_follow_up" | "life_clue";
 
 export interface Curiosity {
   /** ثابت لنفس الفرضية — عليه بيتعمل منع التكرار. */
@@ -317,6 +318,53 @@ function unlabelledSpend(spends: CuriosityTxn[], now: number, todayStart: number
  * الفرضية اللي تستاهل تتسأل النهارده، أو null. الترتيب: مبلغ غريب آخر ٣ أيام، بعده تغيير عادة/مكان، بعده فئة
  * زادت، بعده صرف من غير تصنيف — الأولاني حركة بعينها لسه طازة، اللي بعده فرضيات عن حياة البيت، والأخير فجوة في الداتا.
  */
+/**
+ * استنتاج من المشتريات (طلب المالك ٨/١١): الرمل معناه قطة، والحفاضات معناها بيبي. برضه فرضية مش حقيقة، فبتتسأل مرة في السنة
+ * والجواب هو اللي بيتحفظ. **ومفيش استنتاج صحي عن قصد:** لا حمل ولا مرض ولا نقص فيتامين. تخمين زي ده لو غلط بيجرح، ولو
+ * صح ممكن يفضح حاجة صاحبها ماقالهاش، خصوصاً والقايمة مشتركة في البيت (sensitiveMemory.ts، وZAD_LIVING_BRAIN).
+ */
+const LIFE_CLUES: ReadonlyArray<{ key: string; pattern: RegExp; known: RegExp; question: string; record: string }> = [
+  {
+    key: "clue:baby", pattern: /(حفاض|بامبرز|مولفيكس|لبن اطفال|لبن رضع|سيريلاك|مناديل اطفال)/, known: /(بيبي|رضيع|طفل|ابني|بنتي|عيال|ولاد)/,
+    question: "شايف حاجات بيبي في مشترياتك. فيه بيبي في البيت؟",
+    record: "آه ⇒ update_customer_profile (kids_count). لأ (هدية مثلاً) ⇒ remember إن الحاجات دي مش لبيته.",
+  },
+  {
+    key: "clue:pet", pattern: /(رمل قطط|اكل قطط|طعام قطط|اكل كلاب|طعام كلاب|دراي فود|ويسكاس|بيورينا)/, known: /(قطه|قطط|كلب|حيوان اليف)/,
+    question: "شايف أكل حيوانات في مشترياتك. عندك قطة ولا كلب؟ اسمه إيه؟",
+    record: "الجواب ⇒ remember بالحيوان واسمه، عشان عروض أكله وميعاد تطعيمه.",
+  },
+  {
+    key: "clue:car", pattern: /(زيت موتور|زيت عربيه|بنزين|غسيل عربيه|كاوتش|تغيير زيت)/, known: /(عربيه|سياره|معندناش عربي)/,
+    question: "شايف مصاريف عربية. عندك عربية؟ عشان أحسبلك مشوار المحل والعرض صح.",
+    record: "لأ ⇒ remember بسكوب transport «معندناش عربية». آه ⇒ remember بنوعها لو قالها.",
+  },
+  {
+    key: "clue:filter", pattern: /(شمع فلتر|شمعه فلتر|فلتر ميه|فلتر مياه)/, known: /(فلتر)/,
+    question: "اشتريت فلتر مية. بتغيّر الشمع كل قد إيه؟ أفكّرك قبل ميعاده.",
+    record: "الجواب ⇒ remember بالمدة.",
+  },
+  {
+    key: "clue:gym", pattern: /(واي بروتين|whey|بروتين بار|كرياتين|اشتراك جيم|جيم)/, known: /(جيم|بتمرن|رياضه)/,
+    question: "شايف حاجات جيم. بتتمرن بانتظام؟",
+    record: "الجواب ⇒ remember، عشان عروض الأصناف دي.",
+  },
+  {
+    key: "clue:plant_based", pattern: /(لبن لوز|لبن شوفان|لبن صويا|خالي من الجلوتين|نباتي)/, known: /(نباتي|جلوتين|لبن لوز)/,
+    question: "بتجيب بدائل نباتية كتير. ده نظام أكلك ولا تغيير بس؟",
+    record: "الجواب ⇒ remember بنظام الأكل زي ما قاله، عشان شيف زاد والعروض. متفترضش سبب صحي.",
+  },
+];
+
+/** اسم في المشتريات بيدل على حاجة زاد لسه مايعرفهاش. */
+export function lifeClues(names: readonly string[], knownNotes: readonly string[], kidsCount = 0): Curiosity[] {
+  const text = names.map(itemKey).join(" | ");
+  const notes = knownNotes.map(itemKey).join(" | ");
+  return LIFE_CLUES
+    .filter((c) => c.pattern.test(text) && !c.known.test(notes) && !(c.key === "clue:baby" && kidsCount > 0))
+    .map((c) => ({ key: c.key, kind: "life_clue" as const, question: c.question, record: c.record }));
+}
+
 export function curiosityFor(input: {
   txns: readonly CuriosityTxn[];
   now: number;
@@ -332,6 +380,9 @@ export function curiosityFor(input: {
   shifts?: readonly ShiftRow[];
   /** ملاحظات الذاكرة بمعادها — «فاكر إنك قلتلي…». */
   datedNotes?: readonly DatedNote[];
+  /** أسامي مشتريات البيت (المخزن وقايمة الشرا). */
+  boughtNames?: readonly string[];
+  kidsCount?: number;
 }): Curiosity | null {
   const spends = input.txns.filter(isSpend);
   const live = activeShifts(input.shifts ?? [], input.now);
@@ -349,6 +400,7 @@ export function curiosityFor(input: {
     ...labelGoneQuiet(spends, input.now, input.knownNotes ?? []),
     ...surges,
     ...weeklyRitual(spends, input.now, input.todayStart, input.knownNotes ?? []),
+    ...lifeClues([...(input.boughtNames ?? []), ...spends.flatMap((t) => [t.title ?? "", t.merchant_name ?? ""])], input.knownNotes ?? [], input.kidsCount ?? 0),
     ...unlabelledSpend(spends, input.now, input.todayStart),
   ];
   return candidates.find((c) => !input.askedKeys.has(c.key)) ?? null;
@@ -372,7 +424,7 @@ export function recentlyAskedKeys(
 ): Set<string> {
   const cut = now - ASK_AGAIN_AFTER_DAYS * DAY_MS;
   const keys = askedCuriosityKeys((rows ?? []).filter((r) => !(Date.parse(r.created_at ?? "") < cut)));
-  for (const key of askedCuriosityKeys(rows)) if (key.startsWith("ritual:")) keys.add(key);
+  for (const key of askedCuriosityKeys(rows)) if (key.startsWith("ritual:") || key.startsWith("clue:")) keys.add(key);
   return keys;
 }
 
@@ -387,7 +439,8 @@ export async function curiosityQuestion(
   now = Date.now(),
 ): Promise<Curiosity | null> {
   try {
-    const [txRes, askedRes, notesRes, shiftRes] = await Promise.all([
+    const family = await householdFamilyId(sb, userId).catch(() => null);
+    const [txRes, askedRes, notesRes, shiftRes, invRes, shopRes, profileRes] = await Promise.all([
       sb.from("zad_transactions")
         .select("id,amount,title,category,merchant_name,is_expense,txn_kind,source_type,created_at")
         .eq("user_id", userId).gte("created_at", new Date(now - LOOKBACK_DAYS * DAY_MS).toISOString())
@@ -402,6 +455,10 @@ export async function curiosityQuestion(
       sb.from("zad_memory").select("id,note,scope,valid_until").eq("user_id", userId).limit(100),
       sb.from("zad_life_circumstances").select("kind,started_at,ends_at,ended_at,confirmed,detail")
         .eq("user_id", userId).like("kind", "shift_%").gt("ends_at", new Date(now).toISOString()).limit(10),
+      // المشتريات نفسها، من غير الصيدلية عن قصد: مفيش استنتاج صحي.
+      sb.from("zad_inventory").select("item_name").or(householdFilter(userId, family)).limit(300),
+      sb.from("zad_shopping_list").select("item_name").or(householdFilter(userId, family)).limit(100),
+      sb.from("zad_customer_profile").select("kids_count").eq("user_id", userId).maybeSingle(),
     ]);
     if (txRes.error || askedRes.error || notesRes.error) return null;
     return curiosityFor({
@@ -413,6 +470,9 @@ export async function curiosityQuestion(
       datedNotes: (notesRes.data ?? []) as DatedNote[],
       // فشل قراية التحولات = من غيرها (سؤال زيادة أحسن من فضول ساكت للأبد).
       shifts: (shiftRes.data ?? []) as ShiftRow[],
+      boughtNames: [...((invRes.data ?? []) as Array<{ item_name: string | null }>), ...((shopRes.data ?? []) as Array<{ item_name: string | null }>)]
+        .map((r) => r.item_name ?? ""),
+      kidsCount: Number((profileRes.data as { kids_count?: number | null } | null)?.kids_count) || 0,
     });
   } catch (e) {
     console.warn("[curiosity] read failed:", (e as Error)?.message);

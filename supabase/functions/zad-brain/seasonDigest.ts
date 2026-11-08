@@ -17,6 +17,7 @@ import { fetchPreviewImage, previewableUrl } from "../_shared/pagePreview.ts";
 import { deliveryApp } from "../_shared/deliveryApps.ts";
 import { dealRelevance, loadAffinity } from "../_shared/dealRelevance.ts";
 import { upcomingSeason } from "../_shared/season.ts";
+import { upcomingCalendarSeasons } from "../_shared/seasonCalendar.ts";
 import { SCHOOL_WINDOW_MARKETS } from "./eventAhead.ts";
 import { customerCity, dealCountry, dealsForCity, FAVORITE_WINDOW_DAYS, favoriteStores, runningOutNames } from "./tasteDeals.ts";
 
@@ -260,6 +261,11 @@ export function seasonNeeds(input: {
   };
   if ((input.kidsCount ?? 0) > 0 && SCHOOL_WINDOW_MARKETS.has(input.country) && input.schoolStarts.some(ahead)) {
     out.push(...SCHOOL_NEEDS);
+  }
+  // ٧.٣: باقي مواسم بلده اللي ليها أصناف (كحك العيد، الرنجة، مدارس مصر). رمضان نفسه فوق، بشرط اللي البيت بيجيبه.
+  const day = new Date(input.now).toISOString().slice(0, 10);
+  for (const s of upcomingCalendarSeasons(input.country, day, SEASON_LEAD_DAYS, input.kidsCount ?? 0)) {
+    if (s.key !== "ahlan_ramadan") out.push(...s.needs.filter((n) => !out.includes(n)));
   }
   return out;
 }

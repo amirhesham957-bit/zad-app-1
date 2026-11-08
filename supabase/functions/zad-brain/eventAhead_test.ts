@@ -1,4 +1,4 @@
-import { assertEquals, assertStringIncludes } from "jsr:@std/assert@1";
+import { assert, assertEquals, assertStringIncludes } from "jsr:@std/assert@1";
 import { eventAhead, eventAheadQuestion } from "./eventAhead.ts";
 import { askedThisMorning } from "./curiosity.ts";
 
@@ -67,4 +67,14 @@ Deno.test("the chat reads the morning's event question back with its goal title 
     },
   });
   assertEquals(asked, { question: "رمضان بعد 14 يوم…", kind: "event_reserve", for: "رمضان 1448", deadline: "2027-02-08", sent_at: sent });
+});
+
+Deno.test("7.3: a season of the customer's own country is asked once, two weeks before", () => {
+  const base = { timeZone: "Asia/Riyadh", kidsCount: 0, seasonWindows: [], appointments: [] };
+  const due = eventAhead({ ...base, country: "SA", localDate: "2027-02-08" });
+  // ٨ فبراير ٢٠٢٧ = أول رمضان؛ السؤال عن يوم التأسيس (٢٢ فبراير) لسه بيتسأل.
+  assertEquals(due?.kind, "season");
+  assertEquals(due?.on, "2027-02-22");
+  assert(eventAheadQuestion(due!).includes("يوم التأسيس بعد 14 يوم"));
+  assertEquals(eventAhead({ ...base, country: "EG", localDate: "2027-02-08" }), null);
 });

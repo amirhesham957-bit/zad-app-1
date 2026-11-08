@@ -1353,3 +1353,26 @@ Deno.test("appointments need a zoned ISO time in the future; the local-now conte
   assertEquals(localNowContext("Not/AZone", new Date("2026-09-14T06:30:00Z")).time_zone, "UTC");
   assertEquals(localNowContext("UTC", new Date("2026-09-14T00:05:00Z")).iso_local, "2026-09-14T00:05:00+00:00");
 });
+
+Deno.test("occurred_on: تاريخ فات بيتخزن ظهر اليوم ده بتوقيت العميل", async () => {
+  const { occurredAtIso } = await import("./validators.ts");
+  // القاهرة +03:00؛ ١٥ أغسطس ظهراً = ٠٩:٠٠ UTC — نفس اليوم في أي منطقة.
+  assertEquals(occurredAtIso("2026-08-15", "2026-09-28", "+03:00"), "2026-08-15T09:00:00.000Z");
+  assertEquals(occurredAtIso("٢٠٢٦-٠٨-١٥", "2026-09-28", "+03:00"), "2026-08-15T09:00:00.000Z", "أرقام عربي");
+  assertEquals(occurredAtIso(undefined, "2026-09-28", "+03:00"), null);
+  assertEquals(occurredAtIso("", "2026-09-28", "+03:00"), null);
+  assertEquals(occurredAtIso("2026-09-28", "2026-09-28", "+03:00"), null, "النهارده = الافتراضي");
+  assertEquals(occurredAtIso("2026-09-29", "2026-09-28", "+03:00"), "invalid", "المستقبل مرفوض");
+  assertEquals(occurredAtIso("2026-02-30", "2026-09-28", "+03:00"), "invalid", "يوم مش موجود");
+  assertEquals(occurredAtIso("15/08/2026", "2026-09-28", "+03:00"), "invalid");
+  assertEquals(occurredAtIso("2024-01-01", "2026-09-28", "+03:00"), "invalid", "أقدم من سنة");
+});
+
+Deno.test("validateLogTransaction بيرفض تاريخ في المستقبل ويقبل تاريخ فات", async () => {
+  const { validateLogTransaction, freshContext } = await import("./validators.ts");
+  const snap = { now_local: { date: "2026-09-28", utc_offset: "+03:00" } } as any;
+  const base = { amount: 100, txn_kind: "expense", title: "إيجار" };
+  assertEquals((await validateLogTransaction({ ...base, occurred_on: "2026-08-01" }, snap, freshContext("u1"))).ok, true);
+  assertEquals((await validateLogTransaction({ ...base, occurred_on: "2026-10-01" }, snap, freshContext("u1"))).ok, false);
+  assertEquals((await validateLogTransaction(base, snap, freshContext("u1"))).ok, true);
+});
