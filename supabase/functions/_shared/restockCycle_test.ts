@@ -80,6 +80,7 @@ Deno.test("a habit needs three different purchase days", () => {
   assertEquals(habitCycleDays(["2026-10-01", "2026-10-16"]), null);
   assertEquals(habitCycleDays(["2026-10-01T09:00:00Z", "2026-10-01T18:00:00Z", "2026-10-16"]), null);
   assertEquals(habitCycleDays(["2026-10-01", "2026-10-16", "2026-10-31"]), 15);
+});
 
 Deno.test("a long cycle warns three days before it runs out, not earlier", () => {
   // زيت: دورة ٣٠ يوم.
