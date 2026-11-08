@@ -130,6 +130,21 @@ class SettingsScreen extends ConsumerWidget {
                           .setPetCallsEnabled(on: on),
                     ),
                   ),
+                  SwitchListTile(
+                    key: const ValueKey<String>('food-pattern'),
+                    title: Text(context.l10n.settingsFoodPatternTitle),
+                    subtitle: Text(context.l10n.settingsFoodPatternBody),
+                    value: ref.watch(
+                      settingsControllerProvider.select(
+                        (v) => v.settings?.foodPatternEnabled ?? false,
+                      ),
+                    ),
+                    onChanged: (on) => unawaited(
+                      ref
+                          .read(settingsControllerProvider.notifier)
+                          .setFoodPatternEnabled(on: on),
+                    ),
+                  ),
                 ],
               ),
 

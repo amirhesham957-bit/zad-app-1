@@ -2944,6 +2944,13 @@ class ZadL10nAr extends ZadL10n {
   String get settingsCompanionSection => 'رفيقك';
 
   @override
+  String get settingsFoodPatternTitle => 'صورة أكل البيت';
+
+  @override
+  String get settingsFoodPatternBody =>
+      'مرة في الشهر بالكتير، زاد يوصف أكل البيت من المشتريات المتسجلة ويقترح إضافات. وصف مشتريات مش نصيحة طبية.';
+
+  @override
   String get settingsPetCallsTitle => 'نداءات زادو';
 
   @override

@@ -3012,6 +3012,13 @@ class ZadL10nEn extends ZadL10n {
   String get settingsCompanionSection => 'Your companion';
 
   @override
+  String get settingsFoodPatternTitle => 'Your home\'s food picture';
+
+  @override
+  String get settingsFoodPatternBody =>
+      'At most once a month, Zad describes your home\'s food from recorded purchases and suggests additions. A description of purchases, not medical advice.';
+
+  @override
   String get settingsPetCallsTitle => 'Zado\'s calls';
 
   @override

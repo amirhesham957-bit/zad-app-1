@@ -119,6 +119,11 @@ class SettingsController extends Notifier<SettingsView> {
   Future<bool> setCycleStartDay(int? day) =>
       _save(() => ref.read(settingsRepositoryProvider).setCycleStartDay(day));
 
+  /// Turns the home's food picture on or off.
+  Future<bool> setFoodPatternEnabled({required bool on}) => _save(
+    () => ref.read(settingsRepositoryProvider).setFoodPatternEnabled(on: on),
+  );
+
   /// Turns the pet's calls on or off.
   Future<bool> setPetCallsEnabled({required bool on}) => _save(
     () => ref.read(settingsRepositoryProvider).setPetCallsEnabled(on: on),

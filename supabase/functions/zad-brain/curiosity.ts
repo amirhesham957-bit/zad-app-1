@@ -17,6 +17,7 @@ import { itemKey } from "./shared.ts";
 import { activeShifts, type ShiftRow } from "./lifeShift.ts";
 import { sensitiveTopic } from "./sensitiveMemory.ts";
 import { householdFamilyId, householdFilter } from "../_shared/household.ts";
+import { type FoodBought, foodPatternInvite, foodPatternNote } from "./foodPattern.ts";
 
 const DAY_MS = 86_400_000;
 
@@ -57,7 +58,7 @@ export interface CuriosityTxn {
   created_at: string;
 }
 
-export type CuriosityKind = "amount_outlier" | "label_gone_quiet" | "category_surge" | "unlabelled_spend" | "same_product" | "weekly_ritual" | "memory_follow_up" | "life_clue";
+export type CuriosityKind = "amount_outlier" | "label_gone_quiet" | "category_surge" | "unlabelled_spend" | "same_product" | "weekly_ritual" | "memory_follow_up" | "life_clue" | "food_pattern";
 
 export interface Curiosity {
   /** ثابت لنفس الفرضية — عليه بيتعمل منع التكرار. */
@@ -383,6 +384,8 @@ export function curiosityFor(input: {
   /** أسامي مشتريات البيت (المخزن وقايمة الشرا). */
   boughtNames?: readonly string[];
   kidsCount?: number;
+  /** صورة أكل البيت أو عرض تفعيلها (foodPattern.ts). */
+  foodNote?: Curiosity | null;
 }): Curiosity | null {
   const spends = input.txns.filter(isSpend);
   const live = activeShifts(input.shifts ?? [], input.now);
@@ -400,6 +403,8 @@ export function curiosityFor(input: {
     ...labelGoneQuiet(spends, input.now, input.knownNotes ?? []),
     ...surges,
     ...weeklyRitual(spends, input.now, input.todayStart, input.knownNotes ?? []),
+    // مرة في الشهر بالكتير، مش مرة لكل ملاحظة.
+    ...(input.foodNote && ![...input.askedKeys].some((k) => k.startsWith("food:")) ? [input.foodNote] : []),
     ...lifeClues([...(input.boughtNames ?? []), ...spends.flatMap((t) => [t.title ?? "", t.merchant_name ?? ""])], input.knownNotes ?? [], input.kidsCount ?? 0),
     ...unlabelledSpend(spends, input.now, input.todayStart),
   ];
@@ -440,7 +445,7 @@ export async function curiosityQuestion(
 ): Promise<Curiosity | null> {
   try {
     const family = await householdFamilyId(sb, userId).catch(() => null);
-    const [txRes, askedRes, notesRes, shiftRes, invRes, shopRes, profileRes] = await Promise.all([
+    const [txRes, askedRes, notesRes, shiftRes, invRes, shopRes, profileRes, foodRes] = await Promise.all([
       sb.from("zad_transactions")
         .select("id,amount,title,category,merchant_name,is_expense,txn_kind,source_type,created_at")
         .eq("user_id", userId).gte("created_at", new Date(now - LOOKBACK_DAYS * DAY_MS).toISOString())
@@ -456,10 +461,15 @@ export async function curiosityQuestion(
       sb.from("zad_life_circumstances").select("kind,started_at,ends_at,ended_at,confirmed,detail")
         .eq("user_id", userId).like("kind", "shift_%").gt("ends_at", new Date(now).toISOString()).limit(10),
       // المشتريات نفسها، من غير الصيدلية عن قصد: مفيش استنتاج صحي.
-      sb.from("zad_inventory").select("item_name").or(householdFilter(userId, family)).limit(300),
+      sb.from("zad_inventory").select("item_name,created_at").or(householdFilter(userId, family)).limit(300),
       sb.from("zad_shopping_list").select("item_name").or(householdFilter(userId, family)).limit(100),
       sb.from("zad_customer_profile").select("kids_count").eq("user_id", userId).maybeSingle(),
+      sb.from("zad_users").select("food_pattern_enabled").eq("id", userId).maybeSingle(),
     ]);
+    const bought: FoodBought[] = ((invRes.data ?? []) as Array<{ item_name: string | null; created_at?: string | null }>)
+      .map((r) => ({ name: r.item_name, at: r.created_at }));
+    // فشل القراية = مقفولة: الميزة دي باختيار صريح، فالشك معناه سكوت.
+    const foodOn = (foodRes.data as { food_pattern_enabled?: boolean } | null)?.food_pattern_enabled === true;
     if (txRes.error || askedRes.error || notesRes.error) return null;
     return curiosityFor({
       txns: (txRes.data ?? []) as CuriosityTxn[],
@@ -472,6 +482,7 @@ export async function curiosityQuestion(
       shifts: (shiftRes.data ?? []) as ShiftRow[],
       boughtNames: [...((invRes.data ?? []) as Array<{ item_name: string | null }>), ...((shopRes.data ?? []) as Array<{ item_name: string | null }>)]
         .map((r) => r.item_name ?? ""),
+      foodNote: foodRes.error ? null : foodOn ? foodPatternNote(bought, now) : foodPatternInvite(bought, now),
       kidsCount: Number((profileRes.data as { kids_count?: number | null } | null)?.kids_count) || 0,
     });
   } catch (e) {
