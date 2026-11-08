@@ -21,6 +21,7 @@ import 'package:zad/core/design/components/zad_kotlin_surfaces.dart';
 import 'package:zad/core/design/foundation/compose_shadow.dart';
 import 'package:zad/core/design/tokens/zad_extended_colors.dart';
 import 'package:zad/core/design/tokens/zad_palette.dart';
+import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/subscriptions/presentation/subscription_brands.dart';
@@ -419,16 +420,13 @@ class _Chip extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => SizedBox(
-    height: 32,
-    child: FilterChip(
-      label: Text(label, style: ZadType.labelSmall),
-      selected: selected,
-      showCheckmark: true,
-      selectedColor: selectedColor,
-      onSelected: (_) => onTap(),
-      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-    ),
+  Widget build(BuildContext context) => FilterChip(
+    label: Text(label, style: ZadType.labelSmall),
+    selected: selected,
+    showCheckmark: true,
+    selectedColor: selectedColor,
+    onSelected: (_) => onTap(),
+    materialTapTargetSize: MaterialTapTargetSize.padded,
   );
 }
 
@@ -537,17 +535,21 @@ class SubscriptionCardFull extends StatelessWidget {
         : daysLeft != null && daysLeft <= 7
         ? scheme.secondary
         : scheme.primary;
-    final shape = BorderRadius.circular(20);
+    final shape = BorderRadius.circular(ZadRadii.cardLarge);
 
+    // A full 44dp each: they were 24dp, side by side, next to Delete.
     Widget quiet(IconData icon, String label, Color tint, VoidCallback onTap) =>
         Tooltip(
           message: label,
           child: InkResponse(
-            onTap: onTap,
-            radius: 14,
-            child: Padding(
-              padding: const EdgeInsets.all(3),
-              child: Icon(icon, size: 18, color: tint, semanticLabel: label),
+            onTap: () {
+              unawaited(HapticFeedback.selectionClick());
+              onTap();
+            },
+            radius: 22,
+            child: SizedBox.square(
+              dimension: 44,
+              child: Icon(icon, size: 20, color: tint, semanticLabel: label),
             ),
           ),
         );
@@ -590,160 +592,184 @@ class SubscriptionCardFull extends StatelessWidget {
                       horizontal: 16,
                       vertical: 14,
                     ),
-                    child: Row(
+                    child: Column(
                       children: <Widget>[
-                        if (brand != null) ...<Widget>[
-                          Container(
-                            width: 42,
-                            height: 42,
-                            decoration: BoxDecoration(
-                              color: brand.color.withValues(
-                                alpha: sub.isActive ? 0.14 : 0.06,
-                              ),
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow: composeShadow(
-                                elevation: 2,
-                                ambient: Colors.black,
-                                spot: brand.color.withValues(alpha: 0.3),
-                              ),
-                            ),
-                            child: Icon(
-                              brand.icon,
-                              size: 22,
-                              color: brand.color.withValues(
-                                alpha: sub.isActive ? 1 : 0.5,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 14),
-                        ],
-                        Expanded(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: <Widget>[
-                              Text(
-                                sub.title,
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.bold,
-                                  color: sub.isActive
-                                      ? scheme.onSurface
-                                      : scheme.onSurfaceVariant,
-                                ),
-                              ),
-                              const SizedBox(height: 3),
-                              if (bnplProviderOf(sub.title, sub.provider)
-                                  case final bnpl?) ...<Widget>[
-                                Container(
-                                  margin: const EdgeInsets.only(bottom: 3),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 6,
-                                    vertical: 1,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: scheme.secondaryContainer,
-                                    borderRadius: BorderRadius.circular(99),
-                                  ),
-                                  child: Text(
-                                    context.l10n.subsBnplTag(bnpl.name),
-                                    style: TextStyle(
-                                      fontSize: 10.5,
-                                      fontWeight: FontWeight.w700,
-                                      color: scheme.onSecondaryContainer,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                              Text(
-                                switch (daysLeft) {
-                                  null => sub.provider ?? '',
-                                  0 => context.l10n.subsRenewsToday,
-                                  < 0 => context.l10n.subsExpiredAgo(-daysLeft),
-                                  _ => context.l10n.subsRenewsIn(daysLeft),
-                                },
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color:
-                                      daysLeft != null &&
-                                          daysLeft <= 3 &&
-                                          sub.isActive
-                                      ? scheme.error
-                                      : scheme.onSurfaceVariant,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.end,
+                        Row(
                           children: <Widget>[
-                            Text(
-                              _money(sub.amount, symbol),
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w800,
-                                color: sub.isActive
-                                    ? scheme.onSurface
-                                    : scheme.outlineVariant,
+                            if (brand != null) ...<Widget>[
+                              Container(
+                                width: 42,
+                                height: 42,
+                                decoration: BoxDecoration(
+                                  color: brand.color.withValues(
+                                    alpha: sub.isActive ? 0.14 : 0.06,
+                                  ),
+                                  borderRadius: BorderRadius.circular(
+                                    ZadRadii.chip,
+                                  ),
+                                  boxShadow: composeShadow(
+                                    elevation: 2,
+                                    ambient: Colors.black,
+                                    spot: brand.color.withValues(alpha: 0.3),
+                                  ),
+                                ),
+                                child: Icon(
+                                  brand.icon,
+                                  size: 22,
+                                  color: brand.color.withValues(
+                                    alpha: sub.isActive ? 1 : 0.5,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 14),
+                            ],
+                            Expanded(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: <Widget>[
+                                  Text(
+                                    sub.title,
+                                    style: ZadType.titleSmall.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: sub.isActive
+                                          ? scheme.onSurface
+                                          : scheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 3),
+                                  if (bnplProviderOf(sub.title, sub.provider)
+                                      case final bnpl?) ...<Widget>[
+                                    Container(
+                                      margin: const EdgeInsets.only(bottom: 3),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 6,
+                                        vertical: 1,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: scheme.secondaryContainer,
+                                        borderRadius: BorderRadius.circular(
+                                          ZadRadii.pill,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        context.l10n.subsBnplTag(bnpl.name),
+                                        style: ZadType.labelSmall.copyWith(
+                                          fontWeight: FontWeight.w700,
+                                          color: scheme.onSecondaryContainer,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                  Text(
+                                    switch (daysLeft) {
+                                      null => sub.provider ?? '',
+                                      0 => context.l10n.subsRenewsToday,
+                                      < 0 => context.l10n.subsExpiredAgo(
+                                        -daysLeft,
+                                      ),
+                                      _ => context.l10n.subsRenewsIn(daysLeft),
+                                    },
+                                    style: ZadType.labelMedium.copyWith(
+                                      color:
+                                          daysLeft != null &&
+                                              daysLeft <= 3 &&
+                                              sub.isActive
+                                          ? scheme.error
+                                          : scheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                            if (sub.isActive) ...<Widget>[
-                              const SizedBox(height: 6),
-                              Text(
-                                context.l10n.subsPerYear(
-                                  _money(yearly, symbol),
-                                ),
-                                style: const TextStyle(
-                                  fontSize: 10,
-                                  color: Color(0xFF94A3B8),
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Material(
-                                color: scheme.primary.withValues(alpha: 0.12),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                  side: BorderSide(
-                                    color: scheme.primary.withValues(
-                                      alpha: 0.35,
-                                    ),
-                                    width: 0.8,
+                            Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: <Widget>[
+                                Text(
+                                  _money(sub.amount, symbol),
+                                  style: ZadType.titleSmall.copyWith(
+                                    fontWeight: FontWeight.w800,
+                                    color: sub.isActive
+                                        ? scheme.onSurface
+                                        : scheme.outlineVariant,
                                   ),
                                 ),
-                                clipBehavior: Clip.antiAlias,
-                                child: InkWell(
-                                  onTap: onMarkAsPaid,
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 7,
-                                      vertical: 3,
+                                if (sub.isActive) ...<Widget>[
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    context.l10n.subsPerYear(
+                                      _money(yearly, symbol),
                                     ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: <Widget>[
-                                        Icon(
-                                          Icons.check_circle,
-                                          size: 12,
-                                          color: scheme.primary,
+                                    style: ZadType.labelSmall.copyWith(
+                                      color: scheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: ZadSpacing.sm),
+                        Row(
+                          mainAxisAlignment: sub.isActive
+                              ? MainAxisAlignment.spaceBetween
+                              : MainAxisAlignment.end,
+                          children: <Widget>[
+                            if (sub.isActive)
+                              Flexible(
+                                child: Material(
+                                  color: scheme.primary.withValues(alpha: 0.12),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(
+                                      ZadRadii.chip,
+                                    ),
+                                  ),
+                                  clipBehavior: Clip.antiAlias,
+                                  child: InkWell(
+                                    onTap: () {
+                                      unawaited(HapticFeedback.mediumImpact());
+                                      onMarkAsPaid();
+                                    },
+                                    child: ConstrainedBox(
+                                      constraints: const BoxConstraints(
+                                        minHeight: 44,
+                                      ),
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: ZadSpacing.md,
                                         ),
-                                        const SizedBox(width: 3),
-                                        Text(
-                                          context.l10n.subsPaidMark,
-                                          style: TextStyle(
-                                            fontSize: 10.5,
-                                            fontWeight: FontWeight.bold,
-                                            color: scheme.primary,
-                                          ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: <Widget>[
+                                            Icon(
+                                              Icons.check_circle,
+                                              size: 16,
+                                              color: scheme.primary,
+                                            ),
+                                            const SizedBox(
+                                              width: ZadSpacing.xs,
+                                            ),
+                                            Flexible(
+                                              child: Text(
+                                                context.l10n.subsPaidMark,
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: ZadType.labelMedium
+                                                    .copyWith(
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      color: scheme.primary,
+                                                    ),
+                                              ),
+                                            ),
+                                          ],
                                         ),
-                                      ],
+                                      ),
                                     ),
                                   ),
                                 ),
                               ),
-                            ],
-                            const SizedBox(height: 6),
                             Row(
                               mainAxisSize: MainAxisSize.min,
                               children: <Widget>[
@@ -755,7 +781,6 @@ class SubscriptionCardFull extends StatelessWidget {
                                       : scheme.outlineVariant,
                                   onToggleAutoDeduct,
                                 ),
-                                const SizedBox(width: 4),
                                 quiet(
                                   sub.isActive
                                       ? Icons.pause_circle
@@ -766,14 +791,12 @@ class SubscriptionCardFull extends StatelessWidget {
                                   scheme.onSurfaceVariant,
                                   onToggleActive,
                                 ),
-                                const SizedBox(width: 4),
                                 quiet(
                                   Icons.edit_note,
                                   context.l10n.subsEdit,
                                   scheme.onSurfaceVariant,
                                   onEdit,
                                 ),
-                                const SizedBox(width: 4),
                                 quiet(
                                   Icons.delete_outline,
                                   context.l10n.commonDelete,
