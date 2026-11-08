@@ -5,6 +5,8 @@ import {
   askedThisMorning,
   curiosityFor,
   type CuriosityTxn,
+  type DatedNote,
+  recentlyAskedKeys,
   spendLabel,
 } from "./curiosity.ts";
 
@@ -159,7 +161,8 @@ Deno.test("asked_this_morning: nothing asked, never sent, or yesterday's questio
 });
 
 // مبلغ غريب (الموجة ٣): ٥ قهاوي عادية بـ٥٠، وواحدة امبارح بـ٤٠٠.
-const usualCoffee = () => [tx(40), tx(33), tx(26), tx(19), tx(12, { amount: 60 })];
+// أيام أسبوع مختلفة عن قصد: نفس اليوم ٣ مرات بقى عادة أسبوعية وليها سؤالها.
+const usualCoffee = () => [tx(41), tx(34), tx(25), tx(18), tx(12, { amount: 60 })];
 
 Deno.test("curiosity: a spend at three times its category's usual is asked about first, with its id", () => {
   const c = ask([...usualCoffee(), tx(1, { id: "odd", title: "عزومة", amount: 400 })]);
@@ -178,8 +181,8 @@ Deno.test("curiosity: no outlier under three times, on a thin history, after thr
   assertEquals(ask([...usualCoffee(), tx(1, { amount: 140 })])?.kind, undefined);
   // ٤ حركات بس قبلها = مفيش «عادي».
   assertEquals(ask([...usualCoffee().slice(1), tx(1, { amount: 400 })])?.kind, undefined);
-  // من ٤ أيام = مش طازة.
-  assertEquals(ask([...usualCoffee(), tx(4, { amount: 400 })])?.kind, undefined);
+  // من ٥ أيام = مش طازة.
+  assertEquals(ask([...usualCoffee(), tx(5, { amount: 400 })])?.kind, undefined);
   assertEquals(ask([...usualCoffee(), tx(1, { id: "odd", amount: 400 })], ["outlier:odd"])?.kind, undefined);
   // «أخرى» مالهاش «عادي» — دي فجوة تصنيف، سؤالها التاني.
   const other = usualCoffee().map((t) => ({ ...t, category: "أخرى" }));
@@ -192,4 +195,77 @@ Deno.test("curiosity: one old odd spend doesn't move «usual» — it is the med
   const c = ask([...usualCoffee(), tx(20, { amount: 5000 }), tx(1, { id: "odd", amount: 400 })]);
   assertEquals(c?.kind, "amount_outlier");
   assert(c!.question.includes("حوالي 50"));
+});
+
+// ── عادة أسبوعية و«فاكر إنك قلتلي» (ZAD_PLAN ٥.١٠) ──
+const gym = (over: Partial<CuriosityTxn> = {}) =>
+  [0, 7, 14, 21].map((d) => tx(d, { title: "نادي الهدف", category: "رياضة", amount: 80, ...over }));
+
+Deno.test("ritual: the same thing on the same weekday, on three dates, is asked about by its day", () => {
+  const c = ask(gym());
+  assertEquals(c?.kind, "weekly_ritual");
+  assert(c!.question.includes("كل سبت"), c!.question);
+  assert(c!.question.includes("نادي الهدف"));
+});
+
+Deno.test("ritual: two dates, or different weekdays, are not a habit", () => {
+  assertEquals(ask(gym().slice(0, 2)), null);
+  assertEquals(ask([0, 8, 16, 24].map((d) => tx(d, { title: "نادي الهدف", category: "رياضة", amount: 80 }))), null);
+});
+
+Deno.test("ritual: stopped more than two weeks ago is not asked as a habit", () => {
+  assert(ask([21, 28, 35, 42].map((d) => tx(d, { title: "نادي الهدف", category: "رياضة" })))?.kind !== "weekly_ritual");
+});
+
+Deno.test("ritual: nothing about a doctor, a pharmacy or a sensitive name", () => {
+  assertEquals(ask(gym({ title: "عيادة النور" })), null);
+  assertEquals(ask(gym({ title: "مركز", category: "الرعاية الصحية" })), null);
+  assertEquals(ask(gym({ title: "محكمة الأسرة" })), null);
+});
+
+Deno.test("ritual: already known from memory, or already asked, stays quiet", () => {
+  assertEquals(ask(gym(), [], ["بيروح نادي الهدف كل سبت"]), null);
+  const key = ask(gym())!.key;
+  assertEquals(ask(gym(), [key]), null);
+});
+
+Deno.test("ritual: asked once in the year; other hypotheses come back after 30 days", () => {
+  const old = new Date(NOW - 200 * DAY).toISOString();
+  const rows = [
+    { created_at: old, facts: { curiosity: { key: "ritual:x:6" } } },
+    { created_at: old, facts: { curiosity: { key: "surge:y" } } },
+    { created_at: new Date(NOW - 2 * DAY).toISOString(), facts: { curiosity: { key: "surge:z" } } },
+  ];
+  assertEquals([...recentlyAskedKeys(rows, NOW)].sort(), ["ritual:x:6", "surge:z"]);
+});
+
+const follow = (notes: DatedNote[]) =>
+  curiosityFor({ txns: [], now: NOW, todayStart: TODAY_START, askedKeys: new Set(), datedNotes: notes });
+const until = (daysAgo: number) => new Date(NOW - daysAgo * DAY).toISOString();
+
+Deno.test("follow-up: a dated note just past its day is asked about, newest first", () => {
+  const c = follow([
+    { id: "a", note: "عندنا ضيوف لحد الجمعة", scope: "general", valid_until: until(2) },
+    { id: "b", note: "امتحانات يوسف الأسبوع ده", scope: "general", valid_until: until(1) },
+  ]);
+  assertEquals(c?.kind, "memory_follow_up");
+  assertEquals(c?.key, "followup:b");
+  assert(c!.question.includes("امتحانات يوسف"));
+});
+
+Deno.test("follow-up: not before its day, not long after, never a sensitive note, only his own words", () => {
+  assertEquals(follow([{ id: "a", note: "امتحانات يوسف", scope: "general", valid_until: until(-1) }]), null);
+  assertEquals(follow([{ id: "a", note: "امتحانات يوسف", scope: "general", valid_until: until(4) }]), null);
+  assertEquals(follow([{ id: "a", note: "مراتي حامل", scope: "general", valid_until: until(1) }]), null);
+  assertEquals(follow([{ id: "a", note: "ملخص الأسبوع", scope: "weekly_synthesis", valid_until: until(1) }]), null);
+  assertEquals(follow([{ id: "a", note: "امتحانات يوسف", scope: "general", valid_until: null }]), null);
+});
+
+Deno.test("follow-up: goes before a fresh odd amount", () => {
+  const c = curiosityFor({
+    txns: [...usualCoffee(), tx(1, { id: "odd", amount: 400 })],
+    now: NOW, todayStart: TODAY_START, askedKeys: new Set(),
+    datedNotes: [{ id: "a", note: "امتحانات يوسف", scope: "general", valid_until: until(1) }],
+  });
+  assertEquals(c?.kind, "memory_follow_up");
 });

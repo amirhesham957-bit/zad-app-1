@@ -15,6 +15,7 @@
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { itemKey } from "./shared.ts";
 import { activeShifts, type ShiftRow } from "./lifeShift.ts";
+import { sensitiveTopic } from "./sensitiveMemory.ts";
 
 const DAY_MS = 86_400_000;
 
@@ -33,6 +34,15 @@ export const OUTLIER_RECENT_DAYS = 3;
 export const OUTLIER_RATIO = 3;
 /** …والعادي محسوب من ٥ حركات على الأقل في نفس الفئة قبلها. */
 export const OUTLIER_MIN_SAMPLES = 5;
+/** عادة أسبوعية (٥.١٠): نفس الحاجة في نفس اليوم من الأسبوع، ٣ تواريخ مختلفة على الأقل في آخر ٨ أسابيع… */
+export const RITUAL_MIN_DATES = 3;
+export const RITUAL_LOOKBACK_DAYS = 56;
+/** …وآخر مرة منها جوه الأسبوعين دول: اللي وقفت دي سؤال «بطّلتها؟». */
+export const RITUAL_ALIVE_DAYS = 14;
+/** بعد ما ميعاد ملاحظة ليها نهاية يعدّي، زاد يسأل عنها جوه الأيام دي. */
+export const FOLLOW_UP_DAYS = 3;
+/** العادة بتتسأل مرة في السنة بالكتير: مفتاحها في الأسئلة اللي اتسألت بيتقرا لحد هنا. */
+export const RITUAL_ASKED_DAYS = 365;
 
 export interface CuriosityTxn {
   id: string;
@@ -46,7 +56,7 @@ export interface CuriosityTxn {
   created_at: string;
 }
 
-export type CuriosityKind = "amount_outlier" | "label_gone_quiet" | "category_surge" | "unlabelled_spend" | "same_product";
+export type CuriosityKind = "amount_outlier" | "label_gone_quiet" | "category_surge" | "unlabelled_spend" | "same_product" | "weekly_ritual" | "memory_follow_up";
 
 export interface Curiosity {
   /** ثابت لنفس الفرضية — عليه بيتعمل منع التكرار. */
@@ -140,6 +150,68 @@ function labelGoneQuiet(spends: CuriosityTxn[], now: number, known: readonly str
     record: `لو بطّلها أو غيّر المكان: remember بالسبب (about: «${f.label}»، والمكان الجديد لو قاله). ` +
       "لو قال إنها بس مااتسجلتش: اعرض تسجّلها. لو مش عايز يتكلم فيها: سيبها.",
   }));
+}
+
+const WEEKDAY_NAMES = ["حد", "اتنين", "تلات", "أربع", "خميس", "جمعة", "سبت"];
+// صرف على علاج أو دكتور مابيتسألش عنه كـ«عادة»: حساس ولو الاسم مش مكتوب فيه المرض.
+const HEALTH_SPEND = /صيدل|دواء|ادويه|علاج|مستشف|عياد|تحاليل|معمل|دكتور|صحي|صحه/;
+
+/** نفس الاسم في نفس يوم الأسبوع على ٣ تواريخ أو أكتر. الأيام بتتحسب من بداية النهارده عشان توقيت سوق الحساب. */
+function weeklyRitual(spends: CuriosityTxn[], now: number, todayStart: number, known: readonly string[]): Curiosity[] {
+  const oldest = todayStart - RITUAL_LOOKBACK_DAYS * DAY_MS;
+  const alive = todayStart - RITUAL_ALIVE_DAYS * DAY_MS;
+  const todayDow = new Date(todayStart + 12 * 3_600_000).getUTCDay();
+  const groups = new Map<string, { label: string; dow: number; dates: Set<number>; last: number }>();
+  for (const t of spends) {
+    const at = Date.parse(t.created_at);
+    if (at < oldest || at > now) continue;
+    const label = spendLabel(t);
+    if (!label || sensitiveTopic(label)) continue;
+    if (HEALTH_SPEND.test(itemKey(label)) || HEALTH_SPEND.test(itemKey(t.category ?? ""))) continue;
+    const dayIndex = Math.floor((at - todayStart) / DAY_MS);
+    const dow = (((todayDow + dayIndex) % 7) + 7) % 7;
+    const key = `${itemKey(label)}:${dow}`;
+    const g = groups.get(key) ?? { label, dow, dates: new Set<number>(), last: at };
+    g.dates.add(dayIndex);
+    g.last = Math.max(g.last, at);
+    groups.set(key, g);
+  }
+  const knownKeys = known.map(itemKey);
+  return [...groups.entries()]
+    .filter(([, g]) => g.dates.size >= RITUAL_MIN_DATES && g.last >= alive)
+    .filter(([, g]) => !knownKeys.some((note) => note.includes(itemKey(g.label))))
+    .sort(([, a], [, b]) => b.dates.size - a.dates.size)
+    .map(([key, g]) => ({
+      key: `ritual:${key}`,
+      kind: "weekly_ritual" as const,
+      question: `لاحظت إن كل ${WEEKDAY_NAMES[g.dow]} تقريباً بتسجّل «${g.label}» — عادة ثابتة ولا وراها قصة؟`,
+      record: `لو قال السبب أو العادة (تمرين، زيارة أهله، عزومة): remember بيها (about: «${g.label}»). ` +
+        "لو قال صدفة أو مش عايز يتكلم: سيبها.",
+    }));
+}
+
+export interface DatedNote {
+  id: string;
+  note: string | null;
+  scope?: string | null;
+  valid_until?: string | null;
+}
+
+/** ملاحظة قالها العميل وليها ميعاد، والميعاد عدّى لسه: الأقرب الأول. الحساس مابيترفعش من نفسه حتى لو اتأكد. */
+function memoryFollowUp(notes: readonly DatedNote[], now: number): Curiosity[] {
+  return notes
+    .map((n) => ({ n, until: Date.parse(n.valid_until ?? "") }))
+    .filter(({ n, until }) =>
+      Number.isFinite(until) && until <= now && until >= now - FOLLOW_UP_DAYS * DAY_MS &&
+      (n.scope ?? "general") === "general" && !!n.note?.trim() && !sensitiveTopic(n.note)
+    )
+    .sort((a, b) => b.until - a.until)
+    .map(({ n }) => ({
+      key: `followup:${n.id}`,
+      kind: "memory_follow_up" as const,
+      question: `فاكر إنك قلتلي: «${n.note!.trim().slice(0, 70)}» — ده خلص؟ عدّى على خير؟`,
+      record: "لو فيه جديد هيفضل مهم: remember بيه. لو قال خلص: كفاية تفرح معاه من غير حفظ. ماتعيدش حفظ الملاحظة القديمة.",
+    }));
 }
 
 /** فئات صرفها آخر أسبوعين ضعف المعتاد أو أكتر — والحساب عنده ١٠ أسابيع تاريخ يتقارن بيهم. */
@@ -258,6 +330,8 @@ export function curiosityFor(input: {
    * «فئة زادت» خالص؛ مصروف جديد ⇒ مفيش سؤال عن فئته.
    */
   shifts?: readonly ShiftRow[];
+  /** ملاحظات الذاكرة بمعادها — «فاكر إنك قلتلي…». */
+  datedNotes?: readonly DatedNote[];
 }): Curiosity | null {
   const spends = input.txns.filter(isSpend);
   const live = activeShifts(input.shifts ?? [], input.now);
@@ -268,10 +342,13 @@ export function curiosityFor(input: {
     ? []
     : categorySurge(spends, input.now).filter((c) => !quietCategories.has(c.key.slice("surge:".length)));
   const candidates = [
+    // ميعادها بيفوت في ٣ أيام، ومفيش حاجة تانية هنا مستعجلة زيها.
+    ...memoryFollowUp(input.datedNotes ?? [], input.now),
     // حركة بعينها لسه طازة — قبل الفرضيات عن العادات.
     ...amountOutlier(spends, input.now, input.todayStart),
     ...labelGoneQuiet(spends, input.now, input.knownNotes ?? []),
     ...surges,
+    ...weeklyRitual(spends, input.now, input.todayStart, input.knownNotes ?? []),
     ...unlabelledSpend(spends, input.now, input.todayStart),
   ];
   return candidates.find((c) => !input.askedKeys.has(c.key)) ?? null;
@@ -285,6 +362,17 @@ export function askedCuriosityKeys(rows: ReadonlyArray<{ facts?: unknown }> | nu
     const key = facts?.curiosity?.key;
     if (typeof key === "string" && key) keys.add(key);
   }
+  return keys;
+}
+
+/** الفرضية بترجع بعد ٣٠ يوم لو الحال اتغير؛ العادة الأسبوعية مابتتغيرش، فمرة في السنة كفاية. */
+export function recentlyAskedKeys(
+  rows: ReadonlyArray<{ facts?: unknown; created_at?: string }> | null | undefined,
+  now: number,
+): Set<string> {
+  const cut = now - ASK_AGAIN_AFTER_DAYS * DAY_MS;
+  const keys = askedCuriosityKeys((rows ?? []).filter((r) => !(Date.parse(r.created_at ?? "") < cut)));
+  for (const key of askedCuriosityKeys(rows)) if (key.startsWith("ritual:")) keys.add(key);
   return keys;
 }
 
@@ -304,13 +392,14 @@ export async function curiosityQuestion(
         .select("id,amount,title,category,merchant_name,is_expense,txn_kind,source_type,created_at")
         .eq("user_id", userId).gte("created_at", new Date(now - LOOKBACK_DAYS * DAY_MS).toISOString())
         .order("created_at", { ascending: false }).limit(400),
-      sb.from("zad_voice_moments").select("facts")
+      sb.from("zad_voice_moments").select("facts,created_at")
         // اتبعتت بس: تحية اتمسكت أو فشلت ماسألتش حاجة.
         .eq("user_id", userId).eq("moment", "morning_greeting").eq("status", "sent")
-        .gte("created_at", new Date(now - ASK_AGAIN_AFTER_DAYS * DAY_MS).toISOString()).limit(60),
+        .gte("created_at", new Date(now - RITUAL_ASKED_DAYS * DAY_MS).toISOString())
+        .order("created_at", { ascending: false }).limit(400),
       // من غير فلتر «حية»: ملاحظة اتقفلت عن نفس الحاجة سبب كفاية مانسألش (والفلتر محتاج مايجريشن
       // 20261003100000 تكون اتطبقت).
-      sb.from("zad_memory").select("note").eq("user_id", userId).limit(100),
+      sb.from("zad_memory").select("id,note,scope,valid_until").eq("user_id", userId).limit(100),
       sb.from("zad_life_circumstances").select("kind,started_at,ends_at,ended_at,confirmed,detail")
         .eq("user_id", userId).like("kind", "shift_%").gt("ends_at", new Date(now).toISOString()).limit(10),
     ]);
@@ -319,8 +408,9 @@ export async function curiosityQuestion(
       txns: (txRes.data ?? []) as CuriosityTxn[],
       now,
       todayStart,
-      askedKeys: askedCuriosityKeys(askedRes.data as Array<{ facts?: unknown }>),
+      askedKeys: recentlyAskedKeys(askedRes.data as Array<{ facts?: unknown; created_at?: string }>, now),
       knownNotes: ((notesRes.data ?? []) as Array<{ note: string | null }>).map((n) => n.note ?? ""),
+      datedNotes: (notesRes.data ?? []) as DatedNote[],
       // فشل قراية التحولات = من غيرها (سؤال زيادة أحسن من فضول ساكت للأبد).
       shifts: (shiftRes.data ?? []) as ShiftRow[],
     });
