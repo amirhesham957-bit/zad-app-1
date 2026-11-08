@@ -295,10 +295,23 @@ Deno.test("reported wrong (4.19): the same deal stays quiet for 30 days, the nee
   assertEquals([...keys], ["deal:زيت:كيو"]);
 });
 
-Deno.test("deal buttons ride only on a morning greeting that carries a deal", () => {
-  assert(hasDealButtons("morning_greeting", { taste_deal: { item: "زيت" } }));
-  assert(!hasDealButtons("morning_greeting", { weather: {} }));
-  assert(!hasDealButtons("good_night", { taste_deal: { item: "زيت" } }));
+Deno.test("deal buttons ride only on a morning greeting that says the deal", () => {
+  const deal = { taste_deal: { item: "زيت الممتاز 1 لتر", store: "بشاير" } };
+  assert(hasDealButtons("morning_greeting", deal, "الجو حلو. زيت الممتاز في بشاير بـ٩٠"));
+  assert(!hasDealButtons("morning_greeting", { weather: {} }, "الجو حلو"));
+  assert(!hasDealButtons("good_night", deal, "زيت الممتاز في بشاير"));
+  // The store goes unnamed but the item is there.
+  assert(hasDealButtons("morning_greeting", deal, "زيت الممتاز بـ٩٠ لو محتاج"));
+});
+
+Deno.test("a greeting whose deal the model dropped carries no deal buttons (10 of 16 live, 8/11)", () => {
+  const facts = { taste_deal: { item: "بونا كيس نشا الذرة - 40 جرام - عبوة من 8", store: "noon-express" } };
+  assert(!hasDealButtons("morning_greeting", facts, "الجو في القاهرة غيم والعظمى ٢٥. عيد ميلادك امتى عشان أفكّرك قبلها؟"));
+  const soap = { taste_deal: { item: "صابون", store: "أمازون" } };
+  assert(!hasDealButtons("morning_greeting", soap, "الجو في القاهرة صافي. عيد ميلادك امتى؟"));
+  // Spelled the model's way.
+  const eucerin = { taste_deal: { item: "EUCERIN Lotion", store: "LojaGlamourosa.com" } };
+  assert(hasDealButtons("morning_greeting", eucerin, "لوشن Eucerin في lojaglamourosa.com بخصم 20%"));
 });
 
 // ZAD_PLAN ٤.٨: الميزانية مرتاحة ⇒ عرض على أساسي بيتخزّن والبيت بيشتريه = فرصة تخزين.

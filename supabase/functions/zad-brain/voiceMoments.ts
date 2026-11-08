@@ -137,10 +137,33 @@ export function codeLine(raw: unknown): string {
     ` (من ${from} ${c.store.slice(0, 40)}، ممكن يكون خلص).`;
 }
 
-/** تحية صبح فيها عرض (ZAD_PLAN ٤.٢٠): البوت بيحط تحتها [🛒 ضيفه لقايمتي] [🙅 مش مهتم] بمعرّف الصف. */
-export function hasDealButtons(moment: string, facts: unknown): boolean {
-  const deal = (facts as { taste_deal?: { item?: unknown } } | null)?.taste_deal;
-  return moment === "morning_greeting" && typeof deal?.item === "string" && deal.item.trim() !== "";
+/** Case, Arabic letter forms and digits folded, so the model's spelling of a store still matches. */
+function foldForMatch(text: string): string {
+  return text.toLowerCase()
+    .replace(/[٠-٩]/g, (d) => String("٠١٢٣٤٥٦٧٨٩".indexOf(d)))
+    .replace(/[\u064B-\u0652\u0640]/g, "")
+    .replace(/[أإآ]/g, "ا").replace(/ى/g, "ي").replace(/ة/g, "ه")
+    .replace(/\s+/g, " ").trim();
+}
+
+/** Did the text the customer will read actually name this deal — its store, or at least two words of the item? */
+function saysTheDeal(text: string, deal: { item?: unknown; store?: unknown }): boolean {
+  const said = foldForMatch(text);
+  const store = typeof deal.store === "string" ? foldForMatch(deal.store) : "";
+  if (store.length >= 2 && said.includes(store)) return true;
+  const words = typeof deal.item === "string" ? foldForMatch(deal.item).split(/[\s\-–—/]+/).filter((w) => w.length >= 3) : [];
+  return words.filter((w) => said.includes(w)).length >= Math.min(2, words.length) && words.length > 0;
+}
+
+/**
+ * تحية صبح فيها عرض (ZAD_PLAN ٤.٢٠): البوت بيحط تحتها [🛒 ضيفه لقايمتي] [🙅 مش مهتم] بمعرّف الصف.
+ * The buttons follow what was SAID, not what the model was offered: on 2026-11-08, 10 of the last 16 greetings with a
+ * deal in their facts said only the weather and a question («عيد ميلادك امتى؟») and still carried the deal buttons.
+ */
+export function hasDealButtons(moment: string, facts: unknown, text: string): boolean {
+  const deal = (facts as { taste_deal?: { item?: unknown; store?: unknown } } | null)?.taste_deal;
+  if (moment !== "morning_greeting" || typeof deal?.item !== "string" || deal.item.trim() === "") return false;
+  return saysTheDeal(text, deal);
 }
 
 /**
@@ -1265,7 +1288,7 @@ export async function processVoiceMoments(
           : await deps.pushTelegram(
             row.user_id, composed.title, composed.text, voice, deliveryMoment,
             composed.speech || composed.text, emotion,
-            DOSE_MOMENTS.has(deliveryMoment) || TELEGRAM_TEXT_MOMENTS.has(deliveryMoment) || hasDealButtons(deliveryMoment, row.facts)
+            DOSE_MOMENTS.has(deliveryMoment) || TELEGRAM_TEXT_MOMENTS.has(deliveryMoment) || hasDealButtons(deliveryMoment, row.facts, composed.text)
               ? row.id : undefined,
           );
 
