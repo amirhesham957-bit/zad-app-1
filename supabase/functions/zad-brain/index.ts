@@ -114,7 +114,7 @@ import { decideGate, GATE_RESPONSE_SCHEMA, gatePrompt, type GateVerdict, knownFi
 import { decideLifeEvent } from "../_shared/lifeEventDecide.ts";
 import { eventInstant, LIFE_EVENT_SCHEMA, type LifeEvent, type LifeKind, lifeEventCard, lifeEventPrompt, lifeKindOf, parseLifeEvent } from "./lifeEvents.ts";
 // المرحلة ٣ — الوكلاء المتخصصون: توجيه + هوية في البرومبت + trace في zad_brain_runs.
-import { intentToolHints, priorAssistantText, shouldWidenTools, LIMIT_NOT_CHANGED_REPLY, SNAPSHOT_REFUSAL_REPLY, snapshotLeak, unbackedLimitClaim, unbackedReminderClaim, unbackedWriteClaim, WRITE_NOT_DONE_REPLY, unbackedDeleteClaim, DELETE_NOT_DONE_REPLY, recordSpecialistTrace, routeSpecialists, specialistPromptBlock, scopeToolsForSpecialist } from "./specialists.ts";
+import { intentToolHints, mentionsLifeFact, priorAssistantText, shouldWidenTools, LIMIT_NOT_CHANGED_REPLY, SNAPSHOT_REFUSAL_REPLY, snapshotLeak, unbackedLimitClaim, unbackedReminderClaim, unbackedWriteClaim, WRITE_NOT_DONE_REPLY, unbackedDeleteClaim, DELETE_NOT_DONE_REPLY, recordSpecialistTrace, routeSpecialists, specialistPromptBlock, scopeToolsForSpecialist } from "./specialists.ts";
 // Phase 3 — صندوق بريد الأيدجنتس: تقرير كل تنفيذ ناجح يوصل للعقل، والعقل بيقرا غير المقروء.
 import { agentMailBlock, agentSenderFor, deliverAgentMail, fetchUnreadAgentMail, sendAgentReport } from "./agentMail.ts";
 import { chooseNotes, DAILY_NOTES_MAX, insightExpiry, openCards, recentCardTitles } from "./attention.ts";
@@ -7957,7 +7957,7 @@ async function handleAgentTurnInLane(
   // لنفس الفايدة. NONE صريحة لكل سطر لو مفيش حاجة تستاهل، مفيش إجبار.
   // After the response: the reply does not depend on it, and it was a whole
   // model call the customer waited through on every turn that wrote something.
-  if (ctx.mutationCount > 0) {
+  if (ctx.mutationCount > 0 || mentionsLifeFact(message)) {
     afterResponse("post-turn fact/skill extraction", (async () => {
       const extraction = await callModel({
         model: MODEL_ROUTINE,

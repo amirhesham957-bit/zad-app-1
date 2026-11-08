@@ -100,6 +100,24 @@ export const SPECIALISTS: Record<SpecialistId, SpecialistDef> = {
 
 const ORDER: SpecialistId[] = ["finance", "pantry", "pharmacy", "family", "home"];
 
+const LIFE_WORD = (alts: string) => new RegExp(`(^|[\\s،,.؛:«(])(و|ف)?(${alts})(?=$|[\\s،,.؛:»)!])`);
+const LIFE_RELATION = LIFE_WORD(
+  "مراتي|زوجتي|جوزي|زوجي|ابني|ولدي|بنتي|ولادي|عيالي|امي|ماما|بابا|ابويا|ابوي|اخويا|اخوي|اختي|حماتي|حمايا|خطيبي|خطيبتي",
+);
+const LIFE_SELF = LIFE_WORD(
+  "بشتغل|اشتغل|ساكن|ساكنه|عايش|عايشه|نباتي|نباتيه|بحب|مابحبش|ما احب|بكره|اتجوزت|اتخطبت|ولدت|مسافر|مسافره|اترقيت|سبت الشغل|اتفصلت|نقلت",
+);
+
+/**
+ * جملة عن حياته أو عيلته، مش سؤال. بوابة الاستخلاص بعد اللفة: كان بيشتغل بس لو اللفة كتبت حاجة، فـ«ابني دخل
+ * الجامعة» كانت بتضيع (المالك ٨/١١). قاعدة مش موديل، عشان نداء الاستخلاص يفضل على اللي يستاهل.
+ */
+export function mentionsLifeFact(message: string): boolean {
+  const norm = normalize(message).trim();
+  if (norm.length < 8 || /[؟?]/.test(norm)) return false;
+  return LIFE_RELATION.test(norm) || LIFE_SELF.test(norm);
+}
+
 /** تطبيع خفيف: تشكيل، همزات، ألف مقصورة، تاء مربوطة. */
 function normalize(text: string): string {
   return text
