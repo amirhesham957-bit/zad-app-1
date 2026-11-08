@@ -43,6 +43,7 @@ async function callerCountry(req: Request, userId: unknown): Promise<string | nu
 }
 import { googleNearbyAny, googlePlacesKeys } from "./googlePlaces.ts";
 import { dealRelevance, loadAffinity, rankByRelevance } from "../_shared/dealRelevance.ts";
+import { DEAL_SEARCH_CACHE_MS, dealSearchCacheKey, refused, SOURCE_REST_MS, withoutResting } from "./sourcePool.ts";
 import { tiktokDealHits, tiktokDealsPrompt, tiktokQuery, withPriceFromPercent } from "./tiktokDeals.ts";
 import { brochureEntries, OFFICIAL_FLYER_SITES, OFFICIAL_FLYER_UA, officialFlyerDeals, officialFlyerPrompt, robotsAllows, siteForPdf } from "./officialFlyers.ts";
 import { fillMarketCurrency, DEAL_SEARCH_TIMEOUT_MS, dealQuery, dealsFromHitsPrompt, dealSearchItems, readDeals, readReverseCity, readStoreDeals, reverseCityUrl, sameCurrency, cleanCity, searchStoreName, storeDealsPrompt, storeDealsQuery, videoDealsPrompt, youtubeDealVideos, instagramDealPosts, postDealsPrompt, flyerDealsPrompt, readDealCodes, type DealCode } from "./liveDeals.ts";
@@ -1672,6 +1673,38 @@ async function wikipediaSnippets(query: string, lang: "ar" | "en", maxResults: n
  * [queryEn]: نفس السؤال بالإنجليزي من العقل، لويكيبيديا الإنجليزي — المعلومة العالمية (رياضة، علوم،
  * أحداث) أحدث وأكمل هناك. نتايجها بتتفلتر على السؤال الإنجليزي، مش العربي.
  */
+// المصادر المستريحة (sourcePool.ts). القراية كل دقيقة بالكتير، وفشلها = مفيش حد مستريح.
+let restRead: { at: number; names: Set<string> } = { at: 0, names: new Set() };
+async function restingSources(): Promise<Set<string>> {
+  if (Date.now() - restRead.at < 60_000) return restRead.names;
+  try {
+    const { data } = await supabase.from("zad_search_source_rest").select("source").gt("until", new Date().toISOString());
+    restRead = { at: Date.now(), names: new Set(((data ?? []) as Array<{ source: string }>).map((r) => r.source)) };
+  } catch {
+    restRead = { at: Date.now(), names: new Set() };
+  }
+  return restRead.names;
+}
+async function restSource(name: string, reason: string): Promise<void> {
+  restRead.names.add(name);
+  const { error } = await supabase.from("zad_search_source_rest")
+    .upsert({ source: name, until: new Date(Date.now() + SOURCE_REST_MS).toISOString(), reason: reason.slice(0, 80) });
+  if (error) console.warn("[search] source rest not saved:", error.message);
+}
+
+/** بحث العروض بكاش ٦ ساعات، عشان السيرفر مايسألش نفس السؤال. نتيجة فاضية مابتتحفظش. */
+async function cachedDealSearch(query: string, maxResults: number, country: unknown): Promise<WebHit[]> {
+  const key = dealSearchCacheKey(query, maxResults, country);
+  const cached = await getCachedAiResponse(key, DEAL_SEARCH_CACHE_MS);
+  if (Array.isArray(cached?.hits)) {
+    lastWebSearchSource = "cache";
+    return cached.hits as WebHit[];
+  }
+  const hits = await webSearchSnippets(query, maxResults, country);
+  if (hits.length > 0) await setCachedAiResponse(key, "deal_search", { hits });
+  return hits;
+}
+
 export async function webSearchSnippets(query: string, maxResults = 8, country?: unknown, queryEn?: string): Promise<WebHit[]> {
   lastWebSearchAttempts = [];
   const arabic = /[\u0600-\u06FF]/.test(query);
@@ -1718,8 +1751,11 @@ export async function webSearchSnippets(query: string, maxResults = 8, country?:
     ),
     asksLatest(query) || asksLatest(queryEn),
   );
-  for (const [name, run] of ordered) {
+  for (const [name, run] of withoutResting(ordered, await restingSources())) {
+    const attemptsBefore = lastWebSearchAttempts.length;
     const raw = await run();
+    const said = lastWebSearchAttempts.slice(attemptsBefore);
+    if (refused(said)) await restSource(name, said.join(" "));
     // Groq/Gemini بيرجّعوا ملخّص الإجابة كنتيجة أولى؛ ده كلام موديل بحث فعلاً، بيعدّي زي أي نتيجة.
     // ويكيبيديا اتفلترت جوه، كل لغة على سؤالها.
     // ويكيبيديا اتفلترت ورتّبت جوه (والأحدث الأول لسؤال «آخر مرة»).
@@ -3134,7 +3170,7 @@ async function handle(req: Request): Promise<Response> {
         const currency = typeof payload?.currency === "string" ? payload.currency.toUpperCase() : market.currency;
         // ٤.٣: مدينة الهدف لو معروفة ('' = البلد كله).
         const city = cleanCity(payload?.city);
-        const hits = await webSearchSnippets(storeDealsQuery(store, market.name, city), 8, market.code);
+        const hits = await cachedDealSearch(storeDealsQuery(store, market.name, city), 8, market.code);
         if (hits.length === 0) return jsonResponse({ ok: true, deals: [], hits: 0, source: lastWebSearchSource });
         const { system, user } = storeDealsPrompt(store, market.name, currency, hits, new Date().toISOString().slice(0, 10), city);
         const parsed = await callJsonModel(system, user, 1500, "routine");
@@ -3229,7 +3265,7 @@ async function handle(req: Request): Promise<Response> {
         const countryCode = typeof payload?.country === "string" ? payload.country.toUpperCase() : null;
         if (!handle && (!topic || !countryCode)) return jsonResponse({ ok: false, reason: "bad_source" }, 400);
         const known = new Set(Array.isArray(payload?.known) ? (payload.known as unknown[]).map(String) : []);
-        const found = await webSearchSnippets(handle ? recipeAccountQuery(handle) : recipeTopicQuery(topic, marketOf(countryCode).name), 10, countryCode ?? undefined);
+        const found = await cachedDealSearch(handle ? recipeAccountQuery(handle) : recipeTopicQuery(topic, marketOf(countryCode).name), 10, countryCode ?? undefined);
         const hits = socialVideoHits(found, handle, known, handle ? null : countryCode, 3);
         const today = new Date().toISOString().slice(0, 10);
         const videos: SocialVideo[] = [];
@@ -3253,7 +3289,7 @@ async function handle(req: Request): Promise<Response> {
         // نوع المحل بيحدد كلمات البحث. فشل القراية = «عروض» بس، زي الأول.
         const { data: seedRow } = await supabase.from("zad_deal_seed_stores").select("kind").eq("country", country).eq("store", store).maybeSingle()
           .then((r) => r, () => ({ data: null }));
-        const found = await webSearchSnippets(tiktokQuery(store, market.name, city, (seedRow as { kind?: string } | null)?.kind), 10, country);
+        const found = await cachedDealSearch(tiktokQuery(store, market.name, city, (seedRow as { kind?: string } | null)?.kind), 10, country);
         const videos = tiktokDealHits(found, store, country, 3);
         const today = new Date().toISOString().slice(0, 10);
         const deals: ReturnType<typeof readStoreDeals> = [];
