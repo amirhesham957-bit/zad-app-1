@@ -51,6 +51,7 @@ class StreetAlertsView {
     this.status = StreetAlertsStatus.unknown,
     this.busy = false,
     this.homeLearned = false,
+    this.commuteOn = false,
   });
 
   /// Where it stands.
@@ -61,6 +62,9 @@ class StreetAlertsView {
 
   /// Whether home is known yet (two nights).
   final bool homeLearned;
+
+  /// Whether the customer agreed to Zad learning their routine.
+  final bool commuteOn;
 }
 
 /// The switch.
@@ -88,6 +92,7 @@ class StreetAlertsController extends Notifier<StreetAlertsView> {
           ? StreetAlertsStatus.on
           : StreetAlertsStatus.needsAlways,
       homeLearned: saved.home != null,
+      commuteOn: saved.commuteOn,
     );
   }
 
@@ -130,6 +135,22 @@ class StreetAlertsController extends Notifier<StreetAlertsView> {
       debugPrint('[places] disable failed: $e');
     }
     await reload();
+  }
+
+  /// The customer's yes or no to learning their routine. Returns false when
+  /// a no could not reach the server; the phone has forgotten it regardless.
+  Future<bool> setCommute({required bool on}) async {
+    final engine = ref.read(placeEngineProvider);
+    if (engine == null) return false;
+    var reached = true;
+    try {
+      await engine.setCommute(on: on);
+    } on Object catch (e) {
+      debugPrint('[places] commute switch: $e');
+      reached = false;
+    }
+    await reload();
+    return reached;
   }
 
   /// The screen that fixes [StreetAlertsStatus.needsAlways] or

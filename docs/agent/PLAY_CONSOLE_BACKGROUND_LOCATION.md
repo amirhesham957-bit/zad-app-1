@@ -43,6 +43,30 @@ the device. This requires background location for geofencing."
 The video must now also show enabling the toggle, the disclosure text, and a
 return-home recap notification.
 
+## ⚠️ Scope grew on 2026-11-08 — resubmit before this ships to Play testers
+
+A third use of the same permission, off by default and with its **own** consent
+sheet: **daily routine learning**. From the home fence's leave and return events,
+the phone works out when the user usually leaves and returns, on which weekdays.
+
+Privacy facts to state in the form and the video:
+- It adds no new location collection: no new fence, sample or route tracking. It
+  reuses the home fence already declared above.
+- Only the summary leaves the device (`commute_summary`: two times and weekdays).
+  No coordinates, workplace or route exist on the server.
+- It applies only to the phone's own account holder. It is never shown to family
+  members, so no one is monitored through it.
+- Turning the switch off erases the outings on the device and the note on the server.
+
+Updated short description for the form: "Zad reminds users of shortage-list items
+when they are near a relevant store. If the user turns them on: it recognizes when
+they return home to recap what they spent, and learns the times they usually leave
+and return, to time its reminders. Home location stays on the device; only times
+are sent. This requires background location for geofencing."
+
+The video must also show the routine switch, its consent sheet («موافق»), and
+turning it off.
+
 ## Why background (not foreground-only)
 
 The reminder is only useful if it fires without the user having the app
@@ -86,5 +110,5 @@ better).
 5. Toggle it off — show the switch flipping and (if visible) that no further
    location access happens.
 
-No other screen or flow in the app touches background location — the video
-doesn't need to cover anything beyond this card.
+The routine switch appears under street alerts in the same section (see the
+2026-11-08 note above), and the video must cover it too.
