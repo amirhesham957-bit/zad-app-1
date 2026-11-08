@@ -1980,6 +1980,17 @@
   "dealsSourcePartner": "رابط شراكة",
   "dealsSourceOther": "المصدر",
   "homeDealsTitle": "عروض على نواقصك",
+  "recipesWeekGroup": "خطة الأسبوع",
+  "recipesWeekAction": "خطة الأسبوع",
+  "recipesWeekDay": "اليوم {day}",
+  "@recipesWeekDay": {
+    "placeholders": { "day": { "type": "int" } }
+  },
+  "recipesOnDeal": "عليه عرض دلوقتي",
+  "recipesFromCreator": "من فيديو @{handle}",
+  "@recipesFromCreator": {
+    "placeholders": { "handle": { "type": "String" } }
+  },
   "recipesTrendingGroup": "ترند دلوقتي",
   "homeDealsSeeAll": "كل العروض",
   "homeDealsWhyNeed": "ناقص عندك",

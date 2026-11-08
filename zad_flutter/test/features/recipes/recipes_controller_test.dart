@@ -44,6 +44,7 @@ class _Chef implements RecipesRemote {
     required String userId,
     required String items,
     bool fresh = false,
+    bool week = false,
     List<String> avoid = const <String>[],
   }) async {
     asked.add(items);

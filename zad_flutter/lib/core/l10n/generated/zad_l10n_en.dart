@@ -2702,6 +2702,25 @@ class ZadL10nEn extends ZadL10n {
   String get homeDealsTitle => 'Deals on what you\'re out of';
 
   @override
+  String get recipesWeekGroup => 'This week\'s plan';
+
+  @override
+  String get recipesWeekAction => 'Week plan';
+
+  @override
+  String recipesWeekDay(int day) {
+    return 'Day $day';
+  }
+
+  @override
+  String get recipesOnDeal => 'On offer now';
+
+  @override
+  String recipesFromCreator(String handle) {
+    return 'From @$handle\'s video';
+  }
+
+  @override
   String get recipesTrendingGroup => 'Trending now';
 
   @override

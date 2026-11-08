@@ -93,6 +93,8 @@ import { brokeModePlan, isBrokeModeActive } from "../_shared/brokeMode.ts";
 import { challengeDayIndex, suggestChallengeCap } from "../_shared/savingsChallenge.ts";
 import { type SavingsAgreement, savingsAgreementFrom } from "../_shared/savingsAgreement.ts";
 import { RECEIPT_REACTIONS_PER_DAY, receiptKey, sanitizeReceiptFacts } from "../_shared/receiptReaction.ts";
+import { runSocialRecipes } from "./socialRecipesRun.ts";
+import { AFFINITY_SCOPE, affinityNote, type Polarity, signalTerms, statedPreference } from "../_shared/dealRelevance.ts";
 import { seasonFor, seasonInstruction, upcomingSeason, upcomingSeasonInstruction } from "../_shared/season.ts";
 import { SEASON_PLAN_DAYS, seasonPlanInstruction, upcomingCalendarSeasons } from "../_shared/seasonCalendar.ts";
 import { type FastIntent, formatBalanceReply, parseFastPath } from "./fastPath.ts";
@@ -703,6 +705,17 @@ async function writeMemoryNoteWithLinking(
   await embedAndLinkNote(sb, userId, scope, note, { link: upsertStatus !== "conflict", noteId });
 
   return { status: upsertStatus };
+}
+
+/**
+ * إشارة تفضيل (dealRelevance.ts): نفس zad_memory_upsert بتاعة الذاكرة، فالتكرار بيقوّي الوزن. من غير embedding: ضغطة على عرض
+ * مش لازم تكلّف نداء موديل. الفشل مايوقفش حاجة.
+ */
+async function bumpAffinity(sb: SupabaseClient, userId: string, polarity: Polarity, term: string, confidence: number): Promise<void> {
+  const { error } = await sb.rpc("zad_memory_upsert", {
+    p_user: userId, p_scope: AFFINITY_SCOPE, p_note: affinityNote(polarity, term), p_conf: confidence, p_family_id: null, p_valid_until: null,
+  });
+  if (error) console.warn("[affinity] write failed:", error.message);
 }
 
 /**
@@ -4603,6 +4616,8 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
     case "find_deals": {
       const store = String(input?.store ?? "").trim().slice(0, 60);
       const item = String(input?.item_name ?? "").trim().slice(0, 60);
+      // العميل طلبها بنفسه: بتعلّي العروض دي بعد كده.
+      for (const t of signalTerms(item, store)) await bumpAffinity(sb, userId, "like", t, 0.6);
       return await findChatDeals(sb, userId, store, item);
     }
 
@@ -7989,6 +8004,12 @@ async function handleAgentTurnInLane(
   // لنفس الفايدة. NONE صريحة لكل سطر لو مفيش حاجة تستاهل، مفيش إجبار.
   // After the response: the reply does not depend on it, and it was a whole
   // model call the customer waited through on every turn that wrote something.
+  // «أنا بحب…» و«مش باكل…» بتتحفظ بالكود، مش معتمدة إن الموديل يفتكر (طلب المالك ٨/١١). الحساس له مساره (sensitiveMemory.ts).
+  const stated = statedPreference(message);
+  if (stated && !sensitiveTopic(stated.term)) {
+    afterResponse("stated preference", bumpAffinity(sb, userId, stated.polarity, stated.term, 0.95));
+  }
+
   if (ctx.mutationCount > 0 || mentionsLifeFact(message)) {
     afterResponse("post-turn fact/skill extraction", (async () => {
       const extraction = await callModel({
@@ -9361,6 +9382,16 @@ async function handleRequest(req: Request): Promise<Response> {
 
     // تيك توك من غير كشط (طلب المالك ٧/١١، zad-core-intelligence/tiktokDeals.ts): نفس المحلات بدورها (zad_deal_source_targets
     // بـ'tiktok')، محرك البحث بـsite:tiktok.com ونص نتايج الفيديوهات بيتقري، وكل عرض برابط الفيديو وكل كود في zad_deal_codes.
+    // وصفات وعروض تيك توك (ZAD_PLAN ٧.٤): السيرفر بيقرا من محرك البحث، وهنا الكتابة. slot = تلت المصادر في كل نوبة.
+    if (body.action === "social_recipes_run") {
+      if (!(await secretMatches(req.headers.get("ZAD-PROACTIVE-CRON-SECRET"), "ZAD_PROACTIVE_CRON_SECRET"))) {
+        return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: CORS_HEADERS });
+      }
+      const sbSocial = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+      const out = await runSocialRecipes(sbSocial, Number(body.slot) || 0, (p) => callCoreIntel("social_recipes_scan", p, "social_recipes_run", 60_000));
+      return new Response(JSON.stringify(out), { headers: CORS_HEADERS });
+    }
+
     if (body.action === "deals_tiktok_run") {
       if (!(await secretMatches(req.headers.get("ZAD-PROACTIVE-CRON-SECRET"), "ZAD_PROACTIVE_CRON_SECRET"))) {
         return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: CORS_HEADERS });
@@ -10178,6 +10209,20 @@ async function handleRequest(req: Request): Promise<Response> {
     // بتقوله بصوتها "رجعت! روحت فين وصرفت إيه". مابنتكلمش على خروجة من غير صرف — ده تطفّل.
     // شريط العروض على الرئيسية (طلب المالك ٤/١١): عروض بلد العميل اللي على نواقص بيته (قايمة الشرا، اللي قرّب يخلص)
     // ومحلاته، بنفس اختيار رسالة الموسم (seasonDigest.ts) — قراية بس، من غير أي موديل. الهوية من JWT بس.
+    // العميل ضغط على عرض (التطبيق). الهوية من JWT بس، والرد مش مهم للشاشة.
+    if (body.action === "deal_signal") {
+      const signalUser = await resolveRequestUserId(req, body);
+      if (!signalUser) {
+        return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: CORS_HEADERS });
+      }
+      const polarity: Polarity = body.signal === "dismiss" ? "dislike" : "like";
+      const sbSignal = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+      for (const t of signalTerms(String(body.item ?? "").slice(0, 80), String(body.store ?? "").slice(0, 60)).slice(0, 2)) {
+        await bumpAffinity(sbSignal, signalUser, polarity, t, 0.5);
+      }
+      return new Response(JSON.stringify({ ok: true }), { headers: CORS_HEADERS });
+    }
+
     if (body.action === "home_deals") {
       const dealsUserId = await resolveRequestUserId(req, body);
       if (!dealsUserId) {

@@ -13,6 +13,7 @@ abstract interface class RecipesRemote {
     required String userId,
     required String items,
     bool fresh = false,
+    bool week = false,
     List<String> avoid = const <String>[],
   });
 
@@ -40,6 +41,7 @@ class SupabaseRecipesRemote implements RecipesRemote {
     required String userId,
     required String items,
     bool fresh = false,
+    bool week = false,
     List<String> avoid = const <String>[],
   }) async {
     final response = await _client.functions.invoke(
@@ -50,6 +52,7 @@ class SupabaseRecipesRemote implements RecipesRemote {
         'payload': <String, dynamic>{
           'items': items,
           if (fresh) 'fresh': true,
+          if (week) 'week': true,
           if (avoid.isNotEmpty) 'avoid': avoid,
         },
       },

@@ -4723,6 +4723,36 @@ abstract class ZadL10n {
   /// **'عروض على نواقصك'**
   String get homeDealsTitle;
 
+  /// No description provided for @recipesWeekGroup.
+  ///
+  /// In ar, this message translates to:
+  /// **'خطة الأسبوع'**
+  String get recipesWeekGroup;
+
+  /// No description provided for @recipesWeekAction.
+  ///
+  /// In ar, this message translates to:
+  /// **'خطة الأسبوع'**
+  String get recipesWeekAction;
+
+  /// No description provided for @recipesWeekDay.
+  ///
+  /// In ar, this message translates to:
+  /// **'اليوم {day}'**
+  String recipesWeekDay(int day);
+
+  /// No description provided for @recipesOnDeal.
+  ///
+  /// In ar, this message translates to:
+  /// **'عليه عرض دلوقتي'**
+  String get recipesOnDeal;
+
+  /// No description provided for @recipesFromCreator.
+  ///
+  /// In ar, this message translates to:
+  /// **'من فيديو @{handle}'**
+  String recipesFromCreator(String handle);
+
   /// No description provided for @recipesTrendingGroup.
   ///
   /// In ar, this message translates to:

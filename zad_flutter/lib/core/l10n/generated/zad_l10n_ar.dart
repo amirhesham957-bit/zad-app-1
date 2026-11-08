@@ -2638,6 +2638,25 @@ class ZadL10nAr extends ZadL10n {
   String get homeDealsTitle => 'عروض على نواقصك';
 
   @override
+  String get recipesWeekGroup => 'خطة الأسبوع';
+
+  @override
+  String get recipesWeekAction => 'خطة الأسبوع';
+
+  @override
+  String recipesWeekDay(int day) {
+    return 'اليوم $day';
+  }
+
+  @override
+  String get recipesOnDeal => 'عليه عرض دلوقتي';
+
+  @override
+  String recipesFromCreator(String handle) {
+    return 'من فيديو @$handle';
+  }
+
+  @override
   String get recipesTrendingGroup => 'ترند دلوقتي';
 
   @override

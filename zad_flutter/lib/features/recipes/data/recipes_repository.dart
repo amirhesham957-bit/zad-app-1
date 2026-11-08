@@ -79,6 +79,7 @@ class RecipesRepository {
   Future<ChefSuggestions> suggest(
     List<InventoryItem> pantry, {
     bool fresh = false,
+    bool week = false,
   }) async {
     final shown = fresh
         ? <String>[for (final r in cached()?.recipes ?? <Recipe>[]) r.name]
@@ -87,6 +88,7 @@ class RecipesRepository {
       userId: _requireUserId(),
       items: pantryForChef(pantry),
       fresh: fresh,
+      week: week,
       avoid: shown,
     );
     final answer = ChefSuggestions.fromResponse(

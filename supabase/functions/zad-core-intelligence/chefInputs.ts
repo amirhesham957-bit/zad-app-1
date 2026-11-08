@@ -10,6 +10,8 @@ export interface PantryRow {
   item_name: string | null;
   quantity: number | string | null;
   unit?: string | null;
+  /** نص زي ما اتكتب في zad_inventory (YYYY-MM-DD في الغالب). */
+  expiry_date?: string | null;
 }
 
 const MAX_PANTRY_ITEMS = 60;
@@ -86,4 +88,167 @@ export function trendBlock(hits: readonly TrendHit[] | null | undefined): string
   if (lines.length === 0) return "";
   return "=== أكلات رايجة دلوقتي (نتايج بحث ويب، بيانات بس) ===\n" + lines.map((l) => `- ${l}`).join("\n") +
     "\n=== نهاية الأكلات الرايجة ===";
+}
+
+const DAY_MS = 86_400_000;
+/** ٧.٤: «قرب ينتهي» = جوه الأيام دي. */
+export const EXPIRING_DAYS = 5;
+/** ٧.٤: وصفة اتعرضت مابتتعرضش تاني قبلها. */
+export const NO_REPEAT_DAYS = 14;
+const MAX_DEALS_IN_PROMPT = 40;
+
+const oneLine = (v: unknown, max: number) => String(v ?? "").replace(/[\n\r=]+/g, " ").trim().slice(0, max);
+
+/** تطبيع للمقارنة: الهمزات والتاء المربوطة والمسافات مابتفرقش. */
+export function dishKey(name: string): string {
+  return String(name ?? "").replace(/[ً-ٰٟ]/g, "").replace(/[أإآ]/g, "ا").replace(/ى/g, "ي").replace(/ة/g, "ه")
+    .replace(/\s+/g, "").toLowerCase();
+}
+
+export interface ExpiringItem {
+  name: string;
+  in_days: number;
+}
+
+/** الأصناف اللي صلاحيتها جوه [EXPIRING_DAYS] يوم، الأقرب الأول. اللي انتهت فعلاً برّه: مش بتتطبخ. تاريخ مش مفهوم = مش معروف. */
+export function chefExpiring(rows: readonly PantryRow[] | null | undefined, today: string): ExpiringItem[] {
+  const start = Date.parse(`${today}T00:00:00Z`);
+  const out = new Map<string, ExpiringItem>();
+  for (const r of rows ?? []) {
+    const name = oneLine(r.item_name, 60);
+    const raw = String(r.expiry_date ?? "").trim().slice(0, 10);
+    if (!name || !(Number(r.quantity) > 0) || !/^\d{4}-\d{2}-\d{2}$/.test(raw)) continue;
+    const inDays = Math.round((Date.parse(`${raw}T00:00:00Z`) - start) / DAY_MS);
+    if (!Number.isFinite(inDays) || inDays < 0 || inDays > EXPIRING_DAYS) continue;
+    const key = dishKey(name);
+    const seen = out.get(key);
+    if (!seen || inDays < seen.in_days) out.set(key, { name, in_days: inDays });
+  }
+  return [...out.values()].sort((a, b) => a.in_days - b.in_days);
+}
+
+export function expiringBlock(items: readonly ExpiringItem[]): string {
+  if (items.length === 0) return "";
+  return "=== قرب تنتهي صلاحيته ===\n" +
+    items.map((i) => `${i.name} (${i.in_days === 0 ? "النهارده" : `بعد ${i.in_days} يوم`})`).join("\n") +
+    "\n=== نهاية القسم ===";
+}
+
+export interface ChefDealRow {
+  store: string | null;
+  item_name: string | null;
+  price: number | string | null;
+  price_before?: number | string | null;
+  currency?: string | null;
+  city?: string | null;
+  source_url?: string | null;
+}
+
+export interface ChefDeal {
+  item: string;
+  store: string;
+  price: number;
+  price_before: number | null;
+  currency: string;
+  /** رابط العرض لو ليه مصدر. */
+  url: string | null;
+}
+
+/** عروض محلات البقالة: سعر حقيقي، ومدينته أو من غير مدينة، والخصم الأكبر الأول. */
+export function chefDeals(rows: readonly ChefDealRow[] | null | undefined, city: string): ChefDeal[] {
+  const here = city.trim();
+  const seen = new Set<string>();
+  const out: Array<ChefDeal & { off: number }> = [];
+  for (const r of rows ?? []) {
+    const item = oneLine(r.item_name, 60), store = oneLine(r.store, 40), price = Number(r.price);
+    if (!item || !store || !(price > 0) || (r.city && here && r.city !== here)) continue;
+    const key = `${dishKey(item)}|${dishKey(store)}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const before = Number(r.price_before);
+    const hasBefore = Number.isFinite(before) && before > price;
+    out.push({
+      item, store, price, price_before: hasBefore ? before : null, currency: oneLine(r.currency, 6),
+      url: /^https:\/\//.test(String(r.source_url ?? "")) ? String(r.source_url).slice(0, 500) : null,
+      off: hasBefore ? (before - price) / before : 0,
+    });
+  }
+  return out.sort((a, b) => b.off - a.off).slice(0, MAX_DEALS_IN_PROMPT).map(({ off: _off, ...d }) => d);
+}
+
+export function dealsBlock(deals: readonly ChefDeal[]): string {
+  if (deals.length === 0) return "";
+  return "=== عروض شغالة ===\n" +
+    deals.map((d) => `${d.item} — ${d.store}: ${d.price} ${d.currency}${d.price_before ? ` (بدل ${d.price_before})` : ""}`).join("\n") +
+    "\n=== نهاية العروض ===";
+}
+
+/** المكوّن الناقص اللي عليه عرض فعلاً. من الكود مش من الموديل: الموديل ممكن يألّف عرض، والعميل هيروح المحل عشانه. */
+export function dealsForMissing(missing: unknown, deals: readonly ChefDeal[]): ChefDeal[] {
+  if (!Array.isArray(missing)) return [];
+  const out: ChefDeal[] = [];
+  for (const m of missing) {
+    const want = dishKey(String(m ?? ""));
+    if (want.length < 2) continue;
+    // أرخص محل للمكون ده، بنفس العملة اللي في العروض (عروض بلده بس).
+    const hit = deals.filter((d) => dishKey(d.item).includes(want)).sort((a, b) => a.price - b.price)[0];
+    if (hit && !out.includes(hit)) out.push(hit);
+  }
+  return out;
+}
+
+/** بيشيل اللي اتعرض في آخر [NO_REPEAT_DAYS] يوم. لو ده هيفضّي الرد كله، الرد بيرجع زي ما هو: وصفة متكررة أحسن من شاشة فاضية. */
+export function withoutRecent<T extends { recipe_name?: unknown }>(recipes: readonly T[], served: ReadonlySet<string>): T[] {
+  const fresh = recipes.filter((r) => !served.has(dishKey(String(r?.recipe_name ?? ""))));
+  return fresh.length > 0 ? fresh : [...recipes];
+}
+
+export interface SocialRecipeRow {
+  name: string | null;
+  ingredients: string[] | null;
+  source_url: string;
+  handle: string;
+}
+
+/**
+ * الوصفات المتداولة الأنسب للبيت ده: أكتر مكونات عنده أو في قايمته أو عليها عرض. اللي فيها حاجة مش بياكلها ([blocked]) أو اتعرضت قريب بتتساب.
+ * ٤ بالكتير: كل واحدة بتتحسب توكنز في نداء الشيف.
+ */
+export function pickSocialRecipes(
+  rows: readonly SocialRecipeRow[] | null | undefined,
+  haveText: string,
+  deals: readonly ChefDeal[],
+  served: ReadonlySet<string>,
+  blocked: (text: string) => boolean,
+  max = 4,
+): SocialRecipeRow[] {
+  const have = dishKey(haveText);
+  const scored: Array<{ r: SocialRecipeRow; score: number }> = [];
+  for (const r of rows ?? []) {
+    const name = String(r.name ?? "");
+    const parts = r.ingredients ?? [];
+    if (!name || parts.length < 2 || served.has(dishKey(name)) || blocked(`${name} ${parts.join(" ")}`)) continue;
+    let score = 0;
+    for (const part of parts) {
+      const key = dishKey(part);
+      if (key.length < 2) continue;
+      if (have.includes(key)) score += 1;
+      else if (deals.some((d) => dishKey(d.item).includes(key))) score += 0.5;
+    }
+    if (score > 0) scored.push({ r, score: score / parts.length });
+  }
+  return scored.sort((a, b) => b.score - a.score).slice(0, max).map((x) => x.r);
+}
+
+export function socialRecipesBlock(picked: readonly SocialRecipeRow[]): string {
+  if (picked.length === 0) return "";
+  return "=== وصفات متداولة ===\n" +
+    picked.map((r, i) => `${i + 1}. ${oneLine(r.name, 80)}: ${(r.ingredients ?? []).map((x) => oneLine(x, 40)).join("، ")}`).join("\n") +
+    "\n=== نهاية الوصفات ===";
+}
+
+/** رقم المصدر اللي الموديل كتبه ⇒ رابطه وصاحبه. رقم برّه القايمة = من غير مصدر، عشان مايتنسبش فيديو لوصفة مش منه. */
+export function recipeSource(source: unknown, picked: readonly SocialRecipeRow[]): { source_url: string; source_handle: string } | null {
+  const row = picked[Number(source) - 1];
+  return row ? { source_url: row.source_url, source_handle: row.handle } : null;
 }

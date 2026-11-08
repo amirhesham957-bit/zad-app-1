@@ -42,6 +42,7 @@ async function callerCountry(req: Request, userId: unknown): Promise<string | nu
   }
 }
 import { googleNearbyAny, googlePlacesKeys } from "./googlePlaces.ts";
+import { dealRelevance, loadAffinity, rankByRelevance } from "../_shared/dealRelevance.ts";
 import { tiktokDealHits, tiktokDealsPrompt, tiktokQuery, withPriceFromPercent } from "./tiktokDeals.ts";
 import { brochureEntries, OFFICIAL_FLYER_SITES, OFFICIAL_FLYER_UA, officialFlyerDeals, officialFlyerPrompt, robotsAllows, siteForPdf } from "./officialFlyers.ts";
 import { fillMarketCurrency, DEAL_SEARCH_TIMEOUT_MS, dealQuery, dealsFromHitsPrompt, dealSearchItems, readDeals, readReverseCity, readStoreDeals, reverseCityUrl, sameCurrency, cleanCity, searchStoreName, storeDealsPrompt, storeDealsQuery, videoDealsPrompt, youtubeDealVideos, instagramDealPosts, postDealsPrompt, flyerDealsPrompt, readDealCodes, type DealCode } from "./liveDeals.ts";
@@ -51,7 +52,8 @@ import {
   youtubeProbe, youtubeSearch,
 } from "./socialSources.ts";
 import { tavilyProbe, tavilySearch } from "./tavily.ts";
-import { avoidNames, chefPantryLine, type PantryRow, trendBlock, trendCacheKey, trendQuery } from "./chefInputs.ts";
+import { readSocialVideo, recipeAccountQuery, recipeTopicQuery, socialVideoHits, socialVideoPrompt, type SocialVideo } from "./socialRecipes.ts";
+import { avoidNames, chefDeals, type ChefDeal, type ChefDealRow, chefExpiring, chefPantryLine, dealsBlock, dealsForMissing, dishKey, type ExpiringItem, expiringBlock, NO_REPEAT_DAYS, type PantryRow, pickSocialRecipes, recipeSource, type SocialRecipeRow, socialRecipesBlock, trendBlock, trendCacheKey, trendQuery, withoutRecent } from "./chefInputs.ts";
 import { householdFamilyId, householdFilter } from "../_shared/household.ts";
 import { budgetUsage, dailyCap, encyclopediaFirstForLatest, groundingPlan, KEY_REST_MS, keyRefused, paidQuotaExhausted, takeSearchBudget, tavilyFirstWhileGroundingRests, withPaidGroundingFirst } from "./paidSearch.ts";
 
@@ -2125,18 +2127,34 @@ async function handle(req: Request): Promise<Response> {
         // المخزن من السيرفر (chefInputs.ts): نسخة التطبيق المحلية ممكن تكون متأخرة — بلاغ المالك ٦/١١ شاف «حليب ومياه»
         // والمخزن فيه ٨ أصناف. فشل القراية أو مخزن فاضي على السيرفر = نص التطبيق زي ما هو.
         let items = String(payload?.items ?? "");
+        // ٧.٤: اللي قرب تنتهي صلاحيته، من نفس قراية المخزن.
+        let expiring: ExpiringItem[] = [];
         try {
           const familyId = await householdFamilyId(supabase as never, user_id);
-          const { data: pantryRows } = await supabase.from("zad_inventory").select("item_name,quantity")
+          const { data: pantryRows } = await supabase.from("zad_inventory").select("item_name,quantity,expiry_date")
             .or(householdFilter(user_id, familyId)).gt("quantity", 0).limit(200);
           const serverLine = chefPantryLine((pantryRows ?? []) as PantryRow[]);
           if (serverLine) items = serverLine;
+          expiring = chefExpiring((pantryRows ?? []) as PantryRow[], new Date().toISOString().slice(0, 10));
         } catch (e) {
           console.error("[CoreIntel] meal_suggestions pantry read failed:", (e as Error).message);
         }
         // «اقتراحات جديدة»: الكاش بيتعدّى، واللي اتعرض قبل كده مايتكررش.
         const fresh = payload?.fresh === true;
-        const avoid = avoidNames(payload?.avoid);
+        // ٧.٤: «خطة الأسبوع»: ٧ وصفات، واحدة لكل يوم.
+        const week = payload?.week === true;
+        // ٧.٤: اللي اتعرض في آخر أسبوعين مايتعرضش تاني، حتى من غير «اقتراحات جديدة».
+        let served = new Set<string>();
+        let servedNames: string[] = [];
+        try {
+          const { data: servedRows } = await supabase.from("zad_chef_served").select("recipe_name,name_key").eq("user_id", user_id)
+            .gte("served_at", new Date(Date.now() - NO_REPEAT_DAYS * 86_400_000).toISOString()).order("served_at", { ascending: false }).limit(40);
+          served = new Set(((servedRows ?? []) as Array<{ name_key: string }>).map((r) => r.name_key));
+          servedNames = ((servedRows ?? []) as Array<{ recipe_name: string }>).map((r) => r.recipe_name);
+        } catch (e) {
+          console.error("[CoreIntel] meal_suggestions served read failed:", (e as Error).message);
+        }
+        const avoid = [...new Set([...avoidNames(payload?.avoid), ...avoidNames(servedNames.slice(0, 12)), ...avoidNames(servedNames.slice(12, 24))])];
         // الكاش بقى شخصي: الرد بقى فيه تفضيلات العميلة (تحت)، فمشاركته بين عملاء مختلف
         // مخزونهم زي بعضه كانت هتسرّب اقتراح مبني على حد تاني، أو تتجاهل تفضيلات العميلة
         // دي وترجّع رد حد تاني اتخزن الأول.
@@ -2151,7 +2169,7 @@ async function handle(req: Request): Promise<Response> {
           console.error("[CoreIntel] meal_suggestions broke mode lookup failed:", (e as Error).message);
         }
         const cacheKey = mealSuggestionsCacheKey({
-          userId: user_id, dialect: dialectPrefix, person: personTag, brokeMode, items: items || "",
+          userId: user_id, dialect: dialectPrefix, person: personTag, brokeMode, items: (week ? "week|" : "") + (items || ""),
         });
         const cached = fresh ? null : await getCachedAiResponse(cacheKey);
         if (cached) return jsonResponse(cached);
@@ -2173,6 +2191,51 @@ async function handle(req: Request): Promise<Response> {
           trends = trendBlock(hits);
         } catch (e) {
           console.error("[CoreIntel] meal_suggestions trends failed:", (e as Error).message);
+        }
+
+        // ٧.٤: عروض البقالة الشغالة في بلده ومدينته: مش في وضع الطوارئ، لأن العرض دعوة للشرا. فشل القراية = من غير عروض.
+        let liveDeals: ChefDeal[] = [];
+        // تفضيلاته: عروض على حاجة مش بياكلها مابتوصلش للشيف، ولا وصفات فيها.
+        const affinity = await loadAffinity(supabase as never, user_id);
+        if (!brokeMode) {
+          try {
+            const { data: who } = await supabase.from("zad_users").select("country,travel_country").eq("id", user_id).maybeSingle();
+            const dealCountry = String((who as { travel_country?: string | null } | null)?.travel_country || (who as { country?: string | null } | null)?.country || "").toUpperCase();
+            if (/^[A-Z]{2}$/.test(dealCountry)) {
+              const [{ data: stores }, { data: place }] = await Promise.all([
+                supabase.from("zad_deal_seed_stores").select("store").eq("country", dealCountry).in("kind", ["grocery", "delivery"]).limit(120),
+                supabase.from("zad_user_city").select("city").eq("user_id", user_id).eq("country", dealCountry).maybeSingle(),
+              ]);
+              const names = ((stores ?? []) as Array<{ store: string }>).map((r) => r.store);
+              if (names.length) {
+                const { data: dealRows } = await supabase.from("zad_deals")
+                  .select("store,item_name,price,price_before,currency,city,source_url").eq("country", dealCountry).in("store", names)
+                  .gt("expires_at", new Date().toISOString()).limit(200);
+                liveDeals = rankByRelevance(chefDeals((dealRows ?? []) as ChefDealRow[], String((place as { city?: string } | null)?.city ?? "")), affinity);
+              }
+            }
+          } catch (e) {
+            console.error("[CoreIntel] meal_suggestions deals failed:", (e as Error).message);
+          }
+        }
+
+        // وصفات تيك توك (socialRecipes.ts): الأنسب للي عنده وفي قايمته وعليه عرض. فشل القراية = من غيرها.
+        let socialPicked: SocialRecipeRow[] = [];
+        try {
+          const { data: who } = await supabase.from("zad_users").select("country").eq("id", user_id).maybeSingle();
+          const code = String((who as { country?: string | null } | null)?.country ?? "").toUpperCase();
+          const familyId = await householdFamilyId(supabase as never, user_id);
+          const [{ data: rows }, { data: shop }] = await Promise.all([
+            supabase.from("zad_social_recipes").select("name,ingredients,source_url,handle")
+              .not("name", "is", null).or(`country.is.null,country.eq.${/^[A-Z]{2}$/.test(code) ? code : "XX"}`)
+              .gte("found_at", new Date(Date.now() - 120 * 86_400_000).toISOString()).order("found_at", { ascending: false }).limit(150),
+            supabase.from("zad_shopping_list").select("item_name").or(householdFilter(user_id, familyId)).eq("is_purchased", false).limit(50),
+          ]);
+          const wanted = ((shop ?? []) as Array<{ item_name: string | null }>).map((r) => r.item_name ?? "").join(" ");
+          socialPicked = pickSocialRecipes(rows as SocialRecipeRow[] | null, `${items} ${wanted}`, liveDeals, served,
+            (text) => dealRelevance({ item: text }, affinity).blocked);
+        } catch (e) {
+          console.error("[CoreIntel] meal_suggestions social recipes failed:", (e as Error).message);
         }
 
         // تقوية شيف زاد: آخر آراء العميلة على وصفات قبل كده — إعجاب وعدم إعجاب بس، مش
@@ -2268,6 +2331,12 @@ async function handle(req: Request): Promise<Response> {
           // السبب اللي التطبيق موجود عشانه.
           "رتّبي اقتراحاتك على أساس الأصناف اللي قرب تخلص أو قرب تنتهي صلاحيتها (لو متعلّمة " +
           "في المخزون) قبل أي حاجة تانية.\n" +
+          (expiring.length > 0
+            ? "الأصناف في قسم === قرب تنتهي صلاحيته === أول حاجة: أول وصفة لازم تستخدم منها، واللي مش هيلحق يتطبخ قولي في `text` إنه يتجمّد.\n"
+            : "") +
+          (liveDeals.length > 0
+            ? "قسم === عروض شغالة === فيه أصناف عليها خصم فعلاً: في «وجبات تانية» فضّلي الناقص يبقى منها. متذكريش عرض مش في القسم ده، ومتكتبيش سعر من عندك.\n"
+            : "") +
           "لكل وجبة: `missing_ingredients` لازم تبقى بالظبط اللي ناقص مش موجود في المخزون — " +
           "دي بتتحوّل لقائمة تسوق بضغطة واحدة، فأي صنف زيادة فيها بيكلّف العميل فلوس بلا داعي.\n" +
           "`image_keyword_en` اسم الأكلة بالإنجليزي بكلمتين أو تلاتة للبحث عن صورة " +
@@ -2296,10 +2365,23 @@ async function handle(req: Request): Promise<Response> {
             ? "العميل شاف الوصفات دي وطلب اقتراحات جديدة — **متكرريش ولا واحدة منها ولا نفس الأكلة باسم تاني**: " +
               avoid.join("، ") + ".\n"
             : "") +
+          (socialPicked.length > 0
+            ? "قسم === وصفات متداولة === فيه وصفات الناس بتعملها، بأرقام: لو واحدة مناسبة استخدميها باسمها في مجموعة مناسبة، واكتبي `\"source\"` برقمها. ولو مش منها، سيبي `source` فاضي.\n"
+            : "") +
+          (affinity.some((a) => a.polarity === "dislike")
+            ? "العميل قال إنه مش بيحب أو مش بياكل: " + affinity.filter((a) => a.polarity === "dislike").map((a) => a.term).join("، ") + " — متقترحيش وصفة فيها.\n"
+            : "") +
+          (week
+            ? "⬅️ المطلوب المرة دي خطة أسبوع: ٧ وصفات مختلفة بالظبط في `recipes`، واحدة لكل يوم بالترتيب، بدل المجموعات اللي فوق. " +
+              "أول الأيام للأصناف اللي قرب تنتهي صلاحيتها، والوصفات تتنوّع ومايتكررش فيها نفس البروتين يومين ورا بعض.\n"
+            : "") +
           `الشهر الحالي: ${seasonMonthAr} — لو فيه مناسبة موسمية معروفة (رمضان، الصيف، الشتاء، الأعياد) خدي بالك منها في اقتراحاتك، من غير ما تفرضيها لو المخزون مش مناسب.\n`;
         const userPrompt = "=== المخزون ===\n" + (items || "لا يوجد مخزون") + "\n=== نهاية المخزون ===" +
+          (expiring.length > 0 ? "\n" + expiringBlock(expiring) : "") +
+          (liveDeals.length > 0 ? "\n" + dealsBlock(liveDeals) : "") +
+          (socialPicked.length > 0 ? "\n" + socialRecipesBlock(socialPicked) : "") +
           (trends ? "\n" + trends : "");
-        const result = await logged(user_id, action, "callJsonModel", { args: [systemPrompt, userPrompt] }, () => callJsonModel(systemPrompt, userPrompt));
+        const result = await logged(user_id, action, "callJsonModel", { args: [systemPrompt, userPrompt] }, () => callJsonModel(systemPrompt, userPrompt, week ? 4000 : undefined));
         // same honest-failure contract as recipe_details: null/ok:false on a genuine upstream
         // failure instead of baking in Arabic text that looks like a real AI reply. The Kotlin
         // client (ZadAiRepository.suggestMeals) already falls back to its own "لم أتمكن..."
@@ -2312,12 +2394,31 @@ async function handle(req: Request): Promise<Response> {
         // حارس فوق البرومبت: في وضع الطوارئ أي وصفة محتاجة شراء بتتشال، مش بتتعرض.
         const allowedRecipes = brokeMode ? rawRecipes.filter((r: { missing_ingredients_to_buy?: unknown }) => recipeNeedsNoShopping(r?.missing_ingredients_to_buy)) : rawRecipes;
         // «من مخزونك» الأول، وكل وصفة معلّمة: التطبيق بيعرض «مكتملة من مخزونك» أو «ناقصك …».
-        const flagged = allowedRecipes.map((r: { missing_ingredients_to_buy?: unknown; trending?: unknown }) => ({
+        const flagged = withoutRecent(allowedRecipes as Array<{ recipe_name?: unknown; missing_ingredients_to_buy?: unknown; trending?: unknown }>, served).map((r) => ({
           ...r, from_inventory: recipeNeedsNoShopping(r?.missing_ingredients_to_buy), trending: !!trends && r?.trending === true,
+          deal_items: dealsForMissing(r?.missing_ingredients_to_buy, liveDeals),
+          ...recipeSource((r as { source?: unknown })?.source, socialPicked),
         })).sort((a: { from_inventory: boolean }, b: { from_inventory: boolean }) => Number(b.from_inventory) - Number(a.from_inventory));
-        const recipes = flagged.length ? await attachRecipeImages(flagged) : [];
+        // خطة الأسبوع بترتيب الموديل: اليوم من مكان الوصفة، بعد شيل اللي اتكرر.
+        const ordered = week
+          ? withoutRecent(allowedRecipes as Array<{ recipe_name?: unknown; missing_ingredients_to_buy?: unknown }>, served).slice(0, 7).map((r, i) => ({
+            ...r, day: i + 1, from_inventory: recipeNeedsNoShopping(r?.missing_ingredients_to_buy), trending: false,
+            deal_items: dealsForMissing(r?.missing_ingredients_to_buy, liveDeals),
+          ...recipeSource((r as { source?: unknown })?.source, socialPicked),
+          }))
+          : flagged;
+        const recipes = ordered.length ? await attachRecipeImages(ordered) : [];
         const response = { text: result?.text || null, recipes, ok: !!result?.text };
-        if (response.ok) await setCachedAiResponse(cacheKey, "meal_suggestions", response);
+        if (response.ok) {
+          await setCachedAiResponse(cacheKey, "meal_suggestions", response);
+          // ٧.٤: اللي اتعرض دلوقتي مايتعرضش تاني قبل ١٤ يوم.
+          const servedNow = (recipes as Array<{ recipe_name?: unknown }>).map((r) => String(r?.recipe_name ?? "").trim().slice(0, 120)).filter(Boolean)
+            .map((recipe_name) => ({ user_id, name_key: dishKey(recipe_name), recipe_name, served_at: new Date().toISOString() }));
+          if (servedNow.length) {
+            const { error: servedErr } = await supabase.from("zad_chef_served").upsert(servedNow, { onConflict: "user_id,name_key" });
+            if (servedErr) console.error("[CoreIntel] meal_suggestions served write failed:", servedErr.message);
+          }
+        }
         return jsonResponse(response);
       }
 
@@ -3000,21 +3101,24 @@ async function handle(req: Request): Promise<Response> {
         const { location } = payload || {};
         const items = dealSearchItems(payload?.items);
         if (items.length === 0) return jsonResponse({ deals: [], ok: true });
+        // تفضيلات العميل قبل ما العرض يوصل لزادو أو لإشعار (dealRelevance.ts): اللي قال إنه مش بيحبه بيتشال، واللي بيحبه يطلع فوق.
+        const affinity = user_id ? await loadAffinity(supabase as never, user_id) : [];
+        const relevant = <T extends { item?: unknown; store?: unknown }>(list: T[]) => rankByRelevance(list, affinity);
         const systemPrompt = "أنت باحث عروض تسوق حقيقي. ابحث في الويب عن أحدث العروض والتخفيضات الفعلية المتاحة الآن من متاجر ومحلات سوبرماركت معروفة في المنطقة المحددة للأصناف المطلوبة. لا تخترع أي متجر أو سعر أو نسبة خصم أبداً — إذا لم تجد عرضاً حقيقياً موثقاً لصنف معين، تجاهله تماماً. أجب فقط بمصفوفة JSON بدون أي نص إضافي بالشكل: [{\"item\":\"\",\"store\":\"\",\"price\":0.0,\"discount_percent\":0.0,\"note\":\"\"}]. إذا لم تجد أي عروض حقيقية لأي صنف، أرجع مصفوفة فارغة [].";
         const userPrompt = "المنطقة: " + (location || "السعودية") + " | الأصناف المطلوب البحث عن عروض لها: " + items.join("، ");
         // Google-grounded Gemini first (10 keys), compound-mini only when it did not answer.
         const grounded = await logged(user_id, action, "callGroundedJson", { args: [systemPrompt, userPrompt] }, () => callGroundedJson(systemPrompt, userPrompt));
         if (grounded.ok && Array.isArray(grounded.parsed)) {
-          return jsonResponse({ deals: grounded.parsed, sources: [], ok: true, source: "gemini_google_search" });
+          return jsonResponse({ deals: relevant(grounded.parsed as Array<{ item?: unknown; store?: unknown }>), sources: [], ok: true, source: "gemini_google_search" });
         }
         // Grounding out of quota: the ordinary search chain, read by the ordinary model pool.
         const searched = await logged(user_id, action, "dealsFromWebSearch", { args: [items] }, () => dealsFromWebSearch(items, String(location ?? ""), payload?.country));
         if (searched !== null) {
-          return jsonResponse({ deals: searched.deals, sources: searched.sources, ok: true, source: "web_search" });
+          return jsonResponse({ deals: relevant(searched.deals as Array<{ item?: unknown; store?: unknown }>), sources: searched.sources, ok: true, source: "web_search" });
         }
         const result = await logged(user_id, action, "callCompoundSearch", { args: [systemPrompt, userPrompt] }, () => callCompoundSearch(systemPrompt, userPrompt, 1500, DEAL_SEARCH_TIMEOUT_MS));
         const deals = Array.isArray(result?.parsed) ? result.parsed : [];
-        return jsonResponse({ deals, sources: result?.executedTools || [], ok: result?.ok !== false });
+        return jsonResponse({ deals: relevant(deals as Array<{ item?: unknown; store?: unknown }>), sources: result?.executedTools || [], ok: result?.ok !== false });
       }
 
       // ──────────────────────────────────────────────
@@ -3117,6 +3221,27 @@ async function handle(req: Request): Promise<Response> {
       // zad-brain (deals_tiktok_run). محرك البحث بـsite:tiktok.com ⇐ نتايج الفيديوهات بعنوانها ووصفها ⇐ جيميناي.
       // مفيش طلب لتيك توك نفسه.
       // ──────────────────────────────────────────────
+      // SOCIAL_RECIPES_SCAN — وصفات وعروض تيك توك من محرك البحث (socialRecipes.ts). service role بس: zad-brain (social_recipes_run).
+      case "social_recipes_scan": {
+        if (!isServiceRoleToken(bearerToken(req), supabaseKey)) return jsonResponse({ error: "unauthorized" }, 401);
+        const handle = typeof payload?.handle === "string" && /^[\w.]{2,40}$/.test(payload.handle) ? payload.handle : null;
+        const topic = typeof payload?.topic === "string" ? payload.topic.trim().slice(0, 40) : "";
+        const countryCode = typeof payload?.country === "string" ? payload.country.toUpperCase() : null;
+        if (!handle && (!topic || !countryCode)) return jsonResponse({ ok: false, reason: "bad_source" }, 400);
+        const known = new Set(Array.isArray(payload?.known) ? (payload.known as unknown[]).map(String) : []);
+        const found = await webSearchSnippets(handle ? recipeAccountQuery(handle) : recipeTopicQuery(topic, marketOf(countryCode).name), 10, countryCode ?? undefined);
+        const hits = socialVideoHits(found, handle, known, handle ? null : countryCode, 3);
+        const today = new Date().toISOString().slice(0, 10);
+        const videos: SocialVideo[] = [];
+        for (const hit of hits) {
+          const { system, user } = socialVideoPrompt(hit, today);
+          const answer = await readPublicDeals({ systemPrompt: system, content: user, maxTokens: 900, timeoutMs: 20_000, deadline: Date.now() + 25_000, groqText: user });
+          if (!answer.ok || !answer.content) continue;
+          videos.push(readSocialVideo((() => { try { return JSON.parse(answer.content!); } catch { return null; } })(), hit.url, new Date()));
+        }
+        return jsonResponse({ ok: true, hits: found.length, read: videos.length, videos });
+      }
+
       case "store_deals_tiktok": {
         if (!isServiceRoleToken(bearerToken(req), supabaseKey)) return jsonResponse({ error: "unauthorized" }, 401);
         const store = typeof payload?.store === "string" ? payload.store.trim().replace(/\s+/g, " ") : "";
