@@ -42,7 +42,7 @@ async function callerCountry(req: Request, userId: unknown): Promise<string | nu
   }
 }
 import { googleNearbyAny, googlePlacesKeys } from "./googlePlaces.ts";
-import { tiktokDealHits, tiktokDealsPrompt, tiktokQuery } from "./tiktokDeals.ts";
+import { tiktokDealHits, tiktokDealsPrompt, tiktokQuery, withPriceFromPercent } from "./tiktokDeals.ts";
 import { brochureEntries, OFFICIAL_FLYER_SITES, OFFICIAL_FLYER_UA, officialFlyerDeals, officialFlyerPrompt, robotsAllows, siteForPdf } from "./officialFlyers.ts";
 import { fillMarketCurrency, DEAL_SEARCH_TIMEOUT_MS, dealQuery, dealsFromHitsPrompt, dealSearchItems, readDeals, readReverseCity, readStoreDeals, reverseCityUrl, sameCurrency, cleanCity, searchStoreName, storeDealsPrompt, storeDealsQuery, videoDealsPrompt, youtubeDealVideos, instagramDealPosts, postDealsPrompt, flyerDealsPrompt, readDealCodes, type DealCode } from "./liveDeals.ts";
 import { fuelPricePrompt, fuelPriceQuery, readFuelPrice } from "./fuelPrice.ts";
@@ -3125,7 +3125,10 @@ async function handle(req: Request): Promise<Response> {
         const currency = typeof payload?.currency === "string" ? payload.currency.toUpperCase() : market.currency;
         const country = typeof payload?.country === "string" ? payload.country.toUpperCase() : market.code;
         const city = typeof payload?.city === "string" ? payload.city : "";
-        const found = await webSearchSnippets(tiktokQuery(store, market.name, city), 10, country);
+        // نوع المحل بيحدد كلمات البحث. فشل القراية = «عروض» بس، زي الأول.
+        const { data: seedRow } = await supabase.from("zad_deal_seed_stores").select("kind").eq("country", country).eq("store", store).maybeSingle()
+          .then((r) => r, () => ({ data: null }));
+        const found = await webSearchSnippets(tiktokQuery(store, market.name, city, (seedRow as { kind?: string } | null)?.kind), 10, country);
         const videos = tiktokDealHits(found, store, country, 3);
         const today = new Date().toISOString().slice(0, 10);
         const deals: ReturnType<typeof readStoreDeals> = [];
@@ -3138,7 +3141,7 @@ async function handle(req: Request): Promise<Response> {
           });
           if (!answer.ok || !answer.content) continue;
           read++;
-          const parsed = fillMarketCurrency((() => { try { return JSON.parse(answer.content!); } catch { return null; } })(), currency);
+          const parsed = fillMarketCurrency(withPriceFromPercent((() => { try { return JSON.parse(answer.content!); } catch { return null; } })()), currency);
           deals.push(...readStoreDeals(parsed, [hit], currency, new Date()));
           codes.push(...readDealCodes(parsed, hit.url, new Date()));
         }
