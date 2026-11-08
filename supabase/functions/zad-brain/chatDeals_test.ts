@@ -41,3 +41,8 @@ Deno.test("find_deals is offered when he asks for offers or a code — not on a 
     assert(!intentToolHints(m).includes("find_deals"), m);
   }
 });
+
+Deno.test("find_deals: «المقاضي» asks for everything, not an item of that name", () => {
+  assertEquals(matchChatDeals(DEALS, CODES, "", "المقاضي").deals.length, matchChatDeals(DEALS, CODES, "", "").deals.length);
+  assertEquals(matchChatDeals(DEALS, CODES, "", "خزين البيت").deals.length > 0, true);
+});

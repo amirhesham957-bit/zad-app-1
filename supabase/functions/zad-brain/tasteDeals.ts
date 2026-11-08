@@ -21,6 +21,7 @@ import { haversineKm, type Trip, tripCost, tripEatsSaving, usableFuel } from "./
 import { deliveryApp } from "../_shared/deliveryApps.ts";
 import { habitCycleDays, PURCHASE_SOURCES, purchaseDaysByItem } from "../_shared/restockCycle.ts";
 import { householdUserIds } from "./restockJudge.ts";
+import { isGroceryTerm } from "../_shared/groceryLexicon.ts";
 import { likedTerms, loadAffinity, rankByRelevance } from "../_shared/dealRelevance.ts";
 
 export const MAX_TASTE_ITEMS = 5;
@@ -189,7 +190,8 @@ export function tasteItems(shopping: readonly string[], interests: readonly stri
   for (const raw of [...shopping, ...interests]) {
     const name = String(raw ?? "").replace(/\s+/g, " ").trim().slice(0, 40);
     const key = itemKey(name);
-    if (name.length < 2 || seen.has(key)) continue;
+    // «مقاضي» في القايمة مش صنف يتدوّر عليه عرض (٤.٢٥).
+    if (name.length < 2 || seen.has(key) || isGroceryTerm(name)) continue;
     seen.add(key);
     out.push(name);
     if (out.length >= max) break;

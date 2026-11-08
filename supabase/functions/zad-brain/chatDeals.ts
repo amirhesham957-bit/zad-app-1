@@ -7,6 +7,7 @@
 
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { codeStoreKey } from "./dealCodes.ts";
+import { isGroceryTerm } from "../_shared/groceryLexicon.ts";
 import { offerMatchesNeed } from "./productIdentity.ts";
 import { itemKey } from "./shared.ts";
 import { customerCity, dealCountry, dealsForCity } from "./tasteDeals.ts";
@@ -63,7 +64,8 @@ export function matchChatDeals(
   item: string,
 ): { deals: ChatDealRow[]; codes: ChatCodeRow[] } {
   const wantStore = store.trim();
-  const wantItem = item.trim();
+  // «عروض المقاضي» = العروض كلها (٤.٢٥).
+  const wantItem = isGroceryTerm(item) ? "" : item.trim();
   const picked = deals
     .filter((d) => d.store && d.item_name && Number(d.price) > 0)
     .filter((d) => !wantStore || sameStore(wantStore, d.store))

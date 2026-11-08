@@ -546,3 +546,7 @@ Deno.test("withBuyingCycle: a tight budget or a stated want keeps its own senten
   assertEquals(await withBuyingCycle(sb, "u", { ...base, tight: true }), { ...base, tight: true });
   assertEquals(await withBuyingCycle(sb, "u", { ...base, intent: "زيت" }), { ...base, intent: "زيت" });
 });
+
+Deno.test("tasteItems: a word for all the groceries is not an item to hunt", () => {
+  assertEquals(tasteItems(["المقاضي", "زيت", "خزين البيت"], []), ["زيت"]);
+});
