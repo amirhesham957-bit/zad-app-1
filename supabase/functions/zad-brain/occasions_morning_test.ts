@@ -4,7 +4,8 @@ import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { askedThisMorning } from "./curiosity.ts";
 import { intentToolHints, scopeToolsForSpecialist } from "./specialists.ts";
 import { freshContext, MUTATING_TOOLS, validateRememberOccasion, VALIDATORS } from "./validators.ts";
-import { momentFallback, morningFacts, occasionLine } from "./voiceMoments.ts";
+import { loadOccasions, momentFallback, morningFacts, occasionLine } from "./voiceMoments.ts";
+import { occasionFromNote, occasionQuestion, parseOccasionAnswer } from "./occasions.ts";
 
 /** قاعدة مزيفة: كل جدول بيرجّع صفوفه لأي فلتر، والـrpc بيرجّع اللي اتحدد له. */
 function fakeSb(tables: Record<string, unknown[]>, rpcs: Record<string, unknown>): SupabaseClient {
@@ -136,7 +137,6 @@ Deno.test("the gift question reaches the next chat turn with what was offered", 
 });
 
 Deno.test("the brain asks for a missing birthday itself: the customer's first, then people it knows", async () => {
-  const { occasionQuestion } = await import("./occasions.ts");
   const mama = { occasion: "birthday", occasion_for: "ماما", occasion_md: "03-12" };
   const own = { occasion: "birthday", occasion_for: null, occasion_md: "07-04" };
   assertEquals(occasionQuestion([], [], "2026-10-04")?.for, null);
@@ -186,4 +186,56 @@ Deno.test("the morning does not repeat what it asked and got no answer to (owner
   const afterAll = await morning([...allProfile, self]);
   assert(afterAll.daily_question_kind !== "profile");
   assert(afterAll.daily_question_kind !== "occasion");
+});
+
+// بلاغ المالك ٨/١١: «19-8» اتقالت ومااتسجلتش، والسؤال فضل يتكرر، ولف على «زاد» و«ميرو».
+Deno.test("a bare date answers the birthday question", () => {
+  assertEquals(parseOccasionAnswer("19-8"), { month: 8, day: 19 });
+  assertEquals(parseOccasionAnswer("١٩/٨/١٩٩٠"), { month: 8, day: 19 });
+  assertEquals(parseOccasionAnswer("١٩ أغسطس"), { month: 8, day: 19 });
+  assertEquals(parseOccasionAnswer("يوم 5 مارس"), { month: 3, day: 5 });
+  assertEquals(parseOccasionAnswer("أغسطس ١٩"), { month: 8, day: 19 });
+  assertEquals(parseOccasionAnswer("8-19"), { month: 8, day: 19 });
+  assertEquals(parseOccasionAnswer("=== سؤال معلّق ===\nحذف حليب\n=== نهاية السؤال ===\n\n19-8"), { month: 8, day: 19 });
+});
+
+Deno.test("what is not a date does not answer it", () => {
+  for (const text of ["اه", "اديني اللينك", "31-2", "45-9", "اشتريت 19 كيلو رز النهارده من كارفور", ""]) {
+    assertEquals(parseOccasionAnswer(text), null, text);
+  }
+});
+
+Deno.test("a birthday written as a plain note counts as known", () => {
+  assertEquals(occasionFromNote("عيد ميلاد العميل يوم ١٩ أغسطس"), { for: null, md: "08-19" });
+  assertEquals(occasionFromNote("عيد ميلاد العميل: 19 أغسطس"), { for: null, md: "08-19" });
+  assertEquals(occasionFromNote("عيد ميلاد ماما يوم ٣ مارس"), { for: "ماما", md: "03-03" });
+  assertEquals(occasionFromNote("عيد ميلاد ميرو يوم ١٩ أغسطس", ["ميرو"]), { for: null, md: "08-19" });
+  assertEquals(occasionFromNote("يفضل التسوق من المتاجر"), null);
+  assertEquals(occasionFromNote("عيد ميلاد ماما قريب"), null);
+});
+
+Deno.test("the customer and Zad are not people with another birthday", () => {
+  const own = { occasion: "birthday", occasion_for: null, occasion_md: "08-19" };
+  assertEquals(occasionQuestion([own], ["العميل", "زاد", "ميرو"], "2026-11-08", () => true, ["ميرو"]), null);
+  assertEquals(occasionQuestion([own], ["زاد", "ماما"], "2026-11-08", () => true, ["ميرو"])?.for, "ماما");
+});
+
+Deno.test("a birthday left as a note is promoted in place and not asked again", async () => {
+  const updates: unknown[] = [];
+  const chain = (data: unknown) => {
+    const c: Record<string, unknown> = {
+      select: () => c, eq: () => c, is: () => c, ilike: () => c, limit: () => Promise.resolve({ data }),
+      maybeSingle: () => Promise.resolve({ data: { preferred_name: "ميرو" } }),
+      update: (u: unknown) => { updates.push(u); return { eq: () => Promise.resolve({ error: null }) }; },
+    };
+    return c;
+  };
+  const sb = {
+    rpc: () => Promise.resolve({ data: [] }),
+    from: () => chain([{ id: "m1", note: "عيد ميلاد العميل يوم ١٩ أغسطس" }]),
+  } as unknown as SupabaseClient;
+  const rows = await loadOccasions(sb, "u1");
+  assertEquals(rows, [{ occasion: "birthday", occasion_for: null, occasion_md: "08-19" }]);
+  assertEquals(updates, [{ occasion: "birthday", occasion_md: "08-19", occasion_for: null }]);
+  assertEquals(occasionQuestion(rows, [], "2026-11-08"), null);
 });

@@ -33,7 +33,7 @@ import { askedNewcomerKeys, doseTimesQuestion, isNewcomer, NEWCOMER_HOURS, newco
 import { attentionBudget, type CircumstanceMode, loadCircumstance } from "./circumstances.ts";
 import { schoolDay, type TimetableRow, weekdayOfDate } from "./school.ts";
 import { eventAhead, eventAheadQuestion, SEASON_ASK_DAYS, TRAVEL_ASK_DAYS, type EventAhead } from "./eventAhead.ts";
-import { giftSuggestion, occasionDateLabel, occasionQuestion, type OccasionRow, upcomingOccasions } from "./occasions.ts";
+import { giftSuggestion, occasionDateLabel, occasionFromNote, occasionQuestion, type OccasionRow, upcomingOccasions } from "./occasions.ts";
 import { type AskHistory, askHistory, LEDGER_DAYS, mayAsk, occasionAskKey, profileAskKey } from "./askedLedger.ts";
 import { type CadenceAppointment, type ReplyCadence, replyCadence, replyCadenceMomentLine } from "./replyCadence.ts";
 
@@ -1381,8 +1381,7 @@ export async function morningFacts(
       .then((r) => r.data as Record<string, unknown> | null, () => undefined),
     loadCircumstance(sb, userId),
     // المناسبات (20261006000000): ملاحظات الذاكرة اللي ليها يوم كل سنة.
-    sb.rpc("zad_memory_occasions", { p_user: userId })
-      .then((r) => (r.data ?? []) as OccasionRow[], () => [] as OccasionRow[]),
+    loadOccasions(sb, userId),
     // الناس اللي الذاكرة عارفاهم — اللي مالوش عيد ميلاد متسجّل بيتسأل عنه (occasionQuestion).
     sb.from("zad_memory_entities").select("name").eq("user_id", userId).eq("kind", "person")
       .order("last_seen", { ascending: false }).limit(10)
@@ -1423,7 +1422,7 @@ export async function morningFacts(
   // الملف كامل ⇒ سؤال عن مناسبة ناقصة والفضول بيتبادلوا يوم بيوم؛ اللي عنده حاجة ياخد اليوم لو التاني فاضي.
   const occasionAsk = profile === undefined || !asked || ask || gift || bigEvent || followUp || quiet
     ? null
-    : occasionQuestion(occasionRows, people, local.date, (who) => mayAsk(occasionAskKey(who), asked, nowMs));
+    : occasionQuestion(occasionRows, people, local.date, (who) => mayAsk(occasionAskKey(who), asked, nowMs), selfNamesOf(profile));
   const occasionDay = Math.floor(Date.parse(`${local.date}T00:00:00Z`) / 86_400_000) % 2 === 0;
   // «دول نفس الحاجة؟» (productIdentity.ts) قبل الفضول العادي: من غير اسم واحد للصنف مفيش معدل
   // استهلاك ولا «هيخلص إمتى؟». نفس الخانة ونفس الشروط — سؤال واحد في اليوم.
@@ -1573,6 +1572,44 @@ function withoutQuestion(q: NewcomerQuestion): Record<string, unknown> {
   };
 }
 
+/** اسم العميل زي ما بيتنادى: مش «حد تاني» له عيد ميلاد. */
+function selfNamesOf(profile: Record<string, unknown> | null | undefined): string[] {
+  return typeof profile?.preferred_name === "string" ? [profile.preferred_name] : [];
+}
+
+/**
+ * مناسبات العميل، ومعاها اللي اتكتب ملاحظة عادية («عيد ميلاد العميل يوم ١٩ أغسطس»): بيتحوّل مكانه لمناسبة، في نفس
+ * الصف عشان مايبقاش جملتين، فزاد يفتكره ويهنّي ومايسألش تاني. فشل القراية أو التحويل = المناسبات زي ما هي.
+ */
+export async function loadOccasions(sb: SupabaseClient, userId: string): Promise<OccasionRow[]> {
+  const rows = await sb.rpc("zad_memory_occasions", { p_user: userId })
+    .then((r) => (r.data ?? []) as OccasionRow[], () => [] as OccasionRow[]);
+  try {
+    const [{ data: notes }, { data: who }] = await Promise.all([
+      sb.from("zad_memory").select("id,note").eq("user_id", userId).is("occasion", null).is("superseded_by", null)
+        .ilike("note", "%عيد ميلاد%").limit(20),
+      sb.from("zad_customer_profile").select("preferred_name").eq("user_id", userId).maybeSingle(),
+    ]);
+    const self = selfNamesOf(who as Record<string, unknown> | null);
+    const known = new Set(rows.filter((r) => r.occasion === "birthday").map((r) => (r.occasion_for ?? "").trim().toLowerCase()));
+    for (const n of (notes ?? []) as Array<{ id: string; note: string }>) {
+      const found = occasionFromNote(n.note, self);
+      const key = (found?.for ?? "").toLowerCase();
+      if (!found || known.has(key)) continue;
+      const { error } = await sb.from("zad_memory").update({ occasion: "birthday", occasion_md: found.md, occasion_for: found.for }).eq("id", n.id);
+      if (error) {
+        console.warn("[occasions] note promotion failed:", error.message);
+        continue;
+      }
+      known.add(key);
+      rows.push({ occasion: "birthday", occasion_for: found.for, occasion_md: found.md });
+    }
+  } catch (e) {
+    console.warn("[occasions] note read failed:", (e as Error)?.message);
+  }
+  return rows;
+}
+
 /**
  * السؤال اللي الحساب الجديد ياخده دلوقتي، أو null (مش جديد، مفيش ناقصة، أو قراية فشلت — سؤال اتسأل قبل
  * كده أوحش من مفيش سؤال). `known` = قرايات عملتها التحية بالفعل، عشان ماتتعادش.
@@ -1590,7 +1627,7 @@ export async function newcomerAsk(
     if (error || !isNewcomer(user?.created_at, now)) return null;
     const since = new Date(now - NEWCOMER_HOURS * 3_600_000).toISOString();
     const [profile, meds, asked, occasionRows, people] = await Promise.all([
-      sb.from("zad_customer_profile").select("pay_day").eq("user_id", userId).maybeSingle()
+      sb.from("zad_customer_profile").select("pay_day,preferred_name").eq("user_id", userId).maybeSingle()
         .then((r) => r.error ? undefined : r.data as Record<string, unknown> | null),
       sb.from("zad_pharmacy_items").select("name,for_person,dose_times,remaining_quantity").eq("user_id", userId).limit(20)
         .then((r) => r.error ? undefined : ((r.data ?? []) as Array<NewcomerMed & { dose_times: string | null; remaining_quantity: number | null }>)
@@ -1598,18 +1635,19 @@ export async function newcomerAsk(
       sb.from("zad_voice_moments").select("facts").eq("user_id", userId)
         .in("moment", ["morning_greeting", NEWCOMER_MOMENT]).eq("status", "sent").gte("created_at", since).limit(20)
         .then((r) => r.error ? undefined : askedNewcomerKeys(r.data as Array<{ facts?: unknown }>)),
-      known ? Promise.resolve(known.occasionRows) : sb.rpc("zad_memory_occasions", { p_user: userId })
-        .then((r) => (r.data ?? []) as OccasionRow[], () => [] as OccasionRow[]),
+      known ? Promise.resolve(known.occasionRows) : loadOccasions(sb, userId),
       known ? Promise.resolve(known.people) : sb.from("zad_memory_entities").select("name").eq("user_id", userId).eq("kind", "person")
         .order("last_seen", { ascending: false }).limit(10)
         .then((r) => ((r.data ?? []) as Array<{ name: string }>).map((p) => p.name), () => [] as string[]),
     ]);
     if (profile === undefined || meds === undefined || asked === undefined) return null;
+    const history = await loadAskHistory(sb, userId);
     return newcomerQuestion({
       profile,
       country: user?.country ?? null,
       medsWithoutTimes: meds,
-      birthday: occasionQuestion(occasionRows, people, localDate),
+      // نفس دفتر سؤال الصبح (askedLedger.ts): اللي اتسأل في التحية مايتسألش تاني بعد الضهر.
+      birthday: occasionQuestion(occasionRows, people, localDate, (who) => !history || mayAsk(occasionAskKey(who), history, now), selfNamesOf(profile)),
       askedKeys: asked,
     });
   } catch (e) {
