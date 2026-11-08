@@ -1,6 +1,7 @@
 /// Kotlin's `ZadKnowledgeMapScreen`: the customer's areas on a slowly
-/// orbiting 3D sphere around «زاد CORE.3D» — drag to turn it, the three
-/// round buttons to zoom and reset — with the telemetry bar, the node count,
+/// orbiting 3D sphere around «زاد CORE.3D» — drag or flick to turn it, pinch
+/// or the round buttons to zoom, and every node buzzes under the finger —
+/// with the telemetry bar, the node count,
 /// the legend, and a tapped area opening its panel (the budget's figures, or
 /// the area's items with «فتح الشاشة» and «اسأل زاد»).
 ///
@@ -16,10 +17,15 @@ import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/physics.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' show NumberFormat;
 import 'package:zad/core/design/components/zad_kotlin_surfaces.dart';
+import 'package:zad/core/design/components/zad_pressable.dart';
 import 'package:zad/core/design/tokens/zad_extended_colors.dart';
+import 'package:zad/core/design/tokens/zad_motion.dart';
 import 'package:zad/core/design/tokens/zad_palette.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/features/brain/application/knowledge_map_controller.dart';
@@ -299,7 +305,21 @@ class _KnowledgeMapScreenState extends ConsumerState<KnowledgeMapScreen>
                 ),
                 Expanded(
                   child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 250),
+                    duration: MediaQuery.disableAnimationsOf(context)
+                        ? Duration.zero
+                        : ZadDuration.enter,
+                    switchInCurve: ZadCurves.standard,
+                    switchOutCurve: ZadCurves.exit,
+                    transitionBuilder: (child, animation) => FadeTransition(
+                      opacity: animation,
+                      child: ScaleTransition(
+                        scale: Tween<double>(
+                          begin: 0.92,
+                          end: 1,
+                        ).animate(animation),
+                        child: child,
+                      ),
+                    ),
                     child: switch (selected) {
                       null => _DomainRing(
                         key: const ValueKey<String>('ring'),
@@ -320,6 +340,7 @@ class _KnowledgeMapScreenState extends ConsumerState<KnowledgeMapScreen>
                         domain: d,
                         onOpen: _opener(d.key),
                         onAsk: () => _ask(mapDomainLabel(d.key)),
+                        onAskItem: _ask,
                       ),
                     },
                   ),
@@ -668,28 +689,128 @@ class _DomainRing extends StatefulWidget {
   State<_DomainRing> createState() => _DomainRingState();
 }
 
-class _DomainRingState extends State<_DomainRing> {
+class _DomainRingState extends State<_DomainRing>
+    with TickerProviderStateMixin {
+  static const double _minZoom = 0.7;
+  static const double _maxZoom = 2.2;
+
   double _rotX = 14;
   double _rotY = 0;
   double _zoom = 1;
+  double _zoomAtStart = 1;
+  bool _atZoomEnd = false;
+
+  /// The turn a flick leaves behind.
+  late final AnimationController _spin = AnimationController.unbounded(
+    vsync: this,
+  )..addListener(() => setState(() => _rotY = _spin.value));
+
+  /// A button's zoom, eased rather than jumped.
+  late final AnimationController _zoomer =
+      AnimationController(
+        vsync: this,
+        duration: ZadDuration.quick,
+      )..addListener(() {
+        if (_zooming case final zooming?) setState(() => _zoom = zooming.value);
+      });
+  Animation<double>? _zooming;
+
+  /// The nodes spreading out of the core when the ring appears.
+  late final AnimationController _enter = AnimationController(
+    vsync: this,
+    duration: ZadDuration.settle,
+  );
 
   static final List<(double, double, double)> _ambient =
       <(double, double, double)>[
         for (var i = 0; i < 40; i++) _spherePoint(i, 40),
       ];
 
+  bool get _still => MediaQuery.disableAnimationsOf(context);
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_still) {
+      _enter.value = 1;
+    } else if (_enter.isDismissed) {
+      _enter.forward();
+    }
+  }
+
+  @override
+  void dispose() {
+    _spin.dispose();
+    _zoomer.dispose();
+    _enter.dispose();
+    super.dispose();
+  }
+
+  void _onScaleStart(ScaleStartDetails d) {
+    _spin.stop();
+    _zoomer.stop();
+    _zoomAtStart = _zoom;
+    _atZoomEnd = false;
+  }
+
+  void _onScaleUpdate(ScaleUpdateDetails d) => setState(() {
+    _rotY += d.focalPointDelta.dx * 0.45;
+    _rotX = (_rotX - d.focalPointDelta.dy * 0.45).clamp(-75, 75);
+    if (d.pointerCount < 2) return;
+    final wanted = _zoomAtStart * d.scale;
+    final zoom = wanted.clamp(_minZoom, _maxZoom);
+    // One tick on reaching the end, not one per frame spent against it.
+    final atEnd = zoom != wanted;
+    if (atEnd && !_atZoomEnd) unawaited(HapticFeedback.lightImpact());
+    _atZoomEnd = atEnd;
+    _zoom = zoom;
+  });
+
+  void _onScaleEnd(ScaleEndDetails d) {
+    if (_still || d.pointerCount > 0) return;
+    final velocity = d.velocity.pixelsPerSecond.dx.clamp(-2000.0, 2000.0);
+    if (velocity.abs() < 60) return;
+    _spin.value = _rotY;
+    _spin.animateWith(
+      FrictionSimulation(
+        0.135,
+        _rotY,
+        velocity * 0.45,
+        tolerance: const Tolerance(velocity: 1),
+      ),
+    );
+  }
+
+  void _zoomTo(double target) {
+    final zoom = target.clamp(_minZoom, _maxZoom);
+    if (zoom == _zoom) {
+      unawaited(HapticFeedback.lightImpact());
+      return;
+    }
+    unawaited(HapticFeedback.selectionClick());
+    if (_still) {
+      setState(() => _zoom = zoom);
+      return;
+    }
+    _zooming = Tween<double>(
+      begin: _zoom,
+      end: zoom,
+    ).animate(CurvedAnimation(parent: _zoomer, curve: ZadCurves.standard));
+    _zoomer.forward(from: 0);
+  }
+
   @override
   Widget build(BuildContext context) => GestureDetector(
-    onPanUpdate: (d) => setState(() {
-      _rotY += d.delta.dx * 0.45;
-      _rotX = (_rotX - d.delta.dy * 0.45).clamp(-75, 75);
-    }),
+    onScaleStart: _onScaleStart,
+    onScaleUpdate: _onScaleUpdate,
+    onScaleEnd: _onScaleEnd,
     child: LayoutBuilder(
       builder: (context, c) => AnimatedBuilder(
         animation: Listenable.merge(<Listenable>[
           widget.live,
           widget.particles,
           widget.orbit,
+          _enter,
         ]),
         builder: (context, _) => _frame(context, c.biggest),
       ),
@@ -699,7 +820,13 @@ class _DomainRingState extends State<_DomainRing> {
   Widget _frame(BuildContext context, Size size) {
     final domains = widget.map.domains;
     final center = Offset(size.width / 2, size.height / 2);
-    final radius = (math.min(size.width, size.height) / 2 - 48) * _zoom;
+    // From a quarter out, never from nothing: the camera below is a multiple
+    // of the radius and divides by it.
+    final opening = 0.25 + 0.75 * Curves.easeOutBack.transform(_enter.value);
+    final radius =
+        math.max(math.min(size.width, size.height) / 2 - 48, 24) *
+        _zoom *
+        opening;
     final camera = radius * 2.5;
     final rotY = (_rotY + widget.orbit.value * 360) % 360;
     final cx = math.cos(_rotX * math.pi / 180);
@@ -743,7 +870,8 @@ class _DomainRingState extends State<_DomainRing> {
     final scheme = Theme.of(context).colorScheme;
 
     return Stack(
-      clipBehavior: Clip.none,
+      // Zoomed in, the nodes would otherwise run over the telemetry.
+      clipBehavior: _zoom > 1 ? Clip.hardEdge : Clip.none,
       children: <Widget>[
         Positioned.fill(
           child: CustomPaint(
@@ -821,25 +949,28 @@ class _DomainRingState extends State<_DomainRing> {
                 icon: Icons.add,
                 label: 'تكبير',
                 color: _cyan,
-                onTap: () => setState(() => _zoom = math.min(_zoom * 1.2, 2.2)),
+                onTap: () => _zoomTo(_zoom * 1.2),
               ),
               const SizedBox(height: 8),
               _RoundControl(
                 icon: Icons.remove,
                 label: 'تصغير',
                 color: _cyan,
-                onTap: () => setState(() => _zoom = math.max(_zoom / 1.2, 0.7)),
+                onTap: () => _zoomTo(_zoom / 1.2),
               ),
               const SizedBox(height: 8),
               _RoundControl(
                 icon: Icons.restart_alt,
                 label: 'إعادة ضبط',
                 color: _emerald,
-                onTap: () => setState(() {
-                  _rotX = 14;
-                  _rotY = 0;
-                  _zoom = 1;
-                }),
+                onTap: () {
+                  _spin.stop();
+                  setState(() {
+                    _rotX = 14;
+                    _rotY = 0;
+                  });
+                  _zoomTo(1);
+                },
               ),
             ],
           ),
@@ -1015,8 +1146,10 @@ class _NodeCard extends StatelessWidget {
         opacity: node.alpha,
         child: Transform.scale(
           scale: node.scale,
-          child: GestureDetector(
-            onTap: onTap,
+          child: ZadPressable(
+            onPressed: onTap,
+            scale: 0.94,
+            semanticLabel: mapDomainLabel(d.key),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
@@ -1130,8 +1263,8 @@ class _RoundControl extends StatelessWidget {
     child: InkWell(
       onTap: onTap,
       child: SizedBox.square(
-        dimension: 36,
-        child: Icon(icon, size: 18, color: color, semanticLabel: label),
+        dimension: 44,
+        child: Icon(icon, size: 20, color: color, semanticLabel: label),
       ),
     ),
   );
@@ -1262,16 +1395,19 @@ class _ItemRing extends StatelessWidget {
     required this.domain,
     required this.onOpen,
     required this.onAsk,
+    required this.onAskItem,
     super.key,
   });
 
   final MapDomain domain;
   final VoidCallback? onOpen;
   final VoidCallback onAsk;
+  final ValueChanged<String> onAskItem;
 
   @override
   Widget build(BuildContext context) {
     final c = _color(domain);
+    final still = MediaQuery.disableAnimationsOf(context);
     if (domain.items.isEmpty) {
       return Padding(
         padding: const EdgeInsets.all(24),
@@ -1333,45 +1469,59 @@ class _ItemRing extends StatelessWidget {
             itemCount: domain.items.length,
             itemBuilder: (_, i) {
               final item = domain.items[i];
-              return Column(
-                children: <Widget>[
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: _bg,
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: c.withValues(alpha: 0.7),
-                        width: 1.5,
+              final node = ZadPressable(
+                onPressed: () => onAskItem(item.label),
+                semanticLabel: item.label,
+                child: Column(
+                  children: <Widget>[
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: _bg,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: c.withValues(alpha: 0.7),
+                          width: 1.5,
+                        ),
+                      ),
+                      child: Icon(Icons.circle, size: 8, color: c),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      item.label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: ZadType.labelSmall.copyWith(
+                        fontFamily: _mono,
+                        fontWeight: FontWeight.w600,
+                        color: _text,
                       ),
                     ),
-                    child: Icon(Icons.circle, size: 8, color: c),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    item.label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.center,
-                    style: ZadType.labelSmall.copyWith(
-                      fontFamily: _mono,
-                      fontWeight: FontWeight.w600,
-                      color: _text,
+                    Text(
+                      item.detail,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: ZadType.labelSmall.copyWith(
+                        fontFamily: _mono,
+                        color: _textDim,
+                      ),
                     ),
-                  ),
-                  Text(
-                    item.detail,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.center,
-                    style: ZadType.labelSmall.copyWith(
-                      fontFamily: _mono,
-                      color: _textDim,
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               );
+              if (still) return node;
+              return node
+                  .animate(delay: ZadDuration.press * math.min(i, 8) * 0.25)
+                  .fadeIn(duration: ZadDuration.quick)
+                  .scaleXY(
+                    begin: 0.7,
+                    end: 1,
+                    duration: ZadDuration.enter,
+                    curve: ZadCurves.springy,
+                  );
             },
           ),
         ),

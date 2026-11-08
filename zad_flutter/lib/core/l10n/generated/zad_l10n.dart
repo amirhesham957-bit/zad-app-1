@@ -871,6 +871,12 @@ abstract class ZadL10n {
   /// **'البيت والعيلة'**
   String get drawerGroupHome;
 
+  /// No description provided for @memoryGraphResetView.
+  ///
+  /// In ar, this message translates to:
+  /// **'رجّع الشبكة مكانها'**
+  String get memoryGraphResetView;
+
   /// No description provided for @drawerGroupMore.
   ///
   /// In ar, this message translates to:

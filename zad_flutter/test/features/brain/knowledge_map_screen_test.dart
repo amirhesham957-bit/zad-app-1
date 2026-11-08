@@ -3,6 +3,7 @@
 // that asks for less motion gets a still map.
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zad/core/design/zad_theme.dart';
@@ -139,5 +140,96 @@ void main() {
     await pump(tester, const MapInputs());
     expect(find.text('الميزانية'), findsOneWidget);
     expect(find.text('1 عنصر متصل'), findsOneWidget);
+  });
+
+  group('the ring under the finger', () {
+    late List<String> haptics;
+
+    setUp(() {
+      haptics = <String>[];
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(SystemChannels.platform, (call) async {
+            if (call.method == 'HapticFeedback.vibrate') {
+              haptics.add(call.arguments as String);
+            }
+            return null;
+          });
+    });
+
+    tearDown(() {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(SystemChannels.platform, null);
+    });
+
+    testWidgets('every node buzzes when it is pressed', (tester) async {
+      await pump(tester, inputs);
+      await tester.tap(find.text('المخزون'));
+      await tester.pumpAndSettle();
+      expect(haptics, contains('HapticFeedbackType.selectionClick'));
+
+      haptics.clear();
+      await tester.tap(find.text('لبن'));
+      await tester.pumpAndSettle();
+      expect(haptics, contains('HapticFeedbackType.selectionClick'));
+      // An item asks about itself, unsent.
+      expect(find.byType(ChatScreen), findsOneWidget);
+      expect(find.text('وضّحلي أكتر عن لبن'), findsOneWidget);
+    });
+
+    double spread(WidgetTester tester) {
+      final core = tester.getCenter(find.text('زاد'));
+      return (tester.getCenter(find.text('المخزون')) - core).distance;
+    }
+
+    testWidgets('a pinch zooms, and the ends tick once', (tester) async {
+      await pump(tester, inputs);
+      final before = spread(tester);
+      final middle = tester.getCenter(find.text('زاد'));
+
+      final one = await tester.startGesture(middle - const Offset(40, 0));
+      final two = await tester.startGesture(middle + const Offset(40, 0));
+      await tester.pump();
+      for (var i = 0; i < 6; i++) {
+        await one.moveBy(const Offset(-30, 0));
+        await two.moveBy(const Offset(30, 0));
+        await tester.pump();
+      }
+      await one.up();
+      await two.up();
+      await tester.pumpAndSettle();
+
+      expect(spread(tester), greaterThan(before * 1.3));
+      expect(
+        haptics.where((h) => h == 'HapticFeedbackType.lightImpact').length,
+        1,
+      );
+    });
+
+    testWidgets('a drag still turns the sphere', (tester) async {
+      await pump(tester, inputs);
+      final before = tester.getCenter(find.text('المخزون'));
+      await tester.dragFrom(
+        tester.getCenter(find.text('زاد')) + const Offset(0, 120),
+        const Offset(80, 0),
+      );
+      await tester.pumpAndSettle();
+      expect(tester.getCenter(find.text('المخزون')), isNot(before));
+    });
+
+    testWidgets('the zoom buttons are a full 44dp and move the sphere', (
+      tester,
+    ) async {
+      await pump(tester, inputs);
+      final button = find.bySemanticsLabel('تكبير');
+      final size = tester.getSize(
+        find.ancestor(of: button, matching: find.byType(InkWell)).first,
+      );
+      expect(size.shortestSide, greaterThanOrEqualTo(44));
+
+      final before = spread(tester);
+      await tester.tap(button);
+      await tester.pumpAndSettle();
+      expect(spread(tester), greaterThan(before));
+    });
   });
 }
