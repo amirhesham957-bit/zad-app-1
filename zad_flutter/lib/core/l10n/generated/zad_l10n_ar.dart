@@ -2951,6 +2951,25 @@ class ZadL10nAr extends ZadL10n {
       'مرة في الشهر بالكتير، زاد يوصف أكل البيت من المشتريات المتسجلة ويقترح إضافات. وصف مشتريات مش نصيحة طبية.';
 
   @override
+  String get commuteTitle => 'أتعلم مواعيد نزولك ورجوعك';
+
+  @override
+  String get commuteBody => 'اختياري. مواعيد بس، من غير أماكن ولا مشاوير.';
+
+  @override
+  String get commuteConsentTitle => 'زاد يتعلم مواعيد يومك؟';
+
+  @override
+  String get commuteConsentBody =>
+      'زاد هيحسب إمتى بتنزل من البيت وبترجع، من خروجك ورجوعك للبيت. عشان يظبط تنبيهاتك على يومك ويكلمك في الوقت المناسب.\n\nبيتحسب على موبايلك، وللسيرفر بيروح ملخص المواعيد والأيام بس، من غير أي إحداثيات أو أماكن شغل أو خط سير. محدش من العيلة بيشوفه. ولو قفلت المفتاح، بيتمسح من الموبايل والسيرفر.';
+
+  @override
+  String get commuteConsentAgree => 'موافق';
+
+  @override
+  String get commuteConsentDecline => 'لأ، مش دلوقتي';
+
+  @override
   String get settingsPetCallsTitle => 'نداءات زادو';
 
   @override

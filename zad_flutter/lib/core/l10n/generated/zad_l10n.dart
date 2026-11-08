@@ -5233,6 +5233,42 @@ abstract class ZadL10n {
   /// **'مرة في الشهر بالكتير، زاد يوصف أكل البيت من المشتريات المتسجلة ويقترح إضافات. وصف مشتريات مش نصيحة طبية.'**
   String get settingsFoodPatternBody;
 
+  /// No description provided for @commuteTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'أتعلم مواعيد نزولك ورجوعك'**
+  String get commuteTitle;
+
+  /// No description provided for @commuteBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختياري. مواعيد بس، من غير أماكن ولا مشاوير.'**
+  String get commuteBody;
+
+  /// No description provided for @commuteConsentTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد يتعلم مواعيد يومك؟'**
+  String get commuteConsentTitle;
+
+  /// No description provided for @commuteConsentBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد هيحسب إمتى بتنزل من البيت وبترجع، من خروجك ورجوعك للبيت. عشان يظبط تنبيهاتك على يومك ويكلمك في الوقت المناسب.\n\nبيتحسب على موبايلك، وللسيرفر بيروح ملخص المواعيد والأيام بس، من غير أي إحداثيات أو أماكن شغل أو خط سير. محدش من العيلة بيشوفه. ولو قفلت المفتاح، بيتمسح من الموبايل والسيرفر.'**
+  String get commuteConsentBody;
+
+  /// No description provided for @commuteConsentAgree.
+  ///
+  /// In ar, this message translates to:
+  /// **'موافق'**
+  String get commuteConsentAgree;
+
+  /// No description provided for @commuteConsentDecline.
+  ///
+  /// In ar, this message translates to:
+  /// **'لأ، مش دلوقتي'**
+  String get commuteConsentDecline;
+
   /// No description provided for @settingsPetCallsTitle.
   ///
   /// In ar, this message translates to:

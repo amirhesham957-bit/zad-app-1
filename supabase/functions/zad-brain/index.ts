@@ -94,6 +94,7 @@ import { challengeDayIndex, suggestChallengeCap } from "../_shared/savingsChalle
 import { type SavingsAgreement, savingsAgreementFrom } from "../_shared/savingsAgreement.ts";
 import { RECEIPT_REACTIONS_PER_DAY, receiptKey, sanitizeReceiptFacts } from "../_shared/receiptReaction.ts";
 import { runSocialRecipes } from "./socialRecipesRun.ts";
+import { COMMUTE_SCOPE, readCommute } from "./commute.ts";
 import { fuelForecast, fuelForecastLine, type FuelTxn } from "./fuelForecast.ts";
 import { AFFINITY_SCOPE, affinityNote, type Polarity, signalTerms, statedPreference } from "../_shared/dealRelevance.ts";
 import { seasonFor, seasonInstruction, upcomingSeason, upcomingSeasonInstruction } from "../_shared/season.ts";
@@ -1356,6 +1357,8 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
 
   // سؤال صباح الخير اللي اتبعت (ملف أو فضول — curiosity.ts): الجواب بيوصل لفة عادية. ومعاها سؤال
   // بعد الضهر في أول ٧٢ ساعة (newcomer.ts) — الأحدث هو اللي العميل بيجاوب عليه.
+  const { data: commuteRow } = await sb.from("zad_memory").select("note").eq("user_id", userId).eq("scope", COMMUTE_SCOPE).limit(1).maybeSingle()
+    .then((r) => r, () => ({ data: null }));
   // البنزين (fuelForecast.ts): عشان الشات يقدر يتكلم عنه. فشل القراية = من غير توقع.
   const { data: fuelTxns } = await sb.from("zad_transactions").select("amount,title,merchant_name,category,created_at").eq("user_id", userId)
     .eq("txn_kind", "expense").gte("created_at", new Date(Date.now() - 90 * 86_400_000).toISOString()).limit(400)
@@ -1631,6 +1634,7 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
       return up ? { ...up, instruction: upcomingSeasonInstruction(up) } : null;
     })(),
     fuel_forecast: fuelLine,
+    commute: (commuteRow as { note?: string } | null)?.note ?? "",
     // ٧.٣: مواسم بلده جوه أسبوعين، بخطة الشرا والتوفير. فاضية = مفيش.
     season_plan: seasonPlanInstruction(upcomingCalendarSeasons(
       budgetState.country ?? userRes.data?.country ?? null, localNowContext(budgetState.timezone ?? "UTC").date, SEASON_PLAN_DAYS,
@@ -8883,7 +8887,7 @@ ${offers("log_pharmacy_dose") ? `   - **«أخدته» / «خدت الدوا» /
 
 ${(offers("set_broke_mode") || snap?.broke_mode) ? `12. **وضع الطوارئ (broke_mode)**: «أنا مفلس/خلصت فلوسي/مفلس باقي الشهر» ⇒ set_broke_mode(active=true) فوراً، ورد بحنية من غير لوم: رقم مصروف اليوم (daily_cap) لو معروف، و٣ خطوات عملية (الأساسيات بس، الأكل من اللي في البيت، أجّل أي شراء مش ضروري). طول ما broke_mode مش null: **ممنوع** تقترح شراء أو عروض أو مطاعم أو اشتراكات جديدة أو تضيف لقايمة الشراء غير لو العميل طلب بنفسه، والوصفات من المخزون بس من غير أي صنف يتشرى. متقترحش إلغاء التزامات ثابتة (إيجار/قسط).` : ""}
 ${(offers("start_savings_challenge") || snap?.savings_challenge) ? `13. **تحدي التوفير (savings_challenge)**: «تحدي توفير/ساعدني أوفّر/تحدي ٣٠ يوم» ⇒ start_savings_challenge. لو فيه تحدي شغال: اذكر اليوم (day من length_days) والسلسلة (streak) لما يكون ليها معنى، شجّعه يفضل تحت daily_cap، ولو سأل «ينفع أشتري كذا؟» قارن بالسقف اليومي.` : ""}
-${snap?.fuel_forecast ? `13د. **البنزين (fuel_forecast)**: ${snap.fuel_forecast}\n` : ""}${snap?.season_plan ? `13ج. **مواسم بلده (season_plan)**: ${snap.season_plan}\n` : ""}${(snap?.season_ahead) ? `13ب. **الموسم الجاي (season_ahead)**: اتبع season_ahead.instruction مرة في المحادثة لو الكلام عن البيت أو الشراء أو الميزانية — مش في كل رد، ومش في أول سطر.
+${snap?.commute ? `13هـ. **مواعيد يومه (commute)**: ${snap.commute} استخدمها في توقيت كلامك واقتراحاتك، ومتقولش تفاصيل عن مكانه؛ زاد مايعرفش أماكن.\n` : ""}${snap?.fuel_forecast ? `13د. **البنزين (fuel_forecast)**: ${snap.fuel_forecast}\n` : ""}${snap?.season_plan ? `13ج. **مواسم بلده (season_plan)**: ${snap.season_plan}\n` : ""}${(snap?.season_ahead) ? `13ب. **الموسم الجاي (season_ahead)**: اتبع season_ahead.instruction مرة في المحادثة لو الكلام عن البيت أو الشراء أو الميزانية — مش في كل رد، ومش في أول سطر.
 ` : ""}${(snap?.season) ? `14. **المواسم (season)**: لو season مش null، اتبع season.instruction في كل كلامك واقتراحاتك (رمضان: مفيش أكل بالنهار، فطار وسحور؛ العيد: العيدية والعزومات متوقعة). متفترضش إن العميل صايم أو بيحتفل لو قال غير كده.` : ""}
 ${(offers("find_deals")) ? `15أ. **العروض (find_deals)**: «هاتلي عروض/دوّرلي على عرض/فيه عروض إيه/كود خصم» ⇒ نادِ find_deals الأول واعرض العروض بأسعارها ولينكاتها. الميزانية عمرها ما تكون سبب ترفض أو تأجّل بيه البحث أو تقول «انزل بص بنفسك» — ممكن يكون بيخطط للشهر الجاي أو عنده فلوس تانية. نصيحة الفلوس لو لازمة: سطر واحد في آخر الرد بعد العروض.
 ` : ""}${(offers("suggest_recipes")) ? `15. **شيف زاد (suggest_recipes)**: «أطبخ إيه؟/أعمل أكل إيه من اللي عندي؟» ⇒ نادِ suggest_recipes واعرض من الوصفات اللي رجعت بس، باختصار — ممنوع تخترع وصفة من عندك. «افتحلي الشيف/صفحة الوصفات» ⇒ app_command(screen=recipes).` : ""}
@@ -10234,6 +10238,25 @@ async function handleRequest(req: Request): Promise<Response> {
       const sbSignal = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
       for (const t of signalTerms(String(body.item ?? "").slice(0, 80), String(body.store ?? "").slice(0, 60)).slice(0, 2)) {
         await bumpAffinity(sbSignal, signalUser, polarity, t, 0.5);
+      }
+      return new Response(JSON.stringify({ ok: true }), { headers: CORS_HEADERS });
+    }
+
+    // مواعيد يوم العميل من موبايله (commute.ts). الهوية من JWT بس.
+    if (body.action === "commute_summary") {
+      const commuteUser = await resolveRequestUserId(req, body);
+      if (!commuteUser) {
+        return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: CORS_HEADERS });
+      }
+      const request = readCommute(body);
+      if (!request) return new Response(JSON.stringify({ ok: false, error: "invalid" }), { status: 400, headers: CORS_HEADERS });
+      const sbCommute = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+      const { error } = request.clear
+        ? await sbCommute.from("zad_memory").delete().eq("user_id", commuteUser).eq("scope", COMMUTE_SCOPE)
+        : await writeSingleCopyMemory(sbCommute, commuteUser, COMMUTE_SCOPE, request.note, 0.7) as { error: { message?: string } | null };
+      if (error) {
+        console.error("[commute] write failed:", (error as { message?: string }).message);
+        return new Response(JSON.stringify({ ok: false }), { status: 500, headers: CORS_HEADERS });
       }
       return new Response(JSON.stringify({ ok: true }), { headers: CORS_HEADERS });
     }

@@ -11,6 +11,7 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/places/application/street_alerts_controller.dart';
 
 /// Street alerts: on, off, and what is missing when it is on but cannot work.
@@ -43,6 +44,18 @@ class _StreetAlertsSectionState extends ConsumerState<StreetAlertsSection>
     if (state == AppLifecycleState.resumed) {
       unawaited(ref.read(streetAlertsControllerProvider.notifier).reload());
     }
+  }
+
+  Future<void> _toggleCommute(bool on) async {
+    final notifier = ref.read(streetAlertsControllerProvider.notifier);
+    if (on) {
+      final yes = await showModalBottomSheet<bool>(
+        context: context,
+        builder: (_) => const _CommuteConsent(),
+      );
+      if (yes != true) return;
+    }
+    await notifier.setCommute(on: on);
   }
 
   Future<void> _toggle(bool on) async {
@@ -134,6 +147,27 @@ class _StreetAlertsSectionState extends ConsumerState<StreetAlertsSection>
                     ? null
                     : (v) => unawaited(_toggle(v)),
               ),
+              if (on)
+                SwitchListTile(
+                  key: const ValueKey<String>('commute'),
+                  secondary: Icon(
+                    ZadIcons.home,
+                    color: view.commuteOn
+                        ? ZadColors.green600
+                        : ZadColors.inkMuted,
+                  ),
+                  title: Text(context.l10n.commuteTitle),
+                  subtitle: Text(
+                    context.l10n.commuteBody,
+                    style: ZadType.bodySmall.copyWith(
+                      color: ZadColors.inkMuted,
+                    ),
+                  ),
+                  value: view.commuteOn,
+                  onChanged: view.busy
+                      ? null
+                      : (v) => unawaited(_toggleCommute(v)),
+                ),
               if (fix != null)
                 Padding(
                   padding: const EdgeInsets.fromLTRB(
@@ -158,6 +192,41 @@ class _StreetAlertsSectionState extends ConsumerState<StreetAlertsSection>
 }
 
 /// Why, before Android asks — and what never leaves the phone.
+/// Asks before Zad learns the routine. Nothing is learned unless «موافق».
+class _CommuteConsent extends StatelessWidget {
+  const new();
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(ZadSpacing.xl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Text(l.commuteConsentTitle, style: ZadType.titleLarge),
+            const SizedBox(height: ZadSpacing.md),
+            Text(l.commuteConsentBody, style: ZadType.bodyMedium),
+            const SizedBox(height: ZadSpacing.lg),
+            FilledButton(
+              key: const ValueKey<String>('commute-agree'),
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text(l.commuteConsentAgree),
+            ),
+            const SizedBox(height: ZadSpacing.sm),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(l.commuteConsentDecline),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _WhySheet extends StatelessWidget {
   const new();
 

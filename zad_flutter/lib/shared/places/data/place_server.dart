@@ -10,6 +10,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:zad/shared/alerts/domain/push_alert.dart';
 import 'package:zad/shared/nearby/domain/nearby.dart';
 import 'package:zad/shared/places/application/place_engine.dart';
+import 'package:zad/shared/places/domain/commute.dart';
 import 'package:zad_geofence/zad_geofence.dart';
 
 /// The real one.
@@ -48,6 +49,23 @@ class SupabasePlaceServer implements PlaceServer {
       'left_at': leftAt.toUtc().toIso8601String(),
     },
   );
+
+  @override
+  Future<void> commuteSummary(CommutePattern? pattern) =>
+      _client.functions.invoke(
+        'zad-brain',
+        body: <String, dynamic>{
+          'action': 'commute_summary',
+          if (pattern == null)
+            'clear': true
+          else ...<String, dynamic>{
+            'leave': pattern.leave,
+            'back': pattern.back,
+            'days': pattern.days,
+            'samples': pattern.samples,
+          },
+        },
+      );
 
   @override
   Future<void> zoneEvent({

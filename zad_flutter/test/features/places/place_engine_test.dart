@@ -6,6 +6,7 @@ import 'package:zad/shared/alerts/domain/push_alert.dart';
 import 'package:zad/shared/nearby/domain/nearby.dart';
 import 'package:zad/shared/places/application/place_engine.dart';
 import 'package:zad/shared/places/data/place_server.dart';
+import 'package:zad/shared/places/domain/commute.dart';
 import 'package:zad/shared/places/domain/places.dart';
 import 'package:zad_geofence/zad_geofence.dart';
 
@@ -80,6 +81,14 @@ class _Server implements PlaceServer {
 
   @override
   Future<void> saveLastLocation(GeoPoint coarse) async => locations.add(coarse);
+
+  final List<CommutePattern?> commutes = <CommutePattern?>[];
+
+  @override
+  Future<void> commuteSummary(CommutePattern? pattern) async {
+    if (offline) throw StateError('offline');
+    commutes.add(pattern);
+  }
 
   final List<String> zoneEvents = <String>[];
 
@@ -557,6 +566,59 @@ void main() {
       expect(back.zones, state.zones);
       expect(back.shopFences.single.exit, isTrue);
       expect(back.shopFences.single.enter, isFalse);
+    });
+  });
+
+  group('commute', () {
+    final left = now.subtract(const Duration(hours: 9));
+    Future<void> oneDay(PlaceState state) async {
+      seed(state.copyWith(leftAt: left));
+      host.events
+        ..clear()
+        ..add(event(kHomeFence, PlaceTransition.enter, now));
+      await engine.handlePending();
+    }
+
+    test('a day is recorded only after the customer agreed', () async {
+      await oneDay(fresh);
+      expect(host.state.outings, isEmpty);
+      await oneDay(fresh.copyWith(commuteOn: true));
+      expect(host.state.outings.single.awayMinutes, 540);
+    });
+
+    test('the routine is sent once, without any place in it', () async {
+      final days = <Outing>[
+        for (var i = 1; i <= 10; i++)
+          (
+            date: '2026-10-${i.toString().padLeft(2, '0')}',
+            weekday: (i % 5) + 1,
+            leftMinute: 480,
+            awayMinutes: 540,
+          ),
+      ];
+      await oneDay(fresh.copyWith(commuteOn: true, outings: days));
+      expect(server.commutes.single!.leave, '08:00');
+      final sent = host.state.commuteSent;
+      expect(sent, isNotNull);
+      await oneDay(host.state.copyWith(outings: days, commuteSent: sent));
+      expect(server.commutes, hasLength(1));
+    });
+
+    test('no erases the phone and the server', () async {
+      seed(
+        fresh.copyWith(
+          commuteOn: true,
+          commuteSent: 'x',
+          outings: const <Outing>[
+            (date: '2026-10-01', weekday: 4, leftMinute: 480, awayMinutes: 540),
+          ],
+        ),
+      );
+      await engine.setCommute(on: false);
+      expect(host.state.commuteOn, isFalse);
+      expect(host.state.outings, isEmpty);
+      expect(host.state.commuteSent, isNull);
+      expect(server.commutes, <CommutePattern?>[null]);
     });
   });
 }

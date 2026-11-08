@@ -18,6 +18,7 @@ library;
 
 import 'package:timezone/timezone.dart' as tz;
 import 'package:zad/shared/nearby/domain/nearby.dart';
+import 'package:zad/shared/places/domain/commute.dart';
 import 'package:zad_geofence/zad_geofence.dart';
 
 /// A shop's circle. Kotlin's 120 m.
@@ -234,6 +235,9 @@ class PlaceState {
     this.center,
     this.shopFences = const <Fence>[],
     this.zones = const <String, ChildZone>{},
+    this.commuteOn = false,
+    this.outings = const <Outing>[],
+    this.commuteSent,
   });
 
   /// Reads the blob; anything unreadable is the default.
@@ -322,6 +326,24 @@ class PlaceState {
           ?_fenceFromJson(f),
       ],
       zones: zones,
+      commuteOn: json['commute_on'] == true,
+      outings: <Outing>[
+        for (final o in (json['outings'] as List<dynamic>?) ?? const [])
+          if (o is Map &&
+              o['date'] is String &&
+              o['weekday'] is num &&
+              o['left'] is num &&
+              o['away'] is num)
+            (
+              date: o['date'] as String,
+              weekday: (o['weekday'] as num).toInt(),
+              leftMinute: (o['left'] as num).toInt(),
+              awayMinutes: (o['away'] as num).toInt(),
+            ),
+      ],
+      commuteSent: json['commute_sent'] is String
+          ? json['commute_sent'] as String
+          : null,
     );
   }
 
@@ -361,6 +383,16 @@ class PlaceState {
   /// alerts are on.
   final Map<String, ChildZone> zones;
 
+  /// Whether the customer agreed to Zad learning their daily routine. A
+  /// separate yes from street alerts.
+  final bool commuteOn;
+
+  /// The days out so far, oldest first. Stays on the phone.
+  final List<Outing> outings;
+
+  /// The key of the pattern the server last accepted.
+  final String? commuteSent;
+
   /// A copy with the given fields replaced. [leftAt] is cleared with
   /// `clearLeftAt`, since null means "keep".
   PlaceState copyWith({
@@ -376,6 +408,10 @@ class PlaceState {
     GeoPoint? center,
     List<Fence>? shopFences,
     Map<String, ChildZone>? zones,
+    bool? commuteOn,
+    List<Outing>? outings,
+    String? commuteSent,
+    bool clearCommuteSent = false,
   }) => PlaceState(
     enabled: enabled ?? this.enabled,
     zone: zone ?? this.zone,
@@ -388,6 +424,9 @@ class PlaceState {
     center: center ?? this.center,
     shopFences: shopFences ?? this.shopFences,
     zones: zones ?? this.zones,
+    commuteOn: commuteOn ?? this.commuteOn,
+    outings: outings ?? this.outings,
+    commuteSent: clearCommuteSent ? null : (commuteSent ?? this.commuteSent),
   );
 
   /// The blob.
@@ -418,6 +457,17 @@ class PlaceState {
       'refreshed_at': ?refreshedAt?.millisecondsSinceEpoch,
       if (center != null) 'center': point(center),
       'shop_fences': <Object>[for (final f in shopFences) f.toJson()],
+      'commute_on': commuteOn,
+      'outings': <Object>[
+        for (final o in outings)
+          <String, Object>{
+            'date': o.date,
+            'weekday': o.weekday,
+            'left': o.leftMinute,
+            'away': o.awayMinutes,
+          },
+      ],
+      'commute_sent': ?commuteSent,
       'zones': <String, Object>{
         for (final MapEntry(:key, :value) in zones.entries)
           key: <String, Object>{

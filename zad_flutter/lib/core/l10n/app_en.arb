@@ -918,6 +918,12 @@
   "settingsCompanionSection": "Your companion",
   "settingsFoodPatternTitle": "Your home's food picture",
   "settingsFoodPatternBody": "At most once a month, Zad describes your home's food from recorded purchases and suggests additions. A description of purchases, not medical advice.",
+  "commuteTitle": "Learn when I leave and come back",
+  "commuteBody": "Optional. Times only, no places or routes.",
+  "commuteConsentTitle": "Let Zad learn your daily times?",
+  "commuteConsentBody": "Zad works out when you usually leave home and return, from your leaving and coming home, so it can fit reminders to your day and reach you at the right time.\n\nThis is worked out on your phone. Only a summary of times and weekdays goes to the server: no coordinates, workplace or route. Nobody in your family sees it. Turning this off erases it from your phone and the server.",
+  "commuteConsentAgree": "I agree",
+  "commuteConsentDecline": "Not now",
   "settingsPetCallsTitle": "Zado's calls",
   "settingsPetCallsBody": "Zado messages you when it's hungry or thirsty, on Telegram and by notification. Turning this off doesn't stop the morning greeting or the deals."
 }

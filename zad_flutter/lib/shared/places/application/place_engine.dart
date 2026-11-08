@@ -26,6 +26,7 @@ import 'package:zad/shared/alerts/domain/push_alert.dart';
 import 'package:zad/shared/nearby/data/nearby_remote.dart';
 import 'package:zad/shared/nearby/domain/nearby.dart';
 import 'package:zad/shared/places/data/place_server.dart';
+import 'package:zad/shared/places/domain/commute.dart';
 import 'package:zad/shared/places/domain/places.dart';
 import 'package:zad_geofence/zad_geofence.dart';
 
@@ -117,6 +118,10 @@ abstract interface class PlaceServer {
     required PlaceTransition transition,
     required DateTime at,
   });
+
+  /// The learned routine's summary, or null to erase it. Times and weekdays
+  /// only. Throws when it cannot be reached.
+  Future<void> commuteSummary(CommutePattern? pattern);
 }
 
 /// Shops of [kind] around [at] (already coarse).
@@ -184,6 +189,38 @@ class PlaceEngine {
     );
     await _save(state);
     await _registerAll(state);
+  }
+
+  /// The customer's yes or no to learning their routine. A no forgets it on
+  /// the phone at once; the server is told next, and asked again on the next
+  /// run if it cannot be reached.
+  Future<void> setCommute({required bool on}) async {
+    var state = await this.state();
+    if (on) {
+      await _save(state.copyWith(commuteOn: true));
+      return;
+    }
+    state = state.copyWith(
+      commuteOn: false,
+      outings: const <Outing>[],
+      clearCommuteSent: true,
+    );
+    await _save(state);
+    await _server.commuteSummary(null);
+  }
+
+  /// Sends the routine when it is new. Returns the state to save.
+  Future<PlaceState> _shareCommute(PlaceState state) async {
+    if (!state.commuteOn) return state;
+    final pattern = commutePattern(state.outings);
+    if (pattern == null || pattern.key == state.commuteSent) return state;
+    try {
+      await _server.commuteSummary(pattern);
+      return state.copyWith(commuteSent: pattern.key);
+    } on Object catch (e) {
+      debugPrint('[places] commute summary not sent: $e');
+      return state;
+    }
   }
 
   /// Every fence this phone should watch: the street ones while street
@@ -332,6 +369,20 @@ class PlaceEngine {
               debugPrint('[places] back_home not sent: $err');
               break;
             }
+            if (state.commuteOn) {
+              final left = tz.TZDateTime.from(leftAt, zone);
+              state = state.copyWith(
+                outings: <Outing>[
+                  ...state.outings,
+                  (
+                    date: DateFormat('yyyy-MM-dd').format(left),
+                    weekday: left.weekday,
+                    leftMinute: left.hour * 60 + left.minute,
+                    awayMinutes: e.at.difference(leftAt).inMinutes,
+                  ),
+                ].reversed.take(kCommuteKeep).toList().reversed.toList(),
+              );
+            }
           }
           state = state.copyWith(clearLeftAt: true);
         }
@@ -378,6 +429,7 @@ class PlaceEngine {
       }
     }
 
+    state = await _shareCommute(state);
     await _save(state);
     await _host.acknowledge(done);
 

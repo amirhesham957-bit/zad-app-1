@@ -3019,6 +3019,25 @@ class ZadL10nEn extends ZadL10n {
       'At most once a month, Zad describes your home\'s food from recorded purchases and suggests additions. A description of purchases, not medical advice.';
 
   @override
+  String get commuteTitle => 'Learn when I leave and come back';
+
+  @override
+  String get commuteBody => 'Optional. Times only, no places or routes.';
+
+  @override
+  String get commuteConsentTitle => 'Let Zad learn your daily times?';
+
+  @override
+  String get commuteConsentBody =>
+      'Zad works out when you usually leave home and return, from your leaving and coming home, so it can fit reminders to your day and reach you at the right time.\n\nThis is worked out on your phone. Only a summary of times and weekdays goes to the server: no coordinates, workplace or route. Nobody in your family sees it. Turning this off erases it from your phone and the server.';
+
+  @override
+  String get commuteConsentAgree => 'I agree';
+
+  @override
+  String get commuteConsentDecline => 'Not now';
+
+  @override
   String get settingsPetCallsTitle => 'Zado\'s calls';
 
   @override
