@@ -15,6 +15,7 @@ import { itemKey } from "./shared.ts";
 import { codeStoreKey } from "./dealCodes.ts";
 import { fetchPreviewImage, previewableUrl } from "../_shared/pagePreview.ts";
 import { deliveryApp } from "../_shared/deliveryApps.ts";
+import { dealRelevance, loadAffinity } from "../_shared/dealRelevance.ts";
 import { upcomingSeason } from "../_shared/season.ts";
 import { SCHOOL_WINDOW_MARKETS } from "./eventAhead.ts";
 import { customerCity, dealCountry, dealsForCity, FAVORITE_WINDOW_DAYS, favoriteStores, runningOutNames } from "./tasteDeals.ts";
@@ -323,6 +324,7 @@ async function loadDealInputs(sb: SupabaseClient, userId: string, now: number): 
     schoolStarts: ((windows ?? []) as Array<{ start_date: string; seasonal_events?: { slug?: string } | Array<{ slug?: string }> | null }>)
       .filter((w) => [w.seasonal_events].flat().some((e) => e?.slug === "back_to_school")).map((w) => w.start_date),
   });
+  const affinity = await loadAffinity(sb, userId, now);
   return {
     country,
     broke,
@@ -338,7 +340,9 @@ async function loadDealInputs(sb: SupabaseClient, userId: string, now: number): 
     merchants: [...new Set(((txns ?? []) as Array<{ merchant_name: string | null }>).map((t) => (t.merchant_name ?? "").trim()).filter(Boolean))],
     bought: ((bought ?? []) as Array<{ item_name: string | null }>).map((r) => r.item_name ?? "").filter(Boolean),
     sent: new Set(((sentRows ?? []) as Array<{ deal_key: string }>).map((r) => r.deal_key)),
-    deals: dealsForCity((deals ?? []) as DigestDealRow[], city).filter((d) => !pausedKinds.has(d.source_kind)),
+    // اللي قال إنه مش بيحبه مايتبعتلوش (dealRelevance.ts).
+    deals: dealsForCity((deals ?? []) as DigestDealRow[], city).filter((d) =>
+      !pausedKinds.has(d.source_kind) && !dealRelevance({ item: d.item_name, store: d.store }, affinity).blocked),
     codes: (codes ?? []) as DigestCodeRow[],
   };
 }
