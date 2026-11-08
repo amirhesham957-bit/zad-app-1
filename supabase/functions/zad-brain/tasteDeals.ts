@@ -26,6 +26,8 @@ export const FAVORITE_WINDOW_DAYS = 60;
 export const DEAL_REPEAT_DAYS = 7;
 /** «🙅 مش مهتم» في تليجرام (٤.٢٠): الاحتياج ده مايتعرضش عليه عرض المدة دي. */
 export const DEAL_DECLINED_DAYS = 30;
+/** How much of a sent moment zad_voice_moments.delivery.text keeps (voiceMoments.ts). */
+const DELIVERY_TEXT_SAVED = 300;
 /** آخر نقطة للعميل أقدم من كده = مش بيته ولا مكانه دلوقتي (ZAD_PLAN ٤.٧). */
 export const NEARBY_POINT_MAX_AGE_DAYS = 7;
 export const NEARBY_RADIUS_METERS = 3000;
@@ -557,16 +559,46 @@ export function dealCountry(
   return travelContext(row, nowMs)?.in ?? String(row?.country ?? "").trim().toUpperCase();
 }
 
+/** Case, Arabic letter forms and digits folded, so the model's spelling of a store still matches. */
+function foldForMatch(text: string): string {
+  return text.toLowerCase()
+    .replace(/[٠-٩]/g, (d) => String("٠١٢٣٤٥٦٧٨٩".indexOf(d)))
+    .replace(/[\u064B-\u0652\u0640]/g, "")
+    .replace(/[أإآ]/g, "ا").replace(/ى/g, "ي").replace(/ة/g, "ه")
+    .replace(/\s+/g, " ").trim();
+}
+
+/** Did the text the customer will read actually name this deal — its store, or at least two words of the item? */
+export function saysTheDeal(text: string, deal: { item?: unknown; store?: unknown }): boolean {
+  const said = foldForMatch(text);
+  const store = typeof deal.store === "string" ? foldForMatch(deal.store) : "";
+  if (store.length >= 2 && said.includes(store)) return true;
+  const words = typeof deal.item === "string" ? foldForMatch(deal.item).split(/[\s\-–—/]+/).filter((w) => w.length >= 3) : [];
+  return words.filter((w) => said.includes(w)).length >= Math.min(2, words.length) && words.length > 0;
+}
+
+/**
+ * A deal counts as offered only if the customer got it. On 2026-11-08, 10 of the last 16 greetings with a deal in their
+ * facts never said it, and the deal was then held back for a week. A text that leaves the deal out doesn't count
+ * (failed sends never reach this: the query reads sent rows). A row with no saved text yet, or one cut at [DELIVERY_TEXT_SAVED], can't be judged and still counts.
+ */
+function reachedTheCustomer(row: { facts?: unknown; delivery?: unknown }): boolean {
+  const text = (row.delivery as { text?: unknown } | null | undefined)?.text;
+  if (typeof text !== "string" || text.length >= DELIVERY_TEXT_SAVED) return true;
+  return saysTheDeal(text, (row.facts as { taste_deal: { item?: unknown; store?: unknown } }).taste_deal);
+}
+
 /**
  * مفاتيح العروض اللي اتقالت (facts.taste_deal.key في تحيات الصبح) آخر [DEAL_REPEAT_DAYS] يوم، و`need:<صنف>` لكل عرض
  * اتقال عليه «مش مهتم» (facts.taste_deal.answer = no) آخر [DEAL_DECLINED_DAYS] يوم. صف من غير تاريخ = جديد.
  */
-export function askedDealKeys(rows: ReadonlyArray<{ facts?: unknown; created_at?: string | null }> | null | undefined, nowMs = Date.now()): Set<string> {
+export function askedDealKeys(rows: ReadonlyArray<{ facts?: unknown; created_at?: string | null; delivery?: unknown }> | null | undefined, nowMs = Date.now()): Set<string> {
   const keys = new Set<string>();
   for (const r of rows ?? []) {
-    const deal = (r?.facts as { taste_deal?: { key?: unknown; answer?: unknown } } | null)?.taste_deal;
+    const deal = (r?.facts as { taste_deal?: { key?: unknown; answer?: unknown; item?: unknown; store?: unknown } } | null)?.taste_deal;
     const key = deal?.key;
     if (typeof key !== "string" || !key) continue;
+    if (!deal?.answer && !reachedTheCustomer(r)) continue;
     const at = Date.parse(String(r?.created_at ?? ""));
     const age = Number.isFinite(at) ? nowMs - at : 0;
     // «العرض ده غلط» (٤.١٩): نفس العرض مايتقالش تاني شهر، مش أسبوع بس.
@@ -591,7 +623,7 @@ export async function loadTasteDeal(sb: SupabaseClient, userId: string, now = Da
       sb.from("zad_users").select("country,travel_country,travel_since,last_lat,last_lon,last_location_at").eq("id", userId).maybeSingle(),
       sb.from("zad_transactions").select("merchant_name,title,created_at").eq("user_id", userId).eq("txn_kind", "expense")
         .gte("created_at", new Date(now - FAVORITE_WINDOW_DAYS * 86_400_000).toISOString()).limit(500),
-      sb.from("zad_voice_moments").select("facts,created_at").eq("user_id", userId).eq("moment", "morning_greeting").eq("status", "sent")
+      sb.from("zad_voice_moments").select("facts,created_at,delivery").eq("user_id", userId).eq("moment", "morning_greeting").eq("status", "sent")
         .gte("created_at", new Date(now - DEAL_DECLINED_DAYS * 86_400_000).toISOString()).limit(40),
       // فشل القراية = اعتبره شغال: النواقص بس بأرخص سعر، مش عرض تخزين.
       sb.from("zad_broke_mode").select("ends_at,ended_at").eq("user_id", userId).maybeSingle()
@@ -631,7 +663,7 @@ export async function loadTasteDeal(sb: SupabaseClient, userId: string, now = Da
       ...statedStores(saidOf(STORE_PREFERENCE_SCOPE)),
       ...favoriteStores((txns ?? []) as Array<{ merchant_name: string | null }>),
     ].filter((name, i, all) => all.findIndex((o) => itemKey(o) === itemKey(name)) === i);
-    const skip = askedDealKeys(past as Array<{ facts?: unknown; created_at?: string | null }>, now);
+    const skip = askedDealKeys(past as Array<{ facts?: unknown; created_at?: string | null; delivery?: unknown }>, now);
     const brands = new Map([...houseBrands(boughtNames), ...statedBrands(saidOf(BRAND_PREFERENCE_SCOPE))]);
     // ٤.٨: الفلوس مرتاحة ⇒ عرض على أساسي بيتخزّن واتشرى قبل كده بيتقال كفرصة تخزين.
     const stockable = opts.comfortable && !tight ? storableBought(boughtNames) : new Set<number>();

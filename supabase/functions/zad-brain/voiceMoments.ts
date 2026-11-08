@@ -23,7 +23,7 @@ import { loadAppointmentFollowUp } from "./appointmentFollowUp.ts";
 import { type DoseHabit, loadDoseHabit } from "./doseHabit.ts";
 import { sameProductAsk } from "./productIdentity.ts";
 import { askedClothesKeys, clothingNudge, loadWeather, weatherAlert, type WeatherFacts } from "./weather.ts";
-import { loadTasteDeal } from "./tasteDeals.ts";
+import { loadTasteDeal, saysTheDeal } from "./tasteDeals.ts";
 import { loadDealCode } from "./dealCodes.ts";
 import { budgetComfortable } from "./householdLoad.ts";
 import { familyTime, type FamilyTime, isWeekendEve, weekendOuting, type WeekendOuting } from "./familyTime.ts";
@@ -135,24 +135,6 @@ export function codeLine(raw: unknown): string {
     (Number(c.min_order) > 0 ? ` على طلب ${Number(c.min_order)} أو أكتر` : "") +
     (typeof c.until === "string" && /^\d{4}-\d{2}-\d{2}$/.test(c.until) ? ` لحد ${c.until}` : "") +
     ` (من ${from} ${c.store.slice(0, 40)}، ممكن يكون خلص).`;
-}
-
-/** Case, Arabic letter forms and digits folded, so the model's spelling of a store still matches. */
-function foldForMatch(text: string): string {
-  return text.toLowerCase()
-    .replace(/[٠-٩]/g, (d) => String("٠١٢٣٤٥٦٧٨٩".indexOf(d)))
-    .replace(/[\u064B-\u0652\u0640]/g, "")
-    .replace(/[أإآ]/g, "ا").replace(/ى/g, "ي").replace(/ة/g, "ه")
-    .replace(/\s+/g, " ").trim();
-}
-
-/** Did the text the customer will read actually name this deal — its store, or at least two words of the item? */
-function saysTheDeal(text: string, deal: { item?: unknown; store?: unknown }): boolean {
-  const said = foldForMatch(text);
-  const store = typeof deal.store === "string" ? foldForMatch(deal.store) : "";
-  if (store.length >= 2 && said.includes(store)) return true;
-  const words = typeof deal.item === "string" ? foldForMatch(deal.item).split(/[\s\-–—/]+/).filter((w) => w.length >= 3) : [];
-  return words.filter((w) => said.includes(w)).length >= Math.min(2, words.length) && words.length > 0;
 }
 
 /**

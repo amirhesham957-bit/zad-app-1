@@ -509,3 +509,20 @@ Deno.test("city: the morning deal reads their city's rows; with no city, or a ci
   assertEquals(noCity?.price, 50);
   assertEquals(otherCountry?.price, 50);
 });
+
+Deno.test("a deal counts as offered only when the greeting said it and it was delivered (8/11)", () => {
+  const now = Date.parse("2026-11-08T12:00:00Z");
+  const row = (text: string | undefined, answer?: string) => ({
+    created_at: "2026-11-08T08:00:00Z",
+    facts: { taste_deal: { key: "deal:زيت:بشاير", item: "زيت الممتاز", store: "بشاير", ...(answer ? { answer } : {}) } },
+    ...(text === undefined ? {} : { delivery: { text } }),
+  });
+  const key = "deal:زيت:بشاير";
+  assert(askedDealKeys([row("زيت الممتاز في بشاير بـ٩٠")], now).has(key));
+  assert(!askedDealKeys([row("الجو غيم. عيد ميلادك امتى؟")], now).has(key));
+  // Not judged yet, or the saved text was cut: still counts.
+  assert(askedDealKeys([row(undefined)], now).has(key));
+  assert(askedDealKeys([row("ا".repeat(300))], now).has(key));
+  // A customer's answer always counts.
+  assert(askedDealKeys([row("الجو غيم", "no")], now).has("need:زيت"));
+});
