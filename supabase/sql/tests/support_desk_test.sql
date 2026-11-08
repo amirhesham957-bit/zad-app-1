@@ -51,12 +51,12 @@ begin
   insert into zad_entitlements values (u, 'pro', now() + interval '10 days', 5, 2);
   insert into zad_product_events values (u, 'app_open'), (u, 'bank.off');
   insert into zad_brain_runs values (u, 'failed', 'Error: every gemini model unavailable');
-  insert into zad_transactions values (u, 999, 'كارفور');
+  insert into zad_transactions values (u, 73519.25, 'كارفور');
 
   r := public.zad_support_lookup(-100, u::text);
   assert r ->> 'found' = 'true' and r ->> 'tier' = 'pro' and r ->> 'bank_last' = 'bank.off', 'by id: ' || r::text;
   assert r -> 'brain_failed_7d' ->> 'الذكاء مش متاح' = '1', 'failures by kind';
-  assert position('999' in r::text) = 0 and position('كارفور' in r::text) = 0, 'nothing financial: ' || r::text;
+  assert position('73519.25' in r::text) = 0 and position('كارفور' in r::text) = 0, 'nothing financial: ' || r::text;
 
   assert public.zad_support_lookup(-100, ' owner@zad.APP ') ->> 'user_id' = u::text, 'by login email, any case';
   assert public.zad_support_lookup(-100, 'help@x.com') ->> 'user_id' = other::text, 'by a ticket contact email';
