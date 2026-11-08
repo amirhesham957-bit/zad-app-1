@@ -3,34 +3,11 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.6";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const admin = createClient(supabaseUrl, serviceKey);
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "apikey, x-client-info, Content-Type, Authorization",
 };
-
-// Tables with no FK/ON DELETE CASCADE to auth.users — must be cleaned explicitly.
-// Everything else (zad_memory, zad_insights, zad_debts, zad_pharmacy_items,
-// zad_maintenance_items, zad_dose_log, zad_consumption, zad_brain_queue,
-// zad_brain_runs, user_behavior_profile, family_tasbiha, tasbiha_challenge_progress,
-// financial_challenge_progress) cascades automatically once auth.users is deleted.
-const USER_OWNED_TABLES = [
-  "zad_inventory",
-  "zad_transactions",
-  "zad_subscriptions",
-  "zad_shopping_list",
-  "app_notifications",
-  "affiliate_clicks",
-  "affiliate_catalog_requests",
-  "family_members",
-];
-
-// Same problem, different column name. Keyed on sender_id, no FK to auth.users.
-const SENDER_OWNED_TABLES = [
-  "chat_messages",
-];
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -52,36 +29,15 @@ Deno.serve(async (req: Request) => {
     if (userErr || !userRes?.user) {
       return new Response(JSON.stringify({ error: "invalid_session" }), { status: 401, headers: corsHeaders });
     }
-    const userId = userRes.user.id;
 
-    for (const table of USER_OWNED_TABLES) {
-      const { error } = await admin.from(table).delete().eq("user_id", userId);
-      if (error) console.error(`[DeleteAccount] cleanup failed table=${table}: ${error.message}`);
+    // المسح الفعلي بعد ١٤ يوم (zad_purge_due_accounts). هنا الطلب بس، باسم صاحب الجلسة.
+    const { data: purgeAt, error } = await callerClient.rpc("zad_request_account_deletion");
+    if (error) {
+      console.error(`[DeleteAccount] request failed: ${error.message}`);
+      return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: corsHeaders });
     }
 
-    // Chat carries the user's own words, and neither table keys on `user_id` or has an
-    // FK to auth.users — so deleting the account left every message they ever sent in
-    // place, readable by the rest of the family group forever. Verified 2026-08-14 by
-    // checking pg_constraint: no auth.users FK on either sender_id.
-    for (const table of SENDER_OWNED_TABLES) {
-      const { error } = await admin.from(table).delete().eq("sender_id", userId);
-      if (error) console.error(`[DeleteAccount] cleanup failed table=${table}: ${error.message}`);
-    }
-    // zad_users primary key is the auth user id itself, not a "user_id" column.
-    const { error: profileErr } = await admin.from("zad_users").delete().eq("id", userId);
-    if (profileErr) console.error(`[DeleteAccount] cleanup failed table=zad_users: ${profileErr.message}`);
-
-    // Deleting the auth user cascades every table with ON DELETE CASCADE to
-    // auth.users, and is the actual account deletion — without this the
-    // client-only row deletes just emptied the profile while the auth
-    // account (and email) lived on forever.
-    const { error: deleteErr } = await admin.auth.admin.deleteUser(userId);
-    if (deleteErr) {
-      console.error(`[DeleteAccount] auth.admin.deleteUser failed: ${deleteErr.message}`);
-      return new Response(JSON.stringify({ error: deleteErr.message }), { status: 500, headers: corsHeaders });
-    }
-
-    return new Response(JSON.stringify({ success: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ success: true, purge_at: purgeAt }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
     console.error(`[DeleteAccount] Error: ${(e as Error).message}`);
     return new Response(JSON.stringify({ error: (e as Error).message }), { status: 500, headers: corsHeaders });

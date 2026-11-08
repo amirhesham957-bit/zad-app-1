@@ -1663,7 +1663,7 @@ bot.on("message:text", async (ctx) => {
   if (turnReply.lines.length > 0) {
     const body = clampForTelegram(turnReply.lines.join("\n\n"));
     if (turnReply.needsAdCredit) {
-      await ctx.reply(body, { reply_markup: toGrammyKeyboard(adCreditKeyboard()) });
+      await ctx.reply(body, { reply_markup: toGrammyKeyboard(adCreditKeyboard(SUPABASE_URL)) });
     } else if (turnReply.pendingId) {
       await ctx.reply(body, { reply_markup: toGrammyKeyboard(confirmSpendKeyboard(turnReply.pendingId)) });
     } else if (turnReply.toolPendingId) {
@@ -1747,7 +1747,7 @@ bot.on("message:voice", async (ctx) => {
   if (turnReply.lines.length > 0) {
     const body = clampForTelegram(heard + turnReply.lines.join("\n\n"));
     if (turnReply.needsAdCredit) {
-      await ctx.reply(body, { reply_markup: toGrammyKeyboard(adCreditKeyboard()) });
+      await ctx.reply(body, { reply_markup: toGrammyKeyboard(adCreditKeyboard(SUPABASE_URL)) });
     } else if (turnReply.pendingId) {
       await ctx.reply(body, { reply_markup: toGrammyKeyboard(confirmSpendKeyboard(turnReply.pendingId)) });
     } else if (turnReply.toolPendingId) {
@@ -2969,14 +2969,15 @@ Deno.serve(async (req: Request) => {
   // the webhook is wired up, without ever echoing the token or the secret itself.
   if (req.method === "GET") {
     // زرار «افتح زاد» تحت رسايل الرفيق (telegram.ts): تحويل لمكان من قايمة مقفولة.
-    const open = new URL(req.url).searchParams.get("open");
+    const query = new URL(req.url).searchParams;
+    const open = query.get("open");
     if (open !== null) {
-      const location = appLinkRedirect(open);
+      const location = appLinkRedirect(open, query.get("code"));
       return location
         ? new Response(null, { status: 302, headers: { Location: location, "Cache-Control": "no-store" } })
         : new Response("not found", { status: 404 });
     }
-    const status = await ensureWebhook(new URL(req.url).searchParams.get("force") === "1");
+    const status = await ensureWebhook(query.get("force") === "1");
     return new Response(
       JSON.stringify({
         function: "zad-telegram-bot",

@@ -1,5 +1,5 @@
-/// Telegram's «افتح زاد» buttons (`telegram.ts` `petCallKeyboard`): where the
-/// link asks to go, from MainActivity's `zad/link` channel.
+/// Links that open the app from outside (`telegram.ts` `appLinkRedirect`):
+/// where the link asks to go, from MainActivity's `zad/link` channel.
 library;
 
 import 'package:flutter/services.dart';
@@ -13,14 +13,43 @@ enum AppLinkTarget {
 
   /// The deals page.
   deals,
+
+  /// The page with the rewarded ad.
+  rewards,
+
+  /// The join-family dialog, with the invite's code.
+  invite,
 }
 
-/// The target named [raw]; null for anything else.
-AppLinkTarget? appLinkTargetFrom(Object? raw) => switch (raw) {
-  'pet' => AppLinkTarget.pet,
-  'deals' => AppLinkTarget.deals,
-  _ => null,
-};
+/// One link.
+class AppLink {
+  /// Creates a link.
+  const new(this.target, {this.code});
+
+  /// Where it goes.
+  final AppLinkTarget target;
+
+  /// The family invite's code; set only for [AppLinkTarget.invite].
+  final String? code;
+}
+
+final RegExp _inviteCode = RegExp(r'^[A-Za-z0-9-]{4,32}$');
+
+/// Reads the channel's map; null for anything outside the list.
+AppLink? appLinkFrom(Object? raw) {
+  if (raw is! Map) return null;
+  final code = raw['code'];
+  return switch (raw['to']) {
+    'pet' => const AppLink(AppLinkTarget.pet),
+    'deals' => const AppLink(AppLinkTarget.deals),
+    'rewards' => const AppLink(AppLinkTarget.rewards),
+    'invite' when code is String && _inviteCode.hasMatch(code) => AppLink(
+      AppLinkTarget.invite,
+      code: code,
+    ),
+    _ => null,
+  };
+}
 
 /// MainActivity's link channel.
 class AppLinkIntake {
@@ -31,7 +60,7 @@ class AppLinkIntake {
   final MethodChannel _channel;
 
   /// Calls [onLink] with the link that opened the app and each one after.
-  Future<void> listen(void Function(AppLinkTarget target) onLink) async {
+  Future<void> listen(void Function(AppLink link) onLink) async {
     Future<void> take() async {
       final Object? raw;
       try {
@@ -40,8 +69,8 @@ class AppLinkIntake {
         // No channel (tests, another platform): no link.
         return;
       }
-      final target = appLinkTargetFrom(raw);
-      if (target != null) onLink(target);
+      final link = appLinkFrom(raw);
+      if (link != null) onLink(link);
     }
 
     _channel.setMethodCallHandler((call) async {

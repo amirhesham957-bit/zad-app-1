@@ -11,9 +11,7 @@ export { DOSE_SNOOZE_MINUTES, type DoseAction, doseAlreadyReply, doseSlots } fro
 /**
  * زر إما بـcallback_data (بيرجع للبوت) أو بـurl (بيفتح رابط عند العميل).
  *
- * ⚠️ تليجرام بيقبل http/https/tg:// في url وبيرفض أي مخطط مخصص — يعني
- * `zad://rewards` مش هيتبعت أصلاً. عشان كده رابط الشحن https://zad.app/rewards
- * وفيه intent-filter مقابل في المانيفست.
+ * ⚠️ تليجرام بيقبل http/https/tg:// في url وبيرفض أي مخطط مخصص، فزرار التطبيق بيروح لـappLinkUrl.
  */
 export interface InlineKeyboardButton {
   text: string;
@@ -22,8 +20,8 @@ export interface InlineKeyboardButton {
 }
 
 /** زر "اشحن رصيدك" لرسالة نفاد الرصيد. */
-export function adCreditKeyboard(): InlineKeyboardButton[][] {
-  return [[{ text: "🎬 اشحن رصيدك من التطبيق", url: "https://zad.app/rewards" }]];
+export function adCreditKeyboard(supabaseUrl: string): InlineKeyboardButton[][] {
+  return [[{ text: "🎬 اشحن رصيدك من التطبيق", url: appLinkUrl(supabaseUrl, "rewards") }]];
 }
 
 export function mainMenuKeyboard(): InlineKeyboardButton[][] {
@@ -63,7 +61,7 @@ export function proactiveDismissKeyboard(taskId: string): InlineKeyboardButton[]
 }
 
 /** الأماكن اللي زرار تليجرام يقدر يفتحها في التطبيق. قايمة مقفولة: الرابط عام ومن غير تسجيل دخول. */
-export type AppLinkTarget = "pet" | "deals";
+export type AppLinkTarget = "pet" | "deals" | "rewards";
 
 const APP_PACKAGE = "com.aistudio.zad.wrtqvx";
 
@@ -76,9 +74,12 @@ export function appLinkUrl(supabaseUrl: string, to: AppLinkTarget): string {
 }
 
 /** عنوان التحويل لمكان معروف، وnull لأي حاجة تانية. لو التطبيق مش متسطب، أندرويد بيفتح صفحته على بلاي. */
-export function appLinkRedirect(to: string | null): string | null {
-  if (to !== "pet" && to !== "deals") return null;
-  return `intent://open?to=${to}#Intent;scheme=zad;package=${APP_PACKAGE};end`;
+export function appLinkRedirect(to: string | null, code: string | null = null): string | null {
+  const intent = (query: string) => `intent://open?${query}#Intent;scheme=zad;package=${APP_PACKAGE};end`;
+  // دعوة العيلة (inviteLink في التطبيق) بتاخد كودها معاها.
+  if (to === "invite") return code && /^[A-Za-z0-9-]{4,32}$/.test(code) ? intent(`to=invite&code=${code}`) : null;
+  if (to !== "pet" && to !== "deals" && to !== "rewards") return null;
+  return intent(`to=${to}`);
 }
 
 /**

@@ -213,7 +213,7 @@ class ProfileScreen extends ConsumerWidget {
                   _MenuRow(
                     icon: ZadIcons.delete,
                     title: 'حذف الحساب',
-                    subtitle: 'حذف الحساب نهائياً',
+                    subtitle: 'بيتمسح بعد مهلة ١٤ يوم',
                     danger: true,
                     onTap: () => unawaited(_deleteAccount(context, ref)),
                   ),
@@ -252,7 +252,8 @@ class ProfileScreen extends ConsumerWidget {
           style: TextStyle(color: ZadColors.terracottaRust),
         ),
         content: const Text(
-          'هل أنت متأكد من حذف حسابك نهائياً؟ لا يمكن التراجع عن هذا الإجراء.',
+          'هنقفل حسابك دلوقتي، وبعد ١٤ يوم هيتمسح هو وكل بياناته نهائياً. '
+          'لو غيّرت رأيك، ادخل بنفس الحساب قبلها وهتقدر ترجّعه.',
         ),
         actions: <Widget>[
           TextButton(

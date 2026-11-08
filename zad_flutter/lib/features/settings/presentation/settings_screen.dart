@@ -113,6 +113,28 @@ class SettingsScreen extends ConsumerWidget {
 
               const SizedBox(height: ZadSpacing.lg),
               _Section(
+                title: context.l10n.settingsCompanionSection,
+                children: <Widget>[
+                  SwitchListTile(
+                    key: const ValueKey<String>('pet-calls'),
+                    title: Text(context.l10n.settingsPetCallsTitle),
+                    subtitle: Text(context.l10n.settingsPetCallsBody),
+                    value: ref.watch(
+                      settingsControllerProvider.select(
+                        (v) => v.settings?.petCallsEnabled ?? true,
+                      ),
+                    ),
+                    onChanged: (on) => unawaited(
+                      ref
+                          .read(settingsControllerProvider.notifier)
+                          .setPetCallsEnabled(on: on),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: ZadSpacing.lg),
+              _Section(
                 title: 'الأصوات',
                 children: <Widget>[
                   SwitchListTile(

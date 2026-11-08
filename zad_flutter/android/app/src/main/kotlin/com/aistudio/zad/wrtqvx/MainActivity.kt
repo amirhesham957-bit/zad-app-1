@@ -22,7 +22,7 @@ class MainActivity : FlutterActivity() {
     private var shareChannel: MethodChannel? = null
     private var pendingShare: Map<String, Any?>? = null
     private var linkChannel: MethodChannel? = null
-    private var pendingLink: String? = null
+    private var pendingLink: Map<String, String?>? = null
 
     // zad://open is read by readLink. Flutter's own deep linking would push it
     // as a route the app does not have; every other link stays as it was.
@@ -163,7 +163,9 @@ class MainActivity : FlutterActivity() {
     private fun readLink(intent: Intent?) {
         if (!isAppLink(intent) || intent!!.getBooleanExtra(LINK_TAKEN, false)) return
         intent.putExtra(LINK_TAKEN, true)
-        pendingLink = intent.data?.getQueryParameter("to") ?: return
+        val data = intent.data ?: return
+        val to = data.getQueryParameter("to") ?: return
+        pendingLink = mapOf("to" to to, "code" to data.getQueryParameter("code"))
         linkChannel?.invokeMethod("link", null)
     }
 

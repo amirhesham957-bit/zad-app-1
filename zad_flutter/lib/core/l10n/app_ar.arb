@@ -2125,5 +2125,14 @@
   "@briefWhyMedicineLow": {"placeholders": {"name": {"type": "String"}, "days": {"type": "String"}}},
   "briefWhyBudgetDanger": "المتاح {available} على {days} يوم = {daily} في اليوم، ومعدل صرفك لحد دلوقتي بيقول إنه مش هيكفي.",
   "@briefWhyBudgetDanger": {"placeholders": {"available": {"type": "String"}, "days": {"type": "String"}, "daily": {"type": "String"}}},
-  "briefWhySeason": "من تقويم أم القرى بتوقيت بلدك — والأسعار بتعلى قبل الموسم."
+  "briefWhySeason": "من تقويم أم القرى بتوقيت بلدك — والأسعار بتعلى قبل الموسم.",
+  "accountRestoreTitle": "حسابك مجدول للحذف",
+  "accountRestoreBody": "طلبت حذف حسابك، وهيتمسح هو وكل بياناته نهائياً بعد {days} يوم. تحب ترجّعه؟",
+  "@accountRestoreBody": {"placeholders": {"days": {"type": "int"}}},
+  "accountRestoreLeave": "خروج",
+  "accountRestoreYes": "رجّع حسابي",
+  "accountRestoreFailed": "تعذر استرجاع الحساب دلوقتي. افتح التطبيق تاني وجرّب.",
+  "settingsCompanionSection": "رفيقك",
+  "settingsPetCallsTitle": "نداءات زادو",
+  "settingsPetCallsBody": "زادو بيبعتلك لما يجوع أو يعطش، على تليجرام والإشعارات. قفلها مش بيوقف تحية الصبح ولا العروض."
 }

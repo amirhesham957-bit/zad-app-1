@@ -3,6 +3,7 @@ library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' show NumberFormat;
+import 'package:zad/core/env/zad_env.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 
 /// An amount with the account's currency.
@@ -14,8 +15,10 @@ String familyCurrency(WidgetRef ref) => ref.watch(
   budgetControllerProvider.select((v) => v.snapshot?.currency ?? ''),
 );
 
-/// The invite deep link.
-String inviteLink(String code) => 'zad://invite?code=$code';
+/// The invite link: the bot's redirect, which opens the app on the join
+/// dialog (`telegram.ts` `appLinkRedirect`).
+String inviteLink(String code) =>
+    '${ZadEnv.supabaseUrl}/functions/v1/zad-telegram-bot?open=invite&code=$code';
 
 /// Kotlin's `extractInviteCode`: a pasted link or message becomes its code.
 String extractInviteCode(String raw) {

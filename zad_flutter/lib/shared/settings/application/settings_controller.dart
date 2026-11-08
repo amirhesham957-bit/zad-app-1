@@ -119,6 +119,11 @@ class SettingsController extends Notifier<SettingsView> {
   Future<bool> setCycleStartDay(int? day) =>
       _save(() => ref.read(settingsRepositoryProvider).setCycleStartDay(day));
 
+  /// Turns the pet's calls on or off.
+  Future<bool> setPetCallsEnabled({required bool on}) => _save(
+    () => ref.read(settingsRepositoryProvider).setPetCallsEnabled(on: on),
+  );
+
   Future<bool> _save(Future<AccountSettings> Function() write) async {
     if (!ref.mounted || state.isSaving) return false;
     state = state.copyWith(isSaving: true, clearError: true);

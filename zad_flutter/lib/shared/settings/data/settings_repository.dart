@@ -233,6 +233,21 @@ class SettingsRepository {
     return next;
   }
 
+  /// Turns the pet's calls on or off: cache, then queue.
+  Future<AccountSettings> setPetCallsEnabled({required bool on}) async {
+    final userId = _requireUserId();
+    final next = (cached() ?? const AccountSettings()).copyWith(
+      petCallsEnabled: on,
+    );
+    await _write(next);
+    await _outbox().enqueue(
+      id: outboxIdFor('pet_calls_enabled'),
+      kind: OutboxKind.updateAccountSettings,
+      payload: <String, dynamic>{'id': userId, 'pet_calls_enabled': on},
+    );
+    return next;
+  }
+
   /// Sets the account's country and currency: queue, then cache.
   ///
   /// The two columns travel as one entry because they are one fact — the

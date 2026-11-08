@@ -23,6 +23,7 @@ class AccountSettings {
     this.cycleAnchor = CycleAnchor.dayOfMonth,
     this.currency,
     this.country,
+    this.petCallsEnabled = true,
   });
 
   /// Reads a `zad_users` row.
@@ -36,7 +37,11 @@ class AccountSettings {
     cycleAnchor: CycleAnchor.fromWire(json['cycle_anchor'] as String?),
     currency: json['currency'] as String?,
     country: json['country'] as String?,
+    petCallsEnabled: json['pet_calls_enabled'] as bool? ?? true,
   );
+
+  /// Whether the pet may call the customer on Telegram and by notification.
+  final bool petCallsEnabled;
 
   /// The ceiling the customer says they have for a cycle.
   ///
@@ -93,6 +98,7 @@ class AccountSettings {
     CycleAnchor? cycleAnchor,
     String? currency,
     String? country,
+    bool? petCallsEnabled,
     bool clearCycleStartDay = false,
   }) => AccountSettings(
     monthlyLimit: monthlyLimit ?? this.monthlyLimit,
@@ -103,6 +109,7 @@ class AccountSettings {
     cycleAnchor: cycleAnchor ?? this.cycleAnchor,
     currency: currency ?? this.currency,
     country: country ?? this.country,
+    petCallsEnabled: petCallsEnabled ?? this.petCallsEnabled,
   );
 
   /// Round-trips through the cache.
@@ -113,6 +120,7 @@ class AccountSettings {
     'cycle_anchor': cycleAnchor.wireName,
     'currency': currency,
     'country': country,
+    'pet_calls_enabled': petCallsEnabled,
   };
 
   /// The columns a settings read asks the server for.
@@ -126,5 +134,6 @@ class AccountSettings {
     'cycle_anchor',
     'currency',
     'country',
+    'pet_calls_enabled',
   ];
 }

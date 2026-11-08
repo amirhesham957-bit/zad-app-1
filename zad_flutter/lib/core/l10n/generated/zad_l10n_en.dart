@@ -2970,4 +2970,32 @@ class ZadL10nEn extends ZadL10n {
   @override
   String get briefWhySeason =>
       'From the Umm al-Qura calendar in your country\'s time — prices rise before the season.';
+
+  @override
+  String get accountRestoreTitle => 'Your account is scheduled for deletion';
+
+  @override
+  String accountRestoreBody(int days) {
+    return 'You asked to delete your account. It and all its data will be erased in $days days. Restore it?';
+  }
+
+  @override
+  String get accountRestoreLeave => 'Sign out';
+
+  @override
+  String get accountRestoreYes => 'Restore my account';
+
+  @override
+  String get accountRestoreFailed =>
+      'Couldn\'t restore the account right now. Reopen the app and try again.';
+
+  @override
+  String get settingsCompanionSection => 'Your companion';
+
+  @override
+  String get settingsPetCallsTitle => 'Zado\'s calls';
+
+  @override
+  String get settingsPetCallsBody =>
+      'Zado messages you when it\'s hungry or thirsty, on Telegram and by notification. Turning this off doesn\'t stop the morning greeting or the deals.';
 }

@@ -448,9 +448,8 @@ class _Header extends ConsumerWidget {
                           text:
                               '🌱 دعوة للانضمام إلى عائلتي على تطبيق زاد\n\n'
                               '📲 اضغط على الرابط التالي للانضمام فوراً وفتح '
-                              'التطبيق:\nhttps://zad.app/invite?code=$code\n\n'
-                              '🔑 كود الدعوة المباشر:\n$code\n\n'
-                              '🔗 رابط التطبيق المباشر:\n${inviteLink(code)}',
+                              'التطبيق:\n${inviteLink(code)}\n\n'
+                              '🔑 كود الدعوة المباشر:\n$code',
                         ),
                       ),
                     ),

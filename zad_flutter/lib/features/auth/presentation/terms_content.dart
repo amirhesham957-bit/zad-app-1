@@ -74,7 +74,7 @@ PLEASE READ THESE TERMS CAREFULLY BEFORE CREATING AN ACCOUNT. BY REGISTERING, AC
 
 5.4 SMS and notification reading happens only with your explicit device-level permission, which you may revoke at any time in your device settings. Revoking permissions may disable automatic tracking features.
 
-5.5 You may request deletion of your account and associated data at any time through the App's profile settings.
+5.5 You may request deletion of your account and associated data at any time through the App's profile settings. Deletion takes effect 14 days after the request; signing in during that period lets you cancel it.
 
 5.6 When you confirm or reject a transaction that Zad suggested from a bank notification, Zad keeps that message's wording pattern, with every amount, date, number, name, card, account, phone number, email and link removed first, together with the sender's name, your country, and one vote from your account. A pattern helps read other customers' messages only after at least three different accounts agreed on it. Messages from chat apps (such as WhatsApp or Telegram) are never used for this. Your votes are deleted with your account.
 

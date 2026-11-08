@@ -286,7 +286,7 @@ Deno.test("notification review message asks for amount and direction without cla
 // الزر ده لازم يفضل زر رابط. لو رجع callback_data بدل url، تليجرام هيبعت
 // callback للبوت والعميل مش هيتنقل للتطبيق أصلاً.
 Deno.test("adCreditKeyboard is a single link button, not a callback button", () => {
-  const rows = adCreditKeyboard();
+  const rows = adCreditKeyboard("https://x.supabase.co");
   assertEquals(rows.length, 1);
   assertEquals(rows[0].length, 1);
   const button = rows[0][0];
@@ -294,6 +294,7 @@ Deno.test("adCreditKeyboard is a single link button, not a callback button", () 
   assertEquals(button.callback_data, undefined);
   // تليجرام بيرفض السكيمات المخصصة (zad://) في أزرار الروابط، فلازم https.
   assert(button.url!.startsWith("https://"), `expected https url, got ${button.url}`);
+  assertEquals(button.url, "https://x.supabase.co/functions/v1/zad-telegram-bot?open=rewards");
 });
 
 // ── رفض المبادرات الاستباقية (20260913190000) ─────────────────────────────────
@@ -776,6 +777,10 @@ Deno.test("a pet call's buttons only open the app, and neither can mute it (owne
 Deno.test("the open-app redirect goes only to known places, and straight to Zad's package", () => {
   assertEquals(telegramModule.appLinkRedirect("pet"), "intent://open?to=pet#Intent;scheme=zad;package=com.aistudio.zad.wrtqvx;end");
   assertEquals(telegramModule.appLinkRedirect("deals"), "intent://open?to=deals#Intent;scheme=zad;package=com.aistudio.zad.wrtqvx;end");
+  assertEquals(telegramModule.appLinkRedirect("rewards"), "intent://open?to=rewards#Intent;scheme=zad;package=com.aistudio.zad.wrtqvx;end");
+  assertEquals(telegramModule.appLinkRedirect("invite", "ZAD-AB12"), "intent://open?to=invite&code=ZAD-AB12#Intent;scheme=zad;package=com.aistudio.zad.wrtqvx;end");
+  assertEquals(telegramModule.appLinkRedirect("invite"), null);
+  assertEquals(telegramModule.appLinkRedirect("invite", "x;end#Intent"), null);
   assertEquals(telegramModule.appLinkRedirect("https://evil.example"), null);
   assertEquals(telegramModule.appLinkRedirect("pet;end"), null);
   assertEquals(telegramModule.appLinkRedirect(""), null);

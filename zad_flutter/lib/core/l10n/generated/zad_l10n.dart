@@ -5154,6 +5154,54 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'من تقويم أم القرى بتوقيت بلدك — والأسعار بتعلى قبل الموسم.'**
   String get briefWhySeason;
+
+  /// No description provided for @accountRestoreTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'حسابك مجدول للحذف'**
+  String get accountRestoreTitle;
+
+  /// No description provided for @accountRestoreBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'طلبت حذف حسابك، وهيتمسح هو وكل بياناته نهائياً بعد {days} يوم. تحب ترجّعه؟'**
+  String accountRestoreBody(int days);
+
+  /// No description provided for @accountRestoreLeave.
+  ///
+  /// In ar, this message translates to:
+  /// **'خروج'**
+  String get accountRestoreLeave;
+
+  /// No description provided for @accountRestoreYes.
+  ///
+  /// In ar, this message translates to:
+  /// **'رجّع حسابي'**
+  String get accountRestoreYes;
+
+  /// No description provided for @accountRestoreFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذر استرجاع الحساب دلوقتي. افتح التطبيق تاني وجرّب.'**
+  String get accountRestoreFailed;
+
+  /// No description provided for @settingsCompanionSection.
+  ///
+  /// In ar, this message translates to:
+  /// **'رفيقك'**
+  String get settingsCompanionSection;
+
+  /// No description provided for @settingsPetCallsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'نداءات زادو'**
+  String get settingsPetCallsTitle;
+
+  /// No description provided for @settingsPetCallsBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'زادو بيبعتلك لما يجوع أو يعطش، على تليجرام والإشعارات. قفلها مش بيوقف تحية الصبح ولا العروض.'**
+  String get settingsPetCallsBody;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

@@ -2902,4 +2902,32 @@ class ZadL10nAr extends ZadL10n {
   @override
   String get briefWhySeason =>
       'من تقويم أم القرى بتوقيت بلدك — والأسعار بتعلى قبل الموسم.';
+
+  @override
+  String get accountRestoreTitle => 'حسابك مجدول للحذف';
+
+  @override
+  String accountRestoreBody(int days) {
+    return 'طلبت حذف حسابك، وهيتمسح هو وكل بياناته نهائياً بعد $days يوم. تحب ترجّعه؟';
+  }
+
+  @override
+  String get accountRestoreLeave => 'خروج';
+
+  @override
+  String get accountRestoreYes => 'رجّع حسابي';
+
+  @override
+  String get accountRestoreFailed =>
+      'تعذر استرجاع الحساب دلوقتي. افتح التطبيق تاني وجرّب.';
+
+  @override
+  String get settingsCompanionSection => 'رفيقك';
+
+  @override
+  String get settingsPetCallsTitle => 'نداءات زادو';
+
+  @override
+  String get settingsPetCallsBody =>
+      'زادو بيبعتلك لما يجوع أو يعطش، على تليجرام والإشعارات. قفلها مش بيوقف تحية الصبح ولا العروض.';
 }

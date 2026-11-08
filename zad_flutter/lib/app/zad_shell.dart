@@ -13,6 +13,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:zad/app/account_restore.dart';
 import 'package:zad/app/link/app_link.dart';
 import 'package:zad/app/share/share_intake.dart';
 import 'package:zad/app/share/share_router.dart';
@@ -30,6 +31,7 @@ import 'package:zad/features/budget/presentation/budget_gate_screen.dart';
 import 'package:zad/features/budget/presentation/finances_screen.dart';
 import 'package:zad/features/chat/presentation/agent_screen_router.dart';
 import 'package:zad/features/chat/presentation/chat_screen.dart';
+import 'package:zad/features/family/presentation/family_dialogs.dart';
 import 'package:zad/features/home/application/home_campaign.dart';
 import 'package:zad/features/home/application/home_widget_controller.dart';
 import 'package:zad/features/home/presentation/campaign_banner.dart';
@@ -56,6 +58,7 @@ import 'package:zad/shared/family/application/family_controller.dart';
 import 'package:zad/shared/kids/application/kids_mode_controller.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/navigation/shell_navigation.dart';
+import 'package:zad/shared/navigation/zad_screens.dart';
 import 'package:zad/shared/navigation/zad_slots.dart';
 import 'package:zad/shared/notifications/application/notifications_controller.dart';
 import 'package:zad/shared/pharmacy/application/pharmacy_controller.dart';
@@ -116,6 +119,8 @@ class _ZadShellState extends ConsumerState<ZadShell> {
     // starting changes provider state, and the permission prompt should come
     // over a drawn screen, not a blank one.
     WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      await offerAccountRestore(context, ref);
       if (!mounted) return;
       _startBilling();
       // «شارك لزاد» (share_router.dart): the share that opened the app, and
@@ -225,13 +230,19 @@ class _ZadShellState extends ConsumerState<ZadShell> {
   ShareIntake? _share;
   AppLinkIntake? _links;
 
-  /// Telegram's «افتح زاد». Kids mode has neither place.
-  void _openAppLink(AppLinkTarget target) {
+  /// Telegram's «افتح زاد» and a family invite. Kids mode has none of them.
+  void _openAppLink(AppLink link) {
     if (!mounted || ref.read(kidsModeActiveProvider)) return;
     Navigator.of(context).popUntil((route) => route.isFirst);
-    unawaited(switch (target) {
+    unawaited(switch (link.target) {
       AppLinkTarget.pet => showCompanionCareSheet(context),
       AppLinkTarget.deals => showNearbyDealsScreen(context),
+      AppLinkTarget.rewards => ZadScreens.showPaywallScreen(context),
+      AppLinkTarget.invite => showJoinFamilyDialog(
+        context,
+        ref,
+        initialCode: link.code ?? '',
+      ),
     });
   }
 

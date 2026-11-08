@@ -218,9 +218,8 @@ class ProfileController extends Notifier<ProfileView> {
     if (ref.mounted) state = state.copyWith(behaviorConsent: given);
   }
 
-  /// Deletes the account for good: `delete-account` cleans every table and
-  /// the auth user on the server, then this device signs out. True when the
-  /// server did it.
+  /// Asks for the account to be deleted: `delete-account` schedules it 14
+  /// days out, then this device signs out. True when the server took it.
   Future<bool> deleteAccount() async {
     try {
       await _client.functions.invoke('delete-account');
@@ -230,8 +229,8 @@ class ProfileController extends Notifier<ProfileView> {
     try {
       await ref.read(sessionControllerProvider.notifier).signOut();
     } on Object {
-      // The account is gone; a local sign-out that reports an error has
-      // still cleared the device.
+      // The request is in; a local sign-out that reports an error has still
+      // cleared the device.
     }
     return true;
   }
