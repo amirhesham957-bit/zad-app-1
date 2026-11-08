@@ -171,7 +171,7 @@ import { familyPushText } from "./familyPush.ts";
 import { inventoryOwnerFilter, pickInventoryRow } from "./inventoryRow.ts";
 import { householdFamilyId, householdFilter } from "../_shared/household.ts";
 import { CLIENT_MOMENTS, MAX_OUTING_MS, MIN_OUTING_MS, morningFacts, NEWCOMER_MOMENT, processVoiceMoments, summarizeOuting, tasbihaFacts, UNCOUNTED_MOMENTS } from "./voiceMoments.ts";
-import { occasionDateLabel, occasionMd, occasionNote, type OccasionKind } from "./occasions.ts";
+import { occasionDateLabel, occasionMd, occasionNote, type OccasionKind, parseOccasionAnswer } from "./occasions.ts";
 import { leanTools, promptSizes } from "./promptBudget.ts";
 import { recentOutbound } from "../_shared/outbound.ts";
 import { proactiveTurn, recordConversation } from "../_shared/conversationLog.ts";
@@ -7861,6 +7861,18 @@ async function handleAgentTurnInLane(
         console.warn("[agent_turn] forced log retry failed:", (e as Error)?.message ?? e);
       }
     }
+  }
+
+  // «19-8» ردّ على سؤال عيد الميلاد، والموديل قال «سجلته» من غير ما ينادي الأداة (بلاغ المالك ٨/١١: فضل يتسأل).
+  // الجواب هو التاريخ بالظبط، فالكود اللي بيحفظه.
+  const occasionAsked = snap?.asked_this_morning?.kind === "occasion" ? snap.asked_this_morning : null;
+  const occasionReply = occasionAsked && !(ctx.counts["remember_occasion"] ?? 0) ? parseOccasionAnswer(message) : null;
+  if (occasionReply) {
+    const saved = await runTool(sb, userId, "remember_occasion", {
+      occasion: "birthday", ...occasionReply, ...(occasionAsked?.for ? { person: occasionAsked.for } : {}),
+    }, snap, ctx, scope);
+    if (saved.startsWith("مرفوض:")) console.warn("[agent_turn] occasion answer rejected:", saved);
+    else recordCall(executed, consulted, "remember_occasion", saved, true);
   }
 
   // «فكرني بكرة الساعة 9 الصبح اكلم الدكتور»، «ضيف شراب كحة لبنتي في الصيدلية»، «زود عيش ع اللسته» والموديل رد
