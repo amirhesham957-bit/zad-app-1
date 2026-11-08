@@ -42,7 +42,7 @@ async function callerCountry(req: Request, userId: unknown): Promise<string | nu
   }
 }
 import { googleNearbyAny, googlePlacesKeys } from "./googlePlaces.ts";
-import { loadAffinity, rankByRelevance } from "../_shared/dealRelevance.ts";
+import { dealRelevance, loadAffinity, rankByRelevance } from "../_shared/dealRelevance.ts";
 import { tiktokDealHits, tiktokDealsPrompt, tiktokQuery } from "./tiktokDeals.ts";
 import { brochureEntries, OFFICIAL_FLYER_SITES, OFFICIAL_FLYER_UA, officialFlyerDeals, officialFlyerPrompt, robotsAllows, siteForPdf } from "./officialFlyers.ts";
 import { fillMarketCurrency, DEAL_SEARCH_TIMEOUT_MS, dealQuery, dealsFromHitsPrompt, dealSearchItems, readDeals, readReverseCity, readStoreDeals, reverseCityUrl, sameCurrency, cleanCity, searchStoreName, storeDealsPrompt, storeDealsQuery, videoDealsPrompt, youtubeDealVideos, instagramDealPosts, postDealsPrompt, flyerDealsPrompt, readDealCodes, type DealCode } from "./liveDeals.ts";
@@ -52,7 +52,8 @@ import {
   youtubeProbe, youtubeSearch,
 } from "./socialSources.ts";
 import { tavilyProbe, tavilySearch } from "./tavily.ts";
-import { avoidNames, chefDeals, type ChefDeal, type ChefDealRow, chefExpiring, chefPantryLine, dealsBlock, dealsForMissing, dishKey, type ExpiringItem, expiringBlock, NO_REPEAT_DAYS, type PantryRow, trendBlock, trendCacheKey, trendQuery, withoutRecent } from "./chefInputs.ts";
+import { readSocialVideo, recipeAccountQuery, recipeTopicQuery, socialVideoHits, socialVideoPrompt, type SocialVideo } from "./socialRecipes.ts";
+import { avoidNames, chefDeals, type ChefDeal, type ChefDealRow, chefExpiring, chefPantryLine, dealsBlock, dealsForMissing, dishKey, type ExpiringItem, expiringBlock, NO_REPEAT_DAYS, type PantryRow, pickSocialRecipes, recipeSource, type SocialRecipeRow, socialRecipesBlock, trendBlock, trendCacheKey, trendQuery, withoutRecent } from "./chefInputs.ts";
 import { householdFamilyId, householdFilter } from "../_shared/household.ts";
 import { budgetUsage, dailyCap, encyclopediaFirstForLatest, groundingPlan, KEY_REST_MS, keyRefused, paidQuotaExhausted, takeSearchBudget, tavilyFirstWhileGroundingRests, withPaidGroundingFirst } from "./paidSearch.ts";
 
@@ -2194,26 +2195,47 @@ async function handle(req: Request): Promise<Response> {
 
         // ٧.٤: عروض البقالة الشغالة في بلده ومدينته: مش في وضع الطوارئ، لأن العرض دعوة للشرا. فشل القراية = من غير عروض.
         let liveDeals: ChefDeal[] = [];
+        // تفضيلاته: عروض على حاجة مش بياكلها مابتوصلش للشيف، ولا وصفات فيها.
+        const affinity = await loadAffinity(supabase as never, user_id);
         if (!brokeMode) {
           try {
             const { data: who } = await supabase.from("zad_users").select("country,travel_country").eq("id", user_id).maybeSingle();
             const dealCountry = String((who as { travel_country?: string | null } | null)?.travel_country || (who as { country?: string | null } | null)?.country || "").toUpperCase();
             if (/^[A-Z]{2}$/.test(dealCountry)) {
               const [{ data: stores }, { data: place }] = await Promise.all([
-                supabase.from("zad_deal_seed_stores").select("store").eq("country", dealCountry).eq("kind", "grocery").limit(80),
+                supabase.from("zad_deal_seed_stores").select("store").eq("country", dealCountry).in("kind", ["grocery", "delivery"]).limit(120),
                 supabase.from("zad_user_city").select("city").eq("user_id", user_id).eq("country", dealCountry).maybeSingle(),
               ]);
               const names = ((stores ?? []) as Array<{ store: string }>).map((r) => r.store);
               if (names.length) {
                 const { data: dealRows } = await supabase.from("zad_deals")
-                  .select("store,item_name,price,price_before,currency,city").eq("country", dealCountry).in("store", names)
+                  .select("store,item_name,price,price_before,currency,city,source_url").eq("country", dealCountry).in("store", names)
                   .gt("expires_at", new Date().toISOString()).limit(200);
-                liveDeals = chefDeals((dealRows ?? []) as ChefDealRow[], String((place as { city?: string } | null)?.city ?? ""));
+                liveDeals = rankByRelevance(chefDeals((dealRows ?? []) as ChefDealRow[], String((place as { city?: string } | null)?.city ?? "")), affinity);
               }
             }
           } catch (e) {
             console.error("[CoreIntel] meal_suggestions deals failed:", (e as Error).message);
           }
+        }
+
+        // وصفات تيك توك (socialRecipes.ts): الأنسب للي عنده وفي قايمته وعليه عرض. فشل القراية = من غيرها.
+        let socialPicked: SocialRecipeRow[] = [];
+        try {
+          const { data: who } = await supabase.from("zad_users").select("country").eq("id", user_id).maybeSingle();
+          const code = String((who as { country?: string | null } | null)?.country ?? "").toUpperCase();
+          const familyId = await householdFamilyId(supabase as never, user_id);
+          const [{ data: rows }, { data: shop }] = await Promise.all([
+            supabase.from("zad_social_recipes").select("name,ingredients,source_url,handle")
+              .not("name", "is", null).or(`country.is.null,country.eq.${/^[A-Z]{2}$/.test(code) ? code : "XX"}`)
+              .gte("found_at", new Date(Date.now() - 120 * 86_400_000).toISOString()).order("found_at", { ascending: false }).limit(150),
+            supabase.from("zad_shopping_list").select("item_name").or(householdFilter(user_id, familyId)).eq("is_purchased", false).limit(50),
+          ]);
+          const wanted = ((shop ?? []) as Array<{ item_name: string | null }>).map((r) => r.item_name ?? "").join(" ");
+          socialPicked = pickSocialRecipes(rows as SocialRecipeRow[] | null, `${items} ${wanted}`, liveDeals, served,
+            (text) => dealRelevance({ item: text }, affinity).blocked);
+        } catch (e) {
+          console.error("[CoreIntel] meal_suggestions social recipes failed:", (e as Error).message);
         }
 
         // تقوية شيف زاد: آخر آراء العميلة على وصفات قبل كده — إعجاب وعدم إعجاب بس، مش
@@ -2343,6 +2365,12 @@ async function handle(req: Request): Promise<Response> {
             ? "العميل شاف الوصفات دي وطلب اقتراحات جديدة — **متكرريش ولا واحدة منها ولا نفس الأكلة باسم تاني**: " +
               avoid.join("، ") + ".\n"
             : "") +
+          (socialPicked.length > 0
+            ? "قسم === وصفات متداولة === فيه وصفات الناس بتعملها، بأرقام: لو واحدة مناسبة استخدميها باسمها في مجموعة مناسبة، واكتبي `\"source\"` برقمها. ولو مش منها، سيبي `source` فاضي.\n"
+            : "") +
+          (affinity.some((a) => a.polarity === "dislike")
+            ? "العميل قال إنه مش بيحب أو مش بياكل: " + affinity.filter((a) => a.polarity === "dislike").map((a) => a.term).join("، ") + " — متقترحيش وصفة فيها.\n"
+            : "") +
           (week
             ? "⬅️ المطلوب المرة دي خطة أسبوع: ٧ وصفات مختلفة بالظبط في `recipes`، واحدة لكل يوم بالترتيب، بدل المجموعات اللي فوق. " +
               "أول الأيام للأصناف اللي قرب تنتهي صلاحيتها، والوصفات تتنوّع ومايتكررش فيها نفس البروتين يومين ورا بعض.\n"
@@ -2351,6 +2379,7 @@ async function handle(req: Request): Promise<Response> {
         const userPrompt = "=== المخزون ===\n" + (items || "لا يوجد مخزون") + "\n=== نهاية المخزون ===" +
           (expiring.length > 0 ? "\n" + expiringBlock(expiring) : "") +
           (liveDeals.length > 0 ? "\n" + dealsBlock(liveDeals) : "") +
+          (socialPicked.length > 0 ? "\n" + socialRecipesBlock(socialPicked) : "") +
           (trends ? "\n" + trends : "");
         const result = await logged(user_id, action, "callJsonModel", { args: [systemPrompt, userPrompt] }, () => callJsonModel(systemPrompt, userPrompt, week ? 4000 : undefined));
         // same honest-failure contract as recipe_details: null/ok:false on a genuine upstream
@@ -2368,12 +2397,14 @@ async function handle(req: Request): Promise<Response> {
         const flagged = withoutRecent(allowedRecipes as Array<{ recipe_name?: unknown; missing_ingredients_to_buy?: unknown; trending?: unknown }>, served).map((r) => ({
           ...r, from_inventory: recipeNeedsNoShopping(r?.missing_ingredients_to_buy), trending: !!trends && r?.trending === true,
           deal_items: dealsForMissing(r?.missing_ingredients_to_buy, liveDeals),
+          ...recipeSource((r as { source?: unknown })?.source, socialPicked),
         })).sort((a: { from_inventory: boolean }, b: { from_inventory: boolean }) => Number(b.from_inventory) - Number(a.from_inventory));
         // خطة الأسبوع بترتيب الموديل: اليوم من مكان الوصفة، بعد شيل اللي اتكرر.
         const ordered = week
           ? withoutRecent(allowedRecipes as Array<{ recipe_name?: unknown; missing_ingredients_to_buy?: unknown }>, served).slice(0, 7).map((r, i) => ({
             ...r, day: i + 1, from_inventory: recipeNeedsNoShopping(r?.missing_ingredients_to_buy), trending: false,
             deal_items: dealsForMissing(r?.missing_ingredients_to_buy, liveDeals),
+          ...recipeSource((r as { source?: unknown })?.source, socialPicked),
           }))
           : flagged;
         const recipes = ordered.length ? await attachRecipeImages(ordered) : [];
@@ -3190,6 +3221,27 @@ async function handle(req: Request): Promise<Response> {
       // zad-brain (deals_tiktok_run). محرك البحث بـsite:tiktok.com ⇐ نتايج الفيديوهات بعنوانها ووصفها ⇐ جيميناي.
       // مفيش طلب لتيك توك نفسه.
       // ──────────────────────────────────────────────
+      // SOCIAL_RECIPES_SCAN — وصفات وعروض تيك توك من محرك البحث (socialRecipes.ts). service role بس: zad-brain (social_recipes_run).
+      case "social_recipes_scan": {
+        if (!isServiceRoleToken(bearerToken(req), supabaseKey)) return jsonResponse({ error: "unauthorized" }, 401);
+        const handle = typeof payload?.handle === "string" && /^[\w.]{2,40}$/.test(payload.handle) ? payload.handle : null;
+        const topic = typeof payload?.topic === "string" ? payload.topic.trim().slice(0, 40) : "";
+        const countryCode = typeof payload?.country === "string" ? payload.country.toUpperCase() : null;
+        if (!handle && (!topic || !countryCode)) return jsonResponse({ ok: false, reason: "bad_source" }, 400);
+        const known = new Set(Array.isArray(payload?.known) ? (payload.known as unknown[]).map(String) : []);
+        const found = await webSearchSnippets(handle ? recipeAccountQuery(handle) : recipeTopicQuery(topic, marketOf(countryCode).name), 10, countryCode ?? undefined);
+        const hits = socialVideoHits(found, handle, known, handle ? null : countryCode, 3);
+        const today = new Date().toISOString().slice(0, 10);
+        const videos: SocialVideo[] = [];
+        for (const hit of hits) {
+          const { system, user } = socialVideoPrompt(hit, today);
+          const answer = await readPublicDeals({ systemPrompt: system, content: user, maxTokens: 900, timeoutMs: 20_000, deadline: Date.now() + 25_000, groqText: user });
+          if (!answer.ok || !answer.content) continue;
+          videos.push(readSocialVideo((() => { try { return JSON.parse(answer.content!); } catch { return null; } })(), hit.url, new Date()));
+        }
+        return jsonResponse({ ok: true, hits: found.length, read: videos.length, videos });
+      }
+
       case "store_deals_tiktok": {
         if (!isServiceRoleToken(bearerToken(req), supabaseKey)) return jsonResponse({ error: "unauthorized" }, 401);
         const store = typeof payload?.store === "string" ? payload.store.trim().replace(/\s+/g, " ") : "";

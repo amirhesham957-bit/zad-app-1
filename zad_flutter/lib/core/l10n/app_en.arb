@@ -778,6 +778,10 @@
     "placeholders": { "day": { "type": "int" } }
   },
   "recipesOnDeal": "On offer now",
+  "recipesFromCreator": "From @{handle}'s video",
+  "@recipesFromCreator": {
+    "placeholders": { "handle": { "type": "String" } }
+  },
   "recipesTrendingGroup": "Trending now",
   "homeDealsSeeAll": "All deals",
   "homeDealsWhyNeed": "You're out",

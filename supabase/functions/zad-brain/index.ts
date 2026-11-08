@@ -93,6 +93,7 @@ import { brokeModePlan, isBrokeModeActive } from "../_shared/brokeMode.ts";
 import { challengeDayIndex, suggestChallengeCap } from "../_shared/savingsChallenge.ts";
 import { type SavingsAgreement, savingsAgreementFrom } from "../_shared/savingsAgreement.ts";
 import { RECEIPT_REACTIONS_PER_DAY, receiptKey, sanitizeReceiptFacts } from "../_shared/receiptReaction.ts";
+import { runSocialRecipes } from "./socialRecipesRun.ts";
 import { AFFINITY_SCOPE, affinityNote, type Polarity, signalTerms, statedPreference } from "../_shared/dealRelevance.ts";
 import { seasonFor, seasonInstruction, upcomingSeason, upcomingSeasonInstruction } from "../_shared/season.ts";
 import { type FastIntent, formatBalanceReply, parseFastPath } from "./fastPath.ts";
@@ -9349,6 +9350,16 @@ async function handleRequest(req: Request): Promise<Response> {
 
     // تيك توك من غير كشط (طلب المالك ٧/١١، zad-core-intelligence/tiktokDeals.ts): نفس المحلات بدورها (zad_deal_source_targets
     // بـ'tiktok')، محرك البحث بـsite:tiktok.com ونص نتايج الفيديوهات بيتقري، وكل عرض برابط الفيديو وكل كود في zad_deal_codes.
+    // وصفات وعروض تيك توك (ZAD_PLAN ٧.٤): السيرفر بيقرا من محرك البحث، وهنا الكتابة. slot = تلت المصادر في كل نوبة.
+    if (body.action === "social_recipes_run") {
+      if (!(await secretMatches(req.headers.get("ZAD-PROACTIVE-CRON-SECRET"), "ZAD_PROACTIVE_CRON_SECRET"))) {
+        return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: CORS_HEADERS });
+      }
+      const sbSocial = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+      const out = await runSocialRecipes(sbSocial, Number(body.slot) || 0, (p) => callCoreIntel("social_recipes_scan", p, "social_recipes_run", 60_000));
+      return new Response(JSON.stringify(out), { headers: CORS_HEADERS });
+    }
+
     if (body.action === "deals_tiktok_run") {
       if (!(await secretMatches(req.headers.get("ZAD-PROACTIVE-CRON-SECRET"), "ZAD_PROACTIVE_CRON_SECRET"))) {
         return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: CORS_HEADERS });

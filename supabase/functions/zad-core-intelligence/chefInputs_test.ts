@@ -1,5 +1,5 @@
 import { assert, assertEquals } from "jsr:@std/assert@1";
-import { avoidNames, chefPantryLine, trendBlock, trendCacheKey, trendQuery , chefDeals, chefExpiring, dealsBlock, dealsForMissing, dishKey, expiringBlock, withoutRecent } from "./chefInputs.ts";
+import { avoidNames, chefPantryLine, trendBlock, trendCacheKey, trendQuery , chefDeals, chefExpiring, dealsBlock, dealsForMissing, dishKey, expiringBlock, pickSocialRecipes, recipeSource, socialRecipesBlock, withoutRecent } from "./chefInputs.ts";
 
 Deno.test("the server pantry: stocked only, merged, sorted, the app's shape", () => {
   assertEquals(
@@ -71,4 +71,36 @@ Deno.test("7.4: a recipe shown in the last two weeks is dropped, unless nothing 
   const recipes = [{ recipe_name: "كُشري  مصري" }, { recipe_name: "مكرونة" }];
   assertEquals(withoutRecent(recipes, served).map((r) => r.recipe_name), ["مكرونة"]);
   assertEquals(withoutRecent([recipes[0]], served).length, 1);
+});
+
+const social = (name: string, ingredients: string[], id = name) => ({ name, ingredients, source_url: `https://www.tiktok.com/@a/video/${id}`, handle: "a" });
+
+Deno.test("the cheapest store for an ingredient wins", () => {
+  const deals = [
+    { item: "فراخ", store: "A", price: 120, price_before: null, currency: "EGP", url: "https://a" },
+    { item: "فراخ بلدي", store: "B", price: 95, price_before: null, currency: "EGP", url: null },
+  ];
+  assertEquals(dealsForMissing(["فراخ"], deals).map((d) => d.store), ["B"]);
+});
+
+Deno.test("a trending recipe is picked for what this home has or can get cheaply", () => {
+  const deals = [{ item: "عدس", store: "A", price: 10, price_before: null, currency: "EGP", url: null }];
+  const rows = [social("سوشي", ["سلمون", "نوري"]), social("كشري", ["مكرونة", "عدس", "رز"]), social("مكرونة", ["مكرونة", "صلصة"])];
+  const got = pickSocialRecipes(rows, "مكرونة (2), صلصة (1)", deals, new Set(), () => false);
+  assertEquals(got.map((r) => r.name), ["مكرونة", "كشري"]);
+});
+
+Deno.test("what he does not eat or just saw stays out", () => {
+  const rows = [social("صينية تونة", ["تونة", "مكرونة"]), social("كشري", ["مكرونة", "عدس"])];
+  assertEquals(pickSocialRecipes(rows, "مكرونة", [], new Set(), (t) => t.includes("تونة")).map((r) => r.name), ["كشري"]);
+  assertEquals(pickSocialRecipes(rows, "مكرونة", [], new Set([dishKey("كشري")]), (t) => t.includes("تونة")), []);
+});
+
+Deno.test("a recipe is credited only to a video that was offered", () => {
+  const picked = [social("كشري", ["مكرونة", "عدس"], "1")];
+  assertEquals(recipeSource(1, picked), { source_url: "https://www.tiktok.com/@a/video/1", source_handle: "a" });
+  assertEquals(recipeSource(2, picked), null);
+  assertEquals(recipeSource(undefined, picked), null);
+  assertEquals(socialRecipesBlock([]), "");
+  assertEquals(socialRecipesBlock(picked).includes("1. كشري: مكرونة، عدس"), true);
 });

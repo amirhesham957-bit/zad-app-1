@@ -22,6 +22,7 @@ import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/recipes/application/recipes_controller.dart';
 import 'package:zad/features/recipes/domain/recipe.dart';
 import 'package:zad/features/recipes/presentation/recipe_detail_screen.dart';
+import 'package:zad/shared/affiliate/data/affiliate_repository.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart';
 import 'package:zad/shared/inventory/application/shopping_controller.dart';
@@ -112,27 +113,28 @@ class RecipesView extends ConsumerWidget {
             children: <Widget>[
               Expanded(
                 child: FilledButton.icon(
-              onPressed: view.isAsking || !hasStock
-                  ? null
-                  : () => unawaited(
-                      ref
-                          .read(recipesControllerProvider.notifier)
-                          .ask(fresh: suggestions != null),
-                    ),
-              icon: view.isAsking
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(ZadIcons.chef),
-              label: Text(
-                view.isAsking
-                    ? 'شيف زاد بتفكر…'
-                    : suggestions == null
-                    ? 'وصفات من مخزني'
-                    : 'اقتراحات جديدة',
-              ),
+                  onPressed: view.isAsking || !hasStock
+                      ? null
+                      : () => unawaited(
+                          ref
+                              .read(recipesControllerProvider.notifier)
+                              .ask(fresh: suggestions != null),
+                        ),
+                  icon: view.isAsking
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(ZadIcons.chef),
+                  label: Text(
+                    view.isAsking
+                        ? 'شيف زاد بتفكر…'
+                        : suggestions == null
+                        ? 'وصفات من مخزني'
+                        : 'اقتراحات جديدة',
+                  ),
+                ),
               ),
               const SizedBox(width: ZadSpacing.sm),
               OutlinedButton(
@@ -435,13 +437,32 @@ class RecipeSheet extends ConsumerWidget {
               const SizedBox(height: ZadSpacing.lg),
               _Heading(context.l10n.recipesOnDeal),
               for (final d in recipe.deals)
-                Padding(
-                  padding: const EdgeInsets.only(top: ZadSpacing.xs),
-                  child: Text(
-                    '${d.item} · ${d.store} · ${d.price % 1 == 0 ? d.price.toInt() : d.price} ${d.currency}',
-                    style: ZadType.bodySmall,
+                InkWell(
+                  onTap: d.url == null
+                      ? null
+                      : () => unawaited(openAmazonLink(d.url!)),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(minHeight: 44),
+                    child: Align(
+                      alignment: AlignmentDirectional.centerStart,
+                      child: Text(
+                        '${d.item} · ${d.store} · '
+                        '${d.price % 1 == 0 ? d.price.toInt() : d.price} '
+                        '${d.currency}',
+                        style: ZadType.bodySmall,
+                      ),
+                    ),
                   ),
                 ),
+            ],
+            if (recipe.sourceUrl case final url?) ...<Widget>[
+              const SizedBox(height: ZadSpacing.sm),
+              TextButton(
+                onPressed: () => unawaited(openAmazonLink(url)),
+                child: Text(
+                  context.l10n.recipesFromCreator(recipe.sourceHandle ?? ''),
+                ),
+              ),
             ],
             if (recipe.steps.isNotEmpty) ...<Widget>[
               const SizedBox(height: ZadSpacing.xl),

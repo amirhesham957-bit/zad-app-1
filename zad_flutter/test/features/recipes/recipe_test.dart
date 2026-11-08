@@ -179,6 +179,7 @@ void main() {
         Recipe.fromJson(<String, dynamic>{'recipe_name': name, 'day': d});
     final answer = ChefSuggestions(
       recipes: <Recipe>[day(2, 'b')!, day(1, 'a')!],
+      fetchedAt: DateTime.utc(2026, 11, 8),
       pantrySignature: '',
     );
     expect(answer.weekPlan.map((r) => r.name), <String>['a', 'b']);
@@ -190,7 +191,12 @@ void main() {
     final recipe = Recipe.fromJson(<String, dynamic>{
       'recipe_name': 'x',
       'deal_items': <Object?>[
-        <String, dynamic>{'item': 'فراخ', 'store': 'كارفور', 'price': 100, 'currency': 'EGP'},
+        <String, dynamic>{
+          'item': 'فراخ',
+          'store': 'كارفور',
+          'price': 100,
+          'currency': 'EGP',
+        },
         <String, dynamic>{'item': 'بلا سعر', 'store': 'x', 'price': 0},
         'junk',
       ],

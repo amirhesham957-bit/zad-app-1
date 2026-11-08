@@ -30,7 +30,7 @@ class _Recipes extends RecipesController {
   RecipesView build() => initial;
 
   @override
-  Future<void> ask({bool fresh = false}) async =>
+  Future<void> ask({bool fresh = false, bool week = false}) async =>
       calls.add(fresh ? 'ask:fresh' : 'ask');
 
   @override

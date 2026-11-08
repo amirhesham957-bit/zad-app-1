@@ -27,6 +27,7 @@ class RecipeDeal {
     required this.store,
     required this.price,
     this.currency = '',
+    this.url,
   });
 
   /// Reads one deal, or null when it has nothing to show.
@@ -41,6 +42,7 @@ class RecipeDeal {
       store: store,
       price: price,
       currency: (raw['currency'] as Object?)?.toString() ?? '',
+      url: _url(raw['url']),
     );
   }
 
@@ -56,12 +58,16 @@ class RecipeDeal {
   /// The price's currency.
   final String currency;
 
+  /// Where the offer was seen, when there is a link.
+  final String? url;
+
   /// As the cache keeps it.
   Map<String, dynamic> toJson() => <String, dynamic>{
     'item': item,
     'store': store,
     'price': price,
     'currency': currency,
+    'url': ?url,
   };
 }
 
@@ -81,6 +87,8 @@ class Recipe {
     this.trending = false,
     this.day,
     this.deals = const <RecipeDeal>[],
+    this.sourceUrl,
+    this.sourceHandle,
   });
 
   /// Reads one recipe, or null when it has no name to show.
@@ -115,6 +123,8 @@ class Recipe {
           list.map(RecipeDeal.fromJson).nonNulls.toList(),
         _ => const <RecipeDeal>[],
       },
+      sourceUrl: _url(raw['source_url']),
+      sourceHandle: (raw['source_handle'] as Object?)?.toString(),
     );
   }
 
@@ -155,6 +165,12 @@ class Recipe {
   /// Running deals on what it still needs.
   final List<RecipeDeal> deals;
 
+  /// The video it came from, when it came from one.
+  final String? sourceUrl;
+
+  /// Who posted that video.
+  final String? sourceHandle;
+
   /// The recipe as the cache keeps it — the server's field names, so one
   /// reader serves both.
   Map<String, dynamic> toJson() => <String, dynamic>{
@@ -170,6 +186,8 @@ class Recipe {
     'trending': trending,
     'day': ?day,
     'deal_items': deals.map((d) => d.toJson()).toList(),
+    'source_url': ?sourceUrl,
+    'source_handle': ?sourceHandle,
   };
 }
 
@@ -226,12 +244,14 @@ class ChefSuggestions {
   bool get isUsable => recipes.isNotEmpty || (text?.isNotEmpty ?? false);
 
   /// Recipes that need nothing bought.
-  List<Recipe> get fromPantry =>
-      recipes.where((r) => r.day == null && r.fromInventory && !r.trending).toList();
+  List<Recipe> get fromPantry => recipes
+      .where((r) => r.day == null && r.fromInventory && !r.trending)
+      .toList();
 
   /// Recipes that need a few things.
-  List<Recipe> get needShopping =>
-      recipes.where((r) => r.day == null && !r.fromInventory && !r.trending).toList();
+  List<Recipe> get needShopping => recipes
+      .where((r) => r.day == null && !r.fromInventory && !r.trending)
+      .toList();
 
   /// What people are cooking these days.
   List<Recipe> get trending =>
