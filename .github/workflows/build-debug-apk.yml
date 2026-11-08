@@ -173,7 +173,9 @@ jobs:
       # الرفع لبلاي مايوقّعش البيلد (٧/١١): الـAPK والـAAB اترفعوا artifacts فوق قبله، والرفع كان بيفشل بس على
       # صلاحيات جوجل (الـAPI مقفول، وبعده دعوة الـService Account لسه ماتفعّلتش) — فكل رن كان أحمر والتطبيق سليم.
       # الفشل فاضل ظاهر: تحذير فوق الرن وسطر في الملخص (الخطوة اللي بعدها).
-      - name: Upload to Google Play (internal testing)
+      # A push whose commit message says [closed-testing] goes to the testers (the alpha track is
+      # Play's closed testing); every other push stays on internal, so a merge never reaches them.
+      - name: Upload to Google Play
         id: play_upload
         if: steps.play.outputs.ready == 'true'
         continue-on-error: true
@@ -182,7 +184,7 @@ jobs:
           serviceAccountJsonPlainText: ${{ secrets.PLAY_CONFIG_JSON }}
           packageName: com.aistudio.zad.wrtqvx
           releaseFiles: zad_flutter/build/app/outputs/bundle/release/app-release.aab
-          track: internal
+          track: ${{ contains(github.event.head_commit.message, '[closed-testing]') && 'alpha' || 'internal' }}
           status: completed
 
       - name: Play upload result
