@@ -28,10 +28,12 @@ import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_motion.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/intelligence/data/monthly_report_pdf.dart';
 import 'package:zad/features/intelligence/domain/monthly_analysis.dart';
 import 'package:zad/features/intelligence/domain/monthly_report.dart';
 import 'package:zad/features/intelligence/presentation/behavior_card.dart';
+import 'package:zad/features/intelligence/presentation/brain_pulse.dart';
 import 'package:zad/features/intelligence/presentation/export_report_button.dart';
 import 'package:zad/features/intelligence/presentation/spending_charts.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
@@ -130,14 +132,23 @@ class _IntelligenceState extends ConsumerState<IntelligenceScreen> {
           children:
               <Widget>[
                     const _SosBanner(),
+                    // The numbers are shown from the first expense; only the
+                    // written report waits for three (owner, 2026-11-09).
+                    if (expenses.isNotEmpty)
+                      BrainPulseCard(
+                        rows: all,
+                        currency: budget?.currency ?? '',
+                        onAsk: _ask,
+                      ),
                     _Hero(onOrb: _ask, onPrompt: _ask),
-                    if (!enough)
-                      _NotEnough(count: expenses.length, onTalk: _ask)
-                    else ...<Widget>[
+                    if (expenses.isNotEmpty)
                       SpendingCharts(
                         rows: all,
                         currency: budget?.currency ?? '',
                       ),
+                    if (!enough)
+                      _NotEnough(count: expenses.length, onTalk: _ask)
+                    else ...<Widget>[
                       BehaviorCard(rows: all, currency: budget?.currency ?? ''),
                       _ReportCard(
                         transactions: all,
@@ -525,7 +536,7 @@ class _NotEnough extends StatelessWidget {
         ),
         const SizedBox(height: 14),
         Text(
-          'سجل أول 3 مصاريف لتفعيل عقل زاد التحليلي',
+          context.l10n.brainReportWaits,
           textAlign: TextAlign.center,
           style: ZadType.titleMedium.copyWith(fontWeight: FontWeight.w700),
         ),

@@ -2201,5 +2201,14 @@
   "familyChatPoll": "تصويت",
   "familyChatTask": "مهمة جديدة",
   "familyChatGrocery": "طلب بقالة",
-  "familyChatSos": "نداء طوارئ"
+  "familyChatSos": "نداء طوارئ",
+  "pulseTitle": "نبض فلوسك",
+  "pulseLastDays": "{days, plural, few{آخر {days} أيام} other{آخر {days} يوم}}",
+  "pulseLess": "أقل {pct}٪ من الفترة اللي قبلها",
+  "pulseMore": "أكتر {pct}٪ من الفترة اللي قبلها",
+  "pulseDaily": "متوسط اليوم",
+  "pulsePeak": "أعلى يوم",
+  "pulseTop": "أكبر بند",
+  "pulseAskPrompt": "حلل صرفي على {category}",
+  "brainReportWaits": "سجل 3 مصاريف وتقرير زاد الكامل يجهز"
 }
