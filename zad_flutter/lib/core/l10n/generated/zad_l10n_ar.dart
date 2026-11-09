@@ -3065,6 +3065,16 @@ class ZadL10nAr extends ZadL10n {
       'شغال. أول ما تخرج وترجع البيت، خروجتك هتظهر هنا.';
 
   @override
+  String get familyHeaderTitle => 'عيلتي';
+
+  @override
+  String get shellLanguageShort => 'EN';
+
+  @override
+  String get chefHomeTapHint =>
+      'اضغط وأنا أقترحلك طبق من اللي عندك في المخزون.';
+
+  @override
   String get chefFullRecipe => 'الشرح الكامل وأسرار الشيف';
 
   @override

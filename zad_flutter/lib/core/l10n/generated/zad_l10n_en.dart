@@ -3133,6 +3133,16 @@ class ZadL10nEn extends ZadL10n {
       'It\'s on. Your next trip out and back will appear here.';
 
   @override
+  String get familyHeaderTitle => 'My family';
+
+  @override
+  String get shellLanguageShort => 'ع';
+
+  @override
+  String get chefHomeTapHint =>
+      'Tap and I\'ll suggest a dish from your pantry.';
+
+  @override
   String get chefFullRecipe => 'Full recipe and chef\'s secrets';
 
   @override

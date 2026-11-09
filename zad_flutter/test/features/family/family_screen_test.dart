@@ -144,7 +144,7 @@ void main() {
   testWidgets('an admin does not manage their own row', (tester) async {
     await pump(tester, InFamily(_family(myRole: 'admin')));
 
-    expect(find.text('عائلة ZAD-1A2B3C4D5E'), findsOneWidget);
+    expect(find.text('عيلتي'), findsOneWidget);
     expect(find.text('مدير'), findsOneWidget);
     expect(find.text('ابن/ابنة'), findsOneWidget);
 
@@ -160,7 +160,7 @@ void main() {
   ) async {
     await pump(tester, InFamily(_family(myRole: 'member')));
 
-    expect(find.text('عائلة ZAD-1A2B3C4D5E'), findsOneWidget);
+    expect(find.text('عيلتي'), findsOneWidget);
 
     await tester.tap(find.text('سارة'));
     await tester.pumpAndSettle();

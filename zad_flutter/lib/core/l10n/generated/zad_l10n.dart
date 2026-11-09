@@ -5425,6 +5425,24 @@ abstract class ZadL10n {
   /// **'شغال. أول ما تخرج وترجع البيت، خروجتك هتظهر هنا.'**
   String get placesOutingsWaiting;
 
+  /// No description provided for @familyHeaderTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'عيلتي'**
+  String get familyHeaderTitle;
+
+  /// No description provided for @shellLanguageShort.
+  ///
+  /// In ar, this message translates to:
+  /// **'EN'**
+  String get shellLanguageShort;
+
+  /// No description provided for @chefHomeTapHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'اضغط وأنا أقترحلك طبق من اللي عندك في المخزون.'**
+  String get chefHomeTapHint;
+
   /// No description provided for @chefFullRecipe.
   ///
   /// In ar, this message translates to:
