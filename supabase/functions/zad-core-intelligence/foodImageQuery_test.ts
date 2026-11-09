@@ -4,7 +4,7 @@
 // returning something confidently wrong.
 
 import { assertEquals, assert } from "jsr:@std/assert@1";
-import { foodFallbackUrl, looksLikeFoodAlt, toFoodSearchTerm } from "./foodImageQuery.ts";
+import { foodFallbackUrl, knownItemTerm, looksLikeFoodAlt, toFoodSearchTerm } from "./foodImageQuery.ts";
 
 Deno.test("the two terms that actually broke now translate to food searches", () => {
   assertEquals(toFoodSearchTerm("مطبخ"), "home cooked meal food");
@@ -50,4 +50,14 @@ Deno.test("the fallback is stable per term, so a card does not swap pictures", (
   assertEquals(a, foodFallbackUrl("كشري"));
   assertEquals(a, foodFallbackUrl("  كشري "));
   assert(a.startsWith("https://images.pexels.com/photos/"));
+});
+
+Deno.test("knownItemTerm names the item, by whole words only", () => {
+  assertEquals(knownItemTerm("زيت عباد"), "cooking oil bottle");
+  assertEquals(knownItemTerm("ستر باور مسحوق يدوي 1 كجم"), "laundry detergent");
+  assertEquals(knownItemTerm("راديسون حلاوة 500 جم"), "halva");
+  assertEquals(knownItemTerm("الجبنة"), "cheese");
+  assertEquals(knownItemTerm("جبنة رومي"), "cheese");
+  assertEquals(knownItemTerm("داخل"), null);
+  assertEquals(knownItemTerm("شاحن موبايل"), null);
 });

@@ -114,6 +114,28 @@ export function toFoodSearchTerm(raw: string): string {
   return `${phrase} food`;
 }
 
+/** أصناف البيت اللي مش في قاموس الأكل، بصيغة تجيب صورة الصنف نفسه. */
+const GROCERY_ITEMS: ReadonlyArray<[string, string]> = [
+  ["زيت", "cooking oil bottle"], ["زيتون", "olives"], ["سمن", "ghee jar"], ["خل", "vinegar bottle"],
+  ["عسل", "honey jar"], ["مربى", "jam jar"], ["حلاوة", "halva"], ["طحينة", "tahini"], ["صلصة", "tomato sauce"],
+  ["كاتشب", "ketchup"], ["مايونيز", "mayonnaise"], ["نشا", "corn starch"], ["شيبسي", "potato chips"],
+  ["مسحوق", "laundry detergent"], ["منظف", "cleaning products"], ["صابون", "soap bar"], ["شامبو", "shampoo bottle"],
+  ["معجون", "toothpaste"], ["مناديل", "tissue box"], ["كلور", "bleach bottle"], ["حفاضات", "baby diapers"],
+];
+
+/**
+ * الصنف بكلمة كاملة بس: "خل" ماتطابقش "داخل"، و"زيت زيتون" أول كلمة فيها زيت. صنف مش معروف = null،
+ * عشان كارت الاحتياج مايعرضش صورة أكل عشوائية جنب "مسحوق غسيل" زي احتياطي صور الوصفات.
+ */
+export function knownItemTerm(raw: string): string | null {
+  const known = new Map<string, string>([...FOOD_DICTIONARY, ...GROCERY_ITEMS]);
+  for (const word of raw.replace(/[^\p{L}\p{N}\s]/gu, " ").split(/\s+/)) {
+    const hit = known.get(word) ?? known.get(word.replace(/^و/, "")) ?? known.get(word.replace(/^و?ال/, ""));
+    if (hit) return hit;
+  }
+  return null;
+}
+
 export function looksLikeFoodAlt(alt: string | null | undefined): boolean {
   const a = (alt ?? "").toLowerCase().trim();
   if (a.length === 0) return true;
