@@ -32,6 +32,8 @@ const REFUSAL_SHAPE = /[0-9٠-٩]{9,}|(^|\s)(cvv|otp|pin|باسورد|الباس
 
 /** كمية أو مدة أو سن مش سعر: «رز 3 كيلو»، «ابني 7 سنين»، «اجازة 3 ايام». */
 const NOT_A_PRICE = /(كيلو|كيلوجرام|كجم|جرام|جم|لتر|علبه|علب|قطعه|قطع|حبه|حبات|كرتونه|كراتين|باكو|بواكي|كيس|اكياس|سنه|سنين|سنوات|يوم|ايام|ساعه|ساعات|دقيقه|دقايق|شهور|اسبوع|مره|مرات|نفر|افراد|عيال|x\s*[0-9٠-٩])/;
+/** ساعة مش سعر: «مش هنام دلوقتي هنام علي 12» (٨/١١) اتقرت مصروف، والموديل جاب ٥٠ جنيه بقالة من تاريخ المحادثة. */
+const CLOCK_NOT_PRICE = /(^|\s)(نام|انام|هنام|بنام|نايم|اصحي|هصحي|بصحي|صاحي)(\s|$)|(^|\s)علي\s+[0-9٠-٩]{1,2}(\s|$)/;
 /** رقم لوحده كتوكن: «80»، «ب 135»، «ب٢٧٫٥»، «14,500». */
 const PRICE_TOKEN = /(^|\s)ب?\s?[0-9٠-٩][0-9٠-٩.,٫٬]*(\s|$)/;
 
@@ -42,7 +44,7 @@ const PRICE_TOKEN = /(^|\s)ب?\s?[0-9٠-٩][0-9٠-٩.,٫٬]*(\s|$)/;
  */
 export function bareMoneyLog(message: string): boolean {
   const m = normalize(message ?? "").trim();
-  if (!m || m.length > 80 || !PRICE_TOKEN.test(m) || QUESTION.test(m) || NOT_A_LOG.test(m) || NOT_A_PRICE.test(m) || REFUSAL_SHAPE.test(m)) return false;
+  if (!m || m.length > 80 || !PRICE_TOKEN.test(m) || QUESTION.test(m) || NOT_A_LOG.test(m) || NOT_A_PRICE.test(m) || CLOCK_NOT_PRICE.test(m) || REFUSAL_SHAPE.test(m)) return false;
   const words = m.split(/\s+/).filter((w) => !/^ب?[0-9٠-٩.,٫٬]+$/.test(w) && w !== "ب");
   return words.length >= 1 && words.length <= 6;
 }

@@ -40,7 +40,7 @@ owner's real account, where only read-only taps are allowed.
 - Explainer video.
 - Privacy policy (Google Site, v3.1) must match the app: AdMob, Sentry, Firebase, background location, Gemini, Azure, Telegram.
 - Audit of Supabase columns per screen, and UI for tables that have none.
-- "Anything I ask the bot isn't in the UI": still to verify.
+- "Anything I ask the bot isn't in the UI", measured 2026-11-09. Real accounts wrote almost nothing from app chat in 30 days (2 `set_life_goal`; the 253 runs in `agent_actions` are the acceptance account `a11ce000`). On the owner's account: 20 chat runs in 14 days, 1 write, 2 runs rejected. Causes found: "add X to my pantry quantity 1" became an expense (fixed in #438); a sleep time became a money proposal (fixed in #451); a spending cap per category has no tool because those caps live only on the device (`category_budgets_store`), so the model tries `set_monthly_limit` and is refused. That last one is open. App chat text is not stored on the server, so the requests behind the other runs can't be read. Screens that load on open (appointments, debts, maintenance) are not stale after a chat.
 - 136 of 499 Dart files are over 300 lines (measured 2026-11-09). Split one folder at a time.
 - iPhone: there is no `ios/` folder yet.
 
