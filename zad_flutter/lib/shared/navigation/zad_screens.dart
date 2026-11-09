@@ -103,6 +103,9 @@ abstract final class ZadScreens {
   /// عقل زاد's analysis screen.
   static late OpenScreen showIntelligenceScreen;
 
+  /// The guided tour over the shell.
+  static late OpenScreen showGuidedTour;
+
   // ── inventory
   /// Adds a pantry item.
   static late OpenScreen showAddPantrySheet;

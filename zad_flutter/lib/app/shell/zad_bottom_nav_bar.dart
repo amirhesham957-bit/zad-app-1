@@ -13,6 +13,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/physics.dart';
+import 'package:zad/app/shell/zad_tour.dart';
 import 'package:zad/core/design/components/zad_pressable.dart';
 import 'package:zad/core/design/foundation/compose_shadow.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
@@ -126,14 +127,23 @@ class ZadBottomNavBar extends StatelessWidget {
   Widget _tab(BuildContext context, _NavItem item) => Flexible(
     child: FittedBox(
       fit: BoxFit.scaleDown,
-      child: _ZadNavTab(
-        icon: item.icon,
-        label: item.label(context.l10n),
-        selected: current == item.destination,
-        accent: accent?.colors.first,
-        onTap: () => item.destination == ZadNavDestination.more
-            ? onOpenMore?.call()
-            : onNavigate(item.destination),
+      child: KeyedSubtree(
+        key: switch (item.destination) {
+          ZadNavDestination.home => ZadTourKeys.home,
+          ZadNavDestination.money => ZadTourKeys.money,
+          ZadNavDestination.inventory => ZadTourKeys.house,
+          ZadNavDestination.more => ZadTourKeys.more,
+          _ => null,
+        },
+        child: _ZadNavTab(
+          icon: item.icon,
+          label: item.label(context.l10n),
+          selected: current == item.destination,
+          accent: accent?.colors.first,
+          onTap: () => item.destination == ZadNavDestination.more
+              ? onOpenMore?.call()
+              : onNavigate(item.destination),
+        ),
       ),
     ),
   );
@@ -182,13 +192,19 @@ class ZadBottomNavBar extends StatelessWidget {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: <Widget>[
-                        _MicOrb(
-                          onTap: onOpenVoice,
-                          onLongPress: onOpenCamera,
-                          gradient: accent,
+                        KeyedSubtree(
+                          key: ZadTourKeys.mic,
+                          child: _MicOrb(
+                            onTap: onOpenVoice,
+                            onLongPress: onOpenCamera,
+                            gradient: accent,
+                          ),
                         ),
                         const SizedBox(width: 8),
-                        _CameraFab(onTap: onOpenCamera),
+                        KeyedSubtree(
+                          key: ZadTourKeys.camera,
+                          child: _CameraFab(onTap: onOpenCamera),
+                        ),
                       ],
                     ),
                   ),

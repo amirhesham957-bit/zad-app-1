@@ -2,6 +2,7 @@
 /// and section. Called by `wireZad`.
 library;
 
+import 'package:zad/app/shell/zad_tour.dart';
 import 'package:zad/features/achievements/presentation/achievements_screen.dart';
 import 'package:zad/features/affiliate/presentation/affiliate_product_card.dart';
 import 'package:zad/features/affiliate/presentation/affiliate_suggestion.dart';
@@ -95,6 +96,7 @@ void wireScreens() {
   ZadScreens.showLifeGoalPickerSheet = showLifeGoalPickerSheet;
   ZadScreens.showHouseholdSection = showHouseholdSection;
   ZadScreens.showIntelligenceScreen = showIntelligenceScreen;
+  ZadScreens.showGuidedTour = showZadTour;
   ZadScreens.showAddPantrySheet = showAddPantrySheet;
   ZadScreens.showAddShoppingSheet = showAddShoppingSheet;
   ZadScreens.showPinPrompt = showPinPrompt;

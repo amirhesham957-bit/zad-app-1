@@ -3199,4 +3199,71 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get profilePremiumSubtitle => 'اشتراكك ومميزاتك ورصيدك';
+
+  @override
+  String get tourOpen => 'جولة في زاد';
+
+  @override
+  String get tourNext => 'التالي';
+
+  @override
+  String get tourSkip => 'تخطي';
+
+  @override
+  String get tourDone => 'يلا نبدأ';
+
+  @override
+  String tourStepOf(Object step, Object total) {
+    return '$step من $total';
+  }
+
+  @override
+  String get tourWelcomeTitle => 'أهلاً بيك في زاد';
+
+  @override
+  String get tourWelcomeBody => 'في نص دقيقة هنوريك كل حاجة فين.';
+
+  @override
+  String get tourHomeTitle => 'الرئيسية';
+
+  @override
+  String get tourHomeBody => 'فلوسك المتاحة، وأهم اللي محتاج يتعمل النهارده.';
+
+  @override
+  String get tourMoneyTitle => 'فلوسي';
+
+  @override
+  String get tourMoneyBody => 'ميزانيتك ومصاريفك والتزاماتك الشهرية.';
+
+  @override
+  String get tourMicTitle => 'كلّم زاد';
+
+  @override
+  String get tourMicBody =>
+      'قول «سجل ٥٠ جنيه قهوة» أو اسأل أي سؤال، وزاد يرد عليك.';
+
+  @override
+  String get tourCameraTitle => 'صوّر الفاتورة';
+
+  @override
+  String get tourCameraBody =>
+      'صوّر إيصال، وزاد يسجله في مصاريفك ويضيف الحاجات للمخزن.';
+
+  @override
+  String get tourHouseTitle => 'بيتي';
+
+  @override
+  String get tourHouseBody => 'المخزن والنواقص والصيدلية ووصفات الشيف.';
+
+  @override
+  String get tourMoreTitle => 'المزيد';
+
+  @override
+  String get tourMoreBody => 'العيلة وعقل زاد وحسابك وكل المزايا.';
+
+  @override
+  String get tourBellTitle => 'الإشعارات';
+
+  @override
+  String get tourBellBody => 'كل تنبيهات زاد وتذكيراته في مكان واحد.';
 }
