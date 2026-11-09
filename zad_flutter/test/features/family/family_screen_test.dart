@@ -224,4 +224,13 @@ void main() {
     }
     await unmount(tester);
   });
+
+  testWidgets('the empty chat fits a short screen', (tester) async {
+    await pump(tester, InFamily(_family(myRole: 'admin')));
+    await tester.binding.setSurfaceSize(const Size(400, 560));
+    await tester.tap(find.text('الشات'));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    await unmount(tester);
+  });
 }
