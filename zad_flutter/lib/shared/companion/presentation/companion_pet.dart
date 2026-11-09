@@ -15,6 +15,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/components/zad_pulses.dart';
+import 'package:zad/core/design/components/zad_scroll_away.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_motion.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
@@ -555,63 +556,68 @@ class _CompanionFloatingPetState extends ConsumerState<CompanionFloatingPet>
               top: _at.dy * room.height,
               width: box,
               height: box,
-              child: GestureDetector(
-                key: const ValueKey<String>('pet-floating-drag'),
-                behavior: HitTestBehavior.translucent,
-                onPanUpdate: (d) => _move(d, room),
-                onPanEnd: (_) => _drop(),
-                onPanCancel: _drop,
-                child: AnimatedBuilder(
-                  animation: Listenable.merge(<Listenable>[_bob, _hop]),
-                  builder: (_, child) {
-                    final bob = _dragging
-                        ? 0.0
-                        : -4 + 8 * Curves.easeInOut.transform(_bob.value);
-                    // A hop on landing: up and back, a small squash at the end.
-                    final hop = math.sin(_hop.value * math.pi);
-                    final breathe = 0.85 + 0.15 * _bob.value;
-                    return Stack(
-                      alignment: Alignment.center,
-                      clipBehavior: Clip.none,
-                      children: <Widget>[
-                        // The glow on the floor, in the mood's colour.
-                        Positioned(
-                          bottom: 0,
-                          child: IgnorePointer(
-                            child: Container(
-                              width: widget.size * 0.8 * breathe,
-                              height: ZadSpacing.md,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(
-                                  ZadRadii.card,
-                                ),
-                                boxShadow: <BoxShadow>[
-                                  BoxShadow(
-                                    color: glow.withValues(alpha: 0.55),
-                                    blurRadius: 18,
-                                    spreadRadius: 2,
+              // While Home is read it tucks into the nearer side, peeking.
+              child: ZadStepsAside(
+                offset: Offset(_at.dx < 0.5 ? -0.7 : 0.7, 0),
+                awayOpacity: 0.6,
+                child: GestureDetector(
+                  key: const ValueKey<String>('pet-floating-drag'),
+                  behavior: HitTestBehavior.translucent,
+                  onPanUpdate: (d) => _move(d, room),
+                  onPanEnd: (_) => _drop(),
+                  onPanCancel: _drop,
+                  child: AnimatedBuilder(
+                    animation: Listenable.merge(<Listenable>[_bob, _hop]),
+                    builder: (_, child) {
+                      final bob = _dragging
+                          ? 0.0
+                          : -4 + 8 * Curves.easeInOut.transform(_bob.value);
+                      // A hop on landing: up and back, a small squash.
+                      final hop = math.sin(_hop.value * math.pi);
+                      final breathe = 0.85 + 0.15 * _bob.value;
+                      return Stack(
+                        alignment: Alignment.center,
+                        clipBehavior: Clip.none,
+                        children: <Widget>[
+                          // The glow on the floor, in the mood's colour.
+                          Positioned(
+                            bottom: 0,
+                            child: IgnorePointer(
+                              child: Container(
+                                width: widget.size * 0.8 * breathe,
+                                height: ZadSpacing.md,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(
+                                    ZadRadii.card,
                                   ),
-                                ],
+                                  boxShadow: <BoxShadow>[
+                                    BoxShadow(
+                                      color: glow.withValues(alpha: 0.55),
+                                      blurRadius: 18,
+                                      spreadRadius: 2,
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                        Transform.translate(
-                          offset: Offset(0, bob - 18 * hop),
-                          child: Transform.rotate(
-                            angle: _lean,
-                            child: Transform.scale(
-                              scale: _dragging ? 1.12 : 1 + 0.06 * hop,
-                              child: child,
+                          Transform.translate(
+                            offset: Offset(0, bob - 18 * hop),
+                            child: Transform.rotate(
+                              angle: _lean,
+                              child: Transform.scale(
+                                scale: _dragging ? 1.12 : 1 + 0.06 * hop,
+                                child: child,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
-                    );
-                  },
-                  child: CompanionHeaderPet(
-                    size: widget.size,
-                    bubbleAbove: true,
+                        ],
+                      );
+                    },
+                    child: CompanionHeaderPet(
+                      size: widget.size,
+                      bubbleAbove: true,
+                    ),
                   ),
                 ),
               ),
