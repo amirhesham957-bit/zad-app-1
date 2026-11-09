@@ -118,43 +118,46 @@ class _FamilyChatTabState extends ConsumerState<FamilyChatTab> {
         Expanded(
           child: messages.isEmpty
               ? Center(
-                  child: ZadEmptyState(
-                    icon: ZadIcons.ask,
-                    title: 'لا توجد رسائل بعد',
-                    message: 'ابدأ المحادثة بإرسال أول رسالة لعائلتك',
-                    action: Wrap(
-                      spacing: ZadSpacing.sm,
-                      alignment: WrapAlignment.center,
-                      children: <Widget>[
-                        ActionChip(
-                          avatar: const Icon(ZadIcons.chore, size: 16),
-                          label: const Text('أضف مهام'),
-                          onPressed: () => unawaited(
-                            showQuickTaskDialog(
-                              context,
-                              ref,
-                              members,
-                              widget.me,
+                  // Scrolls on a short screen: the header takes room.
+                  child: SingleChildScrollView(
+                    child: ZadEmptyState(
+                      icon: ZadIcons.ask,
+                      title: 'لا توجد رسائل بعد',
+                      message: 'ابدأ المحادثة بإرسال أول رسالة لعائلتك',
+                      action: Wrap(
+                        spacing: ZadSpacing.sm,
+                        alignment: WrapAlignment.center,
+                        children: <Widget>[
+                          ActionChip(
+                            avatar: const Icon(ZadIcons.chore, size: 16),
+                            label: const Text('أضف مهام'),
+                            onPressed: () => unawaited(
+                              showQuickTaskDialog(
+                                context,
+                                ref,
+                                members,
+                                widget.me,
+                              ),
                             ),
                           ),
-                        ),
-                        ActionChip(
-                          avatar: const Icon(ZadIcons.shopping, size: 16),
-                          label: const Text('اطلب بقالة'),
-                          onPressed: () =>
-                              unawaited(showQuickGroceryDialog(context, ref)),
-                        ),
-                        ActionChip(
-                          avatar: const Icon(ZadIcons.assistant, size: 16),
-                          label: const Text('استشر @Zad'),
-                          onPressed: () => setState(() {
-                            _text.text = '@Zad ';
-                            _text.selection = TextSelection.collapsed(
-                              offset: _text.text.length,
-                            );
-                          }),
-                        ),
-                      ],
+                          ActionChip(
+                            avatar: const Icon(ZadIcons.shopping, size: 16),
+                            label: const Text('اطلب بقالة'),
+                            onPressed: () =>
+                                unawaited(showQuickGroceryDialog(context, ref)),
+                          ),
+                          ActionChip(
+                            avatar: const Icon(ZadIcons.assistant, size: 16),
+                            label: const Text('استشر @Zad'),
+                            onPressed: () => setState(() {
+                              _text.text = '@Zad ';
+                              _text.selection = TextSelection.collapsed(
+                                offset: _text.text.length,
+                              );
+                            }),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 )
@@ -1007,7 +1010,7 @@ class _Composer extends StatelessWidget {
             cancelButton: CupertinoActionSheetAction(
               onPressed: () => Navigator.of(sheet).pop(),
               child: Text(
-                MaterialLocalizations.of(sheet).cancelButtonLabel,
+                l.commonCancel,
                 style: ZadType.bodyLarge.copyWith(color: ZadColors.ink),
               ),
             ),

@@ -398,6 +398,9 @@ class _Header extends ConsumerWidget {
     final members = family.members;
     final owner = familyOwnerAlias(family);
     final shown = members.length > 6 ? 7 : members.length;
+    // Inside the shell the app's own header is above this one: no status bar
+    // to clear and nowhere to go back to.
+    final pushed = ModalRoute.of(context)?.canPop ?? false;
     return Container(
       decoration: const BoxDecoration(
         gradient: ZadColors.hero,
@@ -406,6 +409,7 @@ class _Header extends ConsumerWidget {
         ),
       ),
       child: SafeArea(
+        top: pushed,
         bottom: false,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(
@@ -419,7 +423,7 @@ class _Header extends ConsumerWidget {
             children: <Widget>[
               Row(
                 children: <Widget>[
-                  const BackButton(color: Colors.white),
+                  if (pushed) const BackButton(color: Colors.white),
                   Expanded(
                     child: Text(
                       owner == null

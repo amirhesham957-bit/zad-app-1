@@ -3,10 +3,9 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:zad/core/design/tokens/zad_colors.dart';
+import 'package:zad/app/shell/zad_tour_card.dart';
 import 'package:zad/core/design/tokens/zad_motion.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
-import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/l10n/l10n.dart';
 
 /// The controls the tour points at, placed where each one is drawn.
@@ -147,7 +146,7 @@ class _ZadTourOverlayState extends State<ZadTourOverlay> {
       width: 0,
       height: 0,
     );
-    final card = _TourCard(
+    final card = TourCard(
       key: ValueKey<int>(_step),
       step: step,
       count: l.tourStepOf('${_step + 1}', '${widget.steps.length}'),
@@ -173,7 +172,7 @@ class _ZadTourOverlayState extends State<ZadTourOverlay> {
                 duration: still ? Duration.zero : ZadDuration.settle,
                 curve: ZadCurves.standard,
                 builder: (_, rect, _) =>
-                    CustomPaint(painter: _ScrimPainter(rect ?? middle)),
+                    CustomPaint(painter: TourScrimPainter(rect ?? middle)),
               ),
             ),
           ),
@@ -206,115 +205,4 @@ class _ZadTourOverlayState extends State<ZadTourOverlay> {
       ),
     );
   }
-}
-
-class _TourCard extends StatelessWidget {
-  const new({
-    required this.step,
-    required this.count,
-    required this.nextLabel,
-    required this.skipLabel,
-    required this.onNext,
-    required this.onSkip,
-    super.key,
-  });
-
-  final ZadTourStep step;
-  final String count;
-  final String nextLabel;
-  final String? skipLabel;
-  final VoidCallback onNext;
-  final VoidCallback onSkip;
-
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(ZadSpacing.xl),
-    decoration: BoxDecoration(
-      gradient: ZadColors.hero,
-      borderRadius: BorderRadius.circular(ZadRadii.hero),
-      border: Border.all(color: ZadColors.glassEdge),
-    ),
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Text(
-          count,
-          style: ZadType.labelSmall.copyWith(color: ZadColors.mintGlow),
-        ),
-        const SizedBox(height: ZadSpacing.sm),
-        Text(
-          step.title,
-          style: ZadType.headlineMedium.copyWith(color: Colors.white),
-        ),
-        const SizedBox(height: ZadSpacing.sm),
-        Text(
-          step.body,
-          style: ZadType.bodyMedium.copyWith(
-            color: Colors.white.withValues(alpha: 0.9),
-          ),
-        ),
-        const SizedBox(height: ZadSpacing.lg),
-        Row(
-          children: <Widget>[
-            Expanded(
-              child: FilledButton(
-                onPressed: onNext,
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size(0, 48),
-                  backgroundColor: Colors.white,
-                  foregroundColor: ZadColors.green800,
-                ),
-                child: Text(nextLabel),
-              ),
-            ),
-            if (skipLabel case final skip?) ...<Widget>[
-              const SizedBox(width: ZadSpacing.sm),
-              TextButton(
-                onPressed: onSkip,
-                style: TextButton.styleFrom(
-                  minimumSize: const Size(64, 48),
-                  foregroundColor: Colors.white,
-                ),
-                child: Text(skip),
-              ),
-            ],
-          ],
-        ),
-      ],
-    ),
-  );
-}
-
-class _ScrimPainter extends CustomPainter {
-  const new(this.hole);
-
-  final Rect hole;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final light = RRect.fromRectAndRadius(
-      hole,
-      const Radius.circular(ZadRadii.cardLarge),
-    );
-    canvas.drawPath(
-      Path.combine(
-        PathOperation.difference,
-        Path()..addRect(Offset.zero & size),
-        Path()..addRRect(light),
-      ),
-      Paint()..color = Colors.black.withValues(alpha: 0.72),
-    );
-    if (hole.isEmpty) return;
-    canvas.drawRRect(
-      light,
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2
-        ..color = ZadColors.mintGlow,
-    );
-  }
-
-  @override
-  bool shouldRepaint(_ScrimPainter old) => old.hole != hole;
 }
