@@ -5322,6 +5322,90 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'زادو بيبعتلك لما يجوع أو يعطش، على تليجرام والإشعارات. قفلها مش بيوقف تحية الصبح ولا العروض.'**
   String get settingsPetCallsBody;
+
+  /// No description provided for @homeWidgetSubs.
+  ///
+  /// In ar, this message translates to:
+  /// **'اشتراكات'**
+  String get homeWidgetSubs;
+
+  /// No description provided for @homeWidgetSubsEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضيف اشتراك'**
+  String get homeWidgetSubsEmpty;
+
+  /// No description provided for @homeWidgetSubsToday.
+  ///
+  /// In ar, this message translates to:
+  /// **'النهارده'**
+  String get homeWidgetSubsToday;
+
+  /// No description provided for @homeWidgetSubsTomorrow.
+  ///
+  /// In ar, this message translates to:
+  /// **'بكرة'**
+  String get homeWidgetSubsTomorrow;
+
+  /// No description provided for @homeWidgetSubsInDays.
+  ///
+  /// In ar, this message translates to:
+  /// **'بعد {days} يوم'**
+  String homeWidgetSubsInDays(Object days);
+
+  /// No description provided for @homeWidgetPantry.
+  ///
+  /// In ar, this message translates to:
+  /// **'المخزون'**
+  String get homeWidgetPantry;
+
+  /// No description provided for @homeWidgetPantryShort.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} ناقص'**
+  String homeWidgetPantryShort(Object count);
+
+  /// No description provided for @homeWidgetPantryFine.
+  ///
+  /// In ar, this message translates to:
+  /// **'كله تمام'**
+  String get homeWidgetPantryFine;
+
+  /// No description provided for @homeWidgetPantryCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} صنف'**
+  String homeWidgetPantryCount(Object count);
+
+  /// No description provided for @homeWidgetPantryEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضيف أصناف'**
+  String get homeWidgetPantryEmpty;
+
+  /// No description provided for @homeWidgetPharmacy.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصيدلية'**
+  String get homeWidgetPharmacy;
+
+  /// No description provided for @homeWidgetPharmacyNone.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش جرعات'**
+  String get homeWidgetPharmacyNone;
+
+  /// No description provided for @homeWidgetPharmacyActive.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} دوا'**
+  String homeWidgetPharmacyActive(Object count);
+
+  /// No description provided for @homeWidgetPharmacyEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضيف دوا'**
+  String get homeWidgetPharmacyEmpty;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

@@ -3003,4 +3003,54 @@ class ZadL10nAr extends ZadL10n {
   @override
   String get settingsPetCallsBody =>
       'زادو بيبعتلك لما يجوع أو يعطش، على تليجرام والإشعارات. قفلها مش بيوقف تحية الصبح ولا العروض.';
+
+  @override
+  String get homeWidgetSubs => 'اشتراكات';
+
+  @override
+  String get homeWidgetSubsEmpty => 'ضيف اشتراك';
+
+  @override
+  String get homeWidgetSubsToday => 'النهارده';
+
+  @override
+  String get homeWidgetSubsTomorrow => 'بكرة';
+
+  @override
+  String homeWidgetSubsInDays(Object days) {
+    return 'بعد $days يوم';
+  }
+
+  @override
+  String get homeWidgetPantry => 'المخزون';
+
+  @override
+  String homeWidgetPantryShort(Object count) {
+    return '$count ناقص';
+  }
+
+  @override
+  String get homeWidgetPantryFine => 'كله تمام';
+
+  @override
+  String homeWidgetPantryCount(Object count) {
+    return '$count صنف';
+  }
+
+  @override
+  String get homeWidgetPantryEmpty => 'ضيف أصناف';
+
+  @override
+  String get homeWidgetPharmacy => 'الصيدلية';
+
+  @override
+  String get homeWidgetPharmacyNone => 'مفيش جرعات';
+
+  @override
+  String homeWidgetPharmacyActive(Object count) {
+    return '$count دوا';
+  }
+
+  @override
+  String get homeWidgetPharmacyEmpty => 'ضيف دوا';
 }

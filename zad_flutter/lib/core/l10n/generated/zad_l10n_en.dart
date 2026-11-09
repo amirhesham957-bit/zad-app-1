@@ -3071,4 +3071,54 @@ class ZadL10nEn extends ZadL10n {
   @override
   String get settingsPetCallsBody =>
       'Zado messages you when it\'s hungry or thirsty, on Telegram and by notification. Turning this off doesn\'t stop the morning greeting or the deals.';
+
+  @override
+  String get homeWidgetSubs => 'Subscriptions';
+
+  @override
+  String get homeWidgetSubsEmpty => 'Add one';
+
+  @override
+  String get homeWidgetSubsToday => 'Today';
+
+  @override
+  String get homeWidgetSubsTomorrow => 'Tomorrow';
+
+  @override
+  String homeWidgetSubsInDays(Object days) {
+    return 'In $days days';
+  }
+
+  @override
+  String get homeWidgetPantry => 'Pantry';
+
+  @override
+  String homeWidgetPantryShort(Object count) {
+    return '$count low';
+  }
+
+  @override
+  String get homeWidgetPantryFine => 'All good';
+
+  @override
+  String homeWidgetPantryCount(Object count) {
+    return '$count items';
+  }
+
+  @override
+  String get homeWidgetPantryEmpty => 'Add items';
+
+  @override
+  String get homeWidgetPharmacy => 'Pharmacy';
+
+  @override
+  String get homeWidgetPharmacyNone => 'No doses left';
+
+  @override
+  String homeWidgetPharmacyActive(Object count) {
+    return '$count medicines';
+  }
+
+  @override
+  String get homeWidgetPharmacyEmpty => 'Add one';
 }
