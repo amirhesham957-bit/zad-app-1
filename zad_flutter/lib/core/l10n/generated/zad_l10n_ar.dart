@@ -3063,4 +3063,55 @@ class ZadL10nAr extends ZadL10n {
   @override
   String get placesOutingsWaiting =>
       'شغال. أول ما تخرج وترجع البيت، خروجتك هتظهر هنا.';
+
+  @override
+  String familyTitleOf(Object name) {
+    return 'عيلة $name';
+  }
+
+  @override
+  String get familyTitleMine => 'عيلتي';
+
+  @override
+  String familyMembersCount(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count فرد',
+      few: '$count أفراد',
+      two: 'فردين',
+      one: 'فرد واحد',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get familyActionInvite => 'دعوة';
+
+  @override
+  String get familyActionShare => 'مشاركة';
+
+  @override
+  String get familyActionSos => 'طوارئ';
+
+  @override
+  String get familyChatTools => 'أدوات الشات';
+
+  @override
+  String get familyChatQuickReplies => 'ردود سريعة';
+
+  @override
+  String get familyChatRequest => 'طلب مصروف';
+
+  @override
+  String get familyChatPoll => 'تصويت';
+
+  @override
+  String get familyChatTask => 'مهمة جديدة';
+
+  @override
+  String get familyChatGrocery => 'طلب بقالة';
+
+  @override
+  String get familyChatSos => 'نداء طوارئ';
 }

@@ -949,5 +949,18 @@
   "homeWidgetPharmacyEmpty": "Add one",
   "placesTabMine": "My places",
   "placesOutingsTurnOn": "Start recording my outings",
-  "placesOutingsWaiting": "It's on. Your next trip out and back will appear here."
+  "placesOutingsWaiting": "It's on. Your next trip out and back will appear here.",
+  "familyTitleOf": "{name}'s family",
+  "familyTitleMine": "My family",
+  "familyMembersCount": "{count, plural, =1{1 member} other{{count} members}}",
+  "familyActionInvite": "Invite",
+  "familyActionShare": "Share",
+  "familyActionSos": "SOS",
+  "familyChatTools": "Chat tools",
+  "familyChatQuickReplies": "Quick replies",
+  "familyChatRequest": "Money request",
+  "familyChatPoll": "Poll",
+  "familyChatTask": "New task",
+  "familyChatGrocery": "Grocery request",
+  "familyChatSos": "Emergency call"
 }

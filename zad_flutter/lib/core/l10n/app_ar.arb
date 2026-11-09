@@ -2180,5 +2180,18 @@
   "homeWidgetPharmacyEmpty": "ضيف دوا",
   "placesTabMine": "أماكني",
   "placesOutingsTurnOn": "فعّل تسجيل خروجاتي",
-  "placesOutingsWaiting": "شغال. أول ما تخرج وترجع البيت، خروجتك هتظهر هنا."
+  "placesOutingsWaiting": "شغال. أول ما تخرج وترجع البيت، خروجتك هتظهر هنا.",
+  "familyTitleOf": "عيلة {name}",
+  "familyTitleMine": "عيلتي",
+  "familyMembersCount": "{count, plural, =1{فرد واحد} =2{فردين} few{{count} أفراد} other{{count} فرد}}",
+  "familyActionInvite": "دعوة",
+  "familyActionShare": "مشاركة",
+  "familyActionSos": "طوارئ",
+  "familyChatTools": "أدوات الشات",
+  "familyChatQuickReplies": "ردود سريعة",
+  "familyChatRequest": "طلب مصروف",
+  "familyChatPoll": "تصويت",
+  "familyChatTask": "مهمة جديدة",
+  "familyChatGrocery": "طلب بقالة",
+  "familyChatSos": "نداء طوارئ"
 }
