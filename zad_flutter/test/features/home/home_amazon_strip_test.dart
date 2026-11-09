@@ -16,6 +16,11 @@ import 'package:zad/shared/navigation/zad_screens.dart';
 import '../../support/quiet_household.dart';
 
 void main() {
+  test('every need carries the store id of its own store', () {
+    expect(amazonSuggestUrl('زيت', 'EG'), endsWith('&tag=zad04-21'));
+    expect(amazonSuggestUrl('زيت', 'SA'), endsWith('&tag=zad0b-21'));
+  });
+
   test("«اقتراح» searches the account's own store", () {
     expect(
       amazonSuggestUrl('بيض', 'EG'),
