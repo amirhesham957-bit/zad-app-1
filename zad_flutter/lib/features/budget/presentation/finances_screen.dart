@@ -14,6 +14,7 @@ import 'package:intl/intl.dart' show NumberFormat;
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/components/zad_kotlin_surfaces.dart';
 import 'package:zad/core/design/components/zad_pressable.dart';
+import 'package:zad/core/design/components/zad_scroll_away.dart';
 import 'package:zad/core/design/foundation/squircle.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
@@ -141,47 +142,49 @@ class _DailyTab extends ConsumerWidget {
       spent: spentByCategory(rows),
     );
 
-    return DecoratedBox(
-      decoration: const BoxDecoration(),
+    return ZadScrollAwayScope(
       child: Scaffold(
         backgroundColor: Colors.transparent,
         // Kotlin: the small scan button over «معاملة».
-        floatingActionButton: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: <Widget>[
-            FloatingActionButton.small(
-              heroTag: 'finances-scan',
-              onPressed: () => unawaited(ZadScreens.openZadCamera(context)),
-              tooltip: 'Scan',
-              backgroundColor: Theme.of(context).colorScheme.secondary,
-              foregroundColor: Colors.white,
-              shape: const CircleBorder(),
-              child: const Icon(Icons.document_scanner, size: 20),
-            ),
-            const SizedBox(height: 12),
-            FloatingActionButton.extended(
-              heroTag: 'finances-add',
-              onPressed: () => ZadScreens.showAddTransactionSheet(context),
-              icon: const Icon(Icons.add, size: 20),
-              label: Text(
-                context.l10n.financesAddTx,
-                style: const TextStyle(fontWeight: FontWeight.bold),
+        floatingActionButton: ZadStepsAside(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: <Widget>[
+              FloatingActionButton.small(
+                heroTag: 'finances-scan',
+                onPressed: () => unawaited(ZadScreens.openZadCamera(context)),
+                tooltip: 'Scan',
+                backgroundColor: Theme.of(context).colorScheme.secondary,
+                foregroundColor: Colors.white,
+                shape: const CircleBorder(),
+                child: const Icon(Icons.document_scanner, size: 20),
               ),
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+              const SizedBox(height: 12),
+              FloatingActionButton.extended(
+                heroTag: 'finances-add',
+                onPressed: () => ZadScreens.showAddTransactionSheet(context),
+                icon: const Icon(Icons.add, size: 20),
+                label: Text(
+                  context.l10n.financesAddTx,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         body: ListView(
           padding: const EdgeInsets.fromLTRB(
             ZadSpacing.gutter,
             ZadSpacing.sm,
             ZadSpacing.gutter,
-            96,
+            // Room for the two floating buttons, so they cover nothing here.
+            132,
           ),
           children: <Widget>[
             _Available(view: budget, currency: currency),

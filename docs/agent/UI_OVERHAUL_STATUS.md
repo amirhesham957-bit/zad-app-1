@@ -23,6 +23,8 @@ owner's real account, where only read-only taps are allowed.
 | #443 | Profile: coloured badges, language, companion and Premium rows | passed, merged | yes: header and first groups; lower rows not opened |
 | #444 | Guided tour over the real buttons, button on Home | passed, merged | yes: all 8 stops |
 | #445 | Home needs: item photo, animation when there is none, store ids pinned by a test | passed, merged | not yet, needs the next APK |
+| #448 | Pantry rows, Home glance and Amazon needs share one item photo | passed, merged | not yet, needs the next APK |
+| #449 | Floating buttons and the companion step aside while a list is read (Money, pantry, Home); room under each list; pantry names on two lines | passed | not yet, needs the next APK |
 
 ## Open bugs
 
@@ -36,7 +38,8 @@ owner's real account, where only read-only taps are allowed.
 - The occasion's vibe across the app, mostly in Premium, with small personal discounts.
 - Chef: famous chefs need the owner's TikTok handles for `RECIPE_ACCOUNTS`.
 - Brain map: a 3D sphere already exists (`knowledge_map_screen.dart`). Judge it on the phone before rebuilding.
-- Screens seen on the phone 2026-11-09 still need: floating buttons and the companion covering content (Money, pantry, Home); Home's top row (tour button, then a lone story circle); the balance card looks muddy under an occasion's colours; long pantry names cut off.
+- Screens seen on the phone 2026-11-09 still need: Home's top row (tour button, then a lone story circle); the balance card looks muddy under an occasion's colours.
+- Other screens with floating buttons (transactions, documents, maintenance, pharmacy, appointments, subscriptions) can adopt `ZadScrollAwayScope` + `ZadStepsAside` the same way.
 - Explainer video.
 - Privacy policy (Google Site, v3.1) must match the app: AdMob, Sentry, Firebase, background location, Gemini, Azure, Telegram.
 - Audit of Supabase columns per screen, and UI for tables that have none.

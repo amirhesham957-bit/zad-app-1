@@ -17,6 +17,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/components/zad_kotlin_surfaces.dart';
+import 'package:zad/core/design/components/zad_scroll_away.dart';
 import 'package:zad/core/design/foundation/compose_shadow.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_extended_colors.dart';
@@ -451,48 +452,53 @@ class _PantryViewState extends ConsumerState<PantryView> {
       );
     }
 
-    return Stack(
-      children: <Widget>[
-        Positioned.fill(
-          child: RefreshIndicator(
-            onRefresh: () => controller.refresh(force: true),
-            child: body,
+    return ZadScrollAwayScope(
+      child: Stack(
+        children: <Widget>[
+          Positioned.fill(
+            child: RefreshIndicator(
+              onRefresh: () => controller.refresh(force: true),
+              child: body,
+            ),
           ),
-        ),
-        PositionedDirectional(
-          end: 16,
-          bottom: 24,
-          child: Row(
-            children: <Widget>[
-              FloatingActionButton(
-                heroTag: 'pantry-photo',
-                onPressed: () => unawaited(ZadScreens.openZadCamera(context)),
-                tooltip: 'تصوير المخزون',
-                backgroundColor: scheme.secondary,
-                foregroundColor: scheme.onSecondary,
-                elevation: 4,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: const Icon(Icons.document_scanner),
+          PositionedDirectional(
+            end: 16,
+            bottom: 24,
+            child: ZadStepsAside(
+              child: Row(
+                children: <Widget>[
+                  FloatingActionButton(
+                    heroTag: 'pantry-photo',
+                    onPressed: () =>
+                        unawaited(ZadScreens.openZadCamera(context)),
+                    tooltip: 'تصوير المخزون',
+                    backgroundColor: scheme.secondary,
+                    foregroundColor: scheme.onSecondary,
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: const Icon(Icons.document_scanner),
+                  ),
+                  const SizedBox(width: 10),
+                  FloatingActionButton(
+                    heroTag: 'pantry-add',
+                    onPressed: () => unawaited(showAddPantrySheet(context)),
+                    tooltip: 'إضافة يدوية',
+                    backgroundColor: scheme.primary,
+                    foregroundColor: scheme.onPrimary,
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: const Icon(Icons.add),
+                  ),
+                ],
               ),
-              const SizedBox(width: 10),
-              FloatingActionButton(
-                heroTag: 'pantry-add',
-                onPressed: () => unawaited(showAddPantrySheet(context)),
-                tooltip: 'إضافة يدوية',
-                backgroundColor: scheme.primary,
-                foregroundColor: scheme.onPrimary,
-                elevation: 4,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: const Icon(Icons.add),
-              ),
-            ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -895,7 +901,7 @@ class _InventoryItemCard extends StatelessWidget {
                       Flexible(
                         child: Text(
                           item.itemName,
-                          maxLines: 1,
+                          maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             fontSize: 15,

@@ -197,7 +197,7 @@ class HomeScreen extends ConsumerWidget {
           const AiAlertBannerSlot(),
           const UrgentRecipeSlot(),
           // Kotlin: room under the last card for the floating companion.
-          const SizedBox(height: 112),
+          const SizedBox(height: 128),
         ],
       ),
     );

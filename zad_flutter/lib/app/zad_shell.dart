@@ -23,6 +23,7 @@ import 'package:zad/app/shell/zad_chrome.dart';
 import 'package:zad/app/shell/zad_pulse_bar.dart';
 import 'package:zad/app/shell/zad_sky.dart';
 import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/design/components/zad_scroll_away.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/alerts/application/alerts_controller.dart';
@@ -457,17 +458,23 @@ class _ZadShellState extends ConsumerState<ZadShell> {
               ),
               const ZadPulseBar(),
               Expanded(
-                child: Stack(
-                  children: <Widget>[
-                    Positioned.fill(child: _tabStack()),
-                    // رفيق زاد floats over the bar on Home, by the corner;
-                    // its moments (a level, waking up, «+10 ⭐») play over it.
-                    // It roams the whole body; empty room lets taps through.
-                    if (_tab == ZadNavDestination.home)
-                      const Positioned.fill(
-                        child: CompanionMoments(child: CompanionFloatingPet()),
-                      ),
-                  ],
+                child: ZadScrollAwayScope(
+                  resetWhenChanged: _tab,
+                  child: Stack(
+                    children: <Widget>[
+                      Positioned.fill(child: _tabStack()),
+                      // رفيق زاد floats over the bar on Home, by the corner;
+                      // its moments (a level, waking up, «+10 ⭐») play over
+                      // it. It roams the whole body; empty room lets taps
+                      // through.
+                      if (_tab == ZadNavDestination.home)
+                        const Positioned.fill(
+                          child: CompanionMoments(
+                            child: CompanionFloatingPet(),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
               ),
             ],
