@@ -3265,4 +3265,75 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get profilePremiumSubtitle => 'Your plan, perks and balance';
+
+  @override
+  String get tourOpen => 'Tour of Zad';
+
+  @override
+  String get tourNext => 'Next';
+
+  @override
+  String get tourSkip => 'Skip';
+
+  @override
+  String get tourDone => 'Let\'s start';
+
+  @override
+  String tourStepOf(Object step, Object total) {
+    return '$step of $total';
+  }
+
+  @override
+  String get tourWelcomeTitle => 'Welcome to Zad';
+
+  @override
+  String get tourWelcomeBody =>
+      'In half a minute you\'ll know where everything is.';
+
+  @override
+  String get tourHomeTitle => 'Home';
+
+  @override
+  String get tourHomeBody =>
+      'Your available money, and what matters most today.';
+
+  @override
+  String get tourMoneyTitle => 'My money';
+
+  @override
+  String get tourMoneyBody => 'Your budget, spending and monthly commitments.';
+
+  @override
+  String get tourMicTitle => 'Talk to Zad';
+
+  @override
+  String get tourMicBody =>
+      'Say \"log 50 for coffee\" or ask anything, and Zad answers.';
+
+  @override
+  String get tourCameraTitle => 'Scan a receipt';
+
+  @override
+  String get tourCameraBody =>
+      'Snap a receipt and Zad logs the spending and fills the pantry.';
+
+  @override
+  String get tourHouseTitle => 'My home';
+
+  @override
+  String get tourHouseBody =>
+      'Pantry, shopping list, pharmacy and the chef\'s recipes.';
+
+  @override
+  String get tourMoreTitle => 'More';
+
+  @override
+  String get tourMoreBody =>
+      'Family, Zad\'s brain, your account and every feature.';
+
+  @override
+  String get tourBellTitle => 'Notifications';
+
+  @override
+  String get tourBellBody => 'All of Zad\'s alerts and reminders in one place.';
 }

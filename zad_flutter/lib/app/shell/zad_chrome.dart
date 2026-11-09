@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:zad/app/shell/zad_sky.dart';
+import 'package:zad/app/shell/zad_tour.dart';
 import 'package:zad/core/design/components/zad_network_image.dart';
 import 'package:zad/core/design/components/zad_pressable.dart';
 import 'package:zad/core/design/components/zad_pulses.dart';
@@ -167,9 +168,12 @@ class ZadTopHeader extends StatelessWidget {
                         const _LanguagePill(),
                         const SizedBox(width: 8),
                       ],
-                      _BellPill(
-                        unread: hasUnreadNotifications,
-                        onTap: onNotifications,
+                      KeyedSubtree(
+                        key: ZadTourKeys.bell,
+                        child: _BellPill(
+                          unread: hasUnreadNotifications,
+                          onTap: onNotifications,
+                        ),
                       ),
                     ],
                   ),

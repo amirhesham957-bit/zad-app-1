@@ -16,9 +16,13 @@ import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/components/zad_appear.dart';
 import 'package:zad/core/design/components/zad_balance_card.dart';
 import 'package:zad/core/design/components/zad_empty_state.dart';
+import 'package:zad/core/design/components/zad_pressable.dart';
 import 'package:zad/core/design/components/zad_scroll_shrink.dart';
 import 'package:zad/core/design/components/zad_trailing_gap.dart';
+import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
+import 'package:zad/core/design/tokens/zad_spacing.dart';
+import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/l10n/app_language.dart';
 import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/core/period/budget_period.dart';
@@ -116,6 +120,7 @@ class HomeScreen extends ConsumerWidget {
           const PermissionBanners(),
           // Live prices at the top (owner, 2026-11-09).
           ZadAppearOnEntry(child: ZadSlots.liveMarketTickerSlot()),
+          const ZadAppearOnEntry(child: _TourButton()),
           // «حكايات زاد»: the occasion's story, when it has one.
           const CampaignStoriesStrip(),
           ZadAppearOnEntry(
@@ -357,5 +362,41 @@ class _Budget extends ConsumerWidget {
     cycleStart: snapshot.cycleStart!,
     cycleEnd: snapshot.cycleEnd!,
     timeZone: snapshot.timeZone,
+  );
+}
+
+/// The way into the guided tour (owner, 2026-11-09).
+class _TourButton extends StatelessWidget {
+  const new();
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: ZadSpacing.md),
+    child: Align(
+      alignment: AlignmentDirectional.centerStart,
+      child: ZadPressable(
+        semanticLabel: context.l10n.tourOpen,
+        onPressed: () => unawaited(ZadScreens.showGuidedTour(context)),
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 44),
+          padding: const EdgeInsets.symmetric(horizontal: ZadSpacing.lg),
+          decoration: const BoxDecoration(
+            gradient: ZadColors.hero,
+            borderRadius: BorderRadius.all(Radius.circular(ZadRadii.hero)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              const Icon(Icons.explore, size: 18, color: ZadColors.mintGlow),
+              const SizedBox(width: ZadSpacing.sm),
+              Text(
+                context.l10n.tourOpen,
+                style: ZadType.labelLarge.copyWith(color: Colors.white),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
   );
 }

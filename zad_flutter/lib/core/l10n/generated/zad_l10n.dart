@@ -5634,6 +5634,132 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'اشتراكك ومميزاتك ورصيدك'**
   String get profilePremiumSubtitle;
+
+  /// No description provided for @tourOpen.
+  ///
+  /// In ar, this message translates to:
+  /// **'جولة في زاد'**
+  String get tourOpen;
+
+  /// No description provided for @tourNext.
+  ///
+  /// In ar, this message translates to:
+  /// **'التالي'**
+  String get tourNext;
+
+  /// No description provided for @tourSkip.
+  ///
+  /// In ar, this message translates to:
+  /// **'تخطي'**
+  String get tourSkip;
+
+  /// No description provided for @tourDone.
+  ///
+  /// In ar, this message translates to:
+  /// **'يلا نبدأ'**
+  String get tourDone;
+
+  /// No description provided for @tourStepOf.
+  ///
+  /// In ar, this message translates to:
+  /// **'{step} من {total}'**
+  String tourStepOf(Object step, Object total);
+
+  /// No description provided for @tourWelcomeTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'أهلاً بيك في زاد'**
+  String get tourWelcomeTitle;
+
+  /// No description provided for @tourWelcomeBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'في نص دقيقة هنوريك كل حاجة فين.'**
+  String get tourWelcomeBody;
+
+  /// No description provided for @tourHomeTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرئيسية'**
+  String get tourHomeTitle;
+
+  /// No description provided for @tourHomeBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'فلوسك المتاحة، وأهم اللي محتاج يتعمل النهارده.'**
+  String get tourHomeBody;
+
+  /// No description provided for @tourMoneyTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'فلوسي'**
+  String get tourMoneyTitle;
+
+  /// No description provided for @tourMoneyBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'ميزانيتك ومصاريفك والتزاماتك الشهرية.'**
+  String get tourMoneyBody;
+
+  /// No description provided for @tourMicTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'كلّم زاد'**
+  String get tourMicTitle;
+
+  /// No description provided for @tourMicBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'قول «سجل ٥٠ جنيه قهوة» أو اسأل أي سؤال، وزاد يرد عليك.'**
+  String get tourMicBody;
+
+  /// No description provided for @tourCameraTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'صوّر الفاتورة'**
+  String get tourCameraTitle;
+
+  /// No description provided for @tourCameraBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'صوّر إيصال، وزاد يسجله في مصاريفك ويضيف الحاجات للمخزن.'**
+  String get tourCameraBody;
+
+  /// No description provided for @tourHouseTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيتي'**
+  String get tourHouseTitle;
+
+  /// No description provided for @tourHouseBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'المخزن والنواقص والصيدلية ووصفات الشيف.'**
+  String get tourHouseBody;
+
+  /// No description provided for @tourMoreTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'المزيد'**
+  String get tourMoreTitle;
+
+  /// No description provided for @tourMoreBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'العيلة وعقل زاد وحسابك وكل المزايا.'**
+  String get tourMoreBody;
+
+  /// No description provided for @tourBellTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإشعارات'**
+  String get tourBellTitle;
+
+  /// No description provided for @tourBellBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل تنبيهات زاد وتذكيراته في مكان واحد.'**
+  String get tourBellBody;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {
