@@ -114,6 +114,8 @@ class HomeScreen extends ConsumerWidget {
           // «قراءة رسائل البنك متوقفة» / «موقعك غير مفعّل» (owner 7/11): at
           // the top, each one tap from the screen that fixes it.
           const PermissionBanners(),
+          // Live prices at the top (owner, 2026-11-09).
+          ZadAppearOnEntry(child: ZadSlots.liveMarketTickerSlot()),
           // «حكايات زاد»: the occasion's story, when it has one.
           const CampaignStoriesStrip(),
           ZadAppearOnEntry(
@@ -170,7 +172,6 @@ class HomeScreen extends ConsumerWidget {
           const HomeActivationSlot(),
           const WhoAreYouCard(),
           const InventoryCheckInSlot(),
-          ZadAppearOnEntry(child: ZadSlots.liveMarketTickerSlot()),
           const ZadAppearOnEntry(delayMs: 95, child: TasbihaHomeSlot()),
           ZadAppearOnEntry(delayMs: 105, child: ZadSlots.homeChefSection()),
           // The bank channel's state, then what it brought and what the brain

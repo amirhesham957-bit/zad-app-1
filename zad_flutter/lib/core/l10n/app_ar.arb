@@ -2180,5 +2180,8 @@
   "homeWidgetPharmacyEmpty": "ضيف دوا",
   "placesTabMine": "أماكني",
   "placesOutingsTurnOn": "فعّل تسجيل خروجاتي",
-  "placesOutingsWaiting": "شغال. أول ما تخرج وترجع البيت، خروجتك هتظهر هنا."
+  "placesOutingsWaiting": "شغال. أول ما تخرج وترجع البيت، خروجتك هتظهر هنا.",
+  "familyHeaderTitle": "عيلتي",
+  "shellLanguageShort": "EN",
+  "chefHomeTapHint": "اضغط وأنا أقترحلك طبق من اللي عندك في المخزون."
 }
