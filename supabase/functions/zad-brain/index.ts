@@ -2758,6 +2758,41 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       });
       return `اتظبط الرصيد على ${input.monthly_limit}`;
     }
+    case "set_category_budget": {
+      const category = String(input.category).trim();
+      const { data: capBefore } = await sb.from("zad_category_budgets")
+        .select("id,category,amount").eq("user_id", userId).eq("category", category).maybeSingle();
+      if (input.amount === 0) {
+        if (!capBefore) return `مفيش سقف على ${category} أصلاً`;
+        const gone = await writeRows(
+          sb.from("zad_category_budgets").delete().eq("id", capBefore.id).select("id,category,amount"),
+          "شيل السقف",
+        );
+        if (!gone.ok) return `مرفوض: ${gone.reason}`;
+        ctx.mutationCount++;
+        ctx.mutations.push({ tool: name, old: capBefore, new: null });
+        await recordAction(sb, userId, scope, {
+          tool: name, input, table: "zad_category_budgets", targetId: capBefore.id, previous: capBefore, next: null,
+        });
+        return `اتشال سقف ${category}`;
+      }
+      const saved = await writeRows(
+        sb.from("zad_category_budgets").upsert({
+          user_id: userId,
+          category,
+          amount: Math.round(input.amount * 100) / 100,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: "user_id,category" }).select("id,category,amount"),
+        "حفظ السقف",
+      );
+      if (!saved.ok) return `مرفوض: ${saved.reason}`;
+      ctx.mutationCount++;
+      ctx.mutations.push({ tool: name, old: capBefore ?? null, new: saved.rows[0] });
+      await recordAction(sb, userId, scope, {
+        tool: name, input, table: "zad_category_budgets", targetId: saved.rows[0].id, previous: capBefore ?? null, next: saved.rows[0],
+      });
+      return `اتحط سقف ${category} على ${input.amount}`;
+    }
     case "add_inventory_item": {
       const itemName = await householdName(sb, userId, String(input.item_name).trim());
       const unit = input.unit ? String(input.unit).trim() : null;
@@ -5217,13 +5252,28 @@ export const CHAT_TOOLS: ToolDef[] = [
       "• \"ميزانيتي 3000\" / \"غيّر ميزانيتي لـ3000\"\n" +
       "لو المبلغ واضح، نادِها على طول — متقولش للعميل يعملها من التطبيق، دي شغلانتك.\n" +
       "التمييز اللي كان بين \"سقف صرفه\" و\"فلوس في إيده\" مابقاش موجود — الاتنين بقوا " +
-      "نفس الرقم، فمفيش داعي تسأل عنه. العميل هيشوف تأكيد قبل الكتابة في كل الحالات.",
+      "نفس الرقم، فمفيش داعي تسأل عنه. العميل هيشوف تأكيد قبل الكتابة في كل الحالات.\n" +
+      "سقف لفئة واحدة («حط سقف 300 للترفيه») مش هنا: دي set_category_budget.",
     input_schema: {
       type: "object",
       properties: {
         monthly_limit: { type: "number" },
       },
       required: ["monthly_limit"],
+    },
+  },
+  {
+    name: "set_category_budget",
+    description:
+      "حط أو غيّر سقف صرف شهري لفئة واحدة: «حط سقف 300 للترفيه»، «الأكل بره ميعديش 1000». " +
+      "amount صفر بيشيل السقف. رصيد الكارت كله مش هنا: دي set_monthly_limit.",
+    input_schema: {
+      type: "object",
+      properties: {
+        category: { type: "string", description: "اسم الفئة زي ما بتظهر في مصاريفه" },
+        amount: { type: "number", description: "المبلغ الشهري، وصفر لشيل السقف" },
+      },
+      required: ["category", "amount"],
     },
   },
   {

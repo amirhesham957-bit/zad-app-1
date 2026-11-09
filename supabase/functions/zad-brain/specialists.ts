@@ -220,6 +220,8 @@ const LIMIT_INTENT = new RegExp(
     `(ميزاني|الكارت|رصيدي).{0,15}(خليه|خليها|خلي|غيره|غيرها|عدله|عدلها)\\s.{0,15}${LIMIT_AMOUNT}|` +
     `ميزانيتي\\s*(هي|هتبقي|تبقي)?\\s*${LIMIT_AMOUNT}`,
 );
+// «حط سقف 300 للترفيه»: سقف لفئة، مش رصيد الكارت.
+const CATEGORY_CAP_INTENT = /(^|\s)(سقف|حد)\s.{0,40}[0-9٠-٩]/;
 // إضافة دوا أو صنف للقايمة: «ضيف بنادول في الصيدلية علبة»، «ضف حليب وخبز للمقاضي» — الموديل رد «ضفت» من
 // غير أداة، ومفيش نية كانت بتجيب الأداة لإعادة اللفة بيها (التقييم الحي ٢٠٢٦-١٠-٢٦).
 const MEDICINE_ADD_INTENT = /(ضيف|ضف|اضف|اضيف|سجل|حط|زود)\s.{0,30}(صيدليه|دوا|دواء|علاج|شراب|بنادول|حبوب|برشام|مضاد|مرهم|بخاخ)/;
@@ -277,6 +279,7 @@ export function intentToolHints(message: string, priorReply = ""): string[] {
   if (HELD_INTENT.test(norm)) tools.push("what_i_held_back");
   if (EXPENSE_INTENT.test(norm)) tools.push("log_transaction");
   if (LIMIT_INTENT.test(norm)) tools.push("set_monthly_limit");
+  if (CATEGORY_CAP_INTENT.test(norm)) tools.push("set_category_budget");
   if (MEDICINE_ADD_INTENT.test(norm)) tools.push("add_pharmacy_item");
   else if (SHOPPING_ADD_INTENT.test(norm)) tools.push("add_shopping_item");
   if (MEDICINE_PRICE_INTENT.test(norm)) tools.push("medicine_price");
@@ -460,7 +463,7 @@ export async function recordSpecialistTrace(
 const SPECIALIST_TOOL_SCOPE: Record<Exclude<SpecialistId, "general">, string[]> = {
   finance: [
     "log_transaction", "allocate_income", "update_transaction", "delete_transaction",
-    "set_monthly_limit", "add_debt", "update_debt", "delete_debt",
+    "set_monthly_limit", "set_category_budget", "add_debt", "update_debt", "delete_debt",
     "add_obligation", "update_obligation", "delete_obligation",
     "add_subscription", "update_subscription", "delete_subscription",
     "forward_ledger", "check_price_online", "query_family", "weekly_savings_plan",

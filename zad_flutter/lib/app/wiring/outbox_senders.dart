@@ -11,6 +11,7 @@ import 'package:zad/features/appointments/data/appointments_repository.dart';
 import 'package:zad/features/bank/data/bank_remote.dart';
 import 'package:zad/features/obligations/data/obligations_repository.dart';
 import 'package:zad/features/recipes/data/recipes_repository.dart';
+import 'package:zad/shared/budget/data/category_budgets_store.dart';
 import 'package:zad/shared/insights/data/insights_repository.dart';
 import 'package:zad/shared/inventory/data/consumption_observations.dart';
 import 'package:zad/shared/inventory/data/inventory_repository.dart';
@@ -78,6 +79,8 @@ Future<void> sendOutboxEntry(Ref ref, OutboxEntry entry) async =>
         await ref
             .read(notificationsRepositoryProvider)
             .sendQueuedReadAll(entry),
+      OutboxKind.setCategoryBudget =>
+        await ref.read(categoryBudgetsStoreProvider).sendQueued(entry),
       OutboxKind.deleteSubscription =>
         await ref.read(subscriptionsRepositoryProvider).sendQueuedDelete(entry),
       OutboxKind.upsertObligation =>

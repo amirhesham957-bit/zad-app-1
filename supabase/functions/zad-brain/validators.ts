@@ -434,6 +434,18 @@ export const validateSetMonthlyLimit: Validator = (input, _snap, ctx) => {
   return { ok: true };
 };
 
+/** سقف لفئة واحدة؛ صفر بيشيله. منفصل عن رصيد الكارت (set_monthly_limit). */
+export const validateSetCategoryBudget: Validator = (input, _snap, ctx) => {
+  if ((ctx.counts["set_category_budget"] ?? 0) >= 5) return { ok: false, reason: "وصلت لحد أقصى ٥ سقوف في المرة" };
+  const category = String(input.category ?? "").trim();
+  if (category.length < 2 || category.length > 40) return { ok: false, reason: "اسم الفئة لازم يتحدد" };
+  if (typeof input.amount !== "number" || !Number.isFinite(input.amount) || input.amount < 0) {
+    return { ok: false, reason: "مبلغ السقف لازم يكون رقم، وصفر بيشيل السقف" };
+  }
+  if (input.amount > 100_000_000) return { ok: false, reason: "الرقم ده غير منطقي كسقف" };
+  return { ok: true };
+};
+
 /**
  * إضافة صنف **جديد** للمخزون. مقصود إنها منفصلة عن [validateUpdateInventoryQty]:
  * دي بترفض لو الصنف موجود بالفعل (التعديل شغلانة الأداة التانية)، والتانية بترفض لو
@@ -1138,6 +1150,7 @@ export const VALIDATORS: Record<string, Validator> = {
   update_transaction: validateUpdateTransaction,
   delete_transaction: validateDeleteTransaction,
   set_monthly_limit: validateSetMonthlyLimit,
+  set_category_budget: validateSetCategoryBudget,
   add_inventory_item: validateAddInventoryItem,
   delete_inventory_item: validateDeleteInventoryItem,
   add_pharmacy_item: validateAddPharmacyItem,
@@ -1247,7 +1260,7 @@ export const MUTATING_TOOLS = [
   "update_inventory_qty", "set_transaction_category", "merge_duplicate_expense",
   "reconcile_cash_balance", "confirm_cycle_start", "confirm_obligation",
   // المرحلة ٢-ب
-  "log_transaction", "update_transaction", "delete_transaction", "set_monthly_limit",
+  "log_transaction", "update_transaction", "delete_transaction", "set_monthly_limit", "set_category_budget",
   "add_inventory_item", "delete_inventory_item", "add_pharmacy_item", "update_pharmacy_item", "set_market", "log_pharmacy_dose", "delete_pharmacy_item",
   "add_shopping_item", "complete_shopping_item", "delete_shopping_item",
   "schedule_task",
@@ -1294,6 +1307,7 @@ export const CONFIRM_REQUIRED_TOOLS = ["log_transaction", "update_transaction", 
  * 2026-09-27).
  */
 export const CHILD_BLOCKED_TOOLS = [
+  "set_category_budget",
   ...CONFIRM_REQUIRED_TOOLS,
   "set_transaction_category", "merge_duplicate_expense", "reconcile_cash_balance",
   "confirm_cycle_start", "confirm_obligation", "set_market", "save_trusted_technician",

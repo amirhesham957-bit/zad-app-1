@@ -28,6 +28,7 @@ import {
   validateQueryFamily,
   validateSetMarket,
   validateSetMonthlyLimit,
+  validateSetCategoryBudget,
   validateUpdateTransaction,
   validateDeleteTransaction,
   validateAskUser,
@@ -741,6 +742,17 @@ Deno.test("delete_transaction caps at 3 per turn", async () => {
   ctx.counts["delete_transaction"] = 3;
   const v = await validateDeleteTransaction({ transaction_id: "tx-1" }, snapWithTx, ctx);
   assertEquals(v.ok, false);
+});
+
+// ── set_category_budget ──
+Deno.test("set_category_budget takes a category and an amount, and zero clears it", async () => {
+  const v = (input: Record<string, unknown>) => validateSetCategoryBudget(input, {}, freshContext("u"));
+  assertEquals((await v({ category: "الترفيه", amount: 300 })).ok, true);
+  assertEquals((await v({ category: "الترفيه", amount: 0 })).ok, true);
+  assertEquals((await v({ category: "", amount: 300 })).ok, false);
+  assertEquals((await v({ category: "الترفيه", amount: -1 })).ok, false);
+  assertEquals((await v({ category: "الترفيه" })).ok, false);
+  assertEquals((await v({ category: "الترفيه", amount: 1e9 })).ok, false);
 });
 
 // ── set_monthly_limit ───────────────────────────────────────────────────────

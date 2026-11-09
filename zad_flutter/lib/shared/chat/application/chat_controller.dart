@@ -20,6 +20,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
+import 'package:zad/shared/budget/application/category_budgets_controller.dart';
 import 'package:zad/shared/chat/data/agent_remote.dart';
 import 'package:zad/shared/chat/data/chat_repository.dart';
 import 'package:zad/shared/chat/domain/agent_screen.dart';
@@ -355,7 +356,9 @@ class ChatController extends Notifier<ChatView> {
   /// turn either. The budget is refreshed outright because it is the figure
   /// most likely to be on screen behind the chat.
   void _refreshMoney() {
-    ref.invalidate(transactionsControllerProvider);
+    ref
+      ..invalidate(transactionsControllerProvider)
+      ..invalidate(categoryBudgetsProvider);
     unawaited(ref.read(budgetControllerProvider.notifier).refresh(force: true));
   }
 
