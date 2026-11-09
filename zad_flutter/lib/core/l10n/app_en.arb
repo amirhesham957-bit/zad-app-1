@@ -946,5 +946,8 @@
   "homeWidgetPharmacy": "Pharmacy",
   "homeWidgetPharmacyNone": "No doses left",
   "homeWidgetPharmacyActive": "{count} medicines",
-  "homeWidgetPharmacyEmpty": "Add one"
+  "homeWidgetPharmacyEmpty": "Add one",
+  "placesTabMine": "My places",
+  "placesOutingsTurnOn": "Start recording my outings",
+  "placesOutingsWaiting": "It's on. Your next trip out and back will appear here."
 }

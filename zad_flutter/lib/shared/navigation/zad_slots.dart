@@ -104,6 +104,12 @@ abstract final class ZadSlots {
   /// Home's «عروض على نواقصك» strip: deals on what the home is short of.
   static late SlotBuilder homeDealsCarousel;
 
+  /// The deals list, inside «أماكني».
+  static late SlotBuilder dealsView;
+
+  /// The shops near the customer, inside «أماكني».
+  static late SlotBuilder nearbyList;
+
   // ── obligations
   /// Fixed obligations.
   static late SlotBuilder obligationsSection;
