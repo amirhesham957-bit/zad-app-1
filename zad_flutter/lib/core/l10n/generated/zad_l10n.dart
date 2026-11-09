@@ -5406,6 +5406,24 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'ضيف دوا'**
   String get homeWidgetPharmacyEmpty;
+
+  /// No description provided for @placesTabMine.
+  ///
+  /// In ar, this message translates to:
+  /// **'أماكني'**
+  String get placesTabMine;
+
+  /// No description provided for @placesOutingsTurnOn.
+  ///
+  /// In ar, this message translates to:
+  /// **'فعّل تسجيل خروجاتي'**
+  String get placesOutingsTurnOn;
+
+  /// No description provided for @placesOutingsWaiting.
+  ///
+  /// In ar, this message translates to:
+  /// **'شغال. أول ما تخرج وترجع البيت، خروجتك هتظهر هنا.'**
+  String get placesOutingsWaiting;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

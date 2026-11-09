@@ -3121,4 +3121,14 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get homeWidgetPharmacyEmpty => 'Add one';
+
+  @override
+  String get placesTabMine => 'My places';
+
+  @override
+  String get placesOutingsTurnOn => 'Start recording my outings';
+
+  @override
+  String get placesOutingsWaiting =>
+      'It\'s on. Your next trip out and back will appear here.';
 }

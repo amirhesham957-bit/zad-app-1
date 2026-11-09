@@ -33,12 +33,13 @@ import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/l10n/l10n.dart';
+import 'package:zad/features/places/application/street_alerts_controller.dart';
 import 'package:zad/features/places/domain/my_places.dart';
 import 'package:zad/features/places/presentation/keep_alive_guide.dart';
 import 'package:zad/features/places/presentation/places_orbit.dart';
 import 'package:zad/features/places/presentation/street_alerts_section.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
-import 'package:zad/shared/navigation/zad_screens.dart';
+import 'package:zad/shared/navigation/zad_slots.dart';
 
 /// Opens the screen.
 Future<void> showMyPlacesScreen(BuildContext context) => Navigator.of(
@@ -79,6 +80,10 @@ class MyPlacesScreen extends ConsumerStatefulWidget {
   @override
   ConsumerState<MyPlacesScreen> createState() => _MyPlacesState();
 }
+
+const String _stillLearning =
+    'لسه بتعلّم — بعد كام خروجة هعرف المحلات اللي بتروحها على طول '
+    'وأفكّرك بالناقص قبلها.';
 
 class _MyPlacesState extends ConsumerState<MyPlacesScreen> {
   List<PlaceReminder> _reminders = const <PlaceReminder>[];
@@ -238,94 +243,97 @@ class _MyPlacesState extends ConsumerState<MyPlacesScreen> {
     final habits = placeHabits(_visits, _local);
     return DecoratedBox(
       decoration: BoxDecoration(gradient: ZadColors.canvas),
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        appBar: AppBar(title: const Text('أماكني')),
-        body: RefreshIndicator(
-          onRefresh: _load,
-          child: ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(
-              ZadSpacing.lg,
-              ZadSpacing.sm,
-              ZadSpacing.lg,
-              120,
+      child: DefaultTabController(
+        length: 3,
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          appBar: AppBar(
+            title: const Text('أماكني'),
+            bottom: TabBar(
+              tabs: <Widget>[
+                Tab(text: context.l10n.placesTabMine),
+                Tab(text: context.l10n.dealsTabDeals),
+                Tab(text: context.l10n.dealsTabNearby),
+              ],
             ),
+          ),
+          body: TabBarView(
             children: <Widget>[
-              ZadAppearOnEntry(
-                child: _PlaceReminders(
-                  reminders: _reminders,
-                  onAdd: () => unawaited(_add()),
-                  onCancel: (r) => unawaited(_cancel(r)),
-                ),
-              ),
-              const SizedBox(height: ZadSpacing.lg),
-              const KeepAliveGuide(),
-              const SizedBox(height: ZadSpacing.lg),
-              ZadAppearOnEntry(
-                delayMs: 80,
-                child: _Section(
-                  icon: ZadIcons.brain,
-                  title: 'اتعلّمت من خروجاتك',
-                  child: habits.isEmpty
-                      ? Text(
-                          _loading
-                              ? 'بنشوف خروجاتك…'
-                              : 'لسه بتعلّم — بعد كام خروجة هعرف المحلات اللي '
-                                    'بتروحها على طول وأفكّرك بالناقص قبلها.',
-                          style: ZadType.bodySmall.copyWith(
-                            color: ZadColors.inkMuted,
-                          ),
-                        )
-                      : Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: <Widget>[
-                            PlacesOrbit(habits: habits, onOpen: _openHabit),
-                            const SizedBox(height: ZadSpacing.lg),
-                            PlaceHabitCards(habits: habits, onOpen: _openHabit),
-                          ],
-                        ),
-                ),
-              ),
-              const SizedBox(height: ZadSpacing.lg),
-              ZadAppearOnEntry(
-                delayMs: 160,
-                child: _Section(
-                  icon: Icons.directions_walk,
-                  title: 'خروجاتك',
-                  child: _visits.isEmpty
-                      ? const ZadEmptyState(
-                          icon: Icons.directions_walk,
-                          title: 'مفيش خروجات متسجّلة',
-                          message:
-                              'لما تفعّل تنبيهات الشارع، زاد يعرف إمتى خرجت '
-                              'ورجعت وصرفت كام — من غير ما مكان بيتك يسيب '
-                              'موبايلك.',
-                        )
-                      : Column(
-                          children: <Widget>[
-                            for (final v in _visits.take(10))
-                              _VisitCard(
-                                when: _whenLabel(v),
-                                away: _awayLabel(v),
-                                spent: _spentLabel(v),
-                                onDelete: () => unawaited(_forget(v)),
+              RefreshIndicator(
+                onRefresh: _load,
+                child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(
+                    ZadSpacing.lg,
+                    ZadSpacing.sm,
+                    ZadSpacing.lg,
+                    120,
+                  ),
+                  children: <Widget>[
+                    ZadAppearOnEntry(
+                      child: _PlaceReminders(
+                        reminders: _reminders,
+                        onAdd: () => unawaited(_add()),
+                        onCancel: (r) => unawaited(_cancel(r)),
+                      ),
+                    ),
+                    const SizedBox(height: ZadSpacing.lg),
+                    const KeepAliveGuide(),
+                    const SizedBox(height: ZadSpacing.lg),
+                    ZadAppearOnEntry(
+                      delayMs: 80,
+                      child: _Section(
+                        icon: ZadIcons.brain,
+                        title: 'اتعلّمت من خروجاتك',
+                        child: habits.isEmpty
+                            ? Text(
+                                _loading ? 'بنشوف خروجاتك…' : _stillLearning,
+                                style: ZadType.bodySmall.copyWith(
+                                  color: ZadColors.inkMuted,
+                                ),
+                              )
+                            : Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: <Widget>[
+                                  PlacesOrbit(
+                                    habits: habits,
+                                    onOpen: _openHabit,
+                                  ),
+                                  const SizedBox(height: ZadSpacing.lg),
+                                  PlaceHabitCards(
+                                    habits: habits,
+                                    onOpen: _openHabit,
+                                  ),
+                                ],
                               ),
-                          ],
-                        ),
+                      ),
+                    ),
+                    const SizedBox(height: ZadSpacing.lg),
+                    ZadAppearOnEntry(
+                      delayMs: 160,
+                      child: _Section(
+                        icon: Icons.directions_walk,
+                        title: 'خروجاتك',
+                        child: _visits.isEmpty
+                            ? const _NoOutings()
+                            : Column(
+                                children: <Widget>[
+                                  for (final v in _visits.take(10))
+                                    _VisitCard(
+                                      when: _whenLabel(v),
+                                      away: _awayLabel(v),
+                                      spent: _spentLabel(v),
+                                      onDelete: () => unawaited(_forget(v)),
+                                    ),
+                                ],
+                              ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: ZadSpacing.lg),
-              OutlinedButton.icon(
-                onPressed: () =>
-                    unawaited(ZadScreens.showNearbyDealsScreen(context)),
-                icon: const Icon(ZadIcons.store, size: 18),
-                label: const Text('المحلات والعروض القريبة مني دلوقتي'),
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size(0, 48),
-                  shape: const StadiumBorder(),
-                ),
-              ),
+              ZadSlots.dealsView(),
+              ZadSlots.nearbyList(),
             ],
           ),
         ),
@@ -350,6 +358,38 @@ class _MyPlacesState extends ConsumerState<MyPlacesScreen> {
                 '${v.currency ?? ''}'
             .trim()
       : 'من غير صرف';
+}
+
+/// No outing recorded yet: why, and the one switch that starts them.
+class _NoOutings extends ConsumerWidget {
+  const new();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final view = ref.watch(streetAlertsControllerProvider);
+    final isOn = view.status == StreetAlertsStatus.on;
+    return ZadEmptyState(
+      icon: Icons.directions_walk,
+      title: 'مفيش خروجات متسجّلة',
+      message: isOn
+          ? context.l10n.placesOutingsWaiting
+          : 'لما تفعّل تنبيهات الشارع، زاد يعرف إمتى خرجت ورجعت وصرفت '
+                'كام — من غير ما مكان بيتك يسيب موبايلك.',
+      action: isOn || view.status == StreetAlertsStatus.unavailable
+          ? null
+          : FilledButton(
+              onPressed: view.busy
+                  ? null
+                  : () => unawaited(
+                      ref
+                          .read(streetAlertsControllerProvider.notifier)
+                          .turnOn(),
+                    ),
+              style: FilledButton.styleFrom(minimumSize: const Size(0, 48)),
+              child: Text(context.l10n.placesOutingsTurnOn),
+            ),
+    );
+  }
 }
 
 class _Section extends StatelessWidget {

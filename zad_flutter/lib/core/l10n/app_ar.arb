@@ -2177,5 +2177,8 @@
   "homeWidgetPharmacy": "الصيدلية",
   "homeWidgetPharmacyNone": "مفيش جرعات",
   "homeWidgetPharmacyActive": "{count} دوا",
-  "homeWidgetPharmacyEmpty": "ضيف دوا"
+  "homeWidgetPharmacyEmpty": "ضيف دوا",
+  "placesTabMine": "أماكني",
+  "placesOutingsTurnOn": "فعّل تسجيل خروجاتي",
+  "placesOutingsWaiting": "شغال. أول ما تخرج وترجع البيت، خروجتك هتظهر هنا."
 }

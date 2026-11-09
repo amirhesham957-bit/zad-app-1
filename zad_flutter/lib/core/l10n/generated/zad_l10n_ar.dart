@@ -3053,4 +3053,14 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get homeWidgetPharmacyEmpty => 'ضيف دوا';
+
+  @override
+  String get placesTabMine => 'أماكني';
+
+  @override
+  String get placesOutingsTurnOn => 'فعّل تسجيل خروجاتي';
+
+  @override
+  String get placesOutingsWaiting =>
+      'شغال. أول ما تخرج وترجع البيت، خروجتك هتظهر هنا.';
 }

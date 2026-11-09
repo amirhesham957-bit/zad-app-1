@@ -37,8 +37,10 @@ import 'package:zad/features/kids/presentation/pin_prompt_dialog.dart';
 import 'package:zad/features/maintenance/presentation/maintenance_screen.dart';
 import 'package:zad/features/maintenance/presentation/trusted_technicians_sheet.dart';
 import 'package:zad/features/modes/presentation/modes_cards.dart';
+import 'package:zad/features/nearby/presentation/deals_view.dart';
 import 'package:zad/features/nearby/presentation/home_deals_carousel.dart';
 import 'package:zad/features/nearby/presentation/nearby_deals_screen.dart';
+import 'package:zad/features/nearby/presentation/nearby_view.dart';
 import 'package:zad/features/notifications/presentation/notification_center_screen.dart';
 import 'package:zad/features/obligations/application/obligations_controller.dart';
 import 'package:zad/features/obligations/domain/obligation.dart';
@@ -201,6 +203,8 @@ void wireSlots() {
   ZadSlots.keepAliveGuide = () => const KeepAliveGuide();
   ZadSlots.liveMarketTickerSlot = () => const LiveMarketTickerSlot();
   ZadSlots.homeDealsCarousel = () => const HomeDealsCarousel();
+  ZadSlots.dealsView = () => const DealsView();
+  ZadSlots.nearbyList = () => const NearbyList();
   ZadSlots.homeProposalsSection = () => const HomeProposalsSection();
   ZadSlots.proposalCard =
       ({
