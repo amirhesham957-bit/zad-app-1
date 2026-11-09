@@ -36,7 +36,7 @@ owner's real account, where only read-only taps are allowed.
 - The occasion's vibe across the app, mostly in Premium, with small personal discounts.
 - Chef: famous chefs need the owner's TikTok handles for `RECIPE_ACCOUNTS`.
 - Brain map: a 3D sphere already exists (`knowledge_map_screen.dart`). Judge it on the phone before rebuilding.
-- Emoji elsewhere (pantry rows and others): the owner wants photos, not emoji.
+- Screens seen on the phone 2026-11-09 still need: floating buttons and the companion covering content (Money, pantry, Home); Home's top row (tour button, then a lone story circle); the balance card looks muddy under an occasion's colours; long pantry names cut off.
 - Explainer video.
 - Privacy policy (Google Site, v3.1) must match the app: AdMob, Sentry, Firebase, background location, Gemini, Azure, Telegram.
 - Audit of Supabase columns per screen, and UI for tables that have none.
@@ -48,6 +48,10 @@ owner's real account, where only read-only taps are allowed.
 
 - All 62 tables and 10 functions the app calls directly exist on the live database; all 159 tables have RLS on. Column types were not checked.
 - Each need's Amazon link carries the store's own id: `zad04-21` for amazon.eg, `zad0b-21` for amazon.sa.
+
+## Decided
+
+- Item pictures: a real photo that moves slowly (`ZadItemPhoto`). No animation library covers every grocery item realistically, and a video per row is too heavy.
 
 ## Traps already paid for
 

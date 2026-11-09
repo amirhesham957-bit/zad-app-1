@@ -21,10 +21,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/misc.dart' show FutureProviderFamily;
-import 'package:lottie/lottie.dart';
-import 'package:zad/core/data/providers.dart';
-import 'package:zad/core/design/components/zad_network_image.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
@@ -36,6 +32,7 @@ import 'package:zad/shared/affiliate/domain/affiliate.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart';
 import 'package:zad/shared/inventory/application/shopping_controller.dart';
 import 'package:zad/shared/inventory/domain/product_family.dart';
+import 'package:zad/shared/inventory/presentation/item_photo.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/modes/application/modes_controller.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
@@ -83,32 +80,6 @@ List<AmazonNeed> amazonNeeds(WidgetRef ref) {
   return out;
 }
 
-/// Photos of the needs, by name. Only items the server recognises have one.
-final FutureProviderFamily<Map<String, String>, String> _needImagesProvider =
-    FutureProvider.family<Map<String, String>, String>((ref, joined) async {
-      final client = ref.read(supabaseClientProvider);
-      try {
-        final response = await client.functions.invoke(
-          'zad-core-intelligence',
-          body: <String, dynamic>{
-            'action': 'item_images',
-            'user_id': client.auth.currentUser?.id,
-            'payload': <String, dynamic>{'names': joined.split('\n')},
-          },
-        );
-        final data = response.data;
-        final images = data is Map ? data['images'] : null;
-        if (images is! Map) return const <String, String>{};
-        return <String, String>{
-          for (final e in images.entries)
-            if (e.key is String && e.value is String)
-              e.key as String: e.value as String,
-        };
-      } on Object {
-        return const <String, String>{};
-      }
-    });
-
 /// The strip.
 class HomeAmazonStrip extends ConsumerWidget {
   /// Creates the strip.
@@ -122,14 +93,6 @@ class HomeAmazonStrip extends ConsumerWidget {
     }
     final needs = amazonNeeds(ref);
     final country = ref.watch(accountCountryProvider);
-    final images = needs.isEmpty
-        ? const <String, String>{}
-        : ref
-                  .watch(
-                    _needImagesProvider(needs.map((n) => n.name).join('\n')),
-                  )
-                  .value ??
-              const <String, String>{};
 
     return Padding(
       padding: const EdgeInsets.only(bottom: ZadSpacing.lg),
@@ -186,7 +149,6 @@ class HomeAmazonStrip extends ConsumerWidget {
                           if (i > 0) const SizedBox(width: ZadSpacing.sm),
                           _NeedCard(
                             need: needs[i],
-                            image: images[needs[i].name],
                             onOrder: () => unawaited(
                               openAmazonLink(
                                 amazonSuggestUrl(needs[i].name, country),
@@ -249,12 +211,9 @@ class HomeAmazonStrip extends ConsumerWidget {
 
 /// One need: its photo, its name, why, and «اطلبه».
 class _NeedCard extends StatelessWidget {
-  const new({required this.need, required this.image, required this.onOrder});
+  const new({required this.need, required this.onOrder});
 
   final AmazonNeed need;
-
-  /// A photo of the item, when the server knows it.
-  final String? image;
   final VoidCallback onOrder;
 
   @override
@@ -274,18 +233,7 @@ class _NeedCard extends StatelessWidget {
             children: <Widget>[
               ClipRRect(
                 borderRadius: BorderRadius.circular(ZadRadii.chip),
-                child: SizedBox(
-                  height: 84,
-                  width: double.infinity,
-                  child: image == null
-                      ? _NeedArt(out: out)
-                      : ZadNetworkImage(
-                          image!,
-                          fit: BoxFit.cover,
-                          semanticLabel: need.name,
-                          fallback: _NeedArt(out: out),
-                        ),
-                ),
+                child: ZadItemPhoto(need.name, height: 84, width: 124),
               ),
               const SizedBox(height: ZadSpacing.sm),
               Text(
@@ -322,34 +270,4 @@ class _NeedCard extends StatelessWidget {
       ),
     );
   }
-}
-
-/// Where a photo would be, for an item with none.
-class _NeedArt extends StatelessWidget {
-  const new({required this.out});
-
-  final bool out;
-
-  @override
-  Widget build(BuildContext context) => DecoratedBox(
-    decoration: BoxDecoration(
-      gradient: LinearGradient(
-        begin: Alignment.topRight,
-        end: Alignment.bottomLeft,
-        colors: out
-            ? <Color>[
-                ZadColors.terracottaRust.withValues(alpha: 0.28),
-                ZadColors.terracottaRust.withValues(alpha: 0.08),
-              ]
-            : <Color>[ZadColors.mint100, ZadColors.mint50],
-      ),
-    ),
-    child: Center(
-      child: Lottie.asset(
-        'assets/lottie/lottie_empty_box.json',
-        height: 72,
-        repeat: !MediaQuery.disableAnimationsOf(context),
-      ),
-    ),
-  );
 }

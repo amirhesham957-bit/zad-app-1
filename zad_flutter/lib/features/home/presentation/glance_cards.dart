@@ -21,10 +21,10 @@ import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart';
 import 'package:zad/shared/inventory/application/shopping_controller.dart';
-import 'package:zad/shared/inventory/domain/food_emoji.dart';
 import 'package:zad/shared/inventory/domain/inventory_item.dart';
 import 'package:zad/shared/inventory/domain/quantity.dart';
 import 'package:zad/shared/inventory/domain/shortage.dart';
+import 'package:zad/shared/inventory/presentation/item_photo.dart';
 import 'package:zad/shared/inventory/presentation/quantity_text.dart';
 import 'package:zad/shared/navigation/destinations.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
@@ -408,15 +408,12 @@ class _FoodTile extends StatelessWidget {
                 Container(
                   width: 36,
                   height: 36,
-                  alignment: Alignment.center,
+                  clipBehavior: Clip.antiAlias,
                   decoration: BoxDecoration(
                     color: _categoryTint(item.category),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Text(
-                    foodEmoji(item.itemName),
-                    style: const TextStyle(fontSize: 20),
-                  ),
+                  child: ZadItemPhoto(item.itemName, width: 36, height: 36),
                 ),
                 const SizedBox(width: ZadSpacing.xs),
                 const Spacer(),
