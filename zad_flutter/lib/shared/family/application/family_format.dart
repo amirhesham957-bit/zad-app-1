@@ -16,13 +16,21 @@ String familyCurrency(WidgetRef ref) => ref.watch(
   budgetControllerProvider.select((v) => v.snapshot?.currency ?? ''),
 );
 
+// What `zad_create_family` and `zad_join_family` store when no alias is typed.
+// l10n: data-begin
+const Set<String> _serverDefaultAliases = <String>{
+  'رب الأسرة',
+  'فرد من العيلة',
+};
+// l10n: data-end
+
 /// Who the family is named for: `family_groups` has no name, so its admin. The
 /// server's default aliases name nobody, so they give null.
 String? familyOwnerAlias(Family family) {
   for (final member in family.members) {
     final alias = member.alias.trim();
     if (member.role != FamilyRole.admin || alias.isEmpty) continue;
-    if (alias == 'رب الأسرة' || alias == 'فرد من العيلة') continue;
+    if (_serverDefaultAliases.contains(alias)) continue;
     return alias;
   }
   return null;
