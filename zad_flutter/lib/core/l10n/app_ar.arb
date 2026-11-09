@@ -2183,5 +2183,11 @@
   "placesOutingsWaiting": "شغال. أول ما تخرج وترجع البيت، خروجتك هتظهر هنا.",
   "familyHeaderTitle": "عيلتي",
   "shellLanguageShort": "EN",
-  "chefHomeTapHint": "اضغط وأنا أقترحلك طبق من اللي عندك في المخزون."
+  "chefHomeTapHint": "اضغط وأنا أقترحلك طبق من اللي عندك في المخزون.",
+  "chefFullRecipe": "الشرح الكامل وأسرار الشيف",
+  "chefSecrets": "🤫 أسرار الشيف",
+  "chefSourceLink": "شوف الوصفة في مصدرها",
+  "chefSourceHandle": "شوف الوصفة عند @{handle}",
+  "chefAsk": "اسأل الشيف عن الوصفة دي",
+  "chefAskPrefill": "يا شيف، في وصفة {name}: "
 }

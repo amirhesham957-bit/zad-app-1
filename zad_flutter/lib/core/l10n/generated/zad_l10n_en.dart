@@ -3141,4 +3141,26 @@ class ZadL10nEn extends ZadL10n {
   @override
   String get chefHomeTapHint =>
       'Tap and I\'ll suggest a dish from your pantry.';
+
+  @override
+  String get chefFullRecipe => 'Full recipe and chef\'s secrets';
+
+  @override
+  String get chefSecrets => '🤫 Chef\'s secrets';
+
+  @override
+  String get chefSourceLink => 'See the recipe at its source';
+
+  @override
+  String chefSourceHandle(Object handle) {
+    return 'See it at @$handle';
+  }
+
+  @override
+  String get chefAsk => 'Ask the chef about this dish';
+
+  @override
+  String chefAskPrefill(Object name) {
+    return 'Chef, about $name: ';
+  }
 }

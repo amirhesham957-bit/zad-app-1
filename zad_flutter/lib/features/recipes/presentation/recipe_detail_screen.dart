@@ -20,11 +20,15 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/recipes/domain/recipe.dart';
 import 'package:zad/features/recipes/presentation/recipes_view.dart';
+import 'package:zad/shared/affiliate/data/affiliate_repository.dart';
+import 'package:zad/shared/chat/application/chat_controller.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart';
 import 'package:zad/shared/inventory/application/shopping_controller.dart';
 import 'package:zad/shared/inventory/domain/quantity.dart';
+import 'package:zad/shared/navigation/zad_slots.dart';
 
 /// Opens the full recipe.
 Future<void> showRecipeDetail(BuildContext context, Recipe recipe) =>
@@ -33,30 +37,46 @@ Future<void> showRecipeDetail(BuildContext context, Recipe recipe) =>
       builder: (_) => RecipeDetailDialog(recipe: recipe),
     );
 
-typedef _Parsed = ({List<String> ingredients, List<String> steps});
+/// A recipe's three sections.
+typedef RecipeParts = ({
+  List<String> ingredients,
+  List<String> steps,
+  List<String> secrets,
+});
 
 final RegExp _numbered = RegExp(r'^\d+[.)\-]+\s*');
 
 /// Kotlin's `parseRecipeContent`: sections by their Arabic headings, bullets
 /// and numbers stripped; everything as steps when no heading is found.
-_Parsed _parse(String text) {
+@visibleForTesting
+RecipeParts parseRecipeContent(String text) {
   final lines = text.split('\n');
   final ingredients = <String>[];
   final steps = <String>[];
+  final secrets = <String>[];
   var section = '';
   for (final line in lines) {
     final t = line.trim();
-    if (t.contains('المقادير')) {
+    // A heading is a short line: a full step can say «التحضير» too.
+    final isHeading = t.length <= 24;
+    if (isHeading && t.contains('المقادير')) {
       section = 'ingredients';
       continue;
     }
-    if (t.contains('طريقة التحضير') ||
-        t.contains('الطريقة') ||
-        t.contains('التحضير')) {
+    if (isHeading && (t.contains('الطريقة') || t.contains('التحضير'))) {
       section = 'steps';
       continue;
     }
+    if (isHeading && t.contains('أسرار')) {
+      section = 'secrets';
+      continue;
+    }
     if (t.isEmpty) continue;
+    if (section == 'secrets') {
+      final c = t.replaceFirst(RegExp(r'^[-•*·]\s*'), '').trim();
+      if (c.isNotEmpty) secrets.add(c.replaceFirst(_numbered, ''));
+      continue;
+    }
     if (section == 'ingredients') {
       var c = t;
       for (final p in const <String>['- ', '• ', '* ', '· ']) {
@@ -77,9 +97,10 @@ _Parsed _parse(String text) {
           if (line.trim().isNotEmpty && !line.trim().startsWith('#'))
             line.trim().replaceFirst(_numbered, '').trim(),
       ].where((s) => s.isNotEmpty).toList(),
+      secrets: const <String>[],
     );
   }
-  return (ingredients: ingredients, steps: steps);
+  return (ingredients: ingredients, steps: steps, secrets: secrets);
 }
 
 /// Kotlin's `recipeTextFromKnown`: the card's own steps in the parser's
@@ -119,6 +140,7 @@ class _RecipeDetailState extends ConsumerState<RecipeDetailDialog> {
   String _text = '';
   String? _error;
   int _retry = 0;
+  bool _full = false;
   final Set<int> _checked = <int>{};
 
   @override
@@ -129,7 +151,7 @@ class _RecipeDetailState extends ConsumerState<RecipeDetailDialog> {
 
   Future<void> _load() async {
     final known = _knownText(widget.recipe);
-    if (known != null && _retry == 0) {
+    if (known != null && _retry == 0 && !_full) {
       setState(() {
         _text = known;
         _loading = false;
@@ -161,7 +183,7 @@ class _RecipeDetailState extends ConsumerState<RecipeDetailDialog> {
               },
             },
           )
-          .timeout(const Duration(seconds: 12));
+          .timeout(const Duration(seconds: 30));
       final data = response.data;
       final t = data is Map ? data['text'] : null;
       // An empty answer or a slow one is said as such. Kotlin's template
@@ -198,6 +220,19 @@ class _RecipeDetailState extends ConsumerState<RecipeDetailDialog> {
     });
   }
 
+  /// The chef answers in the one chat, about this dish (owner, 2026-11-09).
+  void _askChef() {
+    final navigator = Navigator.of(context);
+    ref
+        .read(chatPrefillProvider.notifier)
+        .offer(context.l10n.chefAskPrefill(widget.recipe.name));
+    navigator
+      ..pop()
+      ..push<void>(
+        MaterialPageRoute<void>(builder: (_) => ZadSlots.chatScreen()),
+      );
+  }
+
   Future<void> _addToShopping(List<String> ingredients) async {
     final unticked = <String>[
       for (final (i, name) in ingredients.indexed)
@@ -220,8 +255,14 @@ class _RecipeDetailState extends ConsumerState<RecipeDetailDialog> {
   @override
   Widget build(BuildContext context) {
     final parsed = _text.isEmpty
-        ? (ingredients: const <String>[], steps: const <String>[])
-        : _parse(_text);
+        ? (
+            ingredients: const <String>[],
+            steps: const <String>[],
+            secrets: const <String>[],
+          )
+        : parseRecipeContent(_text);
+    final l = context.l10n;
+    final source = widget.recipe.sourceUrl;
     final size = MediaQuery.sizeOf(context);
     return Dialog(
       insetPadding: EdgeInsets.symmetric(
@@ -289,6 +330,22 @@ class _RecipeDetailState extends ConsumerState<RecipeDetailDialog> {
                       vertical: ZadSpacing.md,
                     ),
                     children: <Widget>[
+                      if (!_full && widget.recipe.steps.isNotEmpty) ...<Widget>[
+                        FilledButton.tonalIcon(
+                          onPressed: () {
+                            _full = true;
+                            // Ticks are positions in the old list.
+                            _checked.clear();
+                            unawaited(_load());
+                          },
+                          icon: const Icon(Icons.auto_awesome, size: 18),
+                          label: Text(l.chefFullRecipe),
+                          style: FilledButton.styleFrom(
+                            minimumSize: const Size(0, 48),
+                          ),
+                        ),
+                        const SizedBox(height: ZadSpacing.md),
+                      ],
                       if (parsed.ingredients.isNotEmpty)
                         _Section(
                           title: '🥐 المقادير',
@@ -368,6 +425,52 @@ class _RecipeDetailState extends ConsumerState<RecipeDetailDialog> {
                           ],
                         ),
                       ],
+                      if (parsed.secrets.isNotEmpty) ...<Widget>[
+                        const SizedBox(height: ZadSpacing.lg),
+                        _Section(
+                          title: l.chefSecrets,
+                          color: ZadColors.terracottaRust,
+                          children: <Widget>[
+                            for (final secret in parsed.secrets)
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: ZadSpacing.xs,
+                                ),
+                                child: Text(
+                                  secret,
+                                  style: ZadType.bodyMedium.copyWith(
+                                    height: 1.7,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ],
+                      const SizedBox(height: ZadSpacing.lg),
+                      if (source != null)
+                        OutlinedButton.icon(
+                          onPressed: () => unawaited(openAmazonLink(source)),
+                          icon: const Icon(Icons.play_circle_outline, size: 18),
+                          label: Text(
+                            widget.recipe.sourceHandle == null
+                                ? l.chefSourceLink
+                                : l.chefSourceHandle(
+                                    widget.recipe.sourceHandle!,
+                                  ),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            minimumSize: const Size(0, 48),
+                          ),
+                        ),
+                      const SizedBox(height: ZadSpacing.sm),
+                      OutlinedButton.icon(
+                        onPressed: _askChef,
+                        icon: const Icon(Icons.chat_bubble_outline, size: 18),
+                        label: Text(l.chefAsk),
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: const Size(0, 48),
+                        ),
+                      ),
                       const SizedBox(height: ZadSpacing.lg),
                       RecipeRatingRow(recipe: widget.recipe),
                     ],

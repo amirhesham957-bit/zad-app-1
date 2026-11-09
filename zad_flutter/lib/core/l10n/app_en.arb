@@ -952,5 +952,11 @@
   "placesOutingsWaiting": "It's on. Your next trip out and back will appear here.",
   "familyHeaderTitle": "My family",
   "shellLanguageShort": "ع",
-  "chefHomeTapHint": "Tap and I'll suggest a dish from your pantry."
+  "chefHomeTapHint": "Tap and I'll suggest a dish from your pantry.",
+  "chefFullRecipe": "Full recipe and chef's secrets",
+  "chefSecrets": "🤫 Chef's secrets",
+  "chefSourceLink": "See the recipe at its source",
+  "chefSourceHandle": "See it at @{handle}",
+  "chefAsk": "Ask the chef about this dish",
+  "chefAskPrefill": "Chef, about {name}: "
 }
