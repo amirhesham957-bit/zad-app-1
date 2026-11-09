@@ -66,55 +66,53 @@ class _StripState extends ConsumerState<CampaignStoriesStrip> {
     final c = active.campaign;
     final seen = _seen == active.key;
     final gradient = campaignGradient(active);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: ZadSpacing.md),
-      child: Align(
-        alignment: AlignmentDirectional.centerStart,
-        child: Semantics(
-          button: true,
-          label: context.l10n.homeStoriesLabel(c.eventName ?? c.title),
-          child: InkWell(
-            onTap: () => _open(active),
-            customBorder: const CircleBorder(),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Container(
-                  width: 64,
-                  height: 64,
-                  padding: const EdgeInsets.all(3),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    // An unseen story is ringed in the occasion's colours.
-                    gradient: seen ? null : (gradient ?? ZadColors.wallet),
-                    color: seen ? ZadColors.outline : null,
-                  ),
-                  child: Container(
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: ZadColors.surface,
-                      border: Border.all(color: ZadColors.surface, width: 2),
-                    ),
-                    child: Text(
-                      c.badge.isEmpty ? '✨' : c.badge,
-                      style: ZadType.headlineMedium.copyWith(height: 1),
-                    ),
-                  ),
+    return Semantics(
+      button: true,
+      label: context.l10n.homeStoriesLabel(c.eventName ?? c.title),
+      child: InkWell(
+        onTap: () => _open(active),
+        borderRadius: BorderRadius.circular(ZadRadii.pill),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Container(
+              width: 44,
+              height: 44,
+              padding: const EdgeInsets.all(2),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                // An unseen story is ringed in the occasion's colours.
+                gradient: seen ? null : (gradient ?? ZadColors.wallet),
+                color: seen ? ZadColors.outline : null,
+              ),
+              child: Container(
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: ZadColors.surface,
+                  border: Border.all(color: ZadColors.surface, width: 2),
                 ),
-                const SizedBox(height: ZadSpacing.xs),
-                ExcludeSemantics(
-                  child: Text(
-                    c.eventName ?? context.l10n.homeStories,
-                    style: ZadType.labelSmall.copyWith(
-                      color: seen ? ZadColors.inkMuted : ZadColors.ink,
-                      fontWeight: seen ? FontWeight.w400 : FontWeight.w700,
-                    ),
-                  ),
+                child: Text(
+                  c.badge.isEmpty ? '✨' : c.badge,
+                  style: ZadType.titleMedium.copyWith(height: 1),
                 ),
-              ],
+              ),
             ),
-          ),
+            const SizedBox(width: ZadSpacing.sm),
+            Flexible(
+              child: ExcludeSemantics(
+                child: Text(
+                  c.eventName ?? context.l10n.homeStories,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: ZadType.labelLarge.copyWith(
+                    color: seen ? ZadColors.inkMuted : ZadColors.ink,
+                    fontWeight: seen ? FontWeight.w400 : FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

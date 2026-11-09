@@ -120,9 +120,20 @@ class HomeScreen extends ConsumerWidget {
           const PermissionBanners(),
           // Live prices at the top (owner, 2026-11-09).
           ZadAppearOnEntry(child: ZadSlots.liveMarketTickerSlot()),
-          const ZadAppearOnEntry(child: _TourButton()),
-          // «حكايات زاد»: the occasion's story, when it has one.
-          const CampaignStoriesStrip(),
+          // The tour and «حكايات زاد» (the occasion's story, when it has
+          // one) share a line: each on its own took a tall strip of the top.
+          const ZadAppearOnEntry(
+            child: Padding(
+              padding: EdgeInsets.only(bottom: ZadSpacing.md),
+              child: Row(
+                children: <Widget>[
+                  Flexible(child: _TourButton()),
+                  SizedBox(width: ZadSpacing.sm),
+                  Flexible(child: CampaignStoriesStrip()),
+                ],
+              ),
+            ),
+          ),
           ZadAppearOnEntry(
             child: HomeCompanionHeader(
               onOpenVoice: onOpenVoice ?? () {},
@@ -259,7 +270,8 @@ class _Budget extends ConsumerWidget {
               // device's arithmetic rather than the server's.
               isStale: view.isStale || view.pendingSpend > 0,
               // The occasion's colours, when a campaign runs and they read.
-              gradient: campaignGradient(ref.watch(homeCampaignProvider)),
+              gradient: campaignCardGradient(ref.watch(homeCampaignProvider)),
+              glow: campaignCardGlow(ref.watch(homeCampaignProvider)),
               // Kotlin's tap opens WhyChangedSheet — «ليه الرقم اتغيّر؟».
               onTap: () => ZadScreens.openWhyChanged(context),
               onSetBudget: () => ZadScreens.showMonthlyLimitSheet(context),
@@ -370,32 +382,30 @@ class _TourButton extends StatelessWidget {
   const new();
 
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(bottom: ZadSpacing.md),
-    child: Align(
-      alignment: AlignmentDirectional.centerStart,
-      child: ZadPressable(
-        semanticLabel: context.l10n.tourOpen,
-        onPressed: () => unawaited(ZadScreens.showGuidedTour(context)),
-        child: Container(
-          constraints: const BoxConstraints(minHeight: 44),
-          padding: const EdgeInsets.symmetric(horizontal: ZadSpacing.lg),
-          decoration: const BoxDecoration(
-            gradient: ZadColors.hero,
-            borderRadius: BorderRadius.all(Radius.circular(ZadRadii.hero)),
+  Widget build(BuildContext context) => ZadPressable(
+    semanticLabel: context.l10n.tourOpen,
+    onPressed: () => unawaited(ZadScreens.showGuidedTour(context)),
+    child: Container(
+      constraints: const BoxConstraints(minHeight: 44),
+      padding: const EdgeInsets.symmetric(horizontal: ZadSpacing.lg),
+      decoration: const BoxDecoration(
+        gradient: ZadColors.hero,
+        borderRadius: BorderRadius.all(Radius.circular(ZadRadii.hero)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          const Icon(Icons.explore, size: 18, color: ZadColors.mintGlow),
+          const SizedBox(width: ZadSpacing.sm),
+          Flexible(
+            child: Text(
+              context.l10n.tourOpen,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: ZadType.labelLarge.copyWith(color: Colors.white),
+            ),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              const Icon(Icons.explore, size: 18, color: ZadColors.mintGlow),
-              const SizedBox(width: ZadSpacing.sm),
-              Text(
-                context.l10n.tourOpen,
-                style: ZadType.labelLarge.copyWith(color: Colors.white),
-              ),
-            ],
-          ),
-        ),
+        ],
       ),
     ),
   );

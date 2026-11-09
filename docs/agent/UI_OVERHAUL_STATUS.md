@@ -25,11 +25,11 @@ owner's real account, where only read-only taps are allowed.
 | #445 | Home needs: item photo, animation when there is none, store ids pinned by a test | passed, merged | not yet, needs the next APK |
 | #448 | Pantry rows, Home glance and Amazon needs share one item photo | passed, merged | not yet, needs the next APK |
 | #449 | Floating buttons and the companion step aside while a list is read (Money, pantry, Home); room under each list; pantry names on two lines | passed | not yet, needs the next APK |
+| #450 | Home: the tour and the occasion's story on one line; balance card in the occasion's first colour with the second as a corner glow | passed | not yet, needs the next APK; card colours seen only in a test render |
 
 ## Open bugs
 
 - **Signing:** two CI builds on 2026-11-09 carried different keys, so Android refused to update one over the other. The `ZAD_DEBUG_KEYSTORE_B64` secret is missing or invalid, and only a person can set it. Until then an APK update on the owner's phone means uninstalling first.
-- The tour button's accessibility node is full width while only the pill can be tapped.
 
 ## Left to do
 
@@ -38,7 +38,7 @@ owner's real account, where only read-only taps are allowed.
 - The occasion's vibe across the app, mostly in Premium, with small personal discounts.
 - Chef: famous chefs need the owner's TikTok handles for `RECIPE_ACCOUNTS`.
 - Brain map: a 3D sphere already exists (`knowledge_map_screen.dart`). Judge it on the phone before rebuilding.
-- Screens seen on the phone 2026-11-09 still need: Home's top row (tour button, then a lone story circle); the balance card looks muddy under an occasion's colours.
+- The occasion banner and the bottom bar still blend both occasion colours (`campaignGradient`). Judge them on the phone; the balance card no longer does.
 - Other screens with floating buttons (transactions, documents, maintenance, pharmacy, appointments, subscriptions) can adopt `ZadScrollAwayScope` + `ZadStepsAside` the same way.
 - Explainer video.
 - Privacy policy (Google Site, v3.1) must match the app: AdMob, Sentry, Firebase, background location, Gemini, Azure, Telegram.

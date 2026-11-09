@@ -37,6 +37,33 @@ LinearGradient? campaignGradient(ActiveCampaign? active) {
   );
 }
 
+/// The balance card's panel: the occasion's first colour only. Run through
+/// the second one, a navy or black met a brown half way and the big card
+/// turned to mud (the phone, White Friday, 2026-11-09).
+LinearGradient? campaignCardGradient(ActiveCampaign? active) {
+  final c = active?.campaign;
+  if (c == null || !c.readableOnWhite) return null;
+  return LinearGradient(
+    begin: AlignmentDirectional.topStart,
+    end: AlignmentDirectional.bottomEnd,
+    colors: <Color>[
+      Color(c.primary),
+      Color.lerp(Color(c.primary), Colors.black, 0.35)!,
+    ],
+  );
+}
+
+/// The occasion's second colour as a light in the card's corner, brightened
+/// so it reads as a glow and kept faint so the white figures stay readable.
+Color? campaignCardGlow(ActiveCampaign? active) {
+  final c = active?.campaign;
+  if (c == null || !c.readableOnWhite) return null;
+  return HSLColor.fromColor(Color(c.secondary))
+      .withLightness(0.5)
+      .toColor()
+      .withValues(alpha: 0.45);
+}
+
 /// The banner, or nothing.
 class CampaignBannerSlot extends ConsumerStatefulWidget {
   /// Creates the slot.
