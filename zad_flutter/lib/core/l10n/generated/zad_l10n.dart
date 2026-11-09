@@ -5604,6 +5604,36 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'سجل 3 مصاريف وتقرير زاد الكامل يجهز'**
   String get brainReportWaits;
+
+  /// No description provided for @profileLanguageSubtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'عربي أو English، بضغطة واحدة'**
+  String get profileLanguageSubtitle;
+
+  /// No description provided for @profileCompanionTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'رفيق زاد'**
+  String get profileCompanionTitle;
+
+  /// No description provided for @profileCompanionSubtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'زادو، هدومه وألعابه ولفله'**
+  String get profileCompanionSubtitle;
+
+  /// No description provided for @profilePremiumTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد بريميوم'**
+  String get profilePremiumTitle;
+
+  /// No description provided for @profilePremiumSubtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'اشتراكك ومميزاتك ورصيدك'**
+  String get profilePremiumSubtitle;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

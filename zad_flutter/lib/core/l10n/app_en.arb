@@ -979,5 +979,10 @@
   "pulsePeak": "Highest day",
   "pulseTop": "Biggest category",
   "pulseAskPrompt": "Analyse my spending on {category}",
-  "brainReportWaits": "Log 3 expenses and Zad's full report is ready"
+  "brainReportWaits": "Log 3 expenses and Zad's full report is ready",
+  "profileLanguageSubtitle": "Arabic or English, one tap",
+  "profileCompanionTitle": "Zad companion",
+  "profileCompanionSubtitle": "Zado, outfits, games and level",
+  "profilePremiumTitle": "Zad Premium",
+  "profilePremiumSubtitle": "Your plan, perks and balance"
 }

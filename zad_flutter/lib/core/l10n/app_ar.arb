@@ -2210,5 +2210,10 @@
   "pulsePeak": "أعلى يوم",
   "pulseTop": "أكبر بند",
   "pulseAskPrompt": "حلل صرفي على {category}",
-  "brainReportWaits": "سجل 3 مصاريف وتقرير زاد الكامل يجهز"
+  "brainReportWaits": "سجل 3 مصاريف وتقرير زاد الكامل يجهز",
+  "profileLanguageSubtitle": "عربي أو English، بضغطة واحدة",
+  "profileCompanionTitle": "رفيق زاد",
+  "profileCompanionSubtitle": "زادو، هدومه وألعابه ولفله",
+  "profilePremiumTitle": "زاد بريميوم",
+  "profilePremiumSubtitle": "اشتراكك ومميزاتك ورصيدك"
 }
