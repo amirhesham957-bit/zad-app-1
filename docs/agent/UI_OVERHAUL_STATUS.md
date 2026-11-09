@@ -17,7 +17,7 @@ owner's real account, where only read-only taps are allowed.
 |---|---|---|---|
 | #438 | «ضيف للبيت» is no longer logged as an expense | passed, merged | no |
 | #439 | Live prices on top, language button beside the bell | passed, merged | seen on Home |
-| #440 | Chef: full recipe, secrets, source link, ask the chef | passed, merged | no |
+| #440 | Chef: full recipe, secrets, source link, ask the chef | passed, merged | yes: suggestions, full recipe, secrets; the source link needs a recipe that has one |
 | #441 | Family: named header, labelled buttons, iPhone tool sheet, chat bubbles | passed, merged | yes: header, tool sheet, members tab; fixes below in the next APK |
 | #442 | Brain: live money pulse, ring that answers a touch, charts from the first expense | passed, merged | yes: pulse card, 7/14/30, highest day |
 | #443 | Profile: coloured badges, language, companion and Premium rows | passed, merged | yes: header and first groups; lower rows not opened |
