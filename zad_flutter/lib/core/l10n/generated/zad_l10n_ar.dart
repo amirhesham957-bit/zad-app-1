@@ -3143,4 +3143,45 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get familyChatSos => 'نداء طوارئ';
+
+  @override
+  String get pulseTitle => 'نبض فلوسك';
+
+  @override
+  String pulseLastDays(num days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'آخر $days يوم',
+      few: 'آخر $days أيام',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String pulseLess(Object pct) {
+    return 'أقل $pct٪ من الفترة اللي قبلها';
+  }
+
+  @override
+  String pulseMore(Object pct) {
+    return 'أكتر $pct٪ من الفترة اللي قبلها';
+  }
+
+  @override
+  String get pulseDaily => 'متوسط اليوم';
+
+  @override
+  String get pulsePeak => 'أعلى يوم';
+
+  @override
+  String get pulseTop => 'أكبر بند';
+
+  @override
+  String pulseAskPrompt(Object category) {
+    return 'حلل صرفي على $category';
+  }
+
+  @override
+  String get brainReportWaits => 'سجل 3 مصاريف وتقرير زاد الكامل يجهز';
 }

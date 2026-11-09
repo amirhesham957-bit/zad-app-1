@@ -970,5 +970,14 @@
   "familyChatPoll": "Poll",
   "familyChatTask": "New task",
   "familyChatGrocery": "Grocery request",
-  "familyChatSos": "Emergency call"
+  "familyChatSos": "Emergency call",
+  "pulseTitle": "Your money's pulse",
+  "pulseLastDays": "{days, plural, other{Last {days} days}}",
+  "pulseLess": "{pct}% less than the period before",
+  "pulseMore": "{pct}% more than the period before",
+  "pulseDaily": "Daily average",
+  "pulsePeak": "Highest day",
+  "pulseTop": "Biggest category",
+  "pulseAskPrompt": "Analyse my spending on {category}",
+  "brainReportWaits": "Log 3 expenses and Zad's full report is ready"
 }

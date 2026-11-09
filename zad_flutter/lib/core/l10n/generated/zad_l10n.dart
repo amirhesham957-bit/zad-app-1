@@ -5550,6 +5550,60 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'نداء طوارئ'**
   String get familyChatSos;
+
+  /// No description provided for @pulseTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'نبض فلوسك'**
+  String get pulseTitle;
+
+  /// No description provided for @pulseLastDays.
+  ///
+  /// In ar, this message translates to:
+  /// **'{days, plural, few{آخر {days} أيام} other{آخر {days} يوم}}'**
+  String pulseLastDays(num days);
+
+  /// No description provided for @pulseLess.
+  ///
+  /// In ar, this message translates to:
+  /// **'أقل {pct}٪ من الفترة اللي قبلها'**
+  String pulseLess(Object pct);
+
+  /// No description provided for @pulseMore.
+  ///
+  /// In ar, this message translates to:
+  /// **'أكتر {pct}٪ من الفترة اللي قبلها'**
+  String pulseMore(Object pct);
+
+  /// No description provided for @pulseDaily.
+  ///
+  /// In ar, this message translates to:
+  /// **'متوسط اليوم'**
+  String get pulseDaily;
+
+  /// No description provided for @pulsePeak.
+  ///
+  /// In ar, this message translates to:
+  /// **'أعلى يوم'**
+  String get pulsePeak;
+
+  /// No description provided for @pulseTop.
+  ///
+  /// In ar, this message translates to:
+  /// **'أكبر بند'**
+  String get pulseTop;
+
+  /// No description provided for @pulseAskPrompt.
+  ///
+  /// In ar, this message translates to:
+  /// **'حلل صرفي على {category}'**
+  String pulseAskPrompt(Object category);
+
+  /// No description provided for @brainReportWaits.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجل 3 مصاريف وتقرير زاد الكامل يجهز'**
+  String get brainReportWaits;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

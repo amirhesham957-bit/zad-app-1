@@ -3209,4 +3209,45 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get familyChatSos => 'Emergency call';
+
+  @override
+  String get pulseTitle => 'Your money\'s pulse';
+
+  @override
+  String pulseLastDays(num days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'Last $days days',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String pulseLess(Object pct) {
+    return '$pct% less than the period before';
+  }
+
+  @override
+  String pulseMore(Object pct) {
+    return '$pct% more than the period before';
+  }
+
+  @override
+  String get pulseDaily => 'Daily average';
+
+  @override
+  String get pulsePeak => 'Highest day';
+
+  @override
+  String get pulseTop => 'Biggest category';
+
+  @override
+  String pulseAskPrompt(Object category) {
+    return 'Analyse my spending on $category';
+  }
+
+  @override
+  String get brainReportWaits =>
+      'Log 3 expenses and Zad\'s full report is ready';
 }
