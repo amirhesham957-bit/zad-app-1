@@ -6,10 +6,13 @@ import 'dart:async';
 
 import 'package:zad/app/wiring/zad_wiring.dart';
 import 'package:zad/core/design/components/zad_network_image.dart';
+import 'package:zad/shared/inventory/presentation/item_photo.dart';
 
 Future<void> testExecutable(FutureOr<void> Function() testMain) async {
   wireZad();
   // The disk cache needs plugins a test host does not have.
   ZadNetworkImage.diskCache = false;
+  // A looping animation never lets pumpAndSettle finish.
+  ZadItemPhoto.loops = false;
   await testMain();
 }

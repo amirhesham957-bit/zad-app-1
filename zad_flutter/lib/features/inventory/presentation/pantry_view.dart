@@ -29,11 +29,11 @@ import 'package:zad/shared/inventory/application/pantry_controller.dart'
     hide PantryView;
 import 'package:zad/shared/inventory/application/shopping_controller.dart';
 import 'package:zad/shared/inventory/data/consumption_learner.dart';
-import 'package:zad/shared/inventory/domain/food_emoji.dart';
 import 'package:zad/shared/inventory/domain/inventory_item.dart';
 import 'package:zad/shared/inventory/domain/product_family.dart';
 import 'package:zad/shared/inventory/domain/quantity.dart';
 import 'package:zad/shared/inventory/domain/shortage.dart';
+import 'package:zad/shared/inventory/presentation/item_photo.dart';
 import 'package:zad/shared/inventory/presentation/quantity_text.dart';
 import 'package:zad/shared/navigation/destinations.dart';
 import 'package:zad/shared/navigation/shell_navigation.dart';
@@ -878,18 +878,12 @@ class _InventoryItemCard extends StatelessWidget {
             Container(
               width: 46,
               height: 46,
-              alignment: Alignment.center,
+              clipBehavior: Clip.antiAlias,
               decoration: BoxDecoration(
                 color: _bgOf(def, scheme),
                 borderRadius: BorderRadius.circular(14),
               ),
-              child: _FloatingIdle(
-                amplitude: 1.2,
-                child: Text(
-                  foodEmoji(item.itemName),
-                  style: const TextStyle(fontSize: 22),
-                ),
-              ),
+              child: ZadItemPhoto(item.itemName, width: 46, height: 46),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -1099,7 +1093,10 @@ class _FamilyCard extends StatelessWidget {
           padding: const EdgeInsets.all(ZadSpacing.lg),
           child: Row(
             children: <Widget>[
-              Text(foodEmoji(group.name), style: ZadType.titleLarge),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(ZadRadii.chip),
+                child: ZadItemPhoto(group.name, width: 46, height: 46),
+              ),
               const SizedBox(width: ZadSpacing.md),
               Expanded(
                 child: Column(
