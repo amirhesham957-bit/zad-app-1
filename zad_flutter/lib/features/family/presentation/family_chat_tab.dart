@@ -6,6 +6,7 @@ library;
 
 import 'dart:async';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -13,8 +14,10 @@ import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/components/zad_empty_state.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
+import 'package:zad/core/design/tokens/zad_motion.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/family/presentation/family_dialogs.dart';
 import 'package:zad/features/family/presentation/family_follow.dart';
 import 'package:zad/shared/family/application/family_life_controller.dart';
@@ -37,6 +40,7 @@ class FamilyChatTab extends ConsumerStatefulWidget {
 }
 
 class _FamilyChatTabState extends ConsumerState<FamilyChatTab> {
+  final Set<String> _seen = <String>{};
   final TextEditingController _text = TextEditingController();
   bool _quickReplies = false;
   String? _pickerFor;
@@ -65,6 +69,14 @@ class _FamilyChatTabState extends ConsumerState<FamilyChatTab> {
         if (m.id != widget.me.id && m.isOnlineAt(now)) m,
     ];
     final messages = view.messages.reversed.toList();
+    // What was already on screen stays still; only an arrival moves.
+    final fresh = _seen.isEmpty
+        ? const <String>{}
+        : <String>{
+            for (final m in messages)
+              if (!_seen.contains(m.id)) m.id,
+          };
+    _seen.addAll(messages.map((m) => m.id));
 
     return Column(
       children: <Widget>[
@@ -159,22 +171,26 @@ class _FamilyChatTabState extends ConsumerState<FamilyChatTab> {
                     final olderDay = i + 1 < messages.length
                         ? _dayOf(messages[i + 1].createdAt)
                         : null;
-                    return Column(
-                      children: <Widget>[
-                        if (day != null && day != olderDay)
-                          _DateChip(day: day, now: now),
-                        _MessageRow(
-                          message: msg,
-                          members: members,
-                          me: widget.me,
-                          pickerOpen: _pickerFor == msg.id,
-                          onTogglePicker: () => setState(
-                            () => _pickerFor = _pickerFor == msg.id
-                                ? null
-                                : msg.id,
+                    return _MessageEnter(
+                      key: ValueKey<String>(msg.id),
+                      animate: fresh.contains(msg.id),
+                      child: Column(
+                        children: <Widget>[
+                          if (day != null && day != olderDay)
+                            _DateChip(day: day, now: now),
+                          _MessageRow(
+                            message: msg,
+                            members: members,
+                            me: widget.me,
+                            pickerOpen: _pickerFor == msg.id,
+                            onTogglePicker: () => setState(
+                              () => _pickerFor = _pickerFor == msg.id
+                                  ? null
+                                  : msg.id,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     );
                   },
                 ),
@@ -202,6 +218,29 @@ class _FamilyChatTabState extends ConsumerState<FamilyChatTab> {
     final local = at.toLocal();
     return DateTime(local.year, local.month, local.day);
   }
+}
+
+/// A message that has just arrived rises into place.
+class _MessageEnter extends StatelessWidget {
+  const new({required this.animate, required this.child, super.key});
+
+  final bool animate;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => TweenAnimationBuilder<double>(
+    tween: Tween<double>(
+      begin: animate && !MediaQuery.disableAnimationsOf(context) ? 0 : 1,
+      end: 1,
+    ),
+    duration: ZadDuration.enter,
+    curve: ZadCurves.standard,
+    builder: (_, value, c) => Opacity(
+      opacity: value,
+      child: Transform.translate(offset: Offset(0, (1 - value) * 16), child: c),
+    ),
+    child: child,
+  );
 }
 
 class _DateChip extends StatelessWidget {
@@ -409,16 +448,21 @@ class _TextBubble extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.all(ZadSpacing.md),
             decoration: BoxDecoration(
+              gradient: isMe ? ZadColors.hero : null,
               color: isMe
-                  ? ZadColors.green700
+                  ? null
                   : isAi
                   ? ZadColors.mint100.withValues(alpha: 0.8)
                   : ZadColors.surfaceVariant,
               borderRadius: BorderRadiusDirectional.only(
-                topStart: const Radius.circular(16),
-                topEnd: const Radius.circular(16),
-                bottomStart: Radius.circular(isMe ? 16 : 4),
-                bottomEnd: Radius.circular(isMe ? 4 : 16),
+                topStart: const Radius.circular(ZadRadii.cardLarge),
+                topEnd: const Radius.circular(ZadRadii.cardLarge),
+                bottomStart: Radius.circular(
+                  isMe ? ZadRadii.cardLarge : ZadSpacing.xs,
+                ),
+                bottomEnd: Radius.circular(
+                  isMe ? ZadSpacing.xs : ZadRadii.cardLarge,
+                ),
               ),
             ),
             child: Column(
@@ -439,7 +483,6 @@ class _TextBubble extends ConsumerWidget {
                       Text(
                         alias,
                         style: ZadType.labelSmall.copyWith(
-                          fontSize: 10,
                           fontWeight: FontWeight.w700,
                           color: isAi ? ZadColors.green700 : ZadColors.inkMuted,
                         ),
@@ -916,6 +959,64 @@ class _Composer extends StatelessWidget {
   final VoidCallback onTask;
   final VoidCallback onGrocery;
 
+  void _showTools(BuildContext context) {
+    final l = context.l10n;
+    unawaited(
+      showCupertinoModalPopup<void>(
+        context: context,
+        builder: (sheet) {
+          Widget tool(
+            IconData icon,
+            String label,
+            VoidCallback run, {
+            bool urgent = false,
+          }) {
+            final color = urgent
+                ? ZadColors.terracottaRust
+                : ZadColors.green700;
+            return CupertinoActionSheetAction(
+              isDestructiveAction: urgent,
+              onPressed: () {
+                Navigator.of(sheet).pop();
+                run();
+              },
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  Icon(icon, size: 20, color: color),
+                  const SizedBox(width: ZadSpacing.sm),
+                  Text(label, style: ZadType.bodyLarge.copyWith(color: color)),
+                ],
+              ),
+            );
+          }
+
+          return CupertinoActionSheet(
+            actions: <Widget>[
+              tool(
+                ZadIcons.ask,
+                l.familyChatQuickReplies,
+                onToggleQuickReplies,
+              ),
+              tool(ZadIcons.shopping, l.familyChatRequest, onRequest),
+              tool(ZadIcons.poll, l.familyChatPoll, onPoll),
+              tool(ZadIcons.chore, l.familyChatTask, onTask),
+              tool(ZadIcons.inventory, l.familyChatGrocery, onGrocery),
+              tool(ZadIcons.sos, l.familyChatSos, onSos, urgent: true),
+            ],
+            cancelButton: CupertinoActionSheetAction(
+              onPressed: () => Navigator.of(sheet).pop(),
+              child: Text(
+                MaterialLocalizations.of(sheet).cancelButtonLabel,
+                style: ZadType.bodyLarge.copyWith(color: ZadColors.ink),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) => Material(
     color: ZadColors.surface.withValues(alpha: 0.95),
@@ -952,63 +1053,12 @@ class _Composer extends StatelessWidget {
               ),
             Row(
               children: <Widget>[
-                ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 150),
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: <Widget>[
-                        IconButton(
-                          tooltip: 'ردود سريعة',
-                          onPressed: onToggleQuickReplies,
-                          icon: const Icon(
-                            ZadIcons.add,
-                            color: ZadColors.green700,
-                          ),
-                        ),
-                        IconButton(
-                          tooltip: 'نداء طوارئ',
-                          onPressed: onSos,
-                          icon: Icon(
-                            ZadIcons.sos,
-                            color: ZadColors.terracottaRust,
-                          ),
-                        ),
-                        IconButton(
-                          tooltip: 'طلب مصروف',
-                          onPressed: onRequest,
-                          icon: const Icon(
-                            ZadIcons.shopping,
-                            color: ZadColors.green700,
-                          ),
-                        ),
-                        IconButton(
-                          tooltip: 'تصويت',
-                          onPressed: onPoll,
-                          icon: Icon(
-                            ZadIcons.poll,
-                            color: ZadColors.mustardOchre,
-                          ),
-                        ),
-                        IconButton(
-                          tooltip: 'المهام',
-                          onPressed: onTask,
-                          icon: const Icon(
-                            ZadIcons.chore,
-                            color: ZadColors.green700,
-                          ),
-                        ),
-                        IconButton(
-                          tooltip: 'البقالة',
-                          onPressed: onGrocery,
-                          icon: Icon(
-                            ZadIcons.inventory,
-                            color: ZadColors.mustardOchre,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                // One door to the tools, named inside: five icons in a strip
+                // you had to drag read as nothing there (owner, 2026-11-09).
+                IconButton(
+                  tooltip: context.l10n.familyChatTools,
+                  onPressed: () => _showTools(context),
+                  icon: const Icon(ZadIcons.add, color: ZadColors.green700),
                 ),
                 Expanded(
                   child: Container(

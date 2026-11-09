@@ -3163,4 +3163,50 @@ class ZadL10nEn extends ZadL10n {
   String chefAskPrefill(Object name) {
     return 'Chef, about $name: ';
   }
+
+  @override
+  String familyTitleOf(Object name) {
+    return '$name\'s family';
+  }
+
+  @override
+  String familyMembersCount(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count members',
+      one: '1 member',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get familyActionInvite => 'Invite';
+
+  @override
+  String get familyActionShare => 'Share';
+
+  @override
+  String get familyActionSos => 'SOS';
+
+  @override
+  String get familyChatTools => 'Chat tools';
+
+  @override
+  String get familyChatQuickReplies => 'Quick replies';
+
+  @override
+  String get familyChatRequest => 'Money request';
+
+  @override
+  String get familyChatPoll => 'Poll';
+
+  @override
+  String get familyChatTask => 'New task';
+
+  @override
+  String get familyChatGrocery => 'Grocery request';
+
+  @override
+  String get familyChatSos => 'Emergency call';
 }

@@ -958,5 +958,17 @@
   "chefSourceLink": "See the recipe at its source",
   "chefSourceHandle": "See it at @{handle}",
   "chefAsk": "Ask the chef about this dish",
-  "chefAskPrefill": "Chef, about {name}: "
+  "chefAskPrefill": "Chef, about {name}: ",
+  "familyTitleOf": "{name}'s family",
+  "familyMembersCount": "{count, plural, =1{1 member} other{{count} members}}",
+  "familyActionInvite": "Invite",
+  "familyActionShare": "Share",
+  "familyActionSos": "SOS",
+  "familyChatTools": "Chat tools",
+  "familyChatQuickReplies": "Quick replies",
+  "familyChatRequest": "Money request",
+  "familyChatPoll": "Poll",
+  "familyChatTask": "New task",
+  "familyChatGrocery": "Grocery request",
+  "familyChatSos": "Emergency call"
 }

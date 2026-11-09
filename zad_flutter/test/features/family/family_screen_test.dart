@@ -13,6 +13,7 @@ import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/zad_theme.dart';
 import 'package:zad/features/family/presentation/family_screen.dart';
 import 'package:zad/shared/family/application/family_controller.dart';
+import 'package:zad/shared/family/application/family_format.dart';
 import 'package:zad/shared/family/data/family_repository.dart';
 import 'package:zad/shared/family/domain/family.dart';
 
@@ -144,7 +145,7 @@ void main() {
   testWidgets('an admin does not manage their own row', (tester) async {
     await pump(tester, InFamily(_family(myRole: 'admin')));
 
-    expect(find.text('عيلتي'), findsOneWidget);
+    expect(find.text('عيلة بابا'), findsOneWidget);
     expect(find.text('مدير'), findsOneWidget);
     expect(find.text('ابن/ابنة'), findsOneWidget);
 
@@ -160,7 +161,8 @@ void main() {
   ) async {
     await pump(tester, InFamily(_family(myRole: 'member')));
 
-    expect(find.text('عيلتي'), findsOneWidget);
+    expect(find.text('عيلتي'), findsOneWidget, reason: 'no admin to name it');
+    expect(find.textContaining('ZAD-'), findsNothing);
 
     await tester.tap(find.text('سارة'));
     await tester.pumpAndSettle();
@@ -179,6 +181,47 @@ void main() {
     expect(find.text('الدور في العيلة'), findsOneWidget);
     await tester.ensureVisible(find.text('شيله من العيلة'));
     expect(find.text('شيله من العيلة'), findsOneWidget);
+    await unmount(tester);
+  });
+
+  test('a default alias does not name the family', () {
+    Family led(String alias) => Family(
+      id: 'f1',
+      inviteCode: 'ZAD-1',
+      members: <FamilyMember>[
+        FamilyMember(
+          id: 'm1',
+          userId: 'me',
+          role: FamilyRole.admin,
+          alias: alias,
+        ),
+      ],
+    );
+    expect(familyOwnerAlias(led('بابا')), 'بابا');
+    expect(familyOwnerAlias(led('رب الأسرة')), isNull);
+    expect(familyOwnerAlias(led('  ')), isNull);
+  });
+
+  testWidgets('the chat tools sit behind one named door', (tester) async {
+    await pump(tester, InFamily(_family(myRole: 'admin')));
+
+    await tester.tap(find.text('الشات'));
+    await tester.pumpAndSettle();
+    // The fake server's refusal sits over the composer as a snack bar.
+    ScaffoldMessenger.of(tester.element(find.byTooltip('أدوات الشات')))
+        .removeCurrentSnackBar();
+    await tester.pumpAndSettle();
+    expect(find.text('نداء طوارئ'), findsNothing);
+    await tester.tap(find.byTooltip('أدوات الشات'));
+    await tester.pumpAndSettle();
+    for (final tool in <String>[
+      'ردود سريعة',
+      'طلب مصروف',
+      'تصويت',
+      'نداء طوارئ',
+    ]) {
+      expect(find.text(tool), findsOneWidget);
+    }
     await unmount(tester);
   });
 }

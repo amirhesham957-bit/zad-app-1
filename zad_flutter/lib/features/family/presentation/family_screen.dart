@@ -12,6 +12,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:zad/core/design/components/zad_empty_state.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
+import 'package:zad/core/design/tokens/zad_motion.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/l10n/l10n.dart';
@@ -350,22 +351,34 @@ class _ActiveFamilyState extends ConsumerState<_ActiveFamily> {
           Expanded(
             child: me == null
                 ? const Center(child: CircularProgressIndicator())
-                : switch (tab) {
-                    0 => FamilyChatTab(family: family, me: me),
-                    1 => FamilyTasksTab(
-                      family: family,
-                      isAdmin: view.isAdmin,
-                      showFinancials: widget.showFinancials,
+                : AnimatedSwitcher(
+                    duration: ZadDuration.quick,
+                    switchInCurve: ZadCurves.standard,
+                    switchOutCurve: ZadCurves.exit,
+                    layoutBuilder: (current, previous) => Stack(
+                      fit: StackFit.expand,
+                      children: <Widget>[...previous, ?current],
                     ),
-                    2 => FamilyMembersTab(
-                      family: family,
-                      view: view,
-                      showFinancials: widget.showFinancials,
+                    child: KeyedSubtree(
+                      key: ValueKey<int>(tab),
+                      child: switch (tab) {
+                        0 => FamilyChatTab(family: family, me: me),
+                        1 => FamilyTasksTab(
+                          family: family,
+                          isAdmin: view.isAdmin,
+                          showFinancials: widget.showFinancials,
+                        ),
+                        2 => FamilyMembersTab(
+                          family: family,
+                          view: view,
+                          showFinancials: widget.showFinancials,
+                        ),
+                        3 => const FamilyGroceriesTab(),
+                        4 => FamilyKidsTab(family: family),
+                        _ => FamilyGoalsTab(family: family),
+                      },
                     ),
-                    3 => const FamilyGroceriesTab(),
-                    4 => FamilyKidsTab(family: family),
-                    _ => FamilyGoalsTab(family: family),
-                  },
+                  ),
           ),
         ],
       ),
@@ -380,24 +393,26 @@ class _Header extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = context.l10n;
     final code = family.inviteCode;
     final members = family.members;
+    final owner = familyOwnerAlias(family);
+    final shown = members.length > 6 ? 7 : members.length;
     return Container(
       decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: <Color>[ZadColors.green800, ZadColors.green600],
+        gradient: ZadColors.hero,
+        borderRadius: BorderRadius.vertical(
+          bottom: Radius.circular(ZadRadii.hero),
         ),
       ),
       child: SafeArea(
         bottom: false,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(
-            ZadSpacing.xs,
+            ZadSpacing.lg,
             ZadSpacing.xs,
             ZadSpacing.lg,
-            ZadSpacing.md,
+            ZadSpacing.lg,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -406,28 +421,16 @@ class _Header extends ConsumerWidget {
                 children: <Widget>[
                   const BackButton(color: Colors.white),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Text(
-                          context.l10n.familyHeaderTitle,
-                          style: ZadType.titleMedium.copyWith(
-                            color: Colors.white,
-                          ),
-                        ),
-                        Text(
-                          '${members.length} أفراد',
-                          style: ZadType.bodySmall.copyWith(
-                            color: Colors.white.withValues(alpha: 0.9),
-                          ),
-                        ),
-                      ],
+                    child: Text(
+                      owner == null
+                          ? l.familyHeaderTitle
+                          : l.familyTitleOf(owner),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: ZadType.headlineMedium.copyWith(
+                        color: Colors.white,
+                      ),
                     ),
-                  ),
-                  IconButton(
-                    tooltip: 'الرجاء الانتباه، حالة طوارئ!',
-                    onPressed: () => unawaited(confirmAndSendSos(context, ref)),
-                    icon: const Icon(ZadIcons.sos, color: Colors.white),
                   ),
                   IconButton(
                     tooltip: 'الانضمام للعائلة',
@@ -435,54 +438,90 @@ class _Header extends ConsumerWidget {
                         unawaited(showJoinFamilyDialog(context, ref)),
                     icon: const Icon(ZadIcons.joinFamily, color: Colors.white),
                   ),
-                  IconButton(
-                    tooltip: 'دعوة أفراد جدد',
-                    onPressed: () => unawaited(showInviteDialog(context, code)),
-                    icon: const Icon(ZadIcons.invite, color: Colors.white),
-                  ),
-                  IconButton(
-                    tooltip: 'مشاركة الدعوة',
-                    onPressed: () => unawaited(
-                      SharePlus.instance.share(
-                        ShareParams(
-                          subject: 'مشاركة الدعوة',
-                          text:
-                              '🌱 دعوة للانضمام إلى عائلتي على تطبيق زاد\n\n'
-                              '📲 اضغط على الرابط التالي للانضمام فوراً وفتح '
-                              'التطبيق:\n${inviteLink(code)}\n\n'
-                              '🔑 كود الدعوة المباشر:\n$code',
-                        ),
-                      ),
+                ],
+              ),
+              const SizedBox(height: ZadSpacing.md),
+              Row(
+                children: <Widget>[
+                  SizedBox(
+                    height: 40,
+                    width: shown == 0 ? 0 : (shown - 1) * 28 + 40,
+                    child: Stack(
+                      children: <Widget>[
+                        for (final (i, m) in members.take(6).indexed)
+                          PositionedDirectional(
+                            start: i * 28,
+                            child: _PopIn(
+                              index: i,
+                              child: _HeaderAvatar(
+                                text: m.alias.characters.firstOrNull ?? '?',
+                              ),
+                            ),
+                          ),
+                        if (members.length > 6)
+                          PositionedDirectional(
+                            start: 6 * 28,
+                            child: _PopIn(
+                              index: 6,
+                              child: _HeaderAvatar(
+                                text: '+${members.length - 6}',
+                                strong: true,
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
-                    icon: const Icon(ZadIcons.share, color: Colors.white),
+                  ),
+                  const SizedBox(width: ZadSpacing.md),
+                  Text(
+                    l.familyMembersCount(members.length),
+                    style: ZadType.bodyMedium.copyWith(
+                      color: Colors.white.withValues(alpha: 0.9),
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
-              Padding(
-                padding: const EdgeInsetsDirectional.only(start: ZadSpacing.md),
-                child: SizedBox(
-                  height: 36,
-                  child: Stack(
-                    children: <Widget>[
-                      for (final (i, m) in members.take(6).indexed)
-                        PositionedDirectional(
-                          start: i * 28,
-                          child: _HeaderAvatar(
-                            text: m.alias.characters.firstOrNull ?? '?',
-                          ),
-                        ),
-                      if (members.length > 6)
-                        PositionedDirectional(
-                          start: 6 * 28,
-                          child: _HeaderAvatar(
-                            text: '+${members.length - 6}',
-                            strong: true,
-                          ),
-                        ),
-                    ],
+              const SizedBox(height: ZadSpacing.lg),
+              // Named buttons: bare icons on the green read as decoration
+              // (owner, 2026-11-09).
+              Row(
+                children: <Widget>[
+                  Expanded(
+                    child: _HeaderAction(
+                      icon: ZadIcons.invite,
+                      label: l.familyActionInvite,
+                      onTap: () => unawaited(showInviteDialog(context, code)),
+                    ),
                   ),
-                ),
+                  const SizedBox(width: ZadSpacing.sm),
+                  Expanded(
+                    child: _HeaderAction(
+                      icon: ZadIcons.share,
+                      label: l.familyActionShare,
+                      onTap: () => unawaited(
+                        SharePlus.instance.share(
+                          ShareParams(
+                            subject: 'مشاركة الدعوة',
+                            text:
+                                '🌱 دعوة للانضمام إلى عائلتي على تطبيق زاد\n\n'
+                                '📲 اضغط على الرابط التالي للانضمام فوراً '
+                                'وفتح التطبيق:\n${inviteLink(code)}\n\n'
+                                '🔑 كود الدعوة المباشر:\n$code',
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: ZadSpacing.sm),
+                  Expanded(
+                    child: _HeaderAction(
+                      icon: ZadIcons.sos,
+                      label: l.familyActionSos,
+                      urgent: true,
+                      onTap: () => unawaited(confirmAndSendSos(context, ref)),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -490,6 +529,74 @@ class _Header extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// A member arriving: each one a beat after the last, and still when the
+/// phone asks for reduced motion.
+class _PopIn extends StatelessWidget {
+  const new({required this.index, required this.child});
+
+  final int index;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => TweenAnimationBuilder<double>(
+    tween: Tween<double>(
+      begin: MediaQuery.disableAnimationsOf(context) ? 1 : 0,
+      end: 1,
+    ),
+    duration: ZadDuration.settle,
+    curve: Interval(index * 0.08, 1, curve: ZadCurves.springy),
+    builder: (_, value, c) => Opacity(
+      opacity: value.clamp(0, 1),
+      child: Transform.scale(scale: value, child: c),
+    ),
+    child: child,
+  );
+}
+
+class _HeaderAction extends StatelessWidget {
+  const new({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.urgent = false,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool urgent;
+
+  @override
+  Widget build(BuildContext context) => Material(
+    color: urgent
+        ? ZadColors.terracottaRust
+        : Colors.white.withValues(alpha: 0.14),
+    borderRadius: BorderRadius.circular(ZadRadii.chip),
+    clipBehavior: Clip.antiAlias,
+    child: InkWell(
+      onTap: onTap,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 48),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Icon(icon, size: 18, color: Colors.white),
+            const SizedBox(width: ZadSpacing.xs),
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: ZadType.labelLarge.copyWith(color: Colors.white),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
 }
 
 class _HeaderAvatar extends StatelessWidget {
@@ -500,8 +607,8 @@ class _HeaderAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    width: 36,
-    height: 36,
+    width: 40,
+    height: 40,
     alignment: Alignment.center,
     decoration: BoxDecoration(
       shape: BoxShape.circle,
@@ -509,15 +616,8 @@ class _HeaderAvatar extends StatelessWidget {
         Colors.white.withValues(alpha: strong ? 0.4 : 0.25),
         ZadColors.green700,
       ),
-      border: Border.all(color: ZadColors.green700, width: 2),
+      border: Border.all(color: ZadColors.emeraldDeep, width: 2),
     ),
-    child: Text(
-      text,
-      style: TextStyle(
-        color: Colors.white,
-        fontWeight: FontWeight.w700,
-        fontSize: strong ? 12 : 14,
-      ),
-    ),
+    child: Text(text, style: ZadType.labelLarge.copyWith(color: Colors.white)),
   );
 }

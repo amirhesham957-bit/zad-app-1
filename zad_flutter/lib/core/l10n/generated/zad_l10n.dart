@@ -5478,6 +5478,78 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'يا شيف، في وصفة {name}: '**
   String chefAskPrefill(Object name);
+
+  /// No description provided for @familyTitleOf.
+  ///
+  /// In ar, this message translates to:
+  /// **'عيلة {name}'**
+  String familyTitleOf(Object name);
+
+  /// No description provided for @familyMembersCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{فرد واحد} =2{فردين} few{{count} أفراد} other{{count} فرد}}'**
+  String familyMembersCount(num count);
+
+  /// No description provided for @familyActionInvite.
+  ///
+  /// In ar, this message translates to:
+  /// **'دعوة'**
+  String get familyActionInvite;
+
+  /// No description provided for @familyActionShare.
+  ///
+  /// In ar, this message translates to:
+  /// **'مشاركة'**
+  String get familyActionShare;
+
+  /// No description provided for @familyActionSos.
+  ///
+  /// In ar, this message translates to:
+  /// **'طوارئ'**
+  String get familyActionSos;
+
+  /// No description provided for @familyChatTools.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدوات الشات'**
+  String get familyChatTools;
+
+  /// No description provided for @familyChatQuickReplies.
+  ///
+  /// In ar, this message translates to:
+  /// **'ردود سريعة'**
+  String get familyChatQuickReplies;
+
+  /// No description provided for @familyChatRequest.
+  ///
+  /// In ar, this message translates to:
+  /// **'طلب مصروف'**
+  String get familyChatRequest;
+
+  /// No description provided for @familyChatPoll.
+  ///
+  /// In ar, this message translates to:
+  /// **'تصويت'**
+  String get familyChatPoll;
+
+  /// No description provided for @familyChatTask.
+  ///
+  /// In ar, this message translates to:
+  /// **'مهمة جديدة'**
+  String get familyChatTask;
+
+  /// No description provided for @familyChatGrocery.
+  ///
+  /// In ar, this message translates to:
+  /// **'طلب بقالة'**
+  String get familyChatGrocery;
+
+  /// No description provided for @familyChatSos.
+  ///
+  /// In ar, this message translates to:
+  /// **'نداء طوارئ'**
+  String get familyChatSos;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

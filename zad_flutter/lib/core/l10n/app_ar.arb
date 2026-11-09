@@ -2189,5 +2189,17 @@
   "chefSourceLink": "شوف الوصفة في مصدرها",
   "chefSourceHandle": "شوف الوصفة عند @{handle}",
   "chefAsk": "اسأل الشيف عن الوصفة دي",
-  "chefAskPrefill": "يا شيف، في وصفة {name}: "
+  "chefAskPrefill": "يا شيف، في وصفة {name}: ",
+  "familyTitleOf": "عيلة {name}",
+  "familyMembersCount": "{count, plural, =1{فرد واحد} =2{فردين} few{{count} أفراد} other{{count} فرد}}",
+  "familyActionInvite": "دعوة",
+  "familyActionShare": "مشاركة",
+  "familyActionSos": "طوارئ",
+  "familyChatTools": "أدوات الشات",
+  "familyChatQuickReplies": "ردود سريعة",
+  "familyChatRequest": "طلب مصروف",
+  "familyChatPoll": "تصويت",
+  "familyChatTask": "مهمة جديدة",
+  "familyChatGrocery": "طلب بقالة",
+  "familyChatSos": "نداء طوارئ"
 }
