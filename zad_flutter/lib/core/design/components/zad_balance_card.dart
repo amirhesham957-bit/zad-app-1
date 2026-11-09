@@ -43,6 +43,7 @@ class ZadBalanceCard extends StatelessWidget {
     this.onEditBalance,
     this.isStale = false,
     this.gradient,
+    this.glow,
     super.key,
   });
 
@@ -101,6 +102,9 @@ class ZadBalanceCard extends StatelessWidget {
   /// passes its own, already checked to keep the white text readable.
   final Gradient? gradient;
 
+  /// The soft light low in the corner; null = زاد's mint.
+  final Color? glow;
+
   /// How much of the opening balance is gone, 0..1.
   double get _spentFraction {
     final opening = openingBalance;
@@ -143,7 +147,9 @@ class ZadBalanceCard extends StatelessWidget {
               // Two soft radial glows. They are what stop a large saturated
               // panel reading as flat fill, and they cost one paint — no blur,
               // no saveLayer, nothing per frame.
-              painter: const _HeroGlowPainter(),
+              painter: _HeroGlowPainter(
+                bloom: glow ?? ZadColors.mintGlow.withValues(alpha: 0.22),
+              ),
               child: Padding(
                 padding: const EdgeInsets.all(ZadSpacing.xl),
                 child: Column(
@@ -733,7 +739,9 @@ class _PaceBar extends StatelessWidget {
 
 /// Paints the card's depth.
 class _HeroGlowPainter extends CustomPainter {
-  const new();
+  const new({required this.bloom});
+
+  final Color bloom;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -753,10 +761,10 @@ class _HeroGlowPainter extends CustomPainter {
         ).createShader(specular),
     );
 
-    // A mint bloom low on the opposite side. This is the one gesture toward the
-    // Web3 look, and it is kept to a single soft blob — the rest of the card is
-    // iOS, and two competing idioms on one surface read as neither.
-    final bloom = Rect.fromCircle(
+    // A bloom low on the opposite side, mint or the occasion's. It is the one
+    // gesture toward the Web3 look, kept to a single soft blob: the rest of
+    // the card is iOS, and two competing idioms read as neither.
+    final bloomArea = Rect.fromCircle(
       center: Offset(size.width * 0.08, size.height * 1.05),
       radius: size.height * 0.85,
     );
@@ -764,16 +772,14 @@ class _HeroGlowPainter extends CustomPainter {
       Offset.zero & size,
       Paint()
         ..shader = RadialGradient(
-          colors: <Color>[
-            ZadColors.mintGlow.withValues(alpha: 0.22),
-            ZadColors.mintGlow.withValues(alpha: 0),
-          ],
-        ).createShader(bloom),
+          colors: <Color>[bloom, bloom.withValues(alpha: 0)],
+        ).createShader(bloomArea),
     );
   }
 
   @override
-  bool shouldRepaint(_HeroGlowPainter oldDelegate) => false;
+  bool shouldRepaint(_HeroGlowPainter oldDelegate) =>
+      oldDelegate.bloom != bloom;
 }
 
 /// Grouped, at most two decimals, Latin digits.
