@@ -3065,12 +3065,41 @@ class ZadL10nAr extends ZadL10n {
       'شغال. أول ما تخرج وترجع البيت، خروجتك هتظهر هنا.';
 
   @override
-  String familyTitleOf(Object name) {
-    return 'عيلة $name';
+  String get familyHeaderTitle => 'عيلتي';
+
+  @override
+  String get shellLanguageShort => 'EN';
+
+  @override
+  String get chefHomeTapHint =>
+      'اضغط وأنا أقترحلك طبق من اللي عندك في المخزون.';
+
+  @override
+  String get chefFullRecipe => 'الشرح الكامل وأسرار الشيف';
+
+  @override
+  String get chefSecrets => '🤫 أسرار الشيف';
+
+  @override
+  String get chefSourceLink => 'شوف الوصفة في مصدرها';
+
+  @override
+  String chefSourceHandle(Object handle) {
+    return 'شوف الوصفة عند @$handle';
   }
 
   @override
-  String get familyTitleMine => 'عيلتي';
+  String get chefAsk => 'اسأل الشيف عن الوصفة دي';
+
+  @override
+  String chefAskPrefill(Object name) {
+    return 'يا شيف، في وصفة $name: ';
+  }
+
+  @override
+  String familyTitleOf(Object name) {
+    return 'عيلة $name';
+  }
 
   @override
   String familyMembersCount(num count) {

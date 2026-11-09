@@ -423,7 +423,7 @@ class _Header extends ConsumerWidget {
                   Expanded(
                     child: Text(
                       owner == null
-                          ? l.familyTitleMine
+                          ? l.familyHeaderTitle
                           : l.familyTitleOf(owner),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,

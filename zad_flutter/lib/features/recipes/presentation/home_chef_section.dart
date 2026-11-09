@@ -19,6 +19,7 @@ import 'package:zad/core/design/components/zad_pressable.dart';
 import 'package:zad/core/design/foundation/compose_shadow.dart';
 import 'package:zad/core/design/tokens/zad_extended_colors.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/recipes/application/recipes_controller.dart';
 import 'package:zad/features/recipes/domain/recipe.dart';
 import 'package:zad/features/recipes/presentation/recipe_detail_screen.dart';
@@ -63,7 +64,9 @@ class HomeChefSection extends ConsumerWidget {
             suggestion: dish == null || dish.isEmpty ? null : dish,
             emptyHint: allDepleted
                 ? 'مخزونك كله خلص — نزّل النواقص في التسوق وأنا أقترحلك أكل.'
-                : 'ضيف أصناف لمخزونك عشان شيف زاد يقترح لك طبق اليوم.',
+                : pantry.isEmpty
+                ? 'ضيف أصناف لمخزونك عشان شيف زاد يقترح لك طبق اليوم.'
+                : context.l10n.chefHomeTapHint,
             onTap: () {
               if (recipes.isNotEmpty) {
                 unawaited(showRecipeDetail(context, recipes.first));

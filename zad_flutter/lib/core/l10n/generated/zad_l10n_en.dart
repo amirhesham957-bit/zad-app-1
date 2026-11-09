@@ -3133,12 +3133,41 @@ class ZadL10nEn extends ZadL10n {
       'It\'s on. Your next trip out and back will appear here.';
 
   @override
-  String familyTitleOf(Object name) {
-    return '$name\'s family';
+  String get familyHeaderTitle => 'My family';
+
+  @override
+  String get shellLanguageShort => 'ع';
+
+  @override
+  String get chefHomeTapHint =>
+      'Tap and I\'ll suggest a dish from your pantry.';
+
+  @override
+  String get chefFullRecipe => 'Full recipe and chef\'s secrets';
+
+  @override
+  String get chefSecrets => '🤫 Chef\'s secrets';
+
+  @override
+  String get chefSourceLink => 'See the recipe at its source';
+
+  @override
+  String chefSourceHandle(Object handle) {
+    return 'See it at @$handle';
   }
 
   @override
-  String get familyTitleMine => 'My family';
+  String get chefAsk => 'Ask the chef about this dish';
+
+  @override
+  String chefAskPrefill(Object name) {
+    return 'Chef, about $name: ';
+  }
+
+  @override
+  String familyTitleOf(Object name) {
+    return '$name\'s family';
+  }
 
   @override
   String familyMembersCount(num count) {

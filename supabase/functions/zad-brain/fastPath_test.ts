@@ -83,3 +83,13 @@ Deno.test("the balance reply reports remaining, available and days left", () => 
 Deno.test("a null state is reported as unreadable, not as zero", () => {
   assertEquals(formatBalanceReply(null).includes("مقدرتش"), true);
 });
+
+Deno.test("adding to the house is not an expense", () => {
+  for (const m of ["ضيف لبن 2", "ضيف لبن للمخزن 2", "ضيف 2 لبن للمخزون", "ضيف موعد الدكتور 5", "add zadtest to my pantry quantity 1", "سجل لبن للمخزن 2"]) {
+    assertEquals(parseFastPath(m), null, m);
+  }
+});
+
+Deno.test("ضيف with a currency is still an expense", () => {
+  assertEquals(parseFastPath("ضيف 50 جنيه قهوة"), { kind: "log_expense", amount: 50, title: "قهوة", wallet: null });
+});

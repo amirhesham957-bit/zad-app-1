@@ -5425,17 +5425,65 @@ abstract class ZadL10n {
   /// **'شغال. أول ما تخرج وترجع البيت، خروجتك هتظهر هنا.'**
   String get placesOutingsWaiting;
 
+  /// No description provided for @familyHeaderTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'عيلتي'**
+  String get familyHeaderTitle;
+
+  /// No description provided for @shellLanguageShort.
+  ///
+  /// In ar, this message translates to:
+  /// **'EN'**
+  String get shellLanguageShort;
+
+  /// No description provided for @chefHomeTapHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'اضغط وأنا أقترحلك طبق من اللي عندك في المخزون.'**
+  String get chefHomeTapHint;
+
+  /// No description provided for @chefFullRecipe.
+  ///
+  /// In ar, this message translates to:
+  /// **'الشرح الكامل وأسرار الشيف'**
+  String get chefFullRecipe;
+
+  /// No description provided for @chefSecrets.
+  ///
+  /// In ar, this message translates to:
+  /// **'🤫 أسرار الشيف'**
+  String get chefSecrets;
+
+  /// No description provided for @chefSourceLink.
+  ///
+  /// In ar, this message translates to:
+  /// **'شوف الوصفة في مصدرها'**
+  String get chefSourceLink;
+
+  /// No description provided for @chefSourceHandle.
+  ///
+  /// In ar, this message translates to:
+  /// **'شوف الوصفة عند @{handle}'**
+  String chefSourceHandle(Object handle);
+
+  /// No description provided for @chefAsk.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسأل الشيف عن الوصفة دي'**
+  String get chefAsk;
+
+  /// No description provided for @chefAskPrefill.
+  ///
+  /// In ar, this message translates to:
+  /// **'يا شيف، في وصفة {name}: '**
+  String chefAskPrefill(Object name);
+
   /// No description provided for @familyTitleOf.
   ///
   /// In ar, this message translates to:
   /// **'عيلة {name}'**
   String familyTitleOf(Object name);
-
-  /// No description provided for @familyTitleMine.
-  ///
-  /// In ar, this message translates to:
-  /// **'عيلتي'**
-  String get familyTitleMine;
 
   /// No description provided for @familyMembersCount.
   ///

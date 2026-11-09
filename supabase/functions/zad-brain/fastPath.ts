@@ -81,6 +81,11 @@ const BALANCE_PATTERNS: RegExp[] = [
  */
 const LOG_VERB = /^(سجل|سجّل|اكتب|احسب|ضيف|أضف|log|add)\s+/;
 
+const ADD_VERB = /^(ضيف|أضف|add)\s+/;
+const MONEY_WORD = new RegExp(AR_START + "(?:جنيه|جنية|ريال|درهم|دينار|مصروف|egp|sar|aed|kwd)" + AR_END);
+/** A list, shelf or appointment the customer named: a job for the tools, so for the model. */
+const HOUSEHOLD_WORD = /(مخزن|مخزون|قايم|قائم|تسوق|صيدلي|دوا|موعد|ميعاد|pantry|inventory|shopping|list)/;
+
 const CASH_HINT = new RegExp(AR_START + "(?:كاش|نقدي|cash)" + AR_END);
 const CARD_HINT = new RegExp(AR_START + "(?:بالكارت|كارت|فيزا|card|visa)" + AR_END);
 
@@ -118,6 +123,11 @@ export function parseFastPath(raw: string): FastIntent | null {
   if (MULTI_CLAUSE.test(message)) return null;
 
   if (!LOG_VERB.test(lowered)) return null;
+  // «ضيف لبن 2» is two bottles of milk, not a 2-pound expense, and «ضيف موعد الدكتور 5» is
+  // not money at all: the proposal card turned household requests into expenses (owner,
+  // 2026-11-09, «اللي بطلبه من البوت مش بلاقيه»). «ضيف» counts as a log only with a currency.
+  if (ADD_VERB.test(lowered) && !MONEY_WORD.test(lowered)) return null;
+  if (HOUSEHOLD_WORD.test(lowered)) return null;
   const body = message.replace(LOG_VERB, "").trim();
 
   // Exactly one number. Two numbers means we do not know which is the amount.

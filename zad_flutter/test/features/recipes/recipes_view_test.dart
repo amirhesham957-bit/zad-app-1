@@ -267,6 +267,8 @@ void main() {
       scrollable: find.byType(Scrollable).last,
     );
     expect(find.text('عجبتك؟ شيف زاد بتفتكر.'), findsOneWidget);
+    await tester.ensureVisible(find.byTooltip('عجبتني'));
+    await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('عجبتني'));
     await tester.pump();
     expect(recipes.calls.last, 'rate:شكشوكة:true');

@@ -17,6 +17,7 @@ import 'package:zad/core/design/tokens/zad_motion.dart';
 import 'package:zad/core/design/tokens/zad_shell_colors.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/app_language.dart';
 import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/home/presentation/sections_grid.dart';
 import 'package:zad/shared/companion/application/companion_controller.dart';
@@ -162,6 +163,10 @@ class ZadTopHeader extends StatelessWidget {
                       ?balance,
                       _Avatar(url: avatarUrl, onTap: onAvatar),
                       const SizedBox(width: 8),
+                      if (!kidsMode) ...<Widget>[
+                        const _LanguagePill(),
+                        const SizedBox(width: 8),
+                      ],
                       _BellPill(
                         unread: hasUnreadNotifications,
                         onTap: onNotifications,
@@ -349,6 +354,36 @@ class _Avatar extends StatelessWidget {
 }
 
 /// The trailing pill: the bell, shaking and dotted while anything is unread.
+/// Arabic or English, one tap from the bell (owner, 2026-11-09). Shows the
+/// language it will switch to.
+class _LanguagePill extends ConsumerWidget {
+  const new();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isEnglish = ref.watch(appLocaleProvider).languageCode == 'en';
+    return ZadPressable(
+      semanticLabel: context.l10n.settingsLanguageSection,
+      onPressed: () => ref
+          .read(appLanguageProvider.notifier)
+          .choose(isEnglish ? AppLanguage.arabic : AppLanguage.english),
+      child: Container(
+        width: 44,
+        height: 44,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: kShellPrimary.withValues(alpha: 0.10),
+          shape: BoxShape.circle,
+        ),
+        child: Text(
+          context.l10n.shellLanguageShort,
+          style: ZadType.labelMedium.copyWith(color: kShellPrimary),
+        ),
+      ),
+    );
+  }
+}
+
 class _BellPill extends StatelessWidget {
   const new({required this.unread, required this.onTap});
 
