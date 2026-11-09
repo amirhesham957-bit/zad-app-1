@@ -3184,4 +3184,19 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get brainReportWaits => 'سجل 3 مصاريف وتقرير زاد الكامل يجهز';
+
+  @override
+  String get profileLanguageSubtitle => 'عربي أو English، بضغطة واحدة';
+
+  @override
+  String get profileCompanionTitle => 'رفيق زاد';
+
+  @override
+  String get profileCompanionSubtitle => 'زادو، هدومه وألعابه ولفله';
+
+  @override
+  String get profilePremiumTitle => 'زاد بريميوم';
+
+  @override
+  String get profilePremiumSubtitle => 'اشتراكك ومميزاتك ورصيدك';
 }

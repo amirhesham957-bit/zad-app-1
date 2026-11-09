@@ -17,6 +17,7 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/app_language.dart';
 import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/core/money/fx.dart';
 import 'package:zad/core/money/money.dart';
@@ -72,6 +73,7 @@ class ProfileScreen extends ConsumerWidget {
               const _SectionTitle('عقل زاد'),
               const SizedBox(height: ZadSpacing.md),
               _MenuGroup(
+                hue: 0,
                 rows: <_MenuRow>[
                   _MenuRow(
                     icon: ZadIcons.memory,
@@ -111,6 +113,7 @@ class ProfileScreen extends ConsumerWidget {
               const _SectionTitle('أنا وعيلتي'),
               const SizedBox(height: ZadSpacing.md),
               _MenuGroup(
+                hue: 2,
                 rows: <_MenuRow>[
                   _MenuRow(
                     icon: ZadIcons.profile,
@@ -129,6 +132,22 @@ class ProfileScreen extends ConsumerWidget {
                     onTap: () => unawaited(showFamilyManagementScreen(context)),
                   ),
                   _MenuRow(
+                    icon: Icons.translate,
+                    title: context.l10n.settingsLanguageSection,
+                    subtitle: context.l10n.profileLanguageSubtitle,
+                    onTap: () {
+                      final isEnglish =
+                          ref.read(appLocaleProvider).languageCode == 'en';
+                      ref
+                          .read(appLanguageProvider.notifier)
+                          .choose(
+                            isEnglish
+                                ? AppLanguage.arabic
+                                : AppLanguage.english,
+                          );
+                    },
+                  ),
+                  _MenuRow(
                     icon: ZadIcons.market,
                     title: 'الإعدادات الإقليمية',
                     subtitle: 'البلد والعملة',
@@ -140,6 +159,7 @@ class ProfileScreen extends ConsumerWidget {
               const _SectionTitle('فلوسي'),
               const SizedBox(height: ZadSpacing.md),
               _MenuGroup(
+                hue: 4,
                 rows: <_MenuRow>[
                   _MenuRow(
                     icon: ZadIcons.budget,
@@ -161,7 +181,22 @@ class ProfileScreen extends ConsumerWidget {
               const _SectionTitle('زاد بتاعي'),
               const SizedBox(height: ZadSpacing.md),
               _MenuGroup(
+                hue: 6,
                 rows: <_MenuRow>[
+                  _MenuRow(
+                    icon: Icons.pets,
+                    title: context.l10n.profileCompanionTitle,
+                    subtitle: context.l10n.profileCompanionSubtitle,
+                    onTap: () =>
+                        unawaited(ZadScreens.showCompanionStudio(context)),
+                  ),
+                  _MenuRow(
+                    icon: Icons.workspace_premium,
+                    title: context.l10n.profilePremiumTitle,
+                    subtitle: context.l10n.profilePremiumSubtitle,
+                    onTap: () =>
+                        unawaited(ZadScreens.showPaywallScreen(context)),
+                  ),
                   _MenuRow(
                     icon: ZadIcons.inventory,
                     title: context.l10n.patternTitle,
@@ -182,6 +217,7 @@ class ProfileScreen extends ConsumerWidget {
               const _SectionTitle('المساعدة'),
               const SizedBox(height: ZadSpacing.md),
               _MenuGroup(
+                hue: 8,
                 rows: <_MenuRow>[
                   _MenuRow(
                     icon: ZadIcons.brainHealth,
@@ -209,6 +245,7 @@ class ProfileScreen extends ConsumerWidget {
               const _SectionTitle('الحساب'),
               const SizedBox(height: ZadSpacing.md),
               _MenuGroup(
+                hue: 10,
                 rows: <_MenuRow>[
                   _MenuRow(
                     icon: ZadIcons.delete,
@@ -370,8 +407,8 @@ class _Header extends ConsumerWidget {
         .toUpperCase();
     return ClipPath(
       clipper: ShapeBorderClipper(shape: zadSquircle(ZadRadii.hero)),
-      child: ColoredBox(
-        color: ZadColors.emeraldDeep,
+      child: DecoratedBox(
+        decoration: const BoxDecoration(gradient: ZadColors.hero),
         child: Stack(
           children: <Widget>[
             PositionedDirectional(
@@ -392,8 +429,8 @@ class _Header extends ConsumerWidget {
                 child: Column(
                   children: <Widget>[
                     SizedBox(
-                      width: 64,
-                      height: 64,
+                      width: 88,
+                      height: 88,
                       child: Stack(
                         children: <Widget>[
                           Positioned.fill(
@@ -416,8 +453,8 @@ class _Header extends ConsumerWidget {
                                 child: avatar != null && avatar.isNotEmpty
                                     ? ZadNetworkImage(
                                         avatar,
-                                        width: 64,
-                                        height: 64,
+                                        width: 88,
+                                        height: 88,
                                         fit: BoxFit.cover,
                                         fallback: _Initial(initial),
                                       )
@@ -471,7 +508,7 @@ class _Header extends ConsumerWidget {
                         ),
                         child: Text(
                           view.displayName,
-                          style: ZadType.titleMedium.copyWith(
+                          style: ZadType.titleLarge.copyWith(
                             color: Colors.white,
                           ),
                         ),
@@ -502,14 +539,8 @@ class _Initial extends StatelessWidget {
   final String text;
 
   @override
-  Widget build(BuildContext context) => Text(
-    text,
-    style: const TextStyle(
-      color: Colors.white,
-      fontSize: 22,
-      fontWeight: FontWeight.w700,
-    ),
-  );
+  Widget build(BuildContext context) =>
+      Text(text, style: ZadType.headlineMedium.copyWith(color: Colors.white));
 }
 
 class _SectionTitle extends StatelessWidget {
@@ -539,11 +570,25 @@ class _MenuRow {
   final bool danger;
 }
 
-/// Kotlin's `ZadMenuGroup`: one card, hairlines between its rows.
+/// The row badges' hues, like the coloured tiles of iPhone's Settings.
+const List<Color> _badgeHues = <Color>[
+  ZadColors.green700,
+  Color(0xFF2B6CB0),
+  Color(0xFFC68216),
+  Color(0xFF6D28D9),
+  Color(0xFFD95726),
+  ZadColors.green600,
+];
+
+/// One card, hairlines between its rows, each row led by its coloured badge
+/// (owner, 2026-11-09: grey icons read as hidden and uncoloured).
 class _MenuGroup extends StatelessWidget {
-  const new({required this.rows});
+  const new({required this.rows, required this.hue});
 
   final List<_MenuRow> rows;
+
+  /// Where in [_badgeHues] this group's first row starts.
+  final int hue;
 
   @override
   Widget build(BuildContext context) => ZadCard(
@@ -564,9 +609,17 @@ class _MenuGroup extends StatelessWidget {
               ),
             ListTile(
               onTap: row.onTap,
-              leading: Icon(
-                row.icon,
-                color: row.danger ? ZadColors.terracottaRust : ZadColors.slate,
+              leading: Container(
+                width: 40,
+                height: 40,
+                alignment: Alignment.center,
+                decoration: ShapeDecoration(
+                  shape: zadSquircle(ZadRadii.chip),
+                  color: row.danger
+                      ? ZadColors.terracottaRust
+                      : _badgeHues[(hue + i) % _badgeHues.length],
+                ),
+                child: Icon(row.icon, size: 20, color: Colors.white),
               ),
               title: Text(
                 row.title,
@@ -1015,6 +1068,7 @@ class _KidsModeCard extends ConsumerWidget {
     final unlocked = ref.watch(kidsModeProvider.select((s) => s.pinUnlocked));
     if (isChild && unlocked) {
       return _MenuGroup(
+        hue: 2,
         rows: <_MenuRow>[
           _MenuRow(
             icon: Icons.lock,
@@ -1036,6 +1090,7 @@ class _KidsModeCard extends ConsumerWidget {
     }
 
     return _MenuGroup(
+      hue: 2,
       rows: <_MenuRow>[
         _MenuRow(
           icon: ZadIcons.child,

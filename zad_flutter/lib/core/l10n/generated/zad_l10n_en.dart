@@ -3250,4 +3250,19 @@ class ZadL10nEn extends ZadL10n {
   @override
   String get brainReportWaits =>
       'Log 3 expenses and Zad\'s full report is ready';
+
+  @override
+  String get profileLanguageSubtitle => 'Arabic or English, one tap';
+
+  @override
+  String get profileCompanionTitle => 'Zad companion';
+
+  @override
+  String get profileCompanionSubtitle => 'Zado, outfits, games and level';
+
+  @override
+  String get profilePremiumTitle => 'Zad Premium';
+
+  @override
+  String get profilePremiumSubtitle => 'Your plan, perks and balance';
 }
