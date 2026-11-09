@@ -476,67 +476,42 @@ class _RecipeDetailState extends ConsumerState<RecipeDetailDialog> {
                     ],
                   ),
           ),
-          DecoratedBox(
-            decoration: BoxDecoration(
-              color: ZadColors.surface,
-              border: Border(top: BorderSide(color: ZadColors.outlineVariant)),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: ZadSpacing.lg,
-                vertical: ZadSpacing.md,
+          // The ✕ on the photo closes it; a second close button only squeezed
+          // this one until its word vanished (seen on a phone, 2026-11-09).
+          if (parsed.ingredients.isNotEmpty)
+            DecoratedBox(
+              decoration: BoxDecoration(
+                color: ZadColors.surface,
+                border: Border(
+                  top: BorderSide(color: ZadColors.outlineVariant),
+                ),
               ),
-              child: Row(
-                children: <Widget>[
-                  Expanded(
-                    child: SizedBox(
-                      height: 48,
-                      child: OutlinedButton(
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: ZadColors.inkMuted,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                        ),
-                        onPressed: () => Navigator.of(context).pop(),
-                        child: const Text(
-                          'إغلاق',
-                          style: TextStyle(fontWeight: FontWeight.w600),
-                        ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: ZadSpacing.lg,
+                  vertical: ZadSpacing.md,
+                ),
+                child: SizedBox(
+                  height: 48,
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    style: FilledButton.styleFrom(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(ZadRadii.chip),
                       ),
+                    ),
+                    onPressed: () =>
+                        unawaited(_addToShopping(parsed.ingredients)),
+                    icon: const Icon(ZadIcons.shopping, size: 18),
+                    label: const Text(
+                      'إضافة النواقص لقائمة التسوق',
+                      maxLines: 1,
+                      style: ZadType.labelLarge,
                     ),
                   ),
-                  if (parsed.ingredients.isNotEmpty) ...<Widget>[
-                    const SizedBox(width: ZadSpacing.md),
-                    Expanded(
-                      flex: 13,
-                      child: SizedBox(
-                        height: 48,
-                        child: FilledButton.icon(
-                          style: FilledButton.styleFrom(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                          ),
-                          onPressed: () =>
-                              unawaited(_addToShopping(parsed.ingredients)),
-                          icon: const Icon(ZadIcons.shopping, size: 18),
-                          label: const Text(
-                            'إضافة النواقص لقائمة التسوق',
-                            maxLines: 1,
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
+                ),
               ),
             ),
-          ),
         ],
       ),
     );
