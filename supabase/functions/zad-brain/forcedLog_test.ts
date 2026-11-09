@@ -104,3 +104,13 @@ Deno.test("an order to log is a money verb (eval 3/11, log_voice_style on Groq)"
   // أمر تسجيل لميعاد أو تذكير مش فلوس.
   assertEquals(wantsForcedLog("سجلي ميعاد الدكتور الساعة 5", "تمام"), false);
 });
+
+Deno.test("a time of day is not a price", () => {
+  for (const m of ["مش هنام دلوقتي هنام علي 12", "هنام على ١١", "هصحي 7", "نايم 3"]) {
+    assertEquals(bareMoneyLog(m), false, m);
+    assertEquals(wantsForcedLog(m, "تمام، تصبح على خير"), false, m);
+  }
+  // Still money: the guard is about the clock, not about every short line.
+  assertEquals(bareMoneyLog("حلاقة 80"), true);
+  assertEquals(bareMoneyLog("انبوبة البوتاجاز ب 200"), true);
+});
