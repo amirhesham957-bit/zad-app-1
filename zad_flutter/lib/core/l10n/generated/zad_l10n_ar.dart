@@ -3063,4 +3063,26 @@ class ZadL10nAr extends ZadL10n {
   @override
   String get placesOutingsWaiting =>
       'شغال. أول ما تخرج وترجع البيت، خروجتك هتظهر هنا.';
+
+  @override
+  String get chefFullRecipe => 'الشرح الكامل وأسرار الشيف';
+
+  @override
+  String get chefSecrets => '🤫 أسرار الشيف';
+
+  @override
+  String get chefSourceLink => 'شوف الوصفة في مصدرها';
+
+  @override
+  String chefSourceHandle(Object handle) {
+    return 'شوف الوصفة عند @$handle';
+  }
+
+  @override
+  String get chefAsk => 'اسأل الشيف عن الوصفة دي';
+
+  @override
+  String chefAskPrefill(Object name) {
+    return 'يا شيف، في وصفة $name: ';
+  }
 }

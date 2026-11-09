@@ -949,5 +949,11 @@
   "homeWidgetPharmacyEmpty": "Add one",
   "placesTabMine": "My places",
   "placesOutingsTurnOn": "Start recording my outings",
-  "placesOutingsWaiting": "It's on. Your next trip out and back will appear here."
+  "placesOutingsWaiting": "It's on. Your next trip out and back will appear here.",
+  "chefFullRecipe": "Full recipe and chef's secrets",
+  "chefSecrets": "🤫 Chef's secrets",
+  "chefSourceLink": "See the recipe at its source",
+  "chefSourceHandle": "See it at @{handle}",
+  "chefAsk": "Ask the chef about this dish",
+  "chefAskPrefill": "Chef, about {name}: "
 }
