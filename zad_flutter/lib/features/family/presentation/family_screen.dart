@@ -14,6 +14,7 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/family/presentation/family_chat_tab.dart';
 import 'package:zad/features/family/presentation/family_dialogs.dart';
 import 'package:zad/features/family/presentation/family_tabs.dart';
@@ -409,7 +410,7 @@ class _Header extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
                         Text(
-                          'عائلة $code',
+                          context.l10n.familyHeaderTitle,
                           style: ZadType.titleMedium.copyWith(
                             color: Colors.white,
                           ),

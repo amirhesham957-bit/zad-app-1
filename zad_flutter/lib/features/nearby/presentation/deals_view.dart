@@ -169,13 +169,26 @@ class _DealCard extends ConsumerWidget {
             borderRadius: BorderRadius.circular(ZadSpacing.md),
             child: image == null
                 ? tile
-                : ZadNetworkImage(
-                    image!,
-                    width: 72,
-                    height: 72,
-                    fit: BoxFit.cover,
-                    fallback: tile,
-                    semanticLabel: deal.item,
+                : Stack(
+                    alignment: Alignment.center,
+                    children: <Widget>[
+                      ZadNetworkImage(
+                        image!,
+                        width: 72,
+                        height: 72,
+                        fit: BoxFit.cover,
+                        fallback: tile,
+                        semanticLabel: deal.item,
+                      ),
+                      // A video's cover, which may show another product of
+                      // the same store's offer: marked as the video.
+                      if (image == youtubeThumbnail(deal.url))
+                        const Icon(
+                          Icons.play_circle_fill,
+                          color: Colors.white,
+                          size: 28,
+                        ),
+                    ],
                   ),
           ),
           const SizedBox(width: ZadSpacing.md),
