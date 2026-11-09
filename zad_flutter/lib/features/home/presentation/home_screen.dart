@@ -34,6 +34,7 @@ import 'package:zad/features/home/presentation/grocery_purchase_prompt.dart';
 import 'package:zad/features/home/presentation/home_activation_card.dart';
 import 'package:zad/features/home/presentation/home_amazon_strip.dart';
 import 'package:zad/features/home/presentation/home_blocks.dart';
+import 'package:zad/features/home/presentation/home_glance_widgets.dart';
 import 'package:zad/features/home/presentation/inventory_check_in_card.dart';
 import 'package:zad/features/home/presentation/metrics_duo.dart';
 import 'package:zad/features/home/presentation/occasion_card.dart';
@@ -128,6 +129,9 @@ class HomeScreen extends ConsumerWidget {
           // (owner, 2026-10-05): it had slid under the brief and the grid.
           _Budget(view: view),
           const FxExcludedNotice(),
+          // A quick look at the next subscription, the pantry and the next
+          // dose (owner, 2026-11-09), without opening anything.
+          const ZadAppearOnEntry(delayMs: 25, child: HomeGlanceWidgets()),
           // The sections right under the money card (owner, 2026-10-27): they
           // had sunk under the brief, the bot's link and the Amazon strip.
           const SizedBox(height: 16),

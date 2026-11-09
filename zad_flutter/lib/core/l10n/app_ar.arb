@@ -2163,5 +2163,19 @@
   "commuteConsentAgree": "موافق",
   "commuteConsentDecline": "لأ، مش دلوقتي",
   "settingsPetCallsTitle": "نداءات زادو",
-  "settingsPetCallsBody": "زادو بيبعتلك لما يجوع أو يعطش، على تليجرام والإشعارات. قفلها مش بيوقف تحية الصبح ولا العروض."
+  "settingsPetCallsBody": "زادو بيبعتلك لما يجوع أو يعطش، على تليجرام والإشعارات. قفلها مش بيوقف تحية الصبح ولا العروض.",
+  "homeWidgetSubs": "اشتراكات",
+  "homeWidgetSubsEmpty": "ضيف اشتراك",
+  "homeWidgetSubsToday": "النهارده",
+  "homeWidgetSubsTomorrow": "بكرة",
+  "homeWidgetSubsInDays": "بعد {days} يوم",
+  "homeWidgetPantry": "المخزون",
+  "homeWidgetPantryShort": "{count} ناقص",
+  "homeWidgetPantryFine": "كله تمام",
+  "homeWidgetPantryCount": "{count} صنف",
+  "homeWidgetPantryEmpty": "ضيف أصناف",
+  "homeWidgetPharmacy": "الصيدلية",
+  "homeWidgetPharmacyNone": "مفيش جرعات",
+  "homeWidgetPharmacyActive": "{count} دوا",
+  "homeWidgetPharmacyEmpty": "ضيف دوا"
 }

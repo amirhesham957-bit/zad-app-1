@@ -932,5 +932,19 @@
   "commuteConsentAgree": "I agree",
   "commuteConsentDecline": "Not now",
   "settingsPetCallsTitle": "Zado's calls",
-  "settingsPetCallsBody": "Zado messages you when it's hungry or thirsty, on Telegram and by notification. Turning this off doesn't stop the morning greeting or the deals."
+  "settingsPetCallsBody": "Zado messages you when it's hungry or thirsty, on Telegram and by notification. Turning this off doesn't stop the morning greeting or the deals.",
+  "homeWidgetSubs": "Subscriptions",
+  "homeWidgetSubsEmpty": "Add one",
+  "homeWidgetSubsToday": "Today",
+  "homeWidgetSubsTomorrow": "Tomorrow",
+  "homeWidgetSubsInDays": "In {days} days",
+  "homeWidgetPantry": "Pantry",
+  "homeWidgetPantryShort": "{count} low",
+  "homeWidgetPantryFine": "All good",
+  "homeWidgetPantryCount": "{count} items",
+  "homeWidgetPantryEmpty": "Add items",
+  "homeWidgetPharmacy": "Pharmacy",
+  "homeWidgetPharmacyNone": "No doses left",
+  "homeWidgetPharmacyActive": "{count} medicines",
+  "homeWidgetPharmacyEmpty": "Add one"
 }
