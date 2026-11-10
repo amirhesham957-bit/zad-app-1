@@ -15,6 +15,7 @@ import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/components/zad_kotlin_surfaces.dart';
 import 'package:zad/core/design/components/zad_pressable.dart';
 import 'package:zad/core/design/components/zad_scroll_away.dart';
+import 'package:zad/core/design/foundation/elevation.dart';
 import 'package:zad/core/design/foundation/squircle.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
@@ -187,14 +188,10 @@ class _DailyTab extends ConsumerWidget {
             132,
           ),
           children: <Widget>[
+            // The figures first (emulator, 2026-11-10): the two offers sat
+            // between the balance and the summary of the same money.
             _Available(view: budget, currency: currency),
             const SizedBox(height: ZadSpacing.md),
-            ZadSlots.brokeModeSlot(offerEntry: true),
-            const SizedBox(height: ZadSpacing.md),
-            ZadSlots.savingsChallengeSlot(offerEntry: true, offerStop: true),
-            const SizedBox(height: ZadSpacing.md),
-            ZadSlots.obligationsSection(),
-            const SizedBox(height: ZadSpacing.sm),
             _Summary(
               income: income,
               spent: spent,
@@ -204,6 +201,8 @@ class _DailyTab extends ConsumerWidget {
             const SizedBox(height: ZadSpacing.md),
             _InsightStrip(spent: spent, budget: limit),
             BudgetSuggestionCard(currency: currency),
+            const SizedBox(height: ZadSpacing.md),
+            ZadSlots.obligationsSection(),
             const SizedBox(height: ZadSpacing.lg),
             Row(
               children: <Widget>[
@@ -241,7 +240,12 @@ class _DailyTab extends ConsumerWidget {
                 ),
                 const SizedBox(height: ZadSpacing.sm),
               ],
-            const SizedBox(height: ZadSpacing.sm),
+            const SizedBox(height: ZadSpacing.md),
+            // The ways out of a tight month, after the money they act on.
+            ZadSlots.brokeModeSlot(offerEntry: true),
+            const SizedBox(height: ZadSpacing.md),
+            ZadSlots.savingsChallengeSlot(offerEntry: true, offerStop: true),
+            const SizedBox(height: ZadSpacing.md),
             BudgetTransactionsSection(income: income, spent: spent),
           ],
         ),
@@ -250,7 +254,7 @@ class _DailyTab extends ConsumerWidget {
   }
 }
 
-/// Kotlin's solid emerald block: المتاح, the pencil, "≈" when unconfirmed,
+/// The emerald balance block: المتاح, the pencil, "≈" when unconfirmed,
 /// and "متبقي X · محجوز Y" when something is held back.
 class _Available extends StatelessWidget {
   const new({required this.view, required this.currency});
@@ -265,9 +269,12 @@ class _Available extends StatelessWidget {
     final unsure = view.isStale || view.pendingSpend > 0;
     return Container(
       padding: const EdgeInsets.all(ZadSpacing.lg + 4),
+      // Zad's own gradient and lift, like Home's balance card, instead of a
+      // flat block (emulator, 2026-11-10).
       decoration: ShapeDecoration(
-        color: ZadColors.green800,
+        gradient: ZadColors.hero,
         shape: zadSquircle(ZadRadii.cardLarge),
+        shadows: ZadElevation.card,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
