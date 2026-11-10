@@ -11,9 +11,12 @@ library;
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:zad/core/design/components/zad_card.dart';
+import 'package:zad/core/design/components/zad_icon_chip.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
+import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/shared/navigation/destinations.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
 import 'package:zad/shared/navigation/zad_slots.dart';
@@ -37,7 +40,7 @@ class BrainFamilyScreen extends StatefulWidget {
 
   /// Shown as the shell's عقل زاد tab. Kotlin draws it under the shell
   /// header with no bar of its own: the two tabs on top, then the row of
-  /// side icons, end-aligned.
+  /// tools.
   final bool embedded;
 
   /// The tab it opens on.
@@ -50,14 +53,32 @@ class BrainFamilyScreen extends StatefulWidget {
 class _BrainFamilyState extends State<BrainFamilyScreen> {
   late BrainFamilyTab _tab = widget.initialTab;
 
+  // A labelled button, not a bare icon (owner, 2026-11-09: «most buttons
+  // feel hidden»; emulator, 2026-11-10: four unnamed icons on the bar).
   Widget _side(
     IconData icon,
     String label,
     Future<void> Function(BuildContext) open,
-  ) => IconButton(
-    tooltip: label,
-    onPressed: () => unawaited(open(context)),
-    icon: Icon(icon, size: 20, color: ZadColors.inkMuted),
+  ) => Padding(
+    padding: const EdgeInsetsDirectional.only(end: ZadSpacing.sm),
+    child: ZadCard(
+      onTap: () => unawaited(open(context)),
+      radius: ZadRadii.pill,
+      padding: const EdgeInsets.fromLTRB(
+        ZadSpacing.md,
+        ZadSpacing.xs,
+        ZadSpacing.xs,
+        ZadSpacing.xs,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          ZadIconChip(icon: icon, tint: ZadColors.green700, size: 32),
+          const SizedBox(width: ZadSpacing.sm),
+          Text(label, style: ZadType.labelLarge.copyWith(color: ZadColors.ink)),
+        ],
+      ),
+    ),
   );
 
   @override
@@ -101,10 +122,7 @@ class _BrainFamilyState extends State<BrainFamilyScreen> {
         backgroundColor: Colors.transparent,
         appBar: widget.embedded
             ? null
-            : AppBar(
-                title: Text(intelligence ? 'عقل زاد' : 'العائلة'),
-                actions: side,
-              ),
+            : AppBar(title: Text(intelligence ? 'عقل زاد' : 'العائلة')),
         body: Column(
           children: <Widget>[
             Padding(
@@ -133,17 +151,18 @@ class _BrainFamilyState extends State<BrainFamilyScreen> {
                 ),
               ),
             ),
-            if (widget.embedded)
-              Padding(
+            // The tools, named, in one row that scrolls sideways.
+            SizedBox(
+              height: 56,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 4,
+                  horizontal: ZadSpacing.lg,
+                  vertical: ZadSpacing.xs,
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: side,
-                ),
+                children: side,
               ),
+            ),
             Expanded(
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 250),

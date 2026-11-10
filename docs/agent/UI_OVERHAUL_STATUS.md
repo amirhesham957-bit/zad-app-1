@@ -37,6 +37,7 @@ owner's real account, where only read-only taps are allowed.
 | #465 | «بيتي»: each tab label on one line (shrinks a little when narrow); the pantry search is a filled rounded field instead of a bare underline | passed | seen before the fix on the emulator; after needs the next APK |
 | #466 | «بيتي» empty states: the smart basket says «السلة فاضية» instead of «— EGP»; the pharmacy's three zero counts wait for the first medicine | passed | seen before the fix on the emulator; after needs the next APK |
 | #467 | Recipes on an empty pantry: «ضيف للمخزن» in the empty state opens the add sheet; the two greyed chef buttons are hidden until the pantry has stock | passed | seen before the fix on the emulator; after needs the next APK |
+| #468 | «عقل زاد» / «العائلة»: the four (and three) unnamed icons on the bar become named buttons with a coloured chip, in one row under the tabs | passed | seen unnamed before the fix; after needs the next APK |
 
 ## Open bugs
 
