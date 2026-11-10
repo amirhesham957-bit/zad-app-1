@@ -36,6 +36,7 @@ owner's real account, where only read-only taps are allowed.
 | #464 | «فلوسي»: the figures first (balance, summary, insight, obligations, category budgets), the broke-mode and 30-day offers after them, then the transactions; the balance block takes Zad's gradient and lift instead of flat green | passed | seen before the fix on the emulator; after needs the next APK |
 | #465 | «بيتي»: each tab label on one line (shrinks a little when narrow); the pantry search is a filled rounded field instead of a bare underline | passed | seen before the fix on the emulator; after needs the next APK |
 | #466 | «بيتي» empty states: the smart basket says «السلة فاضية» instead of «— EGP»; the pharmacy's three zero counts wait for the first medicine | passed | seen before the fix on the emulator; after needs the next APK |
+| #467 | Recipes on an empty pantry: «ضيف للمخزن» in the empty state opens the add sheet; the two greyed chef buttons are hidden until the pantry has stock | passed | seen before the fix on the emulator; after needs the next APK |
 
 ## Open bugs
 

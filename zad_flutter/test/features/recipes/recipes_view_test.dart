@@ -9,7 +9,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/zad_theme.dart';
 import 'package:zad/features/recipes/application/recipes_controller.dart';
 import 'package:zad/features/recipes/domain/recipe.dart';
@@ -19,6 +18,7 @@ import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart';
 import 'package:zad/shared/inventory/application/shopping_controller.dart';
 import 'package:zad/shared/inventory/domain/inventory_item.dart';
+import 'package:zad/shared/navigation/zad_screens.dart';
 
 class _Recipes extends RecipesController {
   new(this.initial);
@@ -135,13 +135,6 @@ void main() {
     );
   }
 
-  FilledButton askButton(WidgetTester tester) => tester.widget<FilledButton>(
-    find.ancestor(
-      of: find.byIcon(ZadIcons.chef),
-      matching: find.byWidgetPredicate((w) => w is FilledButton),
-    ),
-  );
-
   testWidgets('before the first ask, the chef waits for a tap', (tester) async {
     await pump(tester, pantry: _kitchen);
 
@@ -159,7 +152,15 @@ void main() {
     await pump(tester, pantry: <InventoryItem>[_stock('لبن', 0)]);
 
     expect(find.text('المخزن فاضي'), findsOneWidget);
-    expect(askButton(tester).onPressed, isNull);
+    // No greyed buttons: the empty state's own button leads to the pantry.
+    expect(find.text('وصفات من مخزني'), findsNothing);
+    var opened = 0;
+    final saved = ZadScreens.showAddPantrySheet;
+    addTearDown(() => ZadScreens.showAddPantrySheet = saved);
+    ZadScreens.showAddPantrySheet = (_) async => opened++;
+    await tester.tap(find.text('ضيف للمخزن'));
+    await tester.pump();
+    expect(opened, 1);
   });
 
   testWidgets('an answer is shown in its two groups, with the chef line', (
