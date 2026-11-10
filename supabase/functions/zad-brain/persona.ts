@@ -94,9 +94,23 @@ export function dropServiceCloser(reply: string): string {
   // «ولا/أو» لوحدهم بس — «وعموماً» كلمة، شيل الواو منها بيبوّظها.
   const rest = kept.join("").replace(/^\s*(?:ولا|أو|او)\s+/u, "").trim();
   const result = (head.trimEnd() + (rest ? (head.trim() ? " " : "") + rest : "")).trim();
-  // رد كله سؤال خدمة بيفضل زي ما هو — رد فاضي أوحش.
-  if (!/[\p{L}\p{N}]/u.test(result)) return reply;
+  // رد كله سؤال خدمة: يمكن السؤال ذيل جملة واحدة بفاصلة («ما أقدر أسوي كذا، تامرني بشيء ثاني؟» —
+  // التقييم الليلي ١٠/١١، ref_injection). بيتقص الذيل، ولو مافضلش كلام الرد بيفضل زي ما هو.
+  if (!/[\p{L}\p{N}]/u.test(result)) return dropClosingClause(reply);
   return result.replace(/\s*(ولا|أو|او)$/u, "").trimEnd();
+}
+
+/** أول السؤال: فعل سؤال خدمة، أو «تامرني». */
+const CLOSER_START = /(?:^|[\s،,])((?:تبي|تبغى|تبغي|تحب|تحتاج|عايز|عاوز|محتاج|ودك|هل)\s[^؟?]*|(?:تامرني|تؤمرني)[^؟?]*)[؟?]+\s*$/u;
+
+/** «…، تامرني بشيء ثاني؟» في آخر جملة واحدة: بيشيل السؤال ويسيب اللي قبله. */
+function dropClosingClause(reply: string): string {
+  const text = reply.trimEnd();
+  const m = CLOSER_START.exec(text);
+  if (!m || !SERVICE_CLOSER.test(m[1])) return reply;
+  const kept = text.slice(0, text.length - m[0].length + m[0].indexOf(m[1]))
+    .replace(/[\s،,]*(?:بس|و)?[\s،,]*$/u, "").trimEnd();
+  return /[\p{L}\p{N}]/u.test(kept) ? kept : reply;
 }
 
 /** زاد سأل عن اسم العميل أو صيغة كلامه في رد من ردود المحادثة اللي قدامه. */

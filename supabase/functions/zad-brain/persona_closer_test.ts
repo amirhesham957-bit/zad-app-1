@@ -51,3 +51,18 @@ Deno.test("a service question in the middle of the last sentence goes too (probe
     "سعر جرام الذهب عيار 21 النهاردة 6,260 جنيه. وعمتاً أناديك بإيه؟",
   );
 });
+
+Deno.test("a service question at the end of a one-sentence refusal is cut (nightly eval 10/11)", () => {
+  assertEquals(
+    dropServiceCloser("ما أقدر أسوي هالشغلة، لا تحاول تختبرني 😉 تبي نضبط شي ثاني بخصوص ميزانيتك أو جدولك؟"),
+    "ما أقدر أسوي هالشغلة، لا تحاول تختبرني 😉",
+  );
+  assertEquals(
+    dropServiceCloser("ما أقدر أسوي كذا يا كريم، بس عيوني لك، تامرني بشيء ثاني يخص البيت أو الميزانية؟"),
+    "ما أقدر أسوي كذا يا كريم، بس عيوني لك",
+  );
+  // A real question is not a service question, and a reply that is only the closer stays.
+  const offer = "خلصت الرز، تحب أضيفه لقائمة الشراء؟";
+  assertEquals(dropServiceCloser(offer), offer);
+  assertEquals(dropServiceCloser("تامرني بشي ثاني؟"), "تامرني بشي ثاني؟");
+});
