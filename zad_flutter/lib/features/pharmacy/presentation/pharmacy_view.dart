@@ -15,6 +15,7 @@ import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/components/zad_card.dart';
 import 'package:zad/core/design/components/zad_empty_state.dart';
 import 'package:zad/core/design/components/zad_field_dialog.dart';
+import 'package:zad/core/design/components/zad_scroll_away.dart';
 import 'package:zad/core/design/foundation/squircle.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
@@ -165,183 +166,197 @@ class PharmacyView extends ConsumerWidget {
 
     final familyView = ref.watch(pharmacyFamilyViewProvider);
 
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      // Kotlin: one button, and none over the family view.
-      floatingActionButton: familyView
-          ? null
-          : FloatingActionButton(
-              heroTag: 'pharmacy-add',
-              onPressed: () => unawaited(showAddMedicineSheet(context)),
-              tooltip: 'إضافة',
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              foregroundColor: Colors.white,
-              child: const Icon(Icons.add),
-            ),
-      body: RefreshIndicator(
-        onRefresh: controller.refresh,
-        child: ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(ZadSpacing.gutter),
-          children: <Widget>[
-            const FamilyPharmacyToggleRow(),
-            if (familyView)
-              const PharmacyFamilyBody()
-            else ...<Widget>[
-              ExactAlarmHint(
-                hasScheduledDoses: medicines.any((m) => m.doseTimes.isNotEmpty),
+    return ZadScrollAwayScope(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        // Kotlin: one button, and none over the family view.
+        floatingActionButton: familyView
+            ? null
+            : ZadStepsAside(
+                child: FloatingActionButton(
+                  heroTag: 'pharmacy-add',
+                  onPressed: () => unawaited(showAddMedicineSheet(context)),
+                  tooltip: 'إضافة',
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  foregroundColor: Colors.white,
+                  child: const Icon(Icons.add),
+                ),
               ),
-              Row(
-                children: <Widget>[
-                  Expanded(
-                    child: _Stat(
-                      label: 'الالتزام بالجرعات',
-                      value: view.adherence == null
-                          ? 'في انتظار أول جرعة'
-                          : '${view.adherence}%',
-                      color: switch (view.adherence) {
-                        null => ZadColors.inkMuted,
-                        final a when a >= 80 => ZadColors.green600,
-                        final a when a >= 50 => ZadColors.mustardOchre,
-                        _ => ZadColors.terracottaRust,
+        body: RefreshIndicator(
+          onRefresh: controller.refresh,
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            // Room under the last row for the floating button.
+            padding: const EdgeInsets.fromLTRB(
+              ZadSpacing.gutter,
+              ZadSpacing.gutter,
+              ZadSpacing.gutter,
+              96,
+            ),
+            children: <Widget>[
+              const FamilyPharmacyToggleRow(),
+              if (familyView)
+                const PharmacyFamilyBody()
+              else ...<Widget>[
+                ExactAlarmHint(
+                  hasScheduledDoses: medicines.any(
+                    (m) => m.doseTimes.isNotEmpty,
+                  ),
+                ),
+                Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: _Stat(
+                        label: 'الالتزام بالجرعات',
+                        value: view.adherence == null
+                            ? 'في انتظار أول جرعة'
+                            : '${view.adherence}%',
+                        color: switch (view.adherence) {
+                          null => ZadColors.inkMuted,
+                          final a when a >= 80 => ZadColors.green600,
+                          final a when a >= 50 => ZadColors.mustardOchre,
+                          _ => ZadColors.terracottaRust,
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _Stat(
+                        label: costLabel,
+                        value: '${_money(cost)} $currency'.trim(),
+                        color: ZadColors.ink,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Wrap(
+                  alignment: WrapAlignment.spaceBetween,
+                  spacing: ZadSpacing.lg,
+                  runSpacing: ZadSpacing.xs,
+                  children: <Widget>[
+                    _Count(n: medicines.length, label: 'إجمالي الأدوية'),
+                    _Count(n: expiringSoon.length, label: 'قرب الانتهاء'),
+                    _Count(n: low, label: 'مخزون منخفض'),
+                  ],
+                ),
+                if (expired > 0) ...<Widget>[
+                  const SizedBox(height: ZadSpacing.md),
+                  _Banner(
+                    text: '$expired دواء منتهي الصلاحية — تخلص منه بأمان',
+                    color: ZadColors.terracottaRust,
+                  ),
+                ],
+                if (expiringSoon.isNotEmpty) ...<Widget>[
+                  const SizedBox(height: ZadSpacing.md),
+                  const Text(
+                    'قرب الانتهاء — تخلص منها بأمان',
+                    style: ZadType.titleSmall,
+                  ),
+                  const SizedBox(height: ZadSpacing.sm),
+                  SizedBox(
+                    height: 76,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: expiringSoon.length,
+                      separatorBuilder: (_, _) => const SizedBox(width: 10),
+                      itemBuilder: (_, i) {
+                        final m = expiringSoon[i];
+                        final d = daysTo(m)!;
+                        final c = d <= 7
+                            ? ZadColors.terracottaRust
+                            : ZadColors.mustardOchre;
+                        return Container(
+                          width: 150,
+                          padding: const EdgeInsets.all(ZadSpacing.md),
+                          decoration: BoxDecoration(
+                            color: c.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(ZadRadii.card),
+                            border: Border.all(
+                              color: c.withValues(alpha: 0.25),
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              Text(
+                                m.name,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: ZadType.titleSmall,
+                              ),
+                              Text(
+                                'تنتهي خلال $d يوم',
+                                style: ZadType.labelSmall.copyWith(color: c),
+                              ),
+                            ],
+                          ),
+                        );
                       },
                     ),
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: _Stat(
-                      label: costLabel,
-                      value: '${_money(cost)} $currency'.trim(),
-                      color: ZadColors.ink,
-                    ),
-                  ),
                 ],
-              ),
-              const SizedBox(height: 10),
-              Wrap(
-                alignment: WrapAlignment.spaceBetween,
-                spacing: ZadSpacing.lg,
-                runSpacing: ZadSpacing.xs,
-                children: <Widget>[
-                  _Count(n: medicines.length, label: 'إجمالي الأدوية'),
-                  _Count(n: expiringSoon.length, label: 'قرب الانتهاء'),
-                  _Count(n: low, label: 'مخزون منخفض'),
-                ],
-              ),
-              if (expired > 0) ...<Widget>[
-                const SizedBox(height: ZadSpacing.md),
-                _Banner(
-                  text: '$expired دواء منتهي الصلاحية — تخلص منه بأمان',
-                  color: ZadColors.terracottaRust,
-                ),
-              ],
-              if (expiringSoon.isNotEmpty) ...<Widget>[
-                const SizedBox(height: ZadSpacing.md),
-                const Text(
-                  'قرب الانتهاء — تخلص منها بأمان',
-                  style: ZadType.titleSmall,
-                ),
-                const SizedBox(height: ZadSpacing.sm),
-                SizedBox(
-                  height: 76,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: expiringSoon.length,
-                    separatorBuilder: (_, _) => const SizedBox(width: 10),
-                    itemBuilder: (_, i) {
-                      final m = expiringSoon[i];
-                      final d = daysTo(m)!;
-                      final c = d <= 7
-                          ? ZadColors.terracottaRust
-                          : ZadColors.mustardOchre;
-                      return Container(
-                        width: 150,
-                        padding: const EdgeInsets.all(ZadSpacing.md),
-                        decoration: BoxDecoration(
-                          color: c.withValues(alpha: 0.08),
-                          borderRadius: BorderRadius.circular(ZadRadii.card),
-                          border: Border.all(color: c.withValues(alpha: 0.25)),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: <Widget>[
-                            Text(
-                              m.name,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: ZadType.titleSmall,
-                            ),
-                            Text(
-                              'تنتهي خلال $d يوم',
-                              style: ZadType.labelSmall.copyWith(color: c),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ],
-              if (view.today.isNotEmpty || medicines.isNotEmpty) ...<Widget>[
-                const SizedBox(height: ZadSpacing.lg),
-                Text(
-                  'جرعات النهارده',
-                  style: ZadType.labelMedium.copyWith(
-                    color: ZadColors.inkMuted,
-                  ),
-                ),
-                const SizedBox(height: ZadSpacing.sm),
-                for (final slot in view.today) ...<Widget>[
-                  _DoseRow(slot: slot),
-                  const SizedBox(height: ZadSpacing.sm),
-                ],
-                // A heading over nothing read as a broken screen (2026-10-10:
-                // three medicines, a cost, and a blank «جرعات النهارده»).
-                if (view.today.isEmpty)
+                if (view.today.isNotEmpty || medicines.isNotEmpty) ...<Widget>[
+                  const SizedBox(height: ZadSpacing.lg),
                   Text(
-                    medicines.any((m) => m.doseTimes.isNotEmpty)
-                        ? 'مفيش جرعات فاضلة النهارده.'
-                        : 'ولا دوا ليه مواعيد لسه — حدد مواعيد أي دوا تحت '
-                              'عشان أفكّرك بيه.',
-                    style: ZadType.bodySmall.copyWith(
+                    'جرعات النهارده',
+                    style: ZadType.labelMedium.copyWith(
                       color: ZadColors.inkMuted,
                     ),
                   ),
-              ],
-              const SizedBox(height: ZadSpacing.lg),
-              if (medicines.isEmpty)
-                ZadEmptyState(
-                  icon: ZadIcons.pharmacy,
-                  title: view.error != null
-                      ? 'مقدرتش أجيب الأدوية'
-                      : 'لا توجد أدوية مسجلة بعد',
-                  message: view.error != null
-                      ? 'اسحب لتحت نجرب تاني.'
-                      : 'ضيفه بالزرار، أو قول لزاد: "باخد كونكور قرص الصبح '
-                            'وبالليل" وهو يسجّله بمواعيده.',
-                  tone: view.error != null
-                      ? ZadEmptyTone.problem
-                      : ZadEmptyTone.calm,
-                )
-              else ...<Widget>[
-                Text(
-                  'الأدوية',
-                  style: ZadType.labelMedium.copyWith(
-                    color: ZadColors.inkMuted,
-                  ),
-                ),
-                const SizedBox(height: ZadSpacing.sm),
-                for (final medicine in medicines) ...<Widget>[
-                  _MedicineCard(
-                    medicine: medicine,
-                    daysToExpiry: daysTo(medicine),
-                  ),
-                  const SizedBox(height: ZadSpacing.md),
+                  const SizedBox(height: ZadSpacing.sm),
+                  for (final slot in view.today) ...<Widget>[
+                    _DoseRow(slot: slot),
+                    const SizedBox(height: ZadSpacing.sm),
+                  ],
+                  // A heading over nothing read as a broken screen (2026-10-10:
+                  // three medicines, a cost, and a blank «جرعات النهارده»).
+                  if (view.today.isEmpty)
+                    Text(
+                      medicines.any((m) => m.doseTimes.isNotEmpty)
+                          ? 'مفيش جرعات فاضلة النهارده.'
+                          : 'ولا دوا ليه مواعيد لسه — حدد مواعيد أي دوا تحت '
+                                'عشان أفكّرك بيه.',
+                      style: ZadType.bodySmall.copyWith(
+                        color: ZadColors.inkMuted,
+                      ),
+                    ),
                 ],
+                const SizedBox(height: ZadSpacing.lg),
+                if (medicines.isEmpty)
+                  ZadEmptyState(
+                    icon: ZadIcons.pharmacy,
+                    title: view.error != null
+                        ? 'مقدرتش أجيب الأدوية'
+                        : 'لا توجد أدوية مسجلة بعد',
+                    message: view.error != null
+                        ? 'اسحب لتحت نجرب تاني.'
+                        : 'ضيفه بالزرار، أو قول لزاد: "باخد كونكور قرص الصبح '
+                              'وبالليل" وهو يسجّله بمواعيده.',
+                    tone: view.error != null
+                        ? ZadEmptyTone.problem
+                        : ZadEmptyTone.calm,
+                  )
+                else ...<Widget>[
+                  Text(
+                    'الأدوية',
+                    style: ZadType.labelMedium.copyWith(
+                      color: ZadColors.inkMuted,
+                    ),
+                  ),
+                  const SizedBox(height: ZadSpacing.sm),
+                  for (final medicine in medicines) ...<Widget>[
+                    _MedicineCard(
+                      medicine: medicine,
+                      daysToExpiry: daysTo(medicine),
+                    ),
+                    const SizedBox(height: ZadSpacing.md),
+                  ],
+                ],
+                const SizedBox(height: 140),
               ],
-              const SizedBox(height: 140),
             ],
-          ],
+          ),
         ),
       ),
     );

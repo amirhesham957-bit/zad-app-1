@@ -18,6 +18,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' show NumberFormat;
 import 'package:zad/core/design/components/zad_kotlin_surfaces.dart';
+import 'package:zad/core/design/components/zad_scroll_away.dart';
 import 'package:zad/core/design/foundation/compose_shadow.dart';
 import 'package:zad/core/design/tokens/zad_extended_colors.dart';
 import 'package:zad/core/design/tokens/zad_palette.dart';
@@ -370,30 +371,34 @@ class _SubsState extends ConsumerState<SubscriptionsScreen> {
       ],
     );
 
-    final body = Stack(
-      children: <Widget>[
-        Positioned.fill(
-          child: RefreshIndicator(
-            onRefresh: () => controller.refresh(force: true),
-            child: list,
-          ),
-        ),
-        PositionedDirectional(
-          end: 24,
-          bottom: 16,
-          child: SafeArea(
-            child: FloatingActionButton(
-              heroTag: null,
-              onPressed: () =>
-                  unawaited(showAddEditSubscriptionDialog(context)),
-              backgroundColor: scheme.primary,
-              foregroundColor: Colors.white,
-              tooltip: context.l10n.commonAdd,
-              child: const Icon(Icons.add),
+    final body = ZadScrollAwayScope(
+      child: Stack(
+        children: <Widget>[
+          Positioned.fill(
+            child: RefreshIndicator(
+              onRefresh: () => controller.refresh(force: true),
+              child: list,
             ),
           ),
-        ),
-      ],
+          PositionedDirectional(
+            end: 24,
+            bottom: 16,
+            child: SafeArea(
+              child: ZadStepsAside(
+                child: FloatingActionButton(
+                  heroTag: null,
+                  onPressed: () =>
+                      unawaited(showAddEditSubscriptionDialog(context)),
+                  backgroundColor: scheme.primary,
+                  foregroundColor: Colors.white,
+                  tooltip: context.l10n.commonAdd,
+                  child: const Icon(Icons.add),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
 
     return Scaffold(
