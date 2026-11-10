@@ -171,7 +171,8 @@ class ZadBankListenerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, Ac
         context.startActivity(intent)
     }
 
-    private fun requestRebind(): Boolean = ListenerWatchdog.rebind(context)
+    // «اضغط للإصلاح»: الخدمة الصامتة بتتقفل وتتفتح قبل الربط (ListenerWatchdog.repair).
+    private fun requestRebind(): Boolean = ListenerWatchdog.repair(context)
 
     private companion object {
         const val CHANNEL = "com.aistudio.zad/bank_listener"

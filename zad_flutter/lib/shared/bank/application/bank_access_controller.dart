@@ -124,14 +124,26 @@ class BankAccessState {
   /// listener was bound and working (owner, 2026-10-13).
   bool isAlive(DateTime now) {
     if (!granted || lastConnectedAt == null) return false;
-    final seen = lastSeenAnyAt;
+    final seen = _lastSignOfLife;
     return seen == null || now.difference(seen) < kListenerStallAfter;
+  }
+
+  /// The later of the last notification seen and the last bind, as the Kotlin
+  /// watchdog reads it: a service that has just been bound again is alive,
+  /// before anything new arrives (owner, 2026-11-10: the pill stayed «وقف»
+  /// after a repair until the next notification).
+  DateTime? get _lastSignOfLife {
+    final seen = lastSeenAnyAt;
+    final bound = lastConnectedAt;
+    if (seen == null) return null;
+    if (bound == null) return seen;
+    return bound.isAfter(seen) ? bound : seen;
   }
 
   /// The reading to show.
   BankAccessHealth get health {
     if (!granted) return BankAccessHealth.notGranted;
-    final seen = lastSeenAnyAt;
+    final seen = _lastSignOfLife;
     final at = checkedAt;
     if (seen != null &&
         at != null &&

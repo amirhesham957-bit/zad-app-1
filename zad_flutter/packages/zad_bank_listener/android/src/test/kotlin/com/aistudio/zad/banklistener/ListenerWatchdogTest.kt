@@ -55,4 +55,11 @@ class ListenerWatchdogTest {
         assertTrue(ListenerWatchdog.shouldAlert(Verdict.REVOKED, now - ListenerWatchdog.ALERT_EVERY_MS, now))
         assertFalse(ListenerWatchdog.shouldAlert(Verdict.FINE, null, now))
     }
+
+    @Test
+    fun `a fresh bind counts as alive, so a repaired service is not forced again`() {
+        // repair() only toggles the component when this reads STALLED.
+        assertEquals(Verdict.FINE, ListenerWatchdog.verdict(true, now - 60_000, now - 48 * hour, now))
+        assertEquals(Verdict.STALLED, ListenerWatchdog.verdict(true, now - 13 * hour, now - 48 * hour, now))
+    }
 }

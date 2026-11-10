@@ -48,6 +48,27 @@ void main() {
     expect(s.isAlive(now), isTrue);
   });
 
+  test('bound again a minute ago after a long silence — listening', () {
+    // «اضغط للإصلاح» rebinds the service; the pill must turn green before the
+    // next notification arrives (owner, 2026-11-10).
+    final s = state(
+      connected: now.subtract(const Duration(minutes: 1)),
+      seen: now.subtract(const Duration(days: 2)),
+    );
+    expect(s.isAlive(now), isTrue);
+    expect(
+      BankAccessState(
+        granted: true,
+        pending: 0,
+        lastCapturedAt: now.subtract(const Duration(days: 3)),
+        lastConnectedAt: now.subtract(const Duration(minutes: 1)),
+        lastSeenAnyAt: now.subtract(const Duration(days: 2)),
+        checkedAt: now,
+      ).health,
+      isNot(BankAccessHealth.stalled),
+    );
+  });
+
   test('never bound — stopped', () {
     expect(state(seen: now).isAlive(now), isFalse);
   });
