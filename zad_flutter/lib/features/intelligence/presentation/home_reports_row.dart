@@ -8,6 +8,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:zad/core/design/components/zad_card.dart';
+import 'package:zad/core/design/components/zad_icon_chip.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
@@ -112,35 +114,31 @@ class _ReportButton extends StatelessWidget {
   final bool busy;
 
   @override
-  Widget build(BuildContext context) => OutlinedButton(
-    onPressed: onTap,
-    style: OutlinedButton.styleFrom(
-      foregroundColor: ZadColors.green700,
-      backgroundColor: ZadColors.mint50,
-      minimumSize: const Size.fromHeight(48),
-      padding: const EdgeInsets.symmetric(horizontal: ZadSpacing.md),
-      side: BorderSide(color: ZadColors.green600.withValues(alpha: 0.3)),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(ZadRadii.card),
-      ),
+  Widget build(BuildContext context) => ZadCard(
+    onTap: busy ? null : onTap,
+    padding: const EdgeInsets.symmetric(
+      horizontal: ZadSpacing.md,
+      vertical: ZadSpacing.sm,
     ),
     child: Row(
-      mainAxisAlignment: MainAxisAlignment.center,
       children: <Widget>[
         if (busy)
           const SizedBox.square(
-            dimension: 16,
-            child: CircularProgressIndicator(strokeWidth: 2),
+            dimension: 32,
+            child: Padding(
+              padding: EdgeInsets.all(ZadSpacing.sm),
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
           )
         else
-          Icon(icon, size: 18),
+          ZadIconChip(icon: icon, tint: ZadColors.green700, size: 32),
         const SizedBox(width: ZadSpacing.sm),
-        Flexible(
+        Expanded(
           child: Text(
             label,
-            maxLines: 1,
+            maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: ZadType.labelLarge.copyWith(fontWeight: FontWeight.bold),
+            style: ZadType.labelLarge.copyWith(color: ZadColors.ink),
           ),
         ),
       ],

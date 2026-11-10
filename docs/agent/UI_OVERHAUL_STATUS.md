@@ -32,6 +32,7 @@ owner's real account, where only read-only taps are allowed.
 | #458 | The first three screens of a new account: «عرّفني بيك» in cards on Zad's canvas with green chosen answers; the budget gate on the canvas with a hero wallet and a large amount field, worded as the balance; «أول خطوة» with a progress bar, checks on done steps and step 3 lined up | passed | not yet, needs the next APK |
 | #459 | Home: the deals on what the home is short of sit beside the pantry, subscriptions and pharmacy glance; the live-prices strip takes no room once it answered with nothing | passed | not yet, needs the next APK |
 | #461 | Home shows one Telegram card at a time: the quiet «بوت زاد على تليجرام» card only when the link banner is snoozed and the account is unlinked, none once linked (seen doubled on the emulator) | passed | seen doubled before the fix; after needs the next APK |
+| #462 | Home: the money comes right after the greeting, with the occasion banner and the tour below it; the glance tiles and report buttons use the same white card and coloured icon chip as the sections (`ZadIconChip`) | passed | not yet, needs the next APK; the companion should no longer sit on the balance card |
 
 ## Open bugs
 
@@ -45,7 +46,7 @@ owner's real account, where only read-only taps are allowed.
 - Chef: famous chefs need the owner's TikTok handles for `RECIPE_ACCOUNTS`.
 - Brain map: a 3D sphere already exists (`knowledge_map_screen.dart`). Judge it on the phone before rebuilding.
 - The bottom bar's mic still blends both occasion colours (`campaignGradient`); small enough to judge on the phone.
-- Seen on the emulator 2026-11-10, still to do: Home stacks the location banner, an empty live-prices bar, «ساهم بسعر», the tour row, the greeting and the occasion banner above the money; Home mixes three tile styles (export buttons, glance cards, section squares); the companion sits on the balance card at rest.
+- Seen on the emulator 2026-11-10: Home's stack above the money, its three tile styles and the companion on the balance card were addressed in #459 and #462; check them on the next APK.
 - Explainer video.
 - Privacy policy (Google Site, v3.1) must match the app: AdMob, Sentry, Firebase, background location, Gemini, Azure, Telegram.
 - Audit of Supabase columns per screen, and UI for tables that have none.

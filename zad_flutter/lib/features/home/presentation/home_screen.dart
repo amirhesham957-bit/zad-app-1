@@ -120,6 +120,19 @@ class HomeScreen extends ConsumerWidget {
           const PermissionBanners(),
           // Live prices at the top (owner, 2026-11-09).
           ZadAppearOnEntry(child: ZadSlots.liveMarketTickerSlot()),
+          ZadAppearOnEntry(
+            child: HomeCompanionHeader(
+              onOpenVoice: onOpenVoice ?? () {},
+              onOpenCamera: onOpenCamera ?? () {},
+            ),
+          ),
+          const SizedBox(height: 16),
+          // The money right under the greeting (owner, 2026-10-05; emulator,
+          // 2026-11-10: six blocks above it pushed it off the first screen).
+          _Budget(view: view),
+          // The occasion's banner (app_campaigns) and the tour come after the
+          // money; the balance card already wears the occasion's colours.
+          const ZadAppearOnEntry(child: CampaignBannerSlot()),
           // The tour and «حكايات زاد» (the occasion's story, when it has
           // one) share a line: each on its own took a tall strip of the top.
           const ZadAppearOnEntry(
@@ -134,18 +147,6 @@ class HomeScreen extends ConsumerWidget {
               ),
             ),
           ),
-          ZadAppearOnEntry(
-            child: HomeCompanionHeader(
-              onOpenVoice: onOpenVoice ?? () {},
-              onOpenCamera: onOpenCamera ?? () {},
-            ),
-          ),
-          const SizedBox(height: 16),
-          // The occasion's banner (app_campaigns), under the greeting.
-          const ZadAppearOnEntry(child: CampaignBannerSlot()),
-          // The money right under the greeting and the occasion's banner
-          // (owner, 2026-10-05): it had slid under the brief and the grid.
-          _Budget(view: view),
           const FxExcludedNotice(),
           // A quick look at the next subscription, the pantry and the next
           // dose (owner, 2026-11-09), without opening anything.
