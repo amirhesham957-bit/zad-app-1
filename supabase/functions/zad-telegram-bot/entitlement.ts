@@ -31,6 +31,9 @@ const LOCKED_PHOTO =
 
 const EXHAUSTED_VOICE = "🔒 خلص رصيد الرسايل الصوتية في باقتك الشهرية. تقدر ترقّي باقتك من التطبيق.";
 const VOICE_TODAY_DONE = "🔒 خلصت أسئلتك الصوتية النهارده (٦ في اليوم في الباقة المجانية) — بترجع بكرة. اكتبلي عادي، أو اشترك من التطبيق وكلّمني بصوتك من غير حد.";
+// المجاني كل ساعتين (20261110210000): ٣ أسئلة صوتية وصورتين، والإعلان في التطبيق بيزوّدهم.
+const VOICE_CYCLE_DONE = "🔒 خلصت أسئلتك الصوتية (٣ كل ساعتين في الباقة المجانية) — بترجع لوحدها. اكتبلي عادي، أو افتح التطبيق وشاهد إعلان تاخد سؤال صوتي زيادة.";
+const IMAGES_CYCLE_DONE = "🔒 خلصت صورك المجانية (٢ كل ساعتين) — بترجع لوحدها. تقدر تكتب الفاتورة هنا، أو تشاهد إعلان في التطبيق وتاخد صورة زيادة.";
 // مسح الصورة بمحاولتين من الرصيد الواحد (20261012020000).
 const EXHAUSTED_PHOTO = "🔒 مسح الفاتورة محتاج محاولتين، ومحاولات باقتك خلصت الشهر ده. تقدر ترقّي باقتك من التطبيق.";
 
@@ -60,7 +63,10 @@ export async function mediaGate(sb: Sb, userId: string, kind: MediaKind): Promis
 
   // الباقة المجانية مالهاش صور على تليجرام — رسالة ترقية. الفويس بقى زي التطبيق (قرار المالك ٣/١١): أسئلة
   // صوتية في اليوم من نفس العدّاد (zad_tiers.voice_daily)، فالفويس نوت بيتسمع ويترد عليه بدل رسالة الترقية.
-  if (status?.telegram_media !== true && kind !== "voice") return { allowed: false, reply: locked };
+  // من ١٠/١١ المجاني ليه صورتين كل ساعتين من نفس رصيد التطبيق (20261110210000)، فالصورة بتعدّي على
+  // العدّاد بدل رسالة الترقية؛ باقة من غير وسائط لسه مقفولة.
+  const free = status?.tier === "free";
+  if (status?.telegram_media !== true && kind !== "voice" && !free) return { allowed: false, reply: locked };
 
   // مشترك: الرصيد الشهري هو اللي بيتخصم منه. الخصم بيحصل هنا عشان نفس السبب — قبل
   // ما نصرف على تنزيل الملف والنداء على الموديل.
@@ -74,6 +80,8 @@ export async function mediaGate(sb: Sb, userId: string, kind: MediaKind): Promis
     if (d?.allowed === true) return { allowed: true };
     // المجاني ٦ أسئلة صوتية في اليوم (20261103230000؛ كانت ٣ من 20261028020000) — حتى بتصريح الإعلان القديم.
     if (d?.reason === "voice_daily_cap") return { allowed: false, reply: VOICE_TODAY_DONE };
+    if (d?.reason === "voice_cycle_cap") return { allowed: false, reply: VOICE_CYCLE_DONE };
+    if (d?.reason === "image_cycle_cap") return { allowed: false, reply: IMAGES_CYCLE_DONE };
     if (d?.reason === "quota_exhausted") {
       return { allowed: false, reply: kind === "voice" ? EXHAUSTED_VOICE : EXHAUSTED_PHOTO };
     }

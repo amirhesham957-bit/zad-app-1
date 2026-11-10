@@ -55,6 +55,15 @@ abstract final class ZadEnv {
         '.ingest.us.sentry.io/4512172230443008',
   );
 
+  /// The AdMob interstitial unit (the full-screen ad at natural breaks,
+  /// `InterstitialPacer`). Empty turns interstitials off; only a person can
+  /// create the unit in the AdMob console, so a release build without
+  /// `ADMOB_INTERSTITIAL_UNIT` in env.json shows none. Debug builds use
+  /// Google's test unit regardless.
+  static const String admobInterstitialUnit = String.fromEnvironment(
+    'ADMOB_INTERSTITIAL_UNIT',
+  );
+
   /// Children's school zones (docs/agent/ZAD_LIVING_BRAIN.md slice 2). On by
   /// default — the sideloaded APK. A Google Play build can pass
   /// `--dart-define=ENABLE_KIDS_GEOFENCING=false` if review asks for it

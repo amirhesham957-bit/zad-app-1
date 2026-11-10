@@ -162,7 +162,7 @@ void main() {
     await _pump(tester, still: true);
     expect(find.byKey(const ValueKey<String>('watch-ad')), findsNothing);
     expect(find.textContaining('شاهد'), findsNothing);
-    expect(find.textContaining('5 محاولات بترجع كل 5 ساعات'), findsOneWidget);
+    expect(find.textContaining('كل ساعتين: ٢٠ رسالة'), findsOneWidget);
   });
 
   testWidgets('the free plan offers «شاهد وخد» when ads may show', (
@@ -171,7 +171,7 @@ void main() {
     await _pump(tester, still: true, ads: true);
     await tester.pump();
     expect(find.byKey(const ValueKey<String>('watch-ad')), findsOneWidget);
-    expect(find.text('شاهد إعلان وخد محاولتين'), findsOneWidget);
+    expect(find.text('شاهد إعلان وخد رسالتين'), findsOneWidget);
   });
 
   testWidgets('fits a small phone at large text', (tester) async {

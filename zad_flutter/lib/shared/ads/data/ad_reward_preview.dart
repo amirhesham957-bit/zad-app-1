@@ -17,6 +17,8 @@ class AdRewardPreview {
     required this.available,
     this.reason,
     this.reward = 0,
+    this.rewardVoice = 0,
+    this.rewardImages = 0,
     this.boxNext = false,
     this.boxBonus = 0,
     this.adsToday = 0,
@@ -29,6 +31,8 @@ class AdRewardPreview {
     available: j['available'] == true,
     reason: j['reason'] as String?,
     reward: (j['reward'] as num?)?.toInt() ?? 0,
+    rewardVoice: (j['reward_voice'] as num?)?.toInt() ?? 0,
+    rewardImages: (j['reward_images'] as num?)?.toInt() ?? 0,
     boxNext: j['box_next'] == true,
     boxBonus: (j['box_bonus'] as num?)?.toInt() ?? 0,
     adsToday: (j['ads_today'] as num?)?.toInt() ?? 0,
@@ -42,8 +46,15 @@ class AdRewardPreview {
   /// Why not: `daily_ad_cap` or `kids_no_ads`.
   final String? reason;
 
-  /// Attempts for one ad, before the box.
+  /// Messages the next ad gives (the ladder since 20261110210000: 5, 5, 5,
+  /// then 3).
   final int reward;
+
+  /// Voice questions the next ad gives (1 on the second and third ad).
+  final int rewardVoice;
+
+  /// Images the next ad gives (1 on the third ad).
+  final int rewardImages;
 
   /// The next ad opens the box.
   final bool boxNext;

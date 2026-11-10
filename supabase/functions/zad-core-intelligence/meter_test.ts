@@ -119,6 +119,22 @@ Deno.test("the seventh free voice question: 402 no_voice_today, in Zad's words",
   assert(String(g.refusal?.body.message).includes("٦ في اليوم"));
 });
 
+Deno.test("free tier out of its two-hour voice or images: 402 no_attempts, so the app offers an ad", async () => {
+  for (const [action, reason, words] of [
+    ["voice_agent", "voice_cycle_cap", "٣ كل ساعتين"],
+    ["analyze_receipt", "image_cycle_cap", "٢ كل ساعتين"],
+  ] as const) {
+    const db = fakeRpc({
+      zad_rate_take: { data: { ok: true } },
+      zad_entitlement_consume: { data: { allowed: false, reason } },
+    });
+    const g = await openGate(db.rpc, "u1", meterFor(action)!);
+    assertEquals(g.refusal?.status, 402);
+    assertEquals(g.refusal?.body.error, "no_attempts");
+    assert(String(g.refusal?.body.message).includes(words), reason);
+  }
+});
+
 Deno.test("reading a reply aloud never calls consume", async () => {
   const db = fakeRpc({ zad_rate_take: { data: { ok: true } } });
   assertEquals(await openGate(db.rpc, "u1", meterFor("voice_synthesize")!), {});

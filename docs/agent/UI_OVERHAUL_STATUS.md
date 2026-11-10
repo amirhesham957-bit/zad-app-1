@@ -39,6 +39,7 @@ owner's real account, where only read-only taps are allowed.
 | #467 | Recipes on an empty pantry: «ضيف للمخزن» in the empty state opens the add sheet; the two greyed chef buttons are hidden until the pantry has stock | passed | seen before the fix on the emulator; after needs the next APK |
 | #468 | «عقل زاد» / «العائلة»: the four (and three) unnamed icons on the bar become named buttons with a coloured chip, in one row under the tabs | passed | seen unnamed before the fix; after needs the next APK |
 | #469 | Home on the #467 APK: the empty live-prices strip and «ساهم بسعر» share one line; the companion peeks from the edge until the customer places it, instead of standing on the balance card | passed | both seen before the fix on the emulator; after needs the next APK |
+| — | Free quota every 2 hours per kind (20 messages, 3 voice, 2 images), one balance with the bot; the ad ladder (5 · voice+5 · voice+image+5 · then 3); a paced full-screen ad at natural breaks (off in release until `ADMOB_INTERSTITIAL_UNIT` is set); the «طاقة زاد» sheet shows the three balances | passed | not yet, needs the next APK |
 
 ## Open bugs
 
@@ -56,7 +57,7 @@ owner's real account, where only read-only taps are allowed.
 - Seen on the emulator 2026-11-10, still to do: Home stacks the location banner, an empty live-prices bar, «ساهم بسعر», the tour row, the greeting and the occasion banner above the money; Home mixes three tile styles (export buttons, glance cards, section squares); the companion sits on the balance card at rest.
 - Recipes tab on an empty pantry: both buttons are disabled and nothing leads to the pantry (emulator, 2026-11-10).
 - Explainer video.
-- Privacy policy (Google Site, v3.1) must match the app: AdMob, Sentry, Firebase, background location, Gemini, Azure, Telegram.
+- Privacy policy: v4.0 written to match the app (`docs/legal/privacy_policy_v4.md`, 2026-11-10). The owner pastes it into the Google Site; until then the site still says v3.1.
 - Audit of Supabase columns per screen, and UI for tables that have none.
 - "Anything I ask the bot isn't in the UI", measured 2026-11-09. Real accounts wrote almost nothing from app chat in 30 days (2 `set_life_goal`; the 253 runs in `agent_actions` are the acceptance account `a11ce000`). On the owner's account: 20 chat runs in 14 days, 1 write, 2 runs rejected. Causes found: "add X to my pantry quantity 1" became an expense (fixed in #438); a sleep time became a money proposal (fixed in #451); a spending cap per category had no tool because those caps lived only on the device, so the model tried `set_monthly_limit` and was refused (closed by #452). App chat text is not stored on the server, so the requests behind the other runs can't be read. Screens that load on open (appointments, debts, maintenance) are not stale after a chat.
 - 136 of 499 Dart files are over 300 lines (measured 2026-11-09). Split one folder at a time.

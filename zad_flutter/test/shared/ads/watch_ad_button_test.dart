@@ -101,62 +101,41 @@ Finder _button() => find.byKey(const ValueKey<String>('watch-ad'));
 void main() {
   testWidgets('offers the reward the server previews', (tester) async {
     await _pump(tester);
-    expect(find.text('شاهد إعلان وخد محاولتين'), findsOneWidget);
-    expect(find.textContaining('١ من ٣'), findsOneWidget);
+    expect(find.text('شاهد إعلان وخد رسالتين'), findsOneWidget);
+    expect(find.text('الإعلان التالت بيدّي صورة كمان'), findsOneWidget);
   });
 
-  testWidgets('the ad that opens the box says so and counts it', (
+  testWidgets('the ladder: each step names what it adds', (tester) async {
+    await _pump(
+      tester,
+      preview: const AdRewardPreview(available: true, reward: 5, dailyCap: 9),
+    );
+    expect(find.text('شاهد إعلان وخد ٥ رسايل'), findsOneWidget);
+    expect(
+      find.text('الإعلان التاني بيزوّد سؤال صوتي، والتالت صورة كمان'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('the third ad: messages, a voice question and an image', (
     tester,
   ) async {
     await _pump(
       tester,
       preview: const AdRewardPreview(
         available: true,
-        reward: 2,
-        boxNext: true,
-        boxBonus: 2,
-        adsToday: 2,
-      ),
-    );
-    expect(find.text('شاهد إعلان وخد ٤ محاولات'), findsOneWidget);
-    expect(find.textContaining('بيفتح الصندوق'), findsOneWidget);
-  });
-
-  testWidgets('three ads, one attempt: the first two count toward it', (
-    tester,
-  ) async {
-    await _pump(
-      tester,
-      preview: const AdRewardPreview(
-        available: true,
-        boxBonus: 1,
-        adsToday: 1,
-        dailyCap: 9,
-      ),
-    );
-    expect(find.text('شاهد إعلان — ٢ من ٣'), findsOneWidget);
-    expect(
-      find.text('كل ٣ إعلانات = محاولة واحدة — شفت ١ من ٣'),
-      findsOneWidget,
-    );
-  });
-
-  testWidgets('three ads, one attempt: the third opens it', (tester) async {
-    await _pump(
-      tester,
-      preview: const AdRewardPreview(
-        available: true,
-        boxNext: true,
-        boxBonus: 1,
+        reward: 5,
+        rewardVoice: 1,
+        rewardImages: 1,
         adsToday: 2,
         dailyCap: 9,
       ),
     );
-    expect(find.text('شاهد إعلان وخد محاولة واحدة'), findsOneWidget);
     expect(
-      find.text('الإعلان ده بيكمّل التلاتة ويفتح محاولة واحدة'),
+      find.text('شاهد إعلان وخد ٥ رسايل + سؤال صوتي + صورة'),
       findsOneWidget,
     );
+    expect(find.text('كل إعلان بعد كده = ٣ رسايل'), findsOneWidget);
   });
 
   testWidgets('nothing where ads may not show', (tester) async {
@@ -210,7 +189,7 @@ void main() {
     await tester.pump(const Duration(seconds: 41));
     await tester.pump();
     expect(r.preview.calls, 2);
-    expect(find.text('شاهد إعلان وخد محاولتين'), findsOneWidget);
+    expect(find.text('شاهد إعلان وخد رسالتين'), findsOneWidget);
   });
 
   testWidgets(

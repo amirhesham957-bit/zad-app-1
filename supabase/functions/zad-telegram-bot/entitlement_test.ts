@@ -7,15 +7,36 @@ function sbWith(responses: Record<string, unknown>) {
   };
 }
 
-Deno.test("المجاني: الصور برسالة ترقية، والفويس من عدّاد اليوم (قرار المالك ٣/١١)", async () => {
+Deno.test("المجاني: الصور والفويس من رصيد الساعتين بتاع التطبيق (قرار المالك ١٠/١١)", async () => {
   const sb = sbWith({
     zad_entitlement_status: { telegram_media: false, tier: "free" },
-    zad_entitlement_consume: { allowed: true, reason: "quota", voice_daily: 6, voice_left: 5 },
+    zad_entitlement_consume: { allowed: true, reason: "quota", images_left: 1 },
   });
-
   assertEquals(await mediaGate(sb, "u1", "voice"), { allowed: true });
+  assertEquals(await mediaGate(sb, "u1", "scan"), { allowed: true });
+});
 
-  const photo = await mediaGate(sb, "u1", "scan");
+Deno.test("المجاني بعد الصورتين أو الـ٣ أسئلة صوتية بياخد رسالة «كل ساعتين» مش ترقية", async () => {
+  const images = await mediaGate(sbWith({
+    zad_entitlement_status: { telegram_media: false, tier: "free" },
+    zad_entitlement_consume: { allowed: false, reason: "image_cycle_cap" },
+  }), "u1", "scan");
+  assertEquals(images.allowed, false);
+  assertEquals(images.reply!.includes("٢ كل ساعتين"), true);
+
+  const voice = await mediaGate(sbWith({
+    zad_entitlement_status: { telegram_media: false, tier: "free" },
+    zad_entitlement_consume: { allowed: false, reason: "voice_cycle_cap" },
+  }), "u1", "voice");
+  assertEquals(voice.allowed, false);
+  assertEquals(voice.reply!.includes("٣ كل ساعتين"), true);
+});
+
+Deno.test("باقة من غير وسائط (مش مجانية) لسه الصور مقفولة برسالة ترقية", async () => {
+  const photo = await mediaGate(sbWith({
+    zad_entitlement_status: { telegram_media: false, tier: "legacy" },
+    zad_entitlement_consume: { allowed: true, reason: "quota" },
+  }), "u1", "scan");
   assertEquals(photo.allowed, false);
   assertEquals(photo.reply!.includes("الفواتير"), true);
 });
