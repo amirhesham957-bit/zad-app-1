@@ -296,10 +296,26 @@ class _PantryViewState extends ConsumerState<PantryView> {
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
                 child: TextField(
                   onChanged: (q) => setState(() => _query = q.trim()),
-                  decoration: const InputDecoration(
+                  // A filled, rounded search field (iOS style) instead of a
+                  // bare underline (emulator, 2026-11-10).
+                  decoration: InputDecoration(
                     hintText: 'اسم المنتج',
-                    prefixIcon: Icon(Icons.search, size: 18),
+                    prefixIcon: const Icon(Icons.search, size: 18),
                     isDense: true,
+                    filled: true,
+                    fillColor: ZadColors.surface,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(ZadRadii.card),
+                      borderSide: const BorderSide(color: ZadColors.hairline),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(ZadRadii.card),
+                      borderSide: const BorderSide(color: ZadColors.hairline),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(ZadRadii.card),
+                      borderSide: const BorderSide(color: ZadColors.green600),
+                    ),
                   ),
                 ),
               ),
