@@ -229,17 +229,21 @@ class PharmacyView extends ConsumerWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
-                Wrap(
-                  alignment: WrapAlignment.spaceBetween,
-                  spacing: ZadSpacing.lg,
-                  runSpacing: ZadSpacing.xs,
-                  children: <Widget>[
-                    _Count(n: medicines.length, label: 'إجمالي الأدوية'),
-                    _Count(n: expiringSoon.length, label: 'قرب الانتهاء'),
-                    _Count(n: low, label: 'مخزون منخفض'),
-                  ],
-                ),
+                // Three zeros over the empty state said nothing (emulator,
+                // 2026-11-10): the counts come with the first medicine.
+                if (medicines.isNotEmpty) ...<Widget>[
+                  const SizedBox(height: 10),
+                  Wrap(
+                    alignment: WrapAlignment.spaceBetween,
+                    spacing: ZadSpacing.lg,
+                    runSpacing: ZadSpacing.xs,
+                    children: <Widget>[
+                      _Count(n: medicines.length, label: 'إجمالي الأدوية'),
+                      _Count(n: expiringSoon.length, label: 'قرب الانتهاء'),
+                      _Count(n: low, label: 'مخزون منخفض'),
+                    ],
+                  ),
+                ],
                 if (expired > 0) ...<Widget>[
                   const SizedBox(height: ZadSpacing.md),
                   _Banner(

@@ -472,12 +472,19 @@ class _BudgetHeader extends StatelessWidget {
             ),
           ),
           const SizedBox(height: ZadSpacing.xs),
-          Text(
-            basket == null
-                ? '— $currency'.trim()
-                : '${_money(basket)} $currency',
-            style: ZadType.figure(28).copyWith(color: Colors.white),
-          ),
+          // An empty list says so instead of «— EGP» (emulator, 2026-11-10).
+          if (basket == null && lines == 0)
+            Text(
+              'السلة فاضية — ضيف اللي ناقصك',
+              style: ZadType.titleMedium.copyWith(color: Colors.white),
+            )
+          else
+            Text(
+              basket == null
+                  ? '— $currency'.trim()
+                  : '${_money(basket)} $currency',
+              style: ZadType.figure(28).copyWith(color: Colors.white),
+            ),
           if (basket != null && priced < lines)
             Text(
               'تقدير لـ $priced من $lines صنف — «تعبئة ذكية» تقدّر الباقي',
