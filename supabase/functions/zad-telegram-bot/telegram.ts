@@ -241,6 +241,21 @@ export function amazonButtonRows(links: unknown): InlineKeyboardButton[][] {
   return rows;
 }
 
+/**
+ * روابط أمازون في رد زاد كأزرار تحت الرسالة (طلب المالك ١٠/١١): الزرار بيفتح الرابط برّه الشات، فتطبيق
+ * أمازون يلقطه لو متثبت، والنص يفضل نضيف. زاد بيحط التاج ويفحص الرابط قبل ما يوصل هنا (dealLink.ts)، فاللي
+ * من غير تاج بيفضل في النص زي ما هو. ٣ أزرار بالكتير.
+ */
+export function amazonLinkButtons(body: string): { text: string; rows: InlineKeyboardButton[][] } {
+  const urls = [...new Set(body.match(/https:\/\/www\.amazon\.(?:eg|sa)\/[^\s]*[?&]tag=[^\s]+/g) ?? [])].slice(0, 3);
+  if (urls.length === 0) return { text: body, rows: [] };
+  let text = body;
+  for (const url of urls) text = text.split(url).join("");
+  text = text.replace(/:\s*(?=\n|$)/g, "").replace(/[ \t]{2,}/g, " ").replace(/ +\n/g, "\n").trim();
+  const rows = urls.map((url, i) => [{ text: urls.length > 1 ? `🛒 افتح على أمازون (${i + 1})` : "🛒 افتحه على أمازون", url }]);
+  return { text, rows };
+}
+
 /** Confirm/cancel for a parsed spend intent. Only the pending-row id travels in
  * callback_data — the amount/title/category live in telegram_pending_writes, because
  * callback_data is capped at 64 bytes and a truncated amount would be a silent

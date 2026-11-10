@@ -75,3 +75,10 @@ Deno.test("other links only lose their markdown", async () => {
   );
   assertEquals(await linksForChat("مفيش لينكات هنا", { fetcher: never, env: noEnv }), "مفيش لينكات هنا");
 });
+
+Deno.test("the bare amazon home page gets the tag too (owner's report 10/11)", async () => {
+  assertEquals(
+    await linksForChat("ده لينك أمازون: https://www.amazon.eg", { fetcher: answering(200), env: noEnv }),
+    "ده لينك أمازون: https://www.amazon.eg/?tag=zad04-21",
+  );
+});
