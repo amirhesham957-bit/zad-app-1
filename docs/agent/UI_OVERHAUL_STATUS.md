@@ -35,6 +35,7 @@ owner's real account, where only read-only taps are allowed.
 | #462 | Home: the money comes right after the greeting, with the occasion banner and the tour below it; the glance tiles and report buttons use the same white card and coloured icon chip as the sections (`ZadIconChip`) | passed | not yet, needs the next APK; the companion should no longer sit on the balance card |
 | #464 | «فلوسي»: the figures first (balance, summary, insight, obligations, category budgets), the broke-mode and 30-day offers after them, then the transactions; the balance block takes Zad's gradient and lift instead of flat green | passed | seen before the fix on the emulator; after needs the next APK |
 | #465 | «بيتي»: each tab label on one line (shrinks a little when narrow); the pantry search is a filled rounded field instead of a bare underline | passed | seen before the fix on the emulator; after needs the next APK |
+| #466 | «بيتي» empty states: the smart basket says «السلة فاضية» instead of «— EGP»; the pharmacy's three zero counts wait for the first medicine | passed | seen before the fix on the emulator; after needs the next APK |
 
 ## Open bugs
 
@@ -49,6 +50,8 @@ owner's real account, where only read-only taps are allowed.
 - Brain map: a 3D sphere already exists (`knowledge_map_screen.dart`). Judge it on the phone before rebuilding.
 - The bottom bar's mic still blends both occasion colours (`campaignGradient`); small enough to judge on the phone.
 - Seen on the emulator 2026-11-10: Home's stack above the money, its three tile styles and the companion on the balance card were addressed in #459 and #462; check them on the next APK.
+- Seen on the emulator 2026-11-10, still to do: Home stacks the location banner, an empty live-prices bar, «ساهم بسعر», the tour row, the greeting and the occasion banner above the money; Home mixes three tile styles (export buttons, glance cards, section squares); the companion sits on the balance card at rest.
+- Recipes tab on an empty pantry: both buttons are disabled and nothing leads to the pantry (emulator, 2026-11-10).
 - Explainer video.
 - Privacy policy (Google Site, v3.1) must match the app: AdMob, Sentry, Firebase, background location, Gemini, Azure, Telegram.
 - Audit of Supabase columns per screen, and UI for tables that have none.

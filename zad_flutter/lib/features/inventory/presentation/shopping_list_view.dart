@@ -22,6 +22,7 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/core/money/money.dart';
 import 'package:zad/features/inventory/data/shopping_ai_remote.dart';
 import 'package:zad/shared/affiliate/application/affiliate_match_controller.dart';
@@ -472,12 +473,19 @@ class _BudgetHeader extends StatelessWidget {
             ),
           ),
           const SizedBox(height: ZadSpacing.xs),
-          Text(
-            basket == null
-                ? '— $currency'.trim()
-                : '${_money(basket)} $currency',
-            style: ZadType.figure(28).copyWith(color: Colors.white),
-          ),
+          // An empty list says so instead of «— EGP» (emulator, 2026-11-10).
+          if (basket == null && lines == 0)
+            Text(
+              context.l10n.shoppingBasketEmpty,
+              style: ZadType.titleMedium.copyWith(color: Colors.white),
+            )
+          else
+            Text(
+              basket == null
+                  ? '— $currency'.trim()
+                  : '${_money(basket)} $currency',
+              style: ZadType.figure(28).copyWith(color: Colors.white),
+            ),
           if (basket != null && priced < lines)
             Text(
               'تقدير لـ $priced من $lines صنف — «تعبئة ذكية» تقدّر الباقي',
