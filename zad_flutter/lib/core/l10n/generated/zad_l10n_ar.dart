@@ -1445,11 +1445,11 @@ class ZadL10nAr extends ZadL10n {
   }
 
   @override
-  String get gateTitle => 'قبل ما نبدأ، حدد سقفك الشهري';
+  String get gateTitle => 'قبل ما نبدأ، معاك كام الشهر ده؟';
 
   @override
   String get gateBody =>
-      'زاد ما بيخترعش أرقام. من غير السقف مفيش \"متبقي\" ولا \"متاح\" — وكل رقم هتشوفه هيبقى تخمين.';
+      'زاد ما بيخترعش أرقام. من الرقم ده بنحسب «المتاح» و«المتبقي» كل يوم، وتقدر تعدّله في أي وقت.';
 
   @override
   String get gateMarket => 'البلد والعملة';
@@ -1458,7 +1458,7 @@ class ZadL10nAr extends ZadL10n {
   String get commonChange => 'تغيير';
 
   @override
-  String get gateCeiling => 'سقف الصرف الشهري';
+  String get gateCeiling => 'رصيدك للشهر ده';
 
   @override
   String get gateStart => 'يلا نبدأ';
