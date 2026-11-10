@@ -211,7 +211,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey<String>('attempts-chip')));
     await tester.pumpAndSettle();
-    expect(find.text('شاهد إعلان وخد محاولتين'), findsOneWidget);
+    expect(find.text('شاهد إعلان وخد رسالتين'), findsOneWidget);
 
     await tester.pumpWidget(_host(_FakeRemote(_free())));
     await tester.pumpAndSettle();

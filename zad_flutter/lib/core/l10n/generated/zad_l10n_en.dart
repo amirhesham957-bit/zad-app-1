@@ -286,7 +286,7 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get paywallFreeTerms =>
-      '5 attempts that come back every 5 hours, and logging expenses is always free. A chat message costs 1 attempt, a receipt scan 2, a deep analysis 3.';
+      'Every 2 hours: 20 messages, 3 voice questions and 2 images, and logging expenses is always free. A deep analysis costs 3 messages.';
 
   @override
   String get paywallFromPlay => 'From Google Play';
@@ -1212,7 +1212,7 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get voiceOutToday =>
-      'That\'s today\'s voice questions (6 a day) — they\'re back tomorrow. Type your question, or subscribe to talk to Zad without a limit.';
+      'That\'s your voice questions (3 every 2 hours) — they come back on their own, or watch an ad for one more. Type your question, or subscribe to talk to Zad without a limit.';
 
   @override
   String get voiceRecord => 'Record voice';
@@ -1322,7 +1322,7 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get voiceSheetOutToday =>
-      'That\'s today\'s voice questions — 6 a day, back tomorrow';
+      'That\'s your voice questions — 3 every 2 hours, back on their own';
 
   @override
   String get voiceSheetTooShort => 'I didn\'t hear anything clear — try again';
@@ -2790,8 +2790,7 @@ class ZadL10nEn extends ZadL10n {
   String get lowAttemptsTitle => 'You\'re almost out of attempts';
 
   @override
-  String get outOfAttemptsBody =>
-      'Watch 3 ads to get an attempt, or subscribe.';
+  String get outOfAttemptsBody => 'Watch an ad for 5 messages, or subscribe.';
 
   @override
   String get outOfAttemptsPlans => 'See the plans';
@@ -3342,4 +3341,70 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get shoppingBasketEmpty => 'The basket is empty — add what you need';
+
+  @override
+  String adWatchFor(String reward) {
+    return 'Watch an ad for $reward';
+  }
+
+  @override
+  String get adLadderFirst =>
+      'The second ad adds a voice question, the third an image too';
+
+  @override
+  String get adLadderSecond => 'The third ad gives an image too';
+
+  @override
+  String adLadderAfter(String messages) {
+    return 'Every ad after that = $messages';
+  }
+
+  @override
+  String get rewardVoiceOne => 'a voice question';
+
+  @override
+  String rewardVoiceMany(String n) {
+    return '$n voice questions';
+  }
+
+  @override
+  String get rewardImageOne => 'an image';
+
+  @override
+  String rewardImageMany(String n) {
+    return '$n images';
+  }
+
+  @override
+  String get messagesOne => '1 message';
+
+  @override
+  String get messagesTwo => '2 messages';
+
+  @override
+  String messagesFew(String n) {
+    return '$n messages';
+  }
+
+  @override
+  String messagesMany(String n) {
+    return '$n messages';
+  }
+
+  @override
+  String get quotaKindMessages => 'Messages';
+
+  @override
+  String get quotaKindVoice => 'Voice questions';
+
+  @override
+  String get quotaKindImages => 'Images';
+
+  @override
+  String quotaOfTotal(String left, String total) {
+    return '$left of $total';
+  }
+
+  @override
+  String get quotaScanFromImages => '1 image from your images';
 }

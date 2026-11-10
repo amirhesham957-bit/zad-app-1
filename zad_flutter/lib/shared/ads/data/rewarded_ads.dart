@@ -16,6 +16,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:zad/shared/ads/data/ads_sdk.dart';
 
 /// The rewarded ad unit. Debug and profile builds use Google's test unit:
 /// tapping one's own live ads is invalid traffic and AdMob suspends accounts
@@ -44,42 +45,9 @@ abstract interface class RewardedAds {
 
 /// AdMob.
 class AdMobRewardedAds implements RewardedAds {
-  Future<bool>? _ready;
-
-  /// Consent, the rating, and the SDK — once per run.
-  Future<bool> _prepare() => _ready ??= () async {
-    try {
-      final consent = Completer<void>();
-      ConsentInformation.instance.requestConsentInfoUpdate(
-        ConsentRequestParameters(),
-        () => unawaited(
-          ConsentForm.loadAndShowConsentFormIfRequired((_) {
-            if (!consent.isCompleted) consent.complete();
-          }),
-        ),
-        (_) {
-          if (!consent.isCompleted) consent.complete();
-        },
-      );
-      await consent.future;
-      if (!await ConsentInformation.instance.canRequestAds()) return false;
-      await MobileAds.instance.updateRequestConfiguration(
-        RequestConfiguration(maxAdContentRating: MaxAdContentRating.pg),
-      );
-      await MobileAds.instance.initialize();
-      return true;
-    } on Object catch (e) {
-      debugPrint('[ads] prepare failed: $e');
-      return false;
-    }
-  }();
-
   @override
   Future<RewardedOutcome> watch({required String userId}) async {
-    if (!await _prepare()) {
-      _ready = null; // ask again next time: the form may have been dismissed
-      return RewardedOutcome.unavailable;
-    }
+    if (!await AdsSdk.prepare()) return RewardedOutcome.unavailable;
     final ad = await _load();
     if (ad == null) return RewardedOutcome.unavailable;
 

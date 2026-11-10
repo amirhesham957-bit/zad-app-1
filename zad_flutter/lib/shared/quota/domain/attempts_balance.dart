@@ -1,10 +1,11 @@
 /// The customer's one balance, «محاولات» — what `zad_entitlement_status`
 /// reports since 20261012020000.
 ///
-/// Logging is free and never counts. A chat message costs 1, a scan 2, a deep
-/// analysis 3. The free tier gets 5 back every 5 hours, never stacking above
-/// 5 — attempts earned from ads come on top and survive the refill
-/// (20261012100000); the paid plans get 300, 1000 or 2500 a month.
+/// Logging is free and never counts. A chat message costs 1, a deep analysis
+/// 3. The free tier gets 20 messages, 3 voice questions and 2 images back
+/// every 2 hours, each kind on its own (20261110210000) — what ads earned
+/// comes on top and survives the refill; the paid plans get 300, 1000 or 2500
+/// a month, where a scan still costs 2.
 library;
 
 import 'package:flutter/foundation.dart';
@@ -32,6 +33,10 @@ class AttemptsBalance {
     required this.nextRefillAt,
     required this.adsEnabled,
     this.adLeft = 0,
+    this.voiceLeft,
+    this.voicePerCycle,
+    this.imagesLeft,
+    this.imagesPerCycle,
   });
 
   /// Reads `zad_entitlement_status`'s answer, or null when it is not one (an
@@ -43,13 +48,21 @@ class AttemptsBalance {
     final perCycle = json['attempts_per_cycle'];
     final next = json['next_refill_at'];
     final adLeft = json['ad_attempts_left'];
+    int? n(String k) => switch (json[k]) {
+      final num v => v.toInt(),
+      _ => null,
+    };
     return AttemptsBalance(
       tier: (json['tier'] as String?) ?? 'free',
       left: left.toInt(),
-      perCycle: perCycle is num ? perCycle.toInt() : 5,
+      perCycle: perCycle is num ? perCycle.toInt() : 20,
       nextRefillAt: next is String ? DateTime.tryParse(next) : null,
       adsEnabled: json['ads_enabled'] == true,
       adLeft: adLeft is num ? adLeft.toInt() : 0,
+      voiceLeft: n('voice_free_left'),
+      voicePerCycle: n('voice_per_cycle'),
+      imagesLeft: n('images_left'),
+      imagesPerCycle: n('images_per_cycle'),
     );
   }
 
@@ -59,7 +72,7 @@ class AttemptsBalance {
   /// Attempts left now.
   final int left;
 
-  /// What a cycle gives: 5 for the free tier, the plan's monthly figure
+  /// What a cycle gives: 20 for the free tier, the plan's monthly figure
   /// otherwise.
   final int perCycle;
 
@@ -72,6 +85,23 @@ class AttemptsBalance {
   /// How much of [left] was earned from ads. It stays through the refill, so
   /// the cycle's own attempts are [left] less this.
   final int adLeft;
+
+  /// Free tier: voice questions left in this cycle; null on a paid plan
+  /// (no limit) or an older server.
+  final int? voiceLeft;
+
+  /// Free tier: voice questions a cycle gives (3).
+  final int? voicePerCycle;
+
+  /// Free tier: images left in this cycle; null on a paid plan or an older
+  /// server, where a scan costs [AttemptCosts.scan] from [left].
+  final int? imagesLeft;
+
+  /// Free tier: images a cycle gives (2).
+  final int? imagesPerCycle;
+
+  /// Images come from their own balance (the free tier since 20261110210000).
+  bool get imagesSeparate => imagesLeft != null;
 
   /// What is left of the cycle's own attempts — what the refill tops up.
   int get cycleLeft => left - adLeft.clamp(0, left);
@@ -98,11 +128,25 @@ class AttemptsBalance {
       other.perCycle == perCycle &&
       other.nextRefillAt == nextRefillAt &&
       other.adsEnabled == adsEnabled &&
-      other.adLeft == adLeft;
+      other.adLeft == adLeft &&
+      other.voiceLeft == voiceLeft &&
+      other.voicePerCycle == voicePerCycle &&
+      other.imagesLeft == imagesLeft &&
+      other.imagesPerCycle == imagesPerCycle;
 
   @override
-  int get hashCode =>
-      Object.hash(tier, left, perCycle, nextRefillAt, adsEnabled, adLeft);
+  int get hashCode => Object.hash(
+    tier,
+    left,
+    perCycle,
+    nextRefillAt,
+    adsEnabled,
+    adLeft,
+    voiceLeft,
+    voicePerCycle,
+    imagesLeft,
+    imagesPerCycle,
+  );
 }
 
 /// «محاولة واحدة»، «محاولتين»، «٣ محاولات»، «١١ محاولة» — the noun agrees with

@@ -282,7 +282,7 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get paywallFreeTerms =>
-      '5 محاولات بترجع كل 5 ساعات، وتسجيل المصاريف مجاني دايماً. رسالة الشات بمحاولة، مسح الفاتورة بمحاولتين، والتحليل العميق بـ3.';
+      'كل ساعتين: ٢٠ رسالة و٣ أسئلة صوتية وصورتين، وتسجيل المصاريف مجاني دايماً. التحليل العميق بـ٣ رسايل.';
 
   @override
   String get paywallFromPlay => 'من Google Play';
@@ -1173,7 +1173,7 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get voiceOutToday =>
-      'خلصت أسئلتك الصوتية النهارده (٦ في اليوم) — بترجع بكرة. اكتب سؤالك، أو اشترك وكلّم زاد من غير حد.';
+      'خلصت أسئلتك الصوتية (٣ كل ساعتين) — بترجع لوحدها، أو شاهد إعلان وخد سؤال زيادة. اكتب سؤالك، أو اشترك وكلّم زاد من غير حد.';
 
   @override
   String get voiceRecord => 'سجّل صوت';
@@ -1281,7 +1281,7 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get voiceSheetOutToday =>
-      'خلصت أسئلتك الصوتية النهارده — ٦ في اليوم، وبترجع بكرة';
+      'خلصت أسئلتك الصوتية — ٣ كل ساعتين، وبترجع لوحدها';
 
   @override
   String get voiceSheetTooShort => 'لم أسمع كلامًا واضحًا، حاول مرة أخرى';
@@ -2726,7 +2726,7 @@ class ZadL10nAr extends ZadL10n {
   String get lowAttemptsTitle => 'محاولاتك قربت تخلص';
 
   @override
-  String get outOfAttemptsBody => 'شوف ٣ إعلانات وخد محاولة، أو اشترك وارتاح.';
+  String get outOfAttemptsBody => 'شاهد إعلان وخد ٥ رسايل، أو اشترك وارتاح.';
 
   @override
   String get outOfAttemptsPlans => 'شوف الباقات';
@@ -3272,4 +3272,70 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get shoppingBasketEmpty => 'السلة فاضية — ضيف اللي ناقصك';
+
+  @override
+  String adWatchFor(String reward) {
+    return 'شاهد إعلان وخد $reward';
+  }
+
+  @override
+  String get adLadderFirst =>
+      'الإعلان التاني بيزوّد سؤال صوتي، والتالت صورة كمان';
+
+  @override
+  String get adLadderSecond => 'الإعلان التالت بيدّي صورة كمان';
+
+  @override
+  String adLadderAfter(String messages) {
+    return 'كل إعلان بعد كده = $messages';
+  }
+
+  @override
+  String get rewardVoiceOne => 'سؤال صوتي';
+
+  @override
+  String rewardVoiceMany(String n) {
+    return '$n أسئلة صوتية';
+  }
+
+  @override
+  String get rewardImageOne => 'صورة';
+
+  @override
+  String rewardImageMany(String n) {
+    return '$n صور';
+  }
+
+  @override
+  String get messagesOne => 'رسالة';
+
+  @override
+  String get messagesTwo => 'رسالتين';
+
+  @override
+  String messagesFew(String n) {
+    return '$n رسايل';
+  }
+
+  @override
+  String messagesMany(String n) {
+    return '$n رسالة';
+  }
+
+  @override
+  String get quotaKindMessages => 'رسايل';
+
+  @override
+  String get quotaKindVoice => 'أسئلة صوتية';
+
+  @override
+  String get quotaKindImages => 'صور';
+
+  @override
+  String quotaOfTotal(String left, String total) {
+    return '$left من $total';
+  }
+
+  @override
+  String get quotaScanFromImages => 'صورة من رصيد الصور';
 }

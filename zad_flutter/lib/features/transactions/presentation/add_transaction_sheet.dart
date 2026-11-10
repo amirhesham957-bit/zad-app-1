@@ -10,6 +10,8 @@
 /// carries it up whenever it can. Nothing here waits on a request.
 library;
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -18,6 +20,7 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/core/money/money.dart';
+import 'package:zad/shared/ads/application/interstitials.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/sound/ui_sounds.dart';
 import 'package:zad/shared/transactions/application/transactions_controller.dart';
@@ -105,7 +108,10 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
       ref.read(budgetControllerProvider.notifier).recomputePending();
       ref.read(uiSoundsProvider.notifier).play(UiSound.saved);
       await HapticFeedback.mediumImpact();
+      // The save is a natural break: the pacer decides if an ad may follow.
+      final interstitials = ref.read(interstitialsProvider);
       if (mounted) Navigator.of(context).pop();
+      unawaited(interstitials.atBreak(InterstitialBreak.saved));
     } on Object {
       if (mounted) setState(() => _saving = false);
     }

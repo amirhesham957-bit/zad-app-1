@@ -592,7 +592,7 @@ abstract class ZadL10n {
   /// No description provided for @paywallFreeTerms.
   ///
   /// In ar, this message translates to:
-  /// **'5 محاولات بترجع كل 5 ساعات، وتسجيل المصاريف مجاني دايماً. رسالة الشات بمحاولة، مسح الفاتورة بمحاولتين، والتحليل العميق بـ3.'**
+  /// **'كل ساعتين: ٢٠ رسالة و٣ أسئلة صوتية وصورتين، وتسجيل المصاريف مجاني دايماً. التحليل العميق بـ٣ رسايل.'**
   String get paywallFreeTerms;
 
   /// No description provided for @paywallFromPlay.
@@ -2074,7 +2074,7 @@ abstract class ZadL10n {
   /// No description provided for @voiceOutToday.
   ///
   /// In ar, this message translates to:
-  /// **'خلصت أسئلتك الصوتية النهارده (٦ في اليوم) — بترجع بكرة. اكتب سؤالك، أو اشترك وكلّم زاد من غير حد.'**
+  /// **'خلصت أسئلتك الصوتية (٣ كل ساعتين) — بترجع لوحدها، أو شاهد إعلان وخد سؤال زيادة. اكتب سؤالك، أو اشترك وكلّم زاد من غير حد.'**
   String get voiceOutToday;
 
   /// No description provided for @voiceRecord.
@@ -2278,7 +2278,7 @@ abstract class ZadL10n {
   /// No description provided for @voiceSheetOutToday.
   ///
   /// In ar, this message translates to:
-  /// **'خلصت أسئلتك الصوتية النهارده — ٦ في اليوم، وبترجع بكرة'**
+  /// **'خلصت أسئلتك الصوتية — ٣ كل ساعتين، وبترجع لوحدها'**
   String get voiceSheetOutToday;
 
   /// No description provided for @voiceSheetTooShort.
@@ -4876,7 +4876,7 @@ abstract class ZadL10n {
   /// No description provided for @outOfAttemptsBody.
   ///
   /// In ar, this message translates to:
-  /// **'شوف ٣ إعلانات وخد محاولة، أو اشترك وارتاح.'**
+  /// **'شاهد إعلان وخد ٥ رسايل، أو اشترك وارتاح.'**
   String get outOfAttemptsBody;
 
   /// No description provided for @outOfAttemptsPlans.
@@ -5772,6 +5772,108 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'السلة فاضية — ضيف اللي ناقصك'**
   String get shoppingBasketEmpty;
+
+  /// Ad button: what one ad gives.
+  ///
+  /// In ar, this message translates to:
+  /// **'شاهد إعلان وخد {reward}'**
+  String adWatchFor(String reward);
+
+  /// Under the ad button before the first ad of the day.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإعلان التاني بيزوّد سؤال صوتي، والتالت صورة كمان'**
+  String get adLadderFirst;
+
+  /// Under the ad button after the first ad.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإعلان التالت بيدّي صورة كمان'**
+  String get adLadderSecond;
+
+  /// Under the ad button from the third ad on.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل إعلان بعد كده = {messages}'**
+  String adLadderAfter(String messages);
+
+  /// Ad reward piece: one voice question.
+  ///
+  /// In ar, this message translates to:
+  /// **'سؤال صوتي'**
+  String get rewardVoiceOne;
+
+  /// Ad reward piece: several voice questions; n in Arabic digits.
+  ///
+  /// In ar, this message translates to:
+  /// **'{n} أسئلة صوتية'**
+  String rewardVoiceMany(String n);
+
+  /// Ad reward piece: one image.
+  ///
+  /// In ar, this message translates to:
+  /// **'صورة'**
+  String get rewardImageOne;
+
+  /// Ad reward piece: several images.
+  ///
+  /// In ar, this message translates to:
+  /// **'{n} صور'**
+  String rewardImageMany(String n);
+
+  /// Count of chat messages: one.
+  ///
+  /// In ar, this message translates to:
+  /// **'رسالة'**
+  String get messagesOne;
+
+  /// Count of chat messages: two.
+  ///
+  /// In ar, this message translates to:
+  /// **'رسالتين'**
+  String get messagesTwo;
+
+  /// Count of chat messages: 3 to 10.
+  ///
+  /// In ar, this message translates to:
+  /// **'{n} رسايل'**
+  String messagesFew(String n);
+
+  /// Count of chat messages: 11 and up.
+  ///
+  /// In ar, this message translates to:
+  /// **'{n} رسالة'**
+  String messagesMany(String n);
+
+  /// Quota sheet row: chat messages.
+  ///
+  /// In ar, this message translates to:
+  /// **'رسايل'**
+  String get quotaKindMessages;
+
+  /// Quota sheet row: voice questions.
+  ///
+  /// In ar, this message translates to:
+  /// **'أسئلة صوتية'**
+  String get quotaKindVoice;
+
+  /// Quota sheet row: images.
+  ///
+  /// In ar, this message translates to:
+  /// **'صور'**
+  String get quotaKindImages;
+
+  /// Quota sheet: what is left of a cycle.
+  ///
+  /// In ar, this message translates to:
+  /// **'{left} من {total}'**
+  String quotaOfTotal(String left, String total);
+
+  /// Quota sheet: a scan costs one image.
+  ///
+  /// In ar, this message translates to:
+  /// **'صورة من رصيد الصور'**
+  String get quotaScanFromImages;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

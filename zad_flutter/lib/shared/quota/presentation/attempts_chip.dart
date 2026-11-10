@@ -1,7 +1,8 @@
 /// «طاقة زاد»: the balance on the chat's bar, and the sheet behind it.
 ///
 /// The chip is the one number the customer needs: how many attempts are left.
-/// Tapping it says what each request costs, when the free 5 come back, and
+/// Tapping it says what each request costs, when the free tier's messages,
+/// voice and images come back (every 2 hours, each on its own), and
 /// offers both ways on: «شاهد وخد» (one rewarded ad, when ads may show and
 /// the server would grant it) and a plan with no ads.
 library;
@@ -15,6 +16,7 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/ads/presentation/watch_ad_button.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
@@ -133,6 +135,27 @@ Future<void> showAttemptsSheet(
                         color: ZadColors.inkMuted,
                       ),
                     ),
+                    if (now.imagesSeparate) ...<Widget>[
+                      const SizedBox(height: ZadSpacing.md),
+                      _KindRow(
+                        icon: ZadIcons.ask,
+                        label: context.l10n.quotaKindMessages,
+                        left: now.left,
+                        perCycle: now.perCycle,
+                      ),
+                      _KindRow(
+                        icon: ZadIcons.voice,
+                        label: context.l10n.quotaKindVoice,
+                        left: now.voiceLeft ?? 0,
+                        perCycle: now.voicePerCycle ?? 3,
+                      ),
+                      _KindRow(
+                        icon: ZadIcons.scan,
+                        label: context.l10n.quotaKindImages,
+                        left: now.imagesLeft ?? 0,
+                        perCycle: now.imagesPerCycle ?? 2,
+                      ),
+                    ],
                   ],
                 );
               },
@@ -145,7 +168,9 @@ Future<void> showAttemptsSheet(
             ),
             _CostRow(
               label: 'مسح فاتورة أو صورة',
-              cost: attemptsLabel(AttemptCosts.scan),
+              cost: balance.imagesSeparate
+                  ? sheetContext.l10n.quotaScanFromImages
+                  : attemptsLabel(AttemptCosts.scan),
             ),
             _CostRow(
               label: 'تحليل عميق أو خطة',
@@ -173,6 +198,52 @@ Future<void> showAttemptsSheet(
     ),
   ),
 );
+
+/// One kind's balance on the free tier: «رسايل ١٢ من ٢٠».
+class _KindRow extends StatelessWidget {
+  const new({
+    required this.icon,
+    required this.label,
+    required this.left,
+    required this.perCycle,
+  });
+
+  final IconData icon;
+  final String label;
+  final int left;
+  final int perCycle;
+
+  @override
+  Widget build(BuildContext context) {
+    final empty = left <= 0;
+    final fg = empty ? ZadColors.mustardOchre : ZadColors.forestEmerald;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: ZadSpacing.xs),
+      child: Row(
+        children: <Widget>[
+          Icon(icon, size: 20, color: fg),
+          const SizedBox(width: ZadSpacing.sm),
+          Expanded(
+            child: Text(
+              label,
+              style: ZadType.bodyMedium.copyWith(color: ZadColors.ink),
+            ),
+          ),
+          Text(
+            context.l10n.quotaOfTotal(
+              arabicDigits(left < 0 ? 0 : left),
+              arabicDigits(perCycle),
+            ),
+            style: ZadType.labelLarge.copyWith(
+              color: fg,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 class _CostRow extends StatelessWidget {
   const new({required this.label, required this.cost});

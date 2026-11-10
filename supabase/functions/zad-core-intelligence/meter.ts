@@ -5,7 +5,7 @@
 // القاعدة:
 //   * توكن عميل: حد في الدقيقة وفي اليوم لكل نوع (zad_rate_take)، والمسح بيخصم محاولتين
 //     (zad_entitlement_consume 'scan')، والسؤال الصوتي (voice_agent) بيخصم محاولة صوت واحدة —
-//     المجاني ٦ في اليوم (كان ٣ لحد ٣/١١) والمدفوع من غير حد (قرار المالك ٢٠٢٦-١٠-٢٨، zad_tiers.voice_daily).
+//     المجاني من ١٠/١١: صورتين و٣ أسئلة صوتية كل ساعتين (20261110210000)، والمدفوع زي ما هو.
 //     قراية الرد بصوت (voice_synthesize) بتتعدّ بس ومابتخصمش: السؤال ورده محاولة واحدة،
 //     وقراية ردود الشات مجانية للكل.
 //   * مسح أو سؤال صوتي رجع فاضي (صورة مش مقروءة، الموديل ماردّش) بيرجّع اللي اتخصم — العميل مابيدفعش
@@ -78,6 +78,12 @@ export const NO_ATTEMPTS_VOICE_MESSAGE = "رصيد الصوت خلص لحد ال
 export const NO_VOICE_TODAY_MESSAGE =
   "خلصت أسئلتك الصوتية النهارده (٦ في اليوم في الباقة المجانية) — بترجع بكرة. اكتب سؤالك عادي، أو اشترك وكلّم زاد بصوتك من غير حد.";
 
+// المجاني (20261110210000): ٢ صورة و٣ أسئلة صوتية كل ساعتين، كل نوع لوحده، والإعلان بيزوّدهم.
+export const NO_IMAGES_NOW_MESSAGE =
+  "خلصت صورك المجانية (٢ كل ساعتين) — بترجع لوحدها، أو شاهد إعلان وخد صورة زيادة، أو شوف الباقات.";
+export const NO_VOICE_NOW_MESSAGE =
+  "خلصت أسئلتك الصوتية (٣ كل ساعتين) — بترجع لوحدها، أو شاهد إعلان وخد سؤال صوتي زيادة. وتقدر تكتب سؤالك عادي.";
+
 export type Rpc = (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }>;
 
 export interface GateResult {
@@ -120,7 +126,13 @@ export async function openGate(rpc: Rpc, userId: string, meter: Meter): Promise<
         status: 402,
         body: {
           error: "no_attempts",
-          message: meter.kind === "scan" ? NO_ATTEMPTS_SCAN_MESSAGE : NO_ATTEMPTS_VOICE_MESSAGE,
+          message: c?.reason === "image_cycle_cap"
+            ? NO_IMAGES_NOW_MESSAGE
+            : c?.reason === "voice_cycle_cap"
+            ? NO_VOICE_NOW_MESSAGE
+            : meter.kind === "scan"
+            ? NO_ATTEMPTS_SCAN_MESSAGE
+            : NO_ATTEMPTS_VOICE_MESSAGE,
           entitlement: c,
         },
       },

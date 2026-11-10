@@ -17,6 +17,7 @@ import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/ads/application/ads_policy.dart';
+import 'package:zad/shared/ads/application/interstitials.dart';
 import 'package:zad/shared/ads/data/ad_reward_preview.dart';
 import 'package:zad/shared/ads/data/rewarded_ads.dart';
 import 'package:zad/shared/auth/application/session_controller.dart';
@@ -69,6 +70,9 @@ class _WatchAdButtonState extends ConsumerState<WatchAdButton> {
     });
     final outcome = await ref.read(rewardedAdsProvider).watch(userId: user);
     if (!mounted) return;
+    if (outcome != RewardedOutcome.unavailable) {
+      ref.read(interstitialsProvider).rewardedShown();
+    }
     setState(() {
       _busy = false;
       _note = switch (outcome) {
@@ -107,11 +111,8 @@ class _WatchAdButtonState extends ConsumerState<WatchAdButton> {
       label = 'خلصت إعلانات النهارده';
     } else if (waiting) {
       label = 'الإعلان الجاي بعد دقيقة';
-    } else if (preview.total == 0) {
-      // ٣ إعلانات = محاولة (قرار المالك ٢٨/١٠): الإعلان ده خطوة منهم.
-      label = context.l10n.adWatchStep(arabicDigits(preview.adsToday % 3 + 1));
     } else {
-      label = 'شاهد إعلان وخد ${attemptsLabel(preview.total)}';
+      label = context.l10n.adWatchFor(rewardLabel(context.l10n, preview));
     }
     final enabled = preview.available && !waiting && !_busy;
 
@@ -155,17 +156,30 @@ class _WatchAdButtonState extends ConsumerState<WatchAdButton> {
   }
 }
 
-/// The line under the button: what the three ads come to.
-String _progressLine(ZadL10n l, AdRewardPreview p) {
-  if (p.reward == 0) {
-    return p.boxNext
-        ? l.adThirdOpens(attemptsLabel(p.boxBonus))
-        : l.adThreeForOne(
-            attemptsLabel(p.boxBonus),
-            arabicDigits(p.adsToday % 3),
-          );
-  }
-  return p.boxNext
-      ? 'الإعلان ده بيفتح الصندوق: +${arabicDigits(p.boxBonus)} زيادة'
-      : 'كل تالت إعلان بيفتح صندوق — ${arabicDigits(p.adsToday % 3)} من ٣';
+/// What one ad gives: «٥ رسايل + سؤال صوتي + صورة».
+String rewardLabel(ZadL10n l, AdRewardPreview p) {
+  final parts = <String>[
+    if (p.reward > 0) messagesLabel(l, p.reward),
+    if (p.rewardVoice == 1) l.rewardVoiceOne,
+    if (p.rewardVoice > 1) l.rewardVoiceMany(arabicDigits(p.rewardVoice)),
+    if (p.rewardImages == 1) l.rewardImageOne,
+    if (p.rewardImages > 1) l.rewardImageMany(arabicDigits(p.rewardImages)),
+  ];
+  return parts.isEmpty ? attemptsLabel(p.total) : parts.join(' + ');
 }
+
+/// «رسالة»، «رسالتين»، «٥ رسايل»، «١١ رسالة».
+String messagesLabel(ZadL10n l, int n) {
+  if (n == 1) return l.messagesOne;
+  if (n == 2) return l.messagesTwo;
+  return n <= 10
+      ? l.messagesFew(arabicDigits(n))
+      : l.messagesMany(arabicDigits(n));
+}
+
+/// The line under the button: what the ladder does next.
+String _progressLine(ZadL10n l, AdRewardPreview p) => switch (p.adsToday) {
+  0 => l.adLadderFirst,
+  1 => l.adLadderSecond,
+  _ => l.adLadderAfter(messagesLabel(l, 3)),
+};

@@ -23,6 +23,7 @@ import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/core/money/money.dart';
+import 'package:zad/shared/ads/application/interstitials.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/sound/ui_sounds.dart';
 import 'package:zad/shared/transactions/application/transactions_controller.dart';
@@ -114,7 +115,10 @@ class _QuickExpenseSheetState extends ConsumerState<QuickExpenseSheet> {
       ref.read(budgetControllerProvider.notifier).recomputePending();
       ref.read(uiSoundsProvider.notifier).play(UiSound.saved);
       unawaited(HapticFeedback.mediumImpact());
+      // The save is a natural break: the pacer decides if an ad may follow.
+      final interstitials = ref.read(interstitialsProvider);
       if (mounted) Navigator.of(context).pop();
+      unawaited(interstitials.atBreak(InterstitialBreak.saved));
     } on Object {
       if (mounted) setState(() => _sending = false);
     }

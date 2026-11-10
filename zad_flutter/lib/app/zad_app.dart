@@ -13,6 +13,7 @@ import 'package:zad/core/l10n/app_language.dart';
 import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/auth/presentation/password_recovery_listener.dart';
 import 'package:zad/features/places/application/street_alerts_controller.dart';
+import 'package:zad/shared/ads/application/interstitials.dart';
 
 /// Whether the app follows the phone's dark mode.
 ///
@@ -42,6 +43,10 @@ class ZadApp extends ConsumerStatefulWidget {
 }
 
 class _ZadAppState extends ConsumerState<ZadApp> with WidgetsBindingObserver {
+  // Closing a full screen is a natural break for the interstitial pacer.
+  late final InterstitialRouteObserver _adBreaks = InterstitialRouteObserver(
+    () => ref.read(interstitialsProvider),
+  );
   @override
   void initState() {
     super.initState();
@@ -93,6 +98,7 @@ class _ZadAppState extends ConsumerState<ZadApp> with WidgetsBindingObserver {
     return MaterialApp(
       onGenerateTitle: (context) => context.l10n.appTitle,
       debugShowCheckedModeBanner: false,
+      navigatorObservers: <NavigatorObserver>[_adBreaks],
       theme: ZadTheme.light(),
       darkTheme: ZadTheme.dark(),
       themeMode: followSystemDarkMode ? ThemeMode.system : ThemeMode.light,
