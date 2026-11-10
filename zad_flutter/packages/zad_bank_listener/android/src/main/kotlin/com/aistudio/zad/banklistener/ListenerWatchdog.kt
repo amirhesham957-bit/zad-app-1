@@ -93,6 +93,40 @@ internal object ListenerWatchdog {
         return true
     }
 
+    /**
+     * الخدمة صامتة من [STALL_AFTER_MS] والصلاحية موجودة: [rebind] لوحده بيتجاهله شاومي (المالك ١٠/١١: «وقف — اضغط
+     * للإصلاح» والضغط مابيعملش حاجة، و`bank.stalled` ٥ مرات في اليوم). قفل المكوّن وفتحه بيخلي النظام يشيل الخدمة
+     * ويسجّلها من جديد فيربطها. بس لما تكون صامتة: خدمة شغالة ماتتلمسش.
+     */
+    fun repair(context: Context): Boolean {
+        if (!isGranted(context)) return false
+        val now = System.currentTimeMillis()
+        val stalled = verdict(
+            true,
+            ZadNotificationListenerService.readMillis(context, ZadNotificationListenerService.LAST_CONNECTED_AT),
+            ZadNotificationListenerService.readMillis(context, ZadNotificationListenerService.LAST_SEEN_ANY_AT),
+            now,
+        ) == Verdict.STALLED
+        if (stalled) toggleComponent(context)
+        return rebind(context)
+    }
+
+    /** المكوّن بيتقفل ويرجع لحالته في المانيفست (شغّال)، من غير ما التطبيق يتقتل. */
+    private fun toggleComponent(context: Context) {
+        val component = ComponentName(context, ZadNotificationListenerService::class.java)
+        val pm = context.packageManager
+        try {
+            pm.setComponentEnabledSetting(
+                component, PackageManager.COMPONENT_ENABLED_STATE_DISABLED, PackageManager.DONT_KILL_APP,
+            )
+            pm.setComponentEnabledSetting(
+                component, PackageManager.COMPONENT_ENABLED_STATE_DEFAULT, PackageManager.DONT_KILL_APP,
+            )
+        } catch (e: Exception) {
+            Log.e("ZadBankWatchdog", "component toggle failed: ${e.message}")
+        }
+    }
+
     /** منبّه متكرر مش دقيق. نفس الـPendingIntent بيستبدل اللي قبله، فالنداء المتكرر آمن. */
     fun schedule(context: Context) {
         val alarms = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
@@ -106,7 +140,7 @@ internal object ListenerWatchdog {
 
     fun check(context: Context) {
         val granted = isGranted(context)
-        if (granted) rebind(context)
+        if (granted) repair(context)
         val now = System.currentTimeMillis()
         val v = verdict(
             granted,
