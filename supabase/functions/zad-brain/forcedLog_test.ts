@@ -114,3 +114,9 @@ Deno.test("a time of day is not a price", () => {
   assertEquals(bareMoneyLog("حلاقة 80"), true);
   assertEquals(bareMoneyLog("انبوبة البوتاجاز ب 200"), true);
 });
+
+Deno.test("an amount in words is still money (nightly eval 10/11, log_two_thousand_word)", () => {
+  assertEquals(bareMoneyLog("ألفين جنيه درس خصوصي"), true);
+  assertEquals(wantsForcedLog("ألفين جنيه درس خصوصي", "أبشر، بجهز لك تسجيلها بـ 2000 ريال تحت فئة التعليم.\n\nتبي أعتمدها الحين؟"), true);
+  assertEquals(bareMoneyLog("عندي الف حاجة اعملها"), false);
+});
