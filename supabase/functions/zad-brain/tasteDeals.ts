@@ -12,6 +12,7 @@
 // هيخلص خلال أسبوع (zad_home_state)، وبعدها الاهتمامات.
 
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
+import { withDealLink } from "./dealLink.ts";
 import { countryNameAr, type DealHere, itemKey, sameStore, travelContext } from "./shared.ts";
 import { isBrokeModeActive } from "../_shared/brokeMode.ts";
 import { householdFamilyId, householdFilter } from "../_shared/household.ts";
@@ -39,6 +40,11 @@ export const NEARBY_RADIUS_METERS = 3000;
 /** البحث (fetch_live_deals). index.ts بيوصّله وقت التشغيل؛ من غيره مفيش عروض — والتستات مابتكلمش النت. */
 export const dealSource: { search: (payload: Record<string, unknown>, userId: string) => Promise<unknown> } = {
   search: () => Promise.resolve(null),
+};
+
+/** فحص رابط العرض (dealLink.ts). التستات بتبدّله عشان مايكلموش النت. */
+export const linkCheck: { fetcher: typeof fetch } = {
+  fetcher: () => Promise.reject(new Error("no network in tests")),
 };
 
 /** المحلات حوالين نقطة (nearby_pois — جوجل ثم LocationIQ، متخزّن لكل خلية). index.ts بيوصّله. */
@@ -84,6 +90,8 @@ export interface TasteDeal {
   key: string;
   /** من zad_deals بس: نوع المصدر ورابطه ولحد إمتى. البحث الحي مالوش مصدر متخزّن. */
   source?: { kind: string; url: string | null; until: string | null } | null;
+  /** رابط المنتج اللي البحث الحي رجّعه (أمازون بس بيتاخد منه، dealLink.ts). */
+  product_url?: string | null;
 }
 
 // ── ماركة البيت (ZAD_PLAN ٤.١٥) ───────────────────────────────────────────────────────────────────
@@ -259,6 +267,7 @@ export function pickDeal(
       ...(src && typeof src.kind === "string"
         ? { source: { kind: src.kind, url: typeof src.url === "string" ? src.url : null, until: typeof src.until === "string" ? src.until.slice(0, 10) : null } }
         : {}),
+      ...(typeof d?.url === "string" && /^https:\/\/\S{4,500}$/.test(d.url.trim()) ? { product_url: d.url.trim() } : {}),
       price: hasPrice ? Math.round(price * 100) / 100 : null,
       discount_percent: hasDiscount ? Math.round(discount) : null,
       ...(hasBefore ? { price_before: Math.round(before * 100) / 100, saving: Math.round((before - price) * 100) / 100 } : {}),
@@ -750,16 +759,20 @@ export async function loadTasteDeal(sb: SupabaseClient, userId: string, now = Da
       deliveryOf(feeRows as Array<{ app_key?: string; fee?: number; currency?: string }> | null, r.store, r.currency ?? null);
     const storedRaw = rankByRelevance(storedDeals(stored as StoredDealRow[] | null, tripOf, deliveryFor) as Array<{ item?: unknown; store?: unknown }>, affinity);
     const fromStore = items.length ? pick(storedRaw) : null;
-    if (fromStore) return fromStore;
+    if (fromStore) return await withDealLink(fromStore, country, { fetcher: linkCheck.fetcher });
     if (items.length) {
       const res = await dealSource.search({ items, location: countryNameAr(country), country }, userId);
       const liveRaw = (res as { deals?: unknown } | null)?.deals;
       const live = pick(Array.isArray(liveRaw) ? rankByRelevance(liveRaw as Array<{ item?: unknown; store?: unknown }>, affinity) : liveRaw);
-      if (live) return live;
+      if (live) return await withDealLink(live, country, { fetcher: linkCheck.fetcher });
     }
     // الاحتياج الأول دايماً؛ العرض الناري بس لما مفيش عرض على حاجة ناقصة، وبعده عرض أساسي لأي بيت.
-    return pickFireDeal(storedRaw, boughtNames, favorites, skip, nearby, tight, brands) ??
-      pickStapleDeal(storedRaw, favorites, skip, nearby, tight);
+    return await withDealLink(
+      pickFireDeal(storedRaw, boughtNames, favorites, skip, nearby, tight, brands) ??
+        pickStapleDeal(storedRaw, favorites, skip, nearby, tight),
+      country,
+      { fetcher: linkCheck.fetcher },
+    );
   } catch (e) {
     console.warn("[taste_deal] failed:", (e as Error)?.message);
     return null;

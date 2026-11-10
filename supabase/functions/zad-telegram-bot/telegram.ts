@@ -881,6 +881,8 @@ const DEAL_LINK_TEXT: Record<string, string> = {
   instagram: "📸 البوست",
   flyer: "📰 النشرة",
   partner: "🔗 رابط الشراكة",
+  amazon: "🛒 افتحه على أمازون",
+  store_search: "🔎 افتحه في المتجر",
 };
 
 /**
