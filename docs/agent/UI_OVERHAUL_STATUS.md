@@ -26,6 +26,7 @@ owner's real account, where only read-only taps are allowed.
 | #448 | Pantry rows, Home glance and Amazon needs share one item photo | passed, merged | not yet, needs the next APK |
 | #449 | Floating buttons and the companion step aside while a list is read (Money, pantry, Home); room under each list; pantry names on two lines | passed | not yet, needs the next APK |
 | #450 | Home: the tour and the occasion's story on one line; balance card in the occasion's first colour with the second as a corner glow | passed | not yet, needs the next APK; card colours seen only in a test render |
+| #452 | Category ceilings on the account (`zad_category_budgets`), queued offline; the agent's `set_category_budget`; a phone's old ceilings go up once | passed | not yet, needs merging and the next APK |
 
 ## Open bugs
 
@@ -43,7 +44,7 @@ owner's real account, where only read-only taps are allowed.
 - Explainer video.
 - Privacy policy (Google Site, v3.1) must match the app: AdMob, Sentry, Firebase, background location, Gemini, Azure, Telegram.
 - Audit of Supabase columns per screen, and UI for tables that have none.
-- "Anything I ask the bot isn't in the UI", measured 2026-11-09. Real accounts wrote almost nothing from app chat in 30 days (2 `set_life_goal`; the 253 runs in `agent_actions` are the acceptance account `a11ce000`). On the owner's account: 20 chat runs in 14 days, 1 write, 2 runs rejected. Causes found: "add X to my pantry quantity 1" became an expense (fixed in #438); a sleep time became a money proposal (fixed in #451); a spending cap per category has no tool because those caps live only on the device (`category_budgets_store`), so the model tries `set_monthly_limit` and is refused. That last one is open. App chat text is not stored on the server, so the requests behind the other runs can't be read. Screens that load on open (appointments, debts, maintenance) are not stale after a chat.
+- "Anything I ask the bot isn't in the UI", measured 2026-11-09. Real accounts wrote almost nothing from app chat in 30 days (2 `set_life_goal`; the 253 runs in `agent_actions` are the acceptance account `a11ce000`). On the owner's account: 20 chat runs in 14 days, 1 write, 2 runs rejected. Causes found: "add X to my pantry quantity 1" became an expense (fixed in #438); a sleep time became a money proposal (fixed in #451); a spending cap per category had no tool because those caps lived only on the device, so the model tried `set_monthly_limit` and was refused (closed by #452). App chat text is not stored on the server, so the requests behind the other runs can't be read. Screens that load on open (appointments, debts, maintenance) are not stale after a chat.
 - 136 of 499 Dart files are over 300 lines (measured 2026-11-09). Split one folder at a time.
 - iPhone: there is no `ios/` folder yet.
 

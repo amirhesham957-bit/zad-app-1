@@ -513,6 +513,13 @@
     "trigger",
     "user_id"
   ],
+  "zad_category_budgets": [
+    "amount",
+    "category",
+    "id",
+    "updated_at",
+    "user_id"
+  ],
   "zad_chat_turns": [
     "created_at",
     "id",
