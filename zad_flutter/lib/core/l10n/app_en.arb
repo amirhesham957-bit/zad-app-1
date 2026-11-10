@@ -780,6 +780,7 @@
   "homeDealsTitle": "Deals on what you're out of",
   "recipesWeekGroup": "This week's plan",
   "recipesWeekAction": "Week plan",
+  "recipesAddToPantry": "Add to the pantry",
   "recipesWeekDay": "Day {day}",
   "@recipesWeekDay": {
     "placeholders": { "day": { "type": "int" } }

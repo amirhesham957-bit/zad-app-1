@@ -2672,6 +2672,9 @@ class ZadL10nAr extends ZadL10n {
   String get recipesWeekAction => 'خطة الأسبوع';
 
   @override
+  String get recipesAddToPantry => 'ضيف للمخزن';
+
+  @override
   String recipesWeekDay(int day) {
     return 'اليوم $day';
   }

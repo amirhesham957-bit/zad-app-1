@@ -1992,6 +1992,7 @@
   "homeDealsTitle": "عروض على نواقصك",
   "recipesWeekGroup": "خطة الأسبوع",
   "recipesWeekAction": "خطة الأسبوع",
+  "recipesAddToPantry": "ضيف للمخزن",
   "recipesWeekDay": "اليوم {day}",
   "@recipesWeekDay": {
     "placeholders": { "day": { "type": "int" } }

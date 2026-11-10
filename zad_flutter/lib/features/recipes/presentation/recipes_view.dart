@@ -84,7 +84,7 @@ class RecipesView extends ConsumerWidget {
                               ZadScreens.showAddPantrySheet(context),
                             ),
                             icon: const Icon(ZadIcons.add),
-                            label: const Text('ضيف للمخزن'),
+                            label: Text(context.l10n.recipesAddToPantry),
                           ),
                         ),
                 )
