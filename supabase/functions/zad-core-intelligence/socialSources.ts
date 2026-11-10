@@ -11,6 +11,8 @@ export interface YouTubeVideo {
   channel: string;
   published_at: string;
   url: string;
+  /** The search's own snippet of the description (no extra quota). */
+  description?: string;
 }
 
 export interface SourceResult<T> {
@@ -25,7 +27,7 @@ const DAY_MS = 86_400_000;
 
 // اللي بنقراه من ردود جوجل وميتا بس.
 type ApiError = { error?: { errors?: Array<{ reason?: unknown }>; status?: unknown; type?: unknown; code?: unknown } };
-type SearchItem = { id?: { videoId?: unknown }; snippet?: { title?: unknown; channelTitle?: unknown; publishedAt?: unknown } };
+type SearchItem = { id?: { videoId?: unknown }; snippet?: { title?: unknown; channelTitle?: unknown; publishedAt?: unknown; description?: unknown } };
 
 /** فيديوهات يوتيوب لبحث في بلد، الأحدث الأول، من آخر [days] يوم. */
 export async function youtubeSearch(
@@ -55,6 +57,7 @@ export async function youtubeSearch(
         channel: String(v.snippet?.channelTitle ?? "").slice(0, 100),
         published_at: String(v.snippet?.publishedAt ?? ""),
         url: `https://www.youtube.com/watch?v=${id}`,
+        description: String(v.snippet?.description ?? "").slice(0, 1200),
       });
     }
     return { ok: true, status: res.status, items: videos };

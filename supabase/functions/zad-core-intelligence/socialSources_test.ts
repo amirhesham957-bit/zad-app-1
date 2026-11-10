@@ -16,12 +16,12 @@ const realFetch = globalThis.fetch;
 Deno.test("youtube: videos with links, newest window, in the customer's region", async () => {
   const seen = stubFetch([[/youtube\/v3\/search/, 200, {
     items: [
-      { id: { videoId: "abc" }, snippet: { title: "عروض كارفور الأسبوع", channelTitle: "Carrefour Egypt", publishedAt: "2026-10-25T10:00:00Z" } },
+      { id: { videoId: "abc" }, snippet: { title: "عروض كارفور الأسبوع", channelTitle: "Carrefour Egypt", publishedAt: "2026-10-25T10:00:00Z", description: "خصومات على الزيت" } },
       { id: { channelId: "x" }, snippet: { title: "قناة مش فيديو" } },
     ],
   }]]);
   const r = await youtubeSearch("SECRET", "عروض كارفور", "eg", { now: Date.parse("2026-10-26T00:00:00Z") });
-  assertEquals(r.items, [{ id: "abc", title: "عروض كارفور الأسبوع", channel: "Carrefour Egypt", published_at: "2026-10-25T10:00:00Z", url: "https://www.youtube.com/watch?v=abc" }]);
+  assertEquals(r.items, [{ id: "abc", title: "عروض كارفور الأسبوع", channel: "Carrefour Egypt", published_at: "2026-10-25T10:00:00Z", url: "https://www.youtube.com/watch?v=abc", description: "خصومات على الزيت" }]);
   const url = new URL(seen[0]);
   assertEquals([url.searchParams.get("regionCode"), url.searchParams.get("publishedAfter")], ["EG", "2026-10-12T00:00:00.000Z"]);
   globalThis.fetch = realFetch;
