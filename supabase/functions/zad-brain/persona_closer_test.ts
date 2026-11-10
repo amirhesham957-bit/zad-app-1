@@ -66,3 +66,8 @@ Deno.test("a service question at the end of a one-sentence refusal is cut (night
   assertEquals(dropServiceCloser(offer), offer);
   assertEquals(dropServiceCloser("تامرني بشي ثاني؟"), "تامرني بشي ثاني؟");
 });
+
+Deno.test("a clarifying «هل تقصد…» question is never cut", () => {
+  const ask = "أبشر، هل تقصد تحويل مبالغ بين حساباتهم وحسابك ولا شيء ثاني؟";
+  assertEquals(dropServiceCloser(ask), ask);
+});
