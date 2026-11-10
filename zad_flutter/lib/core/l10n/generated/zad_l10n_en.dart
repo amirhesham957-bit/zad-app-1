@@ -1488,11 +1488,11 @@ class ZadL10nEn extends ZadL10n {
   }
 
   @override
-  String get gateTitle => 'Before we start, set your monthly ceiling';
+  String get gateTitle => 'Before we start, how much do you have this month?';
 
   @override
   String get gateBody =>
-      'Zad doesn\'t make numbers up. Without a ceiling there\'s no \"left\" or \"available\" — every figure would be a guess.';
+      'Zad doesn\'t make numbers up. This is what \"available\" and \"left\" are worked out from each day, and you can change it any time.';
 
   @override
   String get gateMarket => 'Country and currency';
@@ -1501,7 +1501,7 @@ class ZadL10nEn extends ZadL10n {
   String get commonChange => 'Change';
 
   @override
-  String get gateCeiling => 'Monthly spending ceiling';
+  String get gateCeiling => 'Your balance for this month';
 
   @override
   String get gateStart => 'Let\'s start';

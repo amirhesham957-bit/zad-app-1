@@ -14,6 +14,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/design/components/zad_card.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
+import 'package:zad/core/design/tokens/zad_motion.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/features/onboarding/application/first_steps_controller.dart';
@@ -34,6 +35,7 @@ class FirstStepsScreen extends ConsumerStatefulWidget {
 class _FirstStepsState extends ConsumerState<FirstStepsScreen> {
   bool _notificationsOn = false;
   bool _asking = false;
+  bool _telegramDone = false;
 
   @override
   void initState() {
@@ -55,9 +57,12 @@ class _FirstStepsState extends ConsumerState<FirstStepsScreen> {
     _log('onboarding.notifications_already');
   }
 
-  void _telegramLinked(bool already) => _log(
-    already ? 'onboarding.telegram_already' : 'onboarding.telegram_linked',
-  );
+  void _telegramLinked(bool already) {
+    if (mounted) setState(() => _telegramDone = true);
+    _log(
+      already ? 'onboarding.telegram_already' : 'onboarding.telegram_linked',
+    );
+  }
 
   Future<void> _firstExpense() async {
     final before = ref.read(transactionsControllerProvider).rows.length;
@@ -91,6 +96,10 @@ class _FirstStepsState extends ConsumerState<FirstStepsScreen> {
       transactionsControllerProvider.select((v) => v.rows.isNotEmpty),
     );
     final allDone = hasExpense && _notificationsOn;
+    final doneCount =
+        (hasExpense ? 1 : 0) +
+        (_notificationsOn ? 1 : 0) +
+        (_telegramDone ? 1 : 0);
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
@@ -115,6 +124,8 @@ class _FirstStepsState extends ConsumerState<FirstStepsScreen> {
                       color: ZadColors.inkMuted,
                     ),
                   ),
+                  const SizedBox(height: ZadSpacing.md),
+                  _Progress(done: doneCount, of: 3),
                   const SizedBox(height: ZadSpacing.xl),
                   _Step(
                     number: 1,
@@ -141,12 +152,19 @@ class _FirstStepsState extends ConsumerState<FirstStepsScreen> {
                     onAction: _askNotifications,
                   ),
                   const SizedBox(height: ZadSpacing.md),
-                  const _StepHeader(
-                    number: 3,
-                    title: 'اربط بوت تليجرام',
-                    why:
-                        'من غيره التذكيرات وسؤال «اقفل يومك» مش هتوصلك وانت '
-                        'برّه التطبيق.',
+                  // Lined up with the cards' own content above it.
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: ZadSpacing.lg,
+                    ),
+                    child: _StepHeader(
+                      number: 3,
+                      done: _telegramDone,
+                      title: 'اربط بوت تليجرام',
+                      why:
+                          'من غيره التذكيرات وسؤال «اقفل يومك» مش هتوصلك وانت '
+                          'برّه التطبيق.',
+                    ),
                   ),
                   const SizedBox(height: ZadSpacing.sm),
                   ZadSlots.telegramBindingSection(onLinked: _telegramLinked),
@@ -184,23 +202,75 @@ class _FirstStepsState extends ConsumerState<FirstStepsScreen> {
   }
 }
 
+/// How many of the steps are done, as a bar that fills.
+class _Progress extends StatelessWidget {
+  const new({required this.done, required this.of});
+
+  final int done;
+  final int of;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    children: <Widget>[
+      Expanded(
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(ZadRadii.pill),
+          child: TweenAnimationBuilder<double>(
+            tween: Tween<double>(end: done / of),
+            duration: ZadDuration.settle,
+            curve: ZadCurves.standard,
+            builder: (_, v, _) => LinearProgressIndicator(
+              value: v,
+              minHeight: 8,
+              backgroundColor: ZadColors.mint100,
+              color: ZadColors.green700,
+            ),
+          ),
+        ),
+      ),
+      const SizedBox(width: ZadSpacing.md),
+      Text(
+        '$done / $of',
+        style: ZadType.labelLarge.copyWith(color: ZadColors.green800),
+      ),
+    ],
+  );
+}
+
 class _StepHeader extends StatelessWidget {
-  const new({required this.number, required this.title, required this.why});
+  const new({
+    required this.number,
+    required this.title,
+    required this.why,
+    this.done = false,
+  });
 
   final int number;
   final String title;
   final String why;
+  final bool done;
 
   @override
   Widget build(BuildContext context) => Row(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: <Widget>[
-      CircleAvatar(
-        radius: 14,
-        backgroundColor: ZadColors.mint100,
-        child: Text(
-          '$number',
-          style: ZadType.labelLarge.copyWith(color: ZadColors.green800),
+      // A done step trades its number for a check.
+      AnimatedSwitcher(
+        duration: ZadDuration.enter,
+        transitionBuilder: (child, a) => ScaleTransition(
+          scale: CurvedAnimation(parent: a, curve: ZadCurves.springy),
+          child: child,
+        ),
+        child: CircleAvatar(
+          key: ValueKey<bool>(done),
+          radius: 14,
+          backgroundColor: done ? ZadColors.green700 : ZadColors.mint100,
+          child: done
+              ? const Icon(Icons.check_rounded, size: 18, color: Colors.white)
+              : Text(
+                  '$number',
+                  style: ZadType.labelLarge.copyWith(color: ZadColors.green800),
+                ),
         ),
       ),
       const SizedBox(width: ZadSpacing.md),
@@ -247,7 +317,7 @@ class _Step extends StatelessWidget {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        _StepHeader(number: number, title: title, why: why),
+        _StepHeader(number: number, title: title, why: why, done: done),
         const SizedBox(height: ZadSpacing.md),
         Align(
           alignment: AlignmentDirectional.centerEnd,

@@ -14,6 +14,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:zad/core/design/components/zad_card.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
@@ -132,124 +133,160 @@ class _IntroState extends ConsumerState<IntroduceYourselfScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: const Text('عرّفني بيك'),
-        actions: <Widget>[ZadSlots.signOutAction()],
-      ),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(
-            ZadSpacing.lg,
-            ZadSpacing.sm,
-            ZadSpacing.lg,
-            ZadSpacing.xxl,
+    final theme = Theme.of(context);
+    return DecoratedBox(
+      // Zad's canvas, and the answers chosen in Zad's green: it was a white
+      // page of grey chips where a choice barely showed (emulator, 2026-11-10).
+      decoration: BoxDecoration(gradient: ZadColors.canvas),
+      child: Theme(
+        data: theme.copyWith(
+          chipTheme: theme.chipTheme.copyWith(
+            backgroundColor: ZadColors.surface,
+            selectedColor: ZadColors.green700,
+            checkmarkColor: Colors.white,
+            side: BorderSide(color: ZadColors.outline),
+            shape: const StadiumBorder(),
+            labelStyle: ZadType.bodyMedium.copyWith(color: ZadColors.ink),
+            secondaryLabelStyle: ZadType.bodyMedium.copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.w700,
+            ),
+            padding: const EdgeInsets.symmetric(
+              horizontal: ZadSpacing.sm,
+              vertical: ZadSpacing.xs,
+            ),
           ),
-          children: <Widget>[
-            Text(
-              'أربع أسئلة وسؤال اختياري، عشان أكلمك صح وآخد بالي من اللي في '
-              'رعايتك.',
-              style: ZadType.bodyMedium.copyWith(color: ZadColors.inkMuted),
-            ),
-            const SizedBox(height: ZadSpacing.xl),
-            _Question(
-              title: 'أناديك بإيه؟',
-              child: TextField(
-                controller: _name,
-                textInputAction: TextInputAction.done,
-                maxLength: 40,
-                decoration: const InputDecoration(
-                  hintText: 'اسمك أو اسم الدلع',
-                  border: OutlineInputBorder(),
-                  counterText: '',
+        ),
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          appBar: AppBar(
+            automaticallyImplyLeading: false,
+            backgroundColor: Colors.transparent,
+            title: const Text('عرّفني بيك'),
+            actions: <Widget>[ZadSlots.signOutAction()],
+          ),
+          body: SafeArea(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(
+                ZadSpacing.lg,
+                ZadSpacing.sm,
+                ZadSpacing.lg,
+                ZadSpacing.xxl,
+              ),
+              children: <Widget>[
+                Text(
+                  'أربع أسئلة وسؤال اختياري، عشان أكلمك صح وآخد '
+                  'بالي من اللي في رعايتك.',
+                  style: ZadType.bodyMedium.copyWith(color: ZadColors.inkMuted),
                 ),
-              ),
-            ),
-            _Question(
-              title: 'أكلمك بصيغة إيه؟',
-              child: _Chips(
-                options: ProfileOptions.genders,
-                label: (g) => g == 'female' ? 'ست' : 'راجل',
-                selected: <String>{?_gender},
-                onTap: (g) => setState(() => _gender = g),
-              ),
-            ),
-            _Question(
-              title: 'إنت مين في البيت؟',
-              child: _Chips(
-                options: ProfileOptions.roles,
-                label: ProfileLabels.role,
-                selected: <String>{?_role},
-                onTap: _pickRole,
-              ),
-            ),
-            _Question(
-              title: 'مين في رعايتك؟',
-              hint: 'اختار كل اللي ينطبق.',
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: <Widget>[
-                  _Chips(
-                    options: ProfileOptions.caresFor,
-                    label: ProfileLabels.caresFor,
-                    selected: _caresFor ?? const <String>{},
-                    onTap: _toggleCare,
-                  ),
-                  const SizedBox(height: ZadSpacing.xs),
-                  Align(
-                    alignment: AlignmentDirectional.centerStart,
-                    child: ChoiceChip(
-                      label: const Text('محدش — مسؤول عن نفسي بس'),
-                      selected: _caresFor?.isEmpty ?? false,
-                      onSelected: (_) => setState(() => _caresFor = <String>{}),
+                const SizedBox(height: ZadSpacing.xl),
+                _Question(
+                  title: 'أناديك بإيه؟',
+                  child: TextField(
+                    controller: _name,
+                    textInputAction: TextInputAction.done,
+                    maxLength: 40,
+                    decoration: const InputDecoration(
+                      hintText: 'اسمك أو اسم الدلع',
+                      border: OutlineInputBorder(),
+                      counterText: '',
                     ),
                   ),
-                ],
-              ),
-            ),
-            _Question(
-              title: 'بتقبض يوم كام في الشهر؟',
-              hint: 'اختياري — عشان أحسب شهرك من يوم القبض.',
-              child: DropdownButtonFormField<int?>(
-                initialValue: _payDay,
-                isExpanded: true,
-                // Without a style it took the theme's title — large and bold
-                // beside the choice chips above (emulator, 2026-11-01).
-                style: ZadType.bodyLarge.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface,
                 ),
-                decoration: const InputDecoration(border: OutlineInputBorder()),
-                items: <DropdownMenuItem<int?>>[
-                  const DropdownMenuItem<int?>(
-                    child: Text('مش ثابت / مش عايز أقول'),
+                _Question(
+                  title: 'أكلمك بصيغة إيه؟',
+                  child: _Chips(
+                    options: ProfileOptions.genders,
+                    label: (g) => g == 'female' ? 'ست' : 'راجل',
+                    selected: <String>{?_gender},
+                    onTap: (g) => setState(() => _gender = g),
                   ),
-                  for (var d = 1; d <= 31; d++)
-                    DropdownMenuItem<int?>(value: d, child: Text('يوم $d')),
-                ],
-                onChanged: (d) => setState(() => _payDay = d),
-              ),
-            ),
-            if (_error case final error?) ...<Widget>[
-              Text(
-                error,
-                style: ZadType.bodySmall.copyWith(
-                  color: ZadColors.terracottaRust,
                 ),
-              ),
-              const SizedBox(height: ZadSpacing.sm),
-            ],
-            const SizedBox(height: ZadSpacing.md),
-            FilledButton(
-              onPressed: _complete && !_saving ? _save : null,
-              child: _saving
-                  ? const SizedBox.square(
-                      dimension: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Text('يلا بينا'),
+                _Question(
+                  title: 'إنت مين في البيت؟',
+                  child: _Chips(
+                    options: ProfileOptions.roles,
+                    label: ProfileLabels.role,
+                    selected: <String>{?_role},
+                    onTap: _pickRole,
+                  ),
+                ),
+                _Question(
+                  title: 'مين في رعايتك؟',
+                  hint: 'اختار كل اللي ينطبق.',
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
+                      _Chips(
+                        options: ProfileOptions.caresFor,
+                        label: ProfileLabels.caresFor,
+                        selected: _caresFor ?? const <String>{},
+                        onTap: _toggleCare,
+                      ),
+                      const SizedBox(height: ZadSpacing.xs),
+                      Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: ChoiceChip(
+                          label: const Text('محدش — مسؤول عن نفسي بس'),
+                          selected: _caresFor?.isEmpty ?? false,
+                          onSelected: (_) =>
+                              setState(() => _caresFor = <String>{}),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                _Question(
+                  title: 'بتقبض يوم كام في الشهر؟',
+                  hint: 'اختياري — عشان أحسب شهرك من يوم القبض.',
+                  child: DropdownButtonFormField<int?>(
+                    initialValue: _payDay,
+                    isExpanded: true,
+                    // Without a style it took the theme's title — large
+                    // and bold beside the choice chips above (emulator,
+                    // 2026-11-01).
+                    style: ZadType.bodyLarge.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                    ),
+                    items: <DropdownMenuItem<int?>>[
+                      const DropdownMenuItem<int?>(
+                        child: Text('مش ثابت / مش عايز أقول'),
+                      ),
+                      for (var d = 1; d <= 31; d++)
+                        DropdownMenuItem<int?>(value: d, child: Text('يوم $d')),
+                    ],
+                    onChanged: (d) => setState(() => _payDay = d),
+                  ),
+                ),
+                if (_error case final error?) ...<Widget>[
+                  Text(
+                    error,
+                    style: ZadType.bodySmall.copyWith(
+                      color: ZadColors.terracottaRust,
+                    ),
+                  ),
+                  const SizedBox(height: ZadSpacing.sm),
+                ],
+                const SizedBox(height: ZadSpacing.md),
+                FilledButton(
+                  onPressed: _complete && !_saving ? _save : null,
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size.fromHeight(52),
+                    shape: const StadiumBorder(),
+                  ),
+                  child: _saving
+                      ? const SizedBox.square(
+                          dimension: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('يلا بينا'),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -265,19 +302,21 @@ class _Question extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(bottom: ZadSpacing.xl),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        Text(title, style: ZadType.titleSmall),
-        if (hint case final h?)
-          Text(
-            h,
-            style: ZadType.labelSmall.copyWith(color: ZadColors.inkMuted),
-          ),
-        const SizedBox(height: ZadSpacing.sm),
-        child,
-      ],
+    padding: const EdgeInsets.only(bottom: ZadSpacing.md),
+    child: ZadCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Text(title, style: ZadType.titleSmall),
+          if (hint case final h?)
+            Text(
+              h,
+              style: ZadType.labelSmall.copyWith(color: ZadColors.inkMuted),
+            ),
+          const SizedBox(height: ZadSpacing.sm),
+          child,
+        ],
+      ),
     ),
   );
 }

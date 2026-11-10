@@ -2572,13 +2572,13 @@ abstract class ZadL10n {
   /// No description provided for @gateTitle.
   ///
   /// In ar, this message translates to:
-  /// **'قبل ما نبدأ، حدد سقفك الشهري'**
+  /// **'قبل ما نبدأ، معاك كام الشهر ده؟'**
   String get gateTitle;
 
   /// No description provided for @gateBody.
   ///
   /// In ar, this message translates to:
-  /// **'زاد ما بيخترعش أرقام. من غير السقف مفيش \"متبقي\" ولا \"متاح\" — وكل رقم هتشوفه هيبقى تخمين.'**
+  /// **'زاد ما بيخترعش أرقام. من الرقم ده بنحسب «المتاح» و«المتبقي» كل يوم، وتقدر تعدّله في أي وقت.'**
   String get gateBody;
 
   /// No description provided for @gateMarket.
@@ -2596,7 +2596,7 @@ abstract class ZadL10n {
   /// No description provided for @gateCeiling.
   ///
   /// In ar, this message translates to:
-  /// **'سقف الصرف الشهري'**
+  /// **'رصيدك للشهر ده'**
   String get gateCeiling;
 
   /// No description provided for @gateStart.
