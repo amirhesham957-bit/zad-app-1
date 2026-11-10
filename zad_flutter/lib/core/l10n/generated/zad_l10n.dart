@@ -4777,6 +4777,12 @@ abstract class ZadL10n {
   /// **'خطة الأسبوع'**
   String get recipesWeekAction;
 
+  /// No description provided for @recipesAddToPantry.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضيف للمخزن'**
+  String get recipesAddToPantry;
+
   /// No description provided for @recipesWeekDay.
   ///
   /// In ar, this message translates to:

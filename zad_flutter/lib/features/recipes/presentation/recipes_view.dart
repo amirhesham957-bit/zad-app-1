@@ -26,6 +26,7 @@ import 'package:zad/shared/affiliate/data/affiliate_repository.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart';
 import 'package:zad/shared/inventory/application/shopping_controller.dart';
+import 'package:zad/shared/navigation/zad_screens.dart';
 
 /// The recipes section.
 class RecipesView extends ConsumerWidget {
@@ -70,12 +71,21 @@ class RecipesView extends ConsumerWidget {
                               'دوس «وصفات من مخزني» وهتقولك تطبخ إيه من اللي '
                               'عندك، واللي ناقصه حاجة بسيطة.',
                         )
-                      : const ZadEmptyState(
+                      // The way in, right here (emulator, 2026-11-10: two
+                      // greyed buttons and nothing that led to the pantry).
+                      : ZadEmptyState(
                           icon: ZadIcons.chef,
                           title: 'المخزن فاضي',
                           message:
                               'ضيف اللي عندك في المخزن، وشيف زاد تقترح أكلات '
                               'منه.',
+                          action: FilledButton.icon(
+                            onPressed: () => unawaited(
+                              ZadScreens.showAddPantrySheet(context),
+                            ),
+                            icon: const Icon(ZadIcons.add),
+                            label: Text(context.l10n.recipesAddToPantry),
+                          ),
                         ),
                 )
               else ...<Widget>[
@@ -101,55 +111,57 @@ class RecipesView extends ConsumerWidget {
             ],
           ),
         ),
-        // The one action, in the thumb's reach.
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-            ZadSpacing.gutter,
-            0,
-            ZadSpacing.gutter,
-            ZadSpacing.lg,
-          ),
-          child: Row(
-            children: <Widget>[
-              Expanded(
-                child: FilledButton.icon(
+        // The one action, in the thumb's reach — once there is something to
+        // cook from; before that the empty state above has the way in.
+        if (hasStock)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              ZadSpacing.gutter,
+              0,
+              ZadSpacing.gutter,
+              ZadSpacing.lg,
+            ),
+            child: Row(
+              children: <Widget>[
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: view.isAsking || !hasStock
+                        ? null
+                        : () => unawaited(
+                            ref
+                                .read(recipesControllerProvider.notifier)
+                                .ask(fresh: suggestions != null),
+                          ),
+                    icon: view.isAsking
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(ZadIcons.chef),
+                    label: Text(
+                      view.isAsking
+                          ? 'شيف زاد بتفكر…'
+                          : suggestions == null
+                          ? 'وصفات من مخزني'
+                          : 'اقتراحات جديدة',
+                    ),
+                  ),
+                ),
+                const SizedBox(width: ZadSpacing.sm),
+                OutlinedButton(
                   onPressed: view.isAsking || !hasStock
                       ? null
                       : () => unawaited(
                           ref
                               .read(recipesControllerProvider.notifier)
-                              .ask(fresh: suggestions != null),
+                              .ask(fresh: true, week: true),
                         ),
-                  icon: view.isAsking
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(ZadIcons.chef),
-                  label: Text(
-                    view.isAsking
-                        ? 'شيف زاد بتفكر…'
-                        : suggestions == null
-                        ? 'وصفات من مخزني'
-                        : 'اقتراحات جديدة',
-                  ),
+                  child: Text(context.l10n.recipesWeekAction),
                 ),
-              ),
-              const SizedBox(width: ZadSpacing.sm),
-              OutlinedButton(
-                onPressed: view.isAsking || !hasStock
-                    ? null
-                    : () => unawaited(
-                        ref
-                            .read(recipesControllerProvider.notifier)
-                            .ask(fresh: true, week: true),
-                      ),
-                child: Text(context.l10n.recipesWeekAction),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
       ],
     );
   }
