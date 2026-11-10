@@ -1,13 +1,28 @@
 import { assertEquals } from "jsr:@std/assert@1";
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
-import { runSocialRecipes, SOCIAL_SLOTS, socialSources, videoCountry } from "./socialRecipesRun.ts";
+import { rotateForDay, runSocialRecipes, SOCIAL_SLOTS, socialSources, videoCountry } from "./socialRecipesRun.ts";
 
 Deno.test("every source lands in exactly one slot", () => {
   const all = [0, 1, 2].flatMap((s) => socialSources(s)).map((s) => JSON.stringify(s));
   assertEquals(new Set(all).size, all.length);
-  assertEquals(all.length, 9);
+  // TikTok: 3 accounts + 3 topics x 2 countries; YouTube: the 6 topics; Instagram: the 3 accounts.
+  assertEquals(all.length, 18);
   assertEquals(socialSources(SOCIAL_SLOTS), socialSources(0));
   assertEquals(all.some((s) => s.includes("bashacook")), true);
+});
+
+Deno.test("each slot reads all three platforms", () => {
+  for (const slot of [0, 1, 2]) {
+    const platforms = new Set(socialSources(slot).map((s) => s.platform));
+    assertEquals([...platforms].sort(), ["instagram", "tiktok", "youtube"]);
+  }
+});
+
+Deno.test("a slot starts somewhere else each day, and keeps every source", () => {
+  assertEquals(rotateForDay([1, 2, 3], 0), [1, 2, 3]);
+  assertEquals(rotateForDay([1, 2, 3], 1), [2, 3, 1]);
+  assertEquals(rotateForDay([1, 2, 3], 5), [3, 1, 2]);
+  assertEquals(rotateForDay([], 4), []);
 });
 
 const deal = (store: string) => ({ store, item_name: "زيت", price: 20, price_before: null, currency: "SAR", country: "SA", valid_until: null, source_url: "https://x" });
@@ -36,10 +51,13 @@ Deno.test("a read video is stored, and only a known store's deal goes live", asy
   const out = await runSocialRecipes(sb, 0, (p) => {
     asked = p;
     return Promise.resolve({ ok: true, videos: [{ url: "https://v", handle: "bashacook", recipe: { name: "كشري", ingredients: ["عدس", "رز"] }, stores: [], deals: [deal("العثيم"), deal("محل مجهول")] }] });
-  });
+  }, new Date(0)); // day 0: no rotation, so the slot opens on a TikTok account
   assertEquals(asked.known, ["old"]);
   assertEquals(upserts[0].name, "كشري");
   assertEquals(upserts[0].country, "SA");
   assertEquals(puts.length, out.sources);
   assertEquals(out.refused, out.sources);
+  // Each deal is filed under the platform it came from.
+  const kinds = puts.map((p) => ((p as { p: { source_kind?: string } }).p).source_kind);
+  assertEquals(new Set(kinds).size > 1, true);
 });

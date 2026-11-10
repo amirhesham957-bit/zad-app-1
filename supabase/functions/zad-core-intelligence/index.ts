@@ -54,6 +54,7 @@ import {
 } from "./socialSources.ts";
 import { tavilyProbe, tavilySearch } from "./tavily.ts";
 import { readSocialVideo, recipeAccountQuery, recipeTopicQuery, socialVideoHits, socialVideoPrompt, type SocialVideo } from "./socialRecipes.ts";
+import { instagramRecipeHits, PLATFORM_NAME, recipePlatform, youtubeRecipeHits, youtubeRecipeQuery } from "./socialRecipeSources.ts";
 import { avoidNames, chefDeals, type ChefDeal, type ChefDealRow, chefExpiring, chefPantryLine, dealsBlock, dealsForMissing, dishKey, type ExpiringItem, expiringBlock, NO_REPEAT_DAYS, type PantryRow, pickSocialRecipes, recipeSource, type SocialRecipeRow, socialRecipesBlock, trendBlock, trendCacheKey, trendQuery, withoutRecent } from "./chefInputs.ts";
 import { householdFamilyId, householdFilter } from "../_shared/household.ts";
 import { budgetUsage, dailyCap, encyclopediaFirstForLatest, groundingPlan, KEY_REST_MS, keyRefused, paidQuotaExhausted, takeSearchBudget, tavilyFirstWhileGroundingRests, withPaidGroundingFirst } from "./paidSearch.ts";
@@ -3303,22 +3304,47 @@ async function handle(req: Request): Promise<Response> {
       // SOCIAL_RECIPES_SCAN — وصفات وعروض تيك توك من محرك البحث (socialRecipes.ts). service role بس: zad-brain (social_recipes_run).
       case "social_recipes_scan": {
         if (!isServiceRoleToken(bearerToken(req), supabaseKey)) return jsonResponse({ error: "unauthorized" }, 401);
+        // تيك توك بمحرك البحث، ويوتيوب وإنستجرام بواجهاتهم الرسمية (socialRecipeSources.ts، طلب المالك ١٠/١١).
+        const platform = recipePlatform(payload?.platform);
         const handle = typeof payload?.handle === "string" && /^[\w.]{2,40}$/.test(payload.handle) ? payload.handle : null;
         const topic = typeof payload?.topic === "string" ? payload.topic.trim().slice(0, 40) : "";
         const countryCode = typeof payload?.country === "string" ? payload.country.toUpperCase() : null;
         if (!handle && (!topic || !countryCode)) return jsonResponse({ ok: false, reason: "bad_source" }, 400);
         const known = new Set(Array.isArray(payload?.known) ? (payload.known as unknown[]).map(String) : []);
-        const found = await cachedDealSearch(handle ? recipeAccountQuery(handle) : recipeTopicQuery(topic, marketOf(countryCode).name), 10, countryCode ?? undefined);
-        const hits = socialVideoHits(found, handle, known, handle ? null : countryCode, 3);
+        let hits: Array<{ title: string; url: string; snippet: string; handle?: string }>;
+        let found = 0;
+        if (platform === "youtube") {
+          const ytKey = Deno.env.get("YOUTUBE_API_KEY");
+          if (!ytKey) return jsonResponse({ ok: false, reason: "no_key" });
+          if (!topic || !countryCode) return jsonResponse({ ok: false, reason: "bad_source" }, 400);
+          const yt = await youtubeSearch(ytKey, youtubeRecipeQuery(topic, marketOf(countryCode).name), countryCode, { days: 60, max: 10 });
+          if (!yt.ok) return jsonResponse({ ok: false, reason: yt.reason ?? `youtube_${yt.status}` });
+          found = yt.items.length;
+          hits = youtubeRecipeHits(yt.items, known, countryCode, 3);
+        } else if (platform === "instagram") {
+          const igToken = await instagramToken();
+          const igAccount = Deno.env.get("INSTAGRAM_BUSINESS_ACCOUNT_ID");
+          if (!igToken || !igAccount) return jsonResponse({ ok: false, reason: "no_key" });
+          if (!handle) return jsonResponse({ ok: false, reason: "bad_source" }, 400);
+          const ig = await instagramAccountPosts(igToken, igAccount, handle, { days: 60, max: 15 });
+          // Not a Business/Creator account, or Meta refused: skipped quietly, the run goes on.
+          if (!ig.ok) return jsonResponse({ ok: false, reason: ig.reason ?? `instagram_${ig.status}` });
+          found = ig.items.length;
+          hits = instagramRecipeHits(ig.items, handle, known, 3);
+        } else {
+          const searched = await cachedDealSearch(handle ? recipeAccountQuery(handle) : recipeTopicQuery(topic, marketOf(countryCode).name), 10, countryCode ?? undefined);
+          found = searched.length;
+          hits = socialVideoHits(searched, handle, known, handle ? null : countryCode, 3);
+        }
         const today = new Date().toISOString().slice(0, 10);
         const videos: SocialVideo[] = [];
         for (const hit of hits) {
-          const { system, user } = socialVideoPrompt(hit, today);
+          const { system, user } = socialVideoPrompt(hit, today, PLATFORM_NAME[platform]);
           const answer = await readPublicDeals({ systemPrompt: system, content: user, maxTokens: 900, timeoutMs: 20_000, deadline: Date.now() + 25_000, groqText: user });
           if (!answer.ok || !answer.content) continue;
-          videos.push(readSocialVideo((() => { try { return JSON.parse(answer.content!); } catch { return null; } })(), hit.url, new Date()));
+          videos.push(readSocialVideo((() => { try { return JSON.parse(answer.content!); } catch { return null; } })(), hit.url, new Date(), hit.handle));
         }
-        return jsonResponse({ ok: true, hits: found.length, read: videos.length, videos });
+        return jsonResponse({ ok: true, platform, hits: found, read: videos.length, videos });
       }
 
       case "store_deals_tiktok": {
