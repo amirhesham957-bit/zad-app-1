@@ -5760,6 +5760,12 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'كل تنبيهات زاد وتذكيراته في مكان واحد.'**
   String get tourBellBody;
+
+  /// No description provided for @shoppingBasketEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'السلة فاضية — ضيف اللي ناقصك'**
+  String get shoppingBasketEmpty;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

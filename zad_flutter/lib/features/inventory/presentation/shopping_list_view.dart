@@ -22,6 +22,7 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/core/money/money.dart';
 import 'package:zad/features/inventory/data/shopping_ai_remote.dart';
 import 'package:zad/shared/affiliate/application/affiliate_match_controller.dart';
@@ -475,7 +476,7 @@ class _BudgetHeader extends StatelessWidget {
           // An empty list says so instead of «— EGP» (emulator, 2026-11-10).
           if (basket == null && lines == 0)
             Text(
-              'السلة فاضية — ضيف اللي ناقصك',
+              context.l10n.shoppingBasketEmpty,
               style: ZadType.titleMedium.copyWith(color: Colors.white),
             )
           else

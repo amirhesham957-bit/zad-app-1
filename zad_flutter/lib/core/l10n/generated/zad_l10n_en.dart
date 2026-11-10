@@ -3336,4 +3336,7 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get tourBellBody => 'All of Zad\'s alerts and reminders in one place.';
+
+  @override
+  String get shoppingBasketEmpty => 'The basket is empty — add what you need';
 }

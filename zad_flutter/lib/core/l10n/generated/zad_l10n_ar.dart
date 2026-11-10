@@ -3266,4 +3266,7 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get tourBellBody => 'كل تنبيهات زاد وتذكيراته في مكان واحد.';
+
+  @override
+  String get shoppingBasketEmpty => 'السلة فاضية — ضيف اللي ناقصك';
 }
