@@ -167,7 +167,11 @@ class HomeCompanionHeader extends ConsumerWidget {
         borderRadius: radius,
         side: campaign == null
             ? BorderSide(color: _outline, width: 0.5)
-            : BorderSide(color: Color(campaign.primary), width: 1.5),
+            // A hint of the occasion, not a frame: at full strength White
+            // Friday's near-black drew a heavy outline (emulator, 2026-11-10).
+            : BorderSide(
+                color: Color(campaign.primary).withValues(alpha: 0.35),
+              ),
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(

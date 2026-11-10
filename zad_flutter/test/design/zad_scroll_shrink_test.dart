@@ -52,4 +52,31 @@ void main() {
     expect(find.byType(Opacity), findsNothing);
     expect(find.text('money'), findsOneWidget);
   });
+
+  testWidgets('at full opacity it only scales, with no fade layer', (
+    tester,
+  ) async {
+    final controller = ScrollController();
+    addTearDown(controller.dispose);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ListView(
+          controller: controller,
+          children: const <Widget>[
+            ZadScrollShrink(
+              minOpacity: 1,
+              child: SizedBox(height: 200, child: Text('money')),
+            ),
+            SizedBox(height: 2000),
+          ],
+        ),
+      ),
+    );
+    controller.jumpTo(120);
+    await tester.pump();
+    expect(
+      find.ancestor(of: find.text('money'), matching: find.byType(Opacity)),
+      findsNothing,
+    );
+  });
 }

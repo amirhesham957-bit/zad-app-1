@@ -28,6 +28,7 @@ owner's real account, where only read-only taps are allowed.
 | #450 | Home: the tour and the occasion's story on one line; balance card in the occasion's first colour with the second as a corner glow | passed | not yet, needs the next APK; card colours seen only in a test render |
 | #452 | Category ceilings on the account (`zad_category_budgets`), queued offline; the agent's `set_category_budget`; a phone's old ceilings go up once | passed | not yet, needs merging and the next APK |
 | #455 | The other six screens with floating buttons (transactions, documents, maintenance, pharmacy, appointments, subscriptions) step them aside too, with room under each list | passed | not yet, needs the next APK |
+| #456 | Home on the emulator (test account, White Friday): the balance card no longer fades to grey while it shrinks; the occasion banner uses the first colour with a corner glow; the greeting card's occasion outline is a faint hint | passed | seen before the fix on the emulator; after needs the next APK |
 
 ## Open bugs
 
@@ -40,7 +41,8 @@ owner's real account, where only read-only taps are allowed.
 - The occasion's vibe across the app, mostly in Premium, with small personal discounts.
 - Chef: famous chefs need the owner's TikTok handles for `RECIPE_ACCOUNTS`.
 - Brain map: a 3D sphere already exists (`knowledge_map_screen.dart`). Judge it on the phone before rebuilding.
-- The occasion banner and the bottom bar still blend both occasion colours (`campaignGradient`). Judge them on the phone; the balance card no longer does.
+- The bottom bar's mic still blends both occasion colours (`campaignGradient`); small enough to judge on the phone.
+- Seen on the emulator 2026-11-10, still to do: the intro form «عرّفني بيك» and the budget gate are plain white pages; the gate still says «سقف» where the app means the balance; «أول خطوة» puts step 3 outside a card and its Telegram card is cut under the fixed button; Home stacks the location banner, an empty live-prices bar, «ساهم بسعر», the tour row, the greeting and the occasion banner above the money; Home mixes three tile styles (export buttons, glance cards, section squares); the companion sits on the balance card at rest.
 - Explainer video.
 - Privacy policy (Google Site, v3.1) must match the app: AdMob, Sentry, Firebase, background location, Gemini, Azure, Telegram.
 - Audit of Supabase columns per screen, and UI for tables that have none.

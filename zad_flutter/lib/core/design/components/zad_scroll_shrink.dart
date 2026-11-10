@@ -49,14 +49,14 @@ class ZadScrollShrink extends StatelessWidget {
             ? scrollShrinkAt(position.pixels, distance)
             : 0.0;
         if (t == 0) return child!;
-        return Opacity(
-          opacity: 1 - (1 - minOpacity) * t,
-          child: Transform.scale(
-            scale: 1 - (1 - minScale) * t,
-            alignment: Alignment.topCenter,
-            child: child,
-          ),
+        final scaled = Transform.scale(
+          scale: 1 - (1 - minScale) * t,
+          alignment: Alignment.topCenter,
+          child: child,
         );
+        // At full opacity there is nothing to fade, and no layer to pay for.
+        if (minOpacity >= 1) return scaled;
+        return Opacity(opacity: 1 - (1 - minOpacity) * t, child: scaled);
       },
     );
   }
