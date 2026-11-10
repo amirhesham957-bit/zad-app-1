@@ -119,11 +119,11 @@ export function withAmazonTag(raw: string, env?: (k: string) => string | undefin
 /** الرد زي ما هيتبعت: روابط Markdown نضيفة، وروابط أمازون بالتاج ومفحوصة. */
 export async function linksForChat(
   reply: string,
-  deps: { fetcher?: typeof fetch; env?: (k: string) => string | undefined } = {},
+  deps: { fetcher?: typeof fetch; env?: (k: string) => string | undefined; isKnownLink?: (url: string) => Promise<boolean> } = {},
 ): Promise<string> {
   let text = reply.replace(MD_LINK, (_m, label: string, url: string) => `${label.trim()}: ${url}`);
   // فيديوهات يوتيوب وتيك توك مفحوصة قبل ما تتبعت (videoLinks.ts، بلاغ المالك ١٠/١١).
-  text = await videosForChat(text, { fetcher: deps.fetcher, env: deps.env });
+  text = await videosForChat(text, { fetcher: deps.fetcher, env: deps.env, isKnownLink: deps.isKnownLink });
   const found = [...new Set((text.match(AMAZON_URL) ?? []).map((u) => u.replace(/[.,،؛!؟?]+$/u, "")))];
   for (const original of found) {
     const tagged = withAmazonTag(original, deps.env);

@@ -3,7 +3,9 @@
 //   يوتيوب ⇐ youtube.com/oembed (٢٠٠ = الفيديو موجود وعام). مكسور ⇐ أول بديل شغال من YouTube Data API
 //            (YOUTUBE_API_KEY) بكلام السطر اللي كان فيه، ومفحوص بنفس الطريقة. مفيش مفتاح أو مفيش بديل ⇐ الرابط بيتشال.
 //   تيك توك ⇐ tiktok.com/oembed (٢٠٠ = موجود). مكسور ⇐ بيتشال.
-//   إنستجرام ⇐ مفيش فحص من غير توكن Meta، فرابط كتبه الموديل بيتشال. روابط إنستجرام الحقيقية جاية من Graph API (socialSources.ts).
+//   إنستجرام ⇐ مفيش فحص من غير توكن Meta: الرابط بيفضل بس لو احنا اللي جايبينه (متخزن في zad_deals أو zad_deal_codes أو
+//            zad_social_picks من Graph API، socialSources.ts)، وإلا الموديل كاتبه من دماغه وبيتشال. قبل ١٠/١١ كان بيتشال
+//            دايماً، حتى الحقيقي، فالعميل عمره ما شاف رابط إنستجرام.
 // مفيش كشط: نداءات oEmbed والبحث الرسمي بس، زي باقي المصادر.
 
 const YOUTUBE = /https?:\/\/(?:www\.|m\.)?(?:youtube\.com\/(?:watch\?v=|shorts\/)|youtu\.be\/)([\w-]{11})[^\s)\]»"'<>]*/gi;
@@ -17,6 +19,8 @@ type Env = (k: string) => string | undefined;
 export interface VideoDeps {
   fetcher?: typeof fetch;
   env?: Env;
+  /** رابط إنستجرام جاي من مصادرنا (متخزن عندنا)؟ من غيره كل روابط إنستجرام بتتشال. */
+  isKnownLink?: (url: string) => Promise<boolean>;
 }
 
 const trimEnd = (u: string) => u.replace(/[.,،؛!؟?]+$/u, "");
@@ -99,6 +103,9 @@ export async function videosForChat(reply: string, deps: VideoDeps = {}): Promis
     text = alternative ? text.split(url).join(alternative) : dropLink(text, url);
   }
   for (const url of tiktok) if (!alive.get(url)) text = dropLink(text, url);
-  for (const url of instagram) text = dropLink(text, url);
+  for (const url of instagram) {
+    const known = deps.isKnownLink ? await deps.isKnownLink(url).catch(() => false) : false;
+    if (!known) text = dropLink(text, url);
+  }
   return text.trimEnd();
 }

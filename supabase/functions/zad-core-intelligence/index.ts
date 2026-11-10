@@ -45,6 +45,7 @@ import { googleNearbyAny, googlePlacesKeys } from "./googlePlaces.ts";
 import { dealRelevance, loadAffinity, rankByRelevance } from "../_shared/dealRelevance.ts";
 import { DEAL_SEARCH_CACHE_MS, dealSearchCacheKey, refused, SOURCE_REST_MS, withoutResting } from "./sourcePool.ts";
 import { tiktokDealHits, tiktokDealsPrompt, tiktokQuery, withPriceFromPercent } from "./tiktokDeals.ts";
+import { isFreshPick, PICK_MIN_LIKES, readSocialPick, type SocialPick, tiktokPostedAt } from "./socialPicks.ts";
 import { brochureEntries, OFFICIAL_FLYER_SITES, OFFICIAL_FLYER_UA, officialFlyerDeals, officialFlyerPrompt, robotsAllows, siteForPdf } from "./officialFlyers.ts";
 import { fillMarketCurrency, DEAL_SEARCH_TIMEOUT_MS, dealQuery, dealsFromHitsPrompt, dealSearchItems, readDeals, readReverseCity, readStoreDeals, reverseCityUrl, sameCurrency, cleanCity, searchStoreName, storeDealsPrompt, storeDealsQuery, videoDealsPrompt, youtubeDealVideos, instagramDealPosts, postDealsPrompt, flyerDealsPrompt, readDealCodes, type DealCode } from "./liveDeals.ts";
 import { fuelPricePrompt, fuelPriceQuery, readFuelPrice } from "./fuelPrice.ts";
@@ -3363,6 +3364,7 @@ async function handle(req: Request): Promise<Response> {
         const today = new Date().toISOString().slice(0, 10);
         const deals: ReturnType<typeof readStoreDeals> = [];
         const codes: DealCode[] = [];
+        const picks: SocialPick[] = [];
         let read = 0;
         for (const hit of videos) {
           const { system, user } = tiktokDealsPrompt(store, market.name, currency, hit, today);
@@ -3371,12 +3373,16 @@ async function handle(req: Request): Promise<Response> {
           });
           if (!answer.ok || !answer.content) continue;
           read++;
-          const parsed = fillMarketCurrency(withPriceFromPercent((() => { try { return JSON.parse(answer.content!); } catch { return null; } })()), currency);
+          const raw = (() => { try { return JSON.parse(answer.content!); } catch { return null; } })();
+          const parsed = fillMarketCurrency(withPriceFromPercent(raw), currency);
           deals.push(...readStoreDeals(parsed, [hit], currency, new Date()));
           codes.push(...readDealCodes(parsed, hit.url, new Date()));
+          // From the video's own id: a pick older than two weeks is no longer a trend.
+          const pick = readSocialPick(raw, hit.url, tiktokPostedAt(hit.url));
+          if (pick && isFreshPick(pick.posted_at)) picks.push(pick);
         }
         return jsonResponse({
-          ok: true, deals, codes, hits: found.length, videos: videos.length, read, source: "tiktok", search: lastWebSearchSource,
+          ok: true, deals, codes, picks, hits: found.length, videos: videos.length, read, source: "tiktok", search: lastWebSearchSource,
         });
       }
 
@@ -3404,6 +3410,7 @@ async function handle(req: Request): Promise<Response> {
         const today = new Date().toISOString().slice(0, 10);
         const deals: ReturnType<typeof readStoreDeals> = [];
         const codes: DealCode[] = [];
+        const picks: SocialPick[] = [];
         let read = 0;
         for (const post of posts) {
           const { system, user } = postDealsPrompt(store, market.name, currency, post.caption, today);
@@ -3419,12 +3426,16 @@ async function handle(req: Request): Promise<Response> {
           const parsed = fillMarketCurrency((() => { try { return JSON.parse(answer.content!); } catch { return null; } })(), currency);
           const postDeals = readStoreDeals(parsed, [{ title: post.caption.slice(0, 120), url: post.permalink, snippet: "" }], currency, new Date());
           const postCodes = readDealCodes(parsed, post.permalink, new Date());
-          if (postDeals.length === 0 && postCodes.length === 0) logEmptyDealRead("instagram", store, post.caption, answer.content, parsed);
+          const pick = readSocialPick(parsed, post.permalink, post.timestamp, post.likes);
+          // The store's own account was vetted for followers; a hashtag post needs its own likes.
+          const liked = via === "account" || (post.likes ?? 0) >= PICK_MIN_LIKES;
+          if (pick && liked && isFreshPick(pick.posted_at)) picks.push(pick);
+          if (postDeals.length === 0 && postCodes.length === 0 && !pick) logEmptyDealRead("instagram", store, post.caption, answer.content, parsed);
           deals.push(...postDeals);
           codes.push(...postCodes);
         }
         return jsonResponse({
-          ok: true, deals, codes, hits: found.items.length, posts: posts.length, read, source: "instagram", via,
+          ok: true, deals, codes, picks, hits: found.items.length, posts: posts.length, read, source: "instagram", via,
           ...(via === "account" ? { account: handle } : { tag }),
         });
       }
