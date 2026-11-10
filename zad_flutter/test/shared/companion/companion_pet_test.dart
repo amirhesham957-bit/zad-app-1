@@ -195,7 +195,10 @@ void main() {
     await pump(tester, const CompanionFloatingPet());
     final drag = find.byKey(const ValueKey<String>('pet-floating-drag'));
     final before = tester.getCenter(drag);
-    // It starts by the bottom-left corner (the end side in Arabic).
+    // It starts by the bottom-left corner (the end side in Arabic), peeking
+    // from the edge until it is placed: its middle is near the screen's
+    // edge, not on the card beside it.
+    expect(before.dx, lessThan(40));
     await tester.drag(drag, const Offset(300, -250));
     await tester.pump(const Duration(seconds: 1));
     final after = tester.getCenter(drag);
