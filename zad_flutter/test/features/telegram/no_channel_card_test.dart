@@ -125,6 +125,31 @@ void main() {
       expect(events, isNot(contains('channel.card_shown')));
     });
 
+    // One Telegram card at a time, none once linked (emulator, 2026-11-10).
+    for (final (banner, linked, shown) in <(bool, bool, bool)>[
+      (true, false, false),
+      (false, false, true),
+      (false, true, false),
+    ]) {
+      testWidgets('quiet bot card: banner $banner, linked $linked', (
+        tester,
+      ) async {
+        allowed = true;
+        await pump(
+          tester,
+          TelegramHomeState(
+            bannerVisible: banner,
+            promptDue: false,
+            linked: linked,
+          ),
+        );
+        expect(
+          find.text('بوت زاد على تليجرام'),
+          shown ? findsOneWidget : findsNothing,
+        );
+      });
+    }
+
     testWidgets('link status unknown: no card', (tester) async {
       await pump(
         tester,
