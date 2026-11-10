@@ -842,3 +842,27 @@ Deno.test("an amazon link in Zad's reply becomes a button under it (owner, 10/11
   const untagged = "شوف https://www.amazon.eg/dp/B0CHX3QBCH";
   assertEquals(amazonLinkButtons(untagged), { text: untagged, rows: [] });
 });
+
+Deno.test("amazon buttons go through the bot and open the Amazon app on Android", () => {
+  const { amazonOpenUrl, amazonAppRedirect, amazonLinkButtons } = telegramModule;
+  const base = "https://x.supabase.co";
+  const eg = "https://www.amazon.eg/dp/B0ABCDEF12?tag=zad04-21";
+  const via = amazonOpenUrl(base, eg);
+  assertEquals(via, `${base}/functions/v1/zad-telegram-bot?open=amazon&u=${encodeURIComponent(eg)}`);
+  assertEquals(new URL(via).searchParams.get("u"), eg);
+  // Not Amazon: the button keeps its own link, and the redirect refuses it.
+  assertEquals(amazonOpenUrl(base, "https://evil.example/x"), "https://evil.example/x");
+  assertEquals(amazonAppRedirect("https://evil.example/x", "Android"), null);
+  assertEquals(amazonAppRedirect("https://www.amazon.eg.evil.example/x", "Android"), null);
+  assertEquals(amazonAppRedirect(null, "Android"), null);
+  // Android: the Amazon app, with the same tagged page as the fallback.
+  assertEquals(
+    amazonAppRedirect(eg, "Mozilla/5.0 (Linux; Android 14)"),
+    `intent://www.amazon.eg/dp/B0ABCDEF12?tag=zad04-21#Intent;scheme=https;package=com.amazon.mShop.android.shopping;S.browser_fallback_url=${encodeURIComponent(eg)};end`,
+  );
+  // iPhone and the rest: the link itself.
+  assertEquals(amazonAppRedirect(eg, "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0)"), eg);
+  // The reply's buttons use the opener.
+  const out = amazonLinkButtons(`خدها من هنا: ${eg}`, (u) => amazonOpenUrl(base, u));
+  assertEquals(out.rows, [[{ text: "🛒 افتحه على أمازون", url: via }]]);
+});
