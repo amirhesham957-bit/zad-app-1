@@ -1,6 +1,6 @@
 // كتابة وصفات وعروض تيك توك ويوتيوب وإنستجرام (ZAD_PLAN ٧.٤، المنصات الـ٣ ١٠/١١). القراية والفهم في zad-core-intelligence/socialRecipes.ts.
 //
-// الحسابات والمواضيع بتتوزع على ٣ نوبات (كرون social-recipes-twice-weekly)، والفيديو اللي اتقرا مايتعادش.
+// الحسابات والمواضيع بتتوزع على ٣ نوبات (كرون social-recipes-daily)، والفيديو اللي اتقرا مايتعادش.
 // عرض لمحل برّه قايمة zad_deal_seed_stores مابيدخلش zad_deals: الاسم جاي من وصف فيديو، والقايمة هي اللي بتثبت إنه محل حقيقي في بلده.
 
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
