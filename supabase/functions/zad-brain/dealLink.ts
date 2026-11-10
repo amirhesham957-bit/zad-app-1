@@ -5,6 +5,8 @@
 //    نون والدواء ولولو 403، بنده 404، فمش هنا) — وبرضه بيتفحص ساعتها.
 // ٣. مفيش رابط مضمون ⇒ الرسالة زي ما هي، نص بس.
 
+import { dropLink, videosForChat } from "./videoLinks.ts";
+
 /** تاجات أمازون: سر المشروع لو موجود، وإلا اللي التطبيق بيستعمله من ٩/١١. */
 export function amazonTag(country: string, env: (k: string) => string | undefined = (k) => Deno.env.get(k)): string | null {
   if (country === "EG") return env("ZAD_AMAZON_EG_TAG")?.trim() || "zad04-21";
@@ -120,13 +122,15 @@ export async function linksForChat(
   deps: { fetcher?: typeof fetch; env?: (k: string) => string | undefined } = {},
 ): Promise<string> {
   let text = reply.replace(MD_LINK, (_m, label: string, url: string) => `${label.trim()}: ${url}`);
+  // فيديوهات يوتيوب وتيك توك مفحوصة قبل ما تتبعت (videoLinks.ts، بلاغ المالك ١٠/١١).
+  text = await videosForChat(text, { fetcher: deps.fetcher, env: deps.env });
   const found = [...new Set((text.match(AMAZON_URL) ?? []).map((u) => u.replace(/[.,،؛!؟?]+$/u, "")))];
   for (const original of found) {
     const tagged = withAmazonTag(original, deps.env);
     const ok = tagged !== null && await answers200(tagged, deps.fetcher);
     text = ok
       ? text.split(original).join(tagged!)
-      : text.split(original).join("").replace(/:\s*(?=\s|$)/gu, "").replace(/[ \t]{2,}/g, " ");
+      : dropLink(text, original);
   }
   return text.trimEnd();
 }
