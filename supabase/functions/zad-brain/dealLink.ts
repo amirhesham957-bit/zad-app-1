@@ -95,7 +95,8 @@ export async function withDealLink<T extends { item: string; store: string; prod
 // (تطبيق أمازون بيلقطه)، ورابط أمازون مصر/السعودية بياخد التاج، وبيتبعت بس لو ردّ 200 — وإلا النص لوحده.
 
 const MD_LINK = /\[([^\]\n]{1,80})\]\((https?:\/\/[^\s)]+)\)/g;
-const AMAZON_URL = /https?:\/\/(?:www\.)?amazon\.(eg|sa)\/[^\s)\]»"'<>]+/gi;
+// المسار اختياري: «https://www.amazon.eg» لوحده اتبعت من غير تاج (بلاغ المالك ١٠/١١، بعد #٤٥٧).
+const AMAZON_URL = /https?:\/\/(?:www\.)?amazon\.(eg|sa)(?:\/[^\s)\]»"'<>]*)?/gi;
 
 /** رابط أمازون بالتاج بتاعنا (بدل أي تاج تاني)، أو null لو مش أمازون مصر/السعودية. */
 export function withAmazonTag(raw: string, env?: (k: string) => string | undefined): string | null {

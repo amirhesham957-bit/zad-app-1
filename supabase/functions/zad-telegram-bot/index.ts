@@ -41,7 +41,7 @@ import {
   adCreditKeyboard,
   InlineKeyboardButton, mainMenuKeyboard, dismissKeyboard,
   proactiveDismissKeyboard, parseProactiveDismissCallback, proactiveDismissReply,
-  reasonForCode, parseDismissCallback, appLinkRedirect, petCallKeyboard, parsePetCareCallback, petCareReply, normalizeBindingCode, bindingReply, isFamilyInviteCode, looksLikeLinkCode, FAMILY_CODE_REPLY, adminChatId, mapButtonRow, amazonButtonRows, type BindingStatus, unlinkReply, memoryNoteForDismissal,
+  reasonForCode, parseDismissCallback, appLinkRedirect, petCallKeyboard, parsePetCareCallback, petCareReply, normalizeBindingCode, bindingReply, isFamilyInviteCode, looksLikeLinkCode, FAMILY_CODE_REPLY, adminChatId, mapButtonRow, amazonButtonRows, amazonLinkButtons, type BindingStatus, unlinkReply, memoryNoteForDismissal,
   formatBalanceMessage, type BudgetStateRow, formatTransactionsMessage, formatInsightTitle,
   confirmSpendKeyboard, parseSpendCallback, pendingQuestionAnswered, refusedSpendReply,
   transactionProposalKeyboard, parseTransactionProposalCallback,
@@ -1669,7 +1669,8 @@ bot.on("message:text", async (ctx) => {
     } else if (turnReply.toolPendingId) {
       await ctx.reply(body, { reply_markup: toGrammyKeyboard(confirmToolKeyboard(turnReply.toolPendingId)) });
     } else {
-      await ctx.reply(body);
+      const shop = amazonLinkButtons(body);
+      await ctx.reply(shop.text, shop.rows.length ? { reply_markup: toGrammyKeyboard(shop.rows) } : undefined);
       // رد فيه إحساس (تشجيع، قلق، عتاب خفيف) ⇒ بصوت زاد كمان (voiceReply.ts)، بعد النص وفي الخلفية.
       runInBackground(maybeVoiceReply(sb, userId, ctx.chat.id, turnReply.lines.join("\n\n"), false));
     }
@@ -1753,7 +1754,8 @@ bot.on("message:voice", async (ctx) => {
     } else if (turnReply.toolPendingId) {
       await ctx.reply(body, { reply_markup: toGrammyKeyboard(confirmToolKeyboard(turnReply.toolPendingId)) });
     } else {
-      await ctx.reply(body);
+      const shop = amazonLinkButtons(body);
+      await ctx.reply(shop.text, shop.rows.length ? { reply_markup: toGrammyKeyboard(shop.rows) } : undefined);
       // بعت فويس ⇒ الرد يتقال بصوت زاد كمان (voiceReply.ts)، بعد النص وفي الخلفية.
       runInBackground(maybeVoiceReply(sb, userId, ctx.chat.id, turnReply.lines.join("\n\n"), true));
     }

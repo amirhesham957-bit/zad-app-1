@@ -10,8 +10,7 @@ import {
   duplicateProposalKeyboard, duplicateProposalMessage,
   notificationReviewMessage,
   adCreditKeyboard,
-  proactiveDismissKeyboard, parseProactiveDismissCallback, arabicDays, proactiveDismissReply,
-} from "./telegram.ts";
+  proactiveDismissKeyboard, parseProactiveDismissCallback, arabicDays, proactiveDismissReply, amazonLinkButtons } from "./telegram.ts";
 
 Deno.test("normalizeBindingCode uppercases a valid code", () => {
   assertEquals(normalizeBindingCode("abcd1234"), "ABCD1234");
@@ -832,4 +831,14 @@ Deno.test("check-in by words (owner 7/11): the buttons are a shortcut, a written
   assertEquals(level("الأرز بكام؟"), null);
   assertEquals(level("صباح الخير"), null);
   assertEquals(parseCheckinTextReply("خلص", []), null);
+});
+
+Deno.test("an amazon link in Zad's reply becomes a button under it (owner, 10/11)", () => {
+  const body = "ده لينك أمازون ناو: https://www.amazon.eg/gp/browse.html?node=21869850031&tag=zad04-21 عشان تطلب اللي ناقصك.";
+  const out = amazonLinkButtons(body);
+  assertEquals(out.rows, [[{ text: "🛒 افتحه على أمازون", url: "https://www.amazon.eg/gp/browse.html?node=21869850031&tag=zad04-21" }]]);
+  assertEquals(out.text.includes("https://"), false);
+  // Without our tag it was not checked by Zad: it stays in the text, no button.
+  const untagged = "شوف https://www.amazon.eg/dp/B0CHX3QBCH";
+  assertEquals(amazonLinkButtons(untagged), { text: untagged, rows: [] });
 });
