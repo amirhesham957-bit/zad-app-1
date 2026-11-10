@@ -8,7 +8,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' show DateFormat;
 import 'package:zad/core/data/providers.dart';
-import 'package:zad/core/design/components/zad_pressable.dart';
+import 'package:zad/core/design/components/zad_card.dart';
+import 'package:zad/core/design/components/zad_icon_chip.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
@@ -151,44 +152,37 @@ class _Tile extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => ZadPressable(
-    onPressed: onTap,
-    child: Container(
-      padding: const EdgeInsets.all(ZadSpacing.md),
-      decoration: BoxDecoration(
-        color: ZadColors.surface,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-          color: isUrgent ? ZadColors.mustardOchre : ZadColors.outline,
+  Widget build(BuildContext context) => ZadCard(
+    onTap: onTap,
+    padding: const EdgeInsets.all(ZadSpacing.md),
+    // Something due soon: a warm wash instead of a drawn border.
+    color: isUrgent ? ZadColors.mustardOchre.withValues(alpha: 0.10) : null,
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        ZadIconChip(icon: icon, tint: tint, size: 32),
+        const SizedBox(height: ZadSpacing.sm),
+        Text(
+          title,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: ZadType.labelSmall.copyWith(color: ZadColors.inkMuted),
         ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Icon(icon, size: 20, color: tint),
-          const SizedBox(height: ZadSpacing.sm),
+        const SizedBox(height: ZadSpacing.xs),
+        Text(
+          headline,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: ZadType.titleSmall.copyWith(color: ZadColors.ink),
+        ),
+        if (caption != null)
           Text(
-            title,
+            caption!,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: ZadType.labelSmall.copyWith(color: ZadColors.inkMuted),
           ),
-          const SizedBox(height: ZadSpacing.xs),
-          Text(
-            headline,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: ZadType.titleSmall.copyWith(color: ZadColors.ink),
-          ),
-          if (caption != null)
-            Text(
-              caption!,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: ZadType.labelSmall.copyWith(color: ZadColors.inkMuted),
-            ),
-        ],
-      ),
+      ],
     ),
   );
 }
