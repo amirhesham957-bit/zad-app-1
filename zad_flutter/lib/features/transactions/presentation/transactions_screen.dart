@@ -14,6 +14,7 @@ import 'package:intl/intl.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:zad/core/design/components/zad_card.dart';
 import 'package:zad/core/design/components/zad_empty_state.dart';
+import 'package:zad/core/design/components/zad_scroll_away.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
@@ -75,99 +76,103 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
     final rows = view.rows.where(_filter.keeps).toList();
     final controller = ref.read(transactionsControllerProvider.notifier);
 
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      // Bottom third of the screen, where the thumb already is.
-      floatingActionButton: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: <Widget>[
-          // Above the main action and smaller than it: scanning is the faster
-          // way in when there is paper in hand, but typing is the one that
-          // always works, so it keeps the larger target.
-          FloatingActionButton.small(
-            heroTag: 'scan',
-            onPressed: () =>
-                ZadScreens.showCameraScreen(context, CameraMode.receipt),
-            tooltip: context.l10n.txScanReceipt,
-            backgroundColor: ZadColors.surface,
-            foregroundColor: ZadColors.green800,
-            child: const Icon(ZadIcons.scan),
-          ),
-          const SizedBox(height: ZadSpacing.md),
-          FloatingActionButton.extended(
-            heroTag: 'add',
-            onPressed: () => showAddTransactionSheet(context),
-            icon: const Icon(ZadIcons.add),
-            label: Text(context.l10n.txLog),
-            backgroundColor: ZadColors.green800,
-            foregroundColor: Colors.white,
-          ),
-        ],
-      ),
-      body: DecoratedBox(
-        decoration: BoxDecoration(gradient: ZadColors.canvas),
-        child: RefreshIndicator(
-          // force: the cooldown stops *automatic* refetching on re-entry.
-          // Someone who pulled the list down asked for it.
-          onRefresh: () => controller.refresh(force: true),
-          child: CustomScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            slivers: <Widget>[
-              SliverAppBar(
-                title: Text(context.l10n.txTitle),
-                floating: true,
-                backgroundColor: Colors.transparent,
-                actions: <Widget>[
-                  if (view.pendingCount > 0)
-                    Padding(
-                      padding: const EdgeInsets.only(left: ZadSpacing.lg),
-                      child: _PendingChip(count: view.pendingCount),
-                    ),
-                ],
+    return ZadScrollAwayScope(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        // Bottom third of the screen, where the thumb already is.
+        floatingActionButton: ZadStepsAside(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: <Widget>[
+              // Above the main action and smaller than it: scanning is the
+              // faster way in when there is paper in hand, but typing is the
+              // one that always works, so it keeps the larger target.
+              FloatingActionButton.small(
+                heroTag: 'scan',
+                onPressed: () =>
+                    ZadScreens.showCameraScreen(context, CameraMode.receipt),
+                tooltip: context.l10n.txScanReceipt,
+                backgroundColor: ZadColors.surface,
+                foregroundColor: ZadColors.green800,
+                child: const Icon(ZadIcons.scan),
               ),
-              if (!view.isEmpty)
-                SliverToBoxAdapter(
-                  child: SizedBox(
-                    height: 56,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: ZadSpacing.gutter,
-                        vertical: ZadSpacing.sm,
+              const SizedBox(height: ZadSpacing.md),
+              FloatingActionButton.extended(
+                heroTag: 'add',
+                onPressed: () => showAddTransactionSheet(context),
+                icon: const Icon(ZadIcons.add),
+                label: Text(context.l10n.txLog),
+                backgroundColor: ZadColors.green800,
+                foregroundColor: Colors.white,
+              ),
+            ],
+          ),
+        ),
+        body: DecoratedBox(
+          decoration: BoxDecoration(gradient: ZadColors.canvas),
+          child: RefreshIndicator(
+            // force: the cooldown stops *automatic* refetching on re-entry.
+            // Someone who pulled the list down asked for it.
+            onRefresh: () => controller.refresh(force: true),
+            child: CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: <Widget>[
+                SliverAppBar(
+                  title: Text(context.l10n.txTitle),
+                  floating: true,
+                  backgroundColor: Colors.transparent,
+                  actions: <Widget>[
+                    if (view.pendingCount > 0)
+                      Padding(
+                        padding: const EdgeInsets.only(left: ZadSpacing.lg),
+                        child: _PendingChip(count: view.pendingCount),
                       ),
-                      children: <Widget>[
-                        for (final f in TxnFilter.values) ...<Widget>[
-                          ChoiceChip(
-                            label: Text(f.label(context.l10n)),
-                            selected: _filter == f,
-                            showCheckmark: false,
-                            shape: const StadiumBorder(),
-                            onSelected: (_) => setState(() => _filter = f),
-                          ),
-                          const SizedBox(width: ZadSpacing.sm),
+                  ],
+                ),
+                if (!view.isEmpty)
+                  SliverToBoxAdapter(
+                    child: SizedBox(
+                      height: 56,
+                      child: ListView(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: ZadSpacing.gutter,
+                          vertical: ZadSpacing.sm,
+                        ),
+                        children: <Widget>[
+                          for (final f in TxnFilter.values) ...<Widget>[
+                            ChoiceChip(
+                              label: Text(f.label(context.l10n)),
+                              selected: _filter == f,
+                              showCheckmark: false,
+                              shape: const StadiumBorder(),
+                              onSelected: (_) => setState(() => _filter = f),
+                            ),
+                            const SizedBox(width: ZadSpacing.sm),
+                          ],
                         ],
-                      ],
+                      ),
                     ),
                   ),
-                ),
-              if (view.isEmpty)
-                SliverFillRemaining(
-                  hasScrollBody: false,
-                  child: _Empty(hasError: view.error != null),
-                )
-              else if (rows.isEmpty)
-                SliverFillRemaining(
-                  hasScrollBody: false,
-                  child: ZadEmptyState(
-                    icon: ZadIcons.search,
-                    title: context.l10n.txNoneHere,
-                    message: context.l10n.txTryFilter,
-                  ),
-                )
-              else
-                ..._daySlivers(ref, rows),
-            ],
+                if (view.isEmpty)
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: _Empty(hasError: view.error != null),
+                  )
+                else if (rows.isEmpty)
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: ZadEmptyState(
+                      icon: ZadIcons.search,
+                      title: context.l10n.txNoneHere,
+                      message: context.l10n.txTryFilter,
+                    ),
+                  )
+                else
+                  ..._daySlivers(ref, rows),
+              ],
+            ),
           ),
         ),
       ),
@@ -222,7 +227,8 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
             ],
           ),
         ),
-      const SliverToBoxAdapter(child: SizedBox(height: ZadSpacing.xl)),
+      // Room for the two floating buttons, so at the end they cover nothing.
+      const SliverToBoxAdapter(child: SizedBox(height: 132)),
     ];
   }
 }

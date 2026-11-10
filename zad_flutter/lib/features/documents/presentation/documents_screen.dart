@@ -16,6 +16,7 @@ import 'package:zad/core/data/local/screen_cache.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/components/zad_empty_state.dart';
 import 'package:zad/core/design/components/zad_field_dialog.dart';
+import 'package:zad/core/design/components/zad_scroll_away.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_motion.dart';
@@ -173,82 +174,86 @@ class _DocumentsState extends ConsumerState<DocumentsScreen> {
 
     return DecoratedBox(
       decoration: BoxDecoration(gradient: ZadColors.canvas),
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        appBar: AppBar(title: const Text('مستنداتي')),
-        floatingActionButton: FloatingActionButton(
-          tooltip: 'إضافة مستند',
-          onPressed: () => unawaited(_edit()),
-          child: const Icon(ZadIcons.add),
-        ),
-        body: RefreshIndicator(
-          onRefresh: _load,
-          child: ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(
-              ZadSpacing.lg,
-              ZadSpacing.md,
-              ZadSpacing.lg,
-              120,
+      child: ZadScrollAwayScope(
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          appBar: AppBar(title: const Text('مستنداتي')),
+          floatingActionButton: ZadStepsAside(
+            child: FloatingActionButton(
+              tooltip: 'إضافة مستند',
+              onPressed: () => unawaited(_edit()),
+              child: const Icon(ZadIcons.add),
             ),
-            children: <Widget>[
-              Row(
-                children: <Widget>[
-                  Icon(ZadIcons.privacy, size: 16, color: ZadColors.inkMuted),
-                  const SizedBox(width: ZadSpacing.sm),
-                  Expanded(
-                    child: Text(
-                      'زاد بيحفظ نوع المستند وتاريخ انتهائه بس — من غير '
-                      'رقم ولا صورة — ويفكّرك قبلها.',
-                      style: ZadType.bodySmall.copyWith(
-                        color: ZadColors.inkMuted,
+          ),
+          body: RefreshIndicator(
+            onRefresh: _load,
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(
+                ZadSpacing.lg,
+                ZadSpacing.md,
+                ZadSpacing.lg,
+                120,
+              ),
+              children: <Widget>[
+                Row(
+                  children: <Widget>[
+                    Icon(ZadIcons.privacy, size: 16, color: ZadColors.inkMuted),
+                    const SizedBox(width: ZadSpacing.sm),
+                    Expanded(
+                      child: Text(
+                        'زاد بيحفظ نوع المستند وتاريخ انتهائه بس — من غير '
+                        'رقم ولا صورة — ويفكّرك قبلها.',
+                        style: ZadType.bodySmall.copyWith(
+                          color: ZadColors.inkMuted,
+                        ),
                       ),
+                    ),
+                  ],
+                ),
+                if (due > 0) ...<Widget>[
+                  const SizedBox(height: ZadSpacing.md),
+                  Text(
+                    due == 1
+                        ? 'مستند واحد محتاج تجديد قريب'
+                        : '$due مستندات محتاجة تجديد قريب',
+                    style: ZadType.titleSmall.copyWith(
+                      color: ZadColors.terracottaRust,
                     ),
                   ),
                 ],
-              ),
-              if (due > 0) ...<Widget>[
                 const SizedBox(height: ZadSpacing.md),
-                Text(
-                  due == 1
-                      ? 'مستند واحد محتاج تجديد قريب'
-                      : '$due مستندات محتاجة تجديد قريب',
-                  style: ZadType.titleSmall.copyWith(
-                    color: ZadColors.terracottaRust,
-                  ),
-                ),
+                if (_loading)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 48),
+                    child: Center(child: CircularProgressIndicator()),
+                  )
+                else if (sorted.isEmpty)
+                  const ZadEmptyState(
+                    icon: ZadIcons.document,
+                    title: 'مفيش مستندات متسجلة',
+                    message:
+                        'ضيف الجواز أو البطاقة أو الرخصة بتاريخ انتهائها، وزاد '
+                        'يفكّرك قبلها بوقت كفاية للتجديد. '
+                        'أو قول لزاد في الشات: «جوازي بينتهي ١٥ مارس ٢٠٢٧».',
+                  )
+                else
+                  for (final (i, doc) in sorted.indexed)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: ZadSpacing.md),
+                      child:
+                          _DocumentCard(
+                                doc: doc,
+                                today: today,
+                                onEdit: () => unawaited(_edit(doc)),
+                                onDelete: () => unawaited(_delete(doc)),
+                              )
+                              .animate(delay: (i * 40).clamp(0, 400).ms)
+                              .fadeIn(duration: ZadDuration.enter)
+                              .moveY(begin: 8, curve: ZadCurves.standard),
+                    ),
               ],
-              const SizedBox(height: ZadSpacing.md),
-              if (_loading)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 48),
-                  child: Center(child: CircularProgressIndicator()),
-                )
-              else if (sorted.isEmpty)
-                const ZadEmptyState(
-                  icon: ZadIcons.document,
-                  title: 'مفيش مستندات متسجلة',
-                  message:
-                      'ضيف الجواز أو البطاقة أو الرخصة بتاريخ انتهائها، وزاد '
-                      'يفكّرك قبلها بوقت كفاية للتجديد. أو قول لزاد في الشات: '
-                      '«جوازي بينتهي ١٥ مارس ٢٠٢٧».',
-                )
-              else
-                for (final (i, doc) in sorted.indexed)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: ZadSpacing.md),
-                    child:
-                        _DocumentCard(
-                              doc: doc,
-                              today: today,
-                              onEdit: () => unawaited(_edit(doc)),
-                              onDelete: () => unawaited(_delete(doc)),
-                            )
-                            .animate(delay: (i * 40).clamp(0, 400).ms)
-                            .fadeIn(duration: ZadDuration.enter)
-                            .moveY(begin: 8, curve: ZadCurves.standard),
-                  ),
-            ],
+            ),
           ),
         ),
       ),

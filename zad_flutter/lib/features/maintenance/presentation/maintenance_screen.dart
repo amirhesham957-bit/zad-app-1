@@ -15,6 +15,7 @@ import 'package:timezone/timezone.dart' as tz;
 import 'package:zad/core/data/local/screen_cache.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/components/zad_empty_state.dart';
+import 'package:zad/core/design/components/zad_scroll_away.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_motion.dart';
@@ -229,115 +230,119 @@ class _MaintenanceState extends ConsumerState<MaintenanceScreen> {
 
     return DecoratedBox(
       decoration: BoxDecoration(gradient: ZadColors.canvas),
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        appBar: AppBar(
-          title: const Text('صيانة المنزل'),
-          actions: <Widget>[
-            IconButton(
-              tooltip: 'فنيين بثق فيهم',
-              onPressed: () => unawaited(showTrustedTechnicians(context)),
-              icon: const Icon(Icons.handyman_outlined),
+      child: ZadScrollAwayScope(
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          appBar: AppBar(
+            title: const Text('صيانة المنزل'),
+            actions: <Widget>[
+              IconButton(
+                tooltip: 'فنيين بثق فيهم',
+                onPressed: () => unawaited(showTrustedTechnicians(context)),
+                icon: const Icon(Icons.handyman_outlined),
+              ),
+            ],
+          ),
+          floatingActionButton: ZadStepsAside(
+            child: FloatingActionButton(
+              tooltip: 'إضافة',
+              onPressed: () => unawaited(_add()),
+              child: const Icon(ZadIcons.add),
             ),
-          ],
-        ),
-        floatingActionButton: FloatingActionButton(
-          tooltip: 'إضافة',
-          onPressed: () => unawaited(_add()),
-          child: const Icon(ZadIcons.add),
-        ),
-        body: RefreshIndicator(
-          onRefresh: _load,
-          child: ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(
-              ZadSpacing.lg,
-              ZadSpacing.md,
-              ZadSpacing.lg,
-              120,
-            ),
-            children: <Widget>[
-              Row(
-                children: <Widget>[
-                  Expanded(
-                    child: _Stat('${items.length}', 'الأجهزة', ZadColors.ink),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: _Stat(
-                      '$dueSoon',
-                      'صيانة قريبة',
-                      ZadColors.mustardOchre,
+          ),
+          body: RefreshIndicator(
+            onRefresh: _load,
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(
+                ZadSpacing.lg,
+                ZadSpacing.md,
+                ZadSpacing.lg,
+                120,
+              ),
+              children: <Widget>[
+                Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: _Stat('${items.length}', 'الأجهزة', ZadColors.ink),
                     ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: _Stat(
-                      '$warranty',
-                      'ضمان قارب',
-                      ZadColors.terracottaRust,
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _Stat(
+                        '$dueSoon',
+                        'صيانة قريبة',
+                        ZadColors.mustardOchre,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _Stat(
+                        '$warranty',
+                        'ضمان قارب',
+                        ZadColors.terracottaRust,
+                      ),
+                    ),
+                  ],
+                ).animate().fadeIn(duration: ZadDuration.enter),
+                if (overdue > 0) ...<Widget>[
+                  const SizedBox(height: ZadSpacing.md),
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: ZadColors.terracottaRust.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(ZadSpacing.md),
+                      child: Row(
+                        children: <Widget>[
+                          Icon(
+                            ZadIcons.failed,
+                            size: 18,
+                            color: ZadColors.terracottaRust,
+                          ),
+                          const SizedBox(width: ZadSpacing.sm),
+                          Text(
+                            '$overdue جهاز متأخر عن موعد الصيانة',
+                            style: ZadType.bodySmall.copyWith(
+                              color: ZadColors.terracottaRust,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],
-              ).animate().fadeIn(duration: ZadDuration.enter),
-              if (overdue > 0) ...<Widget>[
                 const SizedBox(height: ZadSpacing.md),
-                DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: ZadColors.terracottaRust.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(ZadSpacing.md),
-                    child: Row(
-                      children: <Widget>[
-                        Icon(
-                          ZadIcons.failed,
-                          size: 18,
-                          color: ZadColors.terracottaRust,
-                        ),
-                        const SizedBox(width: ZadSpacing.sm),
-                        Text(
-                          '$overdue جهاز متأخر عن موعد الصيانة',
-                          style: ZadType.bodySmall.copyWith(
-                            color: ZadColors.terracottaRust,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
+                if (_loading)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 48),
+                    child: Center(child: CircularProgressIndicator()),
+                  )
+                else if (sorted.isEmpty)
+                  const ZadEmptyState(
+                    icon: ZadIcons.maintenance,
+                    title: 'لا توجد أجهزة مسجلة بعد',
+                    message:
+                        'سجّل التكييف أو السخان أو العربية، وزاد يفكّرك بميعاد '
+                        'صيانتها وضمانها.',
+                  )
+                else
+                  for (final (i, item) in sorted.indexed)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: ZadSpacing.md),
+                      child:
+                          _ItemCard(
+                                item: item,
+                                onServiced: () => unawaited(_serviced(item)),
+                                onDelete: () => unawaited(_delete(item)),
+                              )
+                              .animate(delay: (i * 40).clamp(0, 400).ms)
+                              .fadeIn(duration: ZadDuration.enter)
+                              .moveY(begin: 8, curve: ZadCurves.standard),
                     ),
-                  ),
-                ),
               ],
-              const SizedBox(height: ZadSpacing.md),
-              if (_loading)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 48),
-                  child: Center(child: CircularProgressIndicator()),
-                )
-              else if (sorted.isEmpty)
-                const ZadEmptyState(
-                  icon: ZadIcons.maintenance,
-                  title: 'لا توجد أجهزة مسجلة بعد',
-                  message:
-                      'سجّل التكييف أو السخان أو العربية، وزاد يفكّرك بميعاد '
-                      'صيانتها وضمانها.',
-                )
-              else
-                for (final (i, item) in sorted.indexed)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: ZadSpacing.md),
-                    child:
-                        _ItemCard(
-                              item: item,
-                              onServiced: () => unawaited(_serviced(item)),
-                              onDelete: () => unawaited(_delete(item)),
-                            )
-                            .animate(delay: (i * 40).clamp(0, 400).ms)
-                            .fadeIn(duration: ZadDuration.enter)
-                            .moveY(begin: 8, curve: ZadCurves.standard),
-                  ),
-            ],
+            ),
           ),
         ),
       ),

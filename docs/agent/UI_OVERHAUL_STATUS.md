@@ -27,6 +27,7 @@ owner's real account, where only read-only taps are allowed.
 | #449 | Floating buttons and the companion step aside while a list is read (Money, pantry, Home); room under each list; pantry names on two lines | passed | not yet, needs the next APK |
 | #450 | Home: the tour and the occasion's story on one line; balance card in the occasion's first colour with the second as a corner glow | passed | not yet, needs the next APK; card colours seen only in a test render |
 | #452 | Category ceilings on the account (`zad_category_budgets`), queued offline; the agent's `set_category_budget`; a phone's old ceilings go up once | passed | not yet, needs merging and the next APK |
+| #455 | The other six screens with floating buttons (transactions, documents, maintenance, pharmacy, appointments, subscriptions) step them aside too, with room under each list | passed | not yet, needs the next APK |
 
 ## Open bugs
 
@@ -40,7 +41,6 @@ owner's real account, where only read-only taps are allowed.
 - Chef: famous chefs need the owner's TikTok handles for `RECIPE_ACCOUNTS`.
 - Brain map: a 3D sphere already exists (`knowledge_map_screen.dart`). Judge it on the phone before rebuilding.
 - The occasion banner and the bottom bar still blend both occasion colours (`campaignGradient`). Judge them on the phone; the balance card no longer does.
-- Other screens with floating buttons (transactions, documents, maintenance, pharmacy, appointments, subscriptions) can adopt `ZadScrollAwayScope` + `ZadStepsAside` the same way.
 - Explainer video.
 - Privacy policy (Google Site, v3.1) must match the app: AdMob, Sentry, Firebase, background location, Gemini, Azure, Telegram.
 - Audit of Supabase columns per screen, and UI for tables that have none.
