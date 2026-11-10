@@ -158,7 +158,7 @@ import { loadWhileAway, whileAwayBlock } from "./whileAway.ts";
 import { campaignAndTasteRules, type CampaignRow, pickHomeCampaign, recipeTaste } from "./campaigns.ts";
 import { loadWeather, weatherForSnapshot, weatherRule } from "./weather.ts";
 import { medicinePrice, medicinePriceReply, pricePayload } from "./medicinePrice.ts";
-import { dealCountry, dealSource, dealsAtPlace, dealsHere, nearbySource, type StoredDealRow } from "./tasteDeals.ts";
+import { dealCountry, dealsAtPlace, dealsHere, dealSource, linkCheck, nearbySource, type StoredDealRow } from "./tasteDeals.ts";
 import { dealPutPayload, findCustomerCities, type FlyerReadRow, flyerEntries, INSTAGRAM_STORES_PER_RUN, accountDayTargets, isInstagramHashtagDay, nextFlyer, searchedDeals, STORES_PER_RUN, TIKTOK_STORES_PER_RUN, YOUTUBE_STORES_PER_RUN } from "./storeDeals.ts";
 import { replyCadence, replyCadenceRule } from "./replyCadence.ts";
 import { ENGAGEMENT_WINDOW_DAYS, engagementFrom, type InsightRow } from "./engagement.ts";
@@ -493,6 +493,8 @@ function detectCycleStartDay(incomeTx: Array<{ created_at: string }>): number | 
  */
 // العروض حسب الذوق (tasteDeals.ts) بتدوّر بنفس البحث الحي بتاع core-intelligence.
 dealSource.search = (payload, userId) => callCoreIntel("fetch_live_deals", payload, userId);
+// رابط العرض بيتفحص بـ200 قبل ما يتبعت (dealLink.ts).
+linkCheck.fetcher = fetch;
 nearbySource.search = (payload, userId) => callCoreIntel("nearby_pois", payload, userId);
 
 async function callCoreIntel(action: string, payload: unknown, userId: string, timeoutMs = 25_000): Promise<any | null> {
