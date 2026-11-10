@@ -28,6 +28,12 @@ class LiveMarketTickerSlot extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final view = ref.watch(liveMarketControllerProvider);
+    // Asked and answered with nothing: the strip would only say so, at the top
+    // of Home, above the money (emulator, new account, 2026-11-10). It comes
+    // back with the first price; a failure still shows, to be retried.
+    if (view.prices.isEmpty && view.fetchState == LiveFetchState.fetched) {
+      return const SizedBox.shrink();
+    }
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: LiveMarketTicker(

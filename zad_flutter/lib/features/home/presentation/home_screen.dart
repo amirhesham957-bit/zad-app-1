@@ -150,6 +150,11 @@ class HomeScreen extends ConsumerWidget {
           // A quick look at the next subscription, the pantry and the next
           // dose (owner, 2026-11-09), without opening anything.
           const ZadAppearOnEntry(delayMs: 25, child: HomeGlanceWidgets()),
+          // «عروض على نواقصك» (owner 4/11) beside the glance (owner, 10/11:
+          // the deals, the pantry, the subscriptions and the pharmacy at a
+          // look): real deals on what the home is short of, with pictures,
+          // codes and the Amazon link. Nothing when there are none.
+          ZadAppearOnEntry(delayMs: 30, child: ZadSlots.homeDealsCarousel()),
           // The sections right under the money card (owner, 2026-10-27): they
           // had sunk under the brief, the bot's link and the Amazon strip.
           const SizedBox(height: 16),
@@ -170,9 +175,6 @@ class HomeScreen extends ConsumerWidget {
           const SubscribePulseCard(),
           // «شفت ١٥ إعلان الأسبوع ده» — once a week, free customers only.
           const AdWeekCard(),
-          // «عروض على نواقصك» (owner 4/11): real deals on what the home is
-          // short of, with pictures, codes and the Amazon link.
-          ZadAppearOnEntry(delayMs: 45, child: ZadSlots.homeDealsCarousel()),
           // «تسوق من أمازون» in its empty shape: «إضافة» and «اقتراح», no
           // products (owner, 2026-10-05; the product row stays off home).
           const HomeAmazonStrip(),
