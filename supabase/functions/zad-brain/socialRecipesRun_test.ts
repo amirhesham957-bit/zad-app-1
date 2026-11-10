@@ -5,10 +5,14 @@ import { rotateForDay, runSocialRecipes, SOCIAL_SLOTS, socialSources, videoCount
 Deno.test("every source lands in exactly one slot", () => {
   const all = [0, 1, 2].flatMap((s) => socialSources(s)).map((s) => JSON.stringify(s));
   assertEquals(new Set(all).size, all.length);
-  // TikTok: 3 accounts + 3 topics x 2 countries; YouTube: the 6 topics; Instagram: the 3 accounts.
-  assertEquals(all.length, 18);
+  // TikTok: 4 accounts + (3 topics + 3 hashtags) x 2 countries; YouTube: the 12 topics; Instagram: the 4 accounts.
+  assertEquals(all.length, 32);
   assertEquals(socialSources(SOCIAL_SLOTS), socialSources(0));
   assertEquals(all.some((s) => s.includes("bashacook")), true);
+  assertEquals(all.some((s) => s.includes("nadia.elsayed.official")), true);
+  // Each country's trend hashtags are searched in that country only.
+  assertEquals(all.some((s) => s.includes("#اكلات_مصرية") && s.includes('"EG"')), true);
+  assertEquals(all.some((s) => s.includes("#اكلات_مصرية") && s.includes('"SA"')), false);
 });
 
 Deno.test("each slot reads all three platforms", () => {

@@ -9,6 +9,7 @@
  * وبيتحظر (جدول المستودعات في ZAD_PLAN).
  */
 
+import { PICK_RULE } from "./socialPicks.ts";
 import { deliveryApp } from "../_shared/deliveryApps.ts";
 import { cleanCity, CODES_RULE, type DealHit, namesOtherCountry, searchStoreName } from "./liveDeals.ts";
 
@@ -96,9 +97,11 @@ export function tiktokDealsPrompt(
     "عرض وجبة أو مطعم: item = اسم الوجبة زي ما هو مكتوب، بمكوناتها أو عدد القطع لو مكتوبين. discount_percent = نسبة الخصم لو مكتوبة، وإلا null؛ " +
     "لو السعر بعد الخصم مش مكتوب سيب price = 0 ومتحسبهوش. " +
     CODES_RULE +
+    PICK_RULE +
     'رد JSON بس: {"deals":[{"item":"","price":0,"price_before":null,"discount_percent":null,"currency":"","valid_until":null,"source":1}],' +
-    '"codes":[{"code":"","percent":null,"amount":null,"min_order":null,"valid_until":null}]}. ' +
-    'مفيش عرض ولا كود واضح ⇒ {"deals":[],"codes":[]}.';
+    '"codes":[{"code":"","percent":null,"amount":null,"min_order":null,"valid_until":null}],' +
+    '"pick":{"kind":"","title":"","summary":"","discount_percent":null}}. ' +
+    'مفيش عرض ولا كود ولا ترشيح ⇒ {"deals":[],"codes":[],"pick":null}.';
   const user = `المحل: ${store}\nالبلد: ${countryName}\nالعملة: ${currency}\nالنهارده: ${today}\n` +
     `=== نتيجة البحث ===\n${hit.title}\n${hit.snippet}\n=== آخر النتيجة ===`;
   return { system, user };

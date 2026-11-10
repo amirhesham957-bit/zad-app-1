@@ -159,6 +159,8 @@ import { campaignAndTasteRules, type CampaignRow, pickHomeCampaign, recipeTaste 
 import { loadWeather, weatherForSnapshot, weatherRule } from "./weather.ts";
 import { medicinePrice, medicinePriceReply, pricePayload } from "./medicinePrice.ts";
 import { linksForChat } from "./dealLink.ts";
+import { knownLinkCheck } from "./knownLinks.ts";
+import { socialPickRows } from "./socialPicksStore.ts";
 import { dealCountry, dealsAtPlace, dealsHere, dealSource, linkCheck, nearbySource, type StoredDealRow } from "./tasteDeals.ts";
 import { dealPutPayload, findCustomerCities, type FlyerReadRow, flyerEntries, INSTAGRAM_STORES_PER_RUN, accountDayTargets, isInstagramHashtagDay, nextFlyer, searchedDeals, STORES_PER_RUN, TIKTOK_STORES_PER_RUN, YOUTUBE_STORES_PER_RUN } from "./storeDeals.ts";
 import { replyCadence, replyCadenceRule } from "./replyCadence.ts";
@@ -8048,7 +8050,7 @@ async function handleAgentTurnInLane(
   // «تحب أساعدك في حاجة تانية؟» في الآخر = كلام آلة (persona.ts). الفضول والعرض المحدد بيفضلوا.
   reply = dropServiceCloser(reply);
   // روابط نضيفة يفتحها الموبايل، وأمازون بالتاج ومفحوص بـ200 (dealLink.ts، بلاغ المالك ١٠/١١).
-  reply = await linksForChat(reply, { fetcher: linkCheck.fetcher });
+  reply = await linksForChat(reply, { fetcher: linkCheck.fetcher, isKnownLink: knownLinkCheck(createClient(SUPABASE_URL, SERVICE_ROLE_KEY)) });
   // لفة خلصت من غير ولا كلمة ولا تنفيذ: العميل كان هيشوف رد فاضي (اختبار القبول ٢٠٢٦-١٠-٠١، سؤال
   // عام بعد بحث فاضي). جملة صريحة أحسن من صمت، ومن غير ما نخترع إجابة.
   if (!reply.trim() && executed.length === 0 && proposals.length === 0) {
@@ -9486,7 +9488,13 @@ async function handleRequest(req: Request): Promise<Response> {
           const { error: codeErr } = await sbDeals.from("zad_deal_codes").upsert(codeRows, { onConflict: "country,store_key,code" });
           if (codeErr) console.error("[deals_tiktok_run] codes failed:", codeErr.message);
         }
-        stores.push({ country: t.country, store: t.store, ok: reply?.ok ?? false, hits: reply?.hits ?? 0, videos: reply?.videos ?? 0, read: reply?.read ?? 0, put, refused, codes: codeRows.length, search: reply?.search ?? null, reason: reply?.reason ?? null });
+        // Picks with no price (owner 10/11): an offer by percent, a restaurant, a recipe — with the post's link.
+        const pickRows = socialPickRows(t, reply?.picks, "tiktok");
+        if (pickRows.length) {
+          const { error: pickErr } = await sbDeals.from("zad_social_picks").upsert(pickRows, { onConflict: "source_url" });
+          if (pickErr) console.error("[deals_tiktok_run] picks failed:", pickErr.message);
+        }
+        stores.push({ country: t.country, store: t.store, ok: reply?.ok ?? false, hits: reply?.hits ?? 0, videos: reply?.videos ?? 0, read: reply?.read ?? 0, put, refused, codes: codeRows.length, picks: pickRows.length, search: reply?.search ?? null, reason: reply?.reason ?? null });
         // A store looked up — even with nothing found — waits for its next turn instead of being searched again now.
         if (reply?.ok) {
           const { error: logErr } = await sbDeals.from("zad_deal_search_log").insert({
@@ -9548,7 +9556,13 @@ async function handleRequest(req: Request): Promise<Response> {
           const { error: codeErr } = await sbDeals.from("zad_deal_codes").upsert(codeRows, { onConflict: "country,store_key,code" });
           if (codeErr) console.error("[deals_instagram_run] codes failed:", codeErr.message);
         }
-        stores.push({ country: t.country, store: t.store, ok: reply?.ok ?? false, posts: reply?.posts ?? 0, read: reply?.read ?? 0, put, refused, codes: codeRows.length, reason: reply?.reason ?? null });
+        // Picks with no price (owner 10/11): an offer by percent, a restaurant, a recipe — with the post's link.
+        const pickRows = socialPickRows(t, reply?.picks, "instagram");
+        if (pickRows.length) {
+          const { error: pickErr } = await sbDeals.from("zad_social_picks").upsert(pickRows, { onConflict: "source_url" });
+          if (pickErr) console.error("[deals_instagram_run] picks failed:", pickErr.message);
+        }
+        stores.push({ country: t.country, store: t.store, ok: reply?.ok ?? false, posts: reply?.posts ?? 0, read: reply?.read ?? 0, put, refused, codes: codeRows.length, picks: pickRows.length, reason: reply?.reason ?? null });
         // A hashtag that answered — even with no posts — has spent its slot this week: logged so it is not asked again.
         if (reply?.ok) {
           const { error: logErr } = await sbDeals.from("zad_deal_search_log").insert({

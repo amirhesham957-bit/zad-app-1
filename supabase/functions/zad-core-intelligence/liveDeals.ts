@@ -8,6 +8,8 @@
  * 2026-09-30). The list is now de-duplicated and capped: the card shows six
  * deals at most, so asking for more only buys a timeout.
  */
+import { PICK_RULE } from "./socialPicks.ts";
+
 export const MAX_DEAL_ITEMS = 5;
 
 /** A compound search runs one web search per item; give it room past the default 25s. */
@@ -447,9 +449,11 @@ export function postDealsPrompt(
     "source = 1 دايماً. currency = العملة زي ما هي مكتوبة، ولو مش مكتوبة سيبها فاضية. valid_until = آخر يوم للعرض YYYY-MM-DD لو مكتوب، وإلا null. " +
     "price_before = السعر قبل الخصم لو مكتوب، وإلا null. اسم الصنف زي ما هو مكتوب، بالحجم لو موجود. ١٥ عرض بالكتير. " +
     CODES_RULE +
+    PICK_RULE +
     'رد JSON بس: {"deals":[{"item":"","price":0,"price_before":null,"currency":"","valid_until":null,"source":1}],' +
-    '"codes":[{"code":"","percent":null,"amount":null,"min_order":null,"valid_until":null}]}. ' +
-    'مفيش عرض ولا كود واضح ⇒ {"deals":[],"codes":[]}.';
+    '"codes":[{"code":"","percent":null,"amount":null,"min_order":null,"valid_until":null}],' +
+    '"pick":{"kind":"","title":"","summary":"","discount_percent":null}}. ' +
+    'مفيش عرض ولا كود ولا ترشيح ⇒ {"deals":[],"codes":[],"pick":null}.';
   const user = `المحل: ${store}\nالبلد: ${countryName}\nالعملة: ${currency}\nالنهارده: ${today}\n=== كلام البوست ===\n${caption.slice(0, 1500)}\n=== آخر الكلام ===`;
   return { system, user };
 }

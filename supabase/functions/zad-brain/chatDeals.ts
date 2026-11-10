@@ -14,6 +14,37 @@ import { customerCity, dealCountry, dealsForCity } from "./tasteDeals.ts";
 
 export const CHAT_DEALS_MAX = 8;
 export const CHAT_CODES_MAX = 4;
+export const CHAT_PICKS_MAX = 5;
+
+/** ترشيح من تيك توك أو إنستجرام من غير سعر (zad_social_picks، طلب المالك ١٠/١١). */
+export interface ChatPickRow {
+  platform: string;
+  kind: string;
+  store: string | null;
+  title: string;
+  summary: string;
+  discount_percent: number | string | null;
+  likes: number | string | null;
+  source_url: string;
+}
+
+const PICK_KIND_WORD: Record<string, string> = {
+  offer: "عرض", recipe: "وصفة", idea: "فكرة", restaurant: "مطعم", supermarket: "سوبرماركت", delivery: "توصيل",
+};
+
+/**
+ * الترشيحات اللي تطابق الطلب: محل اتطلب = بتوعه بس؛ صنف اتطلب = اللي عنوانه أو ملخصه فيه الصنف؛ من غير الاتنين = الأحدث.
+ * الأكتر لايكات الأول في نفس الدرجة. نقي.
+ */
+export function matchChatPicks(rows: ChatPickRow[], store: string, item: string, max = CHAT_PICKS_MAX): ChatPickRow[] {
+  const want = itemKey(item);
+  const out = rows.filter((r) => {
+    if (store && !(r.store && sameStore(r.store, store))) return false;
+    if (want.length >= 2 && !itemKey(`${r.title} ${r.summary}`).includes(want)) return false;
+    return true;
+  });
+  return out.sort((a, b) => (Number(b.likes) || 0) - (Number(a.likes) || 0)).slice(0, max);
+}
 
 export interface ChatDealRow {
   store: string;
@@ -91,9 +122,12 @@ export function matchChatDeals(
 }
 
 /** نتيجة الأداة للموديل: أرقام ولينكات جاهزة، والتعليمات اللي تمنع الوصاية. */
-export function describeChatDeals(found: { deals: ChatDealRow[]; codes: ChatCodeRow[] }, store: string, item: string): string {
+export function describeChatDeals(
+  found: { deals: ChatDealRow[]; codes: ChatCodeRow[]; picks?: ChatPickRow[] }, store: string, item: string,
+): string {
   const what = [item && `«${item}»`, store && `في ${store}`].filter(Boolean).join(" ") || "في بلده";
-  if (!found.deals.length && !found.codes.length) {
+  const picks = found.picks ?? [];
+  if (!found.deals.length && !found.codes.length && !picks.length) {
     return `مفيش عروض متخزنة شغالة ${what} دلوقتي. قول كده للعميل بوضوح، واعرض تدوّر على النت (web_search) لو عايز.`;
   }
   const lines = found.deals.map((d) => {
@@ -110,10 +144,18 @@ export function describeChatDeals(found: { deals: ChatDealRow[]; codes: ChatCode
     const link = https(c.source_url);
     return `- كود ${c.code} — ${c.store}: ${off}${min}${until}${link ? ` — ${link}` : ""}`;
   });
+  const pickLines = picks.map((p) => {
+    const where = p.platform === "instagram" ? "إنستجرام" : p.platform === "youtube" ? "يوتيوب" : "تيك توك";
+    const off = Number(p.discount_percent) > 0 ? ` (خصم ${Number(p.discount_percent)}٪)` : "";
+    const summary = p.summary ? ` — ${p.summary}` : "";
+    return `- ${PICK_KIND_WORD[p.kind] ?? "ترشيح"} على ${where}: ${p.title}${p.store ? ` (${p.store})` : ""}${off}${summary} — ${p.source_url}`;
+  });
   return [
-    `العروض الشغالة ${what} (من صفحات المحلات وفيديوهاتهم، ممكن تكون خلصت):`,
-    ...lines,
+    ...(lines.length ? [`العروض الشغالة ${what} (من صفحات المحلات وفيديوهاتهم، ممكن تكون خلصت):`, ...lines] : []),
     ...(codeLines.length ? ["أكواد خصم:", ...codeLines] : []),
+    ...(pickLines.length
+      ? ["ترشيحات حديثة من تيك توك وإنستجرام (من غير أسعار مكتوبة؛ اعرضها بلينكاتها زي ما هي وقول إن التفاصيل في الفيديو):", ...pickLines]
+      : []),
     "اعرضهم للعميل الأول، بأسعارهم ولينكاتهم زي ما هم. الميزانية مش سبب تحجب أو تأجّل بيه العروض؛ لو عندك ملاحظة فلوس فسطر واحد في الآخر.",
   ].join("\n");
 }
@@ -131,8 +173,13 @@ export async function findChatDeals(sb: SupabaseClient, userId: string, store: s
     sb.rpc("zad_deal_paused_sources", { p_days: 14 }),
     customerCity(sb, userId, country).catch(() => ""),
   ]);
+  const { data: picks } = await sb.from("zad_social_picks")
+    .select("platform,kind,store,title,summary,discount_percent,likes,source_url")
+    .eq("country", country).gt("expires_at", new Date(now).toISOString()).order("found_at", { ascending: false }).limit(80)
+    .then((r) => r, () => ({ data: null }));
   if (error) return "مقدرتش أقرا العروض دلوقتي — قول للعميل كده بصراحة.";
   const pausedKinds = new Set(((paused ?? []) as Array<{ source_kind: string }>).map((r) => r.source_kind));
   const rows = dealsForCity((deals ?? []) as ChatDealRow[], city).filter((d) => !pausedKinds.has(d.source_kind));
-  return describeChatDeals(matchChatDeals(rows, (codes ?? []) as ChatCodeRow[], store, item), store, item);
+  const found = matchChatDeals(rows, (codes ?? []) as ChatCodeRow[], store, item);
+  return describeChatDeals({ ...found, picks: matchChatPicks((picks ?? []) as ChatPickRow[], store, item) }, store, item);
 }

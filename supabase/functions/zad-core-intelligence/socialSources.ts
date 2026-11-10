@@ -121,11 +121,13 @@ export interface InstagramPost {
   timestamp: string;
   /** صورة البوست (أو أول صورة في الألبوم) — للقراية بس، مابتتخزنش. null للفيديو. */
   image_url: string | null;
+  /** اللايكات لو Meta رجّعتها (الترشيح من هاشتاج محتاجها، ١٠/١١). */
+  likes?: number | null;
 }
 
 type MediaItem = {
   id?: unknown; caption?: unknown; permalink?: unknown; timestamp?: unknown; media_type?: unknown; media_url?: unknown;
-  thumbnail_url?: unknown;
+  thumbnail_url?: unknown; like_count?: unknown;
 };
 
 /** الهاشتاج اللي بندوّر بيه على عروض محل: «عروض_كارفور». الهاشتاج مابيقبلش مسافات ولا رموز. */
@@ -161,7 +163,7 @@ export async function instagramHashtagPosts(
   if (found.status !== 200) return { ok: false, status: found.status, reason: reason(found.body), items: [] };
   const first = (Array.isArray(found.body?.data) ? found.body!.data : [])[0] as { id?: unknown } | undefined;
   if (typeof first?.id !== "string") return { ok: true, status: 200, items: [] };
-  const fields = "id,caption,permalink,timestamp,media_type,media_url";
+  const fields = "id,caption,permalink,timestamp,media_type,media_url,like_count";
   const media = await get(`${encodeURIComponent(first.id)}/top_media?user_id=${user}&fields=${fields}&limit=25`);
   if (media.status !== 200) return { ok: false, status: media.status, reason: reason(media.body), items: [] };
   return { ok: true, status: 200, items: readMediaPosts(media.body?.data, opts) };
@@ -187,6 +189,7 @@ function readMediaPosts(data: unknown, opts: { days?: number; max?: number; now?
       permalink: m.permalink,
       timestamp: String(m.timestamp),
       image_url: image && typeof m.media_url === "string" && m.media_url.startsWith("https://") ? m.media_url : cover,
+      likes: Number.isFinite(Number(m.like_count)) ? Number(m.like_count) : null,
     });
   }
   posts.sort((a, b) => Date.parse(b.timestamp) - Date.parse(a.timestamp));
@@ -258,7 +261,7 @@ async function discover(
   opts?: { days?: number; max?: number; now?: number },
 ): Promise<SourceResult<InstagramPost> & { account?: StoreAccount; raw?: unknown }> {
   const inner = media > 0
-    ? `username,followers_count,media.limit(${media}){id,caption,permalink,timestamp,media_type,media_url${withCover ? ",thumbnail_url" : ""}}`
+    ? `username,followers_count,media.limit(${media}){id,caption,permalink,timestamp,media_type,media_url,like_count${withCover ? ",thumbnail_url" : ""}}`
     : "username,followers_count";
   const fields = `business_discovery.username(${username}){${inner}}`;
   let status = 0;

@@ -49,7 +49,7 @@ owner's real account, where only read-only taps are allowed.
 - Verify on the phone everything marked "no" above.
 - Luxury look on every remaining screen, iPhone-style components, animation, drawings.
 - The occasion's vibe across the app, mostly in Premium, with small personal discounts.
-- Chef: famous chefs need the owner's TikTok handles for `RECIPE_ACCOUNTS`.
+- Chef: `nadia.elsayed.official` joined `RECIPE_ACCOUNTS`, and each country's trend hashtags (`RECIPE_HASHTAGS`) are searched like the topics (2026-11-10). More handles from the owner go in the same list.
 - Brain map: a 3D sphere already exists (`knowledge_map_screen.dart`). Judge it on the phone before rebuilding.
 - The bottom bar's mic still blends both occasion colours (`campaignGradient`); small enough to judge on the phone.
 - Seen on the #467 APK (2026-11-10): the money now follows the greeting and the occasion banner sits under it (#462 confirmed). The empty price strip and the companion on the card were still there; #469 addresses both.
@@ -85,7 +85,6 @@ owner's real account, where only read-only taps are allowed.
 ## Decisions waiting on the owner
 
 - Folder layout: `pages/`, `components/` and `data/` inside each feature (recommended), or one top-level `lib/pages/`.
-- TikTok handles for famous chefs.
 - iPhone cannot read other apps' notifications, so bank reading needs another route there.
 
 ## The owner's code rules (2026-11-09)

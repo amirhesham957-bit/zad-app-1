@@ -10,9 +10,17 @@ import { namesOtherCountry } from "./liveDeals.ts";
 import { tiktokVideoUrl } from "./tiktokDeals.ts";
 
 /** الحسابات اللي المالك حددها. */
-export const RECIPE_ACCOUNTS: readonly string[] = ["bashacook", "m7omar.q", "qeu.riyadh"];
+export const RECIPE_ACCOUNTS: readonly string[] = ["bashacook", "m7omar.q", "qeu.riyadh", "nadia.elsayed.official"];
 /** الاستماع العام: كلام الناس في كل بلد. */
 export const RECIPE_TOPICS: readonly string[] = ["وصفات طبخ", "أكلات سريعة", "عروض سوبر ماركت"];
+/**
+ * الترند بالهاشتاج (طلب المالك ١٠/١١: «يجيب الوصفات من الهاشتاجات بنفسه حسب الترند»): كل بلد هاشتاجاته، وبتتبحث زي المواضيع
+ * بمحرك البحث (`site:tiktok.com #…`)، من غير طلب واحد لتيك توك. الترشيح بعد كده للشيف اللي بيرتّب على المخزن.
+ */
+export const RECIPE_HASHTAGS: Readonly<Record<string, readonly string[]>> = {
+  EG: ["#اكلات_مصرية", "#وصفات_سهلة", "#ترند_الأكل"],
+  SA: ["#طبخات_سعودية", "#وصفات_سهلة", "#ترند_الأكل"],
+};
 export const SOCIAL_COUNTRIES: Readonly<Record<string, string>> = { EG: "مصر", SA: "السعودية" };
 const CURRENCY_COUNTRY: Readonly<Record<string, string>> = { EGP: "EG", SAR: "SA" };
 
