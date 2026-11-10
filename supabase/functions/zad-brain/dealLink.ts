@@ -88,3 +88,44 @@ export async function withDealLink<T extends { item: string; store: string; prod
   if (!link || !(await answers200(link.url, deps.fetcher))) return deal;
   return { ...deal, source: { kind: link.kind, url: link.url, until: deal.source?.until ?? null } };
 }
+
+// ── روابط أمازون في رد الشات (بلاغ المالك ١٠/١١) ────────────────────────────────────────────────
+// الموديل كتب «[أمازون ناو](https://www.amazon.eg/gp/browse.html?node=…)»: من غير تاج، فمفيش عمولة، وتيليجرام
+// والتطبيق مابيقروش Markdown فطلع خام ومقلوب. هنا: الرابط بيتكتب نضيف «النص: الرابط» عشان الموبايل يفتحه
+// (تطبيق أمازون بيلقطه)، ورابط أمازون مصر/السعودية بياخد التاج، وبيتبعت بس لو ردّ 200 — وإلا النص لوحده.
+
+const MD_LINK = /\[([^\]\n]{1,80})\]\((https?:\/\/[^\s)]+)\)/g;
+const AMAZON_URL = /https?:\/\/(?:www\.)?amazon\.(eg|sa)\/[^\s)\]»"'<>]+/gi;
+
+/** رابط أمازون بالتاج بتاعنا (بدل أي تاج تاني)، أو null لو مش أمازون مصر/السعودية. */
+export function withAmazonTag(raw: string, env?: (k: string) => string | undefined): string | null {
+  let url: URL;
+  try {
+    url = new URL(raw);
+  } catch {
+    return null;
+  }
+  const country = /(^|\.)amazon\.eg$/.test(url.hostname) ? "EG" : /(^|\.)amazon\.sa$/.test(url.hostname) ? "SA" : null;
+  const tag = country ? amazonTag(country, env) : null;
+  if (!tag || url.protocol !== "https:" && url.protocol !== "http:") return null;
+  url.protocol = "https:";
+  url.searchParams.set("tag", tag);
+  return url.toString();
+}
+
+/** الرد زي ما هيتبعت: روابط Markdown نضيفة، وروابط أمازون بالتاج ومفحوصة. */
+export async function linksForChat(
+  reply: string,
+  deps: { fetcher?: typeof fetch; env?: (k: string) => string | undefined } = {},
+): Promise<string> {
+  let text = reply.replace(MD_LINK, (_m, label: string, url: string) => `${label.trim()}: ${url}`);
+  const found = [...new Set((text.match(AMAZON_URL) ?? []).map((u) => u.replace(/[.,،؛!؟?]+$/u, "")))];
+  for (const original of found) {
+    const tagged = withAmazonTag(original, deps.env);
+    const ok = tagged !== null && await answers200(tagged, deps.fetcher);
+    text = ok
+      ? text.split(original).join(tagged!)
+      : text.split(original).join("").replace(/:\s*(?=\s|$)/gu, "").replace(/[ \t]{2,}/g, " ");
+  }
+  return text.trimEnd();
+}

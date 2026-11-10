@@ -37,7 +37,9 @@ const CLOCK_NOT_PRICE = /(^|\s)(نام|انام|هنام|بنام|نايم|اص�
 /** رقم لوحده كتوكن: «80»، «ب 135»، «ب٢٧٫٥»، «14,500». */
 const PRICE_TOKEN = /(^|\s)ب?\s?[0-9٠-٩][0-9٠-٩.,٫٬]*(\s|$)/;
 /** مبلغ بالحروف بعملته: «ألفين جنيه درس خصوصي» (التقييم الليلي ١٠/١١). من غير عملة «ألف حاجة» مش فلوس. */
-const WORD_PRICE = /(^|\s)(الف|الفين|مليون)\s+(جنيه|ريال|درهم|دينار)(\s|$)/;
+// من غير رقم قبلها: «بـ20 ألف جنيه» مضاعف لرقم، وجملة «هشتري موبايل بـ20 ألف» مش تسجيل — اتعاملت كده
+// بعد #٤٥٤ وفحص القبول بعد النشر وقع (9_pushback_big_purchase، ١٠/١١).
+const WORD_PRICE = /(?<![0-9٠-٩][\s.,٫٬]*)(^|\s)(الف|الفين|مليون)\s+(جنيه|ريال|درهم|دينار)(\s|$)/;
 
 /**
  * «حلاقة 80»، «كتب المدرسة 1250»، «انبوبة البوتاجاز ب 200»: صنف ومبلغ وبس — من غير فعل. ده تسجيل مصروف.
@@ -47,7 +49,7 @@ const WORD_PRICE = /(^|\s)(الف|الفين|مليون)\s+(جنيه|ريال|د
 export function bareMoneyLog(message: string): boolean {
   const m = normalize(message ?? "").trim();
   if (!m || m.length > 80 || !(PRICE_TOKEN.test(m) || WORD_PRICE.test(m)) || QUESTION.test(m) || NOT_A_LOG.test(m) || NOT_A_PRICE.test(m) || CLOCK_NOT_PRICE.test(m) || REFUSAL_SHAPE.test(m)) return false;
-  const words = m.split(/\s+/).filter((w) => !/^ب?([0-9٠-٩.,٫٬]+|الف|الفين|مليون)$/.test(w) && w !== "ب");
+  const words = m.split(/\s+/).filter((w) => !/^ب?[0-9٠-٩.,٫٬]+$/.test(w) && w !== "ب");
   return words.length >= 1 && words.length <= 6;
 }
 

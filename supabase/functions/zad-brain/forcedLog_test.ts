@@ -120,3 +120,10 @@ Deno.test("an amount in words is still money (nightly eval 10/11, log_two_thousa
   assertEquals(wantsForcedLog("ألفين جنيه درس خصوصي", "أبشر، بجهز لك تسجيلها بـ 2000 ريال تحت فئة التعليم.\n\nتبي أعتمدها الحين؟"), true);
   assertEquals(bareMoneyLog("عندي الف حاجة اعملها"), false);
 });
+
+Deno.test("a number times «ألف» is not a word amount: a planned purchase is never forced (acceptance 10/11)", () => {
+  const m = "هشتري موبايل جديد بـ20 ألف جنيه النهارده كاش";
+  assertEquals(bareMoneyLog(m), false);
+  assertEquals(wantsForcedLog(m, ""), false);
+  assertEquals(bareMoneyLog("ألفين جنيه درس خصوصي"), true);
+});

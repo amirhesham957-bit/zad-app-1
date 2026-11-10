@@ -1,6 +1,6 @@
 // رابط العرض: أفلييت مفحوص بس، وبعده بحث المحل المفحوص، وبعده نص بس.
 import { assertEquals } from "jsr:@std/assert@1";
-import { amazonTag, asinOf, candidateLink, withDealLink } from "./dealLink.ts";
+import { amazonTag, asinOf, candidateLink, linksForChat, withAmazonTag, withDealLink } from "./dealLink.ts";
 
 const noEnv = () => undefined;
 const answering = (status: number) => (() => Promise.resolve(new Response("", { status }))) as unknown as typeof fetch;
@@ -48,4 +48,30 @@ Deno.test("a deal with its own https source is left alone", async () => {
   const deal = { item: "كبده", store: "أولاد رجب", source: { kind: "instagram", url: "https://www.instagram.com/p/x/", until: null } };
   const never = (() => { throw new Error("no call"); }) as unknown as typeof fetch;
   assertEquals(await withDealLink(deal, "EG", { fetcher: never, env: noEnv }), deal);
+});
+
+Deno.test("an amazon link in a reply gets our tag and a clean url (owner's report 10/11)", async () => {
+  const reply = "من عيوني يا ميرو، ده لينك [أمازون ناو](https://www.amazon.eg/gp/browse.html?node=21869850031) عشان تطلب اللي ناقصك.";
+  assertEquals(
+    await linksForChat(reply, { fetcher: answering(200), env: noEnv }),
+    "من عيوني يا ميرو، ده لينك أمازون ناو: https://www.amazon.eg/gp/browse.html?node=21869850031&tag=zad04-21 عشان تطلب اللي ناقصك.",
+  );
+});
+
+Deno.test("someone else's tag is replaced, and a link that does not answer 200 is dropped", async () => {
+  assertEquals(withAmazonTag("https://www.amazon.sa/dp/B0CHX3QBCH?tag=other-21", noEnv), "https://www.amazon.sa/dp/B0CHX3QBCH?tag=zad0b-21");
+  assertEquals(withAmazonTag("https://evil.example/amazon.eg", noEnv), null);
+  assertEquals(
+    await linksForChat("اطلبه من [أمازون](https://www.amazon.eg/dp/B0CHX3QBCH) النهارده", { fetcher: answering(503), env: noEnv }),
+    "اطلبه من أمازون النهارده",
+  );
+});
+
+Deno.test("other links only lose their markdown", async () => {
+  const never = (() => { throw new Error("no call"); }) as unknown as typeof fetch;
+  assertEquals(
+    await linksForChat("شوف [الوصفة](https://example.com/r)", { fetcher: never, env: noEnv }),
+    "شوف الوصفة: https://example.com/r",
+  );
+  assertEquals(await linksForChat("مفيش لينكات هنا", { fetcher: never, env: noEnv }), "مفيش لينكات هنا");
 });
