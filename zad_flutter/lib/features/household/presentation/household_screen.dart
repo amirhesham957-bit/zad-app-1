@@ -83,22 +83,27 @@ class _HouseholdScreenState extends State<HouseholdScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: ZadSpacing.gutter),
             child: SegmentedButton<HouseholdSection>(
+              // One line per tab (emulator, 2026-11-10: «نواقص وتسوق» broke
+              // onto two lines and made the bar uneven).
+              style: SegmentedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: ZadSpacing.xs),
+              ),
               segments: const <ButtonSegment<HouseholdSection>>[
                 ButtonSegment<HouseholdSection>(
                   value: HouseholdSection.pantry,
-                  label: Text('المخزن'),
+                  label: _OneLine('المخزن'),
                 ),
                 ButtonSegment<HouseholdSection>(
                   value: HouseholdSection.shopping,
-                  label: Text('نواقص وتسوق'),
+                  label: _OneLine('نواقص وتسوق'),
                 ),
                 ButtonSegment<HouseholdSection>(
                   value: HouseholdSection.pharmacy,
-                  label: Text('الصيدلية'),
+                  label: _OneLine('الصيدلية'),
                 ),
                 ButtonSegment<HouseholdSection>(
                   value: HouseholdSection.recipes,
-                  label: Text('وصفات'),
+                  label: _OneLine('وصفات'),
                 ),
               ],
               selected: <HouseholdSection>{_section},
@@ -144,5 +149,18 @@ class _HouseholdScreenState extends State<HouseholdScreen> {
         ],
       ),
     ),
+  );
+}
+
+/// A tab label kept on one line, shrunk a little if the bar is narrow.
+class _OneLine extends StatelessWidget {
+  const new(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => FittedBox(
+    fit: BoxFit.scaleDown,
+    child: Text(text, maxLines: 1, softWrap: false),
   );
 }

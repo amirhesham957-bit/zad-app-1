@@ -34,6 +34,7 @@ owner's real account, where only read-only taps are allowed.
 | #461 | Home shows one Telegram card at a time: the quiet «بوت زاد على تليجرام» card only when the link banner is snoozed and the account is unlinked, none once linked (seen doubled on the emulator) | passed | seen doubled before the fix; after needs the next APK |
 | #462 | Home: the money comes right after the greeting, with the occasion banner and the tour below it; the glance tiles and report buttons use the same white card and coloured icon chip as the sections (`ZadIconChip`) | passed | not yet, needs the next APK; the companion should no longer sit on the balance card |
 | #464 | «فلوسي»: the figures first (balance, summary, insight, obligations, category budgets), the broke-mode and 30-day offers after them, then the transactions; the balance block takes Zad's gradient and lift instead of flat green | passed | seen before the fix on the emulator; after needs the next APK |
+| #465 | «بيتي»: each tab label on one line (shrinks a little when narrow); the pantry search is a filled rounded field instead of a bare underline | passed | seen before the fix on the emulator; after needs the next APK |
 
 ## Open bugs
 
