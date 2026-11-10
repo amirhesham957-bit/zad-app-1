@@ -38,6 +38,7 @@ owner's real account, where only read-only taps are allowed.
 | #466 | «بيتي» empty states: the smart basket says «السلة فاضية» instead of «— EGP»; the pharmacy's three zero counts wait for the first medicine | passed | seen before the fix on the emulator; after needs the next APK |
 | #467 | Recipes on an empty pantry: «ضيف للمخزن» in the empty state opens the add sheet; the two greyed chef buttons are hidden until the pantry has stock | passed | seen before the fix on the emulator; after needs the next APK |
 | #468 | «عقل زاد» / «العائلة»: the four (and three) unnamed icons on the bar become named buttons with a coloured chip, in one row under the tabs | passed | seen unnamed before the fix; after needs the next APK |
+| #469 | Home on the #467 APK: the empty live-prices strip and «ساهم بسعر» share one line; the companion peeks from the edge until the customer places it, instead of standing on the balance card | passed | both seen before the fix on the emulator; after needs the next APK |
 
 ## Open bugs
 
@@ -51,7 +52,7 @@ owner's real account, where only read-only taps are allowed.
 - Chef: famous chefs need the owner's TikTok handles for `RECIPE_ACCOUNTS`.
 - Brain map: a 3D sphere already exists (`knowledge_map_screen.dart`). Judge it on the phone before rebuilding.
 - The bottom bar's mic still blends both occasion colours (`campaignGradient`); small enough to judge on the phone.
-- Seen on the emulator 2026-11-10: Home's stack above the money, its three tile styles and the companion on the balance card were addressed in #459 and #462; check them on the next APK.
+- Seen on the #467 APK (2026-11-10): the money now follows the greeting and the occasion banner sits under it (#462 confirmed). The empty price strip and the companion on the card were still there; #469 addresses both.
 - Seen on the emulator 2026-11-10, still to do: Home stacks the location banner, an empty live-prices bar, «ساهم بسعر», the tour row, the greeting and the occasion banner above the money; Home mixes three tile styles (export buttons, glance cards, section squares); the companion sits on the balance card at rest.
 - Recipes tab on an empty pantry: both buttons are disabled and nothing leads to the pantry (emulator, 2026-11-10).
 - Explainer video.

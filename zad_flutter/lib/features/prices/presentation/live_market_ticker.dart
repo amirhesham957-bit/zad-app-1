@@ -144,40 +144,23 @@ class LiveMarketTicker extends StatelessWidget {
                         ),
                       ),
                       Icon(Icons.refresh, size: 16, color: scheme.primary),
+                      // «ساهم بسعر» on the same line while there are no
+                      // prices: two rows above the money said little
+                      // (emulator, 2026-11-10).
+                      if (onContributePrice != null) ...<Widget>[
+                        const SizedBox(width: 12),
+                        _Contribute(onTap: onContributePrice!),
+                      ],
                     ],
                   ),
                 ),
               ),
             ),
           ),
-        if (onContributePrice != null)
+        if (onContributePrice != null && (effective.isNotEmpty || loading))
           Padding(
             padding: const EdgeInsets.only(top: 6),
-            child: InkWell(
-              customBorder: const StadiumBorder(),
-              onTap: onContributePrice,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    const Text('📊', style: TextStyle(fontSize: 12)),
-                    const SizedBox(width: 4),
-                    Text(
-                      'ساهم بسعر',
-                      style: TextStyle(
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.bold,
-                        color: scheme.primary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+            child: _Contribute(onTap: onContributePrice!),
           ),
       ],
     );
@@ -406,4 +389,35 @@ class _TickerPill extends StatelessWidget {
       ),
     );
   }
+}
+
+/// «ساهم بسعر».
+class _Contribute extends StatelessWidget {
+  const new({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => InkWell(
+    customBorder: const StadiumBorder(),
+    onTap: onTap,
+    child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          const Text('📊', style: TextStyle(fontSize: 12)),
+          const SizedBox(width: 4),
+          Text(
+            'ساهم بسعر',
+            style: TextStyle(
+              fontSize: 11.5,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 }

@@ -472,6 +472,11 @@ class _CompanionFloatingPetState extends ConsumerState<CompanionFloatingPet>
 
   /// Fractions of the free room: (1, 1) is the bottom-right corner.
   Offset _at = const Offset(0.04, 1);
+
+  /// Left somewhere by the customer. Until then it peeks from the edge
+  /// instead of standing on whatever card is there (emulator, 2026-11-10: it
+  /// sat on the balance card).
+  bool _placed = false;
   double _lean = 0;
   bool _dragging = false;
 
@@ -489,6 +494,7 @@ class _CompanionFloatingPetState extends ConsumerState<CompanionFloatingPet>
         final y = double.tryParse(parts[1]);
         if (x != null && y != null) {
           _at = Offset(x.clamp(0.0, 1.0), y.clamp(0.0, 1.0));
+          _placed = true;
         }
       }
     } on Object catch (e) {
@@ -507,6 +513,7 @@ class _CompanionFloatingPetState extends ConsumerState<CompanionFloatingPet>
     if (room.width <= 0 || room.height <= 0) return;
     setState(() {
       _dragging = true;
+      _placed = true;
       _at = Offset(
         (_at.dx + d.delta.dx / room.width).clamp(0.0, 1.0),
         (_at.dy + d.delta.dy / room.height).clamp(0.0, 1.0),
@@ -552,7 +559,8 @@ class _CompanionFloatingPetState extends ConsumerState<CompanionFloatingPet>
         return Stack(
           children: <Widget>[
             Positioned(
-              left: _at.dx * room.width,
+              // Not placed yet: half of it past the edge, peeking.
+              left: _at.dx * room.width - (_placed ? 0 : box * 0.45),
               top: _at.dy * room.height,
               width: box,
               height: box,
