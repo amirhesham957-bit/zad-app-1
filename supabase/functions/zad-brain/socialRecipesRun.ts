@@ -4,7 +4,7 @@
 // عرض لمحل برّه قايمة zad_deal_seed_stores مابيدخلش zad_deals: الاسم جاي من وصف فيديو، والقايمة هي اللي بتثبت إنه محل حقيقي في بلده.
 
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
-import { RECIPE_ACCOUNTS, RECIPE_TOPICS, SOCIAL_COUNTRIES, type SocialVideo } from "../zad-core-intelligence/socialRecipes.ts";
+import { RECIPE_ACCOUNTS, RECIPE_HASHTAGS, RECIPE_TOPICS, SOCIAL_COUNTRIES, type SocialVideo } from "../zad-core-intelligence/socialRecipes.ts";
 import { dealPutPayload } from "./storeDeals.ts";
 import { itemKey } from "./shared.ts";
 
@@ -22,7 +22,9 @@ export type SocialSource =
  * فيها من التلاتة. نقي.
  */
 export function socialSources(slot: number): SocialSource[] {
-  const topics = Object.keys(SOCIAL_COUNTRIES).flatMap((country) => RECIPE_TOPICS.map((topic) => ({ topic, country })));
+  const topics = Object.keys(SOCIAL_COUNTRIES).flatMap((country) =>
+    [...RECIPE_TOPICS, ...(RECIPE_HASHTAGS[country] ?? [])].map((topic) => ({ topic, country }))
+  );
   const lists: SocialSource[][] = [
     [...RECIPE_ACCOUNTS.map((handle) => ({ platform: "tiktok" as const, handle, country: null })), ...topics.map((t) => ({ platform: "tiktok" as const, ...t }))],
     topics.map((t) => ({ platform: "youtube" as const, ...t })),
