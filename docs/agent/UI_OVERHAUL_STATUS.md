@@ -31,6 +31,7 @@ owner's real account, where only read-only taps are allowed.
 | #456 | Home on the emulator (test account, White Friday): the balance card no longer fades to grey while it shrinks; the occasion banner uses the first colour with a corner glow; the greeting card's occasion outline is a faint hint | passed | seen before the fix on the emulator; after needs the next APK |
 | #458 | The first three screens of a new account: «عرّفني بيك» in cards on Zad's canvas with green chosen answers; the budget gate on the canvas with a hero wallet and a large amount field, worded as the balance; «أول خطوة» with a progress bar, checks on done steps and step 3 lined up | passed | not yet, needs the next APK |
 | #459 | Home: the deals on what the home is short of sit beside the pantry, subscriptions and pharmacy glance; the live-prices strip takes no room once it answered with nothing | passed | not yet, needs the next APK |
+| #461 | Home shows one Telegram card at a time: the quiet «بوت زاد على تليجرام» card only when the link banner is snoozed and the account is unlinked, none once linked (seen doubled on the emulator) | passed | seen doubled before the fix; after needs the next APK |
 
 ## Open bugs
 

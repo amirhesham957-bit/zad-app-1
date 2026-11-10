@@ -830,8 +830,9 @@ class NoChannelCard extends StatelessWidget {
 bool noChannel({required bool? linked, required bool? notificationsOn}) =>
     linked == false && notificationsOn == false;
 
-/// Home's Telegram blocks under the sections grid (Kotlin's order): the
-/// banner while the account is not linked, then the community card. Also
+/// Home's Telegram blocks under the sections grid: the banner while the
+/// account is not linked, or the quiet bot card once the banner is snoozed,
+/// and nothing once it is linked. Also
 /// raises the first-visit link sheet when it is due.
 class HomeTelegramBlocks extends ConsumerStatefulWidget {
   /// Creates the blocks.
@@ -950,11 +951,16 @@ class _HomeTelegramState extends ConsumerState<HomeTelegramBlocks> {
     } else {
       top = const SizedBox(width: double.infinity);
     }
+    // One Telegram card at a time (emulator, 2026-11-10): the quiet card asked
+    // to link right under the banner that asks the same, and it still asked
+    // once the account was linked.
+    final quiet = !none && !state.bannerVisible && state.linked != true;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         AnimatedSize(duration: const Duration(milliseconds: 300), child: top),
-        ZadTelegramCommunityCard(onOpened: controller.recheckAfterSheet),
+        if (quiet)
+          ZadTelegramCommunityCard(onOpened: controller.recheckAfterSheet),
       ],
     );
   }
