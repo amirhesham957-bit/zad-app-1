@@ -158,6 +158,7 @@ import { loadWhileAway, whileAwayBlock } from "./whileAway.ts";
 import { campaignAndTasteRules, type CampaignRow, pickHomeCampaign, recipeTaste } from "./campaigns.ts";
 import { loadWeather, weatherForSnapshot, weatherRule } from "./weather.ts";
 import { medicinePrice, medicinePriceReply, pricePayload } from "./medicinePrice.ts";
+import { linksForChat } from "./dealLink.ts";
 import { dealCountry, dealsAtPlace, dealsHere, dealSource, linkCheck, nearbySource, type StoredDealRow } from "./tasteDeals.ts";
 import { dealPutPayload, findCustomerCities, type FlyerReadRow, flyerEntries, INSTAGRAM_STORES_PER_RUN, accountDayTargets, isInstagramHashtagDay, nextFlyer, searchedDeals, STORES_PER_RUN, TIKTOK_STORES_PER_RUN, YOUTUBE_STORES_PER_RUN } from "./storeDeals.ts";
 import { replyCadence, replyCadenceRule } from "./replyCadence.ts";
@@ -8046,6 +8047,8 @@ async function handleAgentTurnInLane(
   reply = silentWriteFallback(reply, executed, proposals.length);
   // «تحب أساعدك في حاجة تانية؟» في الآخر = كلام آلة (persona.ts). الفضول والعرض المحدد بيفضلوا.
   reply = dropServiceCloser(reply);
+  // روابط نضيفة يفتحها الموبايل، وأمازون بالتاج ومفحوص بـ200 (dealLink.ts، بلاغ المالك ١٠/١١).
+  reply = await linksForChat(reply, { fetcher: linkCheck.fetcher });
   // لفة خلصت من غير ولا كلمة ولا تنفيذ: العميل كان هيشوف رد فاضي (اختبار القبول ٢٠٢٦-١٠-٠١، سؤال
   // عام بعد بحث فاضي). جملة صريحة أحسن من صمت، ومن غير ما نخترع إجابة.
   if (!reply.trim() && executed.length === 0 && proposals.length === 0) {
