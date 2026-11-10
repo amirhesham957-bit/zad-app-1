@@ -45,6 +45,30 @@ class MainActivity : FlutterActivity() {
                 }
             }
         readLink(intent)
+        // Amazon links open in the Amazon Shopping app when it is installed
+        // (owner, 2026-11-10), the same intent as the Telegram button; false
+        // sends Dart to the browser tab it used before.
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "zad/amazon_app")
+            .setMethodCallHandler { call, result ->
+                val url = call.argument<String>("url")
+                if (call.method != "open" || url == null) {
+                    result.notImplemented()
+                    return@setMethodCallHandler
+                }
+                val view = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                    .setPackage("com.amazon.mShop.android.shopping")
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                result.success(
+                    try {
+                        startActivity(view)
+                        true
+                    } catch (e: android.content.ActivityNotFoundException) {
+                        false
+                    } catch (e: SecurityException) {
+                        false
+                    },
+                )
+            }
         // «شارك لزاد» (lib/app/share/share_intake.dart): Dart takes the share
         // when the shell is up, and is told "shared" when one arrives while it
         // runs. A share waiting for sign-in stays here until it is taken.

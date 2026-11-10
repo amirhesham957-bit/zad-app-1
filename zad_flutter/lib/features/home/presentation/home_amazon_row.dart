@@ -25,6 +25,7 @@ import 'package:zad/core/design/tokens/zad_extended_colors.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/affiliate/data/affiliate_repository.dart';
+import 'package:zad/shared/affiliate/data/amazon_app.dart';
 import 'package:zad/shared/affiliate/domain/affiliate.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart';
@@ -407,9 +408,9 @@ class _HomeAmazonRowState extends ConsumerState<HomeAmazonRow> {
     await _launch(rec.url);
   }
 
-  /// Kotlin's `AffiliateHelper.open`: a browser, never the Amazon app —
-  /// which would open its home page and drop the commission cookie.
+  /// The Amazon app, or a browser tab without it (owner, 2026-11-10).
   Future<void> _launch(String url) async {
+    if (await openInAmazonApp(url)) return;
     final uri = Uri.parse(url);
     try {
       if (await launchUrl(uri, mode: LaunchMode.inAppBrowserView)) return;

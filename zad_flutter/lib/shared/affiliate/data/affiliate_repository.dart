@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:zad/core/data/providers.dart';
+import 'package:zad/shared/affiliate/data/amazon_app.dart';
 import 'package:zad/shared/affiliate/domain/affiliate.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
 
@@ -49,6 +50,8 @@ Future<void> openAffiliateProduct(
   final uri = Uri.parse(
     affiliateUrl(product, ref.read(accountCountryProvider)),
   );
+  // The Amazon app first (owner, 2026-11-10); the browser tab without it.
+  if (await openInAmazonApp(uri.toString())) return;
   try {
     if (await launchUrl(uri, mode: LaunchMode.inAppBrowserView)) return;
   } on Object catch (e) {
@@ -58,9 +61,11 @@ Future<void> openAffiliateProduct(
 }
 
 /// Opens a link Zad already built (a «حاجة خلصت» message's button) the same
-/// way: a browser tab, never the Amazon app.
+/// way: the Amazon app, or a browser tab without it.
 Future<void> openAmazonLink(String url) async {
   final uri = Uri.parse(url);
+  // The Amazon app first (owner, 2026-11-10); the browser tab without it.
+  if (await openInAmazonApp(uri.toString())) return;
   try {
     if (await launchUrl(uri, mode: LaunchMode.inAppBrowserView)) return;
   } on Object catch (e) {
@@ -75,11 +80,13 @@ Future<void> openAmazonLink(String url) async {
 
 /// Kotlin's `AffiliateHelper.open` over `productUrl(asin = null, …)`:
 /// a tagged search for [term] in the account's own store, in a browser tab
-/// rather than the Amazon app.
+/// when the Amazon app is not there.
 Future<void> openAmazonSearch(WidgetRef ref, String term) async {
   final uri = Uri.parse(
     amazonSuggestUrl(term, ref.read(accountCountryProvider)),
   );
+  // The Amazon app first (owner, 2026-11-10); the browser tab without it.
+  if (await openInAmazonApp(uri.toString())) return;
   try {
     if (await launchUrl(uri, mode: LaunchMode.inAppBrowserView)) return;
   } on Object catch (e) {
