@@ -82,6 +82,29 @@ export function appLinkRedirect(to: string | null, code: string | null = null): 
   return intent(`to=${to}`);
 }
 
+const AMAZON_APP = "com.amazon.mShop.android.shopping";
+const AMAZON_LINK = /^https:\/\/www\.amazon\.(eg|sa|ae|com\.tr|com)\/[^\s#"'<>]*$/;
+
+/**
+ * زرار أمازون بيعدّي على البوت الأول (المالك ١٠/١١: الزرار كان بيفتح صفحة ويب في المتصفح): تليجرام مابيقبلش غير
+ * روابط https في الأزرار، فالتحويل هو اللي بيكلّم تطبيق أمازون. رابط مش أمازون بيفضل زي ما هو.
+ */
+export function amazonOpenUrl(supabaseUrl: string, url: string): string {
+  if (!AMAZON_LINK.test(url) || url.length > 1000) return url;
+  return `${supabaseUrl.replace(/\/+$/, "")}/functions/v1/zad-telegram-bot?open=amazon&u=${encodeURIComponent(url)}`;
+}
+
+/**
+ * التحويل لتطبيق أمازون: أندرويد بياخد intent بالباكدج ولو التطبيق مش متسطب بيرجع لنفس الرابط في المتصفح؛
+ * أي تليفون تاني (آيفون) بياخد الرابط نفسه وهو بيفتح التطبيق بنفسه. أمازون بس — مش تحويل مفتوح لأي موقع.
+ */
+export function amazonAppRedirect(url: string | null, userAgent: string | null): string | null {
+  if (!url || url.length > 1000 || !AMAZON_LINK.test(url)) return null;
+  if (!/android/i.test(userAgent ?? "")) return url;
+  const rest = url.slice("https://".length);
+  return `intent://${rest}#Intent;scheme=https;package=${AMAZON_APP};S.browser_fallback_url=${encodeURIComponent(url)};end`;
+}
+
 /**
  * أزرار نداء الرفيق («زادو عطشان»): الاتنين بيفتحوا التطبيق (المالك ٨/١١): الرعاية بقت جوه زاد بس، ومفيش زرار
  * كتم تحت رسايل زادو. رسايل قديمة لسه عليها `pc:` و`pd:` بتفضل شغالة من الراوتر.
@@ -228,14 +251,14 @@ export function mapButtonRow(url: unknown): InlineKeyboardButton[] | null {
  * «🛒 حليب على أمازون» — زرار لكل صنف خلص (zad-brain/restockLink.ts). اللينك بيوصل من
  * realtime_push، فبيتقبل بس لو لينك https لمتجر أمازون؛ ٣ بالكتير.
  */
-export function amazonButtonRows(links: unknown): InlineKeyboardButton[][] {
+export function amazonButtonRows(links: unknown, open: (url: string) => string = (u) => u): InlineKeyboardButton[][] {
   if (!Array.isArray(links)) return [];
   const rows: InlineKeyboardButton[][] = [];
   for (const l of links) {
     const name = typeof l?.name === "string" ? l.name.trim().slice(0, 40) : "";
     const url = typeof l?.url === "string" ? l.url : "";
     if (!name || url.length > 1000 || !/^https:\/\/www\.amazon\.(eg|sa|ae|com\.tr|com)\/[^\s]*$/.test(url)) continue;
-    rows.push([{ text: `🛒 ${name} على أمازون`, url }]);
+    rows.push([{ text: `🛒 ${name} على أمازون`, url: open(url) }]);
     if (rows.length >= 3) break;
   }
   return rows;
@@ -246,13 +269,16 @@ export function amazonButtonRows(links: unknown): InlineKeyboardButton[][] {
  * أمازون يلقطه لو متثبت، والنص يفضل نضيف. زاد بيحط التاج ويفحص الرابط قبل ما يوصل هنا (dealLink.ts)، فاللي
  * من غير تاج بيفضل في النص زي ما هو. ٣ أزرار بالكتير.
  */
-export function amazonLinkButtons(body: string): { text: string; rows: InlineKeyboardButton[][] } {
+export function amazonLinkButtons(
+  body: string,
+  open: (url: string) => string = (u) => u,
+): { text: string; rows: InlineKeyboardButton[][] } {
   const urls = [...new Set(body.match(/https:\/\/www\.amazon\.(?:eg|sa)\/[^\s]*[?&]tag=[^\s]+/g) ?? [])].slice(0, 3);
   if (urls.length === 0) return { text: body, rows: [] };
   let text = body;
   for (const url of urls) text = text.split(url).join("");
   text = text.replace(/:\s*(?=\n|$)/g, "").replace(/[ \t]{2,}/g, " ").replace(/ +\n/g, "\n").trim();
-  const rows = urls.map((url, i) => [{ text: urls.length > 1 ? `🛒 افتح على أمازون (${i + 1})` : "🛒 افتحه على أمازون", url }]);
+  const rows = urls.map((url, i) => [{ text: urls.length > 1 ? `🛒 افتح على أمازون (${i + 1})` : "🛒 افتحه على أمازون", url: open(url) }]);
   return { text, rows };
 }
 

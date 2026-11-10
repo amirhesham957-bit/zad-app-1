@@ -41,7 +41,7 @@ import {
   adCreditKeyboard,
   InlineKeyboardButton, mainMenuKeyboard, dismissKeyboard,
   proactiveDismissKeyboard, parseProactiveDismissCallback, proactiveDismissReply,
-  reasonForCode, parseDismissCallback, appLinkRedirect, petCallKeyboard, parsePetCareCallback, petCareReply, normalizeBindingCode, bindingReply, isFamilyInviteCode, looksLikeLinkCode, FAMILY_CODE_REPLY, adminChatId, mapButtonRow, amazonButtonRows, amazonLinkButtons, type BindingStatus, unlinkReply, memoryNoteForDismissal,
+  reasonForCode, parseDismissCallback, appLinkRedirect, petCallKeyboard, parsePetCareCallback, petCareReply, normalizeBindingCode, bindingReply, isFamilyInviteCode, looksLikeLinkCode, FAMILY_CODE_REPLY, adminChatId, mapButtonRow, amazonButtonRows, amazonLinkButtons, amazonOpenUrl, amazonAppRedirect, type BindingStatus, unlinkReply, memoryNoteForDismissal,
   formatBalanceMessage, type BudgetStateRow, formatTransactionsMessage, formatInsightTitle,
   confirmSpendKeyboard, parseSpendCallback, pendingQuestionAnswered, refusedSpendReply,
   transactionProposalKeyboard, parseTransactionProposalCallback,
@@ -1669,7 +1669,7 @@ bot.on("message:text", async (ctx) => {
     } else if (turnReply.toolPendingId) {
       await ctx.reply(body, { reply_markup: toGrammyKeyboard(confirmToolKeyboard(turnReply.toolPendingId)) });
     } else {
-      const shop = amazonLinkButtons(body);
+      const shop = amazonLinkButtons(body, (u) => amazonOpenUrl(SUPABASE_URL, u));
       await ctx.reply(shop.text, shop.rows.length ? { reply_markup: toGrammyKeyboard(shop.rows) } : undefined);
       // رد فيه إحساس (تشجيع، قلق، عتاب خفيف) ⇒ بصوت زاد كمان (voiceReply.ts)، بعد النص وفي الخلفية.
       runInBackground(maybeVoiceReply(sb, userId, ctx.chat.id, turnReply.lines.join("\n\n"), false));
@@ -1754,7 +1754,7 @@ bot.on("message:voice", async (ctx) => {
     } else if (turnReply.toolPendingId) {
       await ctx.reply(body, { reply_markup: toGrammyKeyboard(confirmToolKeyboard(turnReply.toolPendingId)) });
     } else {
-      const shop = amazonLinkButtons(body);
+      const shop = amazonLinkButtons(body, (u) => amazonOpenUrl(SUPABASE_URL, u));
       await ctx.reply(shop.text, shop.rows.length ? { reply_markup: toGrammyKeyboard(shop.rows) } : undefined);
       // بعت فويس ⇒ الرد يتقال بصوت زاد كمان (voiceReply.ts)، بعد النص وفي الخلفية.
       runInBackground(maybeVoiceReply(sb, userId, ctx.chat.id, turnReply.lines.join("\n\n"), true));
@@ -2970,11 +2970,13 @@ Deno.serve(async (req: Request) => {
   // GET is not a Telegram update — it's the health/registration probe. Reports whether
   // the webhook is wired up, without ever echoing the token or the secret itself.
   if (req.method === "GET") {
-    // زرار «افتح زاد» تحت رسايل الرفيق (telegram.ts): تحويل لمكان من قايمة مقفولة.
+    // زرار «افتح زاد» تحت رسايل الرفيق، وزرار أمازون لتطبيق أمازون (telegram.ts): تحويل لمكان من قايمة مقفولة.
     const query = new URL(req.url).searchParams;
     const open = query.get("open");
     if (open !== null) {
-      const location = appLinkRedirect(open, query.get("code"));
+      const location = open === "amazon"
+        ? amazonAppRedirect(query.get("u"), req.headers.get("user-agent"))
+        : appLinkRedirect(open, query.get("code"));
       return location
         ? new Response(null, { status: 302, headers: { Location: location, "Cache-Control": "no-store" } })
         : new Response("not found", { status: 404 });
@@ -3256,7 +3258,7 @@ Deno.serve(async (req: Request) => {
       // تنبيه جرعة بيكسب على زرار الرفض: الأهم إن العميل يقدر يسجّل إنه خدها بضغطة
       // واحدة من غير ما يعدّي على فهم الموديل للكلام (سبب «بيشكرني ومابيسجلش»).
       const mapRow = mapButtonRow(map_url);
-      const amazonRows = amazonButtonRows(amazon_links);
+      const amazonRows = amazonButtonRows(amazon_links, (u) => amazonOpenUrl(SUPABASE_URL, u));
       const validTask = !!dismiss_task_id && /^[0-9a-fA-F-]{36}$/.test(dismiss_task_id);
       const petRows = validTask && (pet_need === "hungry" || pet_need === "thirsty")
         ? petCallKeyboard(pet_need, SUPABASE_URL)
