@@ -144,9 +144,27 @@ class CampaignBanner extends StatelessWidget {
     return ClipRRect(
       borderRadius: BorderRadius.circular(ZadRadii.cardLarge),
       child: DecoratedBox(
-        decoration: BoxDecoration(gradient: gradient ?? ZadColors.wallet),
+        // Like the balance card: the first colour as the panel, the second
+        // as a light in the corner. Run together, a black and a brown made mud.
+        decoration: BoxDecoration(
+          gradient: campaignCardGradient(active) ?? ZadColors.wallet,
+        ),
         child: Stack(
           children: <Widget>[
+            if (campaignCardGlow(active) case final glow?)
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: RadialGradient(
+                        center: const Alignment(-0.9, 0.9),
+                        radius: 1.1,
+                        colors: <Color>[glow, glow.withValues(alpha: 0)],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             if (c.particles != CampaignParticles.none)
               Positioned.fill(
                 child: IgnorePointer(

@@ -255,8 +255,11 @@ class _Budget extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         ZadAppearOnEntry(
-          // The money steps back as the list moves on (ZAD_PLAN ٢.٣).
+          // The money steps back as the list moves on (ZAD_PLAN ٢.٣), by size
+          // only: faded over the light canvas, a dark occasion card turned a
+          // muddy grey (seen on the emulator, 2026-11-10).
           child: ZadScrollShrink(
+            minOpacity: 1,
             child: ZadBalanceCard(
               spendable: spendable,
               spent: snapshot.spent,
