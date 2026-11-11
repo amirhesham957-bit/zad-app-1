@@ -99,3 +99,8 @@ verify_jwt = false
 # with the customer's own token, like zad-core-intelligence.
 [functions.zad-support]
 verify_jwt = true
+
+# عروض SHEIN للخليج: الدالة بتتحقق بنفسها إن النداء بمفتاح service role (shein-link-converter/index.ts)،
+# فالبوابة مش محتاجة JWT مستخدم.
+[functions.shein-link-converter]
+verify_jwt = false
