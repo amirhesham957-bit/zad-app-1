@@ -470,6 +470,21 @@
     "shown_at",
     "user_id"
   ],
+  "zad_affiliate_offers": [
+    "affiliate_url",
+    "category",
+    "coupon_code",
+    "created_at",
+    "id",
+    "image_url",
+    "is_active",
+    "koc_id",
+    "network",
+    "raw_url",
+    "target_countries",
+    "title",
+    "updated_at"
+  ],
   "zad_agent_messages": [
     "created_at",
     "detail",

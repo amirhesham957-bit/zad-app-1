@@ -4817,6 +4817,18 @@ abstract class ZadL10n {
   /// **'بندوّرلك على عروض في محلاتك — اضغط تشوف اللي لقيناه'**
   String get homeDealsSearching;
 
+  /// No description provided for @sheinShop.
+  ///
+  /// In ar, this message translates to:
+  /// **'تسوّق على SHEIN'**
+  String get sheinShop;
+
+  /// No description provided for @sheinDisclosure.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد بياخد عمولة من SHEIN على المشتريات من الروابط دي، من غير ما السعر يزيد عليك.'**
+  String get sheinDisclosure;
+
   /// No description provided for @homeNearbyTitle.
   ///
   /// In ar, this message translates to:

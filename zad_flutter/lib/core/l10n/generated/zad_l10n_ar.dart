@@ -2632,6 +2632,12 @@ class ZadL10nAr extends ZadL10n {
   String get homeDealsSearching => 'بندوّرلك على عروض في محلاتك — اضغط تشوف اللي لقيناه';
 
   @override
+  String get sheinShop => 'تسوّق على SHEIN';
+
+  @override
+  String get sheinDisclosure => 'زاد بياخد عمولة من SHEIN على المشتريات من الروابط دي، من غير ما السعر يزيد عليك.';
+
+  @override
   String get homeNearbyTitle => 'ماركتات وصيدليات جنبك';
 
   @override

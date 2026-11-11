@@ -105,6 +105,10 @@ jobs:
         working-directory: supabase/functions/admob-ssv
         run: deno test --allow-all
 
+      - name: Test shein-link-converter
+        working-directory: supabase/functions/shein-link-converter
+        run: deno test --allow-all
+
       - name: Test zad-fx-refresh
         working-directory: supabase/functions/zad-fx-refresh
         run: deno test --allow-all
