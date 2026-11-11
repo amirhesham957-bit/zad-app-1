@@ -1,5 +1,5 @@
-/// «عروض على نواقصك» on home (owner 4/11): a vertical list of deal rows inside
-/// the page (owner 6/11: a list, not a sideways strip), at most
+/// «عروض على نواقصك» on home: a sideways bar of picture cards (owner 11/11,
+/// replacing 6/11's vertical list: «بار بصور» beside the pantry tiles), at most
 /// [homeDealsShown] of them, «شوف الكل» for the rest — the picture, what
 /// the home is short of, the store, the price and the saving, the store's
 /// discount code (one tap copies it), and «على أمازون», the tagged search
@@ -22,11 +22,14 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/data/local/screen_cache.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/components/zad_network_image.dart';
+import 'package:zad/core/design/foundation/squircle.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
+import 'package:zad/core/design/tokens/zad_motion.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/l10n/l10n.dart';
@@ -38,7 +41,7 @@ import 'package:zad/shared/affiliate/domain/affiliate.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
 
 /// Rows shown on home; the deals page has the rest.
-const int homeDealsShown = 4;
+const int homeDealsShown = 10;
 
 /// How long a fetched strip stays fresh on re-entry.
 const Duration homeDealsRefreshEvery = Duration(minutes: 15);
@@ -100,11 +103,11 @@ class _HomeDealsCarouselState extends ConsumerState<HomeDealsCarousel> {
 
   @override
   Widget build(BuildContext context) {
-    if (_deals.isEmpty) return const SizedBox.shrink();
     final catalogue =
         ref.watch(affiliateProductsProvider).value ??
         const <AffiliateProduct>[];
     final l = context.l10n;
+    final shown = _deals.take(homeDealsShown).toList();
     return Padding(
       padding: const EdgeInsets.only(bottom: ZadSpacing.lg),
       child: Column(
@@ -112,13 +115,11 @@ class _HomeDealsCarouselState extends ConsumerState<HomeDealsCarousel> {
         children: <Widget>[
           Row(
             children: <Widget>[
-              const Icon(Icons.local_offer, color: ZadColors.green700),
-              const SizedBox(width: ZadSpacing.sm),
               Expanded(
                 child: Text(
                   l.homeDealsTitle,
-                  style: ZadType.titleMedium.copyWith(
-                    fontWeight: FontWeight.w700,
+                  style: ZadType.titleLarge.copyWith(
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
               ),
@@ -131,18 +132,33 @@ class _HomeDealsCarouselState extends ConsumerState<HomeDealsCarousel> {
             ],
           ),
           const SizedBox(height: ZadSpacing.xs),
-          for (
-            var i = 0;
-            i < _deals.length && i < homeDealsShown;
-            i++
-          ) ...<Widget>[
-            if (i > 0) const SizedBox(height: ZadSpacing.sm),
-            _DealCard(
-              deal: _deals[i],
-              image:
-                  _deals[i].photo ?? catalogueImage(_deals[i].item, catalogue),
-            ),
-          ],
+          SizedBox(
+            height: _DealCard.height,
+            child: shown.isEmpty
+                // No deals yet: the bar still says where they will come
+                // from, instead of vanishing (journey map, 11/11).
+                ? const _SearchingCard()
+                : ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    clipBehavior: Clip.none,
+                    itemCount: shown.length,
+                    separatorBuilder: (_, _) =>
+                        const SizedBox(width: ZadSpacing.md),
+                    itemBuilder: (_, i) =>
+                        _DealCard(
+                              deal: shown[i],
+                              image:
+                                  shown[i].photo ??
+                                  catalogueImage(shown[i].item, catalogue),
+                            )
+                            .animate()
+                            .fadeIn(
+                              duration: ZadDuration.quick,
+                              delay: Duration(milliseconds: 40 * i),
+                            )
+                            .slideX(begin: 0.08, curve: ZadCurves.standard),
+                  ),
+          ),
           const SizedBox(height: ZadSpacing.sm),
           Text(
             l.amazonAssociatesDisclosure,
@@ -154,10 +170,56 @@ class _HomeDealsCarouselState extends ConsumerState<HomeDealsCarousel> {
   }
 }
 
+/// The bar before any deal arrives.
+class _SearchingCard extends StatelessWidget {
+  const new();
+
+  @override
+  Widget build(BuildContext context) => Align(
+    alignment: AlignmentDirectional.centerStart,
+    child: SizedBox(
+      width: _DealCard.width,
+      child: Material(
+        color: ZadColors.mint50,
+        shape: zadSquircle(ZadRadii.cardLarge),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () => unawaited(ZadScreens.showNearbyDealsScreen(context)),
+          child: Padding(
+            padding: const EdgeInsets.all(ZadSpacing.lg),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                const Icon(
+                  Icons.travel_explore,
+                  size: 40,
+                  color: ZadColors.green700,
+                ),
+                const SizedBox(height: ZadSpacing.md),
+                Text(
+                  context.l10n.homeDealsSearching,
+                  textAlign: TextAlign.center,
+                  style: ZadType.titleSmall,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
 class _DealCard extends ConsumerWidget {
   const new({required this.deal, required this.image});
 
-  static const double _imageSize = 96;
+  /// The card's size in the bar.
+  static const double width = 248;
+
+  /// The bar's height.
+  static const double height = 336;
+
+  static const double _imageHeight = 132;
 
   final HomeDeal deal;
   final String? image;
@@ -166,8 +228,8 @@ class _DealCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l = context.l10n;
     final tile = Container(
-      width: _imageSize,
-      height: _imageSize,
+      width: width,
+      height: _imageHeight,
       color: ZadColors.mint50,
       alignment: Alignment.center,
       child: const Icon(Icons.local_offer, size: 32, color: ZadColors.green700),
@@ -176,158 +238,167 @@ class _DealCard extends ConsumerWidget {
     final before = deal.priceBefore;
     final code = deal.code;
     final url = deal.url;
-    return Material(
-      color: ZadColors.surface,
-      clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(ZadRadii.card),
-        side: BorderSide(color: ZadColors.outline.withValues(alpha: 0.4)),
-      ),
-      child: InkWell(
-        onTap: url == null
-            ? null
-            : () {
-                sendDealOpened(ref, item: deal.item, store: deal.store);
-                unawaited(openAmazonLink(url));
-              },
-        child: Padding(
-          padding: const EdgeInsets.all(ZadSpacing.sm),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(ZadRadii.chip),
-                    child: Stack(
-                      children: <Widget>[
-                        if (image == null)
-                          tile
-                        else
-                          ZadNetworkImage(
-                            image!,
-                            width: _imageSize,
-                            height: _imageSize,
-                            fit: BoxFit.cover,
-                            fallback: tile,
-                            semanticLabel: deal.item,
-                          ),
-                        if (saving != null && saving > 0)
-                          PositionedDirectional(
-                            top: ZadSpacing.xs,
-                            start: ZadSpacing.xs,
-                            child: _Badge(
-                              text: '−${l.dealsPercent('$saving')}',
-                              color: ZadColors.terracottaRust,
+    return SizedBox(
+      width: width,
+      child: Material(
+        color: ZadColors.surface,
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(ZadRadii.card),
+          side: BorderSide(color: ZadColors.outline.withValues(alpha: 0.4)),
+        ),
+        child: InkWell(
+          onTap: url == null
+              ? null
+              : () {
+                  sendDealOpened(ref, item: deal.item, store: deal.store);
+                  unawaited(openAmazonLink(url));
+                },
+          child: Padding(
+            padding: const EdgeInsets.all(ZadSpacing.sm),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(ZadRadii.chip),
+                      child: Stack(
+                        children: <Widget>[
+                          if (image == null)
+                            tile
+                          else
+                            ZadNetworkImage(
+                              image!,
+                              width: width,
+                              height: _imageHeight,
+                              fit: BoxFit.cover,
+                              fallback: tile,
+                              semanticLabel: deal.item,
                             ),
-                          ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: ZadSpacing.md),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Text(
-                          deal.item,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: ZadType.titleSmall,
-                        ),
-                        const SizedBox(height: ZadSpacing.xs),
-                        Text(
-                          deal.store,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: ZadType.labelSmall.copyWith(
-                            color: ZadColors.inkMuted,
-                          ),
-                        ),
-                        const SizedBox(height: ZadSpacing.sm),
-                        Wrap(
-                          spacing: ZadSpacing.sm,
-                          runSpacing: ZadSpacing.xs,
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          children: <Widget>[
-                            Text(
-                              '${dealMoney(deal.price)} ${deal.currency}'
-                                  .trim(),
-                              style: ZadType.titleMedium.copyWith(
-                                fontWeight: FontWeight.w700,
-                                color: ZadColors.green700,
+                          if (saving != null && saving > 0)
+                            PositionedDirectional(
+                              top: ZadSpacing.xs,
+                              start: ZadSpacing.xs,
+                              child: _Badge(
+                                text: '−${l.dealsPercent('$saving')}',
+                                color: ZadColors.terracottaRust,
                               ),
                             ),
-                            if (before != null)
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: ZadSpacing.sm),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: ZadSpacing.xs,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Text(
+                            deal.item,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: ZadType.titleSmall,
+                          ),
+                          const SizedBox(height: ZadSpacing.xs),
+                          Text(
+                            deal.store,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: ZadType.labelSmall.copyWith(
+                              color: ZadColors.inkMuted,
+                            ),
+                          ),
+                          const SizedBox(height: ZadSpacing.sm),
+                          Wrap(
+                            spacing: ZadSpacing.sm,
+                            runSpacing: ZadSpacing.xs,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: <Widget>[
                               Text(
-                                dealMoney(before),
-                                style: ZadType.bodySmall.copyWith(
-                                  color: ZadColors.inkMuted,
-                                  decoration: TextDecoration.lineThrough,
+                                '${dealMoney(deal.price)} ${deal.currency}'
+                                    .trim(),
+                                style: ZadType.titleMedium.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  color: ZadColors.green700,
                                 ),
                               ),
-                            _Badge(
-                              text: switch (deal.why) {
-                                HomeDealWhy.need => l.homeDealsWhyNeed,
-                                HomeDealWhy.favorite => l.homeDealsWhyFavorite,
-                                HomeDealWhy.fire => l.homeDealsWhyFire,
-                                HomeDealWhy.want => l.homeDealsWhyWant,
-                                HomeDealWhy.season => l.homeDealsWhySeason,
-                                HomeDealWhy.top => l.homeDealsWhyTop,
-                              },
-                              color: ZadColors.green700,
-                            ),
-                          ],
-                        ),
-                      ],
+                              if (before != null)
+                                Text(
+                                  dealMoney(before),
+                                  style: ZadType.bodySmall.copyWith(
+                                    color: ZadColors.inkMuted,
+                                    decoration: TextDecoration.lineThrough,
+                                  ),
+                                ),
+                              _Badge(
+                                text: switch (deal.why) {
+                                  HomeDealWhy.need => l.homeDealsWhyNeed,
+                                  HomeDealWhy.favorite =>
+                                    l.homeDealsWhyFavorite,
+                                  HomeDealWhy.fire => l.homeDealsWhyFire,
+                                  HomeDealWhy.want => l.homeDealsWhyWant,
+                                  HomeDealWhy.season => l.homeDealsWhySeason,
+                                  HomeDealWhy.top => l.homeDealsWhyTop,
+                                },
+                                color: ZadColors.green700,
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: ZadSpacing.sm),
-              Wrap(
-                spacing: ZadSpacing.sm,
-                runSpacing: ZadSpacing.sm,
-                alignment: WrapAlignment.end,
-                children: <Widget>[
-                  if (code != null)
-                    OutlinedButton.icon(
-                      style: OutlinedButton.styleFrom(
+                  ],
+                ),
+                const SizedBox(height: ZadSpacing.sm),
+                Wrap(
+                  spacing: ZadSpacing.sm,
+                  runSpacing: ZadSpacing.sm,
+                  alignment: WrapAlignment.end,
+                  children: <Widget>[
+                    if (code != null)
+                      OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: const Size(44, 44),
+                          shape: const StadiumBorder(),
+                        ),
+                        onPressed: () async {
+                          await Clipboard.setData(
+                            ClipboardData(text: code.code),
+                          );
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(l.dealsCopied(code.code))),
+                          );
+                        },
+                        icon: const Icon(Icons.content_copy, size: 16),
+                        label: Text(
+                          l.homeDealsCode(code.code),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    FilledButton.tonalIcon(
+                      style: FilledButton.styleFrom(
                         minimumSize: const Size(44, 44),
                         shape: const StadiumBorder(),
                       ),
-                      onPressed: () async {
-                        await Clipboard.setData(ClipboardData(text: code.code));
-                        if (!context.mounted) return;
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(l.dealsCopied(code.code))),
-                        );
-                      },
-                      icon: const Icon(Icons.content_copy, size: 16),
+                      onPressed: () =>
+                          unawaited(openAmazonSearch(ref, deal.item)),
+                      icon: const Icon(Icons.shopping_cart_outlined, size: 18),
                       label: Text(
-                        l.homeDealsCode(code.code),
+                        l.homeDealsOrderOnAmazon,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                  FilledButton.tonalIcon(
-                    style: FilledButton.styleFrom(
-                      minimumSize: const Size(44, 44),
-                      shape: const StadiumBorder(),
-                    ),
-                    onPressed: () =>
-                        unawaited(openAmazonSearch(ref, deal.item)),
-                    icon: const Icon(Icons.shopping_cart_outlined, size: 18),
-                    label: Text(
-                      l.homeDealsOrderOnAmazon,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),

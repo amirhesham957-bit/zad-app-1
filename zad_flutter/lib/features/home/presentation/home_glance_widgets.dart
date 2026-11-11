@@ -1,6 +1,7 @@
-/// Three small tiles right under the money: the next subscription, what the
-/// pantry is short of, and the next dose (owner, 2026-11-09: a quick look
-/// without opening anything). They read the controllers those screens read,
+/// Four small tiles right under the money: the next subscription, the
+/// pantry, what is left to buy, and the next dose (owner, 2026-11-09: a quick
+/// look without opening anything; 2026-11-11: the shortages too, and each
+/// tile opens its own page). They read the controllers those screens read,
 /// and fetch nothing of their own.
 library;
 
@@ -18,29 +19,67 @@ import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/home/presentation/glance_cards.dart'
     show nextDoseOf;
 import 'package:zad/shared/inventory/application/pantry_controller.dart';
+import 'package:zad/shared/inventory/application/shopping_controller.dart';
 import 'package:zad/shared/navigation/destinations.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
 import 'package:zad/shared/pharmacy/application/pharmacy_controller.dart';
 import 'package:zad/shared/subscriptions/application/subscriptions_controller.dart';
 
-/// The row of three tiles.
+/// The four tiles, two by two: a thumb reaches all of them, and each keeps
+/// room for its line of text on a 320dp phone.
 class HomeGlanceWidgets extends StatelessWidget {
-  /// Creates the row.
+  /// Creates the grid.
   const new({super.key});
 
   @override
-  Widget build(BuildContext context) => const IntrinsicHeight(
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        Expanded(child: _SubscriptionsTile()),
-        SizedBox(width: ZadSpacing.sm),
-        Expanded(child: _PantryTile()),
-        SizedBox(width: ZadSpacing.sm),
-        Expanded(child: _PharmacyTile()),
-      ],
-    ),
+  Widget build(BuildContext context) => const Column(
+    children: <Widget>[
+      IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Expanded(child: _PantryTile()),
+            SizedBox(width: ZadSpacing.sm),
+            Expanded(child: _ShortagesTile()),
+          ],
+        ),
+      ),
+      SizedBox(height: ZadSpacing.sm),
+      IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Expanded(child: _PharmacyTile()),
+            SizedBox(width: ZadSpacing.sm),
+            Expanded(child: _SubscriptionsTile()),
+          ],
+        ),
+      ),
+    ],
   );
+}
+
+class _ShortagesTile extends ConsumerWidget {
+  const new();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
+    final left = ref.watch(shoppingControllerProvider).outstanding;
+
+    return _Tile(
+      icon: ZadIcons.shopping,
+      tint: ZadColors.mustardOchre,
+      title: l10n.homeWidgetShortages,
+      headline: left.isEmpty
+          ? l10n.homeWidgetShortagesEmpty
+          : l10n.homeWidgetShortagesCount(left.length),
+      caption: left.isEmpty ? null : left.first.itemName,
+      isUrgent: left.isNotEmpty,
+      onTap: () =>
+          ZadScreens.showHouseholdSection(context, HouseholdSection.shopping),
+    );
+  }
 }
 
 class _SubscriptionsTile extends ConsumerWidget {
@@ -120,10 +159,10 @@ class _PharmacyTile extends ConsumerWidget {
           ? l10n.homeWidgetPharmacyEmpty
           : next == null
           ? l10n.homeWidgetPharmacyNone
-          : DateFormat.jm(
-              context.dateLocale,
-            ).format(DateTime(2000, 1, 1, next.time.hour, next.time.minute)),
-      caption: next?.medicine.name ??
+          : DateFormat.jm(context.dateLocale)
+                .format(DateTime(2000, 1, 1, next.time.hour, next.time.minute)),
+      caption:
+          next?.medicine.name ??
           (medicines == 0 ? null : l10n.homeWidgetPharmacyActive(medicines)),
       isUrgent: false,
       onTap: () =>
