@@ -4813,6 +4813,18 @@ abstract class ZadL10n {
   /// **'كل العروض'**
   String get homeDealsSeeAll;
 
+  /// No description provided for @homeDealsOrderOnAmazon.
+  ///
+  /// In ar, this message translates to:
+  /// **'اطلبه من أمازون، يوصلك بسرعة'**
+  String get homeDealsOrderOnAmazon;
+
+  /// No description provided for @amazonAssociatesDisclosure.
+  ///
+  /// In ar, this message translates to:
+  /// **'بصفتنا شريك في Amazon Associates، زاد بياخد عمولة من المشتريات المؤهلة — من غير أي زيادة عليك.'**
+  String get amazonAssociatesDisclosure;
+
   /// No description provided for @homeDealsWhyNeed.
   ///
   /// In ar, this message translates to:

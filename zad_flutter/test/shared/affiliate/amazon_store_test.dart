@@ -68,4 +68,19 @@ void main() {
     expect(splitAmazonLinks(other).text, other);
     expect(splitAmazonLinks('رسالة عادية').links, isEmpty);
   });
+
+  test('every amazon.eg / amazon.sa link carries its own store tag', () {
+    expect(
+      withAmazonTag('https://www.amazon.eg/s?k=milk'),
+      'https://www.amazon.eg/s?k=milk&tag=zad04-21',
+    );
+    expect(
+      withAmazonTag('https://www.amazon.sa/dp/B0ABCDEF12?tag=someone-21'),
+      'https://www.amazon.sa/dp/B0ABCDEF12?tag=zad0b-21',
+    );
+    expect(
+      withAmazonTag('https://www.carrefouregypt.com/x?q=1'),
+      'https://www.carrefouregypt.com/x?q=1',
+    );
+  });
 }
