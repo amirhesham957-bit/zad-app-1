@@ -273,10 +273,7 @@ class HomeActivationLine extends StatelessWidget {
                 AnimatedRotation(
                   turns: open ? 0.5 : 0,
                   duration: ZadDuration.quick,
-                  child: Icon(
-                    Icons.expand_more,
-                    color: ZadColors.inkMuted,
-                  ),
+                  child: Icon(Icons.expand_more, color: ZadColors.inkMuted),
                 ),
               ],
             ),

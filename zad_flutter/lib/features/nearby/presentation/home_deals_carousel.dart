@@ -39,6 +39,7 @@ import 'package:zad/features/nearby/domain/home_deals.dart';
 import 'package:zad/features/nearby/domain/store_deals.dart';
 import 'package:zad/shared/affiliate/data/affiliate_repository.dart';
 import 'package:zad/shared/affiliate/domain/affiliate.dart';
+import 'package:zad/shared/campaigns/domain/campaign.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
 
 /// Rows shown on home; the deals page has the rest.
@@ -52,7 +53,10 @@ final Map<String, DateTime> _fetchedAt = <String, DateTime>{};
 /// The strip.
 class HomeDealsCarousel extends ConsumerStatefulWidget {
   /// Creates the strip.
-  const new({super.key});
+  const new({this.occasion, super.key});
+
+  /// The running occasion, marked beside the title in its own colour.
+  final Campaign? occasion;
 
   @override
   ConsumerState<HomeDealsCarousel> createState() => _HomeDealsCarouselState();
@@ -116,7 +120,7 @@ class _HomeDealsCarouselState extends ConsumerState<HomeDealsCarousel> {
         children: <Widget>[
           Row(
             children: <Widget>[
-              Expanded(
+              Flexible(
                 child: Text(
                   l.homeDealsTitle,
                   style: ZadType.titleLarge.copyWith(
@@ -124,6 +128,11 @@ class _HomeDealsCarouselState extends ConsumerState<HomeDealsCarousel> {
                   ),
                 ),
               ),
+              if (widget.occasion case final o?) ...<Widget>[
+                const SizedBox(width: ZadSpacing.sm),
+                Flexible(child: OccasionMark(campaign: o)),
+              ],
+              const Spacer(),
               TextButton(
                 style: TextButton.styleFrom(minimumSize: const Size(44, 44)),
                 onPressed: () =>
@@ -454,4 +463,40 @@ class _Badge extends StatelessWidget {
       ),
     ),
   );
+}
+
+/// The occasion beside the deals' title: its badge and name in its colour,
+/// on a faint wash of it (HOME_REVIEW ٢: the occasion colours the header,
+/// the money card's glow and this mark, nothing else).
+class OccasionMark extends StatelessWidget {
+  /// Creates the mark.
+  const new({required this.campaign, super.key});
+
+  /// The occasion.
+  final Campaign campaign;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = Color(campaign.primary);
+    final name = (campaign.eventName ?? '').trim();
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: ZadSpacing.sm,
+        vertical: ZadSpacing.xs,
+      ),
+      decoration: ShapeDecoration(
+        color: color.withValues(alpha: 0.10),
+        shape: const StadiumBorder(),
+      ),
+      child: Text(
+        name.isEmpty ? campaign.badge : '${campaign.badge} $name',
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: ZadType.labelSmall.copyWith(
+          color: color,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
 }
