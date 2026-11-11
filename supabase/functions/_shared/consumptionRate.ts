@@ -36,3 +36,68 @@ export function needsCheckIn(
   if (createdAt && now - Date.parse(createdAt) < 24 * 3600_000) return false;
   return quantity <= (threshold ?? 2);
 }
+
+/**
+ * كام يوم الوحدة بتعيش عادة في بيت قبل ما يستاهل نسأل «لسه عندك؟»، لما مفيش معدل للبيت لسه. المقاس
+ * (١١/١١، حساب المالك): القاعدة القديمة «الكمية ≤ ٢» سألت ٨ مرات في أسبوع عن حلاوة ومسحوق غسيل ورول أون
+ * وسمن (كلهم كميتهم ١ وبيعيشوا أسابيع) ومسألتش ولا مرة عن لبن أو خضار أو عيش — فالأسئلة اتسابت، ومفيش
+ * ولا نزلة اتسجلت، و`zad_consumption` فضل فاضي. الفئات دي هي اللي بيكتبها الماسح والتطبيق.
+ * null = مابيتسألش عنه من غير معدل (شنط، حاجات مش بتتاكل ولا بتخلص).
+ */
+export const CATEGORY_CYCLE_DAYS: Record<string, number | null> = {
+  "الألبان": 3,
+  "الخضار": 4,
+  "الفواكه": 4,
+  "اللحوم": 4,
+  "المشروبات": 5,
+  "البقالة": 14,
+  "العناية": 30,
+  "أخرى": null,
+};
+
+/** فئة مش في الجدول (أو فاضية). */
+const DEFAULT_CYCLE_DAYS = 10;
+
+/**
+ * الاسم بيغلب الفئة: الماسح بيحط التوست والجبنة واللانشون تحت «البقالة» (١٤ يوم) وهما بيخلصوا في أيام.
+ * أول قاعدة تطابق هي اللي بتحكم.
+ */
+const NAME_CYCLE_DAYS: ReadonlyArray<[RegExp, number | null]> = [
+  [/شنط|كيس|أكياس|اكياس/, null],
+  [/عيش|خبز|توست|فينو|صمون/, 3],
+  [/حليب|لبن|زبادي|رايب/, 3],
+  [/جبن|لانشون|بسطرمة|مرتديلا|بيض/, 5],
+  [/مياه|مية|ماء/, 4],
+];
+
+/**
+ * أولوية سؤال «لسه عندك؟» لصنف واحد: ≥ ١ = يستاهل يتسأل الليلة، وكل ما تكبر يتسأل الأول. null = مايتسألش.
+ *  • بمعدل البيت: الأيام اللي فاضلة للصنف؛ يومين أو أقل = ١ فأكتر (نفس قاعدة needsCheckIn).
+ *  • من غير معدل: الأيام من آخر مرة الصنف اتشاف (شرا، رد، تعديل) ÷ عمر الفئة. لبن من ٣ أيام = ١، حلاوة
+ *    من ٦ أيام = ٠٫٤.
+ * [lastSeenAt] آخر قراية للصنف (zad_inventory_observations)، وإلا تاريخ إضافته.
+ */
+export function checkInPriority(
+  name: string,
+  quantity: number,
+  category: string | null | undefined,
+  avgDailyQty: number | null | undefined,
+  lastSeenAt: string | null | undefined,
+  now: number = Date.now(),
+): number | null {
+  if (!(quantity > 0)) return null;
+  const rate = Number(avgDailyQty);
+  if (rate > 0) {
+    const daysLeft = quantity / rate;
+    return 2 / Math.max(daysLeft, 0.1);
+  }
+  const seen = lastSeenAt ? Date.parse(lastSeenAt) : NaN;
+  if (!Number.isFinite(seen)) return null;
+  const ageDays = (now - seen) / 86_400_000;
+  if (ageDays < 1) return null;
+  const byName = NAME_CYCLE_DAYS.find(([re]) => re.test(name));
+  const key = (category ?? "").trim();
+  const cycle = byName ? byName[1] : key in CATEGORY_CYCLE_DAYS ? CATEGORY_CYCLE_DAYS[key] : DEFAULT_CYCLE_DAYS;
+  if (cycle == null) return null;
+  return ageDays / cycle;
+}

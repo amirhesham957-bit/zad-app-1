@@ -1,5 +1,5 @@
 import { assertEquals } from "jsr:@std/assert@1";
-import { needsCheckIn, rateConfidence } from "../_shared/consumptionRate.ts";
+import { checkInPriority, needsCheckIn, rateConfidence } from "../_shared/consumptionRate.ts";
 
 // الفجوة ٧: لبن ١ ← ٠ في ١٧.٦ ساعة (٢٠٢٦-٠٨-١٧) بقى ليه معدل تقريبي ١.٣٦ في اليوم.
 Deno.test("rateConfidence: one purchase cycle is an approximate rate, not an unknown one", () => {
@@ -34,4 +34,41 @@ Deno.test("needsCheckIn: the house's rate decides when it is known, and a row ad
   // Two bottles a day: one bottle under a threshold of 2 is still asked, ten under a threshold of 12 is not.
   assertEquals(needsCheckIn(10, 12, 2, null, now), false);
   assertEquals(needsCheckIn(4, 1, 2, "2026-11-04T11:59:00Z", now), true, "the rate decides even on the first day");
+});
+
+// ١١/١١: حساب المالك اتسأل ٨ مرات في أسبوع عن حلاوة ومسحوق ورول أون وسمن (كمية ١ كل واحد) ولا مرة عن اللبن.
+Deno.test("checkInPriority: milk after 3 days is due, a jar of halva after 6 days is not", () => {
+  const now = Date.parse("2026-11-11T19:30:00Z");
+  const daysAgo = (d: number) => new Date(now - d * 86_400_000).toISOString();
+  const milk = checkInPriority("حليب", 3.5, "الألبان", null, daysAgo(3), now)!;
+  const halva = checkInPriority("راديسون حلاوة 500 جم", 1, "البقالة", null, daysAgo(6), now)!;
+  const powder = checkInPriority("ستر باور مسحوق يدوي 1 كجم", 1, "العناية", null, daysAgo(6), now)!;
+  assertEquals(milk >= 1, true);
+  assertEquals(halva < 1, true);
+  assertEquals(powder < 1, true);
+});
+
+Deno.test("checkInPriority: the name beats the category — toast filed under groceries goes in days", () => {
+  const now = Date.parse("2026-11-11T19:30:00Z");
+  const fourDays = new Date(now - 4 * 86_400_000).toISOString();
+  assertEquals(checkInPriority("توست بني مربع من برنش، 425 جرام", 2, "البقالة", null, fourDays, now)! >= 1, true);
+  assertEquals(checkInPriority("خل طبيعي الطاووس - ١ لتر", 1, "البقالة", null, fourDays, now)! < 1, true);
+});
+
+Deno.test("checkInPriority: bags, empty items and items seen today are never asked", () => {
+  const now = Date.parse("2026-11-11T19:30:00Z");
+  const old = new Date(now - 40 * 86_400_000).toISOString();
+  assertEquals(checkInPriority("شنطة كاشير", 4, "أخرى", null, old, now), null);
+  assertEquals(checkInPriority("حليب", 0, "الألبان", null, old, now), null);
+  assertEquals(checkInPriority("حليب", 2, "الألبان", null, new Date(now - 3600_000).toISOString(), now), null);
+});
+
+Deno.test("checkInPriority: a household rate wins, and what runs out sooner ranks higher", () => {
+  const now = Date.parse("2026-11-11T19:30:00Z");
+  const yesterday = new Date(now - 86_400_000).toISOString();
+  const water = checkInPriority("مياه", 4, "المشروبات", 2, yesterday, now)!; // ٢ يوم فاضلين
+  const oil = checkInPriority("زيت", 4, "البقالة", 0.5, yesterday, now)!; // ٨ أيام
+  assertEquals(water >= 1, true);
+  assertEquals(oil < 1, true);
+  assertEquals(water > oil, true);
 });
