@@ -7,6 +7,7 @@
 library;
 
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -199,6 +200,17 @@ class _DailyTab extends ConsumerWidget {
               currency: currency,
             ),
             const SizedBox(height: ZadSpacing.md),
+            // The month's PDF and the dossier moved here from home (ZAD_PLAN
+            // ١٠.٨, owner 11/11): reports belong beside the money they cover.
+            if (snapshot != null) ...<Widget>[
+              ZadSlots.homeReportsRow(
+                spent: spent,
+                spendable: budget.spendable,
+                daysLeft: math.max(1, snapshot.daysLeft),
+                currency: currency,
+              ),
+              const SizedBox(height: ZadSpacing.md),
+            ],
             _InsightStrip(spent: spent, budget: limit),
             BudgetSuggestionCard(currency: currency),
             const SizedBox(height: ZadSpacing.md),

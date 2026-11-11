@@ -16,13 +16,10 @@ import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/components/zad_appear.dart';
 import 'package:zad/core/design/components/zad_balance_card.dart';
 import 'package:zad/core/design/components/zad_empty_state.dart';
-import 'package:zad/core/design/components/zad_pressable.dart';
 import 'package:zad/core/design/components/zad_scroll_shrink.dart';
 import 'package:zad/core/design/components/zad_trailing_gap.dart';
-import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
-import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/l10n/app_language.dart';
 import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/core/period/budget_period.dart';
@@ -46,7 +43,6 @@ import 'package:zad/features/home/presentation/permission_banners.dart';
 import 'package:zad/features/home/presentation/quiet_banner.dart';
 import 'package:zad/features/home/presentation/sections_grid.dart';
 import 'package:zad/features/home/presentation/subscribe_pulse_card.dart';
-import 'package:zad/features/home/presentation/tasbiha_home_widget.dart';
 import 'package:zad/features/home/presentation/travel_banner.dart';
 import 'package:zad/features/home/presentation/urgent_recipe_card.dart';
 import 'package:zad/features/home/presentation/who_are_you_card.dart';
@@ -127,86 +123,77 @@ class HomeScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 16),
+          // ZAD_PLAN ١٠.٨ (owner 11/11): one clear thing per level, in this
+          // order — the money, the four glance tiles, then four sideways bars
+          // (deals, the shops near you, Amazon, the chef), the brief and the
+          // latest transactions. Everything else follows them.
           // The money right under the greeting (owner, 2026-10-05; emulator,
           // 2026-11-10: six blocks above it pushed it off the first screen).
           _Budget(view: view),
-          // The occasion's banner (app_campaigns) and the tour come after the
-          // money; the balance card already wears the occasion's colours.
+          // The occasion's banner (app_campaigns), when one runs; the balance
+          // card already wears the occasion's colours.
           const ZadAppearOnEntry(child: CampaignBannerSlot()),
-          // The tour and «حكايات زاد» (the occasion's story, when it has
-          // one) share a line: each on its own took a tall strip of the top.
-          const ZadAppearOnEntry(
-            child: Padding(
-              padding: EdgeInsets.only(bottom: ZadSpacing.md),
-              child: Row(
-                children: <Widget>[
-                  Flexible(child: _TourButton()),
-                  SizedBox(width: ZadSpacing.sm),
-                  Flexible(child: CampaignStoriesStrip()),
-                ],
-              ),
-            ),
-          ),
+          // «حكايات زاد», the occasion's story, when it has one. The tour
+          // that shared its line moved to the profile.
+          const ZadAppearOnEntry(child: CampaignStoriesStrip()),
           const FxExcludedNotice(),
-          // A quick look at the next subscription, the pantry and the next
-          // dose (owner, 2026-11-09), without opening anything.
+          // The pantry, the shortages, the pharmacy and the subscriptions at
+          // a look (owner, 2026-11-09), each opening its own page.
           const ZadAppearOnEntry(delayMs: 25, child: HomeGlanceWidgets()),
-          // «عروض على نواقصك» (owner 4/11) beside the glance (owner, 10/11:
-          // the deals, the pantry, the subscriptions and the pharmacy at a
-          // look): real deals on what the home is short of, with pictures,
-          // codes and the Amazon link. Nothing when there are none.
+          // Every other section behind one line — the grid's first two rows
+          // were the four tiles above a second time.
+          const ZadAppearOnEntry(
+            delayMs: 25,
+            child: SectionsGrid(compact: true),
+          ),
+          const SizedBox(height: ZadSpacing.sm),
+          // «عروض على نواقصك» (owner 4/11, a sideways bar with pictures since
+          // 11/11): real deals on what the home is short of.
           ZadAppearOnEntry(delayMs: 30, child: ZadSlots.homeDealsCarousel()),
-          // The sections right under the money card (owner, 2026-10-27): they
-          // had sunk under the brief, the bot's link and the Amazon strip.
+          // The supermarkets and pharmacies near the customer, from the list
+          // «أماكني» kept — it was buried there.
+          ZadAppearOnEntry(delayMs: 35, child: ZadSlots.homeNearbyStores()),
+          // «تسوق من أمازون»: a card per thing the home is short of.
+          const ZadAppearOnEntry(delayMs: 40, child: HomeAmazonStrip()),
+          // شيف زاد: the last recipes asked for, a tap to ask.
+          ZadAppearOnEntry(delayMs: 45, child: ZadSlots.homeChefSection()),
+          // «موجز زاد النهارده»: the brain says what matters today.
+          const ZadAppearOnEntry(delayMs: 50, child: DailyBriefCard()),
           const SizedBox(height: 16),
-          const ZadAppearOnEntry(delayMs: 30, child: SectionsGrid()),
-          const SizedBox(height: 16),
+          // The bank channel's state, then what it brought.
+          const BankListeningPill(),
+          const SizedBox(height: 18),
+          ZadSlots.stuckNotificationsSlot(),
+          const HomeRecentTransactions(),
+          const SizedBox(height: 18),
+          // What waits on the customer, after the agreed blocks.
+          ZadSlots.homeProposalsSection(),
           // ZAD_PLAN ٣.٢: in the evening, close the day.
           const ZadTrailingGap(
             gap: 16,
             child: ZadAppearOnEntry(delayMs: 30, child: CloseDayCard()),
           ),
-          // The bot's link right under the money while it is missing (owner,
-          // 2026-10-13): the reminders come from Telegram.
-          ZadAppearOnEntry(delayMs: 40, child: ZadSlots.homeTelegramBlocks()),
-          const SizedBox(height: 16),
           // Attempts ran out: the ad button where it can be found (owner 6/11).
           const OutOfAttemptsCard(),
           // «اشترك» (ZAD_PLAN ٨ب.٣): free customers, once a session.
           const SubscribePulseCard(),
           // «شفت ١٥ إعلان الأسبوع ده» — once a week, free customers only.
           const AdWeekCard(),
-          // «تسوق من أمازون» in its empty shape: «إضافة» and «اقتراح», no
-          // products (owner, 2026-10-05; the product row stays off home).
-          const HomeAmazonStrip(),
-          // «موجز زاد النهارده»: the brain says what matters today.
-          // It replaced the grid of seventeen sections and the pantry,
-          // pharmacy and subscriptions cards (2026-09-30) — the pantry lives
-          // in بيتي, the obligations in فلوسي, every section in the drawer.
-          const ZadAppearOnEntry(child: DailyBriefCard()),
-          const SizedBox(height: 16),
-          ZadSlots.homeProposalsSection(),
           ZadTrailingGap(gap: 16, child: ZadSlots.brokeModeSlot()),
           ZadTrailingGap(gap: 16, child: ZadSlots.savingsChallengeSlot()),
           const HomeActivationSlot(),
           const WhoAreYouCard(),
           const InventoryCheckInSlot(),
-          const ZadAppearOnEntry(delayMs: 95, child: TasbihaHomeSlot()),
-          ZadAppearOnEntry(delayMs: 105, child: ZadSlots.homeChefSection()),
-          // The bank channel's state, then what it brought and what the brain
-          // made of it.
-          const BankListeningPill(),
-          const SizedBox(height: 18),
-          ZadSlots.stuckNotificationsSlot(),
-          const HomeRecentTransactions(),
-          const SizedBox(height: 18),
+          // The bot's link, while it is missing (owner, 2026-10-13: the
+          // reminders come from Telegram). Lower than before, not gone — it
+          // also raises the first-visit link sheet.
+          ZadAppearOnEntry(delayMs: 40, child: ZadSlots.homeTelegramBlocks()),
+          const SizedBox(height: 16),
           ZadTrailingGap(
             gap: 18,
             child: ZadSlots.homeInsightsSection(onOpenCamera: onOpenCamera),
           ),
-          // The Amazon product row is hidden until there is a product API
-          // key: its five seeded products had stock photos and Saudi prices
-          // (2026-10-01). Its empty strip sits under the budget.
+          // The tasbih lives in the drawer's «المزيد» (ZAD_PLAN ١٠.٨).
           // Kotlin: the alert banner, then «العقل → الوصفات», then the gap.
           const AiAlertBannerSlot(),
           const UrgentRecipeSlot(),
@@ -320,15 +307,6 @@ class _Budget extends ConsumerWidget {
           ),
           const SizedBox(height: 14),
         ],
-        ZadAppearOnEntry(
-          delayMs: 60,
-          child: ZadSlots.homeReportsRow(
-            spent: snapshot.spent,
-            spendable: spendable,
-            daysLeft: math.max(1, period.daysToLiveOn(now)),
-            currency: snapshot.currency,
-          ),
-        ),
         const SizedBox(height: 14),
       ],
     );
@@ -380,39 +358,5 @@ class _Budget extends ConsumerWidget {
     cycleStart: snapshot.cycleStart!,
     cycleEnd: snapshot.cycleEnd!,
     timeZone: snapshot.timeZone,
-  );
-}
-
-/// The way into the guided tour (owner, 2026-11-09).
-class _TourButton extends StatelessWidget {
-  const new();
-
-  @override
-  Widget build(BuildContext context) => ZadPressable(
-    semanticLabel: context.l10n.tourOpen,
-    onPressed: () => unawaited(ZadScreens.showGuidedTour(context)),
-    child: Container(
-      constraints: const BoxConstraints(minHeight: 44),
-      padding: const EdgeInsets.symmetric(horizontal: ZadSpacing.lg),
-      decoration: const BoxDecoration(
-        gradient: ZadColors.hero,
-        borderRadius: BorderRadius.all(Radius.circular(ZadRadii.hero)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          const Icon(Icons.explore, size: 18, color: ZadColors.mintGlow),
-          const SizedBox(width: ZadSpacing.sm),
-          Flexible(
-            child: Text(
-              context.l10n.tourOpen,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: ZadType.labelLarge.copyWith(color: Colors.white),
-            ),
-          ),
-        ],
-      ),
-    ),
   );
 }

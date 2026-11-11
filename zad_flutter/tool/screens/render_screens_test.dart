@@ -50,6 +50,11 @@ void main() {
       const MethodChannel('zad/app'),
       (_) async => true,
     );
+    // The chat's voice button builds a recorder; no plugin runs here.
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      const MethodChannel('com.llfbandit.record/messages'),
+      (_) async => null,
+    );
     final container = harness.container('user-1', household: _fullHousehold());
     addTearDown(container.dispose);
     final key = GlobalKey();
@@ -83,7 +88,7 @@ void main() {
       await tester.runAsync(() async {
         final boundary =
             key.currentContext!.findRenderObject()! as RenderRepaintBoundary;
-        final image = await boundary.toImage(pixelRatio: 1);
+        final image = await boundary.toImage();
         final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
         File('${out.path}/$name.png')
             .writeAsBytesSync(bytes!.buffer.asUint8List());
@@ -105,7 +110,7 @@ void main() {
       final target = find.text(tab).hitTestable();
       if (target.evaluate().isEmpty) continue;
       await tester.tap(target.first, warnIfMissed: false);
-      await screenfuls(tab == 'فلوسي' ? 'money' : 'home_stock', 4);
+      await screenfuls(tab == 'فلوسي' ? 'money' : 'home_stock');
     }
   });
 }
@@ -196,4 +201,3 @@ List<Override> _fullHousehold() {
     ...quietHouseholdOverrides.skip(2),
   ];
 }
-

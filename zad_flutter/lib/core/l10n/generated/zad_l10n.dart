@@ -4817,6 +4817,24 @@ abstract class ZadL10n {
   /// **'بندوّرلك على عروض في محلاتك — اضغط تشوف اللي لقيناه'**
   String get homeDealsSearching;
 
+  /// No description provided for @homeNearbyTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'ماركتات وصيدليات جنبك'**
+  String get homeNearbyTitle;
+
+  /// No description provided for @homeNearbySeeAll.
+  ///
+  /// In ar, this message translates to:
+  /// **'أماكني'**
+  String get homeNearbySeeAll;
+
+  /// No description provided for @homeNearbyFind.
+  ///
+  /// In ar, this message translates to:
+  /// **'اعرف الماركتات والصيدليات اللي جنبك — اضغط وحدّد مكانك'**
+  String get homeNearbyFind;
+
   /// No description provided for @homeDealsOrderOnAmazon.
   ///
   /// In ar, this message translates to:
@@ -5680,6 +5698,12 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'جولة في زاد'**
   String get tourOpen;
+
+  /// No description provided for @profileTourSubtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'لفّة سريعة على كل حتة في التطبيق'**
+  String get profileTourSubtitle;
 
   /// No description provided for @tourNext.
   ///

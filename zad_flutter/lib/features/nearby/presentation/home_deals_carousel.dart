@@ -27,6 +27,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/data/local/screen_cache.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/components/zad_network_image.dart';
+import 'package:zad/core/design/foundation/elevation.dart';
 import 'package:zad/core/design/foundation/squircle.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_motion.dart';
@@ -132,38 +133,44 @@ class _HomeDealsCarouselState extends ConsumerState<HomeDealsCarousel> {
             ],
           ),
           const SizedBox(height: ZadSpacing.xs),
-          SizedBox(
-            height: _DealCard.height,
-            child: shown.isEmpty
-                // No deals yet: the bar still says where they will come
-                // from, instead of vanishing (journey map, 11/11).
-                ? const _SearchingCard()
-                : ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    clipBehavior: Clip.none,
-                    itemCount: shown.length,
-                    separatorBuilder: (_, _) =>
-                        const SizedBox(width: ZadSpacing.md),
-                    itemBuilder: (_, i) =>
-                        _DealCard(
-                              deal: shown[i],
-                              image:
-                                  shown[i].photo ??
-                                  catalogueImage(shown[i].item, catalogue),
-                            )
-                            .animate()
-                            .fadeIn(
-                              duration: ZadDuration.quick,
-                              delay: Duration(milliseconds: 40 * i),
-                            )
-                            .slideX(begin: 0.08, curve: ZadCurves.standard),
-                  ),
-          ),
-          const SizedBox(height: ZadSpacing.sm),
-          Text(
-            l.amazonAssociatesDisclosure,
-            style: ZadType.labelSmall.copyWith(color: ZadColors.inkMuted),
-          ),
+          if (shown.isEmpty)
+            // No deals yet: the bar still says where they will come from,
+            // instead of vanishing (journey map, 11/11) — one short line, not
+            // an empty bar's height.
+            const _SearchingCard()
+          else
+            SizedBox(
+              height: HomeDealCard.height,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                clipBehavior: Clip.none,
+                itemCount: shown.length,
+                separatorBuilder: (_, _) =>
+                    const SizedBox(width: ZadSpacing.md),
+                itemBuilder: (_, i) =>
+                    HomeDealCard(
+                          deal: shown[i],
+                          image:
+                              shown[i].photo ??
+                              catalogueImage(shown[i].item, catalogue),
+                        )
+                        .animate()
+                        .fadeIn(
+                          duration: ZadDuration.quick,
+                          delay: Duration(milliseconds: 40 * i),
+                        )
+                        .slideX(begin: 0.08, curve: ZadCurves.standard),
+              ),
+            ),
+          // Every card carries «اطلبه من أمازون»; with no card there is no
+          // Amazon link on the bar, and the disclosure would describe nothing.
+          if (shown.isNotEmpty) ...<Widget>[
+            const SizedBox(height: ZadSpacing.sm),
+            Text(
+              l.amazonAssociatesDisclosure,
+              style: ZadType.labelSmall.copyWith(color: ZadColors.inkMuted),
+            ),
+          ],
         ],
       ),
     );
@@ -175,34 +182,31 @@ class _SearchingCard extends StatelessWidget {
   const new();
 
   @override
-  Widget build(BuildContext context) => Align(
-    alignment: AlignmentDirectional.centerStart,
-    child: SizedBox(
-      width: _DealCard.width,
-      child: Material(
-        color: ZadColors.mint50,
-        shape: zadSquircle(ZadRadii.cardLarge),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: () => unawaited(ZadScreens.showNearbyDealsScreen(context)),
-          child: Padding(
-            padding: const EdgeInsets.all(ZadSpacing.lg),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                const Icon(
-                  Icons.travel_explore,
-                  size: 40,
-                  color: ZadColors.green700,
-                ),
-                const SizedBox(height: ZadSpacing.md),
-                Text(
+  Widget build(BuildContext context) => Material(
+    color: ZadColors.mint50,
+    shape: zadSquircle(ZadRadii.cardLarge),
+    clipBehavior: Clip.antiAlias,
+    child: InkWell(
+      onTap: () => unawaited(ZadScreens.showNearbyDealsScreen(context)),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 96),
+        child: Padding(
+          padding: const EdgeInsets.all(ZadSpacing.lg),
+          child: Row(
+            children: <Widget>[
+              const Icon(
+                Icons.travel_explore,
+                size: 40,
+                color: ZadColors.green700,
+              ),
+              const SizedBox(width: ZadSpacing.lg),
+              Expanded(
+                child: Text(
                   context.l10n.homeDealsSearching,
-                  textAlign: TextAlign.center,
                   style: ZadType.titleSmall,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -210,18 +214,26 @@ class _SearchingCard extends StatelessWidget {
   );
 }
 
-class _DealCard extends ConsumerWidget {
-  const new({required this.deal, required this.image});
+/// One deal in the bar: its picture, why it is here, the price, and one row
+/// of buttons (the code, Amazon).
+class HomeDealCard extends ConsumerWidget {
+  /// Creates the card.
+  const new({required this.deal, required this.image, super.key});
 
   /// The card's size in the bar.
   static const double width = 248;
 
-  /// The bar's height.
-  static const double height = 336;
+  /// The bar's height: the image, two lines of name, the store, the price
+  /// and one row of buttons (11/11: 336 left an empty grey block under one
+  /// card).
+  static const double height = 284;
 
-  static const double _imageHeight = 132;
+  static const double _imageHeight = 104;
 
+  /// The deal.
   final HomeDeal deal;
+
+  /// Its picture, when there is one.
   final String? image;
 
   @override
@@ -238,15 +250,17 @@ class _DealCard extends ConsumerWidget {
     final before = deal.priceBefore;
     final code = deal.code;
     final url = deal.url;
-    return SizedBox(
+    return Container(
       width: width,
+      // A soft two-layer shadow instead of a grey edge (HOME_REVIEW ٢).
+      decoration: ShapeDecoration(
+        shape: zadSquircle(ZadRadii.card),
+        shadows: ZadElevation.card,
+      ),
       child: Material(
         color: ZadColors.surface,
         clipBehavior: Clip.antiAlias,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(ZadRadii.card),
-          side: BorderSide(color: ZadColors.outline.withValues(alpha: 0.4)),
-        ),
+        shape: zadSquircle(ZadRadii.card),
         child: InkWell(
           onTap: url == null
               ? null
@@ -277,6 +291,23 @@ class _DealCard extends ConsumerWidget {
                               fallback: tile,
                               semanticLabel: deal.item,
                             ),
+                          // Why it is here, on the picture: under the price
+                          // it pushed the buttons onto a second row.
+                          PositionedDirectional(
+                            bottom: ZadSpacing.xs,
+                            start: ZadSpacing.xs,
+                            child: _Badge(
+                              text: switch (deal.why) {
+                                HomeDealWhy.need => l.homeDealsWhyNeed,
+                                HomeDealWhy.favorite => l.homeDealsWhyFavorite,
+                                HomeDealWhy.fire => l.homeDealsWhyFire,
+                                HomeDealWhy.want => l.homeDealsWhyWant,
+                                HomeDealWhy.season => l.homeDealsWhySeason,
+                                HomeDealWhy.top => l.homeDealsWhyTop,
+                              },
+                              color: ZadColors.green700,
+                            ),
+                          ),
                           if (saving != null && saving > 0)
                             PositionedDirectional(
                               top: ZadSpacing.xs,
@@ -334,18 +365,6 @@ class _DealCard extends ConsumerWidget {
                                     decoration: TextDecoration.lineThrough,
                                   ),
                                 ),
-                              _Badge(
-                                text: switch (deal.why) {
-                                  HomeDealWhy.need => l.homeDealsWhyNeed,
-                                  HomeDealWhy.favorite =>
-                                    l.homeDealsWhyFavorite,
-                                  HomeDealWhy.fire => l.homeDealsWhyFire,
-                                  HomeDealWhy.want => l.homeDealsWhyWant,
-                                  HomeDealWhy.season => l.homeDealsWhySeason,
-                                  HomeDealWhy.top => l.homeDealsWhyTop,
-                                },
-                                color: ZadColors.green700,
-                              ),
                             ],
                           ),
                         ],
@@ -353,18 +372,19 @@ class _DealCard extends ConsumerWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: ZadSpacing.sm),
-                Wrap(
-                  spacing: ZadSpacing.sm,
-                  runSpacing: ZadSpacing.sm,
-                  alignment: WrapAlignment.end,
+                const Spacer(),
+                // One row, pinned to the card's foot so every card in the bar
+                // ends on the same line: the code (copied on a tap, its text
+                // in the tooltip) and Amazon.
+                Row(
                   children: <Widget>[
-                    if (code != null)
-                      OutlinedButton.icon(
-                        style: OutlinedButton.styleFrom(
-                          minimumSize: const Size(44, 44),
-                          shape: const StadiumBorder(),
+                    if (code != null) ...<Widget>[
+                      IconButton.outlined(
+                        constraints: const BoxConstraints.tightFor(
+                          width: 44,
+                          height: 44,
                         ),
+                        tooltip: l.homeDealsCode(code.code),
                         onPressed: () async {
                           await Clipboard.setData(
                             ClipboardData(text: code.code),
@@ -374,25 +394,27 @@ class _DealCard extends ConsumerWidget {
                             SnackBar(content: Text(l.dealsCopied(code.code))),
                           );
                         },
-                        icon: const Icon(Icons.content_copy, size: 16),
+                        icon: const Icon(Icons.content_copy, size: 18),
+                      ),
+                      const SizedBox(width: ZadSpacing.sm),
+                    ],
+                    Expanded(
+                      child: FilledButton.tonalIcon(
+                        style: FilledButton.styleFrom(
+                          minimumSize: const Size(44, 44),
+                          shape: const StadiumBorder(),
+                        ),
+                        onPressed: () =>
+                            unawaited(openAmazonSearch(ref, deal.item)),
+                        icon: const Icon(
+                          Icons.shopping_cart_outlined,
+                          size: 18,
+                        ),
                         label: Text(
-                          l.homeDealsCode(code.code),
+                          l.homeDealsOrderOnAmazon,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                    FilledButton.tonalIcon(
-                      style: FilledButton.styleFrom(
-                        minimumSize: const Size(44, 44),
-                        shape: const StadiumBorder(),
-                      ),
-                      onPressed: () =>
-                          unawaited(openAmazonSearch(ref, deal.item)),
-                      icon: const Icon(Icons.shopping_cart_outlined, size: 18),
-                      label: Text(
-                        l.homeDealsOrderOnAmazon,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],

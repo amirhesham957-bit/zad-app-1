@@ -295,7 +295,12 @@ const int kSectionsCollapsed = 8;
 /// Home's grid: two rows, and the rest behind "كل الأقسام".
 class SectionsGrid extends ConsumerStatefulWidget {
   /// Creates the grid.
-  const new({super.key});
+  const new({this.compact = false, super.key});
+
+  /// Only the «كل الأقسام» line, every section behind it. Home uses it
+  /// under the four glance tiles (ZAD_PLAN ١٠.٨): the first two rows showed
+  /// the same pantry, shopping, subscriptions and pharmacy a second time.
+  final bool compact;
 
   @override
   ConsumerState<SectionsGrid> createState() => _SectionsGridState();
@@ -319,11 +324,12 @@ class _SectionsGridState extends ConsumerState<SectionsGrid> {
 
   @override
   Widget build(BuildContext context) {
-    final head = zadSections.take(kSectionsCollapsed).toList();
-    final rest = zadSections.skip(kSectionsCollapsed).toList();
+    final shown = widget.compact ? 0 : kSectionsCollapsed;
+    final head = zadSections.take(shown).toList();
+    final rest = zadSections.skip(shown).toList();
     return Column(
       children: <Widget>[
-        _Rows(sections: head, badgeFor: _badgeFor),
+        if (head.isNotEmpty) _Rows(sections: head, badgeFor: _badgeFor),
         AnimatedSize(
           duration: ZadDuration.enter,
           curve: ZadCurves.standard,

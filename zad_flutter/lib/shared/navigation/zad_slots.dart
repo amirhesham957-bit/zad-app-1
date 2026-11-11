@@ -110,6 +110,9 @@ abstract final class ZadSlots {
   /// The shops near the customer, inside «أماكني».
   static late SlotBuilder nearbyList;
 
+  /// Home's «ماركتات وصيدليات جنبك» bar, from the kept list only.
+  static late SlotBuilder homeNearbyStores;
+
   // ── obligations
   /// Fixed obligations.
   static late SlotBuilder obligationsSection;

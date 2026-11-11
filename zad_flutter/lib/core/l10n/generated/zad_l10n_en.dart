@@ -2653,6 +2653,15 @@ class ZadL10nEn extends ZadL10n {
   String get homeDealsSearching => 'Looking for deals in your stores — tap to see what we found';
 
   @override
+  String get homeNearbyTitle => 'Shops near you';
+
+  @override
+  String get homeNearbySeeAll => 'My places';
+
+  @override
+  String get homeNearbyFind => 'See the supermarkets and pharmacies near you — tap to set your location';
+
+  @override
   String get homeDealsOrderOnAmazon => 'Order it on Amazon — fast delivery';
 
   @override
@@ -3162,6 +3171,9 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get tourOpen => 'Tour of Zad';
+
+  @override
+  String get profileTourSubtitle => 'A quick walk through every part of the app';
 
   @override
   String get tourNext => 'Next';

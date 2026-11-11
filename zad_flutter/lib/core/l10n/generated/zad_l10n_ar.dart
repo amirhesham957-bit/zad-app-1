@@ -2632,6 +2632,15 @@ class ZadL10nAr extends ZadL10n {
   String get homeDealsSearching => 'بندوّرلك على عروض في محلاتك — اضغط تشوف اللي لقيناه';
 
   @override
+  String get homeNearbyTitle => 'ماركتات وصيدليات جنبك';
+
+  @override
+  String get homeNearbySeeAll => 'أماكني';
+
+  @override
+  String get homeNearbyFind => 'اعرف الماركتات والصيدليات اللي جنبك — اضغط وحدّد مكانك';
+
+  @override
   String get homeDealsOrderOnAmazon => 'اطلبه من أمازون، يوصلك بسرعة';
 
   @override
@@ -3144,6 +3153,9 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get tourOpen => 'جولة في زاد';
+
+  @override
+  String get profileTourSubtitle => 'لفّة سريعة على كل حتة في التطبيق';
 
   @override
   String get tourNext => 'التالي';
