@@ -205,7 +205,8 @@ void wireSlots() {
   ZadSlots.streetAlertsSection = () => const StreetAlertsSection();
   ZadSlots.keepAliveGuide = () => const KeepAliveGuide();
   ZadSlots.liveMarketTickerSlot = () => const LiveMarketTickerSlot();
-  ZadSlots.homeDealsCarousel = () => const HomeDealsCarousel();
+  ZadSlots.homeDealsCarousel = ({occasion}) =>
+      HomeDealsCarousel(occasion: occasion);
   ZadSlots.dealsView = () => const DealsView();
   ZadSlots.nearbyList = () => const NearbyList();
   ZadSlots.homeNearbyStores = () => const HomeNearbyStores();

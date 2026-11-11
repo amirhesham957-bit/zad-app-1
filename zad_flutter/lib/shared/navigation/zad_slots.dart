@@ -9,6 +9,7 @@ library;
 
 import 'package:flutter/widgets.dart';
 import 'package:zad/shared/affiliate/domain/affiliate.dart';
+import 'package:zad/shared/campaigns/domain/campaign.dart';
 import 'package:zad/shared/navigation/zad_screens.dart' show ZadScreens;
 import 'package:zad/shared/proposals/domain/transaction_proposal.dart';
 
@@ -102,7 +103,8 @@ abstract final class ZadSlots {
 
   // ── nearby
   /// Home's «عروض على نواقصك» strip: deals on what the home is short of.
-  static late SlotBuilder homeDealsCarousel;
+  /// `occasion` is the running campaign, marked beside the title.
+  static late Widget Function({Campaign? occasion}) homeDealsCarousel;
 
   /// The deals list, inside «أماكني».
   static late SlotBuilder dealsView;
