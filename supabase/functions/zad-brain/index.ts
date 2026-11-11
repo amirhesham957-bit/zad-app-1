@@ -5179,6 +5179,7 @@ export const CHAT_TOOLS: ToolDef[] = [
             type: "object",
             properties: {
               name: { type: "string" },
+              product: { type: "string", description: "الصنف من غير ماركة ولا حجم: «مياه»، «زيت عباد الشمس»، «توست»" },
               quantity: { type: "number" },
               unit: { type: "string", description: "حبة، كيلو، لتر، علبة، كيس..." },
               category: { type: "string" },

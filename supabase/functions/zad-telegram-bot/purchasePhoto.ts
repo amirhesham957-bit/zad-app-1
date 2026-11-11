@@ -17,6 +17,8 @@ export type PurchaseLineTo = "pantry" | "pharmacy";
 
 export interface PurchaseLine {
   name: string;
+  /** المنتج من غير ماركة («مياه»، «زيت عباد الشمس»): المخزن بيتسجل بيه، والسعر بالاسم المطبوع (20261104170000). */
+  product?: string;
   quantity: number;
   unit?: string;
   category?: string;
@@ -26,7 +28,7 @@ export interface PurchaseLine {
 
 /** سطور الصورة كسطور شرا: اسم فاضي بيتشال، والكمية زي ما هي (نص كيلو = ٠٫٥)، والصيدلية بالحبة. */
 export function purchaseLinesFromPhoto(
-  items: Array<{ name?: string | null; quantity?: number | null; unit?: string | null; category?: string | null; price?: number | null }>,
+  items: Array<{ name?: string | null; product?: string | null; quantity?: number | null; unit?: string | null; category?: string | null; price?: number | null }>,
   to: PurchaseLineTo,
 ): PurchaseLine[] {
   const out: PurchaseLine[] = [];
@@ -34,6 +36,8 @@ export function purchaseLinesFromPhoto(
     const name = String(item.name ?? "").replace(/\s+/g, " ").trim().slice(0, 80);
     if (!name) continue;
     const line: PurchaseLine = { name, quantity: purchaseQuantity(item.quantity, to), to };
+    const product = String(item.product ?? "").replace(/\s+/g, " ").trim().slice(0, 80);
+    if (product) line.product = product;
     const unit = String(item.unit ?? "").trim().slice(0, 20);
     if (unit) line.unit = unit;
     const category = String(item.category ?? "").trim().slice(0, 40);
