@@ -1,5 +1,12 @@
 import { assert, assertEquals, assertStringIncludes } from "jsr:@std/assert@1";
-import { type ChatCodeRow, type ChatDealRow, describeChatDeals, matchChatDeals } from "./chatDeals.ts";
+import {
+  type ChatCodeRow,
+  type ChatDealRow,
+  describeChatDeals,
+  matchChatDeals,
+  matchSheinOffers,
+  type SheinOfferRow,
+} from "./chatDeals.ts";
 import { codeStoreKey } from "./dealCodes.ts";
 import { intentToolHints } from "./specialists.ts";
 
@@ -45,4 +52,38 @@ Deno.test("find_deals is offered when he asks for offers or a code — not on a 
 Deno.test("find_deals: «المقاضي» asks for everything, not an item of that name", () => {
   assertEquals(matchChatDeals(DEALS, CODES, "", "المقاضي").deals.length, matchChatDeals(DEALS, CODES, "", "").deals.length);
   assertEquals(matchChatDeals(DEALS, CODES, "", "خزين البيت").deals.length > 0, true);
+});
+
+const ONE = "https://onelink.shein.com/60/67x9gydalfpz?ismg_ol=4TYBWTPjnSB_01_KOC-C";
+const shein = (title: string, url = ONE, code: string | null = null): SheinOfferRow =>
+  ({ title, affiliate_url: url, coupon_code: code, category: "fashion_home" });
+const SHEIN = [
+  shein("فستان صيفي مشجر"), shein("طقم ولادي أطفال قطن"), shein("مفارش سرير ٦ قطع"),
+  shein("بلوزة", "https://ar.shein.com/p-1.html?aff_id=4559428113"), // not a dashboard link
+];
+
+Deno.test("find_deals: SHEIN answers fashion, kids and home — not groceries, not another store", () => {
+  assertEquals(matchSheinOffers(SHEIN, "", "لبس أطفال").map((o) => o.title)[0], "طقم ولادي أطفال قطن");
+  assertEquals(matchSheinOffers(SHEIN, "شي ان", "").length, 3);
+  assertEquals(matchSheinOffers(SHEIN, "", "").length, 3);
+  assertEquals(matchSheinOffers(SHEIN, "", "زيت"), []);
+  assertEquals(matchSheinOffers(SHEIN, "كارفور", "فستان"), []);
+  // A link that is not SHEIN's dashboard link never reaches the customer.
+  assert(!matchSheinOffers(SHEIN, "shein", "").some((o) => o.affiliate_url.includes("aff_id")));
+});
+
+Deno.test("find_deals: a SHEIN link goes out letter for letter, with the commission said and no referral code", () => {
+  const out = describeChatDeals({ deals: [], codes: [], shein: [shein("فستان صيفي", ONE, "SUMMER10")] }, "", "فستان");
+  assertStringIncludes(out, ONE);
+  assertStringIncludes(out, "بالحرف");
+  assertStringIncludes(out, "عمولة");
+  assertStringIncludes(out, "كود خصم للمشتري: SUMMER10");
+  assert(!out.includes("B8U6U"));
+});
+
+Deno.test("find_deals is offered on SHEIN or clothes and home asked for", () => {
+  for (const m of ["عايز فستان من شي ان", "عندك حاجة من shein؟", "عايزة لبس للعيال", "محتاج مفارش جديدة"]) {
+    assert(intentToolHints(m).includes("find_deals"), m);
+  }
+  assert(!intentToolHints("لبست الجاكيت النهارده").includes("find_deals"));
 });
