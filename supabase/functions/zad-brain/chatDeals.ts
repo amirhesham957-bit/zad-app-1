@@ -15,6 +15,47 @@ import { customerCity, dealCountry, dealsForCity } from "./tasteDeals.ts";
 export const CHAT_DEALS_MAX = 8;
 export const CHAT_CODES_MAX = 4;
 export const CHAT_PICKS_MAX = 5;
+export const CHAT_SHEIN_MAX = 4;
+
+/**
+ * عرض SHEIN للخليج (zad_affiliate_offers، المالك ١١/١١). الرابط رابط لوحة SHEIN اللي shein-link-converter اتأكد إن صفحته
+ * شايلة koc_id بتاعنا قبل ما يتحفظ؛ النسبة جواه، فبيتبعت للعميل زي ما هو بالحرف. كود إحالة المالك مش هنا ومابيتقالش للعميل.
+ */
+export interface SheinOfferRow {
+  title: string;
+  affiliate_url: string;
+  coupon_code: string | null;
+  category: string | null;
+}
+
+/** البلاد اللي SHEIN بتروحلها؛ مصر على أمازون. */
+export const SHEIN_COUNTRIES = new Set(["SA", "AE"]);
+
+const ONELINK = /^https:\/\/onelink\.shein\.com\/\d+\/[A-Za-z0-9]+\/?(\?\S*)?$/;
+
+/** طلب لبس أو أطفال أو بيت وديكور — اللي SHEIN بتبيعه، مش بقالة. */
+const SHEIN_TOPIC =
+  /شي ?ان|shein|لبس|ملابس|هدوم|فستان|فساتين|بلوز|قميص|بنطلون|جيبه|عبايه|جزمه|شنط|شنطه|اكسسوار|اطفال|عيال|بيبي|مواليد|ديكور|مفارش|ستاير|سجاد|مخدات|مطبخ|تنظيم|fashion|dress|kids|decor/;
+
+/**
+ * عروض SHEIN اللي تطابق الطلب: محل اتطلب غير SHEIN = مفيش؛ صنف بقالة = مفيش؛ صنف لبس/بيت = اللي عنوانه فيه الصنف الأول
+ * وبعدهم الأحدث؛ من غير محل ولا صنف = الأحدث. رابط مش من لوحة SHEIN بيتشال هنا كمان. نقي.
+ */
+export function matchSheinOffers(rows: readonly SheinOfferRow[], store: string, item: string, max = CHAT_SHEIN_MAX): SheinOfferRow[] {
+  const wantStore = itemKey(store);
+  if (wantStore && !/شي ?ان|shein/.test(wantStore)) return [];
+  const want = itemKey(item);
+  if (want && !wantStore && !SHEIN_TOPIC.test(want)) return [];
+  const valid = rows.filter((r) => r.title?.trim() && ONELINK.test(String(r.affiliate_url ?? "").trim()));
+  // كلمة بكلمة: «لبس أطفال» يلاقي «طقم ولادي أطفال»؛ الكلمات العامة (لبس، عروض) مابتعدّش.
+  const words = want.split(" ").filter((w) => w.length >= 3 && !/^(لبس|ملابس|هدوم|عروض|عرض|حاجه|حاجات|من|شي|ان|shein)$/.test(w));
+  const score = (r: SheinOfferRow) => words.filter((w) => itemKey(r.title).includes(w)).length;
+  return valid
+    .map((r, i) => ({ r, i, s: score(r) }))
+    .sort((a, b) => b.s - a.s || a.i - b.i)
+    .slice(0, max)
+    .map((x) => x.r);
+}
 
 /** ترشيح من تيك توك أو إنستجرام من غير سعر (zad_social_picks، طلب المالك ١٠/١١). */
 export interface ChatPickRow {
@@ -123,11 +164,12 @@ export function matchChatDeals(
 
 /** نتيجة الأداة للموديل: أرقام ولينكات جاهزة، والتعليمات اللي تمنع الوصاية. */
 export function describeChatDeals(
-  found: { deals: ChatDealRow[]; codes: ChatCodeRow[]; picks?: ChatPickRow[] }, store: string, item: string,
+  found: { deals: ChatDealRow[]; codes: ChatCodeRow[]; picks?: ChatPickRow[]; shein?: SheinOfferRow[] }, store: string, item: string,
 ): string {
   const what = [item && `«${item}»`, store && `في ${store}`].filter(Boolean).join(" ") || "في بلده";
   const picks = found.picks ?? [];
-  if (!found.deals.length && !found.codes.length && !picks.length) {
+  const shein = found.shein ?? [];
+  if (!found.deals.length && !found.codes.length && !picks.length && !shein.length) {
     return `مفيش عروض متخزنة شغالة ${what} دلوقتي. قول كده للعميل بوضوح، واعرض تدوّر على النت (web_search) لو عايز.`;
   }
   const lines = found.deals.map((d) => {
@@ -150,11 +192,23 @@ export function describeChatDeals(
     const summary = p.summary ? ` — ${p.summary}` : "";
     return `- ${PICK_KIND_WORD[p.kind] ?? "ترشيح"} على ${where}: ${p.title}${p.store ? ` (${p.store})` : ""}${off}${summary} — ${p.source_url}`;
   });
+  const sheinLines = shein.map((o) => {
+    const code = o.coupon_code ? ` — كود خصم للمشتري: ${o.coupon_code}` : "";
+    return `- ${o.title} — SHEIN${code} — ${o.affiliate_url.trim()}`;
+  });
   return [
     ...(lines.length ? [`العروض الشغالة ${what} (من صفحات المحلات وفيديوهاتهم، ممكن تكون خلصت):`, ...lines] : []),
     ...(codeLines.length ? ["أكواد خصم:", ...codeLines] : []),
     ...(pickLines.length
       ? ["ترشيحات حديثة من تيك توك وإنستجرام (من غير أسعار مكتوبة؛ اعرضها بلينكاتها زي ما هي وقول إن التفاصيل في الفيديو):", ...pickLines]
+      : []),
+    ...(sheinLines.length
+      ? [
+        "اختيارات من SHEIN (لبس وبيت، بتوصل السعودية والإمارات؛ من غير أسعار مكتوبة — السعر على الصفحة):",
+        ...sheinLines,
+        "لينكات SHEIN دي لينكات أفلييت: انسخها بالحرف زي ما هي، ماتختصرهاش ولا تضيف عليها ولا تشيل منها حاجة. " +
+        "زاد بياخد عمولة صغيرة من الشراء منها من غير ما السعر يزيد على العميل — قول كده في سطر لو عرضتها.",
+      ]
       : []),
     "اعرضهم للعميل الأول، بأسعارهم ولينكاتهم زي ما هم. الميزانية مش سبب تحجب أو تأجّل بيه العروض؛ لو عندك ملاحظة فلوس فسطر واحد في الآخر.",
   ].join("\n");
@@ -181,5 +235,15 @@ export async function findChatDeals(sb: SupabaseClient, userId: string, store: s
   const pausedKinds = new Set(((paused ?? []) as Array<{ source_kind: string }>).map((r) => r.source_kind));
   const rows = dealsForCity((deals ?? []) as ChatDealRow[], city).filter((d) => !pausedKinds.has(d.source_kind));
   const found = matchChatDeals(rows, (codes ?? []) as ChatCodeRow[], store, item);
-  return describeChatDeals({ ...found, picks: matchChatPicks((picks ?? []) as ChatPickRow[], store, item) }, store, item);
+  // SHEIN للخليج بس (المالك ١١/١١): السعودية والإمارات؛ مصر على أمازون.
+  const { data: shein } = SHEIN_COUNTRIES.has(country)
+    ? await sb.from("zad_affiliate_offers").select("title,affiliate_url,coupon_code,category")
+      .eq("is_active", true).contains("target_countries", [country]).order("created_at", { ascending: false }).limit(60)
+      .then((r) => r, () => ({ data: null }))
+    : { data: null };
+  return describeChatDeals({
+    ...found,
+    picks: matchChatPicks((picks ?? []) as ChatPickRow[], store, item),
+    shein: matchSheinOffers((shein ?? []) as SheinOfferRow[], store, item),
+  }, store, item);
 }
