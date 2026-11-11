@@ -10,6 +10,12 @@ Deno.test("amazon tags come from the secrets, else the app's own", () => {
   assertEquals(amazonTag("SA", noEnv), "zad0b-21");
   assertEquals(amazonTag("EG", (k) => k === "ZAD_AMAZON_EG_TAG" ? "mine-21" : undefined), "mine-21");
   assertEquals(amazonTag("AE", noEnv), null);
+  // The secrets every other Amazon link reads (_shared/amazonMarket.ts) win.
+  assertEquals(amazonTag("EG", (k) => k === "AMAZON_ASSOCIATE_TAG_EG" ? "eg-21" : k === "ZAD_AMAZON_EG_TAG" ? "old-21" : undefined), "eg-21");
+  assertEquals(amazonTag("SA", (k) => k === "AMAZON_ASSOCIATE_TAG_SA" ? "sa-21" : undefined), "sa-21");
+  // An Egypt tag never lands on amazon.sa and the other way round.
+  assertEquals(amazonTag("SA", (k) => k === "AMAZON_ASSOCIATE_TAG_EG" ? "eg-21" : undefined), "zad0b-21");
+  assertEquals(amazonTag("EG", (k) => k === "AMAZON_ASSOCIATE_TAG_SA" ? "sa-21" : undefined), "zad04-21");
 });
 
 Deno.test("an amazon product link keeps its item and carries the tag", () => {

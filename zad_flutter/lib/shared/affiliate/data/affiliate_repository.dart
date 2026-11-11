@@ -63,7 +63,7 @@ Future<void> openAffiliateProduct(
 /// Opens a link Zad already built (a «حاجة خلصت» message's button) the same
 /// way: the Amazon app, or a browser tab without it.
 Future<void> openAmazonLink(String url) async {
-  final uri = Uri.parse(url);
+  final uri = Uri.parse(withAmazonTag(url));
   // The Amazon app first (owner, 2026-11-10); the browser tab without it.
   if (await openInAmazonApp(uri.toString())) return;
   try {

@@ -40,6 +40,7 @@ owner's real account, where only read-only taps are allowed.
 | #468 | «عقل زاد» / «العائلة»: the four (and three) unnamed icons on the bar become named buttons with a coloured chip, in one row under the tabs | passed | seen unnamed before the fix; after needs the next APK |
 | #469 | Home on the #467 APK: the empty live-prices strip and «ساهم بسعر» share one line; the companion peeks from the edge until the customer places it, instead of standing on the balance card | passed | both seen before the fix on the emulator; after needs the next APK |
 | — | Free quota every 2 hours per kind (20 messages, 3 voice, 2 images), one balance with the bot; the ad ladder (5 · voice+5 · voice+image+5 · then 3); a paced full-screen ad at natural breaks (off in release until `ADMOB_INTERSTITIAL_UNIT` is set); the «طاقة زاد» sheet shows the three balances | passed | not yet, needs the next APK |
+| — | Home deals: the cheapest local store first under each item, Amazon after it; the button reads «اطلبه من أمازون، يوصلك بسرعة»; the Amazon Associates line under the list; every amazon.eg/sa link the phone opens carries its own store tag. Family: on the chat tab the big card folds to one slim row (member count + SOS, back when pushed), and the screen no longer lifts itself over the keyboard inside the shell | passed | not yet: the emulator logged in and showed Home, then crashed twice for lack of memory |
 
 ## Open bugs
 

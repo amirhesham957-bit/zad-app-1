@@ -92,4 +92,41 @@ void main() {
       expect(d.code, isNull);
     },
   );
+
+  test(
+    'the cheapest local store comes first, Amazon after it (owner 11/11)',
+    () {
+      final deals = cheapestLocalFirst(
+        homeDealsFromJson(<String, Object?>{
+          'ok': true,
+          'cards': <Object?>[
+            card(<String, Object?>{
+              'store': 'أمازون',
+              'price': 30,
+              'url': 'https://www.amazon.eg/dp/B0ABCDEF12',
+            }), // l10n: data
+            card(<String, Object?>{
+              'item': 'زيت عافية',
+              'store': 'بنده',
+              'price': 90,
+            }), // l10n: data
+            card(<String, Object?>{
+              'store': 'كارفور',
+              'price': 38,
+            }), // l10n: data
+            card(<String, Object?>{
+              'store': 'سبينيس',
+              'price': 34,
+            }), // l10n: data
+          ],
+        }),
+      );
+      expect(deals.map((d) => '${d.item}|${d.store}').toList(), <String>[
+        'لبن جهينة 1 لتر|سبينيس', // l10n: data
+        'لبن جهينة 1 لتر|كارفور', // l10n: data
+        'لبن جهينة 1 لتر|أمازون', // l10n: data
+        'زيت عافية|بنده', // l10n: data
+      ]);
+    },
+  );
 }
