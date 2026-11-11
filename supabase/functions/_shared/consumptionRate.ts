@@ -1,4 +1,4 @@
-import { cycleDays, dueAfterDays, priorCycleDays } from "./restockCycle.ts";
+import { cycleDays, dueAfterDays, isEssential, priorCycleDays } from "./restockCycle.ts";
 // معدل الاستهلاك (zad_consumption) زي ما العقل وتليجرام بيقروه — نفس قواعد SQL.
 //
 // الفجوة ٧ (20260930000000): معدل من دورة شرا واحدة بيتخزن rate_known = false و
@@ -66,5 +66,6 @@ export function checkInPriority(
   if (last <= 0) return null;
   const since = (now - last) / 86_400_000;
   if (since < 1) return null;
-  return since / dueAfterDays(cycle);
+  // الأساسي (#482) بيتسأل عنه بدري، في نفس اللحظة اللي بيدخل فيها قايمة الشرا.
+  return since / dueAfterDays(cycle, isEssential(item.restockMode, purchaseDays, cycle));
 }
