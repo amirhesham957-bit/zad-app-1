@@ -304,12 +304,26 @@ class _ActiveFamilyState extends ConsumerState<_ActiveFamily> {
       ],
     ];
     final tab = _tab.clamp(0, tabs.length - 1);
+    // The chat needs the height (owner, 2026-11-11: the messages were
+    // squeezed to nothing between the header and the input): on its tab the
+    // big card folds to one slim row that keeps the way back and the SOS.
+    final chat = tab == 0;
+    // Inside the shell, the shell's own Scaffold already lifts the body over
+    // the keyboard; lifting it here too pushed the input up by the
+    // keyboard's height twice. Only a pushed screen owns the inset.
+    final pushed = ModalRoute.of(context)?.canPop ?? false;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
+      resizeToAvoidBottomInset: pushed,
       body: Column(
         children: <Widget>[
-          _Header(family: family),
+          AnimatedSize(
+            duration: ZadDuration.quick,
+            curve: ZadCurves.standard,
+            alignment: Alignment.topCenter,
+            child: _Header(family: family, compact: chat),
+          ),
           Padding(
             padding: const EdgeInsets.fromLTRB(
               ZadSpacing.gutter,
@@ -387,9 +401,12 @@ class _ActiveFamilyState extends ConsumerState<_ActiveFamily> {
 }
 
 class _Header extends ConsumerWidget {
-  const new({required this.family});
+  const new({required this.family, this.compact = false});
 
   final Family family;
+
+  /// One slim row: the chat tab's header.
+  final bool compact;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -401,6 +418,62 @@ class _Header extends ConsumerWidget {
     // Inside the shell the app's own header is above this one: no status bar
     // to clear and nowhere to go back to.
     final pushed = ModalRoute.of(context)?.canPop ?? false;
+    // On the chat tab inside the shell, the shell's header already names the
+    // section, so the slim row shows the member count instead of the title
+    // (the owner saw «عيلتي» twice, 2026-11-11).
+    final title = Text(
+      owner == null ? l.familyHeaderTitle : l.familyTitleOf(owner),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: (compact ? ZadType.titleMedium : ZadType.headlineMedium).copyWith(
+        color: Colors.white,
+      ),
+    );
+    if (compact) {
+      return Container(
+        decoration: const BoxDecoration(
+          gradient: ZadColors.hero,
+          borderRadius: BorderRadius.vertical(
+            bottom: Radius.circular(ZadRadii.card),
+          ),
+        ),
+        child: SafeArea(
+          top: pushed,
+          bottom: false,
+          child: Padding(
+            padding: const EdgeInsetsDirectional.fromSTEB(
+              ZadSpacing.sm,
+              ZadSpacing.xs,
+              ZadSpacing.sm,
+              ZadSpacing.xs,
+            ),
+            child: Row(
+              children: <Widget>[
+                if (pushed) const BackButton(color: Colors.white),
+                const SizedBox(width: ZadSpacing.sm),
+                Expanded(
+                  child: pushed
+                      ? title
+                      : Text(
+                          l.familyMembersCount(members.length),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: ZadType.bodyMedium.copyWith(
+                            color: Colors.white.withValues(alpha: 0.9),
+                          ),
+                        ),
+                ),
+                IconButton(
+                  tooltip: l.familyActionSos,
+                  onPressed: () => unawaited(confirmAndSendSos(context, ref)),
+                  icon: const Icon(ZadIcons.sos, color: Colors.white),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
     return Container(
       decoration: const BoxDecoration(
         gradient: ZadColors.hero,
@@ -424,18 +497,7 @@ class _Header extends ConsumerWidget {
               Row(
                 children: <Widget>[
                   if (pushed) const BackButton(color: Colors.white),
-                  Expanded(
-                    child: Text(
-                      owner == null
-                          ? l.familyHeaderTitle
-                          : l.familyTitleOf(owner),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: ZadType.headlineMedium.copyWith(
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
+                  Expanded(child: title),
                   IconButton(
                     tooltip: 'الانضمام للعائلة',
                     onPressed: () =>

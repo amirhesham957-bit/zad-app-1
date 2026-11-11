@@ -5,13 +5,19 @@
 //    نون والدواء ولولو 403، بنده 404، فمش هنا) — وبرضه بيتفحص ساعتها.
 // ٣. مفيش رابط مضمون ⇒ الرسالة زي ما هي، نص بس.
 
+import { marketFor } from "../_shared/amazonMarket.ts";
 import { dropLink, videosForChat } from "./videoLinks.ts";
 
-/** تاجات أمازون: سر المشروع لو موجود، وإلا اللي التطبيق بيستعمله من ٩/١١. */
+/**
+ * تاج أمازون لسوق البلد (مصر amazon.eg، السعودية amazon.sa). نفس أسرار المشروع اللي
+ * ترشيحات الرئيسية ولينك النواقص بيقروها (`_shared/amazonMarket.ts`):
+ * AMAZON_ASSOCIATE_TAG_EG / AMAZON_ASSOCIATE_TAG_SA. الأسامي القديمة ZAD_AMAZON_EG_TAG /
+ * ZAD_AMAZON_SA_TAG بتفضل شغالة لو حد كان حاططها، وإلا التاج الافتراضي.
+ */
 export function amazonTag(country: string, env: (k: string) => string | undefined = (k) => Deno.env.get(k)): string | null {
-  if (country === "EG") return env("ZAD_AMAZON_EG_TAG")?.trim() || "zad04-21";
-  if (country === "SA") return env("ZAD_AMAZON_SA_TAG")?.trim() || "zad0b-21";
-  return null;
+  if (country !== "EG" && country !== "SA") return null;
+  const legacy = env(`ZAD_AMAZON_${country}_TAG`)?.trim() || undefined;
+  return marketFor(country, (k) => env(k)?.trim() || (k === `AMAZON_ASSOCIATE_TAG_${country}` ? legacy : undefined)).tag;
 }
 
 const AMAZON_HOST: Record<string, string> = { EG: "www.amazon.eg", SA: "www.amazon.sa" };

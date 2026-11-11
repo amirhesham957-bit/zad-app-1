@@ -2761,6 +2761,13 @@ class ZadL10nEn extends ZadL10n {
   String get homeDealsSeeAll => 'All deals';
 
   @override
+  String get homeDealsOrderOnAmazon => 'Order it on Amazon — fast delivery';
+
+  @override
+  String get amazonAssociatesDisclosure =>
+      'As an Amazon Associate, Zad earns from qualifying purchases — at no extra cost to you.';
+
+  @override
   String get homeDealsWhyNeed => 'You\'re out';
 
   @override

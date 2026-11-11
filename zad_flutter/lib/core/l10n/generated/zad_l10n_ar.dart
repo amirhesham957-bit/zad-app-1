@@ -2697,6 +2697,13 @@ class ZadL10nAr extends ZadL10n {
   String get homeDealsSeeAll => 'كل العروض';
 
   @override
+  String get homeDealsOrderOnAmazon => 'اطلبه من أمازون، يوصلك بسرعة';
+
+  @override
+  String get amazonAssociatesDisclosure =>
+      'بصفتنا شريك في Amazon Associates، زاد بياخد عمولة من المشتريات المؤهلة — من غير أي زيادة عليك.';
+
+  @override
   String get homeDealsWhyNeed => 'ناقص عندك';
 
   @override

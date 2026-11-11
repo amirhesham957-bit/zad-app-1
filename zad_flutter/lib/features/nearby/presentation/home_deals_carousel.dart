@@ -3,7 +3,9 @@
 /// [homeDealsShown] of them, «شوف الكل» for the rest — the picture, what
 /// the home is short of, the store, the price and the saving, the store's
 /// discount code (one tap copies it), and «على أمازون», the tagged search
-/// (`zad0b-21` amazon.sa, `zad04-21` amazon.eg).
+/// (`zad0b-21` amazon.sa, `zad04-21` amazon.eg), labelled «اطلبه من
+/// أمازون، يوصلك بسرعة» under the cheapest local store (owner 11/11), and
+/// Amazon's Associates disclosure under the list.
 /// A tap on the card opens the deal where it was found.
 ///
 /// Reads zad-brain's `home_deals` (no model involved): last answer first
@@ -67,7 +69,9 @@ class _HomeDealsCarouselState extends ConsumerState<HomeDealsCarousel> {
     if (userId == null) return;
     final cache = ref.read(screenCacheProvider);
     if (cache.read('home_deals', userId) case [final cached]) {
-      if (mounted) setState(() => _deals = homeDealsFromJson(cached));
+      if (mounted) {
+        setState(() => _deals = cheapestLocalFirst(homeDealsFromJson(cached)));
+      }
     }
     final last = _fetchedAt[userId];
     if (last != null &&
@@ -86,7 +90,9 @@ class _HomeDealsCarouselState extends ConsumerState<HomeDealsCarousel> {
           Map<String, dynamic>.from(raw),
         ]),
       );
-      if (mounted) setState(() => _deals = homeDealsFromJson(raw));
+      if (mounted) {
+        setState(() => _deals = cheapestLocalFirst(homeDealsFromJson(raw)));
+      }
     } on Object catch (e) {
       debugPrint('home deals read failed: $e');
     }
@@ -137,6 +143,11 @@ class _HomeDealsCarouselState extends ConsumerState<HomeDealsCarousel> {
                   _deals[i].photo ?? catalogueImage(_deals[i].item, catalogue),
             ),
           ],
+          const SizedBox(height: ZadSpacing.sm),
+          Text(
+            l.amazonAssociatesDisclosure,
+            style: ZadType.labelSmall.copyWith(color: ZadColors.inkMuted),
+          ),
         ],
       ),
     );
@@ -308,7 +319,11 @@ class _DealCard extends ConsumerWidget {
                     onPressed: () =>
                         unawaited(openAmazonSearch(ref, deal.item)),
                     icon: const Icon(Icons.shopping_cart_outlined, size: 18),
-                    label: Text(l.dealsOnAmazon),
+                    label: Text(
+                      l.homeDealsOrderOnAmazon,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ],
               ),

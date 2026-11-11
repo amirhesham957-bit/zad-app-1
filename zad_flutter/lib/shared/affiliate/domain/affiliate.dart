@@ -132,6 +132,28 @@ final RegExp _amazonLinkLine = RegExp(r'^\s*•\s*(.+?):\s*(https://\S+)\s*$');
   return (text: kept.join('\n').trim(), links: links);
 }
 
+/// [url] with our associate tag when it points at amazon.eg or amazon.sa —
+/// each store's own tag, replacing any other — so a link the server or a
+/// model built still earns. Any other link comes back unchanged.
+String withAmazonTag(String url) {
+  final uri = Uri.tryParse(url.trim());
+  if (uri == null || uri.scheme != 'https') return url;
+  final country = switch (uri.host) {
+    'www.amazon.eg' || 'amazon.eg' => 'EG',
+    'www.amazon.sa' || 'amazon.sa' => 'SA',
+    _ => null,
+  };
+  if (country == null) return url;
+  return uri
+      .replace(
+        queryParameters: <String, String>{
+          ...uri.queryParameters,
+          'tag': amazonTagFor(country),
+        },
+      )
+      .toString();
+}
+
 bool _isAmazonStore(Uri uri) =>
     uri.scheme == 'https' &&
     const <String>{

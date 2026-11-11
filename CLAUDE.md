@@ -244,6 +244,8 @@ Rules that apply to every Flutter change, in short:
 
 **UI overhaul (since 2026-11-09): read [`docs/agent/UI_OVERHAUL_STATUS.md`](./docs/agent/UI_OVERHAUL_STATUS.md) before touching any screen, and update it in the same commit.** It says what changed, how far it was checked, what is broken and what is left.
 
+**Session record (since 2026-11-11): read [`docs/agent/SESSION_LOG.md`](./docs/agent/SESSION_LOG.md) first and append one entry before the session ends** — what was done (PRs), measured, answered by the owner, left, and the traps.
+
 **The one plan since 2026-10-24 is [`docs/agent/ZAD_PLAN.md`](./docs/agent/ZAD_PLAN.md)** — nine phases, starting with one outbound coordinator (alerts bunched at the wake hour, measured 2026-10-17) and the bank channel, then one aware brain, legal deal sources (receipts, paid search, official flyers, partner programs — never reverse-engineered apps), and the owner's 2026-10-24 ideas sorted item by item, with a verdict on every suggested repo; the 2026-10-18 plan is archived as `ZAD_PLAN_2026_10_18.md` (owner's
 decision: every older plan below is cancelled as a plan and kept as history; each carries a banner
 saying so). Work its phases one after another, not in parallel — only items waiting on the owner's

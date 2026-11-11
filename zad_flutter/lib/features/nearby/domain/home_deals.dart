@@ -66,6 +66,34 @@ String? _https(Object? v) {
   return s.startsWith('https://') && s.length <= 500 ? s : null;
 }
 
+final RegExp _amazonStoreName = RegExp(
+  'amazon|أمازون|امازون', // l10n: data
+  caseSensitive: false,
+);
+
+/// True when [deal] is sold by Amazon itself rather than a local store.
+bool isAmazonDeal(HomeDeal deal) =>
+    _amazonStoreName.hasMatch(deal.store) ||
+    (deal.url ?? '').contains('://www.amazon.');
+
+/// The strip's order (owner 11/11): the cheapest local store first. Items
+/// keep the server's order of first appearance; under each item its local
+/// stores come cheapest first, and Amazon's own offer after them — the
+/// Amazon button on every card is the second option, not the first.
+List<HomeDeal> cheapestLocalFirst(List<HomeDeal> deals) {
+  final groups = <String, List<HomeDeal>>{};
+  for (final d in deals) {
+    groups.putIfAbsent(d.item.trim().toLowerCase(), () => <HomeDeal>[]).add(d);
+  }
+  return <HomeDeal>[
+    for (final g in groups.values)
+      ...(List<HomeDeal>.of(g)..sort((a, b) {
+        final byKind = (isAmazonDeal(a) ? 1 : 0) - (isAmazonDeal(b) ? 1 : 0);
+        return byKind != 0 ? byKind : a.price.compareTo(b.price);
+      })),
+  ];
+}
+
 /// Reads `home_deals`' answer. A malformed card is dropped, never shown.
 List<HomeDeal> homeDealsFromJson(Object? raw) {
   if (raw is! Map) return const <HomeDeal>[];
