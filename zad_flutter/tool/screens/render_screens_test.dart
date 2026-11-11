@@ -50,6 +50,11 @@ void main() {
       const MethodChannel('zad/app'),
       (_) async => true,
     );
+    // The chat's voice button builds a recorder; no plugin runs here.
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      const MethodChannel('com.llfbandit.record/messages'),
+      (_) async => null,
+    );
     final container = harness.container('user-1', household: _fullHousehold());
     addTearDown(container.dispose);
     final key = GlobalKey();
