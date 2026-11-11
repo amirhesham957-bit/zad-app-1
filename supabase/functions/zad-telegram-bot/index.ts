@@ -36,6 +36,7 @@ import {
 } from "./purchasePhoto.ts";
 import { splitPhotoMedicines } from "./pharmacyPhoto.ts";
 import { checkInPriority } from "../_shared/consumptionRate.ts";
+import { PURCHASE_SOURCES, purchaseDaysByItem, restockKey } from "../_shared/restockCycle.ts";
 import { extendCallback, formatExtend, formatLookup, parseExtendCallback, parseSupportCommand, SUPPORT_TEXT, SUPPORT_USAGE } from "./supportDesk.ts";
 import {
   adCreditKeyboard,
@@ -401,9 +402,9 @@ async function deliverVoiceAlert(
  * learning loop) — deliberately NOT a port of ConsumptionLearner's on-device
  * SharedPreferences model, which never leaves the Android client. "Needs a check-in" here
  * means (checkInPriority, 2026-11-11): with a consumption rate, known or approximate from
- * one cycle (20260930000000), predicted to run out within 2 days; without one, older than
- * the typical life of its kind (milk 3 days, groceries 14, care products 30) since it was
- * last seen. The old no-rate rule, quantity <= threshold, asked about a single jar of halva
+ * one cycle (20260930000000), predicted to run out within 2 days; without one, its purchase
+ * cycle in this home (_shared/restockCycle.ts, the same the behaviour profile and the nightly
+ * shopping list use) has mostly passed since it was last bought. The old no-rate rule, quantity <= threshold, asked about a single jar of halva
  * every night and never about milk. The most pressing come first under the daily cap. The
  * live SQL trigger (_inventory_needs_checkin) still uses the threshold. Items with an
  * already-pending prompt are excluded (the unique index on telegram_checkin_prompts is the
@@ -411,15 +412,16 @@ async function deliverVoiceAlert(
  */
 async function findCheckInCandidates(sb: SupabaseClient, userId: string): Promise<Array<{ item_name: string; quantity: number; unit: string | null }>> {
   const [{ data: inv }, { data: cons }, { data: pending }, { data: occasional, error: occErr }, { data: seen }] = await Promise.all([
-    sb.from("zad_inventory").select("item_name,quantity,category,unit,created_at").eq("user_id", userId),
+    sb.from("zad_inventory").select("item_name,quantity,category,unit,created_at,restock_mode,restock_cycle_days").eq("user_id", userId),
     sb.from("zad_consumption").select("item_name,avg_daily_qty,rate_known").eq("user_id", userId),
     sb.from("telegram_checkin_prompts").select("item_name").eq("user_id", userId).eq("status", "pending"),
     // حاجات على فترات مابتتسألش «لسه عندك؟» (ZAD_PLAN ٣.١٠).
     sb.rpc("zad_occasional_items", { p_user: userId }),
-    // آخر مرة كل صنف اتشاف (شرا، رد، تعديل): من هنا بيتحسب «بقاله كام يوم».
+    // أيام شرا كل صنف: منها دورته في البيت ده (restockCycle.ts)، زي الملف السلوكي والحلم بالظبط.
     sb.from("zad_inventory_observations").select("item_name,observed_at").eq("user_id", userId)
-      .gte("observed_at", new Date(Date.now() - 90 * 86_400_000).toISOString())
-      .order("observed_at", { ascending: false }).limit(1000),
+      .in("source", [...PURCHASE_SOURCES])
+      .gte("observed_at", new Date(Date.now() - 180 * 86_400_000).toISOString())
+      .order("observed_at", { ascending: false }).limit(2000),
   ]);
   if (occErr) console.error("checkin: occasional items failed:", occErr.message);
   const occasionalItems = new Set((Array.isArray(occasional) ? occasional as string[] : []).map((n) => n.trim()));
@@ -430,21 +432,25 @@ async function findCheckInCandidates(sb: SupabaseClient, userId: string): Promis
   );
   const pendingItems = new Set(((pending ?? []) as Array<{ item_name: string }>).map((p) => p.item_name));
 
-  const lastSeen = new Map<string, string>();
-  for (const o of (seen ?? []) as Array<{ item_name: string; observed_at: string }>) {
-    if (!lastSeen.has(o.item_name)) lastSeen.set(o.item_name, o.observed_at);
-  }
+  const boughtOn = purchaseDaysByItem((seen ?? []) as Array<{ item_name: string; observed_at: string }>);
 
   // الأقرب يخلص الأول (checkInPriority): قبل كده الترتيب كان ترتيب الداتابيز، فسقف الاتنين في اليوم كان
   // بيروح لنفس الحلاوة ومسحوق الغسيل كل ليلة واللبن مابيجيش دوره.
-  return ((inv ?? []) as Array<{ item_name: string; quantity: number; category: string | null; unit: string | null; created_at: string | null }>)
+  return ((inv ?? []) as Array<{
+    item_name: string; quantity: number; category: string | null; unit: string | null; created_at: string | null;
+    restock_mode: string | null; restock_cycle_days: number | null;
+  }>)
     .filter((item) => !pendingItems.has(item.item_name) && !occasionalItems.has(item.item_name.trim()))
     .map((item) => ({
       item,
       priority: checkInPriority(
-        item.item_name, item.quantity, item.category,
+        {
+          name: item.item_name, quantity: item.quantity, category: item.category,
+          restockMode: item.restock_mode, cycleOverride: item.restock_cycle_days,
+        },
         consByItem.get(item.item_name)?.avg_daily_qty,
-        lastSeen.get(item.item_name) ?? item.created_at,
+        // صنف اتضاف بإيده من غير شرا متسجل: يوم إضافته هو أول شرا.
+        boughtOn.get(restockKey(item.item_name)) ?? (item.created_at ? [item.created_at] : []),
       ),
     }))
     .filter((x): x is { item: typeof x.item; priority: number } => x.priority != null && x.priority >= 1)

@@ -36,38 +36,39 @@ Deno.test("needsCheckIn: the house's rate decides when it is known, and a row ad
   assertEquals(needsCheckIn(4, 1, 2, "2026-11-04T11:59:00Z", now), true, "the rate decides even on the first day");
 });
 
-// ١١/١١: حساب المالك اتسأل ٨ مرات في أسبوع عن حلاوة ومسحوق ورول أون وسمن (كمية ١ كل واحد) ولا مرة عن اللبن.
-Deno.test("checkInPriority: milk after 3 days is due, a jar of halva after 6 days is not", () => {
-  const now = Date.parse("2026-11-11T19:30:00Z");
-  const daysAgo = (d: number) => new Date(now - d * 86_400_000).toISOString();
-  const milk = checkInPriority("حليب", 3.5, "الألبان", null, daysAgo(3), now)!;
-  const halva = checkInPriority("راديسون حلاوة 500 جم", 1, "البقالة", null, daysAgo(6), now)!;
-  const powder = checkInPriority("ستر باور مسحوق يدوي 1 كجم", 1, "العناية", null, daysAgo(6), now)!;
+// ١١/١١: حساب المالك اتسأل ٨ مرات في أسبوع عن حلاوة ومسحوق ورول أون وسمن (كمية ١ كل واحد) ولا مرة عن اللبن،
+// مع إن الملف السلوكي كان عارف إن اللبن بيتشرى كل ٣ أيام.
+const NOW = Date.parse("2026-11-11T19:30:00Z");
+const ago = (d: number) => new Date(NOW - d * 86_400_000).toISOString();
+
+Deno.test("checkInPriority: milk the home buys every 3 days is due; halva bought 6 days ago is not", () => {
+  const milk = checkInPriority({ name: "حليب", quantity: 3.5, category: "الألبان" }, null, [ago(9), ago(6), ago(3)], NOW)!;
+  const halva = checkInPriority({ name: "راديسون حلاوة 500 جم", quantity: 1, category: "البقالة" }, null, [ago(6)], NOW)!;
+  const powder = checkInPriority({ name: "ستر باور مسحوق يدوي 1 كجم", quantity: 1, category: "العناية" }, null, [ago(6)], NOW)!;
   assertEquals(milk >= 1, true);
   assertEquals(halva < 1, true);
   assertEquals(powder < 1, true);
 });
 
-Deno.test("checkInPriority: the name beats the category — toast filed under groceries goes in days", () => {
-  const now = Date.parse("2026-11-11T19:30:00Z");
-  const fourDays = new Date(now - 4 * 86_400_000).toISOString();
-  assertEquals(checkInPriority("توست بني مربع من برنش، 425 جرام", 2, "البقالة", null, fourDays, now)! >= 1, true);
-  assertEquals(checkInPriority("خل طبيعي الطاووس - ١ لتر", 1, "البقالة", null, fourDays, now)! < 1, true);
+Deno.test("checkInPriority: the home's own rhythm beats the kind — oil bought weekly is asked after a week", () => {
+  const weekly = checkInPriority({ name: "زيت", quantity: 1, category: "البقالة" }, null, [ago(22), ago(15), ago(8)], NOW)!;
+  const fresh = checkInPriority({ name: "زيت", quantity: 1, category: "البقالة" }, null, [ago(8)], NOW)!;
+  assertEquals(weekly >= 1, true);
+  assertEquals(fresh < 1, true);
 });
 
-Deno.test("checkInPriority: bags, empty items and items seen today are never asked", () => {
-  const now = Date.parse("2026-11-11T19:30:00Z");
-  const old = new Date(now - 40 * 86_400_000).toISOString();
-  assertEquals(checkInPriority("شنطة كاشير", 4, "أخرى", null, old, now), null);
-  assertEquals(checkInPriority("حليب", 0, "الألبان", null, old, now), null);
-  assertEquals(checkInPriority("حليب", 2, "الألبان", null, new Date(now - 3600_000).toISOString(), now), null);
+Deno.test("checkInPriority: bags, occasional items, empty items and items bought today are never asked", () => {
+  assertEquals(checkInPriority({ name: "شنطة كاشير", quantity: 4, category: "أخرى" }, null, [ago(40)], NOW), null);
+  assertEquals(checkInPriority({ name: "رنجة", quantity: 1, restockMode: "occasional" }, null, [ago(90)], NOW), null);
+  assertEquals(checkInPriority({ name: "حليب", quantity: 0 }, null, [ago(40)], NOW), null);
+  assertEquals(checkInPriority({ name: "حليب", quantity: 2 }, null, [ago(0.1)], NOW), null);
 });
 
-Deno.test("checkInPriority: a household rate wins, and what runs out sooner ranks higher", () => {
-  const now = Date.parse("2026-11-11T19:30:00Z");
-  const yesterday = new Date(now - 86_400_000).toISOString();
-  const water = checkInPriority("مياه", 4, "المشروبات", 2, yesterday, now)!; // ٢ يوم فاضلين
-  const oil = checkInPriority("زيت", 4, "البقالة", 0.5, yesterday, now)!; // ٨ أيام
+Deno.test("checkInPriority: the customer's own cycle wins, and a known rate wins over the cycle", () => {
+  // «الزيت عندي كل أسبوعين».
+  assertEquals(checkInPriority({ name: "زيت", quantity: 1, cycleOverride: 14 }, null, [ago(13)], NOW)! >= 1, true);
+  const water = checkInPriority({ name: "مياه", quantity: 4 }, 2, [ago(1)], NOW)!; // يومين فاضلين
+  const oil = checkInPriority({ name: "زيت", quantity: 4 }, 0.5, [ago(1)], NOW)!; // ٨ أيام
   assertEquals(water >= 1, true);
   assertEquals(oil < 1, true);
   assertEquals(water > oil, true);

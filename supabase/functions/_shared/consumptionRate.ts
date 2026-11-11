@@ -1,3 +1,4 @@
+import { cycleDays, DUE_AT, priorCycleDays } from "./restockCycle.ts";
 // معدل الاستهلاك (zad_consumption) زي ما العقل وتليجرام بيقروه — نفس قواعد SQL.
 //
 // الفجوة ٧ (20260930000000): معدل من دورة شرا واحدة بيتخزن rate_known = false و
@@ -38,66 +39,32 @@ export function needsCheckIn(
 }
 
 /**
- * كام يوم الوحدة بتعيش عادة في بيت قبل ما يستاهل نسأل «لسه عندك؟»، لما مفيش معدل للبيت لسه. المقاس
- * (١١/١١، حساب المالك): القاعدة القديمة «الكمية ≤ ٢» سألت ٨ مرات في أسبوع عن حلاوة ومسحوق غسيل ورول أون
- * وسمن (كلهم كميتهم ١ وبيعيشوا أسابيع) ومسألتش ولا مرة عن لبن أو خضار أو عيش — فالأسئلة اتسابت، ومفيش
- * ولا نزلة اتسجلت، و`zad_consumption` فضل فاضي. الفئات دي هي اللي بيكتبها الماسح والتطبيق.
- * null = مابيتسألش عنه من غير معدل (شنط، حاجات مش بتتاكل ولا بتخلص).
- */
-export const CATEGORY_CYCLE_DAYS: Record<string, number | null> = {
-  "الألبان": 3,
-  "الخضار": 4,
-  "الفواكه": 4,
-  "اللحوم": 4,
-  "المشروبات": 5,
-  "البقالة": 14,
-  "العناية": 30,
-  "أخرى": null,
-};
-
-/** فئة مش في الجدول (أو فاضية). */
-const DEFAULT_CYCLE_DAYS = 10;
-
-/**
- * الاسم بيغلب الفئة: الماسح بيحط التوست والجبنة واللانشون تحت «البقالة» (١٤ يوم) وهما بيخلصوا في أيام.
- * أول قاعدة تطابق هي اللي بتحكم.
- */
-const NAME_CYCLE_DAYS: ReadonlyArray<[RegExp, number | null]> = [
-  [/شنط|كيس|أكياس|اكياس/, null],
-  [/عيش|خبز|توست|فينو|صمون/, 3],
-  [/حليب|لبن|زبادي|رايب/, 3],
-  [/جبن|لانشون|بسطرمة|مرتديلا|بيض/, 5],
-  [/مياه|مية|ماء/, 4],
-];
-
-/**
  * أولوية سؤال «لسه عندك؟» لصنف واحد: ≥ ١ = يستاهل يتسأل الليلة، وكل ما تكبر يتسأل الأول. null = مايتسألش.
- *  • بمعدل البيت: الأيام اللي فاضلة للصنف؛ يومين أو أقل = ١ فأكتر (نفس قاعدة needsCheckIn).
- *  • من غير معدل: الأيام من آخر مرة الصنف اتشاف (شرا، رد، تعديل) ÷ عمر الفئة. لبن من ٣ أيام = ١، حلاوة
- *    من ٦ أيام = ٠٫٤.
- * [lastSeenAt] آخر قراية للصنف (zad_inventory_observations)، وإلا تاريخ إضافته.
+ *  • بمعدل البيت (zad_consumption): الأيام اللي فاضلة؛ يومين أو أقل = ١ فأكتر (نفس needsCheckIn).
+ *  • من غير معدل: دورة شرا الصنف في البيت ده (`restockCycle.ts`: البداية من نوعه، وبعدين وسيط المسافات بين مرات
+ *    شراه، وتصحيح العميل لو قاله) — الأيام من آخر شرا ÷ (الدورة × DUE_AT)، نفس اللحظة اللي الحلم بيحطه فيها في
+ *    قايمة الشرا. لبن البيت بيشتريه كل ٣ أيام = ١ بعد يومين ونص؛ حلاوة كل ٣٠ يوم = ٠٫٢ بعد ٦ أيام.
+ * المقاس (١١/١١، حساب المالك): القاعدة القديمة «الكمية ≤ ٢» سألت ٨ مرات في أسبوع عن حلاوة ومسحوق ورول أون وسمن،
+ * ولا مرة عن اللبن — مع إن الملف السلوكي كان عارف إن دورة اللبن ٣ أيام وإن عليه الدور.
  */
 export function checkInPriority(
-  name: string,
-  quantity: number,
-  category: string | null | undefined,
+  item: { name: string; quantity: number; category?: string | null; restockMode?: string | null; cycleOverride?: number | string | null },
   avgDailyQty: number | null | undefined,
-  lastSeenAt: string | null | undefined,
+  purchaseDays: readonly string[],
   now: number = Date.now(),
 ): number | null {
-  if (!(quantity > 0)) return null;
+  if (!(item.quantity > 0)) return null;
   const rate = Number(avgDailyQty);
-  if (rate > 0) {
-    const daysLeft = quantity / rate;
-    return 2 / Math.max(daysLeft, 0.1);
-  }
-  const seen = lastSeenAt ? Date.parse(lastSeenAt) : NaN;
-  if (!Number.isFinite(seen)) return null;
-  const ageDays = (now - seen) / 86_400_000;
-  if (ageDays < 1) return null;
-  const byName = NAME_CYCLE_DAYS.find(([re]) => re.test(name));
-  const key = (category ?? "").trim();
-  const cycle = byName ? byName[1] : key in CATEGORY_CYCLE_DAYS ? CATEGORY_CYCLE_DAYS[key] : DEFAULT_CYCLE_DAYS;
-  if (cycle == null) return null;
-  return ageDays / cycle;
+  if (rate > 0) return 2 / Math.max(item.quantity / rate, 0.1);
+  if (item.restockMode === "occasional") return null;
+  const override = Number(item.cycleOverride);
+  const cycle = Number.isInteger(override) && override >= 1 && override <= 365
+    ? override
+    : cycleDays(priorCycleDays(item.name, item.category), purchaseDays);
+  if (cycle === null) return null;
+  const last = purchaseDays.reduce((m, d) => Math.max(m, Date.parse(d) || 0), 0);
+  if (last <= 0) return null;
+  const since = (now - last) / 86_400_000;
+  if (since < 1) return null;
+  return since / (cycle * DUE_AT);
 }
