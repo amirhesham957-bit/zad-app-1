@@ -10,7 +10,7 @@ import {
   duplicateProposalKeyboard, duplicateProposalMessage,
   notificationReviewMessage,
   adCreditKeyboard,
-  proactiveDismissKeyboard, parseProactiveDismissCallback, arabicDays, proactiveDismissReply, amazonLinkButtons } from "./telegram.ts";
+  proactiveDismissKeyboard, parseProactiveDismissCallback, parseProactiveReplyCallback, arabicDays, proactiveDismissReply, amazonLinkButtons } from "./telegram.ts";
 
 Deno.test("normalizeBindingCode uppercases a valid code", () => {
   assertEquals(normalizeBindingCode("abcd1234"), "ABCD1234");
@@ -299,18 +299,25 @@ Deno.test("adCreditKeyboard is a single link button, not a callback button", () 
 // ── رفض المبادرات الاستباقية (20260913190000) ─────────────────────────────────
 const TASK = "f89dc384-81d1-41a7-98d2-ffb6d5c79923";
 
-Deno.test("proactive dismiss keyboard: same three reasons, pd: prefix, under Telegram's 64-byte cap", () => {
+Deno.test("proactive keyboard: a reply row that mutes nothing, then an explicit mute row, all under Telegram's 64-byte cap", () => {
+  // بلاغ المالك ١١/١١: أي زرار تحت «زادو عطشان» أو «صرفت النهارده» كان بيكتم أيام.
   const rows = proactiveDismissKeyboard(TASK);
-  assertEquals(rows.length, 1);
-  assertEquals(rows[0].length, 3);
+  assertEquals(rows.map((r) => r.map((b) => b.text)), [["👍 تمام", "💬 قولّي أكتر"], ["✏️ الرقم غلط", "🔕 بلاش النوع ده"]]);
+  for (const btn of rows.flat()) assert(new TextEncoder().encode(btn.callback_data!).length <= 64, btn.callback_data);
+  // الصف الأول ردود: مابيتقراش كرفض أبداً.
   for (const btn of rows[0]) {
-    assert(btn.callback_data!.startsWith(`pd:${TASK}:`));
-    assert(new TextEncoder().encode(btn.callback_data!).length <= 64, btn.callback_data);
-    // كل زرار لازم يرجع يتقري لسبب معروف — زرار مايتقريش = رفض بيضيع بصمت.
-    assert(parseProactiveDismissCallback(btn.callback_data!) !== null, btn.callback_data);
+    assertEquals(parseProactiveDismissCallback(btn.callback_data!), null, btn.callback_data);
+    assert(parseProactiveReplyCallback(btn.callback_data!) !== null, btn.callback_data);
   }
-  // نفس أسامي Task 28، مش أسامي جديدة يتعلمها العميل.
-  assertEquals(rows[0].map((b) => b.text), dismissKeyboard("x")[0].map((b) => b.text));
+  assertEquals(rows[1].map((b) => parseProactiveDismissCallback(b.callback_data!)?.reason), ["wrong_data", "not_relevant"]);
+});
+
+Deno.test("parseProactiveReplyCallback: ok and more, nothing else", () => {
+  assertEquals(parseProactiveReplyCallback(`po:${TASK}`), { taskId: TASK, kind: "ok" });
+  assertEquals(parseProactiveReplyCallback(`pq:${TASK}`), { taskId: TASK, kind: "more" });
+  for (const bad of [`pa:${TASK}`, `po:${TASK}:x`, "po:not-a-uuid", `pd:${TASK}:n`, ""]) {
+    assertEquals(parseProactiveReplyCallback(bad), null, bad);
+  }
 });
 
 Deno.test("parseProactiveDismissCallback maps codes to the reasons the SQL function accepts", () => {

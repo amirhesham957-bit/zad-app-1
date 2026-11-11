@@ -42,6 +42,7 @@ import {
   adCreditKeyboard,
   InlineKeyboardButton, mainMenuKeyboard, dismissKeyboard,
   proactiveDismissKeyboard, parseProactiveDismissCallback, proactiveDismissReply,
+  parseProactiveReplyCallback, PROACTIVE_MORE_PROMPT, PROACTIVE_OK_TURN,
   reasonForCode, parseDismissCallback, appLinkRedirect, petCallKeyboard, parsePetCareCallback, petCareReply, normalizeBindingCode, bindingReply, isFamilyInviteCode, looksLikeLinkCode, FAMILY_CODE_REPLY, adminChatId, mapButtonRow, amazonButtonRows, amazonLinkButtons, amazonOpenUrl, amazonAppRedirect, type BindingStatus, unlinkReply, memoryNoteForDismissal,
   formatBalanceMessage, type BudgetStateRow, formatTransactionsMessage, formatInsightTitle,
   confirmSpendKeyboard, parseSpendCallback, pendingQuestionAnswered, refusedSpendReply,
@@ -2411,7 +2412,25 @@ bot.on("callback_query:data", async (ctx) => {
     return;
   }
 
-  const proactiveDismiss = parseProactiveDismissCallback(data);
+  // «تمام» / «قولّي أكتر» تحت مبادرة: رد، مش رفض — مفيش كتم. «عرفت خلاص» على رسايل قديمة بيتعامل زي «تمام»: ده
+  // اللي العميل كان يقصده (بلاغ المالك ١١/١١: أي زرار كان بيسكّت التنبيه أيام).
+  const proactiveReply = parseProactiveReplyCallback(data);
+  const oldKnew = parseProactiveDismissCallback(data);
+  if (proactiveReply || oldKnew?.reason === "timing") {
+    await ctx.editMessageReplyMarkup({ reply_markup: { inline_keyboard: [] } }).catch(() => {});
+    if (proactiveReply?.kind === "more") {
+      await ctx.replyWithChatAction("typing");
+      const more = await agentTurnReply(sb, userId, chatId, PROACTIVE_MORE_PROMPT);
+      await ctx.reply(more.lines.length ? clampForTelegram(more.lines.join("\n\n")) : "معلش، مش قادر أشرح دلوقتي — ابعتلي سؤالك وهرد عليك أول ما أقدر 🙏");
+      return;
+    }
+    // لفة من العميل: حارس النتيجة (zad_guardian_outcomes) بيعدّها رد، فالنوع مابيسكتش لوحده بعدين كأنه اتجاهل.
+    await recordChatTurn(sb, userId, "user", PROACTIVE_OK_TURN);
+    await ctx.reply("💛");
+    return;
+  }
+
+  const proactiveDismiss = oldKnew;
   if (proactiveDismiss) {
     const { data: result, error } = await sb.rpc("zad_memory_record_proactive_dismissal", {
       p_user: userId, p_task_id: proactiveDismiss.taskId, p_reason: proactiveDismiss.reason,
