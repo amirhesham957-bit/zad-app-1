@@ -2656,6 +2656,12 @@ class ZadL10nEn extends ZadL10n {
   String get homeDealsSearching => 'Looking for deals in your stores — tap to see what we found';
 
   @override
+  String get sheinShop => 'Shop on SHEIN';
+
+  @override
+  String get sheinDisclosure => 'Zad earns a commission from SHEIN on purchases through these links, at no extra cost to you.';
+
+  @override
   String get homeNearbyTitle => 'Shops near you';
 
   @override
