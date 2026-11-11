@@ -113,7 +113,10 @@ jobs:
         run: |
           flutter build apk --debug \
             --dart-define=SUPABASE_URL="${{ secrets.SUPABASE_URL }}" \
-            --dart-define=SUPABASE_ANON_KEY="${{ secrets.SUPABASE_ANON_KEY }}"
+            --dart-define=SUPABASE_ANON_KEY="${{ secrets.SUPABASE_ANON_KEY }}" \
+            --dart-define=ADMOB_INTERSTITIAL_UNIT="${{ secrets.ADMOB_INTERSTITIAL_UNIT }}" \
+            --dart-define=ADMOB_INLINE_UNIT="${{ secrets.ADMOB_INLINE_UNIT }}" \
+            --dart-define=ADMOB_NATIVE_UNIT="${{ secrets.ADMOB_NATIVE_UNIT }}"
         working-directory: zad_flutter
 
       - uses: actions/upload-artifact@v4
@@ -126,7 +129,10 @@ jobs:
         run: |
           flutter build apk --release --split-per-abi \
             --dart-define=SUPABASE_URL="${{ secrets.SUPABASE_URL }}" \
-            --dart-define=SUPABASE_ANON_KEY="${{ secrets.SUPABASE_ANON_KEY }}"
+            --dart-define=SUPABASE_ANON_KEY="${{ secrets.SUPABASE_ANON_KEY }}" \
+            --dart-define=ADMOB_INTERSTITIAL_UNIT="${{ secrets.ADMOB_INTERSTITIAL_UNIT }}" \
+            --dart-define=ADMOB_INLINE_UNIT="${{ secrets.ADMOB_INLINE_UNIT }}" \
+            --dart-define=ADMOB_NATIVE_UNIT="${{ secrets.ADMOB_NATIVE_UNIT }}"
         working-directory: zad_flutter
 
       - uses: actions/upload-artifact@v4
@@ -152,7 +158,10 @@ jobs:
           keytool -list -keystore "$KEYSTORE_PATH" -storepass "$STORE_PASSWORD" -alias "$KEY_ALIAS" | grep -i fingerprint
           flutter build appbundle --release \
             --dart-define=SUPABASE_URL="${{ secrets.SUPABASE_URL }}" \
-            --dart-define=SUPABASE_ANON_KEY="${{ secrets.SUPABASE_ANON_KEY }}"
+            --dart-define=SUPABASE_ANON_KEY="${{ secrets.SUPABASE_ANON_KEY }}" \
+            --dart-define=ADMOB_INTERSTITIAL_UNIT="${{ secrets.ADMOB_INTERSTITIAL_UNIT }}" \
+            --dart-define=ADMOB_INLINE_UNIT="${{ secrets.ADMOB_INLINE_UNIT }}" \
+            --dart-define=ADMOB_NATIVE_UNIT="${{ secrets.ADMOB_NATIVE_UNIT }}"
           rm -f "$KEYSTORE_PATH"
         working-directory: zad_flutter
 

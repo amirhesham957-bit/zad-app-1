@@ -343,6 +343,12 @@ abstract class ZadL10n {
   /// **'استنى'**
   String get commonWait;
 
+  /// No description provided for @adInlineLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعلان'**
+  String get adInlineLabel;
+
   /// Sign-out dialog: the confirming button.
   ///
   /// In ar, this message translates to:

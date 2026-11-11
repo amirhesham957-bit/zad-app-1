@@ -22,6 +22,7 @@ import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/recipes/application/recipes_controller.dart';
 import 'package:zad/features/recipes/domain/recipe.dart';
 import 'package:zad/features/recipes/presentation/recipe_detail_screen.dart';
+import 'package:zad/shared/ads/presentation/native_ad.dart';
 import 'package:zad/shared/affiliate/data/affiliate_repository.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart';
@@ -187,7 +188,16 @@ class RecipesView extends ConsumerWidget {
         padding: const EdgeInsets.symmetric(horizontal: ZadSpacing.gutter),
         sliver: SliverList.separated(
           itemCount: recipes.length,
-          separatorBuilder: (_, _) => const SizedBox(height: ZadSpacing.sm),
+          // Between cards, never inside one (owner 11/11).
+          separatorBuilder: (_, i) => nativeAdAfter(i)
+              ? const Column(
+                  children: <Widget>[
+                    SizedBox(height: ZadSpacing.sm),
+                    ZadNativeAd(),
+                    SizedBox(height: ZadSpacing.sm),
+                  ],
+                )
+              : const SizedBox(height: ZadSpacing.sm),
           itemBuilder: (_, i) => _RecipeCard(recipe: recipes[i]),
         ),
       ),

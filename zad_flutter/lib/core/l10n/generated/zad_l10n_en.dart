@@ -136,6 +136,9 @@ class ZadL10nEn extends ZadL10n {
   String get commonWait => 'Wait';
 
   @override
+  String get adInlineLabel => 'Ad';
+
+  @override
   String get authSignOutConfirm => 'Sign out';
 
   @override
