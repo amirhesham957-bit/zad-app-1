@@ -120,6 +120,8 @@ export interface ItemCycle {
   /** فاضل كام يوم على الشرا الجاي (سالب = عدّى). null = مفيش تاريخ شرا. */
   due_in_days: number | null;
   due: boolean;
+  /** أساسي في البيت: بيتجاب قبل ما يخلص (restockCycle.ts isEssential). */
+  essential: boolean;
 }
 
 export interface CycleItemRow {
@@ -163,6 +165,7 @@ export function itemCycles(
       last_bought: last > 0 ? new Date(last).toISOString() : null,
       due_in_days: v.daysSinceBought === null ? null : v.cycleDays - v.daysSinceBought,
       due: v.due,
+      essential: v.essential,
     });
   }
   return out
