@@ -62,9 +62,14 @@ related:
 | `lessons-ledger` | آخر الجلسة لو اتعلمنا حاجة مش واضحة |
 | `CAVEMAN` | لما المالك يطلب ردود أقصر |
 | `security-review`، `code-review` | قبل دمج حاجة فيها صلاحيات أو فلوس |
+| `security-audit` (اتحمّلت ١١/١١ بطلب المالك) | **وضع الإرشاد** (الافتراضي): مراجعة مركّزة لـPR فيه فلوس أو صلاحيات أو RLS أو إعلانات أو تاجات أفلييت، بالقراية بس. **الفحص الكامل** (٦ مراحل، agents كتير، ملفات في `~/security-audit-skill/`) بس لو المالك طلب «audit كامل» صراحةً — غالي في الكوتة. ممنوع فيه أي نداء للحي أو تشغيل كود من غير sandbox |
+| `ui-ux-pro-max` | تصميم شاشة موبايل (فيه Flutter كـstack): الهرمية، الألوان، الخطوط، إمكانية الوصول — مرجع لكل شريحة في ١٠.٨ |
+| `brand`، `design` | الهوية (١٠.٨، طلب المالك ١١/١١): الألوان والخط والأيقونات وشكل الجزرة والرفيق — مرة واحدة قبل الصفحات |
+| `delegate-and-verify` | لما المالك يطلب agent مساعد: الشغل التقيل (بيلد/اختبار/محاكي) يفضل عندي، والـagent يقرا ويكتب دوكس بس |
+| `find-skills` | لو احتجنا قدرة مش موجودة: يدوّر على سكل قبل ما نكتبها بإيدينا |
 
-**مش للمشروع ده** (ماتحمّلهاش): `shadcn`، `ui-styling` (ويب/Tailwind)، `slides`، `banner-design`،
-`brand`، `llm-wiki`، `agent-memory-*` (عندنا ذاكرة Claude)، و`deep-research` (بيشغّل agents = كوتة كتير).
+**مش للمشروع ده** (ماتحمّلهاش): `shadcn`، `ui-styling` و`frontend-design` و`design-taste-frontend` (ويب/Tailwind)، `slides`، `banner-design`،
+`llm-wiki`، `agent-memory-*` (عندنا ذاكرة Claude)، و`deep-research` (بيشغّل agents = كوتة كتير).
 
 ## الـMCP
 
