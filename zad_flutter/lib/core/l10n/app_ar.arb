@@ -95,6 +95,7 @@
   "authSignOutTitle": "تخرج من الحساب؟",
   "authSignOutBody": "هنحتاج تدخل تاني عشان توصل لحساباتك.",
   "commonWait": "استنى",
+  "adInlineLabel": "إعلان",
   "authSignOutConfirm": "اخرج",
   "@authSignOutConfirm": {
     "description": "Sign-out dialog: the confirming button."

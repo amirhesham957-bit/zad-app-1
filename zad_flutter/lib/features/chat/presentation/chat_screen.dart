@@ -17,6 +17,8 @@ import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/l10n/l10n.dart';
+import 'package:zad/shared/ads/application/interstitials.dart';
+import 'package:zad/shared/ads/presentation/inline_ad.dart';
 import 'package:zad/shared/ads/presentation/watch_ad_button.dart';
 import 'package:zad/shared/chat/application/chat_controller.dart';
 import 'package:zad/shared/chat/application/voice_input_controller.dart';
@@ -71,6 +73,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     _scroll.dispose();
     super.dispose();
   }
+
+  /// Replies that answered a request in this run: each carries one inline
+  /// ad under it (owner 11/11). Replies scrolled back from history do not.
+  final Set<String> _adAfter = <String>{};
 
   Future<void> _send() async {
     final text = _composer.text.trim();
@@ -137,7 +143,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       was,
       now,
     ) {
-      if (was == true && !now) ref.invalidate(attemptsBalanceProvider);
+      if (was != true || now) return;
+      ref.invalidate(attemptsBalanceProvider);
+      final messages = ref.read(chatControllerProvider).messages;
+      final reply = messages.isEmpty ? null : messages.last;
+      if (reply == null || reply.isUser) return;
+      setState(() => _adAfter.add(reply.id));
+      unawaited(
+        ref.read(interstitialsProvider).atBreak(InterstitialBreak.aiReply),
+      );
     });
 
     return DecoratedBox(
@@ -175,9 +189,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       reverse: true,
                       padding: const EdgeInsets.all(ZadSpacing.gutter),
                       itemCount: view.messages.length,
-                      itemBuilder: (_, i) => _Bubble(
-                        message: view.messages[view.messages.length - 1 - i],
-                      ),
+                      itemBuilder: (_, i) {
+                        final message =
+                            view.messages[view.messages.length - 1 - i];
+                        final bubble = _Bubble(message: message);
+                        // The ad sits under the reply, in its own room —
+                        // never inside the bubble or by its buttons.
+                        return _adAfter.contains(message.id)
+                            ? Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: <Widget>[bubble, const ZadInlineAd()],
+                              )
+                            : bubble;
+                      },
                     ),
             ),
             if (_emergency case final trade?)
