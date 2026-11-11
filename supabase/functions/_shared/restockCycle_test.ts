@@ -96,3 +96,31 @@ Deno.test("a short cycle keeps its share: three days ahead would mean always", (
   assertEquals(dueAfterDays(10), 10 * DUE_AT);
   assertEquals(dueAfterDays(30), 27);
 });
+
+// المالك ١١/١١: «ضرورية لازم متنقصش في البيت وتتجاب أول بأول».
+Deno.test("essential: bought on 3 days with a short cycle is learned as essential and comes due earlier", () => {
+  const now = Date.parse("2026-11-11T12:00:00Z");
+  const ago = (d: number) => new Date(now - d * 86_400_000).toISOString();
+  // لبن كل ٤ أيام، آخر مرة من ٣ أيام: ٣ ≥ ٤×٠٫٧ (٢٫٨) بس أقل من ٤×٠٫٨٥ (٣٫٤).
+  const milk = restockVerdict({ name: "حليب", quantity: 2, purchaseDays: [ago(11), ago(7), ago(3)] }, now);
+  assertEquals(milk.essential, true);
+  assertEquals(milk.due, true);
+  // نفس الصنف بشرا واحد بس: مش متعلّم أساسي لسه، فبيستنى الـ٨٥٪.
+  const once = restockVerdict({ name: "حليب", quantity: 2, purchaseDays: [ago(3)] }, now);
+  assertEquals(once.essential, false);
+  assertEquals(once.due, false);
+});
+
+Deno.test("essential: a monthly item is never essential by itself, but the customer's «دي أساسية» makes it one", () => {
+  const now = Date.parse("2026-11-11T12:00:00Z");
+  const ago = (d: number) => new Date(now - d * 86_400_000).toISOString();
+  const oil = restockVerdict({ name: "زيت", quantity: 1, purchaseDays: [ago(90), ago(60), ago(30)] }, now);
+  assertEquals(oil.essential, false);
+  assertEquals(restockVerdict({ name: "زيت", quantity: 1, restockMode: "staple", purchaseDays: [ago(5)] }, now).essential, true);
+  assertEquals(restockVerdict({ name: "رنجة", quantity: 1, restockMode: "occasional", purchaseDays: [ago(5), ago(3), ago(1)] }, now).essential, false);
+});
+
+Deno.test("essential: the early warning still never comes more than 3 days before it runs out", () => {
+  assertEquals(dueAfterDays(3, true), 3 * 0.7);
+  assertEquals(dueAfterDays(14, true), 11);
+});

@@ -73,3 +73,9 @@ Deno.test("checkInPriority: the customer's own cycle wins, and a known rate wins
   assertEquals(oil < 1, true);
   assertEquals(water > oil, true);
 });
+
+Deno.test("checkInPriority: an essential is asked about as early as the list adds it", () => {
+  // لبن اتشرى ٣ مرات كل ٤ أيام، آخر مرة من ٣ أيام: الأساسي بيستحق بعد ٢٫٨ يوم، العادي بعد ٣٫٤.
+  const p = checkInPriority({ name: "حليب", quantity: 2, category: "الألبان" }, null, [ago(11), ago(7), ago(3)], NOW)!;
+  assertEquals(p >= 1, true);
+});

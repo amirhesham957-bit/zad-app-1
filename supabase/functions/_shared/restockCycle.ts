@@ -23,8 +23,26 @@ export const WARN_DAYS = 3;
  * الدورات الطويلة: ٣٠ يوم قبلها بـ٤٫٥، و٦٠ يوم قبلها بـ٩. والدورات القصيرة
  * (عيش كل يومين) بتفضل على النسبة لأن «٣ أيام قبل» معناها كل يوم.
  */
-export function dueAfterDays(cycle: number): number {
-  return Math.max(cycle * DUE_AT, cycle - WARN_DAYS);
+export function dueAfterDays(cycle: number, essential = false): number {
+  return Math.max(cycle * (essential ? ESSENTIAL_DUE_AT : DUE_AT), cycle - WARN_DAYS);
+}
+
+/**
+ * الأساسي (المالك ١١/١١: «ضرورية لازم متنقصش في البيت وتتجاب أول بأول»): بيتعرض كناقص بعد ٧٠٪ من دورته بدل
+ * ٨٥٪ — لبن كل ٣ أيام بيدخل القايمة بعد يومين بدل يومين ونص — ومن غير ما يعدّي سقف الـ٣ أيام (WARN_DAYS).
+ * زاد بيعرفه لوحده: اتشرى في [ESSENTIAL_MIN_PURCHASES] أيام مختلفة أو أكتر ودورته [ESSENTIAL_MAX_CYCLE] يوم أو
+ * أقل. أو العميل قال «دي أساسية» (restock_mode = staple).
+ */
+export const ESSENTIAL_DUE_AT = 0.7;
+export const ESSENTIAL_MIN_PURCHASES = 3;
+export const ESSENTIAL_MAX_CYCLE = 14;
+
+/** الصنف أساسي في البيت ده؟ [cycle] دورته بعد التعلم، [purchaseDays] أيام شراه. */
+export function isEssential(restockMode: string | null | undefined, purchaseDays: readonly string[], cycle: number | null): boolean {
+  if (restockMode === "occasional" || cycle === null) return false;
+  if (restockMode === "staple") return true;
+  const days = new Set(purchaseDays.map((d) => d.slice(0, 10)).filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d))).size;
+  return days >= ESSENTIAL_MIN_PURCHASES && cycle <= ESSENTIAL_MAX_CYCLE;
 }
 
 const norm = (s: string) =>
@@ -112,6 +130,8 @@ export interface RestockVerdict {
   due: boolean;
   cycleDays: number | null;
   daysSinceBought: number | null;
+  /** أساسي في البيت (isEssential): بيتجاب بدري. */
+  essential: boolean;
   reason: "empty" | "cycle" | "used_up" | "threshold" | "fresh" | "occasional" | "not_restocked" | "stocked";
 }
 
@@ -126,14 +146,15 @@ export function restockVerdict(input: RestockInput, now = Date.now()): RestockVe
     : cycleDays(priorCycleDays(input.name, input.category), input.purchaseDays);
   const last = input.purchaseDays.reduce((m, d) => Math.max(m, Date.parse(d) || 0), 0);
   const since = last > 0 ? Math.max(0, (now - last) / DAY_MS) : null;
+  const essential = isEssential(input.restockMode, input.purchaseDays, cycle);
   const out = (due: boolean, reason: RestockVerdict["reason"]): RestockVerdict =>
-    ({ due, cycleDays: cycle, daysSinceBought: since === null ? null : Math.floor(since), reason });
+    ({ due, cycleDays: cycle, daysSinceBought: since === null ? null : Math.floor(since), essential, reason });
 
   if (cycle === null) return out(false, "not_restocked");
   if (input.restockMode === "occasional") return out(false, "occasional");
   if (Number.isFinite(qty) && qty <= 0) return out(true, "empty");
   if (since === null) return out(Number.isFinite(qty) && qty <= threshold, Number.isFinite(qty) && qty <= threshold ? "threshold" : "stocked");
-  if (since >= dueAfterDays(cycle)) return out(true, "cycle");
+  if (since >= dueAfterDays(cycle, essential)) return out(true, "cycle");
   if (Number.isFinite(qty) && qty <= threshold && since >= cycle * 0.5) return out(true, "used_up");
   return out(false, "fresh");
 }
