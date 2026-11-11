@@ -76,3 +76,14 @@ Deno.test("preview and done line say what goes where", () => {
     "1 جديد في المخزن، 2 زادت كميته، 1 اتشال من المشتريات",
   );
 });
+
+// ١١/١١: مشتريات حساب المالك من تليجرام اتسجلت بالاسم المطبوع («توست بني مربع من برنش، 425 جرام»)،
+// لأن السطر كان بيرمي `product` اللي قارئ الفواتير بيرجّعه، فكل ماركة بقت صنف لوحدها في المخزن.
+Deno.test("photo lines keep the product without its brand, so two brands are one stock", () => {
+  const lines = purchaseLinesFromPhoto([
+    { name: "زجاجة مياه بسعة 1.5 لتر من ايلانو 6 قطع", product: "مياه", quantity: 1 },
+    { name: "خل طبيعي الطاووس", product: "  ", quantity: 1 },
+  ], "pantry");
+  assertEquals(lines[0].product, "مياه");
+  assertEquals("product" in lines[1], false);
+});

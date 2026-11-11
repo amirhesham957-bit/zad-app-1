@@ -57,3 +57,12 @@ Deno.test("validator: lines are for an expense, and not too many", async () => {
   assert(!(await ok({ ...base, lines: Array.from({ length: 31 }, () => ({ name: "x" })) })));
   assert(!(await ok({ ...base, txn_kind: "income", lines: [{ name: "لبن" }] })));
 });
+
+Deno.test("tool lines keep the product the model named, and drop a blank one", () => {
+  const lines = toolPurchaseLines([
+    { name: "توست بني مربع من برنش 425 جرام", product: "توست", quantity: 2 },
+    { name: "لبن", product: "" },
+  ]);
+  assertEquals(lines[0].product, "توست");
+  assertEquals("product" in lines[1], false);
+});
