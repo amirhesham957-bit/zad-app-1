@@ -86,6 +86,18 @@ class _ZadShellState extends ConsumerState<ZadShell> {
 
   ZadNavDestination _tab = ZadNavDestination.home;
 
+  /// How far the open tab has scrolled into the header's large title, 0 at
+  /// rest to 1 folded (ZAD_PLAN ١٠.٨: the large title folds into the bar).
+  final ValueNotifier<double> _fold = ValueNotifier<double>(0);
+
+  bool _onScroll(ScrollNotification n) {
+    final m = n.metrics;
+    if (m.axis == Axis.vertical && n is ScrollUpdateNotification) {
+      _fold.value = (m.pixels / headerFoldDistance).clamp(0.0, 1.0);
+    }
+    return false;
+  }
+
   // فلوسي, بيتي and عيلتي fetch when they first build, so each is built on
   // its first visit and then kept — an IndexedStack builds every child up
   // front, and a launch should not spend a round of network on tabs nobody
@@ -255,6 +267,7 @@ class _ZadShellState extends ConsumerState<ZadShell> {
     unawaited(_live?.stop());
     unawaited(_billed?.cancel());
     _lifecycle.dispose();
+    _fold.dispose();
     super.dispose();
   }
 
@@ -262,6 +275,9 @@ class _ZadShellState extends ConsumerState<ZadShell> {
     if (tab != _tab) {
       unawaited(ref.read(productEventsProvider).log('tab.${tab.name}'));
     }
+    // Each tab keeps its own offset; the header opens again and the next
+    // scroll there sets it.
+    if (tab != _tab) _fold.value = 0;
     setState(() {
       _tab = tab;
       _opened.add(tab);
@@ -451,6 +467,7 @@ class _ZadShellState extends ConsumerState<ZadShell> {
                 onAvatar: () => unawaited(showProfileScreen(context)),
                 balance: const AttemptsChip(),
                 season: const SeasonHeaderLayer(),
+                fold: _fold,
                 sky: skyPhaseAt(
                   ref.watch(accountTimeZoneProvider),
                   ref.read(nowProvider)(),
@@ -458,22 +475,25 @@ class _ZadShellState extends ConsumerState<ZadShell> {
               ),
               const ZadPulseBar(),
               Expanded(
-                child: ZadScrollAwayScope(
-                  resetWhenChanged: _tab,
-                  child: Stack(
-                    children: <Widget>[
-                      Positioned.fill(child: _tabStack()),
-                      // رفيق زاد floats over the bar on Home, by the corner;
-                      // its moments (a level, waking up, «+10 ⭐») play over
-                      // it. It roams the whole body; empty room lets taps
-                      // through.
-                      if (_tab == ZadNavDestination.home)
-                        const Positioned.fill(
-                          child: CompanionMoments(
-                            child: CompanionFloatingPet(),
+                child: NotificationListener<ScrollNotification>(
+                  onNotification: _onScroll,
+                  child: ZadScrollAwayScope(
+                    resetWhenChanged: _tab,
+                    child: Stack(
+                      children: <Widget>[
+                        Positioned.fill(child: _tabStack()),
+                        // رفيق زاد floats over the bar on Home, by the corner;
+                        // its moments (a level, waking up, «+10 ⭐») play over
+                        // it. It roams the whole body; empty room lets taps
+                        // through.
+                        if (_tab == ZadNavDestination.home)
+                          const Positioned.fill(
+                            child: CompanionMoments(
+                              child: CompanionFloatingPet(),
+                            ),
                           ),
-                        ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
