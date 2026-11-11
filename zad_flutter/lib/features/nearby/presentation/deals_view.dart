@@ -23,6 +23,7 @@ import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/nearby/data/deal_signal.dart';
 import 'package:zad/features/nearby/domain/store_deals.dart';
+import 'package:zad/shared/ads/presentation/native_ad.dart';
 import 'package:zad/shared/affiliate/data/affiliate_repository.dart';
 import 'package:zad/shared/affiliate/domain/affiliate.dart';
 
@@ -120,13 +121,18 @@ class _DealsViewState extends ConsumerState<DealsView> {
           if (_data.deals.isNotEmpty) ...<Widget>[
             Text(l.dealsStoresHeader, style: ZadType.titleMedium),
             const SizedBox(height: ZadSpacing.sm),
-            for (final d in _data.deals) ...<Widget>[
+            for (final (i, d) in _data.deals.indexed) ...<Widget>[
               _DealCard(
                 deal: d,
                 image: dealImage(d, catalogue),
                 country: country,
               ),
               const SizedBox(height: ZadSpacing.sm),
+              // Between cards, never inside one (owner 11/11).
+              if (nativeAdAfter(i)) ...<Widget>[
+                const ZadNativeAd(),
+                const SizedBox(height: ZadSpacing.sm),
+              ],
             ],
           ],
           const SizedBox(height: ZadSpacing.md),

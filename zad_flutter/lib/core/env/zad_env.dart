@@ -72,6 +72,12 @@ abstract final class ZadEnv {
     'ADMOB_INLINE_UNIT',
   );
 
+  /// The AdMob native-advanced unit: a card in the app's own look inside the
+  /// deals and recipes lists (`ZadNativeAd`). Empty turns it off in release.
+  static const String admobNativeUnit = String.fromEnvironment(
+    'ADMOB_NATIVE_UNIT',
+  );
+
   /// Children's school zones (docs/agent/ZAD_LIVING_BRAIN.md slice 2). On by
   /// default — the sideloaded APK. A Google Play build can pass
   /// `--dart-define=ENABLE_KIDS_GEOFENCING=false` if review asks for it
