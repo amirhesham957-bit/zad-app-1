@@ -24,6 +24,14 @@ enum InterstitialBreak {
 
   /// A full screen was closed with back.
   screenClosed,
+
+  /// Zad answered an AI request in the chat. Only every
+  /// [Interstitials.aiRepliesPerAd]th one is a break (owner 11/11), and it
+  /// comes after the reply is on screen, never before it.
+  aiReply,
+
+  /// A scanned receipt was saved (owner 11/11: an ad with every scan).
+  scanSaved,
 }
 
 /// The pacing and the showing.
@@ -47,6 +55,10 @@ class Interstitials with WidgetsBindingObserver {
   late PacerState _state;
   DateTime? _closedAt;
   bool _showing = false;
+  int _aiReplies = 0;
+
+  /// Every how many AI replies one is a break.
+  static const int aiRepliesPerAd = 3;
 
   static const String _runKey = 'ads_inter_ran';
   static const String _shownKey = 'ads_inter_shown';
@@ -68,6 +80,7 @@ class Interstitials with WidgetsBindingObserver {
     final box = _boxOrNull;
     if (box != null) unawaited(box.put(key, value));
   }
+
   DateTime _now() => _ref.read(nowProvider)();
 
   /// The pacer's view, for tests.
@@ -88,6 +101,11 @@ class Interstitials with WidgetsBindingObserver {
   /// one showed.
   Future<bool> atBreak(InterstitialBreak kind) async {
     if (_showing || !_ref.read(adsAllowedProvider)) return false;
+    if (kind == InterstitialBreak.aiReply &&
+        ++_aiReplies % aiRepliesPerAd != 0) {
+      warmUp();
+      return false;
+    }
     final ads = _ref.read(interstitialAdsProvider);
     if (!ads.configured) return false;
     final now = _now();
@@ -136,11 +154,8 @@ class Interstitials with WidgetsBindingObserver {
     return v == null ? null : DateTime.fromMillisecondsSinceEpoch(v);
   }
 
-  static List<DateTime> _times(String? raw) => (raw ?? '')
-      .split(',')
-      .map(_time)
-      .whereType<DateTime>()
-      .toList();
+  static List<DateTime> _times(String? raw) =>
+      (raw ?? '').split(',').map(_time).whereType<DateTime>().toList();
 }
 
 /// The one instance.

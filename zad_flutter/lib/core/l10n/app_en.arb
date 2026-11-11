@@ -41,6 +41,7 @@
   "authSignOutTitle": "Sign out?",
   "authSignOutBody": "You'll need to sign in again to reach your accounts.",
   "commonWait": "Wait",
+  "adInlineLabel": "Ad",
   "authSignOutConfirm": "Sign out",
   "authErrorInvalidCredentials": "The email or password is wrong.",
   "authErrorEmailTaken": "This email already has an account. Try signing in with it, or reset the password.",

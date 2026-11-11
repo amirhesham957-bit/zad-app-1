@@ -28,6 +28,8 @@ import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/core/money/money.dart';
 import 'package:zad/features/scan/application/receipt_purchase.dart';
 import 'package:zad/features/scan/application/scan_controller.dart';
+import 'package:zad/shared/ads/application/interstitials.dart';
+import 'package:zad/shared/ads/presentation/inline_ad.dart';
 import 'package:zad/shared/ads/presentation/watch_ad_button.dart';
 import 'package:zad/shared/inventory/application/pantry_intake.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
@@ -174,7 +176,11 @@ class _Working extends StatelessWidget {
         'بقرا الفاتورة…',
         style: ZadType.bodyMedium.copyWith(color: ZadColors.inkMuted),
       ),
-      const SizedBox(height: ZadSpacing.xl),
+      const SizedBox(height: ZadSpacing.lg),
+      // One ad with every scan (owner 11/11), while the customer waits and
+      // there is nothing on this screen to tap.
+      const ZadInlineAd(),
+      const SizedBox(height: ZadSpacing.lg),
     ],
   );
 }
@@ -548,7 +554,10 @@ class _ReadingState extends ConsumerState<_Reading> {
       }
       ref.read(uiSoundsProvider.notifier).play(UiSound.scan);
       await HapticFeedback.mediumImpact();
+      final interstitials = ref.read(interstitialsProvider);
       if (mounted) Navigator.of(context).pop();
+      // After the sheet is gone, never over the reading (owner 11/11).
+      unawaited(interstitials.atBreak(InterstitialBreak.scanSaved));
     }
   }
 

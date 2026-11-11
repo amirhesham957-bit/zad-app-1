@@ -132,6 +132,9 @@ class ZadL10nAr extends ZadL10n {
   String get commonWait => 'استنى';
 
   @override
+  String get adInlineLabel => 'إعلان';
+
+  @override
   String get authSignOutConfirm => 'اخرج';
 
   @override
