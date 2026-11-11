@@ -1034,7 +1034,7 @@ interface AnalyzeReceiptResult {
   receiptType: string;
   /** cash | card | wallet | "" (البون ماقالش) — الموجة ٢، 2b257ef5. */
   paymentMethod?: string;
-  items: Array<{ name: string; price: number; quantity: number; unit: string; category: string }>;
+  items: Array<{ name: string; product?: string; price: number; quantity: number; unit: string; category: string }>;
 }
 
 // Constructed with a syntactically-valid placeholder when the token is missing so the

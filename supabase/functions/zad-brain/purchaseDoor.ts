@@ -10,6 +10,8 @@ export const TOOL_PURCHASE_LINES_MAX = 30;
 
 export interface ToolPurchaseLine {
   name: string;
+  /** المنتج من غير ماركة: المخزن بيتسجل بيه (20261104170000)، فماركتين مياه = صنف واحد. */
+  product?: string;
   quantity: number;
   unit?: string;
   category?: string;
@@ -28,6 +30,8 @@ export function toolPurchaseLines(raw: unknown): ToolPurchaseLine[] {
     if (!name) continue;
     const to = r.to === "pharmacy" ? "pharmacy" : "pantry";
     const line: ToolPurchaseLine = { name, quantity: purchaseQuantity(r.quantity, to), to };
+    const product = String(r.product ?? "").replace(/\s+/g, " ").trim().slice(0, 80);
+    if (product) line.product = product;
     const unit = String(r.unit ?? "").trim().slice(0, 20);
     if (unit) line.unit = unit;
     const category = String(r.category ?? "").trim().slice(0, 40);
