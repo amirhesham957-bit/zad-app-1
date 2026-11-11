@@ -1,4 +1,4 @@
-import { cycleDays, DUE_AT, priorCycleDays } from "./restockCycle.ts";
+import { cycleDays, dueAfterDays, priorCycleDays } from "./restockCycle.ts";
 // معدل الاستهلاك (zad_consumption) زي ما العقل وتليجرام بيقروه — نفس قواعد SQL.
 //
 // الفجوة ٧ (20260930000000): معدل من دورة شرا واحدة بيتخزن rate_known = false و
@@ -42,7 +42,7 @@ export function needsCheckIn(
  * أولوية سؤال «لسه عندك؟» لصنف واحد: ≥ ١ = يستاهل يتسأل الليلة، وكل ما تكبر يتسأل الأول. null = مايتسألش.
  *  • بمعدل البيت (zad_consumption): الأيام اللي فاضلة؛ يومين أو أقل = ١ فأكتر (نفس needsCheckIn).
  *  • من غير معدل: دورة شرا الصنف في البيت ده (`restockCycle.ts`: البداية من نوعه، وبعدين وسيط المسافات بين مرات
- *    شراه، وتصحيح العميل لو قاله) — الأيام من آخر شرا ÷ (الدورة × DUE_AT)، نفس اللحظة اللي الحلم بيحطه فيها في
+ *    شراه، وتصحيح العميل لو قاله) — الأيام من آخر شرا ÷ dueAfterDays(الدورة)، نفس اللحظة اللي الحلم بيحطه فيها في
  *    قايمة الشرا. لبن البيت بيشتريه كل ٣ أيام = ١ بعد يومين ونص؛ حلاوة كل ٣٠ يوم = ٠٫٢ بعد ٦ أيام.
  * المقاس (١١/١١، حساب المالك): القاعدة القديمة «الكمية ≤ ٢» سألت ٨ مرات في أسبوع عن حلاوة ومسحوق ورول أون وسمن،
  * ولا مرة عن اللبن — مع إن الملف السلوكي كان عارف إن دورة اللبن ٣ أيام وإن عليه الدور.
@@ -66,5 +66,5 @@ export function checkInPriority(
   if (last <= 0) return null;
   const since = (now - last) / 86_400_000;
   if (since < 1) return null;
-  return since / (cycle * DUE_AT);
+  return since / dueAfterDays(cycle);
 }
