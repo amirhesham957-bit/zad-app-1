@@ -1,3 +1,4 @@
+import { cycleDays, dueAfterDays, priorCycleDays } from "./restockCycle.ts";
 // معدل الاستهلاك (zad_consumption) زي ما العقل وتليجرام بيقروه — نفس قواعد SQL.
 //
 // الفجوة ٧ (20260930000000): معدل من دورة شرا واحدة بيتخزن rate_known = false و
@@ -35,4 +36,35 @@ export function needsCheckIn(
   if (rate > 0) return quantity / rate <= 2;
   if (createdAt && now - Date.parse(createdAt) < 24 * 3600_000) return false;
   return quantity <= (threshold ?? 2);
+}
+
+/**
+ * أولوية سؤال «لسه عندك؟» لصنف واحد: ≥ ١ = يستاهل يتسأل الليلة، وكل ما تكبر يتسأل الأول. null = مايتسألش.
+ *  • بمعدل البيت (zad_consumption): الأيام اللي فاضلة؛ يومين أو أقل = ١ فأكتر (نفس needsCheckIn).
+ *  • من غير معدل: دورة شرا الصنف في البيت ده (`restockCycle.ts`: البداية من نوعه، وبعدين وسيط المسافات بين مرات
+ *    شراه، وتصحيح العميل لو قاله) — الأيام من آخر شرا ÷ dueAfterDays(الدورة)، نفس اللحظة اللي الحلم بيحطه فيها في
+ *    قايمة الشرا. لبن البيت بيشتريه كل ٣ أيام = ١ بعد يومين ونص؛ حلاوة كل ٣٠ يوم = ٠٫٢ بعد ٦ أيام.
+ * المقاس (١١/١١، حساب المالك): القاعدة القديمة «الكمية ≤ ٢» سألت ٨ مرات في أسبوع عن حلاوة ومسحوق ورول أون وسمن،
+ * ولا مرة عن اللبن — مع إن الملف السلوكي كان عارف إن دورة اللبن ٣ أيام وإن عليه الدور.
+ */
+export function checkInPriority(
+  item: { name: string; quantity: number; category?: string | null; restockMode?: string | null; cycleOverride?: number | string | null },
+  avgDailyQty: number | null | undefined,
+  purchaseDays: readonly string[],
+  now: number = Date.now(),
+): number | null {
+  if (!(item.quantity > 0)) return null;
+  const rate = Number(avgDailyQty);
+  if (rate > 0) return 2 / Math.max(item.quantity / rate, 0.1);
+  if (item.restockMode === "occasional") return null;
+  const override = Number(item.cycleOverride);
+  const cycle = Number.isInteger(override) && override >= 1 && override <= 365
+    ? override
+    : cycleDays(priorCycleDays(item.name, item.category), purchaseDays);
+  if (cycle === null) return null;
+  const last = purchaseDays.reduce((m, d) => Math.max(m, Date.parse(d) || 0), 0);
+  if (last <= 0) return null;
+  const since = (now - last) / 86_400_000;
+  if (since < 1) return null;
+  return since / dueAfterDays(cycle);
 }
