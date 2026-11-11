@@ -153,6 +153,14 @@ class ProfileScreen extends ConsumerWidget {
                     subtitle: 'البلد والعملة',
                     onTap: () => unawaited(showRegionalSheet(context)),
                   ),
+                  // The tour moved here from home (ZAD_PLAN ١٠.٨, owner
+                  // 11/11): Home keeps one clear thing per level.
+                  _MenuRow(
+                    icon: Icons.explore,
+                    title: context.l10n.tourOpen,
+                    subtitle: context.l10n.profileTourSubtitle,
+                    onTap: () => unawaited(ZadScreens.showGuidedTour(context)),
+                  ),
                 ],
               ),
               const SizedBox(height: ZadSpacing.xl),

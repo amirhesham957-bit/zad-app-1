@@ -62,8 +62,7 @@ import 'zad_l10n_en.dart';
 /// be consistent with the languages listed in the ZadL10n.supportedLocales
 /// property.
 abstract class ZadL10n {
-  ZadL10n(String locale)
-    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+  ZadL10n(String locale) : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
@@ -83,18 +82,17 @@ abstract class ZadL10n {
   /// Additional delegates can be added by appending to this list in
   /// MaterialApp. This list does not have to be used at all if a custom list
   /// of delegates is preferred or required.
-  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
-      <LocalizationsDelegate<dynamic>>[
-        delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-      ];
+  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates = <LocalizationsDelegate<dynamic>>[
+    delegate,
+    GlobalMaterialLocalizations.delegate,
+    GlobalCupertinoLocalizations.delegate,
+    GlobalWidgetsLocalizations.delegate,
+  ];
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('ar'),
-    Locale('en'),
+    Locale('en')
   ];
 
   /// The app's name, in the task switcher.
@@ -4819,6 +4817,30 @@ abstract class ZadL10n {
   /// **'كل العروض'**
   String get homeDealsSeeAll;
 
+  /// No description provided for @homeDealsSearching.
+  ///
+  /// In ar, this message translates to:
+  /// **'بندوّرلك على عروض في محلاتك — اضغط تشوف اللي لقيناه'**
+  String get homeDealsSearching;
+
+  /// No description provided for @homeNearbyTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'ماركتات وصيدليات جنبك'**
+  String get homeNearbyTitle;
+
+  /// No description provided for @homeNearbySeeAll.
+  ///
+  /// In ar, this message translates to:
+  /// **'أماكني'**
+  String get homeNearbySeeAll;
+
+  /// No description provided for @homeNearbyFind.
+  ///
+  /// In ar, this message translates to:
+  /// **'اعرف الماركتات والصيدليات اللي جنبك — اضغط وحدّد مكانك'**
+  String get homeNearbyFind;
+
   /// No description provided for @homeDealsOrderOnAmazon.
   ///
   /// In ar, this message translates to:
@@ -5431,6 +5453,24 @@ abstract class ZadL10n {
   /// **'ضيف دوا'**
   String get homeWidgetPharmacyEmpty;
 
+  /// No description provided for @homeWidgetShortages.
+  ///
+  /// In ar, this message translates to:
+  /// **'النواقص'**
+  String get homeWidgetShortages;
+
+  /// No description provided for @homeWidgetShortagesCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} تتجاب'**
+  String homeWidgetShortagesCount(int count);
+
+  /// No description provided for @homeWidgetShortagesEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش نواقص'**
+  String get homeWidgetShortagesEmpty;
+
   /// No description provided for @placesTabMine.
   ///
   /// In ar, this message translates to:
@@ -5664,6 +5704,12 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'جولة في زاد'**
   String get tourOpen;
+
+  /// No description provided for @profileTourSubtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'لفّة سريعة على كل حتة في التطبيق'**
+  String get profileTourSubtitle;
 
   /// No description provided for @tourNext.
   ///
@@ -5903,26 +5949,25 @@ class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {
   }
 
   @override
-  bool isSupported(Locale locale) =>
-      <String>['ar', 'en'].contains(locale.languageCode);
+  bool isSupported(Locale locale) => <String>['ar', 'en'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_ZadL10nDelegate old) => false;
 }
 
 ZadL10n lookupZadL10n(Locale locale) {
+
+
   // Lookup logic when only language code is specified.
   switch (locale.languageCode) {
-    case 'ar':
-      return ZadL10nAr();
-    case 'en':
-      return ZadL10nEn();
+    case 'ar': return ZadL10nAr();
+    case 'en': return ZadL10nEn();
   }
 
   throw FlutterError(
     'ZadL10n.delegate failed to load unsupported locale "$locale". This is likely '
     'an issue with the localizations generation tool. Please file an issue '
     'on GitHub with a reproducible sample app and the gen-l10n configuration '
-    'that was used.',
+    'that was used.'
   );
 }

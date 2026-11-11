@@ -40,6 +40,7 @@ import 'package:zad/features/maintenance/presentation/trusted_technicians_sheet.
 import 'package:zad/features/modes/presentation/modes_cards.dart';
 import 'package:zad/features/nearby/presentation/deals_view.dart';
 import 'package:zad/features/nearby/presentation/home_deals_carousel.dart';
+import 'package:zad/features/nearby/presentation/home_nearby_stores.dart';
 import 'package:zad/features/nearby/presentation/nearby_deals_screen.dart';
 import 'package:zad/features/nearby/presentation/nearby_view.dart';
 import 'package:zad/features/notifications/presentation/notification_center_screen.dart';
@@ -207,6 +208,7 @@ void wireSlots() {
   ZadSlots.homeDealsCarousel = () => const HomeDealsCarousel();
   ZadSlots.dealsView = () => const DealsView();
   ZadSlots.nearbyList = () => const NearbyList();
+  ZadSlots.homeNearbyStores = () => const HomeNearbyStores();
   ZadSlots.homeProposalsSection = () => const HomeProposalsSection();
   ZadSlots.proposalCard =
       ({

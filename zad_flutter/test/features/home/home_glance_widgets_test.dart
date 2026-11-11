@@ -1,4 +1,4 @@
-// Home's three quick-look tiles: what each says from its controller's view.
+// Home's four quick-look tiles: what each says from its controller's view.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,6 +9,7 @@ import 'package:zad/core/design/zad_theme.dart';
 import 'package:zad/core/l10n/generated/zad_l10n.dart';
 import 'package:zad/features/home/presentation/home_glance_widgets.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart';
+import 'package:zad/shared/inventory/application/shopping_controller.dart';
 import 'package:zad/shared/inventory/domain/inventory_item.dart';
 import 'package:zad/shared/inventory/domain/shortage.dart';
 import 'package:zad/shared/pharmacy/application/pharmacy_controller.dart';
@@ -44,6 +45,8 @@ void main() {
           pantryControllerProvider.overrideWith(() => QuietPantry(pantry)),
           pharmacyControllerProvider.overrideWith(QuietPharmacy.new),
           subscriptionsControllerProvider.overrideWith(_Subs.new),
+          // The fourth tile (ZAD_PLAN ١٠.٨) reads the shopping list.
+          shoppingControllerProvider.overrideWith(QuietShopping.new),
         ],
         child: MaterialApp(
           theme: ZadTheme.light(),
@@ -65,6 +68,7 @@ void main() {
     expect(find.text('ضيف اشتراك'), findsOneWidget);
     expect(find.text('ضيف أصناف'), findsOneWidget);
     expect(find.text('ضيف دوا'), findsOneWidget);
+    expect(find.text('مفيش نواقص'), findsOneWidget);
   });
 
   testWidgets('the pantry tile counts what is short and names the first', (
