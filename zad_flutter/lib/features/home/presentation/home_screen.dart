@@ -149,7 +149,17 @@ class HomeScreen extends ConsumerWidget {
           const SizedBox(height: ZadSpacing.sm),
           // «عروض على نواقصك» (owner 4/11, a sideways bar with pictures since
           // 11/11): real deals on what the home is short of.
-          ZadAppearOnEntry(delayMs: 30, child: ZadSlots.homeDealsCarousel()),
+          ZadAppearOnEntry(
+            delayMs: 30,
+            child: ZadSlots.homeDealsCarousel(
+              // The occasion's mark beside the title (HOME_REVIEW ٢), when
+              // its colours read on white.
+              occasion: switch (ref.watch(homeCampaignProvider)?.campaign) {
+                final c? when c.readableOnWhite => c,
+                _ => null,
+              },
+            ),
+          ),
           // The supermarkets and pharmacies near the customer, from the list
           // «أماكني» kept — it was buried there.
           ZadAppearOnEntry(delayMs: 35, child: ZadSlots.homeNearbyStores()),
