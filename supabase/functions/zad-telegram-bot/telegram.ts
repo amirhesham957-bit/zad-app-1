@@ -54,11 +54,34 @@ export function dismissKeyboard(insightId: string): InlineKeyboardButton[][] {
  * سقف تليجرام 64 لـcallback_data.
  */
 export function proactiveDismissKeyboard(taskId: string): InlineKeyboardButton[][] {
-  return [Object.keys(DISMISS_REASON_LABELS).map((code) => ({
-    text: DISMISS_REASON_LABELS[code],
-    callback_data: `pd:${taskId}:${code}`,
-  }))];
+  // بلاغ المالك ١١/١١: التلات أزرار القدام كانوا كلهم رفض («مش مهم» / «الرقم غلط» / «عرفت خلاص»)، تحت أي رسالة —
+  // «زادو عطشان» و«صرفت النهارده كذا» زي بعض — وأي زرار يتداس كان بيكتم النوع أيام. «عرفت خلاص» كان المقصود بيها
+  // «تمام» وكانت بتسكّت ٣ أيام. دلوقتي الصف الأول رد عادي مابيكتمش، والكتم صريح في الصف التاني.
+  return [
+    [
+      { text: "👍 تمام", callback_data: `po:${taskId}` },
+      { text: "💬 قولّي أكتر", callback_data: `pq:${taskId}` },
+    ],
+    [
+      { text: "✏️ الرقم غلط", callback_data: `pd:${taskId}:w` },
+      { text: "🔕 بلاش النوع ده", callback_data: `pd:${taskId}:n` },
+    ],
+  ];
 }
+
+/** "po:<task>" (تمام) / "pq:<task>" (قولّي أكتر) — ردود على المبادرة مابتكتمش. أي حاجة تانية null. */
+export function parseProactiveReplyCallback(data: string): { taskId: string; kind: "ok" | "more" } | null {
+  const parts = data.split(":");
+  if (parts.length !== 2 || (parts[0] !== "po" && parts[0] !== "pq")) return null;
+  if (!/^[0-9a-fA-F-]{36}$/.test(parts[1])) return null;
+  return { taskId: parts[1], kind: parts[0] === "po" ? "ok" : "more" };
+}
+
+/** اللي بيتسجل في الشات لما العميل يدوس «تمام» — لفة منه، فحارس النتيجة بيعدّها رد مش تجاهل. */
+export const PROACTIVE_OK_TURN = "👍 تمام";
+
+/** اللي بيتبعت للعقل لما العميل يدوس «قولّي أكتر»: المبادرة نفسها في تاريخ الشات قبلها. */
+export const PROACTIVE_MORE_PROMPT = "اشرحلي الرسالة اللي لسه بعتهالي دي أكتر: ليه بعتها، وأعمل إيه؟";
 
 /** الأماكن اللي زرار تليجرام يقدر يفتحها في التطبيق. قايمة مقفولة: الرابط عام ومن غير تسجيل دخول. */
 export type AppLinkTarget = "pet" | "deals" | "rewards";
