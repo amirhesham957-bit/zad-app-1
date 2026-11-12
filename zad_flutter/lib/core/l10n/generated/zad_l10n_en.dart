@@ -3313,4 +3313,371 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get quotaScanFromImages => '1 image from your images';
+
+  @override
+  String get tickerLoading => 'Fetching prices...';
+
+  @override
+  String get tickerError => 'Couldn\'t fetch live prices right now — try again';
+
+  @override
+  String get tickerEmpty =>
+      'No live prices for your country yet — tap to refresh';
+
+  @override
+  String get tickerRefresh => 'Refresh prices';
+
+  @override
+  String get tickerContribute => 'Add a price';
+
+  @override
+  String get householdTitle => 'Home';
+
+  @override
+  String get householdPrices => 'Prices';
+
+  @override
+  String get householdFamily => 'Family';
+
+  @override
+  String get householdPantry => 'Pantry';
+
+  @override
+  String get householdShopping => 'Shopping';
+
+  @override
+  String get householdPharmacy => 'Pharmacy';
+
+  @override
+  String get householdRecipes => 'Recipes';
+
+  @override
+  String get notifTitle => 'Notifications';
+
+  @override
+  String notifUnread(int count) {
+    return '$count unread';
+  }
+
+  @override
+  String get notifReadAloud => 'Read notifications aloud';
+
+  @override
+  String get notifEmptyTitle => 'No notifications right now.';
+
+  @override
+  String get notifEmptyBody =>
+      'We\'ll let you know as soon as something needs your attention';
+
+  @override
+  String get notifBankSection => 'Bank transactions waiting for you';
+
+  @override
+  String get notifInsightsSection => 'Zad\'s insights';
+
+  @override
+  String get notifBrainSection => 'Zad\'s brain alerts';
+
+  @override
+  String get notifAppSection => 'App notifications';
+
+  @override
+  String get notifNotImportant => 'Not important';
+
+  @override
+  String get notifWrongNumber => 'The number is wrong';
+
+  @override
+  String get notifAlreadyKnew => 'I already knew';
+
+  @override
+  String notifOnAmazon(String name) {
+    return '🛒 $name on Amazon';
+  }
+
+  @override
+  String get notifBell => 'Notifications';
+
+  @override
+  String notifBellUnread(int count) {
+    return 'Notifications — $count unread';
+  }
+
+  @override
+  String get shopNoReach => 'Couldn\'t reach Zad right now. Try again.';
+
+  @override
+  String get shopAddHint => 'What do you need to buy?';
+
+  @override
+  String get shopAddTooltip => 'Add';
+
+  @override
+  String get shopAddProduct => 'Add a product to the list';
+
+  @override
+  String get shopSmartFill => 'Smart fill';
+
+  @override
+  String get shopWhatsApp => 'WhatsApp';
+
+  @override
+  String get shopPriorityHigh => 'Urgent';
+
+  @override
+  String get shopPriorityMedium => 'Medium';
+
+  @override
+  String get shopPriorityLow => 'Low';
+
+  @override
+  String get shopEmptyTitle => 'Your shopping list is empty';
+
+  @override
+  String get shopEmptyBody => 'Zad will add what\'s running out automatically!';
+
+  @override
+  String get shopFilterEmptyTitle => 'Nothing with this priority';
+
+  @override
+  String get shopFilterEmptyBody => 'Try another priority.';
+
+  @override
+  String get shopBought => 'Bought';
+
+  @override
+  String get shopBasketTitle => 'Zad\'s smart basket';
+
+  @override
+  String shopBasketPartial(int priced, int lines) {
+    return 'Estimate for $priced of $lines items — «Smart fill» estimates the rest';
+  }
+
+  @override
+  String get shopBudgetLeftUnknown => 'Budget left: —';
+
+  @override
+  String shopBudgetLeft(String amount) {
+    return 'Budget left: $amount';
+  }
+
+  @override
+  String shopBudgetPct(int pct) {
+    return '$pct% of the budget';
+  }
+
+  @override
+  String get shopOverBudget => 'This list is over the budget you have left!';
+
+  @override
+  String get shopMayNeed => 'You may also need';
+
+  @override
+  String get shopAddToList => 'Add to list';
+
+  @override
+  String shopStockLow(String qty) {
+    return 'Only $qty at home';
+  }
+
+  @override
+  String shopStockEnough(String qty) {
+    return '$qty at home — not short';
+  }
+
+  @override
+  String shopRunsOutIn(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'Runs out in $days days',
+      one: 'Runs out in 1 day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String shopBoughtItem(String name) {
+    return 'Bought $name';
+  }
+
+  @override
+  String shopRemoveGroupTitle(String name) {
+    return 'Remove $name from the list?';
+  }
+
+  @override
+  String shopRemoveGroupBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count lines will be removed together.',
+      one: '1 line will be removed.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get shopRemoveThem => 'Remove them';
+
+  @override
+  String shopGroupKinds(String name, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$name · $count kinds',
+      one: '$name · 1 kind',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get shopHideKinds => 'Hide kinds';
+
+  @override
+  String get shopShowKinds => 'Show kinds';
+
+  @override
+  String get shopFieldName => 'Product name';
+
+  @override
+  String get shopFieldQty => 'Quantity';
+
+  @override
+  String get shopFieldPrice => 'Estimated price';
+
+  @override
+  String get shopFieldStore => 'Store (optional)';
+
+  @override
+  String get pantryEmptyTitle => 'Your pantry is empty';
+
+  @override
+  String get pantryEmptyBody =>
+      'Start adding products to organise your home\'s pantry';
+
+  @override
+  String get pantryScan => 'Scan';
+
+  @override
+  String get pantrySearchEmptyTitle => 'No results';
+
+  @override
+  String get pantrySearchEmptyBody => 'Try a different word';
+
+  @override
+  String get pantryScanTooltip => 'Scan the pantry';
+
+  @override
+  String get pantryAddManual => 'Add by hand';
+
+  @override
+  String pantryLowBanner(int count) {
+    return 'Running low ($count)';
+  }
+
+  @override
+  String get pantryUnspecified => ' (unspecified)';
+
+  @override
+  String get pantryToShopping => 'Add to shopping';
+
+  @override
+  String get pantryExpiringSoon => 'Expiring soon';
+
+  @override
+  String get pantrySuggestRecipe => 'Suggest a recipe';
+
+  @override
+  String get pantryExpired => 'Expired';
+
+  @override
+  String pantryDaysLeft(String days) {
+    return '$days days left';
+  }
+
+  @override
+  String get pantryLow => 'Low';
+
+  @override
+  String get pantryExpiredShort => 'Expired';
+
+  @override
+  String pantryDays(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days days',
+      one: '1 day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get pantryUseOne => 'Use one';
+
+  @override
+  String get pantryAddOne => 'Add one';
+
+  @override
+  String get pantryEditItem => 'Edit item';
+
+  @override
+  String get pantryOut => 'Out';
+
+  @override
+  String pantryKinds(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count kinds',
+      one: '1 kind',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get pantryShowKinds => 'Show kinds';
+
+  @override
+  String get pantryUsedOne => 'Used one';
+
+  @override
+  String get pantryIncreaseOne => 'Add one';
+
+  @override
+  String pantryQty(String qty) {
+    return 'Quantity: $qty';
+  }
+
+  @override
+  String get pantryAdded => 'Added';
+
+  @override
+  String get pantryAddTitle => 'Add a new product';
+
+  @override
+  String get pantryClose => 'Close';
+
+  @override
+  String get pantryNameHint => 'e.g. milk';
+
+  @override
+  String get pantryUnit => 'Unit';
+
+  @override
+  String get pantryCategory => 'Section';
+
+  @override
+  String get pantryExpiryField => 'Expiry date (optional)';
+
+  @override
+  String get pantryOccasional => 'I buy it now and then';
+
+  @override
+  String get pantryOccasionalBody =>
+      'It won\'t count as short when it runs out, and I won\'t remind you';
+
+  @override
+  String get notifNoneNew => 'No new notifications';
 }

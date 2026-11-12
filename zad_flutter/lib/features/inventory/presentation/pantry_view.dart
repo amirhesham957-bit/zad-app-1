@@ -24,6 +24,7 @@ import 'package:zad/core/design/tokens/zad_extended_colors.dart';
 import 'package:zad/core/design/tokens/zad_palette.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/inventory/domain/pantry_categories.dart';
 import 'package:zad/shared/chat/application/chat_controller.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart'
@@ -40,6 +41,7 @@ import 'package:zad/shared/navigation/destinations.dart';
 import 'package:zad/shared/navigation/shell_navigation.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
 
+// l10n: data-begin
 /// Kotlin's stored units — **data** written to `zad_inventory.unit`.
 const List<String> kPantryUnits = <String>[
   'حبة',
@@ -52,6 +54,7 @@ const List<String> kPantryUnits = <String>[
   'صندوق',
 ];
 
+// l10n: data-end
 /// What the unit menu shows for each of [kPantryUnits].
 const List<String> _unitLabels = <String>[
   'حبة',
@@ -67,6 +70,8 @@ const List<String> _unitLabels = <String>[
 /// Kotlin's `CategoryDef`: the pastel pair and the menu icon per key.
 typedef _CategoryDef = ({String key, IconData icon, Color bg, Color fg});
 
+// l10n: data-begin
+// Category keys stored in zad_inventory.category.
 const List<_CategoryDef> _categoryDefs = <_CategoryDef>[
   (
     key: 'الكل',
@@ -123,6 +128,7 @@ const List<_CategoryDef> _categoryDefs = <_CategoryDef>[
     fg: Color(0xFF757575),
   ),
 ];
+// l10n: data-end
 
 _CategoryDef _defFor(String? category, String itemName) {
   final key = pantryCategoryOf(category, itemName);
@@ -133,10 +139,10 @@ _CategoryDef _defFor(String? category, String itemName) {
 }
 
 Color _bgOf(_CategoryDef d, ColorScheme s) =>
-    d.key == 'الكل' ? s.primary : d.bg;
+    d.key == 'الكل' ? s.primary : d.bg; // l10n: data
 
 Color _fgOf(_CategoryDef d, ColorScheme s) =>
-    d.key == 'الكل' ? s.onPrimary : d.fg;
+    d.key == 'الكل' ? s.onPrimary : d.fg; // l10n: data
 
 double _threshold(InventoryItem i) => math.max(i.lowStockThreshold ?? 2, 1);
 
@@ -174,7 +180,7 @@ class PantryView extends ConsumerStatefulWidget {
 }
 
 class _PantryViewState extends ConsumerState<PantryView> {
-  String _category = 'الكل';
+  String _category = 'الكل'; // l10n: data
   String _query = '';
   // Staples whose brands are open under their card. Closed by default: the
   // house has «مياه: 8», not six rows of one bottle each (owner, 2026-10-01).
@@ -211,6 +217,8 @@ class _PantryViewState extends ConsumerState<PantryView> {
   }
 
   void _suggestRecipe(List<InventoryItem> expiring) {
+    // l10n: data-begin
+    // The customer's own message to the brain, sent in Arabic.
     final names = expiring.map((i) => i.itemName).join('، ');
     unawaited(
       ref
@@ -220,6 +228,7 @@ class _PantryViewState extends ConsumerState<PantryView> {
             '$names',
           ),
     );
+    // l10n: data-end
     Navigator.of(context).popUntil((r) => r.isFirst);
     ref.read(shellNavigationProvider.notifier).open(ShellTab.chat);
   }
@@ -246,7 +255,7 @@ class _PantryViewState extends ConsumerState<PantryView> {
     ];
     final filtered = <InventoryItem>[
       for (final i in all)
-        if ((_category == 'الكل' ||
+        if ((_category == 'الكل' || // l10n: data
                 pantryCategoryOf(i.category, i.itemName) == _category) &&
             (_query.isEmpty ||
                 i.itemName.toLowerCase().contains(_query.toLowerCase())))
@@ -299,7 +308,7 @@ class _PantryViewState extends ConsumerState<PantryView> {
                   // A filled, rounded search field (iOS style) instead of a
                   // bare underline (emulator, 2026-11-10).
                   decoration: InputDecoration(
-                    hintText: 'اسم المنتج',
+                    hintText: context.l10n.shopFieldName,
                     prefixIcon: const Icon(Icons.search, size: 18),
                     isDense: true,
                     filled: true,
@@ -366,8 +375,8 @@ class _PantryViewState extends ConsumerState<PantryView> {
                 padding: const EdgeInsets.only(bottom: 110),
                 child: KtEmptyState(
                   icon: Icons.inventory_2,
-                  title: 'المخزون فارغ',
-                  subtitle: 'ابدأ بإضافة منتجات لتنظم مخزون منزلك',
+                  title: context.l10n.pantryEmptyTitle,
+                  subtitle: context.l10n.pantryEmptyBody,
                   action: OutlinedButton.icon(
                     onPressed: () =>
                         unawaited(ZadScreens.openZadCamera(context)),
@@ -381,7 +390,10 @@ class _PantryViewState extends ConsumerState<PantryView> {
                       ),
                     ),
                     icon: const Icon(Icons.camera_alt, size: 16),
-                    label: const Text('تصوير', style: ZadType.bodySmall),
+                    label: Text(
+                      context.l10n.pantryScan,
+                      style: ZadType.bodySmall,
+                    ),
                   ),
                 ),
               ),
@@ -393,8 +405,8 @@ class _PantryViewState extends ConsumerState<PantryView> {
                 padding: const EdgeInsets.only(bottom: 110),
                 child: KtEmptyState(
                   icon: Icons.search_off,
-                  title: 'لا توجد نتائج',
-                  subtitle: 'جرّب البحث بكلمة مختلفة',
+                  title: context.l10n.pantrySearchEmptyTitle,
+                  subtitle: context.l10n.pantrySearchEmptyBody,
                   iconTint: scheme.outline,
                   iconBackground: scheme.outlineVariant,
                 ),
@@ -487,7 +499,7 @@ class _PantryViewState extends ConsumerState<PantryView> {
                     heroTag: 'pantry-photo',
                     onPressed: () =>
                         unawaited(ZadScreens.openZadCamera(context)),
-                    tooltip: 'تصوير المخزون',
+                    tooltip: context.l10n.pantryScanTooltip,
                     backgroundColor: scheme.secondary,
                     foregroundColor: scheme.onSecondary,
                     elevation: 4,
@@ -500,7 +512,7 @@ class _PantryViewState extends ConsumerState<PantryView> {
                   FloatingActionButton(
                     heroTag: 'pantry-add',
                     onPressed: () => unawaited(showAddPantrySheet(context)),
-                    tooltip: 'إضافة يدوية',
+                    tooltip: context.l10n.pantryAddManual,
                     backgroundColor: scheme.primary,
                     foregroundColor: scheme.onPrimary,
                     elevation: 4,
@@ -646,7 +658,7 @@ class _LowStockBanner extends StatelessWidget {
               TextSpan(
                 children: <InlineSpan>[
                   TextSpan(
-                    text: 'نواقص المخزون ($count)',
+                    text: context.l10n.pantryLowBanner(count),
                     style: ZadType.bodySmall.copyWith(
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
@@ -654,7 +666,7 @@ class _LowStockBanner extends StatelessWidget {
                     ),
                   ),
                   TextSpan(
-                    text: ' (غير محدد)',
+                    text: context.l10n.pantryUnspecified,
                     style: ZadType.labelSmall.copyWith(
                       fontSize: 11,
                       color: scheme.onErrorContainer.withValues(alpha: 0.75),
@@ -673,7 +685,7 @@ class _LowStockBanner extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               child: Text(
-                'نزّلها في التسوق',
+                context.l10n.pantryToShopping,
                 style: ZadType.labelSmall.copyWith(
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
@@ -725,7 +737,7 @@ class _ExpiringSoonSection extends StatelessWidget {
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    'ينتهي قريباً',
+                    context.l10n.pantryExpiringSoon,
                     style: ZadType.bodySmall.copyWith(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -745,7 +757,7 @@ class _ExpiringSoonSection extends StatelessWidget {
                   child: Row(
                     children: <Widget>[
                       Text(
-                        'اقتراح وصفة',
+                        context.l10n.pantrySuggestRecipe,
                         style: ZadType.labelSmall.copyWith(
                           fontSize: 11,
                           fontWeight: FontWeight.w500,
@@ -809,8 +821,10 @@ class _ExpiringSoonSection extends StatelessWidget {
                               ),
                               Text(
                                 days != null && days <= 0
-                                    ? 'منتهي الصلاحية'
-                                    : 'باقي ${days ?? '?'} يوم',
+                                    ? context.l10n.pantryExpired
+                                    : context.l10n.pantryDaysLeft(
+                                        days?.toString() ?? '?',
+                                      ),
                                 style: ZadType.labelSmall.copyWith(
                                   fontSize: 9.5,
                                   color: color,
@@ -943,9 +957,9 @@ class _InventoryItemCard extends StatelessWidget {
                                 color: const Color(0xFFFEE2E2),
                                 borderRadius: BorderRadius.circular(99),
                               ),
-                              child: const Text(
-                                'منخفض',
-                                style: TextStyle(
+                              child: Text(
+                                context.l10n.pantryLow,
+                                style: const TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.bold,
                                   color: Color(0xFFDC2626),
@@ -962,7 +976,9 @@ class _InventoryItemCard extends StatelessWidget {
                     children: <Widget>[
                       if (days != null) ...<Widget>[
                         Text(
-                          days <= 0 ? 'منتهي' : '$days يوم',
+                          days <= 0
+                              ? context.l10n.pantryExpiredShort
+                              : context.l10n.pantryDays(days),
                           style: TextStyle(
                             fontSize: 11.5,
                             fontWeight: FontWeight.w500,
@@ -1025,7 +1041,7 @@ class _InventoryItemCard extends StatelessWidget {
                 children: <Widget>[
                   small(
                     Icons.remove_circle_outline,
-                    'استهلاك واحدة',
+                    context.l10n.pantryUseOne,
                     item.quantity > 0 ? scheme.error : scheme.outline,
                     item.quantity > 0 ? onConsume : null,
                   ),
@@ -1042,7 +1058,7 @@ class _InventoryItemCard extends StatelessWidget {
                   ),
                   small(
                     Icons.add_circle_outline,
-                    'زيادة واحدة',
+                    context.l10n.pantryAddOne,
                     scheme.primary,
                     onRestock,
                   ),
@@ -1054,7 +1070,7 @@ class _InventoryItemCard extends StatelessWidget {
               dimension: 26,
               child: IconButton(
                 padding: EdgeInsets.zero,
-                tooltip: 'تعديل الصنف',
+                tooltip: context.l10n.pantryEditItem,
                 onPressed: onEdit,
                 icon: const Icon(
                   Icons.edit,
@@ -1067,7 +1083,7 @@ class _InventoryItemCard extends StatelessWidget {
               dimension: 26,
               child: IconButton(
                 padding: EdgeInsets.zero,
-                tooltip: 'حذف',
+                tooltip: context.l10n.commonDelete,
                 onPressed: onDelete,
                 icon: const Icon(
                   Icons.delete_outline,
@@ -1146,7 +1162,9 @@ class _FamilyCard extends StatelessWidget {
                               borderRadius: BorderRadius.circular(99),
                             ),
                             child: Text(
-                              group.isOut ? 'خلص' : 'منخفض',
+                              group.isOut
+                                  ? context.l10n.pantryOut
+                                  : context.l10n.pantryLow,
                               style: ZadType.labelSmall.copyWith(
                                 fontWeight: FontWeight.bold,
                                 color: scheme.error,
@@ -1158,8 +1176,13 @@ class _FamilyCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '${group.members.length} أنواع · '
-                      '${open ? 'اخفي الأنواع' : 'اعرض الأنواع'}',
+                      <String>[
+                        context.l10n.pantryKinds(group.members.length),
+                        if (open)
+                          context.l10n.shopHideKinds
+                        else
+                          context.l10n.pantryShowKinds,
+                      ].join(' · '),
                       style: ZadType.labelSmall.copyWith(
                         color: scheme.onSurfaceVariant,
                       ),
@@ -1168,7 +1191,7 @@ class _FamilyCard extends StatelessWidget {
                 ),
               ),
               IconButton(
-                tooltip: 'استهلكت واحدة',
+                tooltip: context.l10n.pantryUsedOne,
                 onPressed: onConsume,
                 icon: Icon(
                   Icons.remove_circle_outline,
@@ -1182,7 +1205,7 @@ class _FamilyCard extends StatelessWidget {
                 style: ZadType.titleSmall.copyWith(color: scheme.primary),
               ),
               IconButton(
-                tooltip: 'زوّد واحدة',
+                tooltip: context.l10n.pantryIncreaseOne,
                 onPressed: onRestock,
                 icon: Icon(Icons.add_circle_outline, color: scheme.primary),
               ),
@@ -1262,10 +1285,12 @@ class _ShortageItemCardState extends State<_ShortageItemCard> {
                       ),
                       Text(
                         days != null && days <= 0
-                            ? 'منتهي'
+                            ? context.l10n.pantryExpiredShort
                             : days != null
-                            ? '$days يوم'
-                            : 'الكمية: ${formatQuantity(item.quantity)}',
+                            ? context.l10n.pantryDays(days)
+                            : context.l10n.pantryQty(
+                                formatQuantity(item.quantity),
+                              ),
                         style: ZadType.labelSmall.copyWith(
                           fontSize: 9.5,
                           color: days != null
@@ -1317,7 +1342,9 @@ class _ShortageItemCardState extends State<_ShortageItemCard> {
                   const SizedBox(width: 3),
                   Flexible(
                     child: Text(
-                      _added ? 'أُضيفت' : 'نزّلها في التسوق',
+                      _added
+                          ? context.l10n.pantryAdded
+                          : context.l10n.pantryToShopping,
                       maxLines: 1,
                       style: const TextStyle(fontSize: 10.5),
                     ),
@@ -1425,7 +1452,7 @@ class _AddState extends ConsumerState<_AddInventoryDialog> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: <Widget>[
                   Text(
-                    'إضافة منتج جديد',
+                    context.l10n.pantryAddTitle,
                     style: ZadType.titleMedium.copyWith(
                       fontWeight: FontWeight.bold,
                       color: scheme.onSurface,
@@ -1435,7 +1462,7 @@ class _AddState extends ConsumerState<_AddInventoryDialog> {
                     dimension: 28,
                     child: IconButton(
                       padding: EdgeInsets.zero,
-                      tooltip: 'إغلاق',
+                      tooltip: context.l10n.pantryClose,
                       onPressed: () => Navigator.of(context).pop(),
                       icon: Icon(
                         Icons.close,
@@ -1447,11 +1474,11 @@ class _AddState extends ConsumerState<_AddInventoryDialog> {
                 ],
               ),
               const SizedBox(height: 20),
-              Text('اسم المنتج', style: label),
+              Text(context.l10n.shopFieldName, style: label),
               const SizedBox(height: 6),
               TextField(
                 controller: _name,
-                decoration: field(hint: 'مثلاً: حليب'),
+                decoration: field(hint: context.l10n.pantryNameHint),
               ),
               const SizedBox(height: 14),
               Row(
@@ -1461,7 +1488,7 @@ class _AddState extends ConsumerState<_AddInventoryDialog> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: <Widget>[
-                        Text('الكمية', style: label),
+                        Text(context.l10n.shopFieldQty, style: label),
                         const SizedBox(height: 6),
                         TextField(
                           controller: _qty,
@@ -1471,7 +1498,7 @@ class _AddState extends ConsumerState<_AddInventoryDialog> {
                           decoration: field(),
                           onChanged: (v) {
                             final kept = v.replaceAll(
-                              RegExp('[^0-9٠-٩.,٫½¼¾]'),
+                              RegExp('[^0-9٠-٩.,٫½¼¾]'), // l10n: data
                               '',
                             );
                             if (kept != v) _qty.text = kept;
@@ -1485,7 +1512,7 @@ class _AddState extends ConsumerState<_AddInventoryDialog> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: <Widget>[
-                        Text('الوحدة', style: label),
+                        Text(context.l10n.pantryUnit, style: label),
                         const SizedBox(height: 6),
                         DropdownMenu<int>(
                           initialSelection: _unit,
@@ -1512,7 +1539,7 @@ class _AddState extends ConsumerState<_AddInventoryDialog> {
                 ],
               ),
               const SizedBox(height: 14),
-              Text('القسم', style: label),
+              Text(context.l10n.pantryCategory, style: label),
               const SizedBox(height: 6),
               DropdownMenu<int>(
                 initialSelection: _category,
@@ -1539,7 +1566,7 @@ class _AddState extends ConsumerState<_AddInventoryDialog> {
                 ],
               ),
               const SizedBox(height: 14),
-              Text('تاريخ الصلاحية (اختياري)', style: label),
+              Text(context.l10n.pantryExpiryField, style: label),
               const SizedBox(height: 6),
               TextField(
                 controller: _expiry,
@@ -1558,7 +1585,7 @@ class _AddState extends ConsumerState<_AddInventoryDialog> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: const Text('إلغاء'),
+                      child: Text(context.l10n.commonCancel),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -1574,7 +1601,7 @@ class _AddState extends ConsumerState<_AddInventoryDialog> {
                         ),
                       ),
                       icon: const Icon(Icons.check, size: 18),
-                      label: const Text('حفظ'),
+                      label: Text(context.l10n.commonSave),
                     ),
                   ),
                 ],
@@ -1631,14 +1658,15 @@ class _EditState extends ConsumerState<_EditInventoryDialog> {
   Widget build(BuildContext context) {
     // Zero is a count here — an item that ran out is still renamed or marked
     // «على فترات» — while parseQuantity, built for purchases, refuses it.
-    final quantity = RegExp(r'^[0٠]+([.,٫][0٠]*)?$').hasMatch(_qty.text.trim())
+    final quantity =
+        RegExp(r'^[0٠]+([.,٫][0٠]*)?$').hasMatch(_qty.text.trim()) // l10n: data
         ? 0.0
         : parseQuantity(_qty.text);
     final canSave =
         _name.text.trim().isNotEmpty && quantity != null && quantity >= 0;
     return AlertDialog(
       title: Text(
-        'تعديل الصنف',
+        context.l10n.pantryEditItem,
         style: ZadType.titleLarge.copyWith(fontWeight: FontWeight.bold),
       ),
       content: SingleChildScrollView(
@@ -1647,9 +1675,9 @@ class _EditState extends ConsumerState<_EditInventoryDialog> {
           children: <Widget>[
             TextField(
               controller: _name,
-              decoration: const InputDecoration(
-                labelText: 'اسم المنتج',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: context.l10n.shopFieldName,
+                border: const OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 12),
@@ -1664,11 +1692,14 @@ class _EditState extends ConsumerState<_EditInventoryDialog> {
                     onChanged: (v) {
                       // Digits and the fraction marks formatQuantity writes:
                       // stripping «.» and «½» made a half kilo unsavable.
-                      final kept = v.replaceAll(RegExp('[^0-9٠-٩.,٫½¼¾]'), '');
+                      final kept = v.replaceAll(
+                        RegExp('[^0-9٠-٩.,٫½¼¾]'), // l10n: data
+                        '',
+                      );
                       if (kept != v) _qty.text = kept;
                     },
                     decoration: InputDecoration(
-                      labelText: 'الكمية',
+                      labelText: context.l10n.shopFieldQty,
                       border: const OutlineInputBorder(),
                       errorText: _qty.text.isNotEmpty && quantity == null
                           ? ''
@@ -1680,9 +1711,9 @@ class _EditState extends ConsumerState<_EditInventoryDialog> {
                 Expanded(
                   child: TextField(
                     controller: _unit,
-                    decoration: const InputDecoration(
-                      labelText: 'الوحدة',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: context.l10n.pantryUnit,
+                      border: const OutlineInputBorder(),
                     ),
                   ),
                 ),
@@ -1693,9 +1724,12 @@ class _EditState extends ConsumerState<_EditInventoryDialog> {
               contentPadding: EdgeInsets.zero,
               value: _occasional,
               onChanged: (v) => setState(() => _occasional = v),
-              title: const Text('بشتريها على فترات', style: ZadType.bodyMedium),
-              subtitle: const Text(
-                'مش هتتحسب ناقصة لما تخلص، ومش هفكّرك بيها',
+              title: Text(
+                context.l10n.pantryOccasional,
+                style: ZadType.bodyMedium,
+              ),
+              subtitle: Text(
+                context.l10n.pantryOccasionalBody,
                 style: ZadType.bodySmall,
               ),
             ),
@@ -1705,7 +1739,7 @@ class _EditState extends ConsumerState<_EditInventoryDialog> {
       actions: <Widget>[
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('إلغاء'),
+          child: Text(context.l10n.commonCancel),
         ),
         FilledButton(
           onPressed: canSave
@@ -1727,7 +1761,7 @@ class _EditState extends ConsumerState<_EditInventoryDialog> {
                   navigator.pop();
                 }
               : null,
-          child: const Text('حفظ'),
+          child: Text(context.l10n.commonSave),
         ),
       ],
     );

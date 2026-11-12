@@ -62,7 +62,8 @@ import 'zad_l10n_en.dart';
 /// be consistent with the languages listed in the ZadL10n.supportedLocales
 /// property.
 abstract class ZadL10n {
-  ZadL10n(String locale) : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+  ZadL10n(String locale)
+    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
@@ -82,18 +83,19 @@ abstract class ZadL10n {
   /// Additional delegates can be added by appending to this list in
   /// MaterialApp. This list does not have to be used at all if a custom list
   /// of delegates is preferred or required.
-  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates = <LocalizationsDelegate<dynamic>>[
-    delegate,
-    GlobalMaterialLocalizations.delegate,
-    GlobalCupertinoLocalizations.delegate,
-    GlobalWidgetsLocalizations.delegate,
-  ];
+  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
+      <LocalizationsDelegate<dynamic>>[
+        delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ];
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('ar'),
     Locale('ar', 'SA'),
-    Locale('en')
+    Locale('en'),
   ];
 
   /// The app's name, in the task switcher.
@@ -5951,6 +5953,600 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'صورة من رصيد الصور'**
   String get quotaScanFromImages;
+
+  /// Live price strip: loading.
+  ///
+  /// In ar, this message translates to:
+  /// **'جاري جلب الأسعار...'**
+  String get tickerLoading;
+
+  /// Live price strip: fetch failed, tap to retry.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذر جلب الأسعار الحية الآن — جرب تاني'**
+  String get tickerError;
+
+  /// Live price strip: nothing yet, tap to refresh.
+  ///
+  /// In ar, this message translates to:
+  /// **'لسه مفيش أسعار حية لبلدك — اضغط للتحديث'**
+  String get tickerEmpty;
+
+  /// Live price strip: refresh icon (screen reader).
+  ///
+  /// In ar, this message translates to:
+  /// **'تحديث الأسعار'**
+  String get tickerRefresh;
+
+  /// Live price strip: button to report a price.
+  ///
+  /// In ar, this message translates to:
+  /// **'ساهم بسعر'**
+  String get tickerContribute;
+
+  /// Household screen title.
+  ///
+  /// In ar, this message translates to:
+  /// **'البيت'**
+  String get householdTitle;
+
+  /// Household screen: prices button.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأسعار'**
+  String get householdPrices;
+
+  /// Household screen: family button.
+  ///
+  /// In ar, this message translates to:
+  /// **'العيلة'**
+  String get householdFamily;
+
+  /// Household tab: pantry.
+  ///
+  /// In ar, this message translates to:
+  /// **'المخزن'**
+  String get householdPantry;
+
+  /// Household tab: missing items and shopping.
+  ///
+  /// In ar, this message translates to:
+  /// **'نواقص وتسوق'**
+  String get householdShopping;
+
+  /// Household tab: pharmacy.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصيدلية'**
+  String get householdPharmacy;
+
+  /// Household tab: recipes.
+  ///
+  /// In ar, this message translates to:
+  /// **'وصفات'**
+  String get householdRecipes;
+
+  /// Notification center title.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإشعارات'**
+  String get notifTitle;
+
+  /// Notification center: unread count.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} غير مقروء'**
+  String notifUnread(int count);
+
+  /// Notification center: speak button.
+  ///
+  /// In ar, this message translates to:
+  /// **'قراءة التنبيهات صوتيًا'**
+  String get notifReadAloud;
+
+  /// Notification center: empty title.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد إشعارات حالياً.'**
+  String get notifEmptyTitle;
+
+  /// Notification center: empty guidance.
+  ///
+  /// In ar, this message translates to:
+  /// **'هنعلمك أول ما يحصل حاجة تستاهل انتباهك'**
+  String get notifEmptyBody;
+
+  /// Notification center section: pending bank transactions.
+  ///
+  /// In ar, this message translates to:
+  /// **'عمليات بنكية بانتظارك'**
+  String get notifBankSection;
+
+  /// Notification center section: local insights.
+  ///
+  /// In ar, this message translates to:
+  /// **'تنبيهات ذكاء زاد'**
+  String get notifInsightsSection;
+
+  /// Notification center section: brain alerts.
+  ///
+  /// In ar, this message translates to:
+  /// **'تنبيهات عقل زاد'**
+  String get notifBrainSection;
+
+  /// Notification center section: app notifications.
+  ///
+  /// In ar, this message translates to:
+  /// **'إشعارات التطبيق'**
+  String get notifAppSection;
+
+  /// Insight dismiss reason: not important.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش مهم'**
+  String get notifNotImportant;
+
+  /// Insight dismiss reason: wrong number.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرقم غلط'**
+  String get notifWrongNumber;
+
+  /// Insight dismiss reason: already known.
+  ///
+  /// In ar, this message translates to:
+  /// **'عرفت خلاص'**
+  String get notifAlreadyKnew;
+
+  /// Notification: button to open a product on Amazon.
+  ///
+  /// In ar, this message translates to:
+  /// **'🛒 {name} على أمازون'**
+  String notifOnAmazon(String name);
+
+  /// Home bell tooltip.
+  ///
+  /// In ar, this message translates to:
+  /// **'التنبيهات'**
+  String get notifBell;
+
+  /// Home bell tooltip with unread count.
+  ///
+  /// In ar, this message translates to:
+  /// **'التنبيهات — {count} مش مقروء'**
+  String notifBellUnread(int count);
+
+  /// Shopping: smart fill failed.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقدرتش أوصل لزاد دلوقتي. جرّب تاني.'**
+  String get shopNoReach;
+
+  /// Shopping: quick-add field hint.
+  ///
+  /// In ar, this message translates to:
+  /// **'محتاج تشتري إيه؟'**
+  String get shopAddHint;
+
+  /// Shopping: quick-add button.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضيف'**
+  String get shopAddTooltip;
+
+  /// Shopping: open the add sheet / its title.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة منتج للقائمة'**
+  String get shopAddProduct;
+
+  /// Shopping: ask Zad to fill the list.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعبئة ذكية'**
+  String get shopSmartFill;
+
+  /// Shopping: share the list on WhatsApp.
+  ///
+  /// In ar, this message translates to:
+  /// **'واتساب'**
+  String get shopWhatsApp;
+
+  /// Shopping priority: high.
+  ///
+  /// In ar, this message translates to:
+  /// **'حرج'**
+  String get shopPriorityHigh;
+
+  /// Shopping priority: medium.
+  ///
+  /// In ar, this message translates to:
+  /// **'متوسط'**
+  String get shopPriorityMedium;
+
+  /// Shopping priority: low.
+  ///
+  /// In ar, this message translates to:
+  /// **'منخفض'**
+  String get shopPriorityLow;
+
+  /// Shopping: empty title.
+  ///
+  /// In ar, this message translates to:
+  /// **'قائمة التسوق فارغة'**
+  String get shopEmptyTitle;
+
+  /// Shopping: empty guidance.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد سيضيف النواقص تلقائياً!'**
+  String get shopEmptyBody;
+
+  /// Shopping: filter has no rows.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد عناصر بهذا التصنيف'**
+  String get shopFilterEmptyTitle;
+
+  /// Shopping: filter empty guidance.
+  ///
+  /// In ar, this message translates to:
+  /// **'جرّب أولوية تانية.'**
+  String get shopFilterEmptyBody;
+
+  /// Shopping: bought section header.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتشترى'**
+  String get shopBought;
+
+  /// Shopping budget header title.
+  ///
+  /// In ar, this message translates to:
+  /// **'سلة زاد الذكية'**
+  String get shopBasketTitle;
+
+  /// Shopping budget header: only some lines priced.
+  ///
+  /// In ar, this message translates to:
+  /// **'تقدير لـ {priced} من {lines} صنف — «تعبئة ذكية» تقدّر الباقي'**
+  String shopBasketPartial(int priced, int lines);
+
+  /// Shopping budget header: no budget known.
+  ///
+  /// In ar, this message translates to:
+  /// **'الميزانية المتبقية: —'**
+  String get shopBudgetLeftUnknown;
+
+  /// Shopping budget header: budget left.
+  ///
+  /// In ar, this message translates to:
+  /// **'الميزانية المتبقية: {amount}'**
+  String shopBudgetLeft(String amount);
+
+  /// Shopping budget header: share of budget.
+  ///
+  /// In ar, this message translates to:
+  /// **'{pct}% من الميزانية'**
+  String shopBudgetPct(int pct);
+
+  /// Shopping budget header: over budget.
+  ///
+  /// In ar, this message translates to:
+  /// **'هذه القائمة تتجاوز الميزانية المتبقية!'**
+  String get shopOverBudget;
+
+  /// Shopping: suggestions title.
+  ///
+  /// In ar, this message translates to:
+  /// **'قد تحتاج أيضاً'**
+  String get shopMayNeed;
+
+  /// Shopping: add a suggestion.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة للقائمة'**
+  String get shopAddToList;
+
+  /// Shopping line: pantry stock is low.
+  ///
+  /// In ar, this message translates to:
+  /// **'في البيت {qty} بس'**
+  String shopStockLow(String qty);
+
+  /// Shopping line: pantry has enough.
+  ///
+  /// In ar, this message translates to:
+  /// **'في البيت {qty} — مش ناقص'**
+  String shopStockEnough(String qty);
+
+  /// Shopping line: predicted days left.
+  ///
+  /// In ar, this message translates to:
+  /// **'ينفد بعد {days} أيام'**
+  String shopRunsOutIn(int days);
+
+  /// Shopping: snackbar after ticking a line.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم شراء {name}'**
+  String shopBoughtItem(String name);
+
+  /// Shopping: confirm removing a family of lines.
+  ///
+  /// In ar, this message translates to:
+  /// **'تشيل {name} من القائمة؟'**
+  String shopRemoveGroupTitle(String name);
+
+  /// Shopping: confirm body.
+  ///
+  /// In ar, this message translates to:
+  /// **'هيتشالوا {count} سطور مع بعض.'**
+  String shopRemoveGroupBody(int count);
+
+  /// Shopping: confirm removing the group.
+  ///
+  /// In ar, this message translates to:
+  /// **'شيلهم'**
+  String get shopRemoveThem;
+
+  /// Shopping: a family of lines.
+  ///
+  /// In ar, this message translates to:
+  /// **'{name} · {count} أنواع'**
+  String shopGroupKinds(String name, int count);
+
+  /// Shopping: collapse a family.
+  ///
+  /// In ar, this message translates to:
+  /// **'اخفي الأنواع'**
+  String get shopHideKinds;
+
+  /// Shopping: expand a family.
+  ///
+  /// In ar, this message translates to:
+  /// **'وريني الأنواع'**
+  String get shopShowKinds;
+
+  /// Shopping add sheet: name field.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم المنتج'**
+  String get shopFieldName;
+
+  /// Shopping add sheet: quantity field.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكمية'**
+  String get shopFieldQty;
+
+  /// Shopping add sheet: price field.
+  ///
+  /// In ar, this message translates to:
+  /// **'السعر التقديري'**
+  String get shopFieldPrice;
+
+  /// Shopping add sheet: store field.
+  ///
+  /// In ar, this message translates to:
+  /// **'المتجر (اختياري)'**
+  String get shopFieldStore;
+
+  /// Pantry: empty title.
+  ///
+  /// In ar, this message translates to:
+  /// **'المخزون فارغ'**
+  String get pantryEmptyTitle;
+
+  /// Pantry: empty guidance.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابدأ بإضافة منتجات لتنظم مخزون منزلك'**
+  String get pantryEmptyBody;
+
+  /// Pantry: scan button on the empty state.
+  ///
+  /// In ar, this message translates to:
+  /// **'تصوير'**
+  String get pantryScan;
+
+  /// Pantry: search found nothing.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد نتائج'**
+  String get pantrySearchEmptyTitle;
+
+  /// Pantry: search empty guidance.
+  ///
+  /// In ar, this message translates to:
+  /// **'جرّب البحث بكلمة مختلفة'**
+  String get pantrySearchEmptyBody;
+
+  /// Pantry: scan FAB.
+  ///
+  /// In ar, this message translates to:
+  /// **'تصوير المخزون'**
+  String get pantryScanTooltip;
+
+  /// Pantry: manual add FAB.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة يدوية'**
+  String get pantryAddManual;
+
+  /// Pantry: low-stock banner.
+  ///
+  /// In ar, this message translates to:
+  /// **'نواقص المخزون ({count})'**
+  String pantryLowBanner(int count);
+
+  /// Pantry: low-stock banner suffix.
+  ///
+  /// In ar, this message translates to:
+  /// **' (غير محدد)'**
+  String get pantryUnspecified;
+
+  /// Pantry: move a low item to the shopping list.
+  ///
+  /// In ar, this message translates to:
+  /// **'نزّلها في التسوق'**
+  String get pantryToShopping;
+
+  /// Pantry: expiring section title.
+  ///
+  /// In ar, this message translates to:
+  /// **'ينتهي قريباً'**
+  String get pantryExpiringSoon;
+
+  /// Pantry: ask for a recipe from expiring items.
+  ///
+  /// In ar, this message translates to:
+  /// **'اقتراح وصفة'**
+  String get pantrySuggestRecipe;
+
+  /// Pantry: item past its date.
+  ///
+  /// In ar, this message translates to:
+  /// **'منتهي الصلاحية'**
+  String get pantryExpired;
+
+  /// Pantry: days until expiry.
+  ///
+  /// In ar, this message translates to:
+  /// **'باقي {days} يوم'**
+  String pantryDaysLeft(String days);
+
+  /// Pantry: low-stock tag.
+  ///
+  /// In ar, this message translates to:
+  /// **'منخفض'**
+  String get pantryLow;
+
+  /// Pantry: short expired tag.
+  ///
+  /// In ar, this message translates to:
+  /// **'منتهي'**
+  String get pantryExpiredShort;
+
+  /// Pantry: days tag.
+  ///
+  /// In ar, this message translates to:
+  /// **'{days} يوم'**
+  String pantryDays(int days);
+
+  /// Pantry: decrement.
+  ///
+  /// In ar, this message translates to:
+  /// **'استهلاك واحدة'**
+  String get pantryUseOne;
+
+  /// Pantry: increment.
+  ///
+  /// In ar, this message translates to:
+  /// **'زيادة واحدة'**
+  String get pantryAddOne;
+
+  /// Pantry: edit an item.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل الصنف'**
+  String get pantryEditItem;
+
+  /// Pantry: out-of-stock tag.
+  ///
+  /// In ar, this message translates to:
+  /// **'خلص'**
+  String get pantryOut;
+
+  /// Pantry: kinds in a family.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} أنواع'**
+  String pantryKinds(int count);
+
+  /// Pantry: expand a family.
+  ///
+  /// In ar, this message translates to:
+  /// **'اعرض الأنواع'**
+  String get pantryShowKinds;
+
+  /// Pantry family: decrement.
+  ///
+  /// In ar, this message translates to:
+  /// **'استهلكت واحدة'**
+  String get pantryUsedOne;
+
+  /// Pantry family: increment.
+  ///
+  /// In ar, this message translates to:
+  /// **'زوّد واحدة'**
+  String get pantryIncreaseOne;
+
+  /// Pantry shortage card: quantity.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكمية: {qty}'**
+  String pantryQty(String qty);
+
+  /// Pantry shortage card: added to shopping.
+  ///
+  /// In ar, this message translates to:
+  /// **'أُضيفت'**
+  String get pantryAdded;
+
+  /// Pantry add dialog title.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة منتج جديد'**
+  String get pantryAddTitle;
+
+  /// Pantry add dialog: close.
+  ///
+  /// In ar, this message translates to:
+  /// **'إغلاق'**
+  String get pantryClose;
+
+  /// Pantry add dialog: name hint.
+  ///
+  /// In ar, this message translates to:
+  /// **'مثلاً: حليب'**
+  String get pantryNameHint;
+
+  /// Pantry dialogs: unit field.
+  ///
+  /// In ar, this message translates to:
+  /// **'الوحدة'**
+  String get pantryUnit;
+
+  /// Pantry add dialog: category field.
+  ///
+  /// In ar, this message translates to:
+  /// **'القسم'**
+  String get pantryCategory;
+
+  /// Pantry add dialog: expiry field.
+  ///
+  /// In ar, this message translates to:
+  /// **'تاريخ الصلاحية (اختياري)'**
+  String get pantryExpiryField;
+
+  /// Pantry edit: occasional purchase switch.
+  ///
+  /// In ar, this message translates to:
+  /// **'بشتريها على فترات'**
+  String get pantryOccasional;
+
+  /// Pantry edit: occasional switch explained.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش هتتحسب ناقصة لما تخلص، ومش هفكّرك بيها'**
+  String get pantryOccasionalBody;
+
+  /// Notification center: spoken when there is nothing new.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش تنبيهات جديدة'**
+  String get notifNoneNew;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {
@@ -5962,34 +6558,38 @@ class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {
   }
 
   @override
-  bool isSupported(Locale locale) => <String>['ar', 'en'].contains(locale.languageCode);
+  bool isSupported(Locale locale) =>
+      <String>['ar', 'en'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_ZadL10nDelegate old) => false;
 }
 
 ZadL10n lookupZadL10n(Locale locale) {
-
   // Lookup logic when language+country codes are specified.
   switch (locale.languageCode) {
-    case 'ar': {
-  switch (locale.countryCode) {
-    case 'SA': return ZadL10nArSa();
-   }
-  break;
-   }
+    case 'ar':
+      {
+        switch (locale.countryCode) {
+          case 'SA':
+            return ZadL10nArSa();
+        }
+        break;
+      }
   }
 
   // Lookup logic when only language code is specified.
   switch (locale.languageCode) {
-    case 'ar': return ZadL10nAr();
-    case 'en': return ZadL10nEn();
+    case 'ar':
+      return ZadL10nAr();
+    case 'en':
+      return ZadL10nEn();
   }
 
   throw FlutterError(
     'ZadL10n.delegate failed to load unsupported locale "$locale". This is likely '
     'an issue with the localizations generation tool. Please file an issue '
     'on GitHub with a reproducible sample app and the gen-l10n configuration '
-    'that was used.'
+    'that was used.',
   );
 }

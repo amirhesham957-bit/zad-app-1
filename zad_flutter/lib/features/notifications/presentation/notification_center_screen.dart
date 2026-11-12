@@ -17,6 +17,7 @@ import 'package:zad/core/design/components/zad_kotlin_surfaces.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/affiliate/data/affiliate_repository.dart';
 import 'package:zad/shared/affiliate/domain/affiliate.dart';
 import 'package:zad/shared/insights/application/insights_controller.dart';
@@ -85,22 +86,29 @@ class _CenterState extends ConsumerState<NotificationCenterScreen> {
     final voice = ref.read(zadVoiceProvider);
     _voice = voice;
     unawaited(
-      voice.speak(spoken.isEmpty ? 'مفيش تنبيهات جديدة' : spoken.join('. ')),
+      voice.speak(
+        spoken.isEmpty ? context.l10n.notifNoneNew : spoken.join('. '),
+      ),
     );
   }
 
   /// Kotlin's routing for a local insight.
   void _openFor(LocalInsight a) {
     final t = a.title;
+    // l10n: data-begin
+    // The insight's title is matched against these words to route it.
+    final medicine = t.contains('دواء') || t.contains('جرعة');
+    final food = t.contains('مخزون') || t.contains('طعام');
+    // l10n: data-end
     if (a.actionType == 'cancel_subscription') {
       unawaited(ZadScreens.showSubscriptionsScreen(context));
     } else if (a.actionType == 'increase_budget') {
       unawaited(ZadScreens.showFinancesScreen(context));
-    } else if (t.contains('دواء') || t.contains('جرعة')) {
+    } else if (medicine) {
       unawaited(
         ZadScreens.showHouseholdSection(context, HouseholdSection.pharmacy),
       );
-    } else if (t.contains('مخزون') || t.contains('طعام')) {
+    } else if (food) {
       unawaited(
         ZadScreens.showHouseholdSection(context, HouseholdSection.pantry),
       );
@@ -157,7 +165,7 @@ class _CenterState extends ConsumerState<NotificationCenterScreen> {
         local.isEmpty;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('الإشعارات')),
+      appBar: AppBar(title: Text(context.l10n.notifTitle)),
       body: Column(
         children: <Widget>[
           Padding(
@@ -166,14 +174,14 @@ class _CenterState extends ConsumerState<NotificationCenterScreen> {
               children: <Widget>[
                 if (unread > 0)
                   Text(
-                    '$unread غير مقروء',
+                    context.l10n.notifUnread(unread),
                     style: ZadType.labelSmall.copyWith(
                       color: scheme.onSurfaceVariant,
                     ),
                   ),
                 const Spacer(),
                 IconButton(
-                  tooltip: 'قراءة التنبيهات صوتيًا',
+                  tooltip: context.l10n.notifReadAloud,
                   onPressed: _readAloud,
                   icon: Icon(Icons.volume_up, color: scheme.primary),
                 ),
@@ -182,16 +190,16 @@ class _CenterState extends ConsumerState<NotificationCenterScreen> {
           ),
           Expanded(
             child: empty
-                ? const KtEmptyState(
+                ? KtEmptyState(
                     icon: Icons.notifications_none,
-                    title: 'لا توجد إشعارات حالياً.',
-                    subtitle: 'هنعلمك أول ما يحصل حاجة تستاهل انتباهك',
+                    title: context.l10n.notifEmptyTitle,
+                    subtitle: context.l10n.notifEmptyBody,
                   )
                 : ListView(
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 110),
                     children: <Widget>[
                       if (!proposals.isEmpty) ...<Widget>[
-                        section('عمليات بنكية بانتظارك'),
+                        section(context.l10n.notifBankSection),
                         for (final p in proposals.rows) ...<Widget>[
                           ZadSlots.proposalCard(
                             proposal: p,
@@ -206,7 +214,7 @@ class _CenterState extends ConsumerState<NotificationCenterScreen> {
                         const SizedBox(height: 12),
                       ],
                       if (local.isNotEmpty) ...<Widget>[
-                        section('تنبيهات ذكاء زاد'),
+                        section(context.l10n.notifInsightsSection),
                         for (final a in local)
                           NotificationCard(
                             title: a.title,
@@ -218,7 +226,7 @@ class _CenterState extends ConsumerState<NotificationCenterScreen> {
                         const SizedBox(height: 20),
                       ],
                       if (bell.isNotEmpty) ...<Widget>[
-                        section('تنبيهات عقل زاد'),
+                        section(context.l10n.notifBrainSection),
                         for (final a in bell)
                           if (a.isQuestion)
                             Padding(
@@ -235,7 +243,10 @@ class _CenterState extends ConsumerState<NotificationCenterScreen> {
                         const SizedBox(height: 20),
                       ],
                       if (sorted.isNotEmpty) ...<Widget>[
-                        section('إشعارات التطبيق', color: scheme.onSurface),
+                        section(
+                          context.l10n.notifAppSection,
+                          color: scheme.onSurface,
+                        ),
                         for (final n in sorted)
                           NotificationCard(
                             title: n.title,
@@ -283,18 +294,21 @@ class _BellCard extends ConsumerWidget {
               0,
             ),
             items: <PopupMenuEntry<DismissReason>>[
-              const PopupMenuItem<DismissReason>(
+              PopupMenuItem<DismissReason>(
                 value: DismissReason.notRelevant,
-                child: Text('مش مهم'),
+                child: Text(context.l10n.notifNotImportant),
               ),
               PopupMenuItem<DismissReason>(
                 value: DismissReason.wrongData,
-                child: Text('الرقم غلط', style: TextStyle(color: scheme.error)),
+                child: Text(
+                  context.l10n.notifWrongNumber,
+                  style: TextStyle(color: scheme.error),
+                ),
               ),
               PopupMenuItem<DismissReason>(
                 value: DismissReason.timing,
                 child: Text(
-                  'عرفت خلاص',
+                  context.l10n.notifAlreadyKnew,
                   style: TextStyle(color: scheme.onSurfaceVariant),
                 ),
               ),
@@ -407,7 +421,9 @@ class NotificationCard extends StatelessWidget {
                                     minimumSize: const Size(0, 44),
                                     shape: const StadiumBorder(),
                                   ),
-                                  child: Text('🛒 ${l.name} على أمازون'),
+                                  child: Text(
+                                    context.l10n.notifOnAmazon(l.name),
+                                  ),
                                 ),
                             ],
                           ),
@@ -436,7 +452,9 @@ class NotificationBell extends ConsumerWidget {
     );
     return IconButton(
       onPressed: () => showNotificationCenter(context),
-      tooltip: unread == 0 ? 'التنبيهات' : 'التنبيهات — $unread مش مقروء',
+      tooltip: unread == 0
+          ? context.l10n.notifBell
+          : context.l10n.notifBellUnread(unread),
       icon: Badge(
         isLabelVisible: unread > 0,
         // A page holds a hundred; more than that is "a lot", not a number to
