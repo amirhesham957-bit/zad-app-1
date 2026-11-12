@@ -6590,6 +6590,54 @@ abstract class ZadL10n {
   /// **'مفيش تنبيهات جديدة'**
   String get notifNoneNew;
 
+  /// Pantry card: one tap sets the item to zero (a use, recorded as such).
+  ///
+  /// In ar, this message translates to:
+  /// **'خلص'**
+  String get pantryFinish;
+
+  /// Pantry: after «خلص».
+  ///
+  /// In ar, this message translates to:
+  /// **'{name} خلص'**
+  String pantryFinishedSnack(String name);
+
+  /// Pantry: undo the last «خلص».
+  ///
+  /// In ar, this message translates to:
+  /// **'تراجع'**
+  String get pantryUndo;
+
+  /// Pantry edit dialog: delete the row.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف الصنف'**
+  String get pantryDeleteItem;
+
+  /// Empty pantry: starter card title.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضيف أساسيات بيتك بلمسة'**
+  String get pantryStarterTitle;
+
+  /// Empty pantry: starter card body.
+  ///
+  /// In ar, this message translates to:
+  /// **'علّم على اللي عندك دلوقتي، وزاد يتابعه ويقولك قبل ما يخلص.'**
+  String get pantryStarterBody;
+
+  /// Empty pantry: add the ticked basics.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضيف {count}'**
+  String pantryStarterAdd(int count);
+
+  /// Empty pantry: the one camera way in.
+  ///
+  /// In ar, this message translates to:
+  /// **'أو صوّر فاتورة الشرا'**
+  String get pantryStarterReceipt;
+
   /// Introduce-yourself screen: title.
   ///
   /// In ar, this message translates to:
