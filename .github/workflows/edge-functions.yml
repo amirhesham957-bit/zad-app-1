@@ -246,6 +246,7 @@ jobs:
           supabase/sql/tests/scratch_scaffold.sql supabase/sql/tests/item_preferences_scaffold.sql supabase/migrations/20261113010000_item_preferences.sql supabase/sql/tests/item_preferences_test.sql
           supabase/sql/tests/scratch_scaffold.sql supabase/sql/tests/pantry_learning_scaffold.sql supabase/migrations/20261112230000_pantry_learning_on_server.sql supabase/sql/tests/pantry_learning_test.sql
           supabase/sql/tests/scratch_scaffold.sql supabase/sql/tests/pantry_learning_scaffold.sql supabase/sql/tests/pantry_bot_bets_scaffold.sql supabase/migrations/20261112230000_pantry_learning_on_server.sql supabase/migrations/20261113000000_pantry_bets_from_the_bot.sql supabase/sql/tests/pantry_bot_bets_test.sql
+          supabase/sql/tests/scratch_scaffold.sql supabase/migrations/20261113040000_reply_reports.sql supabase/sql/tests/reply_reports_test.sql
           LIST
 
   # النشر من الريبو، بعد ما الفحص يعدي — مش من على جهاز حد.

@@ -17,6 +17,7 @@ import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/l10n/l10n.dart';
+import 'package:zad/features/chat/presentation/reply_report_button.dart';
 import 'package:zad/shared/ads/application/interstitials.dart';
 import 'package:zad/shared/ads/presentation/inline_ad.dart';
 import 'package:zad/shared/ads/presentation/watch_ad_button.dart';
@@ -345,7 +346,13 @@ class _Bubble extends ConsumerWidget {
           if (!mine &&
               message.status == ChatStatus.done &&
               message.text.trim().isNotEmpty)
-            _SpeakButton(message: message),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                _SpeakButton(message: message),
+                ReplyReportButton(message: message),
+              ],
+            ),
 
           if (message.specialist case final specialist?) ...<Widget>[
             const SizedBox(height: ZadSpacing.xs),
