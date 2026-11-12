@@ -17,10 +17,12 @@ import 'package:zad/core/crash/crash_log.dart';
 import 'package:zad/core/data/local/boxes.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/env/zad_env.dart';
+import 'package:zad/core/l10n/app_language.dart';
 import 'package:zad/features/alerts/data/notification_permission.dart';
 import 'package:zad/features/bank/background/bank_background_main.dart';
 import 'package:zad/features/places/background/place_background_main.dart';
 import 'package:zad/shared/alerts/data/push_platform.dart';
+import 'package:zad/shared/market/application/arabic_variant.dart';
 import 'package:zad/shared/places/application/place_engine.dart';
 import 'package:zad/shared/places/data/background_location.dart';
 import 'package:zad_bank_listener/zad_bank_listener.dart';
@@ -116,6 +118,11 @@ Future<void> bootstrap(Widget app) async {
       child: ProviderScope(
         overrides: [
           localStoreProvider.overrideWithValue(localStore),
+          // The screens' Arabic follows the account (ZAD_PLAN ١٠.١٦); tests
+          // keep the default Arabic.
+          arabicVariantProvider.overrideWith(
+            (ref) => ref.watch(accountArabicVariantProvider),
+          ),
           // The alerts, real on a phone. Firebase starts on first use, after
           // the first frame; everything outside this function (every test)
           // keeps the silent defaults.
