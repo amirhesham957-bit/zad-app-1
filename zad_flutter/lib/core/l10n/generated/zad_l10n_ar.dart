@@ -1061,6 +1061,30 @@ class ZadL10nAr extends ZadL10n {
   String get chatListen => 'اسمع الرد';
 
   @override
+  String get chatReport => 'بلّغ عن الرد';
+
+  @override
+  String get chatReportTitle => 'إيه المشكلة في الرد ده؟';
+
+  @override
+  String get chatReportOffensive => 'مسيء أو غير لائق';
+
+  @override
+  String get chatReportWrong => 'معلومة غلط أو مضللة';
+
+  @override
+  String get chatReportHarmful => 'نصيحة ممكن تأذي';
+
+  @override
+  String get chatReportOther => 'حاجة تانية';
+
+  @override
+  String get chatReportSent => 'وصل بلاغك، شكراً. هنراجع الرد ده.';
+
+  @override
+  String get chatReportFailed => 'البلاغ ماوصلش — جرّب تاني';
+
+  @override
   String get chatThinking => 'بفكر…';
 
   @override
@@ -4310,6 +4334,21 @@ class ZadL10nArSa extends ZadL10nAr {
 
   @override
   String get chatResend => 'ما وصلت — أرسلها مرة ثانية';
+
+  @override
+  String get chatReportTitle => 'وش المشكلة في هذا الرد؟';
+
+  @override
+  String get chatReportHarmful => 'نصيحة ممكن تضر';
+
+  @override
+  String get chatReportOther => 'شي ثاني';
+
+  @override
+  String get chatReportSent => 'وصل بلاغك، شكراً. بنراجع هذا الرد.';
+
+  @override
+  String get chatReportFailed => 'ما وصل البلاغ — حاول مرة ثانية';
 
   @override
   String get chatThinking => 'أفكّر…';

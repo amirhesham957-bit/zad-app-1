@@ -1,0 +1,282 @@
+@import "tailwindcss";
+
+/*
+ * The app's own palette (zad_flutter/lib/core/design/tokens/zad_colors.dart):
+ * "Zad Culinary & Wealth Heritage" - forest emerald, mustard ochre and
+ * terracotta rust over crisp light surfaces. Light only, like the app.
+ */
+@theme {
+  --color-canvas: #f8f9fa;
+  --color-canvas-2: #f4f6f2;
+  --color-canvas-3: #edefe9;
+  --color-surface: #ffffff;
+  --color-ink: #1f1f14;
+  --color-slate: #374151;
+  --color-muted: #5f6258;
+  --color-emerald: #064e3b;
+  --color-emerald-deep: #0a382c;
+  --color-forest: #1b4332;
+  --color-green-700: #0b6b4e;
+  --color-green-600: #0f9b76;
+  --color-zado: #37c98e;
+  --color-mint-glow: #6ee7b7;
+  --color-mint-100: #d9f2e6;
+  --color-mint-50: #e6f4ec;
+  --color-mustard: #c68216;
+  --color-rust: #d95726;
+  --color-hairline: rgb(0 0 0 / 0.07);
+  --font-sans: var(--font-cairo), system-ui, sans-serif;
+  --font-display: var(--font-markazi), var(--font-cairo), serif;
+  --shadow-card: 0 1px 2px rgb(15 23 42 / 0.04), 0 12px 32px -8px rgb(15 23 42 / 0.1);
+  --shadow-float: 0 2px 4px rgb(15 23 42 / 0.05), 0 24px 48px -12px rgb(6 78 59 / 0.22);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+:root {
+  color-scheme: light;
+}
+
+html {
+  background: var(--color-canvas);
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--color-emerald);
+  color: #fff;
+}
+
+/* Editorial display face for the big lines. */
+.display {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+/* Spotlight border on cards: --x / --y written by pointer handlers. */
+.spotlight {
+  position: relative;
+  isolation: isolate;
+}
+.spotlight::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: radial-gradient(380px circle at var(--x, 50%) var(--y, 0%), rgb(15 155 118 / 0.7), transparent 45%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.4s var(--ease-out-expo);
+  pointer-events: none;
+}
+.spotlight:hover::before {
+  opacity: 1;
+}
+
+/* ── Zado ─────────────────────────────────────────────────────────────── */
+.zado-breathe,
+.zado-blink,
+.zado-sprout,
+.zado-wave,
+.zado-sway-hand,
+.zado-pulse,
+.zado-shadow {
+  transform-box: fill-box;
+}
+@keyframes zado-breathe {
+  from {
+    transform: scale(0.985, 0.98);
+  }
+  to {
+    transform: scale(1.01, 1.045);
+  }
+}
+.zado-breathe {
+  transform-origin: 50% 100%;
+  animation: zado-breathe 2.6s cubic-bezier(0.4, 0, 0.2, 1) infinite alternate;
+}
+@keyframes zado-shadow {
+  from {
+    transform: scaleX(1.02);
+  }
+  to {
+    transform: scaleX(0.94);
+  }
+}
+.zado-shadow {
+  transform-origin: center;
+  animation: zado-shadow 2.6s cubic-bezier(0.4, 0, 0.2, 1) infinite alternate;
+}
+@keyframes zado-blink {
+  0%,
+  44%,
+  48%,
+  88%,
+  91%,
+  94%,
+  100% {
+    transform: scaleY(1);
+  }
+  46%,
+  89.5%,
+  92.5% {
+    transform: scaleY(0.08);
+  }
+}
+.zado-blink {
+  transform-origin: center;
+  animation: zado-blink 6.4s infinite;
+}
+@keyframes zado-sprout {
+  from {
+    transform: rotate(-7deg);
+  }
+  to {
+    transform: rotate(7deg);
+  }
+}
+.zado-sprout {
+  transform-origin: 50% 100%;
+  animation: zado-sprout 2.2s ease-in-out infinite alternate;
+}
+@keyframes zado-sway-hand {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(3px);
+  }
+}
+.zado-sway-hand {
+  animation: zado-sway-hand 2.6s ease-in-out infinite alternate;
+}
+@keyframes zado-wave {
+  from {
+    transform: rotate(-4deg) translateY(-6px);
+  }
+  to {
+    transform: rotate(26deg) translateY(-16px);
+  }
+}
+.zado-wave {
+  transform-origin: 100% 100%;
+  animation: zado-wave 0.42s ease-in-out infinite alternate;
+}
+.zado-wave-r {
+  transform-origin: 0% 100%;
+  animation-direction: alternate-reverse;
+  animation-name: zado-wave-r;
+}
+@keyframes zado-wave-r {
+  from {
+    transform: rotate(4deg) translateY(-6px);
+  }
+  to {
+    transform: rotate(-26deg) translateY(-16px);
+  }
+}
+@keyframes zado-pulse {
+  from {
+    transform: scale(0.9);
+  }
+  to {
+    transform: scale(1.12);
+  }
+}
+.zado-pulse {
+  transform-origin: center;
+  animation: zado-pulse 0.6s ease-in-out infinite alternate;
+}
+@keyframes zado-z {
+  0% {
+    opacity: 0;
+    transform: translate(0, 8px);
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(8px, -16px);
+  }
+}
+.zado-z {
+  animation: zado-z 2.4s ease-out infinite;
+}
+.zado-z2 {
+  animation-delay: 0.8s;
+}
+@keyframes zado-float-heart {
+  0% {
+    opacity: 0;
+    transform: translateY(14px) scale(0.6);
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-26px) scale(1.1);
+  }
+}
+.zado-float-heart {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: zado-float-heart 2s ease-out infinite;
+}
+.zado-fh2 {
+  animation-delay: 0.9s;
+}
+
+/* Floating stickers */
+@keyframes bob {
+  from {
+    transform: translateY(-8px) rotate(var(--r, 0deg));
+  }
+  to {
+    transform: translateY(8px) rotate(calc(var(--r, 0deg) + 4deg));
+  }
+}
+.bob {
+  animation: bob var(--d, 4s) ease-in-out infinite alternate;
+}
+
+/* Marquee */
+@keyframes marquee {
+  to {
+    transform: translateX(50%);
+  }
+}
+.marquee-track {
+  animation: marquee 40s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .zado-breathe,
+  .zado-blink,
+  .zado-sprout,
+  .zado-wave,
+  .zado-sway-hand,
+  .zado-pulse,
+  .zado-shadow,
+  .zado-z,
+  .zado-float-heart,
+  .bob,
+  .marquee-track {
+    animation: none;
+  }
+}

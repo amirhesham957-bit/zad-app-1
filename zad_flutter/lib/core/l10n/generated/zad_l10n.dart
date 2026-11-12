@@ -1938,6 +1938,54 @@ abstract class ZadL10n {
   /// **'اسمع الرد'**
   String get chatListen;
 
+  /// No description provided for @chatReport.
+  ///
+  /// In ar, this message translates to:
+  /// **'بلّغ عن الرد'**
+  String get chatReport;
+
+  /// No description provided for @chatReportTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'إيه المشكلة في الرد ده؟'**
+  String get chatReportTitle;
+
+  /// No description provided for @chatReportOffensive.
+  ///
+  /// In ar, this message translates to:
+  /// **'مسيء أو غير لائق'**
+  String get chatReportOffensive;
+
+  /// No description provided for @chatReportWrong.
+  ///
+  /// In ar, this message translates to:
+  /// **'معلومة غلط أو مضللة'**
+  String get chatReportWrong;
+
+  /// No description provided for @chatReportHarmful.
+  ///
+  /// In ar, this message translates to:
+  /// **'نصيحة ممكن تأذي'**
+  String get chatReportHarmful;
+
+  /// No description provided for @chatReportOther.
+  ///
+  /// In ar, this message translates to:
+  /// **'حاجة تانية'**
+  String get chatReportOther;
+
+  /// No description provided for @chatReportSent.
+  ///
+  /// In ar, this message translates to:
+  /// **'وصل بلاغك، شكراً. هنراجع الرد ده.'**
+  String get chatReportSent;
+
+  /// No description provided for @chatReportFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'البلاغ ماوصلش — جرّب تاني'**
+  String get chatReportFailed;
+
   /// No description provided for @chatThinking.
   ///
   /// In ar, this message translates to:

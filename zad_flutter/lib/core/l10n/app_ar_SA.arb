@@ -1,5 +1,10 @@
 {
   "@@locale": "ar_SA",
+  "chatReportTitle": "وش المشكلة في هذا الرد؟",
+  "chatReportHarmful": "نصيحة ممكن تضر",
+  "chatReportOther": "شي ثاني",
+  "chatReportSent": "وصل بلاغك، شكراً. بنراجع هذا الرد.",
+  "chatReportFailed": "ما وصل البلاغ — حاول مرة ثانية",
   "commonWait": "لحظة",
   "navMyFamily": "عائلتي",
   "pulseOneSaved": "شي واحد محفوظ",

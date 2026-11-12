@@ -1082,6 +1082,30 @@ class ZadL10nEn extends ZadL10n {
   String get chatListen => 'Hear the reply';
 
   @override
+  String get chatReport => 'Report this reply';
+
+  @override
+  String get chatReportTitle => 'What\'s wrong with this reply?';
+
+  @override
+  String get chatReportOffensive => 'Offensive or inappropriate';
+
+  @override
+  String get chatReportWrong => 'Wrong or misleading';
+
+  @override
+  String get chatReportHarmful => 'Advice that could cause harm';
+
+  @override
+  String get chatReportOther => 'Something else';
+
+  @override
+  String get chatReportSent => 'Thanks — we got your report and will review this reply.';
+
+  @override
+  String get chatReportFailed => 'The report didn\'t go through — try again';
+
+  @override
   String get chatThinking => 'Thinking…';
 
   @override
