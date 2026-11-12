@@ -50,3 +50,40 @@ Deno.test("item cycles: nearest first, learned from the home's own purchases, ba
   assertEquals(c[1].learned, false);
   assertEquals(c[1].due_in_days, 30 - 3);
 });
+
+// ── إيقاع البيت (ZAD_PLAN ١٠.١ الشريحة ٤هـ) ──
+import { householdRhythm } from "./habits.ts";
+
+const grocery = (date: string, amount: number) => ({
+  amount, merchant_name: "هايبر بنده", category: "بقالة", created_at: `${date}T12:00:00Z`, is_expense: true,
+});
+
+Deno.test("household rhythm: most grocery money in the 5 days after payday, two paydays running, is monthly_bulk", () => {
+  const txns = [
+    grocery("2026-09-25", 900), grocery("2026-09-27", 300), grocery("2026-10-08", 80), grocery("2026-10-15", 60),
+    grocery("2026-10-25", 1000), grocery("2026-10-26", 200), grocery("2026-11-05", 90),
+  ];
+  const r = householdRhythm(txns, "Asia/Riyadh", 25, 7);
+  assertEquals(r.kind, "monthly_bulk");
+  assertEquals(r.paydays_seen, 2);
+  assert(r.payday_share_pct! >= 80, String(r.payday_share_pct));
+});
+
+Deno.test("household rhythm: without a payday, the gap decides; too few days is no rhythm at all", () => {
+  const txns = [grocery("2026-10-01", 100), grocery("2026-10-08", 100), grocery("2026-10-15", 100), grocery("2026-10-22", 100)];
+  assertEquals(householdRhythm(txns, "Africa/Cairo", null, 7).kind, "weekly");
+  assertEquals(householdRhythm(txns, "Africa/Cairo", null, 2).kind, "every_few_days");
+  assertEquals(householdRhythm(txns, "Africa/Cairo", null, 30).kind, "monthly");
+  assertEquals(householdRhythm(txns.slice(0, 3), "Africa/Cairo", null, 7).kind, null);
+  // A payday that the spending ignores is not a bulk month: one payday seen, a weekly home stays weekly.
+  assertEquals(householdRhythm(txns, "Africa/Cairo", 1, 7).kind, "weekly");
+});
+
+Deno.test("household rhythm: payday 31 in a short month is that month's last day", () => {
+  const txns = [
+    grocery("2026-02-28", 1000), grocery("2026-03-02", 100), grocery("2026-03-31", 1000), grocery("2026-04-01", 100),
+    grocery("2026-03-15", 50),
+  ];
+  const r = householdRhythm(txns, "UTC", 31, 14);
+  assertEquals(r.kind, "monthly_bulk");
+});

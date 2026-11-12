@@ -1212,5 +1212,21 @@
   "petLinesFull": "I'm full 🤭\nI can't eat any more 😅",
   "petLinesWatered": "Ahh, refreshed! 💧\nMuch better 😌",
   "petLinesNotThirsty": "I don't want water now 🙈\nI've had enough 😄",
-  "petLinesPetted": "Hehe, that tickles 🤭\nMore! More! 🥰\nLove you 💚"
+  "petLinesPetted": "Hehe, that tickles 🤭\nMore! More! 🥰\nLove you 💚",
+  "cookDone": "Cooked it",
+  "@cookDone": {"description": "Recipe: after cooking, take what it used off the pantry."},
+  "cookSheetTitle": "Take what you used off the pantry",
+  "@cookSheetTitle": {"description": "Cooked sheet: title."},
+  "cookSheetHint": "These are my guesses — change them if you used more or less.",
+  "@cookSheetHint": {"description": "Cooked sheet: hint under the title."},
+  "cookConfirm": "Take off {count}",
+  "@cookConfirm": {"description": "Cooked sheet: confirm, with how many rows are ticked.", "placeholders": {"count": {"type": "int"}}},
+  "cookNothing": "None of this recipe's ingredients are in your pantry.",
+  "@cookNothing": {"description": "Cooked sheet: no pantry row matched."},
+  "cookDoneSnack": "Took {count} off the pantry ✅",
+  "@cookDoneSnack": {"description": "After the cooked sheet: snackbar.", "placeholders": {"count": {"type": "int"}}},
+  "cookLess": "Less",
+  "@cookLess": {"description": "Cooked sheet: stepper −."},
+  "cookMore": "More",
+  "@cookMore": {"description": "Cooked sheet: stepper +."}
 }

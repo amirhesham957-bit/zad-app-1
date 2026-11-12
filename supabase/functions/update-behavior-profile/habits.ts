@@ -109,6 +109,85 @@ export function shoppingRhythm(txns: readonly HabitTxn[], tz: string): ShoppingR
   };
 }
 
+// ── إيقاع البيت (ZAD_PLAN ١٠.١ الشريحة ٤هـ) ─────────────────────────────────────────────────────────────
+// المالك ١٢/١١: «أنا بجيب بزيادة أول الشهر وبخلّص أغلب مرتبي في أول ٥ أيام، غيري بيجيب كل أسبوع، وغيري كل يومين».
+// الإيقاع بيتعرف من أيام شرا البقالة الفعلية (نفس GROCERY فوق)، ويتربط بيوم القبض (zad_users.cycle_start_day):
+//   • monthly_bulk  — نص صرف البقالة أو أكتر في أول [BULK_WINDOW_DAYS] أيام بعد القبض، على شهرين قبض على الأقل.
+//   • every_few_days — المسافة المعتادة بين مشاوير البقالة ٣ أيام أو أقل.
+//   • weekly        — ٤ لـ١٠ أيام.
+//   • monthly       — أكتر من ١٠ أيام من غير ما تبقى مربوطة بالقبض.
+//   • null          — أقل من [RHYTHM_MIN_DAYS] أيام شرا: لسه مفيش إيقاع، ومحدش يخمّن.
+
+export const BULK_WINDOW_DAYS = 5;
+export const RHYTHM_MIN_DAYS = 4;
+
+export type HouseholdRhythmKind = "monthly_bulk" | "weekly" | "every_few_days" | "monthly";
+
+export interface HouseholdRhythm {
+  kind: HouseholdRhythmKind | null;
+  /** نصيب صرف البقالة في أول BULK_WINDOW_DAYS أيام بعد القبض، ٠–١٠٠؛ null من غير يوم قبض. */
+  payday_share_pct: number | null;
+  /** كام شهر قبض الحسبة شافتها. */
+  paydays_seen: number;
+}
+
+/** أول يوم في دورة القبض اللي فيها [date] (YYYY-MM-DD)، بنفس قاعدة الشهر القصير: يوم ٣١ في فبراير = آخر يوم. */
+function paydayOf(date: string, payDay: number): string {
+  const [y, m, d] = date.split("-").map(Number);
+  const clamp = (yy: number, mm: number) => Math.min(payDay, new Date(Date.UTC(yy, mm, 0)).getUTCDate());
+  if (d >= clamp(y, m)) return `${y}-${String(m).padStart(2, "0")}-${String(clamp(y, m)).padStart(2, "0")}`;
+  const py = m === 1 ? y - 1 : y;
+  const pm = m === 1 ? 12 : m - 1;
+  return `${py}-${String(pm).padStart(2, "0")}-${String(clamp(py, pm)).padStart(2, "0")}`;
+}
+
+export function householdRhythm(
+  txns: readonly HabitTxn[],
+  tz: string,
+  payDay: number | null | undefined,
+  typicalGapDays: number | null,
+): HouseholdRhythm {
+  const spend = new Map<string, number>();
+  for (const t of txns) {
+    const amount = Number(t.amount);
+    if (!t.is_expense || !t.created_at || !(amount > 0)) continue;
+    if (!GROCERY.test(`${t.category ?? ""} ${t.merchant_name ?? ""}`)) continue;
+    const at = Date.parse(t.created_at);
+    if (!Number.isFinite(at)) continue;
+    const { date } = localParts(at, tz);
+    spend.set(date, (spend.get(date) ?? 0) + amount);
+  }
+  if (spend.size < RHYTHM_MIN_DAYS) return { kind: null, payday_share_pct: null, paydays_seen: 0 };
+
+  let share: number | null = null;
+  let paydays = 0;
+  const pd = Number(payDay);
+  if (Number.isInteger(pd) && pd >= 1 && pd <= 31) {
+    let total = 0;
+    let early = 0;
+    const seen = new Set<string>();
+    for (const [date, amount] of spend) {
+      const start = paydayOf(date, pd);
+      seen.add(start);
+      total += amount;
+      if ((Date.parse(date) - Date.parse(start)) / DAY_MS < BULK_WINDOW_DAYS) early += amount;
+    }
+    paydays = seen.size;
+    share = total > 0 ? Math.round((100 * early) / total) : null;
+  }
+
+  const kind: HouseholdRhythmKind | null = share !== null && paydays >= 2 && share >= 50
+    ? "monthly_bulk"
+    : typicalGapDays === null
+    ? null
+    : typicalGapDays <= 3
+    ? "every_few_days"
+    : typicalGapDays <= 10
+    ? "weekly"
+    : "monthly";
+  return { kind, payday_share_pct: share, paydays_seen: paydays };
+}
+
 export interface ItemCycle {
   item: string;
   cycle_days: number;

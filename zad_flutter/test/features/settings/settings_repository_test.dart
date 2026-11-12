@@ -1,3 +1,4 @@
+import 'dart:async';
 // Writing the one number the rest of the app is derived from.
 //
 // The property under test is not "does it send" — it is "does it refuse to
@@ -24,6 +25,9 @@ class _FakeRemote implements SettingsRemote {
   /// What the table holds. Null means the row does not exist.
   Map<String, dynamic>? row = <String, dynamic>{};
 
+  /// Set to hold a read open until completed.
+  Completer<void>? holdFetch;
+
   /// The last thing written.
   Map<String, dynamic>? lastUpsert;
 
@@ -35,7 +39,11 @@ class _FakeRemote implements SettingsRemote {
   @override
   Future<Map<String, dynamic>?> fetch({required String userId}) async {
     if (failWith case final e?) throw e;
-    return row;
+    // What the server held when the read reached it; the answer may arrive
+    // after a write has changed the table.
+    final snapshot = row == null ? null : <String, dynamic>{...row!};
+    await holdFetch?.future;
+    return snapshot;
   }
 
   @override
@@ -359,6 +367,24 @@ void main() {
   });
 
   group('reading', () {
+    test(
+      'a write sent while the read was out is not undone by the older answer',
+      () async {
+        // The controller flushes right after saving, and the open screen's
+        // first read can leave between the save and the flush. Seen on CI
+        // as «the salary day is saved the same way» reading back null.
+        await repo.setCycleStartDay(25);
+        remote.holdFetch = Completer<void>();
+        final reading = repo.refresh();
+        expect((await outbox.flush()).sent, 1);
+        remote.holdFetch!.complete();
+
+        expect((await reading).cycleStartDay, 25);
+        expect(repo.cached()?.cycleStartDay, 25);
+        expect(remote.row?['cycle_start_day'], 25);
+      },
+    );
+
     test('an account with no row yet is empty, not an error', () async {
       remote.row = null;
 
