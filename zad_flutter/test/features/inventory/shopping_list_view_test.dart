@@ -6,6 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/zad_theme.dart';
+import 'package:zad/core/l10n/generated/zad_l10n.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/inventory/data/shopping_ai_remote.dart';
 import 'package:zad/features/inventory/presentation/shopping_list_view.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
@@ -86,7 +88,7 @@ void main() {
   });
 
   test('the share text lists the lines and the total', () {
-    final text = shoppingShareText(<ShoppingItem>[
+    final text = shoppingShareText(zadL10nArabic, <ShoppingItem>[
       _s('1', 'لبن', price: 20, qty: 2),
     ], 'ج.م');
     expect(text, contains('قائمة تسوق زاد:'));
@@ -95,7 +97,7 @@ void main() {
   });
 
   test('a total over some of the lines says it is one', () {
-    final text = shoppingShareText(<ShoppingItem>[
+    final text = shoppingShareText(zadL10nArabic, <ShoppingItem>[
       _s('1', 'لبن', price: 20, qty: 2),
       _s('2', 'عيش'),
       _s('3', 'بيض'),
@@ -103,8 +105,25 @@ void main() {
     expect(text, contains('الإجمالي: 40 ج.م (تقدير لـ 1 من 3 صنف)'));
   });
 
+  test('the share text follows the app language, not the item names', () {
+    // ZAD_PLAN ١٠.١٦: the words around the list are the customer's
+    // language; the names are what they typed.
+    final text = shoppingShareText(
+      lookupZadL10n(const Locale('en')),
+      <ShoppingItem>[
+        _s('1', 'لبن', price: 20, qty: 2),
+        _s('2', 'عيش'),
+      ],
+      'EGP',
+    );
+    expect(text, startsWith('Zad shopping list:'));
+    expect(text, contains('• لبن × 2'));
+    expect(text, contains('Total: 40 EGP (estimate for 1 of 2 items)'));
+    expect(text, isNot(contains('الإجمالي')));
+  });
+
   test('the share text gives a staple one bullet, with its brands', () {
-    final text = shoppingShareText(<ShoppingItem>[
+    final text = shoppingShareText(zadL10nArabic, <ShoppingItem>[
       _s('1', 'ماء إيلان'),
       _s('2', 'مياه داساني'),
       _s('3', 'لبن'),

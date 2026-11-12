@@ -58,17 +58,17 @@ const List<String> kPantryUnits = <String>[
 ];
 
 // l10n: data-end
-/// What the unit menu shows for each of [kPantryUnits].
-const List<String> _unitLabels = <String>[
-  'حبة',
-  'كجم',
-  'جرام',
-  'لتر',
-  'علبة',
-  'كيس',
-  'قرشة',
-  'صندوق',
-];
+/// What the unit menu shows for [kPantryUnits] at [i] — same order.
+String _unitLabel(ZadL10n l, int i) => switch (i) {
+  0 => l.pantryUnitPiece,
+  1 => l.pantryUnitKilo,
+  2 => l.pantryUnitGram,
+  3 => l.pantryUnitLitre,
+  4 => l.pantryUnitCan,
+  5 => l.pantryUnitBag,
+  6 => l.pantryUnitBottle,
+  _ => l.pantryUnitCrate,
+};
 
 /// Kotlin's `CategoryDef`: the pastel pair and the menu icon per key.
 typedef _CategoryDef = ({String key, IconData icon, Color bg, Color fg});
@@ -140,6 +140,24 @@ _CategoryDef _defFor(String? category, String itemName) {
     orElse: () => _categoryDefs.last,
   );
 }
+
+/// What the customer reads for a stored category [key] (ZAD_PLAN ١٠.١٦):
+/// the key stays Arabic in `zad_inventory.category`, the label follows the
+/// app's language. An unknown key is shown as it is.
+String _categoryLabel(ZadL10n l, String key) => switch (key) {
+  // l10n: data-begin
+  'الكل' => l.pantryCatAll,
+  'البقالة' => l.pantryCatGrocery,
+  'الخضار' => l.pantryCatVegetables,
+  'الفواكه' => l.pantryCatFruit,
+  'اللحوم' => l.pantryCatMeat,
+  'الألبان' => l.pantryCatDairy,
+  'المشروبات' => l.pantryCatDrinks,
+  'العناية' => l.pantryCatCare,
+  'أخرى' => l.pantryCatOther,
+  // l10n: data-end
+  _ => key,
+};
 
 Color _bgOf(_CategoryDef d, ColorScheme s) =>
     d.key == 'الكل' ? s.primary : d.bg; // l10n: data
@@ -368,7 +386,7 @@ class _PantryViewState extends ConsumerState<PantryView> {
                         style: const TextStyle(fontSize: 14),
                       ),
                       label: Text(
-                        c.key,
+                        _categoryLabel(context.l10n, c.key),
                         style: TextStyle(
                           fontSize: 12.5,
                           fontWeight: on ? FontWeight.bold : FontWeight.w500,
@@ -1536,10 +1554,10 @@ class _AddState extends ConsumerState<_AddInventoryDialog> {
                             if (i != null) setState(() => _unit = i);
                           },
                           dropdownMenuEntries: <DropdownMenuEntry<int>>[
-                            for (var i = 0; i < _unitLabels.length; i++)
+                            for (var i = 0; i < kPantryUnits.length; i++)
                               DropdownMenuEntry<int>(
                                 value: i,
-                                label: _unitLabels[i],
+                                label: _unitLabel(context.l10n, i),
                               ),
                           ],
                         ),
@@ -1566,7 +1584,10 @@ class _AddState extends ConsumerState<_AddInventoryDialog> {
                   for (var i = 1; i < _categoryDefs.length; i++)
                     DropdownMenuEntry<int>(
                       value: i - 1,
-                      label: _categoryDefs[i].key,
+                      label: _categoryLabel(
+                        context.l10n,
+                        _categoryDefs[i].key,
+                      ),
                       leadingIcon: Icon(
                         _categoryDefs[i].icon,
                         size: 18,

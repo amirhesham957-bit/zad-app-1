@@ -18,6 +18,7 @@ import 'package:zad/core/data/sync/outbox.dart';
 import 'package:zad/shared/budget/data/budget_repository.dart';
 import 'package:zad/shared/settings/application/settings_controller.dart';
 import 'package:zad/shared/settings/data/settings_repository.dart';
+import 'package:zad/shared/settings/domain/account_settings.dart';
 import 'package:zad/shared/transactions/data/transactions_remote.dart';
 import 'package:zad/shared/transactions/data/transactions_repository.dart';
 
@@ -53,6 +54,29 @@ class _NoTransactions implements TransactionsRemote {
   Future<Map<String, dynamic>?> upsertReturning(
     Map<String, dynamic> row,
   ) async => row;
+}
+
+/// A repository whose read passed its own checks and then answered late —
+/// its own cache write was slow — so a save finishes in between. What the
+/// read carries is from before the save.
+class _LateAnswer extends SettingsRepository {
+  new({
+    required this.gate,
+    required super.cache,
+    required super.remote,
+    required super.outbox,
+    required super.signedInUserId,
+    required super.now,
+  });
+
+  final Future<void> gate;
+
+  @override
+  Future<AccountSettings> refresh() async {
+    final read = await super.refresh();
+    await gate;
+    return read;
+  }
 }
 
 class _FakeSettingsRemote implements SettingsRemote {
@@ -116,7 +140,7 @@ void main() {
     await dir.delete(recursive: true);
   });
 
-  ProviderContainer containerWith() {
+  ProviderContainer containerWith({Future<void>? lateAnswer}) {
     late SettingsRepository settings;
     late TransactionsRepository txns;
 
@@ -125,13 +149,22 @@ void main() {
       send: (entry) => settings.sendQueued(entry),
       clock: () => now,
     );
-    settings = SettingsRepository(
-      cache: documents,
-      remote: remote,
-      outbox: () => outbox,
-      signedInUserId: () => 'user-1',
-      now: () => now,
-    );
+    settings = lateAnswer == null
+        ? SettingsRepository(
+            cache: documents,
+            remote: remote,
+            outbox: () => outbox,
+            signedInUserId: () => 'user-1',
+            now: () => now,
+          )
+        : _LateAnswer(
+            gate: lateAnswer,
+            cache: documents,
+            remote: remote,
+            outbox: () => outbox,
+            signedInUserId: () => 'user-1',
+            now: () => now,
+          );
     txns = TransactionsRepository(
       cache: transactions,
       remote: _NoTransactions(),
@@ -269,6 +302,31 @@ void main() {
         25,
       );
       expect(remote.row?['cycle_start_day'], 25);
+    },
+  );
+
+  test(
+    'a read that answers after the salary day was saved does not undo it',
+    () async {
+      // The flake behind «the salary day is saved the same way» (ZAD_PLAN
+      // ١٠.١٦ follow-up): the repository's read had already passed its
+      // checks when the save landed, and the controller put its older answer
+      // on screen after the save.
+      final gate = Completer<void>();
+      final container = containerWith(lateAnswer: gate.future);
+      addTearDown(container.dispose);
+      final controller = container.read(settingsControllerProvider.notifier);
+      await Future<void>.delayed(Duration.zero); // build's refresh is out
+
+      expect(await controller.setCycleStartDay(25), isTrue);
+      gate.complete();
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(
+        container.read(settingsControllerProvider).settings?.cycleStartDay,
+        25,
+      );
     },
   );
 

@@ -53,8 +53,13 @@ double? basketTotal(Iterable<ShoppingItem> outstanding) {
 }
 
 /// The list as text to share — Kotlin's WhatsApp message. A staple's brands
-/// are one bullet: «• مياه (إيلان / داساني)».
-String shoppingShareText(Iterable<ShoppingItem> outstanding, String currency) {
+/// are one bullet: «• مياه (إيلان / داساني)». The words around the lines
+/// follow the app's language ([l]); the item names are the customer's own.
+String shoppingShareText(
+  ZadL10n l,
+  Iterable<ShoppingItem> outstanding,
+  String currency,
+) {
   String bullet(ShoppingGroup g) {
     if (g.isFamily) {
       final brands = g.lines.map((l) => brandWithinFamily(l.itemName)).toSet();
@@ -71,12 +76,12 @@ String shoppingShareText(Iterable<ShoppingItem> outstanding, String currency) {
   final priced = outstanding.where((i) => i.estimatedPrice > 0).length;
   final all = outstanding.length;
   return <String>[
-    'قائمة تسوق زاد:',
+    l.shopShareHeader,
     ...lines,
     if (total != null)
-      '\nالإجمالي: ${_money(total)} $currency'.trimRight() +
+      '\n${l.shopShareTotal(_money(total), currency)}'.trimRight() +
           // A total over some of the lines is not the basket's.
-          (priced < all ? ' (تقدير لـ $priced من $all صنف)' : ''),
+          (priced < all ? ' ${l.shopShareEstimate(priced, all)}' : ''),
   ].join('\n');
 }
 
@@ -315,6 +320,7 @@ class _ShoppingListViewState extends ConsumerState<ShoppingListView> {
                                 SharePlus.instance.share(
                                   ShareParams(
                                     text: shoppingShareText(
+                                      context.l10n,
                                       view.outstanding,
                                       currency,
                                     ),

@@ -62,8 +62,7 @@ import 'zad_l10n_en.dart';
 /// be consistent with the languages listed in the ZadL10n.supportedLocales
 /// property.
 abstract class ZadL10n {
-  ZadL10n(String locale)
-    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+  ZadL10n(String locale) : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
@@ -83,19 +82,18 @@ abstract class ZadL10n {
   /// Additional delegates can be added by appending to this list in
   /// MaterialApp. This list does not have to be used at all if a custom list
   /// of delegates is preferred or required.
-  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
-      <LocalizationsDelegate<dynamic>>[
-        delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-      ];
+  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates = <LocalizationsDelegate<dynamic>>[
+    delegate,
+    GlobalMaterialLocalizations.delegate,
+    GlobalCupertinoLocalizations.delegate,
+    GlobalWidgetsLocalizations.delegate,
+  ];
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('ar'),
     Locale('ar', 'SA'),
-    Locale('en'),
+    Locale('en')
   ];
 
   /// The app's name, in the task switcher.
@@ -7087,6 +7085,126 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'عام'**
   String get profileRegionGeneral;
+
+  /// Pantry category chip: every category.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكل'**
+  String get pantryCatAll;
+
+  /// Pantry category: dry groceries and cans.
+  ///
+  /// In ar, this message translates to:
+  /// **'البقالة'**
+  String get pantryCatGrocery;
+
+  /// Pantry category: vegetables.
+  ///
+  /// In ar, this message translates to:
+  /// **'الخضار'**
+  String get pantryCatVegetables;
+
+  /// Pantry category: fruit.
+  ///
+  /// In ar, this message translates to:
+  /// **'الفواكه'**
+  String get pantryCatFruit;
+
+  /// Pantry category: meat, chicken and fish.
+  ///
+  /// In ar, this message translates to:
+  /// **'اللحوم'**
+  String get pantryCatMeat;
+
+  /// Pantry category: milk, cheese, yoghurt.
+  ///
+  /// In ar, this message translates to:
+  /// **'الألبان'**
+  String get pantryCatDairy;
+
+  /// Pantry category: drinks and water.
+  ///
+  /// In ar, this message translates to:
+  /// **'المشروبات'**
+  String get pantryCatDrinks;
+
+  /// Pantry category: personal care and cleaning.
+  ///
+  /// In ar, this message translates to:
+  /// **'العناية'**
+  String get pantryCatCare;
+
+  /// Pantry category: anything else.
+  ///
+  /// In ar, this message translates to:
+  /// **'أخرى'**
+  String get pantryCatOther;
+
+  /// Pantry unit menu: one piece.
+  ///
+  /// In ar, this message translates to:
+  /// **'حبة'**
+  String get pantryUnitPiece;
+
+  /// Pantry unit menu: kilogram.
+  ///
+  /// In ar, this message translates to:
+  /// **'كجم'**
+  String get pantryUnitKilo;
+
+  /// Pantry unit menu: gram.
+  ///
+  /// In ar, this message translates to:
+  /// **'جرام'**
+  String get pantryUnitGram;
+
+  /// Pantry unit menu: litre.
+  ///
+  /// In ar, this message translates to:
+  /// **'لتر'**
+  String get pantryUnitLitre;
+
+  /// Pantry unit menu: a can or small box.
+  ///
+  /// In ar, this message translates to:
+  /// **'علبة'**
+  String get pantryUnitCan;
+
+  /// Pantry unit menu: a bag.
+  ///
+  /// In ar, this message translates to:
+  /// **'كيس'**
+  String get pantryUnitBag;
+
+  /// Pantry unit menu: a bottle.
+  ///
+  /// In ar, this message translates to:
+  /// **'قرشة'**
+  String get pantryUnitBottle;
+
+  /// Pantry unit menu: a crate or carton.
+  ///
+  /// In ar, this message translates to:
+  /// **'صندوق'**
+  String get pantryUnitCrate;
+
+  /// Shared shopping list (WhatsApp): first line.
+  ///
+  /// In ar, this message translates to:
+  /// **'قائمة تسوق زاد:'**
+  String get shopShareHeader;
+
+  /// Shared shopping list: the basket total.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإجمالي: {total} {currency}'**
+  String shopShareTotal(String total, String currency);
+
+  /// Shared shopping list: the total covers only the priced lines.
+  ///
+  /// In ar, this message translates to:
+  /// **'(تقدير لـ {priced} من {all} صنف)'**
+  String shopShareEstimate(int priced, int all);
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {
@@ -7098,38 +7216,34 @@ class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {
   }
 
   @override
-  bool isSupported(Locale locale) =>
-      <String>['ar', 'en'].contains(locale.languageCode);
+  bool isSupported(Locale locale) => <String>['ar', 'en'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_ZadL10nDelegate old) => false;
 }
 
 ZadL10n lookupZadL10n(Locale locale) {
+
   // Lookup logic when language+country codes are specified.
   switch (locale.languageCode) {
-    case 'ar':
-      {
-        switch (locale.countryCode) {
-          case 'SA':
-            return ZadL10nArSa();
-        }
-        break;
-      }
+    case 'ar': {
+  switch (locale.countryCode) {
+    case 'SA': return ZadL10nArSa();
+   }
+  break;
+   }
   }
 
   // Lookup logic when only language code is specified.
   switch (locale.languageCode) {
-    case 'ar':
-      return ZadL10nAr();
-    case 'en':
-      return ZadL10nEn();
+    case 'ar': return ZadL10nAr();
+    case 'en': return ZadL10nEn();
   }
 
   throw FlutterError(
     'ZadL10n.delegate failed to load unsupported locale "$locale". This is likely '
     'an issue with the localizations generation tool. Please file an issue '
     'on GitHub with a reproducible sample app and the gen-l10n configuration '
-    'that was used.',
+    'that was used.'
   );
 }
