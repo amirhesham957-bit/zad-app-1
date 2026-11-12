@@ -130,13 +130,19 @@ class SettingsRepository {
   /// rather than the sync it is.
   Future<AccountSettings> refresh() async {
     final before = _cache.get(_key);
+    final queuedBefore = _queuedSettingsIds();
     final row = await _remote.fetch(userId: _requireUserId());
     // A setter wrote while the read was out: the row may predate that write,
     // and caching it would put the old value back on screen. The salary day
     // set right after opening the screen read back empty this way — under
     // load in `settings_controller_test`, and on a slow phone the same.
     // What is on the phone now is newer than what came back.
-    if (_cache.get(_key) != before) {
+    //
+    // Same when a write that was queued as the read left got sent before it
+    // came back: the answer may predate it, and it is no longer in the queue
+    // for _withQueuedWrites to re-apply (CI, 2026-11-13).
+    final queuedNow = _queuedSettingsIds();
+    if (_cache.get(_key) != before || !queuedNow.containsAll(queuedBefore)) {
       return cached() ?? AccountSettings.fromJson(row ?? <String, dynamic>{});
     }
     // No row yet — the trigger has not run, or this is a brand-new account.
@@ -146,6 +152,11 @@ class SettingsRepository {
     await _write(settings);
     return settings;
   }
+
+  Set<String> _queuedSettingsIds() => <String>{
+    for (final e in _outbox().entries(includeDead: false))
+      if (e.kind == OutboxKind.updateAccountSettings) e.id,
+  };
 
   /// Re-applies the columns still waiting in the outbox.
   AccountSettings _withQueuedWrites(AccountSettings server) {
