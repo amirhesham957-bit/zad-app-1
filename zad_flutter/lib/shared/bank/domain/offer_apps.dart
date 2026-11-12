@@ -30,7 +30,8 @@ bool isOfferApp(String? packageName) {
 }
 
 final RegExp _offerWords = RegExp(
-  'خصم|تخفيض|تخفيضات|عرض|عروض|كود|كوبون|برومو|مجان|توصيل مجاني|%|٪|'
+  'خصم|تخفيض|تخفيضات|عرض|عروض|كود|كوبون|' // l10n: data
+  'برومو|مجان|توصيل مجاني|%|٪|' // l10n: data
   r'\boff\b|\bsale\b|\bdeal\b|\bcoupon\b|\bpromo\b|\bdiscount\b|\bfree delivery\b',
   caseSensitive: false,
 );
