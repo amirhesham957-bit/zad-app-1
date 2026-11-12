@@ -1136,5 +1136,12 @@
   "pantryExpiryField": "Expiry date (optional)",
   "pantryOccasional": "I buy it now and then",
   "pantryOccasionalBody": "It won't count as short when it runs out, and I won't remind you",
+  "pantryExpiryPick": "Pick a date",
+  "pantryExpiryEstimate": "Estimated: {date}",
+  "pantryExpiryEstimateNote": "Leave it and I'll save this estimate; change it if you know the real date",
+  "pantryExpiryIn3Days": "3 days",
+  "pantryExpiryInWeek": "A week",
+  "pantryExpiryInMonth": "A month",
+  "pantryExpiryClear": "Clear the date",
   "notifNoneNew": "No new notifications"
 }

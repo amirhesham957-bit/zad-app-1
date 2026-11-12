@@ -151,5 +151,7 @@
   "pantryIncreaseOne": "زِد واحدة",
   "pantryOccasional": "أشتريها على فترات",
   "pantryOccasionalBody": "ما راح تنحسب ناقصة إذا خلصت، وما راح أذكّرك فيها",
+  "pantryExpiryPick": "اختر التاريخ",
+  "pantryExpiryEstimateNote": "إذا تركته كذا بحفظ التاريخ التقديري، غيّره إذا تعرف التاريخ الصحيح",
   "notifNoneNew": "ما فيه تنبيهات جديدة"
 }

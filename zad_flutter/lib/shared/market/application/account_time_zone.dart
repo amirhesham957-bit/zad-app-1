@@ -9,6 +9,7 @@
 library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:timezone/timezone.dart' as tz;
 import 'package:zad/core/period/market_calendar.dart';
 import 'package:zad/shared/budget/data/budget_repository.dart';
 import 'package:zad/shared/market/domain/market.dart';
@@ -73,3 +74,12 @@ final serverTimeZoneArgumentProvider = Provider<String Function()>((ref) {
     return isKnownMarket(country) ? marketTimeZone(country) : '';
   };
 });
+
+/// The civil day [now] falls on in [zone] (an IANA name), as midnight UTC —
+/// the shape `InventoryItem.expiryDate` keeps. «Today» for an expiry is the
+/// account's day, not the device's: 1 a.m. in Riyadh is still yesterday on a
+/// phone left on Cairo time, and the other way round.
+DateTime civilDayIn(DateTime now, String zone) {
+  final local = tz.TZDateTime.from(now.toUtc(), tz.getLocation(zone));
+  return DateTime.utc(local.year, local.month, local.day);
+}
