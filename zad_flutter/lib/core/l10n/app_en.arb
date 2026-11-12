@@ -1143,5 +1143,13 @@
   "pantryExpiryInWeek": "A week",
   "pantryExpiryInMonth": "A month",
   "pantryExpiryClear": "Clear the date",
-  "notifNoneNew": "No new notifications"
+  "notifNoneNew": "No new notifications",
+  "pantryFinish": "Used up",
+  "pantryFinishedSnack": "{name} is used up",
+  "pantryUndo": "Undo",
+  "pantryDeleteItem": "Delete item",
+  "pantryStarterTitle": "Add your home's basics in one tap",
+  "pantryStarterBody": "Tick what you have now; Zad keeps track and tells you before it runs out.",
+  "pantryStarterAdd": "Add {count}",
+  "pantryStarterReceipt": "Or photograph a receipt"
 }

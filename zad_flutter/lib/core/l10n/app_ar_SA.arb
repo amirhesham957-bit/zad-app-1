@@ -153,5 +153,9 @@
   "pantryOccasionalBody": "ما راح تنحسب ناقصة إذا خلصت، وما راح أذكّرك فيها",
   "pantryExpiryPick": "اختر التاريخ",
   "pantryExpiryEstimateNote": "إذا تركته كذا بحفظ التاريخ التقديري، غيّره إذا تعرف التاريخ الصحيح",
-  "notifNoneNew": "ما فيه تنبيهات جديدة"
+  "notifNoneNew": "ما فيه تنبيهات جديدة",
+  "pantryStarterTitle": "أضف أساسيات بيتك بلمسة",
+  "pantryStarterBody": "حدد اللي عندك الحين، وزاد يتابعه ويقولك قبل لا يخلص.",
+  "pantryStarterAdd": "أضف {count}",
+  "pantryStarterReceipt": "أو صوّر فاتورة المشتريات"
 }

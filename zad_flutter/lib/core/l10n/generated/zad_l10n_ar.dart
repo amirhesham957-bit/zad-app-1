@@ -3653,6 +3653,34 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get notifAlreadyKnew => 'عرفت خلاص';
+
+  @override
+  String get pantryFinish => 'خلص';
+
+  @override
+  String pantryFinishedSnack(String name) {
+    return '$name خلص';
+  }
+
+  @override
+  String get pantryUndo => 'تراجع';
+
+  @override
+  String get pantryDeleteItem => 'حذف الصنف';
+
+  @override
+  String get pantryStarterTitle => 'ضيف أساسيات بيتك بلمسة';
+
+  @override
+  String get pantryStarterBody => 'علّم على اللي عندك دلوقتي، وزاد يتابعه ويقولك قبل ما يخلص.';
+
+  @override
+  String pantryStarterAdd(int count) {
+    return 'ضيف $count';
+  }
+
+  @override
+  String get pantryStarterReceipt => 'أو صوّر فاتورة الشرا';
 }
 
 /// The translations for Arabic, as used in Saudi Arabia (`ar_SA`).
@@ -4194,4 +4222,18 @@ class ZadL10nArSa extends ZadL10nAr {
 
   @override
   String get notifNoneNew => 'ما فيه تنبيهات جديدة';
+
+  @override
+  String get pantryStarterTitle => 'أضف أساسيات بيتك بلمسة';
+
+  @override
+  String get pantryStarterBody => 'حدد اللي عندك الحين، وزاد يتابعه ويقولك قبل لا يخلص.';
+
+  @override
+  String pantryStarterAdd(int count) {
+    return 'أضف $count';
+  }
+
+  @override
+  String get pantryStarterReceipt => 'أو صوّر فاتورة المشتريات';
 }

@@ -3704,4 +3704,32 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get notifNoneNew => 'No new notifications';
+
+  @override
+  String get pantryFinish => 'Used up';
+
+  @override
+  String pantryFinishedSnack(String name) {
+    return '$name is used up';
+  }
+
+  @override
+  String get pantryUndo => 'Undo';
+
+  @override
+  String get pantryDeleteItem => 'Delete item';
+
+  @override
+  String get pantryStarterTitle => 'Add your home\'s basics in one tap';
+
+  @override
+  String get pantryStarterBody => 'Tick what you have now; Zad keeps track and tells you before it runs out.';
+
+  @override
+  String pantryStarterAdd(int count) {
+    return 'Add $count';
+  }
+
+  @override
+  String get pantryStarterReceipt => 'Or photograph a receipt';
 }
