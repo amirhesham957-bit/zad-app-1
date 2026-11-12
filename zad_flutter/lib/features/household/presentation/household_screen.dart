@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/navigation/destinations.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
 import 'package:zad/shared/navigation/zad_slots.dart';
@@ -63,17 +64,17 @@ class _HouseholdScreenState extends State<HouseholdScreen> {
       appBar: widget.embedded
           ? null
           : AppBar(
-              title: const Text('البيت'),
+              title: Text(context.l10n.householdTitle),
               actions: <Widget>[
                 IconButton(
                   onPressed: () => ZadScreens.showPricesScreen(context),
                   icon: const Icon(ZadIcons.prices),
-                  tooltip: 'الأسعار',
+                  tooltip: context.l10n.householdPrices,
                 ),
                 IconButton(
                   onPressed: () => ZadScreens.showFamilyScreen(context),
                   icon: const Icon(ZadIcons.family),
-                  tooltip: 'العيلة',
+                  tooltip: context.l10n.householdFamily,
                 ),
               ],
             ),
@@ -88,22 +89,22 @@ class _HouseholdScreenState extends State<HouseholdScreen> {
               style: SegmentedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(horizontal: ZadSpacing.xs),
               ),
-              segments: const <ButtonSegment<HouseholdSection>>[
+              segments: <ButtonSegment<HouseholdSection>>[
                 ButtonSegment<HouseholdSection>(
                   value: HouseholdSection.pantry,
-                  label: _OneLine('المخزن'),
+                  label: _OneLine(context.l10n.householdPantry),
                 ),
                 ButtonSegment<HouseholdSection>(
                   value: HouseholdSection.shopping,
-                  label: _OneLine('نواقص وتسوق'),
+                  label: _OneLine(context.l10n.householdShopping),
                 ),
                 ButtonSegment<HouseholdSection>(
                   value: HouseholdSection.pharmacy,
-                  label: _OneLine('الصيدلية'),
+                  label: _OneLine(context.l10n.householdPharmacy),
                 ),
                 ButtonSegment<HouseholdSection>(
                   value: HouseholdSection.recipes,
-                  label: _OneLine('وصفات'),
+                  label: _OneLine(context.l10n.householdRecipes),
                 ),
               ],
               selected: <HouseholdSection>{_section},

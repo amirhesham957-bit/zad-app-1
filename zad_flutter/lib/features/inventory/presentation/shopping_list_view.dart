@@ -134,7 +134,7 @@ class _ShoppingListViewState extends ConsumerState<ShoppingListView> {
     final ai = ref.read(shoppingAiRemoteProvider);
     final pantry = ref.read(pantryControllerProvider).items;
     final inventory = pantry.isEmpty
-        ? 'لا يوجد'
+        ? 'لا يوجد' // l10n: data
         : pantry.map((i) => '${i.itemName} (${i.quantity})').join(', ');
     try {
       final suggestions = await ai.suggest(
@@ -179,9 +179,8 @@ class _ShoppingListViewState extends ConsumerState<ShoppingListView> {
       }
     } on Object {
       if (mounted) {
-        ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-          const SnackBar(content: Text('مقدرتش أوصل لزاد دلوقتي. جرّب تاني.')),
-        );
+        ScaffoldMessenger.maybeOf(context)
+            ?.showSnackBar(SnackBar(content: Text(context.l10n.shopNoReach)));
       }
     } finally {
       if (mounted) setState(() => _filling = false);
@@ -227,7 +226,7 @@ class _ShoppingListViewState extends ConsumerState<ShoppingListView> {
                   // buttons beside it: the bare underline sat flush at the
                   // top and read as broken (owner, 2026-10-05).
                   decoration: InputDecoration(
-                    hintText: 'محتاج تشتري إيه؟',
+                    hintText: context.l10n.shopAddHint,
                     filled: true,
                     fillColor: ZadColors.surface,
                     isDense: true,
@@ -257,12 +256,12 @@ class _ShoppingListViewState extends ConsumerState<ShoppingListView> {
                     ? null
                     : () => unawaited(_add()),
                 icon: const Icon(ZadIcons.add),
-                tooltip: 'ضيف',
+                tooltip: context.l10n.shopAddTooltip,
               ),
               IconButton(
                 onPressed: () => unawaited(showAddShoppingSheet(context)),
                 icon: const Icon(ZadIcons.edit),
-                tooltip: 'إضافة منتج للقائمة',
+                tooltip: context.l10n.shopAddProduct,
               ),
             ],
           ),
@@ -300,7 +299,7 @@ class _ShoppingListViewState extends ConsumerState<ShoppingListView> {
                                 ),
                               )
                             : const Icon(ZadIcons.assistant, size: 16),
-                        label: const Text('تعبئة ذكية'),
+                        label: Text(context.l10n.shopSmartFill),
                         style: OutlinedButton.styleFrom(
                           shape: const StadiumBorder(),
                           minimumSize: const Size(0, 44),
@@ -323,7 +322,7 @@ class _ShoppingListViewState extends ConsumerState<ShoppingListView> {
                                 ),
                               ),
                         icon: const Icon(ZadIcons.send, size: 16),
-                        label: const Text('واتساب'),
+                        label: Text(context.l10n.shopWhatsApp),
                         style: FilledButton.styleFrom(
                           backgroundColor: const Color(0xFF25D366),
                           foregroundColor: Colors.white,
@@ -354,10 +353,13 @@ class _ShoppingListViewState extends ConsumerState<ShoppingListView> {
                   spacing: ZadSpacing.sm,
                   children: <Widget>[
                     for (final (p, label) in <(ShoppingPriority?, String)>[
-                      (null, 'الكل'),
-                      (ShoppingPriority.high, 'حرج'),
-                      (ShoppingPriority.medium, 'متوسط'),
-                      (ShoppingPriority.low, 'منخفض'),
+                      (null, context.l10n.txFilterAll),
+                      (ShoppingPriority.high, context.l10n.shopPriorityHigh),
+                      (
+                        ShoppingPriority.medium,
+                        context.l10n.shopPriorityMedium,
+                      ),
+                      (ShoppingPriority.low, context.l10n.shopPriorityLow),
                     ])
                       ChoiceChip(
                         label: Text(label),
@@ -369,16 +371,16 @@ class _ShoppingListViewState extends ConsumerState<ShoppingListView> {
                 ),
                 const SizedBox(height: ZadSpacing.md),
                 if (view.isEmpty)
-                  const ZadEmptyState(
+                  ZadEmptyState(
                     icon: ZadIcons.shopping,
-                    title: 'قائمة التسوق فارغة',
-                    message: 'زاد سيضيف النواقص تلقائياً!',
+                    title: context.l10n.shopEmptyTitle,
+                    message: context.l10n.shopEmptyBody,
                   )
                 else if (outstanding.isEmpty && view.outstanding.isNotEmpty)
-                  const ZadEmptyState(
+                  ZadEmptyState(
                     icon: ZadIcons.search,
-                    title: 'لا توجد عناصر بهذا التصنيف',
-                    message: 'جرّب أولوية تانية.',
+                    title: context.l10n.shopFilterEmptyTitle,
+                    message: context.l10n.shopFilterEmptyBody,
                   ),
                 for (final group in groupShoppingLines(
                   outstanding,
@@ -405,7 +407,7 @@ class _ShoppingListViewState extends ConsumerState<ShoppingListView> {
                 if (view.bought.isNotEmpty) ...<Widget>[
                   const SizedBox(height: ZadSpacing.lg),
                   Text(
-                    'اتشترى',
+                    context.l10n.shopBought,
                     style: ZadType.labelMedium.copyWith(
                       color: ZadColors.inkMuted,
                     ),
@@ -467,7 +469,7 @@ class _BudgetHeader extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Text(
-            'سلة زاد الذكية',
+            context.l10n.shopBasketTitle,
             style: ZadType.labelLarge.copyWith(
               color: Colors.white.withValues(alpha: 0.8),
             ),
@@ -488,7 +490,7 @@ class _BudgetHeader extends StatelessWidget {
             ),
           if (basket != null && priced < lines)
             Text(
-              'تقدير لـ $priced من $lines صنف — «تعبئة ذكية» تقدّر الباقي',
+              context.l10n.shopBasketPartial(priced, lines),
               style: ZadType.labelSmall.copyWith(
                 color: Colors.white.withValues(alpha: 0.8),
               ),
@@ -499,8 +501,10 @@ class _BudgetHeader extends StatelessWidget {
               Expanded(
                 child: Text(
                   left == null
-                      ? 'الميزانية المتبقية: —'
-                      : 'الميزانية المتبقية: ${_money(left)} $currency',
+                      ? context.l10n.shopBudgetLeftUnknown
+                      : context.l10n.shopBudgetLeft(
+                          '${_money(left)} $currency',
+                        ),
                   style: ZadType.labelMedium.copyWith(
                     color: Colors.white.withValues(alpha: 0.85),
                   ),
@@ -508,7 +512,7 @@ class _BudgetHeader extends StatelessWidget {
               ),
               if (basket != null && cap != null && cap > 0)
                 Text(
-                  '$pct% من الميزانية',
+                  context.l10n.shopBudgetPct(pct),
                   style: ZadType.labelMedium.copyWith(color: Colors.white),
                 ),
             ],
@@ -516,7 +520,7 @@ class _BudgetHeader extends StatelessWidget {
           if (over) ...<Widget>[
             const SizedBox(height: ZadSpacing.sm),
             Text(
-              'هذه القائمة تتجاوز الميزانية المتبقية!',
+              context.l10n.shopOverBudget,
               style: ZadType.labelMedium.copyWith(
                 color: const Color(0xFFFFA69E),
                 fontWeight: FontWeight.w700,
@@ -541,7 +545,7 @@ class _Suggestions extends StatelessWidget {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        const Text('قد تحتاج أيضاً', style: ZadType.titleSmall),
+        Text(context.l10n.shopMayNeed, style: ZadType.titleSmall),
         const SizedBox(height: ZadSpacing.sm),
         for (final s in suggestions)
           Row(
@@ -568,7 +572,7 @@ class _Suggestions extends StatelessWidget {
               ),
               TextButton(
                 onPressed: () => onAdd(s),
-                child: const Text('إضافة للقائمة'),
+                child: Text(context.l10n.shopAddToList),
               ),
             ],
           ),
@@ -579,11 +583,12 @@ class _Suggestions extends StatelessWidget {
 
 /// «في البيت 6», and whether that is still short — the list line read
 /// against the pantry.
-String? _stockNote(({double total, bool isLow})? stock) => stock == null
+String? _stockNote(ZadL10n l, ({double total, bool isLow})? stock) =>
+    stock == null
     ? null
     : stock.isLow
-    ? 'في البيت ${formatQuantity(stock.total)} بس'
-    : 'في البيت ${formatQuantity(stock.total)} — مش ناقص';
+    ? l.shopStockLow(formatQuantity(stock.total))
+    : l.shopStockEnough(formatQuantity(stock.total));
 
 class _Line extends ConsumerWidget {
   const new({required this.item, required this.currency, this.stock});
@@ -598,17 +603,26 @@ class _Line extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final controller = ref.read(shoppingControllerProvider.notifier);
     final (tag, tagColor) = switch (item.priority) {
-      ShoppingPriority.high => ('حرج', ZadColors.terracottaRust),
-      ShoppingPriority.medium => ('متوسط', ZadColors.mustardOchre),
-      ShoppingPriority.low => ('منخفض', ZadColors.green600),
+      ShoppingPriority.high => (
+        context.l10n.shopPriorityHigh,
+        ZadColors.terracottaRust,
+      ),
+      ShoppingPriority.medium => (
+        context.l10n.shopPriorityMedium,
+        ZadColors.mustardOchre,
+      ),
+      ShoppingPriority.low => (
+        context.l10n.shopPriorityLow,
+        ZadColors.green600,
+      ),
     };
     final details = <String>[
       if (item.estimatedPrice > 0)
         '${_money(item.estimatedPrice * item.quantity)} $currency'.trim(),
       if (item.store case final s? when s.isNotEmpty) s,
       if (item.predictedDaysLeft case final d? when !item.isPurchased)
-        'ينفد بعد $d أيام',
-      if (!item.isPurchased) ?_stockNote(stock),
+        context.l10n.shopRunsOutIn(d),
+      if (!item.isPurchased) ?_stockNote(context.l10n, stock),
     ];
 
     return Dismissible(
@@ -637,7 +651,11 @@ class _Line extends ConsumerWidget {
                             .onPurchased(item.itemName),
                       );
                       ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-                        SnackBar(content: Text('تم شراء ${item.itemName}')),
+                        SnackBar(
+                          content: Text(
+                            context.l10n.shopBoughtItem(item.itemName),
+                          ),
+                        ),
                       );
                     }
                   },
@@ -691,7 +709,7 @@ class _Line extends ConsumerWidget {
               ),
               IconButton(
                 onPressed: () => unawaited(controller.remove(item.id)),
-                tooltip: 'حذف',
+                tooltip: context.l10n.commonDelete,
                 icon: Icon(
                   ZadIcons.delete,
                   size: 18,
@@ -727,16 +745,16 @@ class _FamilyLineState extends ConsumerState<_FamilyLine> {
     final sure = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('تشيل ${group.name} من القائمة؟'),
-        content: Text('هيتشالوا ${group.lines.length} سطور مع بعض.'),
+        title: Text(context.l10n.shopRemoveGroupTitle(group.name)),
+        content: Text(context.l10n.shopRemoveGroupBody(group.lines.length)),
         actions: <Widget>[
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('إلغاء'),
+            child: Text(context.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('شيلهم'),
+            child: Text(context.l10n.shopRemoveThem),
           ),
         ],
       ),
@@ -761,9 +779,9 @@ class _FamilyLineState extends ConsumerState<_FamilyLine> {
             .read(affiliateMatchProvider.notifier)
             .onPurchased(widget.group.name),
       );
-      ScaffoldMessenger.maybeOf(
-        context,
-      )?.showSnackBar(SnackBar(content: Text('تم شراء ${widget.group.name}')));
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+        SnackBar(content: Text(context.l10n.shopBoughtItem(widget.group.name))),
+      );
     }
   }
 
@@ -776,7 +794,7 @@ class _FamilyLineState extends ConsumerState<_FamilyLine> {
         .toList();
     final shown = brands.take(3).join(' · ');
     final more = brands.length > 3 ? ' +${brands.length - 3}' : '';
-    final note = _stockNote(widget.stock);
+    final note = _stockNote(context.l10n, widget.stock);
     final urgent = group.lines.any((l) => l.priority == ShoppingPriority.high);
     return ZadCard(
       padding: const EdgeInsets.symmetric(horizontal: ZadSpacing.sm),
@@ -796,7 +814,10 @@ class _FamilyLineState extends ConsumerState<_FamilyLine> {
                       children: <Widget>[
                         Flexible(
                           child: Text(
-                            '${group.name} · ${group.lines.length} أنواع',
+                            context.l10n.shopGroupKinds(
+                              group.name,
+                              group.lines.length,
+                            ),
                             style: ZadType.titleSmall,
                           ),
                         ),
@@ -816,7 +837,7 @@ class _FamilyLineState extends ConsumerState<_FamilyLine> {
                               ),
                             ),
                             child: Text(
-                              'حرج',
+                              context.l10n.shopPriorityHigh,
                               style: ZadType.labelSmall.copyWith(
                                 color: ZadColors.terracottaRust,
                               ),
@@ -835,7 +856,9 @@ class _FamilyLineState extends ConsumerState<_FamilyLine> {
                 ),
                 IconButton(
                   onPressed: () => setState(() => _open = !_open),
-                  tooltip: _open ? 'اخفي الأنواع' : 'وريني الأنواع',
+                  tooltip: _open
+                      ? context.l10n.shopHideKinds
+                      : context.l10n.shopShowKinds,
                   icon: Icon(
                     _open ? Icons.expand_less : Icons.expand_more,
                     color: ZadColors.inkMuted,
@@ -843,7 +866,7 @@ class _FamilyLineState extends ConsumerState<_FamilyLine> {
                 ),
                 IconButton(
                   onPressed: () => unawaited(_removeAll()),
-                  tooltip: 'حذف',
+                  tooltip: context.l10n.commonDelete,
                   icon: Icon(
                     ZadIcons.delete,
                     size: 18,
@@ -930,12 +953,12 @@ class _AddSheetState extends ConsumerState<_AddSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          const Text('إضافة منتج للقائمة', style: ZadType.titleMedium),
+          Text(context.l10n.shopAddProduct, style: ZadType.titleMedium),
           const SizedBox(height: ZadSpacing.lg),
           TextField(
             controller: _name,
             autofocus: true,
-            decoration: const InputDecoration(labelText: 'اسم المنتج'),
+            decoration: InputDecoration(labelText: context.l10n.shopFieldName),
             onChanged: (_) => setState(() {}),
           ),
           const SizedBox(height: ZadSpacing.md),
@@ -943,7 +966,7 @@ class _AddSheetState extends ConsumerState<_AddSheet> {
             controller: _qty,
             keyboardType: TextInputType.number,
             textDirection: TextDirection.ltr,
-            decoration: const InputDecoration(labelText: 'الكمية'),
+            decoration: InputDecoration(labelText: context.l10n.shopFieldQty),
             onChanged: (_) => setState(() {}),
           ),
           const SizedBox(height: ZadSpacing.md),
@@ -951,17 +974,17 @@ class _AddSheetState extends ConsumerState<_AddSheet> {
             controller: _price,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             textDirection: TextDirection.ltr,
-            decoration: const InputDecoration(labelText: 'السعر التقديري'),
+            decoration: InputDecoration(labelText: context.l10n.shopFieldPrice),
           ),
           const SizedBox(height: ZadSpacing.md),
           TextField(
             controller: _store,
-            decoration: const InputDecoration(labelText: 'المتجر (اختياري)'),
+            decoration: InputDecoration(labelText: context.l10n.shopFieldStore),
           ),
           const SizedBox(height: ZadSpacing.xl),
           FilledButton(
             onPressed: _canSave ? _save : null,
-            child: const Text('إضافة'),
+            child: Text(context.l10n.commonAdd),
           ),
         ],
       ),

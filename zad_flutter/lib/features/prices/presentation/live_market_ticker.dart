@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/design/foundation/compose_shadow.dart';
 import 'package:zad/core/design/tokens/zad_extended_colors.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/prices/application/live_market_controller.dart';
 import 'package:zad/shared/navigation/destinations.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
@@ -107,7 +108,7 @@ class LiveMarketTicker extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'جاري جلب الأسعار...',
+                    context.l10n.tickerLoading,
                     style: ZadType.labelSmall.copyWith(
                       color: scheme.onSurfaceVariant,
                     ),
@@ -136,8 +137,8 @@ class LiveMarketTicker extends StatelessWidget {
                       Flexible(
                         child: Text(
                           fetchState == LiveFetchState.error
-                              ? 'تعذر جلب الأسعار الحية الآن — جرب تاني'
-                              : 'لسه مفيش أسعار حية لبلدك — اضغط للتحديث',
+                              ? context.l10n.tickerError
+                              : context.l10n.tickerEmpty,
                           style: ZadType.labelSmall.copyWith(
                             color: scheme.onSurfaceVariant,
                           ),
@@ -319,7 +320,7 @@ class _RefreshPillState extends State<_RefreshPill>
                 Icons.refresh,
                 size: 15,
                 color: scheme.onSurfaceVariant,
-                semanticLabel: 'تحديث الأسعار',
+                semanticLabel: context.l10n.tickerRefresh,
               ),
             ),
           ),
@@ -409,7 +410,7 @@ class _Contribute extends StatelessWidget {
           const Text('📊', style: TextStyle(fontSize: 12)),
           const SizedBox(width: 4),
           Text(
-            'ساهم بسعر',
+            context.l10n.tickerContribute,
             style: TextStyle(
               fontSize: 11.5,
               fontWeight: FontWeight.bold,

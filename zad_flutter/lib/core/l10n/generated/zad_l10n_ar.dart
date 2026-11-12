@@ -3295,6 +3295,340 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get quotaScanFromImages => 'صورة من رصيد الصور';
+
+  @override
+  String get tickerLoading => 'جاري جلب الأسعار...';
+
+  @override
+  String get tickerError => 'تعذر جلب الأسعار الحية الآن — جرب تاني';
+
+  @override
+  String get tickerEmpty => 'لسه مفيش أسعار حية لبلدك — اضغط للتحديث';
+
+  @override
+  String get tickerRefresh => 'تحديث الأسعار';
+
+  @override
+  String get tickerContribute => 'ساهم بسعر';
+
+  @override
+  String get householdTitle => 'البيت';
+
+  @override
+  String get householdPrices => 'الأسعار';
+
+  @override
+  String get householdFamily => 'العيلة';
+
+  @override
+  String get householdPantry => 'المخزن';
+
+  @override
+  String get householdShopping => 'نواقص وتسوق';
+
+  @override
+  String get householdPharmacy => 'الصيدلية';
+
+  @override
+  String get householdRecipes => 'وصفات';
+
+  @override
+  String get notifTitle => 'الإشعارات';
+
+  @override
+  String notifUnread(int count) {
+    return '$count غير مقروء';
+  }
+
+  @override
+  String get notifReadAloud => 'قراءة التنبيهات صوتيًا';
+
+  @override
+  String get notifEmptyTitle => 'لا توجد إشعارات حالياً.';
+
+  @override
+  String get notifEmptyBody => 'هنعلمك أول ما يحصل حاجة تستاهل انتباهك';
+
+  @override
+  String get notifBankSection => 'عمليات بنكية بانتظارك';
+
+  @override
+  String get notifInsightsSection => 'تنبيهات ذكاء زاد';
+
+  @override
+  String get notifBrainSection => 'تنبيهات عقل زاد';
+
+  @override
+  String get notifAppSection => 'إشعارات التطبيق';
+
+  @override
+  String get notifNotImportant => 'مش مهم';
+
+  @override
+  String get notifWrongNumber => 'الرقم غلط';
+
+  @override
+  String notifOnAmazon(String name) {
+    return '🛒 $name على أمازون';
+  }
+
+  @override
+  String get notifBell => 'التنبيهات';
+
+  @override
+  String notifBellUnread(int count) {
+    return 'التنبيهات — $count مش مقروء';
+  }
+
+  @override
+  String get shopNoReach => 'مقدرتش أوصل لزاد دلوقتي. جرّب تاني.';
+
+  @override
+  String get shopAddHint => 'محتاج تشتري إيه؟';
+
+  @override
+  String get shopAddTooltip => 'ضيف';
+
+  @override
+  String get shopAddProduct => 'إضافة منتج للقائمة';
+
+  @override
+  String get shopSmartFill => 'تعبئة ذكية';
+
+  @override
+  String get shopWhatsApp => 'واتساب';
+
+  @override
+  String get shopPriorityHigh => 'حرج';
+
+  @override
+  String get shopPriorityMedium => 'متوسط';
+
+  @override
+  String get shopPriorityLow => 'منخفض';
+
+  @override
+  String get shopEmptyTitle => 'قائمة التسوق فارغة';
+
+  @override
+  String get shopEmptyBody => 'زاد سيضيف النواقص تلقائياً!';
+
+  @override
+  String get shopFilterEmptyTitle => 'لا توجد عناصر بهذا التصنيف';
+
+  @override
+  String get shopFilterEmptyBody => 'جرّب أولوية تانية.';
+
+  @override
+  String get shopBought => 'اتشترى';
+
+  @override
+  String get shopBasketTitle => 'سلة زاد الذكية';
+
+  @override
+  String shopBasketPartial(int priced, int lines) {
+    return 'تقدير لـ $priced من $lines صنف — «تعبئة ذكية» تقدّر الباقي';
+  }
+
+  @override
+  String get shopBudgetLeftUnknown => 'الميزانية المتبقية: —';
+
+  @override
+  String shopBudgetLeft(String amount) {
+    return 'الميزانية المتبقية: $amount';
+  }
+
+  @override
+  String shopBudgetPct(int pct) {
+    return '$pct% من الميزانية';
+  }
+
+  @override
+  String get shopOverBudget => 'هذه القائمة تتجاوز الميزانية المتبقية!';
+
+  @override
+  String get shopMayNeed => 'قد تحتاج أيضاً';
+
+  @override
+  String get shopAddToList => 'إضافة للقائمة';
+
+  @override
+  String shopStockLow(String qty) {
+    return 'في البيت $qty بس';
+  }
+
+  @override
+  String shopStockEnough(String qty) {
+    return 'في البيت $qty — مش ناقص';
+  }
+
+  @override
+  String shopRunsOutIn(int days) {
+    return 'ينفد بعد $days أيام';
+  }
+
+  @override
+  String shopBoughtItem(String name) {
+    return 'تم شراء $name';
+  }
+
+  @override
+  String shopRemoveGroupTitle(String name) {
+    return 'تشيل $name من القائمة؟';
+  }
+
+  @override
+  String shopRemoveGroupBody(int count) {
+    return 'هيتشالوا $count سطور مع بعض.';
+  }
+
+  @override
+  String get shopRemoveThem => 'شيلهم';
+
+  @override
+  String shopGroupKinds(String name, int count) {
+    return '$name · $count أنواع';
+  }
+
+  @override
+  String get shopHideKinds => 'اخفي الأنواع';
+
+  @override
+  String get shopShowKinds => 'وريني الأنواع';
+
+  @override
+  String get shopFieldName => 'اسم المنتج';
+
+  @override
+  String get shopFieldQty => 'الكمية';
+
+  @override
+  String get shopFieldPrice => 'السعر التقديري';
+
+  @override
+  String get shopFieldStore => 'المتجر (اختياري)';
+
+  @override
+  String get pantryEmptyTitle => 'المخزون فارغ';
+
+  @override
+  String get pantryEmptyBody => 'ابدأ بإضافة منتجات لتنظم مخزون منزلك';
+
+  @override
+  String get pantryScan => 'تصوير';
+
+  @override
+  String get pantrySearchEmptyTitle => 'لا توجد نتائج';
+
+  @override
+  String get pantrySearchEmptyBody => 'جرّب البحث بكلمة مختلفة';
+
+  @override
+  String get pantryScanTooltip => 'تصوير المخزون';
+
+  @override
+  String get pantryAddManual => 'إضافة يدوية';
+
+  @override
+  String pantryLowBanner(int count) {
+    return 'نواقص المخزون ($count)';
+  }
+
+  @override
+  String get pantryUnspecified => ' (غير محدد)';
+
+  @override
+  String get pantryToShopping => 'نزّلها في التسوق';
+
+  @override
+  String get pantryExpiringSoon => 'ينتهي قريباً';
+
+  @override
+  String get pantrySuggestRecipe => 'اقتراح وصفة';
+
+  @override
+  String get pantryExpired => 'منتهي الصلاحية';
+
+  @override
+  String pantryDaysLeft(String days) {
+    return 'باقي $days يوم';
+  }
+
+  @override
+  String get pantryLow => 'منخفض';
+
+  @override
+  String get pantryExpiredShort => 'منتهي';
+
+  @override
+  String pantryDays(int days) {
+    return '$days يوم';
+  }
+
+  @override
+  String get pantryUseOne => 'استهلاك واحدة';
+
+  @override
+  String get pantryAddOne => 'زيادة واحدة';
+
+  @override
+  String get pantryEditItem => 'تعديل الصنف';
+
+  @override
+  String get pantryOut => 'خلص';
+
+  @override
+  String pantryKinds(int count) {
+    return '$count أنواع';
+  }
+
+  @override
+  String get pantryShowKinds => 'اعرض الأنواع';
+
+  @override
+  String get pantryUsedOne => 'استهلكت واحدة';
+
+  @override
+  String get pantryIncreaseOne => 'زوّد واحدة';
+
+  @override
+  String pantryQty(String qty) {
+    return 'الكمية: $qty';
+  }
+
+  @override
+  String get pantryAdded => 'أُضيفت';
+
+  @override
+  String get pantryAddTitle => 'إضافة منتج جديد';
+
+  @override
+  String get pantryClose => 'إغلاق';
+
+  @override
+  String get pantryNameHint => 'مثلاً: حليب';
+
+  @override
+  String get pantryUnit => 'الوحدة';
+
+  @override
+  String get pantryCategory => 'القسم';
+
+  @override
+  String get pantryExpiryField => 'تاريخ الصلاحية (اختياري)';
+
+  @override
+  String get pantryOccasional => 'بشتريها على فترات';
+
+  @override
+  String get pantryOccasionalBody =>
+      'مش هتتحسب ناقصة لما تخلص، ومش هفكّرك بيها';
+
+  @override
+  String get notifNoneNew => 'مفيش تنبيهات جديدة';
+
+  @override
+  String get notifAlreadyKnew => 'عرفت خلاص';
 }
 
 /// The translations for Arabic, as used in Saudi Arabia (`ar_SA`).
@@ -3745,4 +4079,88 @@ class ZadL10nArSa extends ZadL10nAr {
 
   @override
   String get shoppingBasketEmpty => 'السلة فاضية — أضف اللي ناقصك';
+
+  @override
+  String get tickerError =>
+      'ما قدرنا نجيب الأسعار الحية الحين — جرّب مرة ثانية';
+
+  @override
+  String get tickerEmpty => 'للحين ما فيه أسعار حية لبلدك — اضغط للتحديث';
+
+  @override
+  String get householdFamily => 'العائلة';
+
+  @override
+  String get householdPantry => 'المخزون';
+
+  @override
+  String get householdShopping => 'المقاضي';
+
+  @override
+  String get notifEmptyBody => 'بنعلمك أول ما يصير شي يستاهل انتباهك';
+
+  @override
+  String get notifNotImportant => 'مو مهم';
+
+  @override
+  String notifBellUnread(int count) {
+    return 'التنبيهات — $count مو مقروءة';
+  }
+
+  @override
+  String get shopNoReach => 'ما قدرت أوصل لزاد الحين. جرّب مرة ثانية.';
+
+  @override
+  String get shopAddHint => 'وش تحتاج تشتري؟';
+
+  @override
+  String get shopAddTooltip => 'أضف';
+
+  @override
+  String get shopFilterEmptyBody => 'جرّب أولوية ثانية.';
+
+  @override
+  String get shopBought => 'تم الشراء';
+
+  @override
+  String shopStockEnough(String qty) {
+    return 'في البيت $qty — مو ناقص';
+  }
+
+  @override
+  String shopRunsOutIn(int days) {
+    return 'يخلص بعد $days أيام';
+  }
+
+  @override
+  String shopBoughtItem(String name) {
+    return 'اشتريت $name';
+  }
+
+  @override
+  String shopRemoveGroupBody(int count) {
+    return 'بنشيل $count سطور مع بعض.';
+  }
+
+  @override
+  String get shopHideKinds => 'أخفِ الأنواع';
+
+  @override
+  String get shopShowKinds => 'ورني الأنواع';
+
+  @override
+  String get pantryToShopping => 'نزّلها في المقاضي';
+
+  @override
+  String get pantryIncreaseOne => 'زِد واحدة';
+
+  @override
+  String get pantryOccasional => 'أشتريها على فترات';
+
+  @override
+  String get pantryOccasionalBody =>
+      'ما راح تنحسب ناقصة إذا خلصت، وما راح أذكّرك فيها';
+
+  @override
+  String get notifNoneNew => 'ما فيه تنبيهات جديدة';
 }
