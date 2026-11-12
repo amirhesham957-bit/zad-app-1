@@ -76,3 +76,14 @@ export function groqKeys(env: Env): string[] {
   const single = env("GROQ_API_KEY")?.trim();
   return unique([...numbered(env, "GROQ_API_KEY_"), ...(single ? [single] : [])]);
 }
+
+/**
+ * المالك ١٢/١١: لما المدفوع يخلص، المجاني يشيل قبل جروك/Azure — استقرار البداية. مفتاح صريح لأنه بيرجع
+ * في قرار ٨.٢ (المدفوع لوحده لداتا العملاء): `ZAD_FREE_AFTER_PAID=1`، ومن غير مدفوع مالوش معنى.
+ * المفاتيح اللي بتتجرب بعد المدفوع، أو [] لو المفتاح مقفول.
+ */
+export function freeAfterPaidKeys(env: Env): string[] {
+  if (paidGeminiKeys(env).length === 0) return [];
+  if ((env("ZAD_FREE_AFTER_PAID") ?? "").trim() !== "1") return [];
+  return freeGeminiKeys(env);
+}

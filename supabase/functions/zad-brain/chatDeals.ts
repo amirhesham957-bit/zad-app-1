@@ -28,6 +28,30 @@ export interface SheinOfferRow {
   category: string | null;
 }
 
+/** عرض جه للعميل نفسه في إشعار تطبيق (zad_notification_offers، ١٠.١٤) — بتاعه هو بس. */
+export interface OwnOfferRow {
+  store: string;
+  item: string | null;
+  discount_percent: number | string | null;
+  discount_amount: number | string | null;
+  currency: string | null;
+  code: string | null;
+  link: string | null;
+  expires_at: string;
+}
+
+export const CHAT_OWN_MAX = 5;
+
+/** عروض الإشعارات اللي تطابق الطلب: المحل لو اتطلب، والصنف لو اتقال (أو العرض على المحل كله). الأحدث الأول. نقي. */
+export function matchOwnOffers(rows: readonly OwnOfferRow[], store: string, item: string, max = CHAT_OWN_MAX): OwnOfferRow[] {
+  const wantItem = isGroceryTerm(item) ? "" : item.trim();
+  return rows
+    .filter((r) => r.store)
+    .filter((r) => !store.trim() || sameStore(store, r.store))
+    .filter((r) => !wantItem || !r.item || offerMatchesNeed(wantItem, r.item))
+    .slice(0, max);
+}
+
 /** البلاد اللي SHEIN بتروحلها؛ مصر على أمازون. */
 export const SHEIN_COUNTRIES = new Set(["SA", "AE"]);
 
@@ -164,12 +188,21 @@ export function matchChatDeals(
 
 /** نتيجة الأداة للموديل: أرقام ولينكات جاهزة، والتعليمات اللي تمنع الوصاية. */
 export function describeChatDeals(
-  found: { deals: ChatDealRow[]; codes: ChatCodeRow[]; picks?: ChatPickRow[]; shein?: SheinOfferRow[] }, store: string, item: string,
+  found: {
+    deals: ChatDealRow[];
+    codes: ChatCodeRow[];
+    picks?: ChatPickRow[];
+    shein?: SheinOfferRow[];
+    own?: OwnOfferRow[];
+  },
+  store: string,
+  item: string,
 ): string {
   const what = [item && `«${item}»`, store && `في ${store}`].filter(Boolean).join(" ") || "في بلده";
   const picks = found.picks ?? [];
   const shein = found.shein ?? [];
-  if (!found.deals.length && !found.codes.length && !picks.length && !shein.length) {
+  const own = found.own ?? [];
+  if (!found.deals.length && !found.codes.length && !picks.length && !shein.length && !own.length) {
     return `مفيش عروض متخزنة شغالة ${what} دلوقتي. قول كده للعميل بوضوح، واعرض تدوّر على النت (web_search) لو عايز.`;
   }
   const lines = found.deals.map((d) => {
@@ -192,11 +225,25 @@ export function describeChatDeals(
     const summary = p.summary ? ` — ${p.summary}` : "";
     return `- ${PICK_KIND_WORD[p.kind] ?? "ترشيح"} على ${where}: ${p.title}${p.store ? ` (${p.store})` : ""}${off}${summary} — ${p.source_url}`;
   });
+  const ownLines = own.map((o) => {
+    const off = Number(o.discount_percent) > 0
+      ? ` خصم ${Number(o.discount_percent)}٪`
+      : Number(o.discount_amount) > 0
+      ? ` خصم ${Number(o.discount_amount)} ${o.currency ?? ""}`.trimEnd()
+      : "";
+    const code = o.code ? ` — كود ${o.code}` : "";
+    const until = ` لحد ${String(o.expires_at).slice(0, 10)}`;
+    const link = https(o.link);
+    return `- ${o.store}${o.item ? `: ${o.item}` : ""}${off}${code}${until}${link ? ` — ${link}` : ""}`;
+  });
   const sheinLines = shein.map((o) => {
     const code = o.coupon_code ? ` — كود خصم للمشتري: ${o.coupon_code}` : "";
     return `- ${o.title} — SHEIN${code} — ${o.affiliate_url.trim()}`;
   });
   return [
+    ...(ownLines.length
+      ? ["عروض جاتله هو في إشعارات تطبيقاته (بتاعته هو بس — ماتقولش إن حد تاني جاله نفس العرض):", ...ownLines]
+      : []),
     ...(lines.length ? [`العروض الشغالة ${what} (من صفحات المحلات وفيديوهاتهم، ممكن تكون خلصت):`, ...lines] : []),
     ...(codeLines.length ? ["أكواد خصم:", ...codeLines] : []),
     ...(pickLines.length
@@ -241,8 +288,14 @@ export async function findChatDeals(sb: SupabaseClient, userId: string, store: s
       .eq("is_active", true).contains("target_countries", [country]).order("created_at", { ascending: false }).limit(60)
       .then((r) => r, () => ({ data: null }))
     : { data: null };
+  // ١٠.١٤: عروضه هو من إشعاراته، الشغالة بس. RLS بتاعة الجدول user_id = auth.uid()، والفلتر هنا صريح كمان.
+  const { data: own } = await sb.from("zad_notification_offers")
+    .select("store,item,discount_percent,discount_amount,currency,code,link,expires_at")
+    .eq("user_id", userId).gt("expires_at", new Date(now).toISOString()).order("created_at", { ascending: false }).limit(40)
+    .then((r) => r, () => ({ data: null }));
   return describeChatDeals({
     ...found,
+    own: matchOwnOffers((own ?? []) as OwnOfferRow[], store, item),
     picks: matchChatPicks((picks ?? []) as ChatPickRow[], store, item),
     shein: matchSheinOffers((shein ?? []) as SheinOfferRow[], store, item),
   }, store, item);

@@ -68,6 +68,8 @@ export function freshTtsPool(): TtsPoolState {
 }
 
 const sharedTtsPool = freshTtsPool();
+// المفاتيح المجانية بعد المدفوع (ZAD_FREE_AFTER_PAID): مسبح لوحده عشان ترتيب المفاتيح (ttsKeyOrder) مايبدأش بيهم.
+const freeAfterPaidTtsPool = freshTtsPool();
 const TTS_COOLDOWN_MS = 60_000;
 /** كوتة اليوم خلصت على الزوج ده (`...PerDay...` في رد 429): مفيش فايدة نجربه تاني قريب. */
 const TTS_DAY_COOLDOWN_MS = 30 * 60_000;
@@ -239,6 +241,8 @@ export async function requestVoiceWithFallback(
   fetcher: typeof fetch = fetch,
   dialectInstruction = "",
   preferAzure = false,
+  /** بعد المدفوع وقبل Azure (المالك ١٢/١١): المشاعر بتفضل، لأن Azure صوته محايد. */
+  freeAfterPaidKeys: string[] = [],
 ): Promise<Response> {
   // سلمى (Azure) الأول — كانت لردود الشات من ٢٠٢٦-١٠-٠١ لحد ٢٠٢٦-١٠-٢٧، ومحدش بيطلبها دلوقتي:
   // المالك عاوز المشاعر في الشات كمان، وسلمى مالهاش مشاعر.
@@ -254,9 +258,19 @@ export async function requestVoiceWithFallback(
       console.error(`[CoreIntel] Azure TTS (primary) threw: ${String((e as Error)?.message ?? e).slice(0, 200)}`);
     }
   }
-  const gemini = await requestGeminiVoiceWithPool(input, geminiKeys, fetcher, dialectInstruction);
+  let gemini = await requestGeminiVoiceWithPool(input, geminiKeys, fetcher, dialectInstruction);
   if (gemini.ok && gemini.body) {
     return new Response(gemini.body, { status: 200, headers: { "Content-Type": "audio/pcm", "X-Zad-Voice-Provider": "gemini" } });
+  }
+  if (freeAfterPaidKeys.length > 0) {
+    await gemini.body?.cancel();
+    gemini = await requestGeminiVoiceWithPool(
+      input, freeAfterPaidKeys, fetcher, dialectInstruction, undefined, freeAfterPaidTtsPool,
+    );
+    if (gemini.ok && gemini.body) {
+      console.warn("[CoreIntel] voice: paid key spent; served on a free key");
+      return new Response(gemini.body, { status: 200, headers: { "Content-Type": "audio/pcm", "X-Zad-Voice-Provider": "gemini" } });
+    }
   }
   let attempts: unknown[] = [];
   try { attempts = (await gemini.json())?.attempts ?? []; } catch { /* non-json */ }

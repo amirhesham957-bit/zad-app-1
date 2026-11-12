@@ -65,9 +65,36 @@ const EVAL_KEY = (Deno.env.get("ZAD_EVAL_KEY") ?? "").trim();
 const INTERNAL_KEYS: string[] = paidGeminiKeys((n) => Deno.env.get(n)).length > 0
   ? freeGeminiKeys((n) => Deno.env.get(n))
   : [];
+// المالك ١٢/١١: لما المدفوع يخلص على السلسلة كلها، السلسلة تتجرب تاني على المجاني قبل جروك — استقرار البداية.
+// بيرجع في قرار ٨.٢ (المدفوع لوحده لداتا العملاء)، فهو مفتاح صريح: `ZAD_FREE_AFTER_PAID=1`. سياسة الخصوصية v4
+// بتقول إن جيميناي المجاني ممكن جوجل تستخدم محتواه. من غير المفتاح، السلوك زي ما كان.
+const FREE_AFTER_PAID = INTERNAL_KEYS.length > 0 && (Deno.env.get("ZAD_FREE_AFTER_PAID") ?? "").trim() === "1";
+// تهدئة لكل موديل على المجاني لوحده: تهدئة المدفوع ماتمنعش المجاني من المحاولة.
+const freeCooldownUntil = new Map<string, number>();
+// آخر مرة المدفوع اتقال عليه «خلص» (429) أو اترفض: لحد الوقت ده الطلبات اللي لاقية موديلاته في التهدئة
+// بتروح للمجاني برضه، مش لجروك على طول.
+let paidSpentUntil = 0;
+
+/** For tests: forget that the paid key was spent, so each test starts fresh. */
+export function resetPaidSpentForTests(): void {
+  paidSpentUntil = 0;
+  freeCooldownUntil.clear();
+}
+
 const CALL_KEYS: string[] = [...GEMINI_KEY_POOL, ...(EVAL_KEY ? [EVAL_KEY] : []), ...INTERNAL_KEYS];
 const EVAL_KEY_INDEX: number | null = EVAL_KEY ? GEMINI_KEY_POOL.length : null;
 const INTERNAL_KEY_START = GEMINI_KEY_POOL.length + (EVAL_KEY ? 1 : 0);
+
+/**
+ * «paid key 1/1» / «free key 7/10» / «eval key» — the slot inside its own pool. The log used to print the call index
+ * over the customer pool's size («key 12/1»), which read as twelve keys tried out of one.
+ */
+export function keySlotLabel(keyIndex: number, poolSize: number, evalIndex: number | null, internalStart: number, internalSize: number, paidTier: boolean): string {
+  if (evalIndex !== null && keyIndex === evalIndex) return "eval key";
+  if (keyIndex >= internalStart && internalSize > 0) return `free key ${keyIndex - internalStart + 1}/${internalSize}`;
+  return `${paidTier ? "paid" : "free"} key ${keyIndex + 1}/${poolSize}`;
+}
+const PAID_TIER = paidGeminiKeys((n) => Deno.env.get(n)).length > 0;
 
 /** Whether the nightly eval has its own key; without one it does not run. */
 export function hasEvalKey(): boolean {
@@ -294,6 +321,7 @@ export async function callModel(opts: {
   // keys and models stay for the customers who pay, and Groq's separate quota takes it.
   const freeBusy = currentLane() === "free_busy" && GROQ_KEY_POOL.length > 0;
   const candidates = freeBusy ? [] : fresh.length > 0 ? fresh : GROQ_KEY_POOL.length > 0 ? [] : chain;
+  let paidRefused = false;
   if (freeBusy) trail.push("free lane over its daily budget");
   else if (candidates.length === 0) trail.push("every gemini model cooling down");
   for (const model of candidates) {
@@ -309,11 +337,50 @@ export async function callModel(opts: {
       modelCooldownUntil.delete(model);
       return { ...reply, model };
     } catch (e) {
+      // المدفوع اتلغى أو اتقفل (400/401/403): مع الاحتياطي المجاني، اللفة ماتقعش — السلسلة تكمّل على المجاني.
+      if (e instanceof ConfigError && FREE_AFTER_PAID) {
+        trail.push(`${model}: paid key refused (${(e as Error).message.slice(0, 60)})`);
+        paidRefused = true;
+        break;
+      }
       if (e instanceof ConfigError) throw e;
       if (!(e instanceof ProviderUnavailableError)) throw e;
       if (modelCooldownMs > 0) modelCooldownUntil.set(model, Date.now() + modelCooldownMs);
       trail.push(`${model}: ${e.short}`);
       console.warn(`[zad-brain] model ${model} unavailable (${e.short}); falling over`);
+    }
+  }
+
+  // المدفوع خلص ⇒ نفس السلسلة على المفاتيح المجانية (حارة internal: مفاتيحها الأول) قبل جروك.
+  // «خلص» = 429 (الحصة) أو المفتاح اترفض — مش 503/timeout: ضغط على الموديل نفسه بيرد نفس الرد على المجاني،
+  // وبيحرق ميزانية الوقت وبيودّي داتا للمجاني من غير لازمة. شغل الخلفية مايدخلش: المجاني بتاع العملا والمحتوى العام.
+  const lane = currentLane();
+  if (paidRefused || trail.some((t) => /429/.test(t))) paidSpentUntil = Date.now() + Math.max(modelCooldownMs, 60_000);
+  const paidSpent = Date.now() < paidSpentUntil;
+  if (FREE_AFTER_PAID && paidSpent && !freeBusy && lane !== "eval" && lane !== "internal" && lane !== "background") {
+    const t = Date.now();
+    for (const model of chain.filter((m) => (freeCooldownUntil.get(m) ?? 0) <= t)) {
+      const left = deadline - Date.now();
+      if (left < MIN_GEMINI_ATTEMPT_MS && GROQ_KEY_POOL.length > 0) {
+        trail.push("free keys: budget spent");
+        break;
+      }
+      const timeoutMs = Math.max(MIN_GEMINI_ATTEMPT_MS, Math.min(GEMINI_CALL_TIMEOUT_MS, left));
+      try {
+        const reply = await inLane("internal", () => withRetry(() => sendGemini({ ...opts, model, timeoutMs })));
+        freeCooldownUntil.delete(model);
+        console.warn(`[zad-brain] paid key unavailable; ${model} answered on a free key`);
+        return { ...reply, model };
+      } catch (e) {
+        // مفتاح مجاني ملغي مايوقّعش اللفة وفيه ٩ تانيين وجروك: الموديل اللي بعده بيبدأ من مفتاح تاني.
+        if (e instanceof ConfigError) {
+          trail.push(`free ${model}: refused`);
+          continue;
+        }
+        if (!(e instanceof ProviderUnavailableError)) throw e;
+        if (modelCooldownMs > 0) freeCooldownUntil.set(model, Date.now() + modelCooldownMs);
+        trail.push(`free ${model}: ${e.short}`);
+      }
     }
   }
 
@@ -656,7 +723,7 @@ async function sendGemini(o: {
       const q = summarizeQuota429(lastQuotaBody);
       quotaTrail.push(`key${keyIndex + 1}:${q.quotaId}=${q.quotaValue}/retry=${q.retryDelay}`);
       console.warn(
-        `[zad-brain] Gemini key ${keyIndex + 1}/${GEMINI_KEY_POOL.length} hit 429 — ` +
+        `[zad-brain] Gemini ${keySlotLabel(keyIndex, GEMINI_KEY_POOL.length, EVAL_KEY_INDEX, INTERNAL_KEY_START, INTERNAL_KEYS.length, PAID_TIER)} hit 429 on ${o.model} — ` +
           `quotaId=${q.quotaId} limit=${q.quotaValue} retryDelay=${q.retryDelay}; switching to next key`,
       );
       continue;
@@ -706,8 +773,8 @@ async function sendGemini(o: {
     // اتقصّت. هو اللي بيفرّق بين "الكوتة اليومية خلصت" و"حد الدقيقة اتضرب برشقة": حد
     // يومي متضروب بيرجع retryDelay بالساعات، وحد الدقيقة بيرجعه بالثواني.
     throw new ProviderUnavailableError(
-      `gemini 429 on ${o.model} (all ${GEMINI_KEY_POOL.length} keys exhausted) [${quotaTrail.join(" | ")}]: ${lastQuotaBody}`,
-      `429 all ${GEMINI_KEY_POOL.length} keys`,
+      `gemini 429 on ${o.model} (all ${quotaTrail.length} ${currentLane()}-lane keys exhausted) [${quotaTrail.join(" | ")}]: ${lastQuotaBody}`,
+      `429 all ${quotaTrail.length} ${currentLane()} keys`,
     );
   }
 

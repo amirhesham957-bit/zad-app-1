@@ -82,11 +82,20 @@ Deno.test("whisperWithFallback: a refused model falls back on the same key; a re
   assertEquals(bad.ok, true);
   assertEquals(keys, ["k1", "k2"]);
 
-  // Anything else (a 429, a 500) is the answer, not a reason to burn every key.
-  let n = 0;
-  const busy = await whisperWithFallback(["k1", "k2"], ["whisper-large-v3", "whisper-large-v3-turbo"], async () => {
-    n++;
-    return { ok: false, status: 429, data: {} };
+  // A 429 is that key's own quota (each Groq key is its own allowance): the next key is tried (review 12/11 —
+  // it used to stop at the first 429 with nine keys left).
+  const spent: string[] = [];
+  const next = await whisperWithFallback(["k1", "k2"], ["whisper-large-v3"], async (key) => {
+    spent.push(key);
+    return key === "k1" ? { ok: false, status: 429, data: {} } : { ok: true, status: 200, data: {} };
   });
-  assertEquals([busy.ok, busy.status, n], [false, 429, 1]);
+  assertEquals([next.ok, spent], [true, ["k1", "k2"]]);
+
+  // A 500 is the answer, not a reason to burn every key.
+  let n = 0;
+  const down = await whisperWithFallback(["k1", "k2"], ["whisper-large-v3", "whisper-large-v3-turbo"], async () => {
+    n++;
+    return { ok: false, status: 500, data: {} };
+  });
+  assertEquals([down.ok, down.status, n], [false, 500, 1]);
 });

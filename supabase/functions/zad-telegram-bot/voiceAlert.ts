@@ -14,7 +14,7 @@
 //   كلام = ~0.4 ثانية CPU، والنص مقصوص عشان يفضل تحت ده بكتير.
 
 import { Mp3Encoder } from "npm:@breezystack/lamejs@1.2.7";
-import { geminiKeys } from "../_shared/keyPool.ts";
+import { freeAfterPaidKeys, geminiKeys } from "../_shared/keyPool.ts";
 import { trimRunawaySpeech } from "../_shared/ttsTrim.ts";
 import { cutSpokenTail } from "../_shared/ttsTail.ts";
 import { buildTtsPrompt, DEFAULT_VOICE, emotionForMoment, GEMINI_TTS_CHAIN, isVoiceEmotion, type VoiceEmotion, voiceNameFor, type ZadVoiceGender } from "../_shared/zadVoice.ts";
@@ -145,5 +145,6 @@ export async function synthesizeAlertPcm(
 
 /** نفس مسبح مفاتيح جيميناي في باقي الفانكشنز (_shared/keyPool.ts). */
 export function geminiKeysFromEnv(get: (name: string) => string | undefined = (n) => Deno.env.get(n)): string[] {
-  return geminiKeys(get);
+  // المدفوع الأول، وبعده المجاني لو ZAD_FREE_AFTER_PAID (المالك ١٢/١١): اللوب بالترتيب، فالمدفوع بيتجرب قبلهم.
+  return [...new Set([...geminiKeys(get), ...freeAfterPaidKeys(get)])];
 }

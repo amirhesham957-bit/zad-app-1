@@ -1066,6 +1066,22 @@
     "updated_at",
     "user_id"
   ],
+  "zad_notification_offers": [
+    "code",
+    "created_at",
+    "currency",
+    "discount_amount",
+    "discount_percent",
+    "expires_at",
+    "id",
+    "ingest_event_id",
+    "item",
+    "link",
+    "opened_at",
+    "package_name",
+    "store",
+    "user_id"
+  ],
   "zad_obligations": [
     "active",
     "amount",

@@ -161,6 +161,8 @@ export async function providerHealth(env: Env, envNames: string[], fetchImpl: ty
     resend: await resend,
     // ٨.٢: "free" = داتا العملاء رايحة للطبقة المجانية، اللي شروطها بتمنع البيانات الشخصية.
     ai_data_tier: aiDataTier(env),
+    // المالك ١٢/١١: المجاني بيشيل الشات لما المدفوع يخلص (zad-brain/callModel.ts، ZAD_FREE_AFTER_PAID).
+    free_after_paid: aiDataTier(env) === "paid" && (env("ZAD_FREE_AFTER_PAID") ?? "").trim() === "1",
     gemini_pool: rest.slice(0, geminiKeys.length),
     groq_pool: rest.slice(geminiKeys.length),
     community_chat_configured: !!env("TELEGRAM_COMMUNITY_CHAT_ID"),

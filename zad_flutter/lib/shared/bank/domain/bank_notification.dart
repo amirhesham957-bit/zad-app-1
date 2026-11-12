@@ -26,6 +26,7 @@ library;
 import 'package:zad/core/money/money.dart';
 import 'package:zad/shared/bank/domain/bank_keywords.dart';
 import 'package:zad/shared/bank/domain/life_event_hint.dart';
+import 'package:zad/shared/bank/domain/offer_apps.dart';
 
 /// What the message is.
 enum BankNotificationClass {
@@ -47,6 +48,10 @@ enum BankNotificationClass {
   /// No money, but a household life event — an appointment, a government
   /// notice, a result, a parcel (ZAD_PLAN ٢.٨, `life_event_hint.dart`).
   lifeEvent,
+
+  /// A discount, a code or a sale from a shopping or delivery app
+  /// (ZAD_PLAN ١٠.١٤, `offer_apps.dart`): kept for its owner by zad-brain.
+  offer,
 }
 
 /// Why a message was set aside, for `zad_rejected_bank_messages`.
@@ -327,6 +332,15 @@ BankNotificationVerdict classifyBankNotification({
   final full = '$title $text'.trim();
 
   final reason = bankRejectionReason(full);
+  // ١٠.١٤: a shopping or delivery app's discount or code goes to the server
+  // instead of being dropped as an advert. A login code still never leaves.
+  if ((reason == null || reason == BankRejectReason.promo) &&
+      isOfferApp(packageName) &&
+      looksLikeOffer(full)) {
+    return const BankNotificationVerdict(
+      classification: BankNotificationClass.offer,
+    );
+  }
   // ٢.٨: an appointment, a government notice («انتهت صلاحية الإقامة» too), a
   // result or a parcel — when no amount makes it a money question already.
   if ((reason == null || reason == BankRejectReason.expired) &&
@@ -375,6 +389,7 @@ bool shouldSendToBrain({
   BankNotificationClass.completedTransaction => false,
   BankNotificationClass.ambiguous => true,
   BankNotificationClass.lifeEvent => true,
+  BankNotificationClass.offer => true,
   BankNotificationClass.failedOrPendingTransaction => true,
   BankNotificationClass.informationalOnly =>
     reason == null && isTrackedFinancialApp,
