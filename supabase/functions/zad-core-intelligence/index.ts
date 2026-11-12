@@ -1,4 +1,5 @@
 // deno-lint-ignore-file
+import { voiceCountry } from "../_shared/dialect.ts";
 import { buildTicker, countryForLocation } from "./liveTicker.ts";
 import { asksLatest, bingNewsUrl, cacheTtlMs, englishTwin, type GoldQuote, GOOGLE_CONSENT_COOKIE, goldQuotes, googleNewsUrl, isLiveQuery, keepAnswering, latestFirst, marketOf, topicOf, withTwin } from "./searchQuality.ts";
 import { spokenText, WHISPER_DEFAULT_MODEL, type WhisperOptions, whisperOptions, whisperWithFallback } from "./whisper.ts";
@@ -2125,10 +2126,13 @@ async function handle(req: Request): Promise<Response> {
         voiceRequest.country = null;
       }
       // صوت زاد من اختيار العميل في «ملفي» (20261004090000) — من السيرفر، زي البلد. فشل القراءة
-      // (أو العمود لسه مااتعملش) = الصوت الافتراضي، بنت.
+      // (أو العمود لسه مااتعملش) = الصوت الافتراضي، بنت. ولهجة «ملفي» بتكسب على بلد الحساب في
+      // لكنة الصوت، زي ما بتكسب في كلام العقل (ZAD_PLAN ١٠.١٦، `voiceCountry`).
       try {
-        const { data: voiceProfile } = await supabase.from("zad_customer_profile").select("zad_voice").eq("user_id", caller.user.id).maybeSingle();
-        voiceRequest.voice = zadVoiceGender((voiceProfile as { zad_voice?: string | null } | null)?.zad_voice);
+        const { data: voiceProfile } = await supabase.from("zad_customer_profile").select("zad_voice,dialect").eq("user_id", caller.user.id).maybeSingle();
+        const vp = voiceProfile as { zad_voice?: string | null; dialect?: string | null } | null;
+        voiceRequest.voice = zadVoiceGender(vp?.zad_voice);
+        voiceRequest.country = voiceCountry(voiceRequest.country, vp?.dialect);
       } catch (_e) {
         voiceRequest.voice = "female";
       }

@@ -1,5 +1,5 @@
 import { assert, assertEquals, assertStringIncludes } from "jsr:@std/assert@1";
-import { detectDialectFromText, dialectPromptBlock, dialectReminder, regionForCity, resolveDialect, resolveRegion } from "./dialect.ts";
+import { detectDialectFromText, dialectPromptBlock, dialectReminder, regionForCity, resolveDialect, resolveRegion, voiceCountry } from "./dialect.ts";
 
 Deno.test("clear dialect in the customer's own words is detected; one shared word is not enough", () => {
   assertEquals(detectDialectFromText("عايز اعرف صرفت كام دلوقتي"), "EG");
@@ -68,4 +68,23 @@ Deno.test("Jeddah gets Hijazi, Riyadh keeps Najdi, and both stay respectful", ()
   // منطقة مش بتاعة اللهجة دي بتتجاهل.
   assertEquals(dialectPromptBlock("EG", "SA_HIJAZ"), dialectPromptBlock("EG"));
   assertStringIncludes(dialectPromptBlock("EG"), "من غير شتايم");
+});
+
+Deno.test("the voice follows the dialect chosen in the profile, else the account's country (10.16)", () => {
+  // مصري حسابه سعودي: الصوت مصري زي الكلام.
+  assertEquals(voiceCountry("SA", "EG"), "EG");
+  // سعودي حسابه مصري.
+  assertEquals(voiceCountry("EG", "SA"), "SA");
+  // إماراتي اختار «خليجي»: بلده هو، مش الإمارات بدل الكويت.
+  assertEquals(voiceCountry("KW", "GULF"), "KW");
+  assertEquals(voiceCountry("SA", "GULF"), "AE");
+  assertEquals(voiceCountry("EG", "LEVANT"), "JO");
+  assertEquals(voiceCountry("EG", "TR"), "TR");
+  assertEquals(voiceCountry("EG", "EN"), null);
+  // من غير اختيار، أو قيمة مش معروفة = بلد الحساب زي الأول.
+  assertEquals(voiceCountry("SA", null), "SA");
+  assertEquals(voiceCountry("SA", ""), "SA");
+  assertEquals(voiceCountry("SA", "XX"), "SA");
+  assertEquals(voiceCountry("السعودية", "eg"), "EG");
+  assertEquals(voiceCountry(null, null), null);
 });
