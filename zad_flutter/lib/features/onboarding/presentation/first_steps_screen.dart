@@ -17,6 +17,7 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_motion.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/onboarding/application/first_steps_controller.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
 import 'package:zad/shared/navigation/zad_slots.dart';
@@ -100,10 +101,11 @@ class _FirstStepsState extends ConsumerState<FirstStepsScreen> {
         (hasExpense ? 1 : 0) +
         (_notificationsOn ? 1 : 0) +
         (_telegramDone ? 1 : 0);
+    final l = context.l10n;
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: const Text('أول خطوة'),
+        title: Text(l.firstStepsTitle),
       ),
       body: SafeArea(
         child: Column(
@@ -119,7 +121,7 @@ class _FirstStepsState extends ConsumerState<FirstStepsScreen> {
                 ),
                 children: <Widget>[
                   Text(
-                    'تلات خطوات في دقيقتين، وزاد يبدأ يشتغل معاك من النهارده.',
+                    l.firstStepsLead,
                     style: ZadType.bodyMedium.copyWith(
                       color: ZadColors.inkMuted,
                     ),
@@ -129,25 +131,21 @@ class _FirstStepsState extends ConsumerState<FirstStepsScreen> {
                   const SizedBox(height: ZadSpacing.xl),
                   _Step(
                     number: 1,
-                    title: 'سجّل أول مصروف',
-                    why:
-                        'أي حاجة صرفتها النهارده — قهوة، مواصلات، عيش. '
-                        'من هنا زاد بيبدأ يفهم شهرك.',
+                    title: l.firstStepsSpendTitle,
+                    why: l.firstStepsSpendBody,
                     done: hasExpense,
-                    doneLabel: 'اتسجل ✓',
-                    action: 'سجّل مصروف',
+                    doneLabel: l.firstStepsSpendDone,
+                    action: l.firstStepsSpendAction,
                     onAction: _firstExpense,
                   ),
                   const SizedBox(height: ZadSpacing.md),
                   _Step(
                     number: 2,
-                    title: 'فعّل الإشعارات',
-                    why:
-                        'عشان أقولك لما الميزانية تقرب تخلص، وتوصلك مواعيد '
-                        'الدوا والفواتير في وقتها.',
+                    title: l.firstStepsAlertsTitle,
+                    why: l.firstStepsAlertsBody,
                     done: _notificationsOn,
-                    doneLabel: 'متفعّلة ✓',
-                    action: 'فعّل',
+                    doneLabel: l.firstStepsAlertsDone,
+                    action: l.firstStepsAlertsAction,
                     busy: _asking,
                     onAction: _askNotifications,
                   ),
@@ -160,10 +158,8 @@ class _FirstStepsState extends ConsumerState<FirstStepsScreen> {
                     child: _StepHeader(
                       number: 3,
                       done: _telegramDone,
-                      title: 'اربط بوت تليجرام',
-                      why:
-                          'من غيره التذكيرات وسؤال «اقفل يومك» مش هتوصلك وانت '
-                          'برّه التطبيق.',
+                      title: l.firstStepsTelegramTitle,
+                      why: l.firstStepsTelegramBody,
                     ),
                   ),
                   const SizedBox(height: ZadSpacing.sm),
@@ -185,14 +181,14 @@ class _FirstStepsState extends ConsumerState<FirstStepsScreen> {
                       style: FilledButton.styleFrom(
                         minimumSize: const Size.fromHeight(48),
                       ),
-                      child: const Text('يلا على زاد'),
+                      child: Text(l.firstStepsGo),
                     )
                   : OutlinedButton(
                       onPressed: () => _finish(done: false),
                       style: OutlinedButton.styleFrom(
                         minimumSize: const Size.fromHeight(48),
                       ),
-                      child: const Text('كمّل بعدين — افتح زاد'),
+                      child: Text(l.firstStepsLater),
                     ),
             ),
           ],

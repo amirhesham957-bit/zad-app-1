@@ -20,6 +20,7 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_motion.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/alerts/application/local_reminders.dart';
 import 'package:zad/shared/companion/application/companion_controller.dart';
 import 'package:zad/shared/companion/application/pet_care_controller.dart';
@@ -238,6 +239,7 @@ class _CompanionHeaderPetState extends ConsumerState<CompanionHeaderPet>
     _lastNudge = now;
     _say(
       PetLines.forMood(
+        context.l10n,
         mood,
         name: ref.read(companionProvider).value?.persona.name ?? 'زادو',
         loggedToday: true,
@@ -296,6 +298,7 @@ class _CompanionHeaderPetState extends ConsumerState<CompanionHeaderPet>
     _hop.forward(from: 0);
     _say(
       PetLines.forMood(
+        context.l10n,
         mood,
         name: ref.read(companionProvider).value?.persona.name ?? 'زادو',
         loggedToday: true,
@@ -762,14 +765,14 @@ class _CompanionCareSheetState extends ConsumerState<CompanionCareSheet> {
       unawaited(HapticFeedback.mediumImpact());
       _react(
         CompanionState.celebrating,
-        PetLines.fed(outcome),
+        PetLines.fed(context.l10n, outcome),
         '🍎',
         PetSound.munch,
       );
     } else {
       _react(
         CompanionState.happy,
-        PetLines.fed(outcome),
+        PetLines.fed(context.l10n, outcome),
         '😋',
         PetSound.cuteSqueak,
       );
@@ -782,14 +785,14 @@ class _CompanionCareSheetState extends ConsumerState<CompanionCareSheet> {
       unawaited(HapticFeedback.mediumImpact());
       _react(
         CompanionState.celebrating,
-        PetLines.watered(outcome),
+        PetLines.watered(context.l10n, outcome),
         '💧',
         PetSound.gulp,
       );
     } else {
       _react(
         CompanionState.happy,
-        PetLines.watered(outcome),
+        PetLines.watered(context.l10n, outcome),
         '🙈',
         PetSound.cuteSqueak,
       );
@@ -799,7 +802,12 @@ class _CompanionCareSheetState extends ConsumerState<CompanionCareSheet> {
   void _pat() {
     ref.read(petCareProvider.notifier).pet();
     unawaited(HapticFeedback.lightImpact());
-    _react(CompanionState.happy, PetLines.petted(), '💚', PetSound.purr);
+    _react(
+      CompanionState.happy,
+      PetLines.petted(context.l10n),
+      '💚',
+      PetSound.purr,
+    );
   }
 
   @override
@@ -811,6 +819,7 @@ class _CompanionCareSheetState extends ConsumerState<CompanionCareSheet> {
     final name = _petName(ref);
     final logged = ref.watch(companionProvider).value?.missions.logged ?? true;
     final line = _line ??= PetLines.forMood(
+      context.l10n,
       mood,
       name: name,
       loggedToday: logged,

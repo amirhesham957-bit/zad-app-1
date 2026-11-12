@@ -18,6 +18,7 @@ import 'package:zad/core/design/components/zad_card.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/onboarding/application/first_steps_controller.dart';
 import 'package:zad/shared/brain/application/memory_controller.dart';
 import 'package:zad/shared/brain/domain/customer_profile.dart';
@@ -32,6 +33,35 @@ const Map<String, String> _roleGender = <String, String>{
   'mother': 'female',
   'wife': 'female',
   'daughter': 'female',
+};
+
+/// The household sizes offered as chips; the last stands for «7 or more»
+/// (`household_size` allows 1–30, and a guess of 7 for a big home is closer
+/// than no answer at all).
+const List<int> _householdSizes = <int>[1, 2, 3, 4, 5, 6, 7];
+
+/// What a stored `household_role` reads as on this screen.
+String _roleLabel(ZadL10n l, String role) => switch (role) {
+  'father' => l.introRoleFather,
+  'mother' => l.introRoleMother,
+  'husband' => l.introRoleHusband,
+  'wife' => l.introRoleWife,
+  'son' => l.introRoleSon,
+  'daughter' => l.introRoleDaughter,
+  'single' => l.introRoleSingle,
+  'student' => l.introRoleStudent,
+  'grandparent' => l.introRoleGrandparent,
+  _ => l.introRoleOther,
+};
+
+/// What a stored `cares_for` value reads as on this screen.
+String _caresLabel(ZadL10n l, String who) => switch (who) {
+  'children' => l.introCaresChildren,
+  'parents' => l.introCaresParents,
+  'spouse' => l.introCaresSpouse,
+  'siblings' => l.introCaresSiblings,
+  'grandparents' => l.introCaresGrandparents,
+  _ => who,
 };
 
 /// The screen.
@@ -60,6 +90,9 @@ class _IntroState extends ConsumerState<IntroduceYourselfScreen> {
   // Optional: the day the salary lands. The brain counts the month from it
   // (the salary cycle) and knows when money is tight.
   late int? _payDay = _start?.payDay;
+  // How many live at home, the customer counted in. The pantry's forecasts
+  // (ZAD_PLAN ١٠.١) scale with it; on 2026-11-12 the live profile had none.
+  late int? _householdSize = _start?.householdSize;
   bool _saving = false;
   String? _error;
 
@@ -79,7 +112,8 @@ class _IntroState extends ConsumerState<IntroduceYourselfScreen> {
       _name.text.trim().isNotEmpty &&
       _gender != null &&
       _role != null &&
-      _caresFor != null;
+      _caresFor != null &&
+      _householdSize != null;
 
   Future<void> _save() async {
     if (!_complete || _saving) return;
@@ -96,7 +130,7 @@ class _IntroState extends ConsumerState<IntroduceYourselfScreen> {
       occupation: base.occupation,
       payDay: _payDay,
       payFrequency: base.payFrequency,
-      householdSize: base.householdSize,
+      householdSize: _householdSize,
       kidsCount: base.kidsCount,
       city: base.city,
       dialect: base.dialect,
@@ -115,7 +149,7 @@ class _IntroState extends ConsumerState<IntroduceYourselfScreen> {
     if (failure != null) {
       setState(() {
         _saving = false;
-        _error = 'مقدرتش أحفظ — اتأكد من النت وجرّب تاني.';
+        _error = context.l10n.introSaveFailed;
       });
     }
   }
@@ -123,6 +157,8 @@ class _IntroState extends ConsumerState<IntroduceYourselfScreen> {
   void _pickRole(String role) => setState(() {
     _role = role;
     _gender ??= _roleGender[role];
+    // Living alone answers the household question too.
+    if (role == 'single') _householdSize ??= 1;
   });
 
   void _toggleCare(String who) => setState(() {
@@ -134,6 +170,7 @@ class _IntroState extends ConsumerState<IntroduceYourselfScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l = context.l10n;
     return DecoratedBox(
       // Zad's canvas, and the answers chosen in Zad's green: it was a white
       // page of grey chips where a choice barely showed (emulator, 2026-11-10).
@@ -162,7 +199,7 @@ class _IntroState extends ConsumerState<IntroduceYourselfScreen> {
           appBar: AppBar(
             automaticallyImplyLeading: false,
             backgroundColor: Colors.transparent,
-            title: const Text('عرّفني بيك'),
+            title: Text(l.introTitle),
             actions: <Widget>[ZadSlots.signOutAction()],
           ),
           body: SafeArea(
@@ -175,51 +212,51 @@ class _IntroState extends ConsumerState<IntroduceYourselfScreen> {
               ),
               children: <Widget>[
                 Text(
-                  'أربع أسئلة وسؤال اختياري، عشان أكلمك صح وآخد '
-                  'بالي من اللي في رعايتك.',
+                  l.introLead,
                   style: ZadType.bodyMedium.copyWith(color: ZadColors.inkMuted),
                 ),
                 const SizedBox(height: ZadSpacing.xl),
                 _Question(
-                  title: 'أناديك بإيه؟',
+                  title: l.introNameQuestion,
                   child: TextField(
                     controller: _name,
                     textInputAction: TextInputAction.done,
                     maxLength: 40,
-                    decoration: const InputDecoration(
-                      hintText: 'اسمك أو اسم الدلع',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      hintText: l.introNameHint,
+                      border: const OutlineInputBorder(),
                       counterText: '',
                     ),
                   ),
                 ),
                 _Question(
-                  title: 'أكلمك بصيغة إيه؟',
+                  title: l.introGenderQuestion,
                   child: _Chips(
                     options: ProfileOptions.genders,
-                    label: (g) => g == 'female' ? 'ست' : 'راجل',
+                    label: (g) =>
+                        g == 'female' ? l.introGenderFemale : l.introGenderMale,
                     selected: <String>{?_gender},
                     onTap: (g) => setState(() => _gender = g),
                   ),
                 ),
                 _Question(
-                  title: 'إنت مين في البيت؟',
+                  title: l.introRoleQuestion,
                   child: _Chips(
                     options: ProfileOptions.roles,
-                    label: ProfileLabels.role,
+                    label: (v) => _roleLabel(l, v),
                     selected: <String>{?_role},
                     onTap: _pickRole,
                   ),
                 ),
                 _Question(
-                  title: 'مين في رعايتك؟',
-                  hint: 'اختار كل اللي ينطبق.',
+                  title: l.introCaresQuestion,
+                  hint: l.introCaresHint,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: <Widget>[
                       _Chips(
                         options: ProfileOptions.caresFor,
-                        label: ProfileLabels.caresFor,
+                        label: (v) => _caresLabel(l, v),
                         selected: _caresFor ?? const <String>{},
                         onTap: _toggleCare,
                       ),
@@ -227,7 +264,7 @@ class _IntroState extends ConsumerState<IntroduceYourselfScreen> {
                       Align(
                         alignment: AlignmentDirectional.centerStart,
                         child: ChoiceChip(
-                          label: const Text('محدش — مسؤول عن نفسي بس'),
+                          label: Text(l.introCaresNobody),
                           selected: _caresFor?.isEmpty ?? false,
                           onSelected: (_) =>
                               setState(() => _caresFor = <String>{}),
@@ -237,8 +274,23 @@ class _IntroState extends ConsumerState<IntroduceYourselfScreen> {
                   ),
                 ),
                 _Question(
-                  title: 'بتقبض يوم كام في الشهر؟',
-                  hint: 'اختياري — عشان أحسب شهرك من يوم القبض.',
+                  title: l.introHouseholdQuestion,
+                  hint: l.introHouseholdHint,
+                  child: _Chips(
+                    options: <String>[for (final n in _householdSizes) '$n'],
+                    label: (n) => n == '${_householdSizes.last}'
+                        ? l.introHouseholdMany
+                        : n,
+                    selected: <String>{
+                      if (_householdSize case final n?)
+                        '${n.clamp(1, _householdSizes.last)}',
+                    },
+                    onTap: (n) => setState(() => _householdSize = int.parse(n)),
+                  ),
+                ),
+                _Question(
+                  title: l.introPayDayQuestion,
+                  hint: l.introPayDayHint,
                   child: DropdownButtonFormField<int?>(
                     initialValue: _payDay,
                     isExpanded: true,
@@ -252,11 +304,12 @@ class _IntroState extends ConsumerState<IntroduceYourselfScreen> {
                       border: OutlineInputBorder(),
                     ),
                     items: <DropdownMenuItem<int?>>[
-                      const DropdownMenuItem<int?>(
-                        child: Text('مش ثابت / مش عايز أقول'),
-                      ),
+                      DropdownMenuItem<int?>(child: Text(l.introPayDayNone)),
                       for (var d = 1; d <= 31; d++)
-                        DropdownMenuItem<int?>(value: d, child: Text('يوم $d')),
+                        DropdownMenuItem<int?>(
+                          value: d,
+                          child: Text(l.introPayDay(d)),
+                        ),
                     ],
                     onChanged: (d) => setState(() => _payDay = d),
                   ),
@@ -282,7 +335,7 @@ class _IntroState extends ConsumerState<IntroduceYourselfScreen> {
                           dimension: 20,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Text('يلا بينا'),
+                      : Text(l.introSave),
                 ),
               ],
             ),
