@@ -9,7 +9,7 @@ import 'package:zad/core/l10n/generated/zad_l10n.dart';
 import 'package:zad/shared/market/application/arabic_variant.dart';
 
 void main() {
-  test('the market picks Saudi; the customer\'s own dialect outranks it', () {
+  test("the market picks Saudi; the customer's own dialect outranks it", () {
     expect(arabicVariantFor(country: 'SA'), 'SA');
     expect(arabicVariantFor(country: 'sa'), 'SA');
     expect(arabicVariantFor(country: 'EG'), isNull);

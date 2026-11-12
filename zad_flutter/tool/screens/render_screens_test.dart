@@ -75,12 +75,8 @@ void main() {
             debugShowCheckedModeBanner: false,
             theme: ZadTheme.light(),
             locale: saudi ? kSaudiArabic : const Locale('ar'),
-            localizationsDelegates: saudi
-                ? ZadL10n.localizationsDelegates
-                : null,
-            supportedLocales: saudi
-                ? kZadLocales
-                : const <Locale>[Locale('en', 'US')],
+            localizationsDelegates: ZadL10n.localizationsDelegates,
+            supportedLocales: kZadLocales,
             home: const Directionality(
               textDirection: TextDirection.rtl,
               child: ZadShell(),
