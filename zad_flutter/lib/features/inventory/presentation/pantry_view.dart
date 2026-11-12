@@ -147,7 +147,7 @@ Color _bgOf(_CategoryDef d, ColorScheme s) =>
 Color _fgOf(_CategoryDef d, ColorScheme s) =>
     d.key == 'الكل' ? s.onPrimary : d.fg; // l10n: data
 
-double _threshold(InventoryItem i) => math.max(i.lowStockThreshold ?? 2, 1);
+double _threshold(InventoryItem i) => i.effectiveThreshold;
 
 /// Kotlin's `stockRatio`: full at three times the alert level.
 double _stockRatio(InventoryItem i) =>
@@ -155,9 +155,8 @@ double _stockRatio(InventoryItem i) =>
 
 Color _stockColor(BuildContext context, InventoryItem i) {
   final scheme = Theme.of(context).colorScheme;
-  final t = _threshold(i);
-  if (i.quantity <= t) return scheme.error;
-  if (i.quantity <= t * 2) return scheme.secondary;
+  if (i.isLowStock) return scheme.error;
+  if (i.isGettingLow) return scheme.secondary;
   return context.zadExt.success;
 }
 
@@ -280,7 +279,7 @@ class _PantryViewState extends ConsumerState<PantryView> {
     final header = <Widget>[
       if (low.isNotEmpty)
         _LowStockBanner(
-          count: low.length,
+          names: <String>[for (final i in low) i.itemName],
           // The shortages live on the shopping list — one list, not a tab
           // here and a list there (the owner, 2026-11-04).
           onShop: () {
@@ -623,9 +622,10 @@ class _FloatingIdleState extends State<_FloatingIdle>
 
 /// Kotlin's `LowStockBanner`.
 class _LowStockBanner extends StatelessWidget {
-  const new({required this.count, required this.onShop});
+  const new({required this.names, required this.onShop});
 
-  final int count;
+  /// What is short, so the banner says it — it said «(غير محدد)» instead.
+  final List<String> names;
   final VoidCallback onShop;
 
   @override
@@ -661,7 +661,7 @@ class _LowStockBanner extends StatelessWidget {
               TextSpan(
                 children: <InlineSpan>[
                   TextSpan(
-                    text: context.l10n.pantryLowBanner(count),
+                    text: context.l10n.pantryLowBanner(names.length),
                     style: ZadType.bodySmall.copyWith(
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
@@ -669,7 +669,7 @@ class _LowStockBanner extends StatelessWidget {
                     ),
                   ),
                   TextSpan(
-                    text: context.l10n.pantryUnspecified,
+                    text: ' ${names.join(context.l10n.listSeparator)}',
                     style: ZadType.labelSmall.copyWith(
                       fontSize: 11,
                       color: scheme.onErrorContainer.withValues(alpha: 0.75),
@@ -880,10 +880,7 @@ class _InventoryItemCard extends StatelessWidget {
     final def = _defFor(item.category, item.itemName);
     // Bought every couple of months (ZAD_PLAN ٣.١٠): at zero it is not low,
     // it is simply not in the house right now.
-    final isLow =
-        !grouped &&
-        !item.isOccasional &&
-        item.quantity <= (item.lowStockThreshold ?? 2);
+    final isLow = !grouped && !item.isOccasional && item.isLowStock;
 
     Widget small(IconData icon, String label, Color tint, VoidCallback? tap) =>
         SizedBox.square(

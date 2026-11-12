@@ -198,7 +198,15 @@ void main() {
         ),
       ],
       pantry: const <InventoryItem>[
-        InventoryItem(id: 'i1', userId: 'u', itemName: 'لبن', quantity: 1),
+        // Its own threshold: since ZAD_PLAN ١٠.١ slice 3 one carton with
+        // none set is stocked, not low.
+        InventoryItem(
+          id: 'i1',
+          userId: 'u',
+          itemName: 'لبن',
+          quantity: 1,
+          lowStockThreshold: 2,
+        ),
         InventoryItem(id: 'i2', userId: 'u', itemName: 'رز', quantity: 9),
       ],
       shopping: const <ShoppingItem>[

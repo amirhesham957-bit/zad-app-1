@@ -49,7 +49,10 @@ void main() {
     });
     expect(item.quantity, 0.5);
     expect(item.lowStockThreshold, 0.25);
-    expect(item.isLowStock, isTrue, reason: 'threshold is at least one');
+    // A quarter kilo is a real threshold now (ZAD_PLAN ١٠.١ slice 3): half a
+    // kilo is above it, and a quarter is at it.
+    expect(item.isLowStock, isFalse);
+    expect(item.copyWith(quantity: 0.25).isLowStock, isTrue);
   });
 
   test(

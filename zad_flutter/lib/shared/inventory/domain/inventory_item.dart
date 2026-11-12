@@ -11,6 +11,54 @@
 /// rule is about exactly these two fields.
 library;
 
+// l10n: data-begin
+// Units as stored in zad_inventory.unit (matched, never shown through here).
+const Set<String> _bulkUnits = <String>{
+  'كجم',
+  'كيلو',
+  'كيلوجرام',
+  'كيلوغرام',
+  'كغ',
+  'kg',
+  'لتر',
+  'l',
+  'liter',
+  'litre',
+};
+const Set<String> _fineUnits = <String>{
+  'جرام',
+  'جم',
+  'غرام',
+  'غ',
+  'g',
+  'gm',
+  'مل',
+  'ملي',
+  'ml',
+};
+// l10n: data-end
+
+/// The low-stock level a row gets when nobody chose one (ZAD_PLAN ١٠.١ slice
+/// 3): a quarter of what was added, and never below half of a counted pack,
+/// a quarter kilo or litre, or 100 g / ml.
+///
+/// The same rule as the server's `zad_default_low_stock_threshold`
+/// (`20261112200000_low_stock_threshold_by_unit.sql`), which fills rows that
+/// arrive without one. Before it every row carried the column's default of 2,
+/// and most things are bought one at a time: on 2026-11-12, 29 of the live
+/// project's 40 pantry rows read «منخفض», the box that had just come in
+/// included.
+double defaultLowStockThreshold(double quantity, String? unit) {
+  final u = (unit ?? '').trim().toLowerCase();
+  final floor = _bulkUnits.contains(u)
+      ? 0.25
+      : _fineUnits.contains(u)
+      ? 100.0
+      : 0.5;
+  final quarter = ((quantity < 0 ? 0 : quantity) * 0.25 * 100).round() / 100;
+  return quarter > floor ? quarter : floor;
+}
+
 /// A pantry row.
 class InventoryItem {
   /// Creates an item.
@@ -128,22 +176,25 @@ class InventoryItem {
     _ => occasionalByHistory,
   };
 
-  /// The threshold actually applied.
-  ///
-  /// Two when none is set and never below one, matching the Kotlin screens —
-  /// `(lowStockThreshold ?: 2).coerceAtLeast(1)`. A zero threshold would mean
-  /// "warn me when I have less than nothing", which is a warning that never
-  /// fires.
+  /// The threshold actually applied: the row's own, or
+  /// [defaultLowStockThreshold] when it has none (a row still queued, or one
+  /// written before the server filled it). A zero or negative one would mean
+  /// "warn me when I have less than nothing", a warning that never fires, so
+  /// it counts as none.
   double get effectiveThreshold {
-    final set = lowStockThreshold ?? 2;
-    return set < 1 ? 1 : set;
+    final set = lowStockThreshold;
+    return set != null && set > 0
+        ? set
+        : defaultLowStockThreshold(quantity, unit);
   }
 
   /// Whether this is running out.
   bool get isLowStock => quantity <= effectiveThreshold;
 
-  /// Whether it is close to running out but not there yet.
-  bool get isGettingLow => !isLowStock && quantity <= effectiveThreshold * 2;
+  /// Whether it is close to running out but not there yet: under twice the
+  /// threshold. Strictly under, so the one box just bought (threshold half a
+  /// box) reads as stocked rather than «almost gone».
+  bool get isGettingLow => !isLowStock && quantity < effectiveThreshold * 2;
 
   /// Days until it expires, counted in civil days from [today], or null when
   /// no expiry is set.
