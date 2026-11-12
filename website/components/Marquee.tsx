@@ -14,14 +14,12 @@ const items = [
 export default function Marquee() {
   const row = [...items, ...items];
   return (
-    <section aria-label="اللي زاد بيشيله عنك" className="relative overflow-hidden border-y border-line py-8">
-      <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-32 bg-gradient-to-r from-ink to-transparent" />
-      <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-32 bg-gradient-to-l from-ink to-transparent" />
-      <div className="marquee-track flex w-max gap-12 whitespace-nowrap">
+    <section aria-label="اللي زاد بيشيله عنك" className="relative overflow-hidden bg-emerald py-6">
+      <div className="marquee-track flex w-max gap-10 whitespace-nowrap">
         {row.map((t, i) => (
-          <span key={i} className="flex items-center gap-12 text-3xl font-extrabold text-bone/80 md:text-5xl">
+          <span key={i} className="display flex items-center gap-10 text-4xl text-white md:text-6xl">
             {t}
-            <span aria-hidden className="h-2 w-2 rotate-45 bg-carrot" />
+            <span aria-hidden className="h-3 w-3 rotate-45 rounded-[3px] bg-mint-glow" />
           </span>
         ))}
       </div>

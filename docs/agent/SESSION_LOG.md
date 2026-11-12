@@ -333,3 +333,11 @@ related:
 - **الشريحة:** `dialect_region` في `update_customer_profile` (الـsanitizer كان بيرميه)، `set_app_setting`، `delete_memory` — بالنية (`APP_SETTING_INTENT`، `FORGET_INTENT`). `appByVoice_test.ts` (٦ تستات، mutation-checked).
 - **فخ:** `package.json` غير متتبّع في جذر الريبو بيكسر `deno check`/`deno test` محلياً («Could not find a matching package … node_modules») ⇒ `DENO_NO_PACKAGE_JSON=1`. CI مافيهوش الملف.
 - **فخ:** مجموعة التقييم الليلي مقفولة على ٢٠٠ بالظبط (`judge_test`) — حالة جديدة = تبديل حالة، مش إضافة.
+
+## ٢٠٢٦-١١-١٢ (تاني) — الموقع بهوية التطبيق وزادو
+
+- **طلب المالك:** الموقع «بطيء ومضلم» ⇐ اتعاد بألوان `ZadColors` (فاتح: زمردي/خردلي/طوبي)، وزادو مرسوم SVG من `plush_painting.dart` (نَفَس، رمش، عين بتتبع الماوس، نطّة وكلام بالضغط، مزاج وحاجة في إيده لكل فصل). عناوين Markazi Text + Cairo عبر `next/font/google`.
+- **السرعة:** اتشالت three / R3F / drei / lenis وستارة الافتتاح. `next build` EXIT=0، `eslint` EXIT=0، اتشاف على 1440 و390.
+- **الاسم:** «Astra Labs / أسترا لابس» (تصحيح المالك). دومين `astralabs.vercel.app` محجوز لحد تاني.
+- **مستني المالك:** تغيير اسم فريق Vercel (السلَج لسه فيه اسمه في لينكات الـpreview) — الأداة اترفضت من نظام الصلاحيات.
+- **فخ:** `--font-display: var(--font-display)` في `@theme` بيلف على نفسه؛ متغير `next/font` لازم اسم مختلف (`--font-markazi`).

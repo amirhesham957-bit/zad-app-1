@@ -6,5 +6,5 @@ export const PLAY_STORE_URL =
 // iOS is not published yet: the App Store button renders as "قريباً".
 export const APP_STORE_URL: string | null = null;
 
-export const COMPANY = "Astra Lab";
-export const COMPANY_AR = "أسترا لاب";
+export const COMPANY = "Astra Labs";
+export const COMPANY_AR = "أسترا لابس";
