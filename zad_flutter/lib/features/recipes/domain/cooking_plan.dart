@@ -33,17 +33,32 @@ const Set<String> _bulk = <String>{
   'لتر',
   'l',
   'liter',
-  'litre', //
+  'litre',
 };
 const Set<String> _fine = <String>{
-  'جرام', 'جم', 'غرام', 'غ', 'g', 'gm', 'مل', 'ملي', 'ml', //
+  'جرام',
+  'جم',
+  'غرام',
+  'غ',
+  'g',
+  'gm',
+  'مل',
+  'ملي',
+  'ml',
+};
+const Map<String, String> _arabicDigits = <String, String>{
+  '٠': '0',
+  '١': '1',
+  '٢': '2',
+  '٣': '3',
+  '٤': '4',
+  '٥': '5',
+  '٦': '6',
+  '٧': '7',
+  '٨': '8',
+  '٩': '9',
 };
 // l10n: data-end
-
-const Map<String, String> _arabicDigits = <String, String>{
-  '٠': '0', '١': '1', '٢': '2', '٣': '3', '٤': '4', //
-  '٥': '5', '٦': '6', '٧': '7', '٨': '8', '٩': '9', //
-};
 
 Set<String> _words(String s) =>
     normalizeItemName(s)

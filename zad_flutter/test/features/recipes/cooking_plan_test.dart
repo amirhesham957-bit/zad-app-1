@@ -17,7 +17,7 @@ InventoryItem _item(String id, String name, double qty, [String? unit]) =>
     );
 
 class _Pantry extends PantryController {
-  _Pantry(this.items);
+  new(this.items);
 
   final List<InventoryItem> items;
   final List<(String, num)> adjusted = <(String, num)>[];

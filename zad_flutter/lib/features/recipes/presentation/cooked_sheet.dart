@@ -30,6 +30,7 @@ Future<int> showCookedSheet(
   final taken = await showModalBottomSheet<int>(
     context: context,
     isScrollControlled: true,
+    useSafeArea: true,
     showDragHandle: true,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(ZadRadii.sheet)),
