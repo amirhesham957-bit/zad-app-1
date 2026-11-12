@@ -322,5 +322,5 @@ related:
 
 - **اتعمل:** موقع Next.js 16 + Tailwind 4 + React Three Fiber/drei + Motion + Lenis في `website/` (عربي RTL، خط Cairo من `zad_flutter/assets/fonts`). هيرو ثري دي (الجزرة + عملات + كبسولات)، قصة أفقية بالسكرول (فلوسك/مطبخك/دواك/عيلتك)، عقل زاد، زرار Google Play على `com.aistudio.zad.wrtqvx`، وApp Store «قريباً» (`lib/links.ts`).
 - **اتقاس:** `next build` EXIT=0، `eslint` EXIT=0، وشوفته في Chrome على 1440 و390 من غير overflow أفقي.
-- **مستني المالك:** النشر على Vercel (مفيش أداة Vercel ولا HyperFrames في الجلسة) — Root Directory = `website`. ولينك Play مش متأكد إنه منشور.
+- **اتنشر:** https://zad-astralab.vercel.app (مشروع Vercel `zad-astralab`، Root Directory = `website`). اتنزّل Vercel CLI والـplugin والـMCP (`plugin:vercel:vercel`، محتاج `/mcp` auth من المالك). لينك Play مش متأكد إنه منشور.
 - **فخ:** Motion بيحوّل `useScroll`+`useTransform` على opacity/transform لـWAAPI، وأي offset برّه 0..1 بيوقّع الصفحة كلها («Offsets must be monotonically non-decreasing»). و`new Date()` في Server Component بيكسر الـprerender في Next 16 (`cacheComponents`).
