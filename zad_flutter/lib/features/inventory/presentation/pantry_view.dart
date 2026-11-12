@@ -27,6 +27,7 @@ import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/inventory/domain/pantry_categories.dart';
+import 'package:zad/features/inventory/presentation/pantry_starter_card.dart';
 import 'package:zad/shared/chat/application/chat_controller.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart'
     hide PantryView;
@@ -42,7 +43,6 @@ import 'package:zad/shared/inventory/presentation/quantity_text.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/navigation/destinations.dart';
 import 'package:zad/shared/navigation/shell_navigation.dart';
-import 'package:zad/shared/navigation/zad_screens.dart';
 
 // l10n: data-begin
 /// Kotlin's stored units — **data** written to `zad_inventory.unit`.
@@ -230,6 +230,27 @@ class _PantryViewState extends ConsumerState<PantryView> {
     ref.read(shellNavigationProvider.notifier).open(ShellTab.chat);
   }
 
+  /// «خلص»: the row to zero as one use, so the learner hears it like the −
+  /// it replaces, with a way back.
+  Future<void> _finish(InventoryItem item) async {
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    final l = context.l10n;
+    final amount = item.quantity;
+    final controller = ref.read(pantryControllerProvider.notifier);
+    await controller.adjust(item.id, -amount);
+    messenger
+      ?..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(l.pantryFinishedSnack(item.itemName)),
+          action: SnackBarAction(
+            label: l.pantryUndo,
+            onPressed: () => unawaited(controller.adjust(item.id, amount)),
+          ),
+        ),
+      );
+  }
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
@@ -366,34 +387,11 @@ class _PantryViewState extends ConsumerState<PantryView> {
             ],
           ),
           if (all.isEmpty && _query.isEmpty)
-            SliverFillRemaining(
-              hasScrollBody: false,
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 110),
-                child: KtEmptyState(
-                  icon: Icons.inventory_2,
-                  title: context.l10n.pantryEmptyTitle,
-                  subtitle: context.l10n.pantryEmptyBody,
-                  action: OutlinedButton.icon(
-                    onPressed: () =>
-                        unawaited(ZadScreens.openZadCamera(context)),
-                    style: OutlinedButton.styleFrom(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                    ),
-                    icon: const Icon(Icons.camera_alt, size: 16),
-                    label: Text(
-                      context.l10n.pantryScan,
-                      style: ZadType.bodySmall,
-                    ),
-                  ),
-                ),
-              ),
+            // The staples in one tap instead of «المخزون فارغ» and a camera
+            // button (ZAD_PLAN ١٠.١ slice 5); clear of the add button below.
+            const SliverPadding(
+              padding: EdgeInsets.only(bottom: 110),
+              sliver: SliverToBoxAdapter(child: PantryStarterCard()),
             )
           else if (filtered.isEmpty)
             SliverFillRemaining(
@@ -463,7 +461,7 @@ class _PantryViewState extends ConsumerState<PantryView> {
                       onRestock: () => unawaited(controller.adjust(row.id, 1)),
                       onEdit: () =>
                           unawaited(showEditPantrySheet(context, row)),
-                      onDelete: () => unawaited(controller.remove(row.id)),
+                      onFinish: () => unawaited(_finish(row)),
                     );
                   }
                   return ZadAppearOnEntryDelay(
@@ -486,26 +484,15 @@ class _PantryViewState extends ConsumerState<PantryView> {
               child: body,
             ),
           ),
-          PositionedDirectional(
-            end: 16,
+          // One button, on the right where a right thumb rests (it sat on
+          // the left beside a second camera button; the bar's camera is the
+          // one way to scan — owner, 2026-11-12).
+          Positioned(
+            right: 16,
             bottom: 24,
             child: ZadStepsAside(
               child: Row(
                 children: <Widget>[
-                  FloatingActionButton(
-                    heroTag: 'pantry-photo',
-                    onPressed: () =>
-                        unawaited(ZadScreens.openZadCamera(context)),
-                    tooltip: context.l10n.pantryScanTooltip,
-                    backgroundColor: scheme.secondary,
-                    foregroundColor: scheme.onSecondary,
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: const Icon(Icons.document_scanner),
-                  ),
-                  const SizedBox(width: 10),
                   FloatingActionButton(
                     heroTag: 'pantry-add',
                     onPressed: () => unawaited(showAddPantrySheet(context)),
@@ -852,7 +839,7 @@ class _InventoryItemCard extends StatelessWidget {
     required this.onConsume,
     required this.onRestock,
     required this.onEdit,
-    required this.onDelete,
+    required this.onFinish,
     this.grouped = false,
   });
 
@@ -865,8 +852,12 @@ class _InventoryItemCard extends StatelessWidget {
   final bool grouped;
   final VoidCallback onConsume;
   final VoidCallback onRestock;
+
+  /// The whole card: edit, and delete from there.
   final VoidCallback onEdit;
-  final VoidCallback onDelete;
+
+  /// «خلص»: down to zero in one tap.
+  final VoidCallback onFinish;
 
   @override
   Widget build(BuildContext context) {
@@ -877,17 +868,39 @@ class _InventoryItemCard extends StatelessWidget {
     // it is simply not in the house right now.
     final isLow = !grouped && !item.isOccasional && item.isLowStock;
 
+    // 44dp to tap (CLAUDE.md), the glyph as small as it was: they were 26dp
+    // and the steppers were the most-used controls on the screen.
     Widget small(IconData icon, String label, Color tint, VoidCallback? tap) =>
         SizedBox.square(
-          dimension: 26,
+          dimension: 44,
           child: IconButton(
             padding: EdgeInsets.zero,
             tooltip: label,
             onPressed: tap,
-            icon: Icon(icon, size: 16, color: tint),
+            icon: Icon(icon, size: 20, color: tint),
           ),
         );
 
+    return Semantics(
+      button: true,
+      label: context.l10n.pantryEditItem,
+      child: GestureDetector(
+        key: ValueKey<String>('pantry-card-${item.id}'),
+        behavior: HitTestBehavior.opaque,
+        onTap: onEdit,
+        child: _card(context, scheme, days, def, isLow, small),
+      ),
+    );
+  }
+
+  Widget _card(
+    BuildContext context,
+    ColorScheme scheme,
+    int? days,
+    _CategoryDef def,
+    bool isLow,
+    Widget Function(IconData, String, Color, VoidCallback?) small,
+  ) {
     return DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
@@ -1060,33 +1073,21 @@ class _InventoryItemCard extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(width: 4),
-            SizedBox.square(
-              dimension: 26,
-              child: IconButton(
-                padding: EdgeInsets.zero,
-                tooltip: context.l10n.pantryEditItem,
-                onPressed: onEdit,
-                icon: const Icon(
-                  Icons.edit,
-                  size: 15,
-                  color: Color(0xFF94A3B8),
+            if (item.quantity > 0)
+              SizedBox.square(
+                dimension: 44,
+                child: IconButton(
+                  key: ValueKey<String>('pantry-finish-${item.id}'),
+                  padding: EdgeInsets.zero,
+                  tooltip: context.l10n.pantryFinish,
+                  onPressed: onFinish,
+                  icon: Icon(
+                    Icons.task_alt_rounded,
+                    size: 20,
+                    color: scheme.error,
+                  ),
                 ),
               ),
-            ),
-            SizedBox.square(
-              dimension: 26,
-              child: IconButton(
-                padding: EdgeInsets.zero,
-                tooltip: context.l10n.commonDelete,
-                onPressed: onDelete,
-                icon: const Icon(
-                  Icons.delete_outline,
-                  size: 15,
-                  color: Color(0xFF94A3B8),
-                ),
-              ),
-            ),
           ],
         ),
       ),
@@ -1768,6 +1769,21 @@ class _EditState extends ConsumerState<_EditInventoryDialog> {
         ),
       ),
       actions: <Widget>[
+        // Delete lives here now that the card's own button is «خلص».
+        TextButton(
+          key: const ValueKey<String>('pantry-edit-delete'),
+          onPressed: () async {
+            final navigator = Navigator.of(context);
+            await ref
+                .read(pantryControllerProvider.notifier)
+                .remove(widget.item.id);
+            navigator.pop();
+          },
+          style: TextButton.styleFrom(
+            foregroundColor: Theme.of(context).colorScheme.error,
+          ),
+          child: Text(context.l10n.pantryDeleteItem),
+        ),
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
           child: Text(context.l10n.commonCancel),
