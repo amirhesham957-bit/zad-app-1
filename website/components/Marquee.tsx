@@ -1,20 +1,20 @@
 const items = [
-  "رسايل البنك",
+  "رسائل البنك",
   "مسح الفواتير",
   "قائمة التسوق",
-  "مواعيد الدوا",
+  "مواعيد الدواء",
   "شيف زاد",
-  "مهام الأولاد",
+  "مهام الأبناء",
   "أسعار السوق",
   "ميزانية الشهر",
-  "شات العيلة",
+  "محادثة العائلة",
 ];
 
 // The page's single marquee: breadth of what Zad covers, none of it needs a click.
 export default function Marquee() {
   const row = [...items, ...items];
   return (
-    <section aria-label="اللي زاد بيشيله عنك" className="relative overflow-hidden bg-emerald py-6">
+    <section aria-label="ما يتولاه زاد عنك" className="relative overflow-hidden bg-emerald py-6">
       <div className="marquee-track flex w-max gap-10 whitespace-nowrap">
         {row.map((t, i) => (
           <span key={i} className="display flex items-center gap-10 text-4xl text-white md:text-6xl">
