@@ -163,7 +163,7 @@ export default function Hero() {
           className="md:justify-self-end"
         >
           <p className="mb-6 max-w-[34ch] text-lg leading-relaxed text-slate">
-            زاد بيسجّل مصاريفك من رسايل البنك، بيعرف ناقص إيه في المطبخ، وبيفكّرك بمعاد الدوا.
+            يسجّل زاد مصاريفك من رسائل البنك، ويعرف ما ينقص مطبخك، ويذكّرك بموعد الدواء.
           </p>
           <StoreButtons />
         </motion.div>
