@@ -15,6 +15,7 @@ owner's real account, where only read-only taps are allowed.
 
 | PR | What changed | Tests | Phone |
 |---|---|---|---|
+| — | بيتي tidied (ZAD_PLAN ١٠.١ slice 5): one add button, on the right (it sat on the left beside a second camera button — the bar's camera is the way to scan); the − / + steppers are 44dp (were 26); «خلص» on the card takes a row to zero as one use, with «تراجع»; a tap on the card edits it and delete moved into the edit dialog; an empty pantry shows «أضف أساسيات بيتك بلمسة» — the market's staples ticked (Egypt: لبن/عيش, Gulf: حليب/خبز/تمر), one button adds them, a receipt link under it | widget tests (`pantry_cleanup_test.dart`), the 44dp guard mutation-checked, analyze, full suite | no |
 | — | بيتي, «منخفض» (ZAD_PLAN ١٠.١ slice 3): a row's low level is a quarter of what was added, never below half a counted pack / 0.25 kg·l / 100 g·ml — the same rule on the phone (`defaultLowStockThreshold`) and in the server's insert trigger (`zad_default_low_stock_threshold`); the column's default of 2 is gone and the rows that carried it are recomputed (live: 29 of 40 «منخفض» ⇒ 2). The low banner names what is short instead of «(غير محدد)» | SQL test on a scratch Postgres + mutation; Flutter unit test, analyze, full suite | no |
 | #438 | «ضيف للبيت» is no longer logged as an expense | passed, merged | no |
 | #439 | Live prices on top, language button beside the bell | passed, merged | seen on Home |

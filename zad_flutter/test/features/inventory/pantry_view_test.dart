@@ -37,6 +37,14 @@ InventoryItem _i(
   expiryDate: expiry,
 );
 
+/// Every pantry card; a tap on one opens «تعديل الصنف» (the pencil became
+/// the card itself, ZAD_PLAN ١٠.١ slice 5).
+final Finder _cards = find.byWidgetPredicate(
+  (w) =>
+      w.key is ValueKey<String> &&
+      (w.key! as ValueKey<String>).value.startsWith('pantry-card-'),
+);
+
 void main() {
   setUpAll(() async {
     tz_data.initializeTimeZones();
@@ -196,9 +204,11 @@ void main() {
       expect(opened, <HouseholdSection>[HouseholdSection.shopping]);
     });
 
-    testWidgets('the pencil opens «تعديل الصنف» on that row', (tester) async {
+    testWidgets('a tap on the card opens «تعديل الصنف» on that row', (
+      tester,
+    ) async {
       await pump(tester);
-      await tester.tap(find.byTooltip('تعديل الصنف').first);
+      await tester.tap(_cards.first);
       await tester.pump(const Duration(milliseconds: 500));
       expect(find.text('تعديل الصنف'), findsWidgets);
       expect(find.widgetWithText(FilledButton, 'حفظ'), findsOneWidget);
@@ -264,10 +274,13 @@ void main() {
       final pantryCtl = await pump(tester);
 
       // The milk: a staple until the customer flips it.
-      await tester.tap(find.byTooltip('تعديل الصنف').first);
+      await tester.tap(_cards.first);
       await tester.pump(const Duration(milliseconds: 500));
       final toggle = find.widgetWithText(SwitchListTile, 'بشتريها على فترات');
       expect(tester.widget<SwitchListTile>(toggle).value, isFalse);
+      // The dialog grew a delete button; the switch may need a scroll.
+      await tester.ensureVisible(toggle);
+      await tester.pump();
       await tester.tap(toggle);
       await tester.pump();
       await tester.tap(find.widgetWithText(FilledButton, 'حفظ'));
@@ -276,7 +289,7 @@ void main() {
 
       // The herring: already occasional by its history; saving untouched
       // writes no word, so the history keeps deciding.
-      await tester.tap(find.byTooltip('تعديل الصنف').last);
+      await tester.tap(_cards.last);
       await tester.pump(const Duration(milliseconds: 500));
       expect(
         tester
@@ -323,7 +336,7 @@ void main() {
       ),
     );
     await tester.pump();
-    await tester.tap(find.byTooltip('تعديل الصنف').first);
+    await tester.tap(_cards.first);
     await tester.pump(const Duration(milliseconds: 500));
     await tester.tap(find.widgetWithText(FilledButton, 'حفظ'));
     await tester.pump(const Duration(milliseconds: 500));
@@ -447,7 +460,7 @@ void main() {
           ),
         );
         await tester.pump();
-        await tester.tap(find.byTooltip('تعديل الصنف').first);
+        await tester.tap(_cards.first);
         await tester.pumpAndSettle();
       }
 
