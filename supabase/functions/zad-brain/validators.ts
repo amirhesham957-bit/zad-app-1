@@ -768,6 +768,23 @@ export const validateSetSleepWindow: Validator = (input, _snap, ctx) => {
   return { ok: true };
 };
 
+export const validateSetAppSetting: Validator = (input, _snap, ctx) => {
+  if ((ctx.counts["set_app_setting"] ?? 0) >= 2) return { ok: false, reason: "الإعدادات اتغيّرت كفاية في اللفة دي" };
+  if (input.setting !== "pet_calls" && input.setting !== "food_pattern") return { ok: false, reason: "setting لازم pet_calls أو food_pattern" };
+  if (typeof input.on !== "boolean") return { ok: false, reason: "on لازم true أو false" };
+  return { ok: true };
+};
+
+/** ملاحظة واحدة في اللفة، ولازم تكون من memory اللي العميل شايفها — مش id مهلوس. */
+export const validateDeleteMemory: Validator = (input, snap, ctx) => {
+  if ((ctx.counts["delete_memory"] ?? 0) >= 1) return { ok: false, reason: "ملاحظة واحدة في المرة — اسأله عن الباقي" };
+  const id = typeof input.memory_id === "string" ? input.memory_id.trim() : "";
+  if (!id) return { ok: false, reason: "memory_id ناقص" };
+  const memory = ((snap as { memory?: Array<{ id?: unknown }> } | null)?.memory ?? []);
+  if (!memory.some((m) => m.id === id)) return { ok: false, reason: "الـid ده مش في memory — اختار الملاحظة اللي بيتكلم عنها من memory" };
+  return { ok: true };
+};
+
 export const validateHandoverCard: Validator = (input, _snap, ctx) => {
   if ((ctx.counts["handover_card"] ?? 0) >= 1) return { ok: false, reason: "الكارت اتعمل خلاص في اللفة دي" };
   const days = input.days;
@@ -1231,6 +1248,8 @@ export const VALIDATORS: Record<string, Validator> = {
   save_document: validateSaveDocument,
   handover_card: validateHandoverCard,
   set_sleep_window: validateSetSleepWindow,
+  set_app_setting: validateSetAppSetting,
+  delete_memory: validateDeleteMemory,
   plan_gathering: validateGathering("plan_gathering"),
   add_gathering_to_list: validateGathering("add_gathering_to_list"),
   delete_document: validateDeleteDocument,
@@ -1277,6 +1296,8 @@ export const MUTATING_TOOLS = [
   "add_gathering_to_list",
   // إيقاع النوم يدوي (الشريحة ٣٧).
   "set_sleep_window",
+  // ZAD_PLAN ١٠.٢(أ): مفاتيح الإعدادات و«انسى» بالكلام.
+  "set_app_setting", "delete_memory",
   // مواعيد العميل (20260914004000)
   "add_appointment", "update_appointment", "delete_appointment",
   "add_place_reminder", "cancel_place_reminder",
