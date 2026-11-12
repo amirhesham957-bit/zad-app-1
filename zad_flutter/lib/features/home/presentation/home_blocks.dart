@@ -25,7 +25,7 @@ import 'package:zad/shared/companion/domain/companion_status.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
 import 'package:zad/shared/orb/application/pet_sound.dart';
-import 'package:zad/shared/profile/application/profile_controller.dart';
+import 'package:zad/shared/profile/application/call_name.dart';
 import 'package:zad/shared/transactions/application/transactions_controller.dart';
 import 'package:zad/shared/transactions/domain/transaction.dart';
 
@@ -132,7 +132,7 @@ class HomeCompanionHeader extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final name = ref.watch(profileControllerProvider.select((v) => v.name));
+    final name = ref.watch(customerCallNameProvider);
     // A seasonal campaign rims the card in its colour and pins its badge to
     // the orb; without one the row is exactly as it was.
     final campaign = ref.watch(homeCampaignProvider)?.campaign;

@@ -115,6 +115,10 @@ class SettingsRepository {
     return AccountSettings.fromJson(jsonDecode(raw) as Map<String, dynamic>);
   }
 
+  /// Fires whenever the cached settings change — a [refresh] landing, a
+  /// setter, the outbox's read-back, or a sign-out's [clear].
+  Stream<void> cacheChanges() => _cache.watch(key: _key);
+
   /// Asks the server, and caches the answer.
   ///
   /// Anything still sitting in the outbox is laid back over the server's row
@@ -404,3 +408,20 @@ final Provider<SettingsRepository> settingsRepositoryProvider =
         now: ref.watch(nowProvider),
       );
     });
+
+/// The cached settings, rebuilt every time the cache changes.
+///
+/// `settingsRepositoryProvider` is rebuilt on sign-in, when a new account's
+/// cache is still empty, and never again; anything that read `.cached()` off
+/// it kept that first answer. A Saudi account signing up therefore read
+/// Egyptian screens and the Cairo calendar until the app was killed
+/// (measured on the emulator 2026-11-12: the ticker said «لسه مفيش» after the
+/// budget gate had already shown «السعودية — SAR»). Watch this instead.
+final cachedAccountSettingsProvider = Provider<AccountSettings?>((ref) {
+  final repository = ref.watch(settingsRepositoryProvider);
+  final subscription = repository.cacheChanges().listen(
+    (_) => ref.invalidateSelf(),
+  );
+  ref.onDispose(subscription.cancel);
+  return repository.cached();
+});

@@ -3704,4 +3704,206 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get notifNoneNew => 'No new notifications';
+
+  @override
+  String get introTitle => 'Tell me about you';
+
+  @override
+  String get introLead =>
+      'Five questions and one optional, so I talk to you right and look after the people you care for.';
+
+  @override
+  String get introNameQuestion => 'What should I call you?';
+
+  @override
+  String get introNameHint => 'Your name or a nickname';
+
+  @override
+  String get introGenderQuestion => 'How should I address you?';
+
+  @override
+  String get introGenderMale => 'A man';
+
+  @override
+  String get introGenderFemale => 'A woman';
+
+  @override
+  String get introRoleQuestion => 'Who are you at home?';
+
+  @override
+  String get introRoleFather => 'Father';
+
+  @override
+  String get introRoleMother => 'Mother';
+
+  @override
+  String get introRoleHusband => 'Husband';
+
+  @override
+  String get introRoleWife => 'Wife';
+
+  @override
+  String get introRoleSon => 'Son';
+
+  @override
+  String get introRoleDaughter => 'Daughter';
+
+  @override
+  String get introRoleSingle => 'I live alone';
+
+  @override
+  String get introRoleStudent => 'Student';
+
+  @override
+  String get introRoleGrandparent => 'Grandparent';
+
+  @override
+  String get introRoleOther => 'Something else';
+
+  @override
+  String get introCaresQuestion => 'Who do you look after?';
+
+  @override
+  String get introCaresHint => 'Pick all that apply.';
+
+  @override
+  String get introCaresChildren => 'My children';
+
+  @override
+  String get introCaresParents => 'My parents';
+
+  @override
+  String get introCaresSpouse => 'My spouse';
+
+  @override
+  String get introCaresSiblings => 'My siblings';
+
+  @override
+  String get introCaresGrandparents => 'My grandparents';
+
+  @override
+  String get introCaresNobody => 'Nobody — just myself';
+
+  @override
+  String get introHouseholdQuestion => 'How many people live at home?';
+
+  @override
+  String get introHouseholdHint =>
+      'Counting you. So I can work out what the home uses.';
+
+  @override
+  String get introHouseholdMany => '7 or more';
+
+  @override
+  String get introPayDayQuestion => 'Which day of the month are you paid?';
+
+  @override
+  String get introPayDayHint => 'Optional — so I count your month from payday.';
+
+  @override
+  String get introPayDayNone => 'It varies / I\'d rather not say';
+
+  @override
+  String introPayDay(int day) {
+    return 'Day $day';
+  }
+
+  @override
+  String get introSave => 'Let\'s go';
+
+  @override
+  String get introSaveFailed =>
+      'I couldn\'t save — check your connection and try again.';
+
+  @override
+  String get firstStepsTitle => 'First steps';
+
+  @override
+  String get firstStepsLead =>
+      'Three steps in two minutes, and Zad starts working with you today.';
+
+  @override
+  String get firstStepsSpendTitle => 'Log your first expense';
+
+  @override
+  String get firstStepsSpendBody =>
+      'Anything you spent today — coffee, a ride, bread. That\'s where Zad starts to understand your month.';
+
+  @override
+  String get firstStepsSpendDone => 'Logged ✓';
+
+  @override
+  String get firstStepsSpendAction => 'Log an expense';
+
+  @override
+  String get firstStepsAlertsTitle => 'Turn on notifications';
+
+  @override
+  String get firstStepsAlertsBody =>
+      'So I can tell you when the budget is running low, and remind you of medicine and bills on time.';
+
+  @override
+  String get firstStepsAlertsDone => 'On ✓';
+
+  @override
+  String get firstStepsAlertsAction => 'Turn on';
+
+  @override
+  String get firstStepsTelegramTitle => 'Connect the Telegram bot';
+
+  @override
+  String get firstStepsTelegramBody =>
+      'Without it, reminders and the «close your day» question won\'t reach you outside the app.';
+
+  @override
+  String get firstStepsGo => 'On to Zad';
+
+  @override
+  String get firstStepsLater => 'Finish later — open Zad';
+
+  @override
+  String get petLinesHungry =>
+      'My tummy\'s rumbling… feed me? 🍎\nSo hungry 🥺 just a little something\nSmell food? No, that\'s me being hungry 😅';
+
+  @override
+  String get petLinesThirsty =>
+      'Thirsty… a little water? 💧\nMy mouth is dry 🥵 water me\nOne glass of water and I\'m perfect 💧';
+
+  @override
+  String get petLinesSleepy =>
+      'Sleepy… 😴 good night\nYaaawn 🥱 carry on tomorrow?\nMy eyes are closing on their own… 💤';
+
+  @override
+  String petLinesSad(String name) {
+    return 'I missed you… and you forgot my food and water 🥺\n$name is a little sad… come sit with me 💔';
+  }
+
+  @override
+  String get petLinesHappy =>
+      'I\'m happy with you 💚\nThanks for remembering me 🥰\nYou\'re the best friend 🤗';
+
+  @override
+  String get petLinesIdleLogged =>
+      'How\'s your day? ✨\nI\'m here if you need me 💚\nYou logged today — well done 👏';
+
+  @override
+  String get petLinesIdleNotLogged =>
+      'Logged your spending today? 📝\nJust one expense and I\'ll be proud of you 🌱';
+
+  @override
+  String get petLinesFed => 'Yum yum! 😋\nThank you 🍎\nBest meal ever 🤤';
+
+  @override
+  String get petLinesFull => 'I\'m full 🤭\nI can\'t eat any more 😅';
+
+  @override
+  String get petLinesWatered => 'Ahh, refreshed! 💧\nMuch better 😌';
+
+  @override
+  String get petLinesNotThirsty =>
+      'I don\'t want water now 🙈\nI\'ve had enough 😄';
+
+  @override
+  String get petLinesPetted =>
+      'Hehe, that tickles 🤭\nMore! More! 🥰\nLove you 💚';
 }
