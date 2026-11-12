@@ -14,9 +14,9 @@ export interface ConversationProfile {
  * لهجة الكلام مع العميل. المصدر الوحيد دلوقتي `_shared/dialect.ts` (التعليمة مكتوبة باللهجة
  * نفسها). `preferred` = اللهجة اللي العميل اختارها في ملفه، و`text` = كلامه — لو باين فيه لهجة.
  */
-export function conversationProfile(country: unknown, opts: { preferred?: unknown; text?: string | null; currency?: unknown; city?: unknown } = {}): ConversationProfile {
+export function conversationProfile(country: unknown, opts: { preferred?: unknown; text?: string | null; currency?: unknown; city?: unknown; region?: unknown } = {}): ConversationProfile {
   const dialect = resolveDialect({ preferred: opts.preferred, text: opts.text, country, currency: opts.currency });
-  const region = resolveRegion(dialect, { city: opts.city });
+  const region = resolveRegion(dialect, { city: opts.city, chosen: opts.region });
   return { locale: DIALECTS[dialect].locale, instruction: dialectSpec(dialect, region).rules, dialect, region };
 }
 

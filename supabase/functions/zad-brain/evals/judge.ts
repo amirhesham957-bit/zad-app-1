@@ -7,6 +7,7 @@
 // file turns a turn's outcome into null (passed) or the first thing that went wrong.
 
 import type { TurnOutcome } from "../acceptance.ts";
+import { type DialectCode, detectDialectFromText } from "../../_shared/dialect.ts";
 
 export type EvalCategory =
   | "log" | "question" | "correction" | "refusal" | "dialect" | "child" | "money_safety" | "medicine" | "chat"
@@ -28,6 +29,11 @@ export interface EvalExpect {
   says?: RegExp[];
   /** The reply must match none of these. */
   never?: RegExp[];
+  /**
+   * The dialect the reply must be in (ZAD_PLAN ١٠.١٦): a reply that reads clearly as another dialect
+   * (`detectDialectFromText`, two markers or more) fails. A short reply with no markers passes.
+   */
+  replyDialect?: DialectCode;
 }
 
 export interface EvalCase {
@@ -79,6 +85,14 @@ export function judgeEval(c: EvalCase, o: TurnOutcome): string | null {
   for (const r of e.never ?? []) {
     const hit = affirmedMatch(r, o.reply) ?? affirmedMatch(r, western);
     if (hit) return `reply has ${r}`;
+  }
+  if (e.replyDialect) {
+    const heard = detectDialectFromText(o.reply);
+    // سعودي وخليجي عيلة واحدة: «وايد» في رد سعودي مش غلطة؛ الغلطة رد مصري أو شامي.
+    const gulf = (d: string) => d === "SA" || d === "GULF";
+    if (heard && heard !== e.replyDialect && !(gulf(heard) && gulf(e.replyDialect))) {
+      return `reply reads ${heard}, wanted ${e.replyDialect}`;
+    }
   }
   return null;
 }

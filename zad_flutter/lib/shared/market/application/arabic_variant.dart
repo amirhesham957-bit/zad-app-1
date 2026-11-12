@@ -11,11 +11,26 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/shared/brain/application/memory_controller.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
 
+/// The Gulf markets that read the Saudi screens (owner's decision
+/// 2026-11-13): much closer to them than the Egyptian default, and no
+/// per-country file is needed yet.
+const Set<String> _saudiScreenCountries = <String>{
+  'SA',
+  'AE',
+  'QA',
+  'KW',
+  'BH',
+  'OM',
+};
+
 /// `'SA'` when the screens should read Saudi, null for the default Arabic.
 String? arabicVariantFor({String? country, String? dialect}) {
   final chosen = dialect?.trim().toUpperCase();
-  if (chosen != null && chosen.isNotEmpty) return chosen == 'SA' ? 'SA' : null;
-  return country?.trim().toUpperCase() == 'SA' ? 'SA' : null;
+  if (chosen != null && chosen.isNotEmpty) {
+    return chosen == 'SA' || chosen == 'GULF' ? 'SA' : null;
+  }
+  final market = country?.trim().toUpperCase();
+  return _saudiScreenCountries.contains(market) ? 'SA' : null;
 }
 
 /// The account's Arabic, from what is already on the device.

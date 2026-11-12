@@ -6,9 +6,12 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/brain/domain/customer_profile.dart';
+import 'package:zad/shared/market/application/account_time_zone.dart';
 
 /// Opens the form over [current].
 Future<CustomerProfile?> showProfileSheet(
@@ -72,6 +75,7 @@ class _ProfileSheetState extends State<ProfileSheet> {
   late String? _frequency = widget.initial.payFrequency;
   late String? _dialect = widget.initial.dialect;
   late String? _voice = widget.initial.zadVoice;
+  late String? _region = widget.initial.dialectRegion;
 
   @override
   void dispose() {
@@ -105,6 +109,7 @@ class _ProfileSheetState extends State<ProfileSheet> {
       // different profile and is reported as not saved.
       caresFor: widget.initial.caresFor,
       zadVoice: _voice,
+      dialectRegion: _region,
     ).normalized(),
   );
 
@@ -213,6 +218,33 @@ class _ProfileSheetState extends State<ProfileSheet> {
                 selected: _dialect,
                 label: ProfileLabels.dialect,
                 onChanged: (v) => setState(() => _dialect = v),
+              ),
+              // ZAD_PLAN ١٠.١٦: the region narrows Saudi only — shown when the
+              // dialect is Saudi, chosen or from a Saudi account. «عام» is the
+              // way back from a region; tapping the chosen one keeps it.
+              Consumer(
+                builder: (context, ref, _) {
+                  final saudi =
+                      _dialect == 'SA' ||
+                      (_dialect == null &&
+                          ref.watch(accountCountryProvider)?.toUpperCase() ==
+                              'SA');
+                  if (!saudi) return const SizedBox.shrink();
+                  final l = context.l10n;
+                  return _Chips(
+                    title: l.profileRegionTitle,
+                    options: ProfileOptions.dialectRegions,
+                    selected: _region,
+                    label: (v) => switch (v) {
+                      'SA_HIJAZ' => l.profileRegionHijazi,
+                      'SA_NAJD' => l.profileRegionNajdi,
+                      'SA_EAST' => l.profileRegionEast,
+                      'SA_SOUTH' => l.profileRegionSouth,
+                      _ => l.profileRegionGeneral,
+                    },
+                    onChanged: (v) => setState(() => _region = v ?? _region),
+                  );
+                },
               ),
               // Always one of the two: a voice that was never chosen is a
               // girl's, and tapping the chosen one keeps it.

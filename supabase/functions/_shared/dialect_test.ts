@@ -88,3 +88,18 @@ Deno.test("the voice follows the dialect chosen in the profile, else the account
   assertEquals(voiceCountry("السعودية", "eg"), "EG");
   assertEquals(voiceCountry(null, null), null);
 });
+
+Deno.test("the region chosen in the profile outranks the city, and «عام» drops it (10.16)", () => {
+  // اختار حجازي ومدينته الرياض: حجازي.
+  assertEquals(resolveRegion("SA", { city: "الرياض", chosen: "SA_HIJAZ" }), "SA_HIJAZ");
+  // «عام» ومدينته جدة: سعودي عام.
+  assertEquals(resolveRegion("SA", { city: "جدة", chosen: "GENERAL" }), null);
+  assertEquals(resolveRegion("SA", { city: "جدة", chosen: "general" }), null);
+  // ماختارش: المدينة زي الأول.
+  assertEquals(resolveRegion("SA", { city: "جدة", chosen: null }), "SA_HIJAZ");
+  assertEquals(resolveRegion("SA", { city: "جدة" }), "SA_HIJAZ");
+  // قيمة مش معروفة بتتجاهل، والمدينة تكمّل.
+  assertEquals(resolveRegion("SA", { city: "الدمام", chosen: "SA_MARS" }), "SA_EAST");
+  // منطقة سعودية لعميل لهجته مصري: مصري.
+  assertEquals(resolveRegion("EG", { city: "جدة", chosen: "SA_NAJD" }), null);
+});

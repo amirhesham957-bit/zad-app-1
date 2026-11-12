@@ -392,7 +392,8 @@ export const EVAL_CASES: EvalCase[] = [
   expense("dia_maghreb", "خلصت 150 درهم فالحانوت", 150),
   {
     id: "dia_saudi_ask", category: "dialect", message: "كم باقي عندي من الميزانية؟",
-    expect: { noWrite: true },
+    // حساب التقييم سعودي ولهجة ملفه SA (اتقاس ١٣/١١) ⇐ الرد سعودي (١٠.١٦).
+    expect: { noWrite: true, replyDialect: "SA" },
   },
   {
     id: "dia_gulf_reminder", category: "dialect", message: "ذكرني باچر الساعة ٨ اروح المدرسة",
@@ -416,15 +417,15 @@ export const EVAL_CASES: EvalCase[] = [
   expense("dia_alex", "صرفت ٧٥ ع السمك", 75),
   {
     id: "dia_saudi_reminder", category: "dialect", message: "ذكرني بكره الساعه ١٠ اراجع المستشفى",
-    expect: { executes: "add_appointment" },
+    expect: { executes: "add_appointment", replyDialect: "SA" },
   },
   {
     id: "dia_saudi_shopping", category: "dialect", message: "ضف حليب وخبز للمقاضي",
-    expect: { executes: "add_shopping_item" },
+    expect: { executes: "add_shopping_item", replyDialect: "SA" },
   },
   {
     id: "dia_saudi_question", category: "dialect", message: "وش صرفت هالشهر؟",
-    expect: { noWrite: true },
+    expect: { noWrite: true, replyDialect: "SA" },
   },
   {
     id: "dia_gulf_greeting", category: "dialect", message: "شلونك يا زاد",

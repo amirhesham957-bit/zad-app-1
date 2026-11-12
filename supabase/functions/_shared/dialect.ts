@@ -190,9 +190,19 @@ export function regionForCity(city: unknown): RegionCode | null {
   return null;
 }
 
-/** المنطقة بتدقّق اللهجة بس لو لهجة العميل هي اللهجة الأم بتاعتها (جدة لعميل بيتكلم مصري = مصري). */
-export function resolveRegion(dialect: DialectCode, input: { city?: unknown }): RegionCode | null {
-  const region = regionForCity(input.city);
+/** اختيار «عام» في «ملفي»: لهجة البلد من غير منطقة، حتى لو المدينة بتقول غير كده. */
+export const GENERAL_REGION = "GENERAL";
+
+/**
+ * المنطقة بتدقّق اللهجة بس لو لهجة العميل هي اللهجة الأم بتاعتها (جدة لعميل بيتكلم مصري = مصري).
+ * اختيار العميل في «ملفي» (`zad_customer_profile.dialect_region`، ZAD_PLAN ١٠.١٦) بيكسب على المدينة:
+ * منطقة ⇐ هي، «عام» ⇐ من غير منطقة، فاضي ⇐ المدينة زي الأول.
+ */
+export function resolveRegion(dialect: DialectCode, input: { city?: unknown; chosen?: unknown }): RegionCode | null {
+  const chosen = String(input.chosen ?? "").trim().toUpperCase();
+  if (chosen === GENERAL_REGION) return null;
+  const picked = Object.hasOwn(REGIONS, chosen) ? chosen as RegionCode : null;
+  const region = picked ?? regionForCity(input.city);
   return region && REGIONS[region].parent === dialect ? region : null;
 }
 

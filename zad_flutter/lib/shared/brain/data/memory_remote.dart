@@ -123,15 +123,16 @@ class SupabaseMemoryRemote implements MemoryRemote {
       'pay_day, pay_frequency, household_size, kids_count, city, dialect, '
       'cares_for';
 
-  /// The profile, with زاد's voice (`zad_voice`, 20261004090000). Before that
-  /// migration reaches the project the column is missing (42703), and the
-  /// read without it stands in.
+  /// The profile, with زاد's voice (`zad_voice`, 20261004090000) and the
+  /// Saudi region (`dialect_region`, 20261113030000). Before those migrations
+  /// reach the project a column is missing (42703), and the read without them
+  /// stands in.
   @override
   Future<Map<String, dynamic>?> fetchProfile(String userId) async {
     try {
       return await _client
           .from('zad_customer_profile')
-          .select('$_profileColumns, zad_voice')
+          .select('$_profileColumns, zad_voice, dialect_region')
           .eq('user_id', userId)
           .maybeSingle();
     } on PostgrestException catch (e) {

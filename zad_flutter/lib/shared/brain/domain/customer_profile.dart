@@ -80,6 +80,17 @@ abstract final class ProfileOptions {
     'TR',
     'EN',
   ];
+
+  /// `dialect_region` (20261113030000, ZAD_PLAN ١٠.١٦): where in Saudi
+  /// Arabia the customer speaks from. `GENERAL` is plain Saudi even when the
+  /// city says Jeddah; null has never been chosen and follows the city.
+  static const List<String> dialectRegions = <String>[
+    'SA_HIJAZ',
+    'SA_NAJD',
+    'SA_EAST',
+    'SA_SOUTH',
+    'GENERAL',
+  ];
 }
 
 /// The profile. Every field is optional; null is "not known yet".
@@ -100,6 +111,7 @@ class CustomerProfile {
     this.dialect,
     this.caresFor,
     this.zadVoice,
+    this.dialectRegion,
   });
 
   /// Reads a row.
@@ -120,6 +132,7 @@ class CustomerProfile {
       _ => null,
     },
     zadVoice: json['zad_voice'] as String?,
+    dialectRegion: json['dialect_region'] as String?,
   );
 
   /// How زاد addresses them.
@@ -163,6 +176,10 @@ class CustomerProfile {
   /// null has never been chosen and sounds like `female`.
   final String? zadVoice;
 
+  /// The Saudi region the customer chose (`dialect_region`); null follows
+  /// the city.
+  final String? dialectRegion;
+
   /// Whether the three things Zad needs from the first day are known: what to
   /// call the customer, how to address them, and their place in the home —
   /// including who they look after.
@@ -204,6 +221,7 @@ class CustomerProfile {
           .toSet()
           .toList(),
       zadVoice: oneOf(zadVoice, ProfileOptions.zadVoices),
+      dialectRegion: oneOf(dialectRegion, ProfileOptions.dialectRegions),
     );
   }
 
@@ -231,6 +249,8 @@ class CustomerProfile {
     // Only when chosen, for the same reason — and so a save before the column
     // reaches the project still goes through when the voice was not touched.
     'zad_voice': ?zadVoice,
+    // Only when chosen, like the voice: «عام» is the explicit way back.
+    'dialect_region': ?dialectRegion,
   };
 
   /// Round-trips through the cache; the same columns.
@@ -251,7 +271,8 @@ class CustomerProfile {
       other.city == city &&
       other.dialect == dialect &&
       listEquals(other.caresFor, caresFor) &&
-      other.zadVoice == zadVoice;
+      other.zadVoice == zadVoice &&
+      other.dialectRegion == dialectRegion;
 
   @override
   int get hashCode => Object.hash(
@@ -268,6 +289,7 @@ class CustomerProfile {
     dialect,
     caresFor == null ? null : Object.hashAll(caresFor!),
     zadVoice,
+    dialectRegion,
   );
 }
 

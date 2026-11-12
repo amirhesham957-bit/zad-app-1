@@ -1,4 +1,4 @@
-// ZAD_PLAN ١٠.١٦: a Saudi account reads Saudi screens; nobody else changes.
+// ZAD_PLAN ١٠.١٦: a Saudi or Gulf account reads Saudi screens.
 import 'dart:ui' show Locale;
 
 import 'package:flutter_test/flutter_test.dart';
@@ -17,8 +17,15 @@ void main() {
     // An Egyptian in Riyadh who chose «مصري».
     expect(arabicVariantFor(country: 'SA', dialect: 'EG'), isNull);
     expect(arabicVariantFor(country: 'EG', dialect: 'SA'), 'SA');
-    // Gulf is not Saudi yet: it keeps the default until it has its own file.
-    expect(arabicVariantFor(country: 'AE'), isNull);
+    // The Gulf reads the Saudi screens (owner 2026-11-13), by market or by
+    // the «خليجي» dialect; everyone else keeps the default.
+    for (final gulf in <String>['AE', 'QA', 'KW', 'BH', 'OM', 'ae']) {
+      expect(arabicVariantFor(country: gulf), 'SA', reason: gulf);
+    }
+    expect(arabicVariantFor(country: 'EG', dialect: 'GULF'), 'SA');
+    expect(arabicVariantFor(country: 'AE', dialect: 'EG'), isNull);
+    expect(arabicVariantFor(country: 'JO'), isNull);
+    expect(arabicVariantFor(country: 'AE', dialect: 'LEVANT'), isNull);
   });
 
   test('a Saudi account draws in ar_SA; English stays English', () {

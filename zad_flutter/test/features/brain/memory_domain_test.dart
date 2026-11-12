@@ -78,6 +78,40 @@ void main() {
     );
   });
 
+  test('the Saudi region is one of five, sent only once chosen (10.16)', () {
+    expect(
+      const CustomerProfile(dialectRegion: 'SA_MARS')
+          .normalized()
+          .dialectRegion,
+      isNull,
+    );
+    expect(
+      const CustomerProfile(dialectRegion: 'GENERAL')
+          .normalized()
+          .dialectRegion,
+      'GENERAL',
+    );
+    expect(
+      CustomerProfile.fromJson(const <String, dynamic>{
+        'dialect_region': 'SA_HIJAZ',
+      }).dialectRegion,
+      'SA_HIJAZ',
+    );
+    expect(
+      const CustomerProfile().toFormJson().containsKey('dialect_region'),
+      isFalse,
+    );
+    expect(
+      const CustomerProfile(dialectRegion: 'SA_NAJD')
+          .toFormJson()['dialect_region'],
+      'SA_NAJD',
+    );
+    expect(
+      const CustomerProfile(dialectRegion: 'SA_NAJD'),
+      isNot(const CustomerProfile(dialectRegion: 'SA_EAST')),
+    );
+  });
+
   test('the form sends only the columns it shows', () {
     // work_schedule, income_source, interests and notes come from the brain;
     // an upsert that leaves them out keeps them.

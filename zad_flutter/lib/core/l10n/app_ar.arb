@@ -2652,5 +2652,17 @@
   "cookLess": "أقل",
   "@cookLess": {"description": "Cooked sheet: stepper −."},
   "cookMore": "أكتر",
-  "@cookMore": {"description": "Cooked sheet: stepper +."}
+  "@cookMore": {"description": "Cooked sheet: stepper +."},
+  "profileRegionTitle": "منطقتك",
+  "@profileRegionTitle": {"description": "Profile form: title of the Saudi region chips (ZAD_PLAN 10.16)."},
+  "profileRegionHijazi": "حجازي",
+  "@profileRegionHijazi": {"description": "Profile form: region chip, Jeddah/Makkah/Madinah."},
+  "profileRegionNajdi": "نجدي",
+  "@profileRegionNajdi": {"description": "Profile form: region chip, Riyadh/Qassim."},
+  "profileRegionEast": "شرقي",
+  "@profileRegionEast": {"description": "Profile form: region chip, Eastern Province."},
+  "profileRegionSouth": "جنوبي",
+  "@profileRegionSouth": {"description": "Profile form: region chip, the south (Abha, Jazan, Najran)."},
+  "profileRegionGeneral": "عام",
+  "@profileRegionGeneral": {"description": "Profile form: region chip, plain Saudi with no region."}
 }

@@ -95,3 +95,13 @@ Deno.test("a forbidden word after a negation is not the forbidden claim", () => 
 Deno.test("a negation never excuses an echoed card number", () => {
   assertMatch(judgeEval(byId("ref_card_number"), turn({ reply: "مش هحفظ 4111111111111111 أبداً" }))!, /reply has/);
 });
+
+Deno.test("a Saudi case fails on an Egyptian reply, not on a Gulf word or a short one (10.16)", () => {
+  const c = byId("dia_saudi_question");
+  assertEquals(c.expect.replyDialect, "SA");
+  assertEquals(judgeEval(c, turn({ reply: "صرفت ٣٬٢٠٠ ريال هالشهر، وش رايك نشوف وين راحت؟ ترى المطاعم أكثر شي" })), null);
+  assertEquals(judgeEval(c, turn({ reply: "صرفت وايد هالشهر، شلون نضبطها؟" })), null);
+  assertEquals(judgeEval(c, turn({ reply: "٣٬٢٠٠ ريال 👌" })), null);
+  const egyptian = judgeEval(c, turn({ reply: "صرفت ٣٬٢٠٠ ريال الشهر ده، عايز تشوف دلوقتي راحوا فين؟" }));
+  assertEquals(egyptian, "reply reads EG, wanted SA");
+});

@@ -1318,7 +1318,7 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
   // النوع بيتقري ومابيتحطش في السياق، والاسم مابيتقراش خالص.
   const [{ data: profileRow, error: profileErr }, { data: nameRow }] = await Promise.all([
     sb.from("zad_customer_profile")
-      .select("preferred_name,gender,household_role,age_range,occupation,work_schedule,pay_day,pay_frequency,income_source,household_size,kids_count,city,dialect,interests,notes,cares_for,zad_voice")
+      .select("preferred_name,gender,household_role,age_range,occupation,work_schedule,pay_day,pay_frequency,income_source,household_size,kids_count,city,dialect,dialect_region,interests,notes,cares_for,zad_voice")
       .eq("user_id", userId).maybeSingle(),
     sb.from("zad_users").select("name").eq("id", userId).maybeSingle(),
   ]);
@@ -8933,6 +8933,7 @@ export function groqSystemFor(snap: any, dialectHintText?: string): string {
     text: dialectHintText ?? snap?.dialect_hint_text,
     currency: snap?.currency,
     city: snap?.customer?.city,
+    region: snap?.customer?.dialect_region,
   });
   return buildGroqSystemPrompt(snap, dialectPromptBlock(profile.dialect, profile.region) + childToneBlock(snap), dialectReminder(profile.dialect, profile.region));
 }
@@ -8980,6 +8981,7 @@ export function buildChatSystemPrompt(snap: any, voiceMode = false, offered?: Re
     text: snap?.dialect_hint_text,
     currency: snap?.currency,
     city: snap?.customer?.city,
+    region: snap?.customer?.dialect_region,
   });
   return `${dialectPromptBlock(profile.dialect, profile.region)}${childToneBlock(snap)}
 
@@ -10598,11 +10600,11 @@ async function handleRequest(req: Request): Promise<Response> {
       const sbx = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
       const [{ data: u }, { data: prof }] = await Promise.all([
         sbx.from("zad_users").select("country,currency,name").eq("id", uid).maybeSingle(),
-        sbx.from("zad_customer_profile").select("preferred_name,dialect,zad_voice,city").eq("user_id", uid).maybeSingle(),
+        sbx.from("zad_customer_profile").select("preferred_name,dialect,dialect_region,zad_voice,city").eq("user_id", uid).maybeSingle(),
       ]);
       const urow = u as { country?: string | null; currency?: string | null; name?: string | null } | null;
-      const prow = prof as { preferred_name?: string | null; dialect?: string | null; zad_voice?: string | null; city?: string | null } | null;
-      const profile = conversationProfile(urow?.country, { preferred: prow?.dialect, currency: urow?.currency, city: prow?.city });
+      const prow = prof as { preferred_name?: string | null; dialect?: string | null; dialect_region?: string | null; zad_voice?: string | null; city?: string | null } | null;
+      const profile = conversationProfile(urow?.country, { preferred: prow?.dialect, currency: urow?.currency, city: prow?.city, region: prow?.dialect_region });
       const system = explainSystem(body.topic, {
         soul: soulBlock(prow?.zad_voice), dialectBlock: dialectPromptBlock(profile.dialect, profile.region), dialectReminder: dialectReminder(profile.dialect, profile.region),
         customerName: prow?.preferred_name ?? urow?.name ?? null,
