@@ -2636,5 +2636,21 @@
   "petLinesNotThirsty": "مش عايز مية دلوقتي 🙈\nشربت كفاية 😄",
   "@petLinesNotThirsty": {"description": "Companion lines: watered while not thirsty."},
   "petLinesPetted": "هيهي بتزغزغني 🤭\nكمان! كمان! 🥰\nبحبك 💚",
-  "@petLinesPetted": {"description": "Companion lines: after a pat."}
+  "@petLinesPetted": {"description": "Companion lines: after a pat."},
+  "cookDone": "طبختها",
+  "@cookDone": {"description": "Recipe: after cooking, take what it used off the pantry."},
+  "cookSheetTitle": "اخصم اللي استخدمته من البيت",
+  "@cookSheetTitle": {"description": "Cooked sheet: title."},
+  "cookSheetHint": "دي الكميات اللي أتوقعها — عدّلها لو استخدمت أكتر أو أقل.",
+  "@cookSheetHint": {"description": "Cooked sheet: hint under the title."},
+  "cookConfirm": "اخصم {count}",
+  "@cookConfirm": {"description": "Cooked sheet: confirm, with how many rows are ticked.", "placeholders": {"count": {"type": "int"}}},
+  "cookNothing": "مالقيتش مكونات الوصفة دي في بيتك.",
+  "@cookNothing": {"description": "Cooked sheet: no pantry row matched."},
+  "cookDoneSnack": "خصمت {count} من البيت ✅",
+  "@cookDoneSnack": {"description": "After the cooked sheet: snackbar.", "placeholders": {"count": {"type": "int"}}},
+  "cookLess": "أقل",
+  "@cookLess": {"description": "Cooked sheet: stepper −."},
+  "cookMore": "أكتر",
+  "@cookMore": {"description": "Cooked sheet: stepper +."}
 }

@@ -3879,6 +3879,34 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get petLinesPetted => 'هيهي بتزغزغني 🤭\nكمان! كمان! 🥰\nبحبك 💚';
+
+  @override
+  String get cookDone => 'طبختها';
+
+  @override
+  String get cookSheetTitle => 'اخصم اللي استخدمته من البيت';
+
+  @override
+  String get cookSheetHint => 'دي الكميات اللي أتوقعها — عدّلها لو استخدمت أكتر أو أقل.';
+
+  @override
+  String cookConfirm(int count) {
+    return 'اخصم $count';
+  }
+
+  @override
+  String get cookNothing => 'مالقيتش مكونات الوصفة دي في بيتك.';
+
+  @override
+  String cookDoneSnack(int count) {
+    return 'خصمت $count من البيت ✅';
+  }
+
+  @override
+  String get cookLess => 'أقل';
+
+  @override
+  String get cookMore => 'أكتر';
 }
 
 /// The translations for Arabic, as used in Saudi Arabia (`ar_SA`).
@@ -4573,4 +4601,29 @@ class ZadL10nArSa extends ZadL10nAr {
 
   @override
   String get petLinesPetted => 'هيهي تدغدغني 🤭\nبعد! بعد! 🥰\nأحبك 💚';
+
+  @override
+  String get cookDone => 'طبختها';
+
+  @override
+  String get cookSheetTitle => 'أخصم اللي استخدمته من البيت';
+
+  @override
+  String get cookSheetHint => 'هذي الكميات اللي أتوقعها — عدّلها إذا استخدمت أكثر أو أقل.';
+
+  @override
+  String cookConfirm(int count) {
+    return 'أخصم $count';
+  }
+
+  @override
+  String get cookNothing => 'ما لقيت مكونات هالوصفة في بيتك.';
+
+  @override
+  String cookDoneSnack(int count) {
+    return 'خصمت $count من البيت ✅';
+  }
+
+  @override
+  String get cookMore => 'أكثر';
 }

@@ -7003,6 +7003,54 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'هيهي بتزغزغني 🤭\nكمان! كمان! 🥰\nبحبك 💚'**
   String get petLinesPetted;
+
+  /// Recipe: after cooking, take what it used off the pantry.
+  ///
+  /// In ar, this message translates to:
+  /// **'طبختها'**
+  String get cookDone;
+
+  /// Cooked sheet: title.
+  ///
+  /// In ar, this message translates to:
+  /// **'اخصم اللي استخدمته من البيت'**
+  String get cookSheetTitle;
+
+  /// Cooked sheet: hint under the title.
+  ///
+  /// In ar, this message translates to:
+  /// **'دي الكميات اللي أتوقعها — عدّلها لو استخدمت أكتر أو أقل.'**
+  String get cookSheetHint;
+
+  /// Cooked sheet: confirm, with how many rows are ticked.
+  ///
+  /// In ar, this message translates to:
+  /// **'اخصم {count}'**
+  String cookConfirm(int count);
+
+  /// Cooked sheet: no pantry row matched.
+  ///
+  /// In ar, this message translates to:
+  /// **'مالقيتش مكونات الوصفة دي في بيتك.'**
+  String get cookNothing;
+
+  /// After the cooked sheet: snackbar.
+  ///
+  /// In ar, this message translates to:
+  /// **'خصمت {count} من البيت ✅'**
+  String cookDoneSnack(int count);
+
+  /// Cooked sheet: stepper −.
+  ///
+  /// In ar, this message translates to:
+  /// **'أقل'**
+  String get cookLess;
+
+  /// Cooked sheet: stepper +.
+  ///
+  /// In ar, this message translates to:
+  /// **'أكتر'**
+  String get cookMore;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

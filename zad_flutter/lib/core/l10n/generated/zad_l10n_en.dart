@@ -3934,4 +3934,32 @@ class ZadL10nEn extends ZadL10n {
   @override
   String get petLinesPetted =>
       'Hehe, that tickles 🤭\nMore! More! 🥰\nLove you 💚';
+
+  @override
+  String get cookDone => 'Cooked it';
+
+  @override
+  String get cookSheetTitle => 'Take what you used off the pantry';
+
+  @override
+  String get cookSheetHint => 'These are my guesses — change them if you used more or less.';
+
+  @override
+  String cookConfirm(int count) {
+    return 'Take off $count';
+  }
+
+  @override
+  String get cookNothing => 'None of this recipe\'s ingredients are in your pantry.';
+
+  @override
+  String cookDoneSnack(int count) {
+    return 'Took $count off the pantry ✅';
+  }
+
+  @override
+  String get cookLess => 'Less';
+
+  @override
+  String get cookMore => 'More';
 }

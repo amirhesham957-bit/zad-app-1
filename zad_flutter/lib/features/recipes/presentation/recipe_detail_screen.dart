@@ -22,6 +22,7 @@ import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/recipes/domain/recipe.dart';
+import 'package:zad/features/recipes/presentation/cooked_sheet.dart';
 import 'package:zad/features/recipes/presentation/recipes_view.dart';
 import 'package:zad/shared/affiliate/data/affiliate_repository.dart';
 import 'package:zad/shared/chat/application/chat_controller.dart';
@@ -250,6 +251,15 @@ class _RecipeDetailState extends ConsumerState<RecipeDetailDialog> {
     messenger?.showSnackBar(
       SnackBar(content: Text('ضفت ${toAdd.length} أصناف لقايمة التسوق.')),
     );
+  }
+
+  Future<void> _cooked(List<String> ingredients) async {
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    final l = context.l10n;
+    final taken = await showCookedSheet(context, ref, ingredients);
+    if (taken > 0) {
+      messenger?.showSnackBar(SnackBar(content: Text(l.cookDoneSnack(taken))));
+    }
   }
 
   @override
@@ -494,20 +504,44 @@ class _RecipeDetailState extends ConsumerState<RecipeDetailDialog> {
                 child: SizedBox(
                   height: 48,
                   width: double.infinity,
-                  child: FilledButton.icon(
-                    style: FilledButton.styleFrom(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(ZadRadii.chip),
+                  child: Row(
+                    children: <Widget>[
+                      // ZAD_PLAN 10.1 slice 4c: what the dish used comes off
+                      // the pantry, after the customer checks the amounts.
+                      OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: const Size(0, 48),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(ZadRadii.chip),
+                          ),
+                        ),
+                        onPressed: () => unawaited(_cooked(parsed.ingredients)),
+                        icon: const Icon(Icons.soup_kitchen_outlined, size: 18),
+                        label: Text(l.cookDone, style: ZadType.labelLarge),
                       ),
-                    ),
-                    onPressed: () =>
-                        unawaited(_addToShopping(parsed.ingredients)),
-                    icon: const Icon(ZadIcons.shopping, size: 18),
-                    label: const Text(
-                      'إضافة النواقص لقائمة التسوق',
-                      maxLines: 1,
-                      style: ZadType.labelLarge,
-                    ),
+                      const SizedBox(width: ZadSpacing.sm),
+                      Expanded(
+                        child: FilledButton.icon(
+                          style: FilledButton.styleFrom(
+                            minimumSize: const Size(0, 48),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(
+                                ZadRadii.chip,
+                              ),
+                            ),
+                          ),
+                          onPressed: () =>
+                              unawaited(_addToShopping(parsed.ingredients)),
+                          icon: const Icon(ZadIcons.shopping, size: 18),
+                          label: const Text(
+                            'إضافة النواقص لقائمة التسوق',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: ZadType.labelLarge,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
