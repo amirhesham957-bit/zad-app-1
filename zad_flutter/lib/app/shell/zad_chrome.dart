@@ -5,6 +5,7 @@ library;
 
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -58,8 +59,14 @@ class ZadTopHeader extends StatelessWidget {
     this.balance,
     this.sky = SkyPhase.day,
     this.season,
+    this.fold,
     super.key,
   });
+
+  /// How far the open tab has scrolled into the large title: 0 shows it on
+  /// its own line, 1 folds it away and names the tab small beside «زاد»,
+  /// the way an iPhone's large title folds into its bar. Null keeps it open.
+  final ValueListenable<double>? fold;
 
   /// The occasion's colours and particles behind the header's controls
   /// (`SeasonHeaderLayer`), on every screen; null on a plain day.
@@ -134,14 +141,45 @@ class ZadTopHeader extends StatelessWidget {
                       const SizedBox(width: 10),
                       const _CarrotTile(size: 32, radius: 9, glyph: 18),
                       const SizedBox(width: 10),
-                      Text(
-                        context.l10n.appTitle,
-                        style: const TextStyle(
-                          fontSize: 19,
-                          height: 22 / 19,
-                          letterSpacing: 0.2,
-                          fontWeight: FontWeight.w700,
-                          color: kShellPrimary,
+                      // «زاد», and the tab's name in its place once the large
+                      // title has folded (the bar has no room for both).
+                      Flexible(
+                        child: _Folded(
+                          fold: fold,
+                          builder: (t) {
+                            final p = ((t - 0.5) * 2).clamp(0.0, 1.0);
+                            const style = TextStyle(
+                              fontSize: 19,
+                              height: 22 / 19,
+                              letterSpacing: 0.2,
+                              fontWeight: FontWeight.w700,
+                              color: kShellPrimary,
+                            );
+                            return Stack(
+                              alignment: AlignmentDirectional.centerStart,
+                              children: <Widget>[
+                                Opacity(
+                                  opacity: 1 - p,
+                                  child: Text(
+                                    context.l10n.appTitle,
+                                    maxLines: 1,
+                                    style: style,
+                                  ),
+                                ),
+                                Opacity(
+                                  opacity: p,
+                                  child: Text(
+                                    title,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: style.copyWith(
+                                      color: kShellTextPrimary,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
                         ),
                       ),
                       if (kidsMode) ...<Widget>[
@@ -177,31 +215,18 @@ class ZadTopHeader extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: <Widget>[
-                      Expanded(
-                        child: Text(
-                          title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 26,
-                            height: 32 / 26,
-                            letterSpacing: 0.2,
-                            fontWeight: FontWeight.w700,
-                            color: kShellTextPrimary,
-                          ),
+                  _Folded(
+                    fold: fold,
+                    builder: (t) => ClipRect(
+                      child: Align(
+                        alignment: AlignmentDirectional.bottomStart,
+                        heightFactor: 1 - t,
+                        child: Opacity(
+                          opacity: (1 - t * 1.6).clamp(0.0, 1.0),
+                          child: _LargeTitle(title: title, pet: pet),
                         ),
                       ),
-                      // Down by the bottom padding, so it sits on the rule.
-                      if (pet case final pet?)
-                        Transform.translate(
-                          offset: const Offset(0, 14),
-                          child: pet,
-                        ),
-                    ],
+                    ),
                   ),
                 ],
               ),
@@ -214,6 +239,62 @@ class ZadTopHeader extends StatelessWidget {
         child: const SizedBox(height: 1, width: double.infinity),
       ),
     ],
+  );
+}
+
+/// How far the header has scrolled before the large title has folded away.
+const double headerFoldDistance = 56;
+
+/// Rebuilds [builder] as [fold] moves; 0 when there is none.
+class _Folded extends StatelessWidget {
+  const new({required this.fold, required this.builder});
+
+  final ValueListenable<double>? fold;
+  final Widget Function(double t) builder;
+
+  @override
+  Widget build(BuildContext context) {
+    final f = fold;
+    if (f == null) return builder(0);
+    return ValueListenableBuilder<double>(
+      valueListenable: f,
+      builder: (_, t, _) => builder(t),
+    );
+  }
+}
+
+/// The 26sp title on its own line, and the companion on the rule.
+class _LargeTitle extends StatelessWidget {
+  const new({required this.title, this.pet});
+
+  final String title;
+  final Widget? pet;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(top: 12),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: <Widget>[
+        Expanded(
+          child: Text(
+            title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 26,
+              height: 32 / 26,
+              letterSpacing: 0.2,
+              fontWeight: FontWeight.w700,
+              color: kShellTextPrimary,
+            ),
+          ),
+        ),
+        // Down by the bottom padding, so it sits on the rule.
+        if (pet case final pet?)
+          Transform.translate(offset: const Offset(0, 14), child: pet),
+      ],
+    ),
   );
 }
 
