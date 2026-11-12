@@ -15,6 +15,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart' show DateFormat;
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/components/zad_kotlin_surfaces.dart';
 import 'package:zad/core/design/components/zad_scroll_away.dart';
@@ -34,9 +35,11 @@ import 'package:zad/shared/inventory/data/consumption_learner.dart';
 import 'package:zad/shared/inventory/domain/inventory_item.dart';
 import 'package:zad/shared/inventory/domain/product_family.dart';
 import 'package:zad/shared/inventory/domain/quantity.dart';
+import 'package:zad/shared/inventory/domain/shelf_life.dart';
 import 'package:zad/shared/inventory/domain/shortage.dart';
 import 'package:zad/shared/inventory/presentation/item_photo.dart';
 import 'package:zad/shared/inventory/presentation/quantity_text.dart';
+import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/navigation/destinations.dart';
 import 'package:zad/shared/navigation/shell_navigation.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
@@ -1379,24 +1382,40 @@ class _AddInventoryDialog extends ConsumerStatefulWidget {
 class _AddState extends ConsumerState<_AddInventoryDialog> {
   final TextEditingController _name = TextEditingController();
   final TextEditingController _qty = TextEditingController(text: '1');
-  final TextEditingController _expiry = TextEditingController();
   int _unit = 0;
   int _category = 0;
+
+  /// What the customer picked; null = the estimate, or no date at all.
+  DateTime? _expiry;
+  late final DateTime _today = _accountToday(ref);
+
+  @override
+  void initState() {
+    super.initState();
+    // The estimate follows the name as it is typed.
+    _name.addListener(() => setState(() {}));
+  }
 
   @override
   void dispose() {
     _name.dispose();
     _qty.dispose();
-    _expiry.dispose();
     super.dispose();
   }
+
+  /// The usual shelf life for what is typed, shown as an estimate and saved
+  /// when the customer picks nothing.
+  DateTime? get _estimate => guessExpiryDate(
+    category: _categoryDefs[_category + 1].key,
+    itemName: _name.text,
+    today: _today,
+  );
 
   Future<void> _save() async {
     final name = _name.text.trim();
     if (name.isEmpty) return;
     final navigator = Navigator.of(context);
-    final raw = _expiry.text.trim();
-    final parsed = raw.isEmpty ? null : DateTime.tryParse(raw);
+    final expiry = _expiry ?? _estimate;
     await ref
         .read(pantryControllerProvider.notifier)
         .add(
@@ -1404,9 +1423,7 @@ class _AddState extends ConsumerState<_AddInventoryDialog> {
           quantity: parseQuantity(_qty.text) ?? 1,
           unit: kPantryUnits[_unit],
           category: _categoryDefs[_category + 1].key,
-          expiryDate: parsed == null
-              ? null
-              : DateTime.utc(parsed.year, parsed.month, parsed.day),
+          expiryDate: expiry,
         );
     navigator.pop();
   }
@@ -1565,9 +1582,11 @@ class _AddState extends ConsumerState<_AddInventoryDialog> {
               const SizedBox(height: 14),
               Text(context.l10n.pantryExpiryField, style: label),
               const SizedBox(height: 6),
-              TextField(
-                controller: _expiry,
-                decoration: field(hint: '2025-12-31'),
+              _ExpiryField(
+                value: _expiry,
+                estimate: _estimate,
+                today: _today,
+                onChanged: (d) => setState(() => _expiry = d),
               ),
               const SizedBox(height: 24),
               Row(
@@ -1635,6 +1654,10 @@ class _EditState extends ConsumerState<_EditInventoryDialog> {
   /// written when the customer changes it, so the history keeps deciding for
   /// anyone who never touched it.
   late bool _occasional = widget.item.isOccasional;
+
+  /// The row's expiry as it stands in the dialog; written only if changed.
+  late DateTime? _expiry = widget.item.expiryDate;
+  late final DateTime _today = _accountToday(ref);
 
   @override
   void initState() {
@@ -1716,6 +1739,22 @@ class _EditState extends ConsumerState<_EditInventoryDialog> {
                 ),
               ],
             ),
+            const SizedBox(height: ZadSpacing.md),
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: Text(
+                context.l10n.pantryExpiryField,
+                style: ZadType.labelMedium.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+            const SizedBox(height: ZadSpacing.xs),
+            _ExpiryField(
+              value: _expiry,
+              today: _today,
+              onChanged: (d) => setState(() => _expiry = d),
+            ),
             const SizedBox(height: ZadSpacing.sm),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
@@ -1746,6 +1785,8 @@ class _EditState extends ConsumerState<_EditInventoryDialog> {
                   final said = _occasional == widget.item.isOccasional
                       ? null
                       : (_occasional ? restockOccasional : restockStaple);
+                  final expiry = _expiry;
+                  final expiryChanged = expiry != widget.item.expiryDate;
                   await ref
                       .read(pantryControllerProvider.notifier)
                       .edit(
@@ -1754,11 +1795,147 @@ class _EditState extends ConsumerState<_EditInventoryDialog> {
                         quantity: quantity,
                         unit: unit.isEmpty ? null : unit,
                         restockMode: said,
+                        expiryDate: expiryChanged ? expiry : null,
+                        clearExpiry: expiryChanged && expiry == null,
                       );
                   navigator.pop();
                 }
               : null,
           child: Text(context.l10n.commonSave),
+        ),
+      ],
+    );
+  }
+}
+
+/// Today in the account's market zone — what the expiry field counts from.
+DateTime _accountToday(WidgetRef ref) =>
+    civilDayIn(ref.read(nowProvider)(), ref.read(accountTimeZoneProvider));
+
+/// The expiry field: a tap opens the calendar, three chips set the usual
+/// spans, × clears it. Replaces a free-text `YYYY-MM-DD` box nobody filled
+/// (0 of 40 rows had a date, 2026-11-12).
+///
+/// [estimate], when given and nothing is picked, is shown as «تقديري: …» —
+/// a guess from the kind of item, never presented as the real date.
+class _ExpiryField extends StatelessWidget {
+  const new({
+    required this.value,
+    required this.today,
+    required this.onChanged,
+    this.estimate,
+  });
+
+  final DateTime? value;
+  final DateTime? estimate;
+  final DateTime today;
+  final ValueChanged<DateTime?> onChanged;
+
+  Future<void> _pick(BuildContext context) async {
+    final first = DateTime(today.year, today.month, today.day);
+    final last = DateTime(today.year + 10, today.month, today.day);
+    final seed = value ?? estimate ?? civilDatePlusDays(today, 7);
+    var initial = DateTime(seed.year, seed.month, seed.day);
+    if (initial.isBefore(first)) initial = first;
+    if (initial.isAfter(last)) initial = last;
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: first,
+      lastDate: last,
+    );
+    if (picked != null) {
+      onChanged(DateTime.utc(picked.year, picked.month, picked.day));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final l10n = context.l10n;
+    final format = DateFormat('d MMMM y', context.dateLocale);
+    final picked = value;
+    final guess = estimate;
+    final text = picked != null
+        ? format.format(picked)
+        : guess != null
+        ? l10n.pantryExpiryEstimate(format.format(guess))
+        : l10n.pantryExpiryPick;
+    final chips = <(int, String)>[
+      (kExpiryQuickDays[0], l10n.pantryExpiryIn3Days),
+      (kExpiryQuickDays[1], l10n.pantryExpiryInWeek),
+      (kExpiryQuickDays[2], l10n.pantryExpiryInMonth),
+    ];
+    final radius = BorderRadius.circular(ZadRadii.chip);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: radius,
+            onTap: () => unawaited(_pick(context)),
+            child: Container(
+              constraints: const BoxConstraints(minHeight: 52),
+              padding: const EdgeInsetsDirectional.only(
+                start: ZadSpacing.md,
+                end: ZadSpacing.xs,
+              ),
+              decoration: BoxDecoration(
+                borderRadius: radius,
+                border: Border.all(color: scheme.outline),
+              ),
+              child: Row(
+                children: <Widget>[
+                  Icon(
+                    Icons.event_outlined,
+                    size: 20,
+                    color: scheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: ZadSpacing.sm),
+                  Expanded(
+                    child: Text(
+                      text,
+                      style: ZadType.bodyLarge.copyWith(
+                        color: picked == null
+                            ? scheme.onSurfaceVariant
+                            : scheme.onSurface,
+                      ),
+                    ),
+                  ),
+                  if (picked != null)
+                    IconButton(
+                      tooltip: l10n.pantryExpiryClear,
+                      onPressed: () => onChanged(null),
+                      icon: Icon(
+                        Icons.close,
+                        size: 18,
+                        color: scheme.onSurfaceVariant,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        if (picked == null && guess != null) ...<Widget>[
+          const SizedBox(height: ZadSpacing.xs),
+          Text(
+            l10n.pantryExpiryEstimateNote,
+            style: ZadType.bodySmall.copyWith(color: scheme.onSurfaceVariant),
+          ),
+        ],
+        const SizedBox(height: ZadSpacing.sm),
+        Wrap(
+          spacing: ZadSpacing.sm,
+          children: <Widget>[
+            for (final (days, label) in chips)
+              ChoiceChip(
+                label: Text(label),
+                selected: picked == civilDatePlusDays(today, days),
+                onSelected: (_) => onChanged(civilDatePlusDays(today, days)),
+              ),
+          ],
         ),
       ],
     );

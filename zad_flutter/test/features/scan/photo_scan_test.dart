@@ -12,6 +12,7 @@ import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
+import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/data/sync/outbox.dart';
 import 'package:zad/core/data/sync/outbox_entry.dart';
@@ -22,6 +23,7 @@ import 'package:zad/shared/inventory/data/consumption_observations.dart';
 import 'package:zad/shared/inventory/data/inventory_remote.dart';
 import 'package:zad/shared/inventory/data/inventory_repository.dart';
 import 'package:zad/shared/inventory/data/shopping_list_repository.dart';
+import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/scan/data/receipt_scanner.dart';
 import 'package:zad/shared/scan/data/vision_scanner.dart';
 
@@ -203,10 +205,11 @@ void main() {
       await dir.delete(recursive: true);
     });
 
-    ProviderContainer container({bool pantryBreaks = false}) =>
+    ProviderContainer container({bool pantryBreaks = false, String? zone}) =>
         ProviderContainer(
           overrides: [
             nowProvider.overrideWithValue(() => now),
+            if (zone != null) accountTimeZoneProvider.overrideWithValue(zone),
             signedInUserIdProvider.overrideWithValue(() => 'user-1'),
             outboxProvider.overrideWithValue(outbox),
             receiptCameraProvider.overrideWithValue(camera),
@@ -259,6 +262,25 @@ void main() {
         ],
         <num>[1, 3],
       );
+    });
+
+    test('a new row gets the usual shelf life for its kind; a topped-up '
+        'row keeps its own', () async {
+      tz_data.initializeTimeZones();
+      final c = container(zone: 'Africa/Cairo');
+      addTearDown(c.dispose);
+      final controller = c.read(photoScanControllerProvider.notifier);
+      await controller.scan(PhotoKind.pantry, ReceiptImageSource.camera);
+      expect(await controller.savePantry(), isTrue);
+
+      final expiry = {
+        for (final i in inventory.cached()) i.itemName: i.expiryDate,
+      };
+      // 2026-09-25 in Cairo: bread keeps about four days.
+      expect(expiry['عيش بلدي'], DateTime.utc(2026, 9, 29));
+      expect(expiry['اللبن'], isNull, reason: 'an existing row is topped up');
+      // Filed under the grocery shelf by the scanner: about six months.
+      expect(expiry['شيبسي'], DateTime.utc(2027, 3, 24));
     });
 
     test('nothing ticked, nothing saved', () async {

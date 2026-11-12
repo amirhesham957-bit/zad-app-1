@@ -3,6 +3,7 @@
 library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:zad/core/data/providers.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart';
 import 'package:zad/shared/inventory/application/shopping_controller.dart';
 import 'package:zad/shared/inventory/data/consumption_learner.dart';
@@ -11,6 +12,8 @@ import 'package:zad/shared/inventory/data/inventory_repository.dart';
 import 'package:zad/shared/inventory/data/product_names_repository.dart';
 import 'package:zad/shared/inventory/data/shopping_list_repository.dart';
 import 'package:zad/shared/inventory/domain/receipt_intake.dart';
+import 'package:zad/shared/inventory/domain/shelf_life.dart';
+import 'package:zad/shared/market/application/account_time_zone.dart';
 
 /// What a saved receipt did to the pantry.
 class PantryIntakeResult {
@@ -77,12 +80,24 @@ Future<PantryIntakeResult> intakeIntoPantry(
         await readings.record(updated.itemName, updated.quantity, source);
       }
     }
+    // A receipt never says when things go off, so a new row gets the usual
+    // shelf life for its kind (shelf_life.dart) — the customer corrects it
+    // in «بيتي». A day the account's zone cannot give means no guess, never
+    // a failed intake.
+    final today = _accountToday(ref);
     for (final line in plan.additions) {
       final added = await inventory.add(
         itemName: line.name,
         quantity: line.quantity.toDouble(),
         unit: line.unit,
         category: line.category,
+        expiryDate: today == null
+            ? null
+            : guessExpiryDate(
+                category: line.category,
+                itemName: line.name,
+                today: today,
+              ),
       );
       await readings.record(added.itemName, added.quantity, source);
     }
@@ -119,5 +134,16 @@ Future<PantryIntakeResult> intakeIntoPantry(
       ticked: 0,
       failed: true,
     );
+  }
+}
+
+DateTime? _accountToday(Ref ref) {
+  try {
+    return civilDayIn(
+      ref.read(nowProvider)(),
+      ref.read(accountTimeZoneProvider),
+    );
+  } on Object {
+    return null;
   }
 }
