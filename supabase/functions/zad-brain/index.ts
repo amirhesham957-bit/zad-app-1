@@ -60,6 +60,7 @@ import { formatChefResult, pantryForChef } from "./chef.ts";
 import { crossRate, describeRate, rankDeals, summarizePriceTrend } from "./prices.ts";
 import { homeMap } from "./crowdFloor.ts";
 import { lowStockToAdd, productFamilyOf } from "./lowStock.ts";
+import { type HealPair, healMemory } from "./memoryHeals.ts";
 import { deliverRestockLink } from "./restockLink.ts";
 import { TRACK_DAYS, CONSOLIDATION_MIN_USER_TURNS, consolidateDay, type DayTurn, type FamilyLine, type KnownNote, SHOPPING_ADD_ACTION, TRAIT_CONFIDENCE, TRAIT_SCOPE } from "./consolidation.ts";
 import { loadSharedHistory, markUnanswered, pickHistory, recordSharedTurn, spokenRecord, type SharedTurn } from "./sharedConversation.ts";
@@ -10331,6 +10332,30 @@ async function handleRequest(req: Request): Promise<Response> {
             await sbDream.rpc("zad_memory_link_upsert", {
               p_user: u.id, p_from: c.from_id, p_to: c.to_id, p_relation: "contradicts", p_strength: 0.7,
             });
+          }
+
+          // ZAD_PLAN ١٠.٢(ب) — الذاكرة بتصلّح نفسها (memoryHeals.ts): مرة في الأسبوع، الأزواج المتشابهة في نفس النطاق
+          // بيحكم عليها موديل خفيف (same/update/contradiction/distinct) وSQL بيطبّق من غير مسح. مفيش مرشحين = مفيش نداء.
+          try {
+            const healed = await healMemory({
+              candidates: async () => {
+                const { data, error } = await sbDream.rpc("zad_memory_review_candidates", { p_user: u.id });
+                if (error) throw new Error(error.message);
+                return (Array.isArray(data) ? data : []) as HealPair[];
+              },
+              compose: async (system, user) =>
+                (await callModel({ model: MODEL_ROUTINE, system, tools: [], history: [{ role: "user", text: user }], maxTokens: 400, thinking: false })).text ?? "",
+              heal: async (pair, verdict) => {
+                const { data, error } = await sbDream.rpc("zad_memory_heal", {
+                  p_user: u.id, p_older: pair.older_id, p_newer: pair.newer_id, p_verdict: verdict,
+                });
+                if (error) console.warn("[dream] memory heal failed:", error.message);
+                return !error && (data as { ok?: boolean } | null)?.ok === true;
+              },
+            });
+            if (healed.status === "done") console.log(`[dream] memory healed for ${u.id}:`, JSON.stringify(healed.applied));
+          } catch (healErr) {
+            console.warn(`[dream] memory heal skipped for ${u.id}:`, healErr instanceof Error ? healErr.message : healErr);
           }
 
           // بند 31.3 (تلخيص أسبوعي) — ملاحظة "شخصية" وحيدة (delete-then-insert زي

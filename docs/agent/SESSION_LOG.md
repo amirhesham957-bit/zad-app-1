@@ -341,3 +341,12 @@ related:
 - **الاسم:** «Astra Labs / أسترا لابس» (تصحيح المالك). دومين `astralabs.vercel.app` محجوز لحد تاني.
 - **مستني المالك:** تغيير اسم فريق Vercel (السلَج لسه فيه اسمه في لينكات الـpreview) — الأداة اترفضت من نظام الصلاحيات.
 - **فخ:** `--font-display: var(--font-display)` في `@theme` بيلف على نفسه؛ متغير `next/font` لازم اسم مختلف (`--font-markazi`).
+
+## ٢٠٢٦-١١-١٣ (آخر الليل) — ١٠.٢(ب) نص الطريق، على فرع `feat/10-2b-memory-heals` (مفيش PR لسه)
+
+- **اتقاس على الحي:** ٣١ ملاحظة حية عند ٧ عملا، **صفر** ملاحظة اتحلّ محلها في تاريخ الجدول، صفر رابط contradicts رغم إن الليل شغال (`nightly-dream-reflection` آخر رن 200). ٥ أزواج متشابهة ٠٫٣٥–٠٫٦: ٢ نفس الحقيقة بكلام تاني (القسط، الكلام مع الوالدة)، ١ رفضين لنفس التنبيه، ٢ حقايق مختلفة (عيد ميلاد العميل وابنه) ⇒ التشابه لوحده مايفرّقش.
+- **اتبنى:** مايجريشن `20261113050000_memory_heals.sql` (`zad_memory_reviews` + `zad_memory_review_candidates` + `zad_memory_heal`، service_role بس)، `zad-brain/memoryHeals.ts` (موديل خفيف بيحكم same/update/contradiction/distinct، والحساس مابيروحش)، ومتوصّل في `nightly_dream_reflection` بعد ربط التناقضات. مفيش مسح أبداً.
+- **اتحقق:** SQL test (`memory_heals_test.sql`) ٢٠ فحص عدّوا على pgvector في docker (مش في CI: صورة CI مافيهاش pgvector، زي `memory_time_entities_test`)، واتعمله mutation على شرط `user_id` ووقع. `deno check` نجح، `memoryHeals_test.ts` ٨/٠، `_schema` ١٠/١٠.
+- **فاضل قبل الـPR:** `deno test` العقل كله، `flutter analyze` + `flutter test` (مفيش Dart اتغير)، مراجعة أمان، سطر في ZAD_PLAN ١٠.٢ (ب)، وفتح PR. بعد الدمج: يتأكد على الحي إن المايجريشن نزلت والجدول RLS من غير صلاحيات للعميل، وبعد أول ليلة: لوج `[dream] memory healed`.
+- **مفتوح من قبل:** #523 (١٠.٢أ شريحة ٢) اتعمله merge مع main واتحل التعارض في SESSION_LOG — mergeable، flutter ٢١٢٢/٠، العقل ١٤٥٩/٠. #524 (الدومين astralabshq.vercel.app في ٨.٣).
+- **اتحقق على الحي (#521):** المايجريشن نزلت، RLS شغال من غير سياسات، anon/authenticated من غير صلاحيات، الدالة لـauthenticated بس.
