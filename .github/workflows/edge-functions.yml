@@ -467,9 +467,26 @@ jobs:
               fi
             fi
           fi
-          curl -sS --max-time 170 -X POST "https://$PROJECT_REF.supabase.co/functions/v1/zad-brain" \
+          # دفعات من ٣ لفات (١٣/١١): التمانية في نداء واحد وقّعوا الـworker مرتين بـ546 WORKER_RESOURCE_LIMIT
+          # عند ~٩٨ ثانية. البحث ومقاسات السياق في نداء أخير لوحدهم. دفعة مارجعتش results تبان زي الأول.
+          OFFSET=0; BAD=""; : > batches.jsonl
+          while [ "$OFFSET" -lt 30 ]; do
+            curl -sS --max-time 170 -X POST "https://$PROJECT_REF.supabase.co/functions/v1/zad-brain" \
+              -H "ZAD-PROACTIVE-CRON-SECRET: $PROBE_SECRET" -H "Content-Type: application/json" \
+              -d "{\"action\":\"acceptance_probe\",\"offset\":$OFFSET,\"limit\":3,\"search\":false,\"context\":false}" > batch.json || true
+            if ! jq -e '.results' batch.json >/dev/null 2>&1; then BAD=1; break; fi
+            jq -c . batch.json >> batches.jsonl
+            OFFSET=$((OFFSET + 3))
+            [ "$OFFSET" -ge "$(jq '.of // 0' batch.json)" ] && break
+          done
+          if [ -n "$BAD" ]; then
+            { echo "batch at offset $OFFSET:"; cat batch.json; } > acceptance.json
+          else
+            jq -s '{passed: (map(.passed) | add), total: (map(.total) | add), results: (map(.results) | add)}' batches.jsonl > acceptance.json
+          fi
+          curl -sS --max-time 120 -X POST "https://$PROJECT_REF.supabase.co/functions/v1/zad-brain" \
             -H "ZAD-PROACTIVE-CRON-SECRET: $PROBE_SECRET" -H "Content-Type: application/json" \
-            -d '{"action":"acceptance_probe"}' > acceptance.json || true
+            -d '{"action":"acceptance_probe","cases":[]}' > /dev/null || true
           echo "### Acceptance probe" >> "$GITHUB_STEP_SUMMARY"
           if ! jq -e '.results' acceptance.json >/dev/null 2>&1; then
             echo "::warning::acceptance probe did not answer with results"
