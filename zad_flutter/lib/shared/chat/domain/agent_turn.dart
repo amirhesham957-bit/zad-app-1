@@ -46,6 +46,8 @@ class AgentExecuted {
   /// asked again — the server wrote the row, so the screens holding figures
   /// are out of date the moment this turn returns.
   bool get touchedMoney =>
+      // «دفعت النت» بيسجّل مصروف (ZAD_PLAN ١٠.٢أ) — الاسم مافيهوش كلمة فلوس.
+      tool == 'mark_subscription_paid' ||
       tool.contains('transaction') ||
       tool.contains('expense') ||
       tool.contains('income') ||

@@ -16,6 +16,7 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/core/period/when_label.dart';
 import 'package:zad/features/brain/application/agent_actions_controller.dart';
 import 'package:zad/features/brain/data/agent_actions_repository.dart';
@@ -61,7 +62,9 @@ class _AgentActionLogScreenState extends ConsumerState<AgentActionLogScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text('ترجع في «${agentToolLabel(action.toolName)}»؟'),
+        title: Text(
+          'ترجع في «${agentToolLabel(action.toolName, context.l10n)}»؟',
+        ),
         content: const Text(
           'زاد هيرجّع الحاجة دي زي ما كانت قبل التعديل. مش هتقدر ترجع في '
           'الرجوع ده بعدين.',
@@ -85,7 +88,7 @@ class _AgentActionLogScreenState extends ConsumerState<AgentActionLogScreen> {
         .undo(action);
     if (outcome == null || !mounted) return;
     final message = switch (outcome) {
-      Undone() => 'رجعت في «${agentToolLabel(action.toolName)}»',
+      Undone() => 'رجعت في «${agentToolLabel(action.toolName, context.l10n)}»',
       UndoRefused(:final failure) => failure.message,
     };
     ScaffoldMessenger.of(context)
@@ -194,7 +197,7 @@ class _ActionCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     Text(
-                      agentToolLabel(action.toolName),
+                      agentToolLabel(action.toolName, context.l10n),
                       style: ZadType.titleSmall,
                     ),
                     const SizedBox(height: ZadSpacing.xs),

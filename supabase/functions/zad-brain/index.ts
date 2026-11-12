@@ -60,6 +60,8 @@ import { formatChefResult, pantryForChef } from "./chef.ts";
 import { crossRate, describeRate, rankDeals, summarizePriceTrend } from "./prices.ts";
 import { homeMap } from "./crowdFloor.ts";
 import { lowStockToAdd, productFamilyOf } from "./lowStock.ts";
+import { categoryForCharge, dismissalNote, type DismissReason, doseSlotToSnooze, type ShownInsight, matchInsight, paidRenewal } from "./appByVoice.ts";
+import { mealSuggestionsCachePattern } from "../_shared/recipeCache.ts";
 import { deliverRestockLink } from "./restockLink.ts";
 import { TRACK_DAYS, CONSOLIDATION_MIN_USER_TURNS, consolidateDay, type DayTurn, type FamilyLine, type KnownNote, SHOPPING_ADD_ACTION, TRAIT_CONFIDENCE, TRAIT_SCOPE } from "./consolidation.ts";
 import { loadSharedHistory, markUnanswered, pickHistory, recordSharedTurn, spokenRecord, type SharedTurn } from "./sharedConversation.ts";
@@ -79,7 +81,7 @@ import { chatLane, FREE_BUSY_REPLY, freeDailyBudget, gateReply, historyWindow, t
 import { type HoldCode, heldMessagesSummary, agentTaskNotice, buildRestaurantArrivalMessage, buildStoreArrivalMessage, dailyCapDecision, outlivesShelf, responsiveHourDecision, pacingDecision, pacingPriority, PACING_DUPLICATE_HOURS, decideOnBrainFailure, postponeForQuietHours, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, quietWindowOf, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey, doseAdherence, pickCrossChannelTwin, seenHereItems, type SeenHere, type StoreCategory, cheaperHereItems, type CheaperHere, normalizeForPerson, pharmacyIsRecurring, entityRecallText, itemKey, type MemoryEntity, normalizeMemoryEntities, resolveValidUntil, travelContext } from "./shared.ts";
 import { itemsForStore, storeArrivalTask, storeLocationFrom } from "./storeFit.ts";
 import { refreshDueHomeStates, saveHomeState } from "./homeState.ts";
-import { isDoseAction, muteCheckin, settleDoseReminder } from "../_shared/doseDoor.ts";
+import { DOSE_SNOOZE_MINUTES, isDoseAction, muteCheckin, settleDoseReminder, snoozeDose } from "../_shared/doseDoor.ts";
 import { type KindOutcome, LEARN_WINDOW_DAYS, learnedPriority, learnedQuietUntil, outcomesByKind, type Stance, stanceOf } from "./outcomeLearning.ts";
 import { deliverPetCall } from "./petCall.ts";
 import { pickPantryMatch, samePantryItem, type PantryRow } from "./pantryMatch.ts";
@@ -4302,6 +4304,147 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       ctx.mutations.push({ tool: name, old: snap?.sleep ?? null, new: { bed, wake } });
       return `تمام — زاد مش هيبعت تنبيهات مش ضرورية من ${bed} لـ${wake} (الجرعات والطوارئ زي ما هي).`;
     }
+    case "mark_subscription_paid": {
+      // ZAD_PLAN ١٠.٢(أ): زرار «دفعت» بالكلام — مصروف + التجديد الجاي (appByVoice.ts = markPaid في التطبيق).
+      // فلوس ⇒ في CONFIRM_REQUIRED_TOOLS: مابيوصلش هنا غير بعد «أيوه» (agent_confirm).
+      const spoken = String(input.title ?? "").trim();
+      const { data: subs } = await sb.from("zad_subscriptions")
+        .select("id,title,amount,renewal_date,due_day,billing_cycle,category,type,is_active")
+        .eq("user_id", userId).eq("is_active", true);
+      const rows = (subs ?? []) as Array<{ id: string; title: string; amount: number; renewal_date: string | null; due_day: number | null; billing_cycle: string | null; category: string | null; type: string | null }>;
+      const b = spoken.toLowerCase();
+      const hits = rows.filter((r) => { const a = r.title.trim().toLowerCase(); return a.includes(b) || b.includes(a); });
+      if (hits.length > 1) return `مرفوض: "${spoken}" بيطابق أكتر من اشتراك (${hits.map((h) => h.title).join("، ")}) — اسأله أنهي واحد.`;
+      const sub = hits[0];
+      if (!sub) return `مرفوض: مفيش اشتراك شغال اسمه "${spoken}". المسجّل: ${rows.map((r) => r.title).join("، ") || "ولا حاجة"}.`;
+      const amount = Number(input.amount ?? sub.amount);
+      if (!(amount > 0)) return "مرفوض: الاشتراك مالوش مبلغ — اسأله دفع كام وابعته في amount.";
+      const today = snap?.now_local?.date ?? new Date().toISOString().slice(0, 10);
+      const paid = paidRenewal(sub, today);
+      // الدفعة الأول: لو اترفضت (تكرار في ١٠ دقايق) التجديد مايتحركش.
+      const logged = await executeTool(sb, userId, "log_transaction", {
+        amount, title: sub.title, category: categoryForCharge(sub), txn_kind: "expense",
+        ...(input.allow_duplicate === true ? { allow_duplicate: true } : {}),
+      }, snap, ctx, scope);
+      if (logged.startsWith("مرفوض")) return logged;
+      const patch: Record<string, unknown> = { title: paid.title };
+      if (paid.next) { patch.renewal_date = paid.next; patch.due_day = Number(paid.next.slice(8, 10)); }
+      if (!paid.stillRunning) patch.is_active = false;
+      const w = await writeRows(
+        sb.from("zad_subscriptions").update(patch).eq("id", sub.id).eq("user_id", userId).select("id,title,renewal_date,is_active"),
+        "تقديم تجديد الاشتراك",
+      );
+      if (!w.ok) return `الدفعة اتسجلت بس التجديد ماتحركش: ${w.reason}`;
+      ctx.mutationCount++;
+      ctx.mutations.push({ tool: name, old: sub, new: w.rows[0] });
+      await recordAction(sb, userId, scope, { tool: name, input, table: "zad_subscriptions", targetId: sub.id, previous: sub, next: w.rows[0] });
+      return `اتسجلت دفعة "${sub.title}" (${amount})` +
+        (paid.stillRunning ? (paid.next ? `، والتجديد الجاي ${paid.next}` : "") : "، ودي كانت آخر قسط — الاشتراك اتقفل");
+    }
+    case "add_shortages_to_shopping": {
+      // ZAD_PLAN ١٠.٢(أ): زرار النواقص بالكلام — نفس حساب الحلم بالليل (lowStockToAdd + restockJudge + اللي على فترات).
+      const family = await householdFamilyId(sb, userId);
+      const [{ data: pantry }, { data: openShop }, { data: occasional }] = await Promise.all([
+        sb.from("zad_inventory").select("item_name, quantity, low_stock_threshold, category, restock_mode, restock_cycle_days, created_at").or(householdFilter(userId, family)),
+        sb.from("zad_shopping_list").select("item_name").or(householdFilter(userId, family)).eq("is_purchased", false),
+        sb.rpc("zad_occasional_items", { p_user: userId }),
+      ]);
+      const isDue = await loadRestockJudge(sb, userId, family);
+      const toAdd = lowStockToAdd(pantry, (openShop ?? []).map((r: { item_name: string | null }) => r.item_name),
+        Array.isArray(occasional) ? (occasional as string[]) : [], isDue);
+      if (toAdd.length === 0) return "status=nothing — مفيش نواقص مش على القايمة.";
+      const w = await writeRows(
+        sb.from("zad_shopping_list").insert(toAdd.map((item_name) => ({ user_id: userId, item_name, quantity: 1 }))).select("id,item_name"),
+        "إضافة النواقص للقايمة",
+      );
+      if (!w.ok) return `مرفوض: ${w.reason}`;
+      ctx.mutationCount++;
+      ctx.mutations.push({ tool: name, old: null, new: { items: toAdd } });
+      await recordAction(sb, userId, scope, { tool: name, input, table: "zad_shopping_list", targetId: null, previous: null, next: { items: toAdd } });
+      return `status=added items=${toAdd.join("، ")}`;
+    }
+    case "snooze_pharmacy_dose": {
+      // ZAD_PLAN ١٠.٢(أ): «فكّرني بعدين» بالكلام. الكتابة من doseDoor.ts بس (one_writer_test).
+      const spoken = String(input.name ?? "").trim();
+      const { data: items } = await sb.from("zad_pharmacy_items").select("id,name,dose_times").eq("user_id", userId);
+      const rows = (items ?? []) as Array<{ id: string; name: string; dose_times: string | null }>;
+      const { item, ambiguous } = matchMedicineByName(rows, spoken);
+      if (ambiguous) return `مرفوض: "${spoken}" بيطابق أكتر من دوا (${ambiguous.join("، ")}) — اسأله أنهي واحد.`;
+      if (!item) return `مرفوض: مفيش دوا اسمه "${spoken}". المسجّل: ${rows.map((r) => r.name).join("، ") || "ولا حاجة"}.`;
+      const now = localNowContext(snap?.cycle?.timezone ?? "UTC");
+      const slot = doseSlotToSnooze(item.dose_times, now, input.dose_time ? String(input.dose_time) : null);
+      if (!slot) return `مرفوض: مفيش جرعة ${item.name} قريبة تتأجل (مواعيده: ${item.dose_times || "مش متسجلة"}) — اسأله أنهي ميعاد.`;
+      const minutes = Number(input.minutes ?? DOSE_SNOOZE_MINUTES);
+      const r = await snoozeDose(sb, userId, item.id, slot, minutes);
+      if (!r.ok) return `مرفوض: ${r.reason}`;
+      ctx.mutationCount++;
+      ctx.mutations.push({ tool: name, old: null, new: { item: item.name, scheduled_at: slot, until: r.until } });
+      await recordAction(sb, userId, scope, { tool: name, input, table: "zad_dose_snoozes", targetId: item.id, previous: null, next: { scheduled_at: slot, snooze_until: r.until } });
+      return `status=snoozed — تذكير ${item.name} هيسكت ${minutes} دقيقة ويرن تاني.`;
+    }
+    case "report_price": {
+      // ZAD_PLAN ١٠.٢(أ): «ساهم بسعر» بالكلام — نفس RPC التطبيق بس بنسخة السيرفر (p_user)، والتحقق كله جوه SQL.
+      const city = String(input.city ?? snap?.customer?.city ?? "").trim() || null;
+      const { data, error } = await sb.rpc("zad_report_price_for", {
+        p_user: userId, p_report: crypto.randomUUID(), p_item: String(input.item).trim(), p_price: Number(input.price),
+        p_currency: snap?.currency ?? null, p_location: city, p_store: input.store ? String(input.store).trim() : null, p_category: null,
+      });
+      if (error) return `مرفوض: ${error.message}`;
+      const res = (data ?? {}) as { ok?: boolean; reason?: string; duplicate?: boolean };
+      if (res.ok !== true) return `مرفوض: ${res.reason ?? "البلاغ ما اتسجلش"}`;
+      ctx.mutationCount++;
+      ctx.mutations.push({ tool: name, old: null, new: { item: input.item, price: input.price, store: input.store ?? null } });
+      return res.duplicate ? "status=duplicate — البلاغ ده متسجّل قبل كده." : "status=saved — السعر دخل أسعار الجمهور، شكراً ليه.";
+    }
+    case "clear_place_visits": {
+      // ZAD_PLAN ١٠.٢(أ): «مسح الزيارات» من شاشة الذاكرة بالكلام — صفوفه هو بس.
+      const { data, error } = await sb.from("zad_place_visits").delete().eq("user_id", userId).select("id");
+      if (error) return `مرفوض: ${error.message}`;
+      const n = (data ?? []).length;
+      if (n === 0) return "status=nothing — مفيش أماكن متسجلة أصلاً.";
+      ctx.mutationCount++;
+      ctx.mutations.push({ tool: name, old: { visits: n }, new: { visits: 0 } });
+      await recordAction(sb, userId, scope, { tool: name, input, table: "zad_place_visits", targetId: null, previous: { visits: n }, next: null });
+      return `status=deleted visits=${n}`;
+    }
+    case "rate_recipe": {
+      // ZAD_PLAN ١٠.٢(أ): 👍/👎 بالكلام — نفس rate_recipe في zad-core-intelligence، والكاش بنفس المفتاح (_shared/recipeCache.ts).
+      const recipeName = String(input.recipe_name ?? "").trim().slice(0, 120);
+      const w = await writeRows(
+        sb.from("zad_recipe_feedback").upsert({ user_id: userId, recipe_name: recipeName, liked: input.liked === true }, { onConflict: "user_id,recipe_name" }).select("id"),
+        "حفظ رأيه في الوصفة",
+      );
+      if (!w.ok) return `مرفوض: ${w.reason}`;
+      const { error: cacheErr } = await sb.from("ai_response_cache").delete()
+        .eq("action", "meal_suggestions").like("cache_key", mealSuggestionsCachePattern(userId));
+      if (cacheErr) console.error("[rate_recipe] cache invalidation failed:", cacheErr.message);
+      ctx.mutationCount++;
+      ctx.mutations.push({ tool: name, old: null, new: { recipe_name: recipeName, liked: input.liked === true } });
+      return input.liked === true ? `status=saved — «${recipeName}» عجبه.` : `status=saved — «${recipeName}» مش هتتقترح تاني.`;
+    }
+    case "dismiss_insight": {
+      // ZAD_PLAN ١٠.٢(أ): أزرار القفل على الكارت بالكلام — من المعروض عليه بس، بنفس الملاحظة للعقل.
+      const { data: pending } = await sb.from("zad_insights").select("id,title,body,about_item")
+        .eq("user_id", userId).eq("status", "pending").order("created_at", { ascending: false }).limit(50);
+      const rows = (pending ?? []) as ShownInsight[];
+      const { row, ambiguous } = matchInsight(rows, String(input.about ?? ""));
+      if (ambiguous) return `مرفوض: أكتر من رؤية بالكلام ده (${ambiguous.join("، ")}) — اسأله أنهي واحدة.`;
+      if (!row) return `مرفوض: مفيش رؤية معروضة بالكلام ده. المعروض: ${rows.slice(0, 5).map((r) => r.title).filter(Boolean).join("، ") || "ولا حاجة"}.`;
+      const reason = input.reason as DismissReason;
+      const w = await writeRows(
+        sb.from("zad_insights").update({ status: "dismissed", dismiss_reason: reason, updated_at: new Date().toISOString() })
+          .eq("id", row.id).eq("user_id", userId).select("id"),
+        "قفل الرؤية",
+      );
+      if (!w.ok) return `مرفوض: ${w.reason}`;
+      const note = dismissalNote(reason, row.about_item ?? row.title ?? "");
+      const { error: noteErr } = await sb.rpc("zad_memory_upsert", { p_user: userId, p_scope: note.scope, p_note: note.note, p_conf: note.confidence });
+      if (noteErr) console.error("[dismiss_insight] note failed:", noteErr.message);
+      ctx.mutationCount++;
+      ctx.mutations.push({ tool: name, old: { status: "pending" }, new: { status: "dismissed", reason } });
+      await recordAction(sb, userId, scope, { tool: name, input, table: "zad_insights", targetId: row.id, previous: { status: "pending" }, next: { status: "dismissed", dismiss_reason: reason } });
+      return `status=dismissed — «${row.title}» اتقفلت.`;
+    }
     case "set_app_setting": {
       // ZAD_PLAN ١٠.٢(أ): مفتاح من الإعدادات بالكلام — نفس العمود اللي SettingsRepository بيكتبه.
       const column = input.setting === "pet_calls" ? "pet_calls_enabled" : "food_pattern_enabled";
@@ -6096,6 +6239,90 @@ export const CHAT_TOOLS: ToolDef[] = [
     },
   },
   {
+    name: "mark_subscription_paid",
+    description:
+      "العميل دفع اشتراك/فاتورة/قسط متسجّل عنده («دفعت النت»، «سددت قسط الموبايل») — نفس زرار «دفعت» في الاشتراكات: " +
+      "بيسجّل الدفعة مصروف بمبلغ الاشتراك وبيقدّم التجديد دورة، وعدّاد الأقساط بينقص. **فلوس ⇒ بتستنى «أيوه» العميل.** " +
+      "title زي ما قاله. مبلغ مختلف عن المسجّل؟ ابعته في amount. «دي دفعة تانية» بعد رفض التكرار ⇒ allow_duplicate=true.",
+    input_schema: {
+      type: "object",
+      properties: {
+        title: { type: "string", description: "اسم الاشتراك زي ما قاله العميل" },
+        amount: { type: "number", description: "لو دفع مبلغ غير المسجّل بس" },
+        allow_duplicate: { type: "boolean" },
+      },
+      required: ["title"],
+    },
+  },
+  {
+    name: "add_shortages_to_shopping",
+    description:
+      "ضيف كل نواقص البيت لقايمة التسوق مرة واحدة («ضيف النواقص كلها»، «نزّل الناقص على القايمة») — نفس زرار النواقص في «بيتي»: " +
+      "الأصناف اللي خلصت فعلاً بدورة شرا البيت، من غير اللي على القايمة أصلاً ومن غير اللي على فترات. صنف واحد بعينه ⇒ add_shopping_item.",
+    input_schema: { type: "object", properties: {} },
+  },
+  {
+    name: "snooze_pharmacy_dose",
+    description:
+      "أجّل تذكير جرعة دوا متسجّل («أجّل البنادول ربع ساعة»، «فكّرني بالدوا بعد نص ساعة») — نفس «فكّرني بعدين». " +
+      "بيأجّل الجرعة اللي لسه رنّت أو هترن (من ٣ ساعات فاتت لساعة جاية)، أو dose_time لو قال ميعاد بعينه. مش تسجيل جرعة ولا تغيير مواعيد الدوا.",
+    input_schema: {
+      type: "object",
+      properties: {
+        name: { type: "string", description: "اسم الدوا زي ما قاله" },
+        minutes: { type: "number", description: "كام دقيقة (٥–٢٤٠، ١٥ لو ماقالش)" },
+        dose_time: { type: "string", description: "HH:MM لو قال أنهي جرعة" },
+      },
+      required: ["name"],
+    },
+  },
+  {
+    name: "report_price",
+    description:
+      "العميل بيبلّغ عن سعر شافه بنفسه في محل («الزيت في كارفور بقى ٨٥») — نفس «ساهم بسعر»: بيدخل أسعار الجمهور بعملة حسابه. " +
+      "سعر شافه بعينه بس، مش تخمين ولا سعر من النت.",
+    input_schema: {
+      type: "object",
+      properties: {
+        item: { type: "string" },
+        price: { type: "number" },
+        store: { type: "string" },
+        city: { type: "string", description: "لو قالها، وإلا مدينته" },
+      },
+      required: ["item", "price"],
+    },
+  },
+  {
+    name: "clear_place_visits",
+    description:
+      "امسح سجل الأماكن والمحلات اللي زارها لما **يطلب صراحةً** («امسح الأماكن اللي رحتها») — نفس «مسح الزيارات» في شاشة الذاكرة. كله مرة واحدة.",
+    input_schema: { type: "object", properties: {} },
+  },
+  {
+    name: "rate_recipe",
+    description:
+      "رأي العميل في وصفة («الكشري اللي اقترحته ماعجبنيش»، «الوصفة دي حلوة») — نفس 👍/👎 في الوصفات: اللي ماعجبهوش مابيرجعش في الاقتراحات.",
+    input_schema: {
+      type: "object",
+      properties: { recipe_name: { type: "string" }, liked: { type: "boolean" } },
+      required: ["recipe_name", "liked"],
+    },
+  },
+  {
+    name: "dismiss_insight",
+    description:
+      "اقفل رؤية/تنبيه معروض عليه («مش عايز أشوف تنبيه الكهربا ده تاني») — نفس أزرار القفل على الكارت. " +
+      "about = كلمة من عنوانها. reason: not_relevant (مش مهتم) / wrong_data (الرقم غلط) / timing (عرف خلاص).",
+    input_schema: {
+      type: "object",
+      properties: {
+        about: { type: "string", description: "كلمة من عنوان الرؤية" },
+        reason: { type: "string", enum: ["not_relevant", "wrong_data", "timing"] },
+      },
+      required: ["about", "reason"],
+    },
+  },
+  {
     name: "set_app_setting",
     description:
       "شغّل أو اقفل مفتاح من إعدادات التطبيق لما العميل يطلبه بالكلام — نفس المفتاح اللي في الإعدادات (ZAD_PLAN ١٠.٢أ). " +
@@ -6639,6 +6866,8 @@ function describeProposal(tool: string, input: any, currency: string): string {
     }
     case "set_monthly_limit":
       return `سقف الصرف الشهري يبقى ${money(input.monthly_limit)}`;
+    case "mark_subscription_paid":
+      return `دفعت «${input.title}»${input.amount ? ` بـ${money(input.amount)}` : ""} — هسجلها مصروف وأقدّم التجديد`;
     default:
       return tool;
   }

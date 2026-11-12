@@ -4000,6 +4000,33 @@ class ZadL10nAr extends ZadL10n {
   String shopShareEstimate(int priced, int all) {
     return '(تقدير لـ $priced من $all صنف)';
   }
+
+  @override
+  String get agentToolSetAppSetting => 'تغيير إعداد';
+
+  @override
+  String get agentToolDeleteMemory => 'نسيان ملاحظة';
+
+  @override
+  String get agentToolMarkSubscriptionPaid => 'دفع اشتراك';
+
+  @override
+  String get agentToolAddShortages => 'النواقص للقايمة';
+
+  @override
+  String get agentToolSnoozeDose => 'تأجيل جرعة';
+
+  @override
+  String get agentToolReportPrice => 'بلاغ سعر';
+
+  @override
+  String get agentToolClearPlaceVisits => 'مسح الأماكن';
+
+  @override
+  String get agentToolRateRecipe => 'رأيك في وصفة';
+
+  @override
+  String get agentToolDismissInsight => 'قفل تنبيه';
 }
 
 /// The translations for Arabic, as used in Saudi Arabia (`ar_SA`).
