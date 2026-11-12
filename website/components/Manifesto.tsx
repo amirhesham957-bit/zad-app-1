@@ -7,10 +7,9 @@ const text =
   "كل بيت فيه حد شايل في دماغه الفلوس، والناقص في المطبخ، ومعاد الدوا، ومين عليه إيه. زاد اتعمل عشان الحد ده يرتاح.";
 
 function Word({ word, range, progress }: { word: string; range: [number, number]; progress: MotionValue<number> }) {
-  const opacity = useTransform(progress, range, [0.14, 1]);
-  const y = useTransform(progress, range, [8, 0]);
+  const opacity = useTransform(progress, range, [0.15, 1]);
   return (
-    <motion.span style={{ opacity, y }} className="inline-block">
+    <motion.span style={{ opacity }} className="inline-block">
       {word}&nbsp;
     </motion.span>
   );
@@ -24,8 +23,8 @@ export default function Manifesto() {
   const words = text.split(" ");
 
   return (
-    <section className="mx-auto max-w-[1100px] px-4 py-28 md:px-10 md:py-48">
-      <p ref={ref} className="text-3xl font-extrabold leading-[1.5] md:text-5xl md:leading-[1.45]">
+    <section className="mx-auto max-w-[1100px] px-4 py-28 md:px-10 md:py-44">
+      <p ref={ref} className="display text-5xl leading-[1.25] text-emerald md:text-7xl md:leading-[1.2]">
         {reduce
           ? text
           : words.map((w, i) => (
