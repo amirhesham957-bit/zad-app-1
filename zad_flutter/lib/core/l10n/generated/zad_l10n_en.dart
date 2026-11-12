@@ -4048,4 +4048,31 @@ class ZadL10nEn extends ZadL10n {
   String shopShareEstimate(int priced, int all) {
     return '(estimate for $priced of $all items)';
   }
+
+  @override
+  String get agentToolSetAppSetting => 'Changed a setting';
+
+  @override
+  String get agentToolDeleteMemory => 'Forgot a note';
+
+  @override
+  String get agentToolMarkSubscriptionPaid => 'Paid a subscription';
+
+  @override
+  String get agentToolAddShortages => 'Shortages to the list';
+
+  @override
+  String get agentToolSnoozeDose => 'Put a dose off';
+
+  @override
+  String get agentToolReportPrice => 'Reported a price';
+
+  @override
+  String get agentToolClearPlaceVisits => 'Cleared places visited';
+
+  @override
+  String get agentToolRateRecipe => 'Rated a recipe';
+
+  @override
+  String get agentToolDismissInsight => 'Closed an insight';
 }

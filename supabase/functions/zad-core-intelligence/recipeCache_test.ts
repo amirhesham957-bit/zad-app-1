@@ -1,5 +1,5 @@
 import { assert, assertEquals } from "jsr:@std/assert@1";
-import { mealSuggestionsCacheKey, mealSuggestionsCachePattern } from "./recipeCache.ts";
+import { mealSuggestionsCacheKey, mealSuggestionsCachePattern } from "../_shared/recipeCache.ts";
 
 // Postgres LIKE, for the two wildcards the pattern uses.
 function like(value: string, pattern: string): boolean {

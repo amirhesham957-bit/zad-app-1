@@ -9,6 +9,7 @@
 library;
 
 import 'package:flutter/foundation.dart';
+import 'package:zad/core/l10n/l10n.dart';
 
 /// The tables `zad_agent_undo` knows how to restore — read off the deployed
 /// function on 2026-09-21. Any other table answers `table_not_undoable`, so
@@ -103,7 +104,26 @@ class AgentAction {
 /// reads as a plain "a change by زاد" rather than the raw identifier — Kotlin
 /// fell back to the identifier, and five tools that do run on the live project
 /// (`add_obligation`, `add_appointment`, …) showed up as English snake case.
-String agentToolLabel(String tool) => switch (tool) {
+///
+/// Tools added since ZAD_PLAN ١٠.٢(أ) read from [l] (the ARB files); Arabic
+/// when no [l] is given.
+String agentToolLabel(String tool, [ZadL10n? l]) =>
+    _newToolLabel(tool, l ?? zadL10nArabic) ?? _toolLabel(tool);
+
+String? _newToolLabel(String tool, ZadL10n l) => switch (tool) {
+  'set_app_setting' => l.agentToolSetAppSetting,
+  'delete_memory' => l.agentToolDeleteMemory,
+  'mark_subscription_paid' => l.agentToolMarkSubscriptionPaid,
+  'add_shortages_to_shopping' => l.agentToolAddShortages,
+  'snooze_pharmacy_dose' => l.agentToolSnoozeDose,
+  'report_price' => l.agentToolReportPrice,
+  'clear_place_visits' => l.agentToolClearPlaceVisits,
+  'rate_recipe' => l.agentToolRateRecipe,
+  'dismiss_insight' => l.agentToolDismissInsight,
+  _ => null,
+};
+
+String _toolLabel(String tool) => switch (tool) {
   'log_transaction' => 'تسجيل معاملة',
   'update_transaction' => 'تعديل معاملة',
   'delete_transaction' => 'حذف معاملة',

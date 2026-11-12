@@ -170,6 +170,23 @@ void main() {
       expect(turn.touchedMoney, isFalse);
     });
 
+    test('a paid subscription refreshes the money and the household', () {
+      // ZAD_PLAN 10.2a: «دفعت النت» books an expense and moves the renewal.
+      final turn = AgentTurn.fromJson(<String, dynamic>{
+        'reply': 'تمام',
+        'executed': <Object?>[
+          <String, dynamic>{
+            'tool': 'mark_subscription_paid',
+            'ok': true,
+            'summary': 'اتسجلت دفعة "نت"',
+          },
+        ],
+      });
+
+      expect(turn.touchedMoney, isTrue);
+      expect(turn.touchedHousehold, isTrue);
+    });
+
     test('a failed tool does not count as having moved money', () {
       final turn = AgentTurn.fromJson(<String, dynamic>{
         'reply': 'مقدرتش',
