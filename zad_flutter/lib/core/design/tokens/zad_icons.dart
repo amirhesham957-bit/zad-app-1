@@ -144,6 +144,9 @@ abstract final class ZadIcons {
   /// Retry.
   static const IconData retry = Icons.refresh;
 
+  /// Report one of Zad's replies (ZAD_PLAN 8.3).
+  static const IconData report = Icons.outlined_flag;
+
   /// Keeping the app alive past the phone's battery manager.
   static const IconData battery = Icons.battery_saver;
 
