@@ -3,7 +3,7 @@ import { buildTicker, countryForLocation } from "./liveTicker.ts";
 import { asksLatest, bingNewsUrl, cacheTtlMs, englishTwin, type GoldQuote, GOOGLE_CONSENT_COOKIE, goldQuotes, googleNewsUrl, isLiveQuery, keepAnswering, latestFirst, marketOf, topicOf, withTwin } from "./searchQuality.ts";
 import { spokenText, WHISPER_DEFAULT_MODEL, type WhisperOptions, whisperOptions, whisperWithFallback } from "./whisper.ts";
 import { DeadKeys } from "../_shared/deadKeys.ts";
-import { geminiKeys, groqKeys, publicContentKeys } from "../_shared/keyPool.ts";
+import { aiDataTier, freeAfterPaidKeys, geminiKeys, groqKeys, publicContentKeys } from "../_shared/keyPool.ts";
 import { recipeNeedsNoShopping } from "../_shared/brokeMode.ts";
 import { seasonFor } from "../_shared/season.ts";
 import { deliveryApp, deliveryFee } from "../_shared/deliveryApps.ts";
@@ -129,6 +129,11 @@ function nextGroqKeyIndex(): number {
 // images back to Groq, which cannot serve them.
 // ZAD_API_KEY_1..20 now (_shared/keyPool.ts); a sixth key used to be silently ignored.
 const GEMINI_KEYS: string[] = geminiKeys((n) => Deno.env.get(n));
+// المالك ١٢/١١ (ZAD_FREE_AFTER_PAID): بعد المدفوع، المجاني قبل جروك — الفواتير والصوت والنص.
+const FREE_AFTER_PAID_KEYS: string[] = freeAfterPaidKeys((n) => Deno.env.get(n));
+let freeAfterPaidCursor = 0;
+// المدفوع: الموديل الكبير للمهام التقيلة والفواتير (مفيش حد ٢٠/يوم عليه). المجاني: الخفيف الأول زي ما كان.
+const PAID_TIER = aiDataTier((n) => Deno.env.get(n)) === "paid";
 let geminiKeyCursor = 0;
 // Public content only (flyers, posts, videos) — see publicContentKeys. Its own cursor: GEMINI_KEYS may be one key.
 const PUBLIC_DEAL_KEYS: string[] = publicContentKeys((n) => Deno.env.get(n));
@@ -742,13 +747,19 @@ async function callGeminiPool(opts: {
   deadline?: number;
   /** Public content only: walk PUBLIC_DEAL_KEYS instead of the customer-data pool. */
   publicContent?: boolean;
+  /** After the paid key is spent: walk FREE_AFTER_PAID_KEYS (ZAD_FREE_AFTER_PAID). */
+  freeAfterPaid?: boolean;
 }): Promise<{ content: string | null; ok: boolean }> {
-  const pool = opts.publicContent ? PUBLIC_DEAL_KEYS : GEMINI_KEYS;
+  const pool = opts.publicContent ? PUBLIC_DEAL_KEYS : opts.freeAfterPaid ? FREE_AFTER_PAID_KEYS : GEMINI_KEYS;
   if (pool.length === 0) {
     console.error("[CoreIntel] No Gemini keys configured (ZAD_API_KEY_1..20 / GEMINI_API_KEY all unset)");
     return { content: null, ok: false };
   }
-  const start = opts.publicContent ? nextPublicKeyIndex() : nextGeminiKeyIndex();
+  const start = opts.publicContent
+    ? nextPublicKeyIndex()
+    : opts.freeAfterPaid
+    ? freeAfterPaidCursor++ % pool.length
+    : nextGeminiKeyIndex();
   for (let i = 0; i < pool.length; i++) {
     const left = opts.deadline == null ? null : opts.deadline - Date.now();
     if (left != null && left < 5000) {
@@ -912,6 +923,30 @@ async function callGeminiChain(
     modelCooldownUntil.set(model, Date.now() + MODEL_COOLDOWN_MS);
     console.warn(`[CoreIntel] ${model} failed on the whole pool — next model in the chain`);
   }
+  return await freeAfterPaidChain(chain, opts);
+}
+
+const freeCooldownUntil = new Map<string, number>();
+
+/**
+ * المدفوع خلص على السلسلة كلها ⇒ نفس السلسلة على المفاتيح المجانية، بتهدئة لوحدها (تهدئة المدفوع ماتمنعش
+ * المجاني). فاضية لو ZAD_FREE_AFTER_PAID مقفول. [chain] بالترتيب اللي المتصل عايزه.
+ */
+async function freeAfterPaidChain(
+  chain: readonly string[],
+  opts: Omit<Parameters<typeof callGeminiPool>[0], "model">,
+): Promise<{ content: string | null; ok: boolean }> {
+  if (FREE_AFTER_PAID_KEYS.length === 0) return { content: null, ok: false };
+  const now = Date.now();
+  for (const model of chain.filter((m) => (freeCooldownUntil.get(m) ?? 0) <= now)) {
+    if (opts.deadline != null && opts.deadline - Date.now() < 5000) break;
+    const result = await callGeminiPool({ ...opts, model, freeAfterPaid: true });
+    if (result.ok) {
+      console.warn(`[CoreIntel] paid key spent; ${model} answered on a free key`);
+      return result;
+    }
+    freeCooldownUntil.set(model, Date.now() + MODEL_COOLDOWN_MS);
+  }
   return { content: null, ok: false };
 }
 
@@ -955,12 +990,22 @@ function logEmptyDealRead(source: string, store: string, shown: string, answer: 
   console.log(`[deal_read_empty] ${JSON.stringify({ source, store, model_deals: count, shown: shown.slice(0, 240), answer: answer.slice(0, 400) })}`);
 }
 
+/**
+ * الموديل حسب المهمة (المالك ١٢/١١: البسيط صغير والمعقد كبير): التحليلات («brain») على المفتاح المدفوع بتروح
+ * لـZAD_MODEL_BRAIN (gemini-3.5-flash) من غير thinking — التفكير بيتحسب على maxTokens وكان بيخلّص الرد
+ * (CLAUDE.md، MAX_TOKENS). الاستخراج والتصنيف («routine») والشات (اللي ليه ميزانية تفكير صريحة) على الخفيف.
+ * على المجاني كله خفيف زي ما كان: الكبير عليه ٢٠/يوم بس ومشترك مع الصور.
+ */
+function textModelFor(tier: "routine" | "brain", thinkingBudgetOverride?: number): string {
+  return PAID_TIER && tier === "brain" && thinkingBudgetOverride === undefined ? GEMINI_MODEL_BRAIN : GEMINI_MODEL_TEXT;
+}
+
 async function callTextModel(
   systemPrompt: string, userPrompt: string, maxTokens = 1000, temperature = 0.7,
   tier: "routine" | "brain" = "brain",
   thinkingBudgetOverride?: number,
 ) {
-  const model = GEMINI_MODEL_TEXT;
+  const model = textModelFor(tier, thinkingBudgetOverride);
   // Routine tier is deliberately non-thinking: these are extraction/classification calls
   // where reasoning tokens only eat the output budget (see callGeminiNative.thinkingBudget).
   //
@@ -970,7 +1015,7 @@ async function callTextModel(
   // reasoning that makes the answer good and drops the part that only costs seconds.
   const thinkingBudget = thinkingBudgetOverride !== undefined
     ? thinkingBudgetOverride
-    : (tier === "routine" ? 0 : undefined);
+    : (tier === "routine" || model !== GEMINI_MODEL_TEXT ? 0 : undefined);
   const gemini = await callGeminiChain(model, { systemPrompt, content: userPrompt, temperature, maxTokens, thinkingBudget });
   if (gemini.ok) return gemini.content;
   console.warn("[CoreIntel] Gemini pool exhausted for text — falling back to Groq");
@@ -989,8 +1034,8 @@ async function callJsonModel(
   systemPrompt: string, userPrompt: string, maxTokens = 1500,
   tier: "routine" | "brain" = "brain",
 ) {
-  const model = GEMINI_MODEL_TEXT;
-  const thinkingBudget = tier === "routine" ? 0 : undefined;
+  const model = textModelFor(tier);
+  const thinkingBudget = tier === "routine" || model !== GEMINI_MODEL_TEXT ? 0 : undefined;
   const gemini = await callGeminiChain(model, { systemPrompt, content: userPrompt, temperature: 0.2, maxTokens, jsonMode: true, thinkingBudget });
   let raw = gemini.content;
   let groqOk = true;
@@ -1062,7 +1107,9 @@ async function callVisionModel(
   // line items. The lite models lead (owner, 2026-10-17, ZAD_DREAM_PLAN.md): ZAD_MODEL_ROUTINE
   // is gemini-3.5-flash on this project, the scarcest free bucket (20 a day per project),
   // and it led every receipt and prescription scan. It is now the last resort, not the first.
-  const chain = [...new Set([...VISION_FALLBACK_MODELS, GEMINI_MODEL_ROUTINE])];
+  const liteFirst = [...new Set([...VISION_FALLBACK_MODELS, GEMINI_MODEL_ROUTINE])];
+  // المدفوع مالوش حد الـ٢٠/يوم: الكبير الأول، أدق على الفاتورة المهزوزة (المالك ١٢/١١). المجاني: الخفيف الأول.
+  const chain = PAID_TIER ? [...new Set([GEMINI_MODEL_ROUTINE, ...VISION_FALLBACK_MODELS])] : liteFirst;
   let gemini = await attempt(chain[0]);
   for (let i = 1; i < chain.length && !gemini.ok && (deadline == null || Date.now() < deadline); i++) {
     console.warn(`[CoreIntel] vision model ${chain[i - 1]} failed on every key; trying ${chain[i]}`);
@@ -1074,6 +1121,13 @@ async function callVisionModel(
   if (!gemini.ok && deadline == null) {
     await new Promise((r) => setTimeout(r, 1500));
     gemini = await attempt(chain[0]);
+  }
+  // المدفوع خلص: نفس الصورة على المجاني، الخفيف الأول (ZAD_FREE_AFTER_PAID).
+  if (!gemini.ok) {
+    gemini = await freeAfterPaidChain(liteFirst, {
+      systemPrompt, content, temperature: 0.2, maxTokens: long?.maxTokens ?? 4000, jsonMode: true, thinkingBudget: 0,
+      timeoutMs: long?.timeoutMs, deadline,
+    });
   }
   if (!gemini.ok) {
     console.error(
@@ -2089,7 +2143,7 @@ async function handle(req: Request): Promise<Response> {
       // سلمى (Azure) كانت الأول من ٢٠٢٦-١٠-٠١ — صوت واحد ثابت بس من غير أي مشاعر، فالمساعد كله
       // كان بيتقال محايد. دلوقتي Azure احتياطي بس لما كوتة Gemini تخلص.
       const upstream = await requestVoiceWithFallback(
-        voiceRequest, GEMINI_KEYS, AZURE_SPEECH, fetch, extractDialectHint(payload),
+        voiceRequest, GEMINI_KEYS, AZURE_SPEECH, fetch, extractDialectHint(payload), false, FREE_AFTER_PAID_KEYS,
       );
       if (!upstream.ok || !upstream.body) {
         // جرّبنا المسبح كله + Azure — نرجّع تفاصيل المحاولات (بدون أي مادة مفتاح) عشان اللوج يقول الحقيقة

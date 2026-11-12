@@ -124,7 +124,7 @@ export interface WhisperAttempt {
 /**
  * كل مفتاح بالترتيب؛ ولو الموديل نفسه اترفض (404/400) نفس المفتاح بالموديل اللي بعده —
  * الموديل الكامل ممكن يتشال من كتالوج Groq زي ما Llama اتشال (٢٠٢٦-٠٨-٣١)، والصوت مايقفش.
- * مفتاح مرفوض (401/403) ⇒ المفتاح اللي بعده. أي خطأ تاني بيرجع زي ما هو.
+ * مفتاح مرفوض (401/403) أو حصته خلصت (429) ⇒ المفتاح اللي بعده. أي خطأ تاني بيرجع زي ما هو.
  */
 export async function whisperWithFallback(
   keys: readonly string[],
@@ -137,7 +137,8 @@ export async function whisperWithFallback(
     const r = await send(keys[k], models[m]);
     if (r.ok) return { ...r, model: models[m] };
     last = r;
-    if (r.status === 401 || r.status === 403) continue;
+    // 429 = حصة المفتاح ده خلصت، والعشرة التانيين لسه (مراجعة ١٢/١١: كان بيقف عند أول 429).
+    if (r.status === 401 || r.status === 403 || r.status === 429) continue;
     if ((r.status === 404 || r.status === 400) && m < models.length - 1) {
       m++;
       k--;
