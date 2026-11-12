@@ -61,6 +61,7 @@ String _wireName(BankNotificationClass c) => switch (c) {
   BankNotificationClass.informationalOnly => 'informational_only',
   BankNotificationClass.ambiguous => 'ambiguous',
   BankNotificationClass.lifeEvent => 'life_event',
+  BankNotificationClass.offer => 'offer',
 };
 
 /// Classifies a notification and queues it if it is worth sending.

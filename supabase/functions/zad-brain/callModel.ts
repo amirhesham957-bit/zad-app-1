@@ -71,6 +71,15 @@ const INTERNAL_KEYS: string[] = paidGeminiKeys((n) => Deno.env.get(n)).length > 
 const FREE_AFTER_PAID = INTERNAL_KEYS.length > 0 && (Deno.env.get("ZAD_FREE_AFTER_PAID") ?? "").trim() === "1";
 // تهدئة لكل موديل على المجاني لوحده: تهدئة المدفوع ماتمنعش المجاني من المحاولة.
 const freeCooldownUntil = new Map<string, number>();
+// آخر مرة المدفوع اتقال عليه «خلص» (429) أو اترفض: لحد الوقت ده الطلبات اللي لاقية موديلاته في التهدئة
+// بتروح للمجاني برضه، مش لجروك على طول.
+let paidSpentUntil = 0;
+
+/** For tests: forget that the paid key was spent, so each test starts fresh. */
+export function resetPaidSpentForTests(): void {
+  paidSpentUntil = 0;
+  freeCooldownUntil.clear();
+}
 
 const CALL_KEYS: string[] = [...GEMINI_KEY_POOL, ...(EVAL_KEY ? [EVAL_KEY] : []), ...INTERNAL_KEYS];
 const EVAL_KEY_INDEX: number | null = EVAL_KEY ? GEMINI_KEY_POOL.length : null;
@@ -301,6 +310,7 @@ export async function callModel(opts: {
   // keys and models stay for the customers who pay, and Groq's separate quota takes it.
   const freeBusy = currentLane() === "free_busy" && GROQ_KEY_POOL.length > 0;
   const candidates = freeBusy ? [] : fresh.length > 0 ? fresh : GROQ_KEY_POOL.length > 0 ? [] : chain;
+  let paidRefused = false;
   if (freeBusy) trail.push("free lane over its daily budget");
   else if (candidates.length === 0) trail.push("every gemini model cooling down");
   for (const model of candidates) {
@@ -316,6 +326,12 @@ export async function callModel(opts: {
       modelCooldownUntil.delete(model);
       return { ...reply, model };
     } catch (e) {
+      // المدفوع اتلغى أو اتقفل (400/401/403): مع الاحتياطي المجاني، اللفة ماتقعش — السلسلة تكمّل على المجاني.
+      if (e instanceof ConfigError && FREE_AFTER_PAID) {
+        trail.push(`${model}: paid key refused (${(e as Error).message.slice(0, 60)})`);
+        paidRefused = true;
+        break;
+      }
       if (e instanceof ConfigError) throw e;
       if (!(e instanceof ProviderUnavailableError)) throw e;
       if (modelCooldownMs > 0) modelCooldownUntil.set(model, Date.now() + modelCooldownMs);
@@ -325,8 +341,12 @@ export async function callModel(opts: {
   }
 
   // المدفوع خلص ⇒ نفس السلسلة على المفاتيح المجانية (حارة internal: مفاتيحها الأول) قبل جروك.
+  // «خلص» = 429 (الحصة) أو المفتاح اترفض — مش 503/timeout: ضغط على الموديل نفسه بيرد نفس الرد على المجاني،
+  // وبيحرق ميزانية الوقت وبيودّي داتا للمجاني من غير لازمة. شغل الخلفية مايدخلش: المجاني بتاع العملا والمحتوى العام.
   const lane = currentLane();
-  if (FREE_AFTER_PAID && !freeBusy && lane !== "eval" && lane !== "internal") {
+  if (paidRefused || trail.some((t) => /429/.test(t))) paidSpentUntil = Date.now() + Math.max(modelCooldownMs, 60_000);
+  const paidSpent = Date.now() < paidSpentUntil;
+  if (FREE_AFTER_PAID && paidSpent && !freeBusy && lane !== "eval" && lane !== "internal" && lane !== "background") {
     const t = Date.now();
     for (const model of chain.filter((m) => (freeCooldownUntil.get(m) ?? 0) <= t)) {
       const left = deadline - Date.now();
@@ -341,7 +361,11 @@ export async function callModel(opts: {
         console.warn(`[zad-brain] paid key unavailable; ${model} answered on a free key`);
         return { ...reply, model };
       } catch (e) {
-        if (e instanceof ConfigError) throw e;
+        // مفتاح مجاني ملغي مايوقّعش اللفة وفيه ٩ تانيين وجروك: الموديل اللي بعده بيبدأ من مفتاح تاني.
+        if (e instanceof ConfigError) {
+          trail.push(`free ${model}: refused`);
+          continue;
+        }
         if (!(e instanceof ProviderUnavailableError)) throw e;
         if (modelCooldownMs > 0) freeCooldownUntil.set(model, Date.now() + modelCooldownMs);
         trail.push(`free ${model}: ${e.short}`);

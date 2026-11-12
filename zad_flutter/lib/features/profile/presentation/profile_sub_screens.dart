@@ -407,6 +407,7 @@ class _BankStatusState extends ConsumerState<BankReadingStatusSection> {
                 BankNotificationClass.informationalOnly => 'معلومة',
                 BankNotificationClass.ambiguous => 'تتأكد على السيرفر',
                 BankNotificationClass.lifeEvent => lifeEventLabel,
+                BankNotificationClass.offer => 'عرض لصاحبه', // l10n: done-later
               }}'
         : 'فشل التحليل — الرسالة العينة معملهاش parser';
     unawaited(

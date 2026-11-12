@@ -10,7 +10,7 @@ Deno.env.set("GROQ_API_KEY_1", "groq1");
 Deno.env.set("ZAD_MODEL_FALLBACKS", "model-b");
 Deno.env.set("ZAD_FREE_AFTER_PAID", "1");
 
-const { callModel, setModelCooldownMsForTests } = await import("./callModel.ts?free-after-paid");
+const { callModel, resetPaidSpentForTests, setModelCooldownMsForTests } = await import("./callModel.ts?free-after-paid");
 // The pools are read; leave no key behind for the test files that run after this one in the same process.
 for (const k of ["ZAD_PAID_KEY_1", "ZAD_API_KEY_1", "ZAD_API_KEY_2", "GROQ_API_KEY_1", "ZAD_MODEL_FALLBACKS", "ZAD_FREE_AFTER_PAID"]) {
   Deno.env.delete(k);
@@ -48,6 +48,44 @@ Deno.test("the paid key spent on every model ⇒ the free keys answer before Gro
     assert(calls.filter((u) => u.includes("key=paid1")).length >= 2, calls.join("\n"));
     assert(calls.some((u) => /key=free[12]/.test(u)));
     assert(!calls.some((u) => u.includes("groq")));
+  } finally {
+    globalThis.fetch = original;
+  }
+});
+
+Deno.test("an overloaded model (503) is not a spent paid key — Groq, not the free keys", async () => {
+  resetPaidSpentForTests();
+  const calls: string[] = [];
+  const original = globalThis.fetch;
+  globalThis.fetch = ((input: string | URL | Request) => {
+    const url = String(input);
+    calls.push(url);
+    if (url.includes("groq")) {
+      return Promise.resolve(new Response(JSON.stringify({ choices: [{ message: { content: "groq" } }] }), { status: 200 }));
+    }
+    return Promise.resolve(
+      url.includes("key=paid1") ? new Response(JSON.stringify({ error: { code: 503 } }), { status: 503 }) : geminiOk(),
+    );
+  }) as typeof fetch;
+  try {
+    await callModel({ ...BASE, model: "model-c" }).catch(() => null);
+    assert(!calls.some((u) => /key=free[12]/.test(u)), calls.join("\n"));
+  } finally {
+    globalThis.fetch = original;
+  }
+});
+
+Deno.test("a refused paid key (403) falls to the free keys instead of failing the turn", async () => {
+  resetPaidSpentForTests();
+  const original = globalThis.fetch;
+  globalThis.fetch = ((input: string | URL | Request) => {
+    const url = String(input);
+    if (url.includes("key=paid1")) return Promise.resolve(new Response(JSON.stringify({ error: { code: 403 } }), { status: 403 }));
+    return Promise.resolve(geminiOk());
+  }) as typeof fetch;
+  try {
+    const reply = await callModel({ ...BASE, model: "model-d" });
+    assertEquals(reply.text, "تمام");
   } finally {
     globalThis.fetch = original;
   }

@@ -70,10 +70,31 @@ const short = (v: unknown, max: number): string | null => {
   return s && s.length <= max ? s : null;
 };
 
-/** أول رابط https في النص، لو فيه. */
+/**
+ * دومينات المحلات اللي لينكها بيتحفظ. اسم الحزمة بيتطابق بجزء منه («com.x.amazongift» بيعدّي isOfferApp)، فلينك من
+ * تطبيق شبه محل ممكن يبقى تصيّد — وزاد لو كرره في الشات كـ«عرض جالك» بيديله مصداقيته. لينك برّه القايمة بيتشال، والعميل
+ * بيفتح التطبيق نفسه (security-audit ١٢/١١).
+ */
+const OFFER_LINK_DOMAINS = [
+  "amazon.eg", "amazon.sa", "amazon.ae", "amazon.com", "noon.com", "talabat.com", "hungerstation.com", "jahez.net",
+  "careem.com", "mrsool.co", "elmenus.com", "breadfast.com", "instashop.com", "luluhypermarket.com", "nahdionline.com",
+  "shein.com", "namshi.com", "temu.com", "aliexpress.com", "jumia.com.eg", "deliveroo.ae", "ubereats.com", "ikea.com",
+  "extra.com", "xcite.com", "sharafdg.com", "btech.com",
+];
+
+/** أول رابط https في النص، لو دومينه محل معروف (أو دومين فرعي منه). */
 export function firstHttpsLink(text: string): string | null {
   const m = text.match(/https:\/\/[^\s"'<>]{4,500}/);
-  return m ? m[0].replace(/[).,،]+$/, "") : null;
+  if (!m) return null;
+  const link = m[0].replace(/[).,،]+$/, "");
+  try {
+    const u = new URL(link);
+    if (u.username || u.password || u.port) return null;
+    const host = u.hostname.toLowerCase();
+    return OFFER_LINK_DOMAINS.some((d) => host === d || host.endsWith(`.${d}`)) ? link : null;
+  } catch {
+    return null;
+  }
 }
 
 /**
