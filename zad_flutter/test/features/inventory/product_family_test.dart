@@ -90,8 +90,8 @@ void main() {
 
   test('a family low across every brand is one shortage, under its name', () {
     final low = <InventoryItem>[
-      _row('1', 'ماء إيلان', 1),
-      _row('2', 'مياه نستله', 1),
+      _row('1', 'ماء إيلان', 1, threshold: 2),
+      _row('2', 'مياه نستله', 1, threshold: 2),
     ];
     final shortages = shortagesIn(low, today: _today);
     expect(shortages, hasLength(1));

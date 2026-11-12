@@ -5,19 +5,25 @@ import 'package:zad/shared/inventory/domain/shortage.dart';
 
 final DateTime _today = DateTime.utc(2026, 11, 6);
 
-InventoryItem _row(String name, double qty, {DateTime? created}) =>
-    InventoryItem(
-      id: 'i-$name',
-      userId: 'u',
-      itemName: name,
-      quantity: qty,
-      createdAt: created ?? DateTime.utc(2026, 11, 5, 11, 46),
-    );
+InventoryItem _row(
+  String name,
+  double qty, {
+  DateTime? created,
+  double? threshold,
+}) => InventoryItem(
+  id: 'i-$name',
+  userId: 'u',
+  itemName: name,
+  quantity: qty,
+  lowStockThreshold: threshold,
+  createdAt: created ?? DateTime.utc(2026, 11, 5, 11, 46),
+);
 
 void main() {
   test('owner 6/11: ghee bought yesterday at 1 is not short tonight', () {
-    final ghee = _row('سمن شيراتون', 1);
-    // Before: the threshold (2) alone said «short» the day after.
+    // The old flat threshold of 2, set by hand: it alone said «short» the day
+    // after; the purchase rhythm is what keeps it off.
+    final ghee = _row('سمن شيراتون', 1, threshold: 2);
     expect(shortagesIn(<InventoryItem>[ghee], today: _today), hasLength(1));
     expect(
       shortagesIn(

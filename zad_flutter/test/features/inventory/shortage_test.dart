@@ -31,16 +31,19 @@ InventoryItem item(
 
 void main() {
   group('the threshold', () {
-    test('is two when nobody set one', () {
-      // The Kotlin screens' figure: `lowStockThreshold ?: 2`.
-      expect(item('لبن').effectiveThreshold, 2);
+    test('follows the quantity when nobody set one (ZAD_PLAN ١٠.١)', () {
+      // A quarter of what is there, never below half a counted pack. It was
+      // a flat 2, and 29 of the live project's 40 rows read «منخفض».
+      expect(item('لبن').effectiveThreshold, 1.25);
+      expect(item('لبن', quantity: 1).effectiveThreshold, 0.5);
+      expect(item('لبن', quantity: 1).isLowStock, isFalse);
     });
 
-    test('never drops below one', () {
+    test('a zero or negative one counts as none', () {
       // Zero would mean "warn me when I have less than nothing" — a warning
       // that can never fire.
-      expect(item('لبن', threshold: 0).effectiveThreshold, 1);
-      expect(item('لبن', threshold: -3).effectiveThreshold, 1);
+      expect(item('لبن', threshold: 0).effectiveThreshold, 1.25);
+      expect(item('لبن', threshold: -3).effectiveThreshold, 1.25);
     });
 
     test('running low is at the threshold, not past it', () {
@@ -49,9 +52,12 @@ void main() {
     });
 
     test('getting low is the band above it, and not low itself', () {
-      final getting = item('لبن', quantity: 4, threshold: 2);
+      final getting = item('لبن', quantity: 3, threshold: 2);
       expect(getting.isGettingLow, isTrue);
       expect(getting.isLowStock, isFalse);
+      // Strictly under twice the threshold: the one box just bought (its
+      // threshold half a box) reads as stocked, not «almost gone».
+      expect(item('لبن', quantity: 4, threshold: 2).isGettingLow, isFalse);
 
       // At the threshold it is low, which is a stronger claim than getting
       // low — the two must not both be true or a screen would badge it twice.
