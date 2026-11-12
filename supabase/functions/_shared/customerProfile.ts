@@ -7,6 +7,8 @@ export const PAY_FREQUENCIES = ["monthly", "biweekly", "weekly", "daily", "irreg
 /** مين في رعاية العميل — «ابن مسؤول عن أبوه وأمه» غير «أب مسؤول عن عيال». */
 export const CARES_FOR = ["children", "parents", "spouse", "siblings", "grandparents"] as const;
 export const PROFILE_DIALECTS = ["EG", "SA", "GULF", "LEVANT", "IQ", "MA", "TN", "DZ", "LY", "SD", "YE", "TR", "EN"] as const;
+/** المناطق اللي «ملفي» بيختار منها — نفس الـcheck في 20261113030000_dialect_region. GENERAL = سعودي عام. */
+export const PROFILE_REGIONS = ["SA_HIJAZ", "SA_NAJD", "SA_EAST", "SA_SOUTH", "GENERAL"] as const;
 
 /** نوع الدور في البيت بيحدد النوع لو مش مذكور صراحة: «أنا أم» = أنثى. */
 const ROLE_GENDER: Record<string, "male" | "female"> = {
@@ -77,6 +79,8 @@ export function sanitizeProfilePatch(input: Record<string, unknown>): { patch: C
   set("kids_count", input.kids_count, (v) => intIn(v, 0, 20));
   set("city", input.city, (v) => text(v, 60));
   set("dialect", input.dialect, (v) => oneOf(typeof v === "string" ? v.toUpperCase() : v, PROFILE_DIALECTS));
+  // ZAD_PLAN ١٠.٢(أ): اللي «ملفي» بيعمله يتعمل بالكلام — «كلمني حجازي» ⇒ SA_HIJAZ.
+  set("dialect_region", input.dialect_region, (v) => oneOf(typeof v === "string" ? v.toUpperCase() : v, PROFILE_REGIONS));
   set("interests", input.interests, (v) => {
     if (!Array.isArray(v)) return null;
     const list = [...new Set(v.map((x) => text(x, 30)).filter((x): x is string => !!x))].slice(0, 12);

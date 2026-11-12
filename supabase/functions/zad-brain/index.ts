@@ -4302,6 +4302,39 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       ctx.mutations.push({ tool: name, old: snap?.sleep ?? null, new: { bed, wake } });
       return `تمام — زاد مش هيبعت تنبيهات مش ضرورية من ${bed} لـ${wake} (الجرعات والطوارئ زي ما هي).`;
     }
+    case "set_app_setting": {
+      // ZAD_PLAN ١٠.٢(أ): مفتاح من الإعدادات بالكلام — نفس العمود اللي SettingsRepository بيكتبه.
+      const column = input.setting === "pet_calls" ? "pet_calls_enabled" : "food_pattern_enabled";
+      const on = input.on === true;
+      const { data: before } = await sb.from("zad_users").select(column).eq("id", userId).maybeSingle();
+      const w = await writeRows(
+        sb.from("zad_users").update({ [column]: on }).eq("id", userId).select("id"),
+        on ? "تشغيل الإعداد" : "إيقاف الإعداد",
+      );
+      if (!w.ok) return `مرفوض: ${w.reason}`;
+      ctx.mutationCount++;
+      ctx.mutations.push({ tool: name, old: before ?? null, new: { [column]: on } });
+      await recordAction(sb, userId, scope, { tool: name, input, table: "zad_users", targetId: userId, previous: before ?? null, next: { [column]: on } });
+      const what = input.setting === "pet_calls" ? "نداءات زادو" : "صورة الأكل في الرئيسية";
+      return `status=saved ${column}=${on} — ${what} ${on ? "اشتغلت" : "اتقفلت"}، والمفتاح نفسه في الإعدادات لو حب يرجّعها.`;
+    }
+    case "delete_memory": {
+      // ZAD_PLAN ١٠.٢(أ): «انسى» بالكلام زي شاشة الذاكرة. user_id في الشرط: العقل شغال بـservice_role،
+      // والـsnapshot فيه ملاحظات أفراد العيلة — دي ماتتمسحش من حساب حد تاني.
+      const memoryId = String(input.memory_id);
+      const { data: before } = await sb.from("zad_memory").select("id,scope,note,confidence,evidence_count,valid_until")
+        .eq("id", memoryId).eq("user_id", userId).maybeSingle();
+      if (!before) return "مرفوض: الملاحظة دي مش من ذاكرة العميل نفسه — ماتمسحتش.";
+      const w = await writeRows(
+        sb.from("zad_memory").delete().eq("id", memoryId).eq("user_id", userId).select("id"),
+        "مسح ملاحظة من الذاكرة",
+      );
+      if (!w.ok) return `مرفوض: ${w.reason}`;
+      ctx.mutationCount++;
+      ctx.mutations.push({ tool: name, old: before, new: null });
+      await recordAction(sb, userId, scope, { tool: name, input, table: "zad_memory", targetId: memoryId, previous: before, next: null });
+      return `status=deleted — اتنسيت: «${String((before as { note?: string }).note ?? "").slice(0, 80)}»`;
+    }
     case "handover_card": {
       // كارت تسليم الشفت (handover.ts، الشريحة ٣٤): من حساب العميل نفسه بس، للأيام الجاية بتوقيت السوق. صفر توكنز.
       const timeZone = snap?.cycle?.timezone ?? "UTC";
@@ -5771,7 +5804,7 @@ export const CHAT_TOOLS: ToolDef[] = [
     name: "update_customer_profile",
     description:
       "سجّل حقيقة ثابتة عن العميل نفسه أول ما يقولها، في نص الكلام ومن غير ما تسأل إذن: اسمه اللي يحب يتنادى بيه، نوعه، دوره في البيت، سنه، شغله ومواعيده، ميعاد قبضه ونظامه، مصدر دخله، عدد اللي في البيت والعيال، مدينته، اللهجة اللي عايز يتكلم بيها، اهتماماته. " +
-      "أمثلة: «أنا أم لتلات عيال» ⇒ household_role=mother, kids_count=3. «بشتغل مهندس وبقبض يوم ٢٥» ⇒ occupation, pay_day=25, pay_frequency=monthly. «كلمني مصري» ⇒ dialect=EG. «أنا تعبانة» ⇒ gender=female. " +
+      "أمثلة: «أنا أم لتلات عيال» ⇒ household_role=mother, kids_count=3. «بشتغل مهندس وبقبض يوم ٢٥» ⇒ occupation, pay_day=25, pay_frequency=monthly. «كلمني مصري» ⇒ dialect=EG. «كلمني حجازي» ⇒ dialect=SA, dialect_region=SA_HIJAZ؛ «سعودي عادي» ⇒ dialect_region=GENERAL. «أنا تعبانة» ⇒ gender=female. " +
       "ابعت الحقول اللي اتقالت بس. null صريح = العميل قال امسحها. متخمّنش حاجة ماتقالتش. " +
       "بعد الحفظ كمّل الكلام طبيعي وناديه بالاسم اللي قاله — متعلنش إنك سجلت ومتذكرش أسماء الحقول. " +
       "**الهزار مش بيانات:** «اسمي بيتر باركر»، اسم مشهور أو شخصية خيالية أو لقب بيهزر بيه ⇒ جاريه في الهزار بخفة دم ومتنادهاش الأداة. " +
@@ -5793,6 +5826,10 @@ export const CHAT_TOOLS: ToolDef[] = [
         kids_count: { type: "number" },
         city: { type: "string" },
         dialect: { type: "string", enum: ["EG", "SA", "GULF", "LEVANT", "IQ", "MA", "TN", "DZ", "LY", "SD", "YE", "TR", "EN"] },
+        dialect_region: {
+          type: "string", enum: ["SA_HIJAZ", "SA_NAJD", "SA_EAST", "SA_SOUTH", "GENERAL"], nullable: true,
+          description: "منطقة اللهجة السعودية لو قالها: حجازي (جدة/مكة/المدينة)، نجدي (الرياض/القصيم)، شرقاوي، جنوبي؛ «عادي/عام» = GENERAL. null = ارجع للمدينة.",
+        },
         interests: { type: "array", items: { type: "string" } },
         notes: { type: "string", description: "حاجة مهمة عنه مش ليها خانة، مختصرة" },
         cares_for: {
@@ -6056,6 +6093,35 @@ export const CHAT_TOOLS: ToolDef[] = [
         wake: { type: "string", description: "HH:MM — من ٠٤:٠٠ لـ١٢:٠٠" },
         clear: { type: "boolean" },
       },
+    },
+  },
+  {
+    name: "set_app_setting",
+    description:
+      "شغّل أو اقفل مفتاح من إعدادات التطبيق لما العميل يطلبه بالكلام — نفس المفتاح اللي في الإعدادات (ZAD_PLAN ١٠.٢أ). " +
+      "pet_calls = نداءات زادو (الصاحب بينده عليه ويفكّره): «بطّل زادو ينده عليا» ⇒ on=false. " +
+      "food_pattern = صورة الأكل في الرئيسية (اللي بيتعلمه من مشترياته): «شيل صورة الأكل» ⇒ on=false. " +
+      "ماتغيّرش حاجة ماطلبهاش صراحة.",
+    input_schema: {
+      type: "object",
+      properties: {
+        setting: { type: "string", enum: ["pet_calls", "food_pattern"] },
+        on: { type: "boolean" },
+      },
+      required: ["setting", "on"],
+    },
+  },
+  {
+    name: "delete_memory",
+    description:
+      "امسح ملاحظة واحدة من ذاكرة زاد عن العميل لما **يطلب صراحةً** إنك تنساها («انسى إني بحب السمك»، «امسح اللي قلتهولك عن شغلي») — " +
+      "نفس «انسى» في شاشة الذاكرة. memory_id من memory في الـsnapshot بالظبط، الملاحظة اللي بيتكلم عنها. " +
+      "لو المعلومة اتغيّرت بس (مش عايزك تنساها) سجّل الجديدة بـremember أو update_customer_profile بدل المسح. " +
+      "ملاحظة من فرد تاني في العيلة ماتتمسحش من هنا.",
+    input_schema: {
+      type: "object",
+      properties: { memory_id: { type: "string", description: "id الملاحظة من memory" } },
+      required: ["memory_id"],
     },
   },
   {

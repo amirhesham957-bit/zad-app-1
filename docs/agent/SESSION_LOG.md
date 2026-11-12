@@ -324,3 +324,12 @@ related:
 - **اتقاس:** `next build` EXIT=0، `eslint` EXIT=0، وشوفته في Chrome على 1440 و390 من غير overflow أفقي.
 - **مستني المالك:** النشر على Vercel (مفيش أداة Vercel ولا HyperFrames في الجلسة) — Root Directory = `website`. ولينك Play مش متأكد إنه منشور.
 - **فخ:** Motion بيحوّل `useScroll`+`useTransform` على opacity/transform لـWAAPI، وأي offset برّه 0..1 بيوقّع الصفحة كلها («Offsets must be monotonically non-decreasing»). و`new Date()` في Server Component بيكسر الـprerender في Next 16 (`cacheComponents`).
+
+## ٢٠٢٦-١١-١٣ (بالليل، تالت) — ١٠.٢(أ) شريحة ١
+
+- **اندمج:** #518 (١٠.١٦ اتقفل). قرار المالك: «قرشة» = برطمان/زجاجة، الإنجليزي «Bottle» صح؛ وحدة كارت الصنف تستنى أي تعديل جاي في المخزن.
+- **الجاهز من الخطة:** ١٠.١٤ مستني الموبايل، ١٠.١٥ مستني (قرار ١٣/١١)، فالجاي ١٠.٢(أ).
+- **اتقاس:** كل كتابة في ٢٥ ريبو في التطبيق مقابل ~١٢٠ أداة في العقل. الفاضل مكتوب في ZAD_PLAN ١٠.٢.
+- **الشريحة:** `dialect_region` في `update_customer_profile` (الـsanitizer كان بيرميه)، `set_app_setting`، `delete_memory` — بالنية (`APP_SETTING_INTENT`، `FORGET_INTENT`). `appByVoice_test.ts` (٦ تستات، mutation-checked).
+- **فخ:** `package.json` غير متتبّع في جذر الريبو بيكسر `deno check`/`deno test` محلياً («Could not find a matching package … node_modules») ⇒ `DENO_NO_PACKAGE_JSON=1`. CI مافيهوش الملف.
+- **فخ:** مجموعة التقييم الليلي مقفولة على ٢٠٠ بالظبط (`judge_test`) — حالة جديدة = تبديل حالة، مش إضافة.

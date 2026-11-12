@@ -155,7 +155,7 @@ function reminderIntent(norm: string, priorNorm: string): boolean {
   if (APPOINTMENT_INTENT.test(norm) || WAKE_INTENT.test(norm)) return true;
   return CLOCK_TIME.test(norm) && ASKED_REMINDER_TIME.test(priorNorm);
 }
-const PROFILE_INTENT = /اسمي|انا اسمي|بشتغل|شغلي|شغلتي|وظيفتي|بقبض|مرتبي|راتبي|قبضي|انا (ام|اب|ست|راجل|بنت|ولد|طالب|طالبه|متجوز|متجوزه|اعزب)|عندي\s*[0-9٠-٩]+\s*(عيال|ولاد|اطفال)|ساكن|ساكنه|عمري|عندي\s*[0-9٠-٩]+\s*سنه|مواليد/;
+const PROFILE_INTENT = /اسمي|انا اسمي|بشتغل|شغلي|شغلتي|وظيفتي|بقبض|مرتبي|راتبي|قبضي|انا (ام|اب|ست|راجل|بنت|ولد|طالب|طالبه|متجوز|متجوزه|اعزب)|عندي\s*[0-9٠-٩]+\s*(عيال|ولاد|اطفال)|ساكن|ساكنه|عمري|عندي\s*[0-9٠-٩]+\s*سنه|مواليد|لهجتي|(كلمني|كلميني|تكلم|اتكلم|احكي|كلامك)\s*(معاي|معايا)?\s*(مصري|سعودي|خليجي|حجازي|نجدي|شرقاوي|جنوبي)|انا\s*(حجازي|نجدي|شرقاوي|جنوبي)/;
 
 // سؤال عن سعر أو ترند حي — مكانه البحث على النت، مش أدوات التطبيق: «كم سعر الذهب اليوم»،
 // «كام سعر زجاجة المياه في السعودية» (تليجرام ٢٠٢٦-١٠-٠١). مصروف العميل نفسه («صرفت كام»،
@@ -201,6 +201,10 @@ const HANDOVER_INTENT = /كارت تسليم|تسليم الشفت|تسليم ا
 // نمط العزومة (الشريحة ٣٥).
 const GATHERING_INTENT = /عزومه|عزايم|عازم|عازمين|هعزم|هنعزم|عزمت|ضيوف|جايين يتغدوا|جايين يتعشوا|جايلنا ناس|عندنا ناس جايين/;
 // إيقاع النوم (الشريحة ٣٧): العميل بيقول مواعيد نومه، أو مايتبعتلوش حاجة في وقت.
+// ZAD_PLAN ١٠.٢(أ): «بطّل زادو ينده عليا»، «رجّع صورة الأكل» — مفاتيح الإعدادات بالكلام.
+const APP_SETTING_INTENT = /(نداء|نداءات|زادو|صوره الاكل).{0,30}(وقف|اقفل|بطل|شيل|شغل|رجع|افتح)|(وقف|اقفل|بطل|شيل|شغل|رجع|افتح).{0,30}(نداء|نداءات|زادو|صوره الاكل)/;
+// «انسى إني…»، «امسح من ذاكرتك» — مش «نسيت» (العميل هو اللي نسي).
+const FORGET_INTENT = /(^|\s)(انسي|انساها|انساه|انسيها|انسيه)(\s|$)|امسح.{0,20}(ذاكرتك|من دماغك|اللي قلتهولك|اللي قلتلك)|شيل.{0,20}من (ذاكرتك|دماغك)|(متفتكرش|ماتفتكرش|لا تتذكر)/;
 const SLEEP_INTENT = /(بنام|بنامي|بانام|بصحي|بصحى|بقوم من النوم|مواعيد نومي).{0,30}(الساعه|[0-9٠-٩])|ماتبعتليش.{0,25}(قبل|بعد|بالليل|الصبح)|ماتصحينيش/;
 // «سجّل رقم السباك محمد ٠١٠٠…» من غير سؤال قبلها.
 const TECHNICIAN_SAVE_INTENT = /(سباك|كهربائي|كهربجي|نجار|فني|الفنيين).{0,60}[0-9٠-٩]{7}|[0-9٠-٩]{7}.{0,60}(سباك|كهربائي|كهربجي|نجار|فني|الفنيين)/;
@@ -277,6 +281,8 @@ export function intentToolHints(message: string, priorReply = ""): string[] {
   if (HANDOVER_INTENT.test(norm)) tools.push("handover_card");
   if (GATHERING_INTENT.test(norm)) tools.push("plan_gathering", "add_gathering_to_list", "add_appointment");
   if (SLEEP_INTENT.test(norm)) tools.push("set_sleep_window");
+  if (APP_SETTING_INTENT.test(norm)) tools.push("set_app_setting");
+  if (FORGET_INTENT.test(norm)) tools.push("delete_memory", "remember");
   if (STORE_LOCATION_INTENT.test(norm)) tools.push("store_location");
   if (SAME_PRODUCT_INTENT.test(norm)) tools.push("answer_same_product");
   if (WEATHER_INTENT.test(norm)) tools.push("weather_forecast");
