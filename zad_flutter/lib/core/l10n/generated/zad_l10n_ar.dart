@@ -3368,6 +3368,9 @@ class ZadL10nAr extends ZadL10n {
   String get notifWrongNumber => 'الرقم غلط';
 
   @override
+  String get notifAlreadyKnew => 'عرفت خلاص';
+
+  @override
   String notifOnAmazon(String name) {
     return '🛒 $name على أمازون';
   }
@@ -3621,8 +3624,7 @@ class ZadL10nAr extends ZadL10n {
   String get pantryOccasional => 'بشتريها على فترات';
 
   @override
-  String get pantryOccasionalBody =>
-      'مش هتتحسب ناقصة لما تخلص، ومش هفكّرك بيها';
+  String get pantryOccasionalBody => 'مش هتتحسب ناقصة لما تخلص، ومش هفكّرك بيها';
 
   @override
   String get pantryExpiryPick => 'اختار التاريخ';
@@ -3633,8 +3635,7 @@ class ZadL10nAr extends ZadL10n {
   }
 
   @override
-  String get pantryExpiryEstimateNote =>
-      'لو سبته كده هحفظ التاريخ التقديري، غيّره لو عارف التاريخ الحقيقي';
+  String get pantryExpiryEstimateNote => 'لو سبته كده هحفظ التاريخ التقديري، غيّره لو عارف التاريخ الحقيقي';
 
   @override
   String get pantryExpiryIn3Days => '٣ أيام';
@@ -3650,9 +3651,6 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get notifNoneNew => 'مفيش تنبيهات جديدة';
-
-  @override
-  String get notifAlreadyKnew => 'عرفت خلاص';
 
   @override
   String get pantryFinish => 'خلص';
@@ -3686,8 +3684,7 @@ class ZadL10nAr extends ZadL10n {
   String get introTitle => 'عرّفني بيك';
 
   @override
-  String get introLead =>
-      'خمس أسئلة وسؤال اختياري، عشان أكلمك صح وآخد بالي من اللي في رعايتك.';
+  String get introLead => 'خمس أسئلة وسؤال اختياري، عشان أكلمك صح وآخد بالي من اللي في رعايتك.';
 
   @override
   String get introNameQuestion => 'أناديك بإيه؟';
@@ -3794,15 +3791,13 @@ class ZadL10nAr extends ZadL10n {
   String get firstStepsTitle => 'أول خطوة';
 
   @override
-  String get firstStepsLead =>
-      'تلات خطوات في دقيقتين، وزاد يبدأ يشتغل معاك من النهارده.';
+  String get firstStepsLead => 'تلات خطوات في دقيقتين، وزاد يبدأ يشتغل معاك من النهارده.';
 
   @override
   String get firstStepsSpendTitle => 'سجّل أول مصروف';
 
   @override
-  String get firstStepsSpendBody =>
-      'أي حاجة صرفتها النهارده — قهوة، مواصلات، عيش. من هنا زاد بيبدأ يفهم شهرك.';
+  String get firstStepsSpendBody => 'أي حاجة صرفتها النهارده — قهوة، مواصلات، عيش. من هنا زاد بيبدأ يفهم شهرك.';
 
   @override
   String get firstStepsSpendDone => 'اتسجل ✓';
@@ -3814,8 +3809,7 @@ class ZadL10nAr extends ZadL10n {
   String get firstStepsAlertsTitle => 'فعّل الإشعارات';
 
   @override
-  String get firstStepsAlertsBody =>
-      'عشان أقولك لما الميزانية تقرب تخلص، وتوصلك مواعيد الدوا والفواتير في وقتها.';
+  String get firstStepsAlertsBody => 'عشان أقولك لما الميزانية تقرب تخلص، وتوصلك مواعيد الدوا والفواتير في وقتها.';
 
   @override
   String get firstStepsAlertsDone => 'متفعّلة ✓';
@@ -3827,8 +3821,7 @@ class ZadL10nAr extends ZadL10n {
   String get firstStepsTelegramTitle => 'اربط بوت تليجرام';
 
   @override
-  String get firstStepsTelegramBody =>
-      'من غيره التذكيرات وسؤال «اقفل يومك» مش هتوصلك وانت برّه التطبيق.';
+  String get firstStepsTelegramBody => 'من غيره التذكيرات وسؤال «اقفل يومك» مش هتوصلك وانت برّه التطبيق.';
 
   @override
   String get firstStepsGo => 'يلا على زاد';
@@ -3837,16 +3830,13 @@ class ZadL10nAr extends ZadL10n {
   String get firstStepsLater => 'كمّل بعدين — افتح زاد';
 
   @override
-  String get petLinesHungry =>
-      'بطني بتصوصو… تأكّلني؟ 🍎\nجعان أوي 🥺 حاجة صغيرة بس\nشامم ريحة أكل؟ لأ ده أنا اللي جعان 😅';
+  String get petLinesHungry => 'بطني بتصوصو… تأكّلني؟ 🍎\nجعان أوي 🥺 حاجة صغيرة بس\nشامم ريحة أكل؟ لأ ده أنا اللي جعان 😅';
 
   @override
-  String get petLinesThirsty =>
-      'عطشان… شوية مية؟ 💧\nريقي ناشف 🥵 اسقيني\nكوباية مية واحدة وأبقى زي الفل 💧';
+  String get petLinesThirsty => 'عطشان… شوية مية؟ 💧\nريقي ناشف 🥵 اسقيني\nكوباية مية واحدة وأبقى زي الفل 💧';
 
   @override
-  String get petLinesSleepy =>
-      'نعسان… 😴 تصبح على خير\nهاااه 🥱 نكمّل بكرة؟\nعيني بتقفل لوحدها… 💤';
+  String get petLinesSleepy => 'نعسان… 😴 تصبح على خير\nهاااه 🥱 نكمّل بكرة؟\nعيني بتقفل لوحدها… 💤';
 
   @override
   String petLinesSad(String name) {
@@ -3854,16 +3844,13 @@ class ZadL10nAr extends ZadL10n {
   }
 
   @override
-  String get petLinesHappy =>
-      'أنا مبسوط معاك 💚\nشكراً إنك فاكرني 🥰\nإنت أحلى صاحب 🤗';
+  String get petLinesHappy => 'أنا مبسوط معاك 💚\nشكراً إنك فاكرني 🥰\nإنت أحلى صاحب 🤗';
 
   @override
-  String get petLinesIdleLogged =>
-      'يومك عامل إيه؟ ✨\nأنا هنا لو احتجتني 💚\nسجّلت النهارده — برافو عليك 👏';
+  String get petLinesIdleLogged => 'يومك عامل إيه؟ ✨\nأنا هنا لو احتجتني 💚\nسجّلت النهارده — برافو عليك 👏';
 
   @override
-  String get petLinesIdleNotLogged =>
-      'سجّلت مصروفاتك النهارده؟ 📝\nمصروف واحد بس وأفرح بيك 🌱';
+  String get petLinesIdleNotLogged => 'سجّلت مصروفاتك النهارده؟ 📝\nمصروف واحد بس وأفرح بيك 🌱';
 
   @override
   String get petLinesFed => 'يمّ يمّ! 😋\nتسلم إيدك 🍎\nأحلى أكلة 🤤';
@@ -3929,10 +3916,72 @@ class ZadL10nAr extends ZadL10n {
 
 /// The translations for Arabic, as used in Saudi Arabia (`ar_SA`).
 class ZadL10nArSa extends ZadL10nAr {
-  ZadL10nArSa() : super('ar_SA');
+  ZadL10nArSa(): super('ar_SA');
+
+  @override
+  String get languageEnglishPreview => 'الإنجليزي للحين ينترجم — شاشات كثير بتظل عربي لين يخلص.';
+
+  @override
+  String get authSignOutBody => 'بنحتاجك تدخل مرة ثانية عشان توصل لحساباتك.';
 
   @override
   String get commonWait => 'لحظة';
+
+  @override
+  String get authErrorInvalidCredentials => 'الإيميل أو كلمة السر مو صحيحة.';
+
+  @override
+  String get authErrorEmailTaken => 'الإيميل هذا مسجّل من قبل. جرّب تدخل فيه، أو غيّر كلمة السر.';
+
+  @override
+  String get authErrorInvalidEmail => 'الإيميل هذا شكله مو صحيح.';
+
+  @override
+  String get authErrorEmailNotConfirmed => 'للحين تحتاج تأكّد الإيميل. شوف رسائلك على الرابط اللي أرسلناه.';
+
+  @override
+  String get authErrorRateLimited => 'جرّبت مرات كثير في وقت قصير. انتظر شوي وحاول مرة ثانية.';
+
+  @override
+  String get authErrorSignupDisabled => 'التسجيل مقفل الحين.';
+
+  @override
+  String get authErrorUserBanned => 'الحساب هذا موقوف.';
+
+  @override
+  String get authErrorOffline => 'ما فيه اتصال بالنت — الدخول يحتاج نت.';
+
+  @override
+  String get authErrorServer => 'الخدمة ما ترد الحين. حاول مرة ثانية بعد شوي.';
+
+  @override
+  String get authErrorUnknown => 'صار خطأ ما توقعناه. حاول مرة ثانية.';
+
+  @override
+  String authSignOutPending(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'فيه $count عمليات للحين ما انرسلت للسيرفر. لو طلعت الحين ما بتنرسل. الأفضل تنتظر لين يرجع النت.',
+      one: 'فيه $count عملية للحين ما انرسلت للسيرفر. لو طلعت الحين ما بتنرسل. الأفضل تنتظر لين يرجع النت.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get paywallBasicPerkNoAds => 'بدون إعلانات أبد';
+
+  @override
+  String get paywallNoPlayTitle => 'Google Play مو متاح';
+
+  @override
+  String get paywallNoPlayBody => 'الاشتراك يتم من Google Play. لو زاد مثبّت من ملف مو من المتجر، نزّله من Google Play وبعدها اشترك من هنا.';
+
+  @override
+  String get paywallNotOnPlayTitle => 'الباقة للحين مو على المتجر';
+
+  @override
+  String get paywallNotOnPlayBody => 'الباقة هذي للحين ما تفعّلت على Google Play. جرّب مرة ثانية قريب.';
 
   @override
   String get navMyFamily => 'عائلتي';
@@ -3968,28 +4017,28 @@ class ZadL10nArSa extends ZadL10nAr {
   String get authPreparingAccount => 'نجهّز حسابك…';
 
   @override
-  String get shareTooLarge =>
-      'الملف أكبر من إن زاد يقراه مرة وحدة — أرسله أصغر';
+  String get shareTooLarge => 'الملف أكبر من إن زاد يقراه مرة وحدة — أرسله أصغر';
 
   @override
   String get shareUnsupported => 'زاد يقرا الكلام والصور وملفات PDF وCSV بس';
 
   @override
-  String get shareUnreadable =>
-      'ما قدرت أفتح اللي انشارك — جرّب ترسله مرة ثانية';
+  String get shareUnreadable => 'ما قدرت أفتح اللي انشارك — جرّب ترسله مرة ثانية';
 
   @override
   String get shareWhatImage => 'وش هذي الصورة؟';
 
   @override
-  String get shareWhatImageHint =>
-      'زاد بيقراها ويوريك وش لقى قبل ما يسجل أي شي';
+  String get shareWhatImageHint => 'زاد بيقراها ويوريك وش لقى قبل ما يسجل أي شي';
 
   @override
   String get shareReceipt => 'فاتورة شراء';
 
   @override
   String get drawerGroupHome => 'البيت والعائلة';
+
+  @override
+  String get placesOrbitCaption => 'الأقرب للبيت هو اللي تروح له أكثر، مو المسافة الحقيقية.';
 
   @override
   String get drawerGroupMore => 'أكثر';
@@ -4042,8 +4091,7 @@ class ZadL10nArSa extends ZadL10nAr {
   String get glanceStockEmpty => 'المخزون للحين فاضي';
 
   @override
-  String get glanceStockEmptyHint =>
-      'صوّر فاتورة السوبرماركت أو أضف أصنافك، وزاد يقولك وش قرّب يخلص قبل ما تحتاجه';
+  String get glanceStockEmptyHint => 'صوّر فاتورة السوبرماركت أو أضف أصنافك، وزاد يقولك وش قرّب يخلص قبل ما تحتاجه';
 
   @override
   String get glancePharmacyEmptyLabel => 'ما فيه أدوية مسجّلة';
@@ -4054,8 +4102,7 @@ class ZadL10nArSa extends ZadL10nAr {
   }
 
   @override
-  String get glancePharmacyEmptyHint =>
-      'صوّر شريط الدواء أو أضفه يدوي، وزاد بيذكّرك بمواعيد الجرعات وينبّهك قبل ما يخلص';
+  String get glancePharmacyEmptyHint => 'صوّر شريط الدواء أو أضفه يدوي، وزاد بيذكّرك بمواعيد الجرعات وينبّهك قبل ما يخلص';
 
   @override
   String get glanceTookDose => 'أخذت الجرعة';
@@ -4067,8 +4114,7 @@ class ZadL10nArSa extends ZadL10nAr {
   String get glanceSubsEmpty => 'ما فيه اشتراكات للحين';
 
   @override
-  String get glanceSubsEmptyHint =>
-      'أضف اشتراكاتك الشهرية عشان زاد يحسبها في المتاح ويذكّرك بمواعيد التجديد';
+  String get glanceSubsEmptyHint => 'أضف اشتراكاتك الشهرية عشان زاد يحسبها في المتاح ويذكّرك بمواعيد التجديد';
 
   @override
   String groceryWhatToAdd(String shop, String amount) {
@@ -4082,8 +4128,7 @@ class ZadL10nArSa extends ZadL10nAr {
   String get activationGoalHint => 'زاد بيتابعه معك كل أسبوع';
 
   @override
-  String get activationAllSet =>
-      'كل شي جاهز! 🎉 جرّب تقول لزاد \"صرفت ٥٠ بقالة\" بالصوت أو من بوت تليجرام — بيطلب منك تأكيد ويسجلها.';
+  String get activationAllSet => 'كل شي جاهز! 🎉 جرّب تقول لزاد \"صرفت ٥٠ بقالة\" بالصوت أو من بوت تليجرام — بيطلب منك تأكيد ويسجلها.';
 
   @override
   String get amazonOnList => 'في قائمة التسوق';
@@ -4092,8 +4137,7 @@ class ZadL10nArSa extends ZadL10nAr {
   String get amazonUpdatedToday => 'تحدّث اليوم';
 
   @override
-  String get amazonDisclosure =>
-      'رابط شراء بالعمولة — زاد ياخذ عمولة بدون أي زيادة عليك';
+  String get amazonDisclosure => 'رابط شراء بالعمولة — زاد ياخذ عمولة بدون أي زيادة عليك';
 
   @override
   String get amazonNoNeeds => 'أضف اللي ناقصك، أو شوف عروض اليوم';
@@ -4107,8 +4151,7 @@ class ZadL10nArSa extends ZadL10nAr {
   String get homeOffline => 'ما فيه اتصال بالإنترنت';
 
   @override
-  String get homeOfflineHint =>
-      'بياناتك تنحفظ على الجوال وبتتزامن أول ما يرجع النت';
+  String get homeOfflineHint => 'بياناتك تنحفظ على الجوال وبتتزامن أول ما يرجع النت';
 
   @override
   String get homeServerDown => 'ما قدرت أوصل للسيرفر';
@@ -4117,14 +4160,19 @@ class ZadL10nArSa extends ZadL10nAr {
   String get homePreparing => 'نجهّز ميزانيتك';
 
   @override
-  String get homeServerDownHint =>
-      'بنحاول مرة ثانية من نفسنا. تقدر تسحب الشاشة لتحت الحين.';
+  String get homeServerDownHint => 'بنحاول مرة ثانية من نفسنا. تقدر تسحب الشاشة لتحت الحين.';
 
   @override
   String get homePreparingHint => 'ثانية وحدة وبتلقى كل شي هنا.';
 
   @override
   String get checkInNotYet => 'للحين لا';
+
+  @override
+  String get metricsToMonthEnd => 'لين آخر الشهر';
+
+  @override
+  String get metricsToPayday => 'لين الراتب';
 
   @override
   String get commonNotNow => 'مو الحين';
@@ -4152,8 +4200,7 @@ class ZadL10nArSa extends ZadL10nAr {
   String get profileSaveFailed => 'ما قدرنا نحفظ الملف — جرّب مرة ثانية';
 
   @override
-  String get whoBody =>
-      'اسمك، وتحب أكلمك بصيغة المذكّر ولا المؤنّث، وشغلك وموعد راتبك — عشان أكلمك صح وأتذكرك.';
+  String get whoBody => 'اسمك، وتحب أكلمك بصيغة المذكّر ولا المؤنّث، وشغلك وموعد راتبك — عشان أكلمك صح وأتذكرك.';
 
   @override
   String get whoGo => 'يلّا نتعرّف';
@@ -4162,16 +4209,13 @@ class ZadL10nArSa extends ZadL10nAr {
   String get chatVoiceUnavailable => 'الصوت مو متاح الحين — الرد مكتوب قدامك';
 
   @override
-  String get chatNewBody =>
-      'الكلام اللي فات بينمسح من هالجوال. واللي تعلّمه زاد عنك بيظل مثل ما هو.';
+  String get chatNewBody => 'الكلام اللي فات بينمسح من هالجوال. واللي تعلّمه زاد عنك بيظل مثل ما هو.';
 
   @override
-  String get chatWelcome =>
-      'هلا والله! أنا زاد 🤖، مساعدك العائلي الذكي. كيف أقدر أساعدك اليوم؟\nاسألني عن الوصفات، أو راجع ثلاجتك، أو أضف النواقص لقائمة التسوق!';
+  String get chatWelcome => 'هلا والله! أنا زاد 🤖، مساعدك العائلي الذكي. كيف أقدر أساعدك اليوم؟\nاسألني عن الوصفات، أو راجع ثلاجتك، أو أضف النواقص لقائمة التسوق!';
 
   @override
-  String get chatBusy =>
-      'الذكاء الاصطناعي مشغول شوي الحين 🙏 جرّب مرة ثانية بعد لحظات.';
+  String get chatBusy => 'الذكاء الاصطناعي مشغول شوي الحين 🙏 جرّب مرة ثانية بعد لحظات.';
 
   @override
   String get chatResend => 'ما وصلت — أرسلها مرة ثانية';
@@ -4193,6 +4237,9 @@ class ZadL10nArSa extends ZadL10nAr {
   }
 
   @override
+  String get chatSubscribeFeature => 'اشترك وفعّل هالميزة';
+
+  @override
   String get chatSubscribeMore => 'اشترك وخذ محاولات أكثر';
 
   @override
@@ -4208,12 +4255,10 @@ class ZadL10nArSa extends ZadL10nAr {
   String get chatSend => 'أرسل';
 
   @override
-  String get voiceTooShort =>
-      'ضغطت الزر بسرعة — اضغط وابدأ تكلّم، وبعدين وقّف.';
+  String get voiceTooShort => 'ضغطت الزر بسرعة — اضغط وابدأ تكلّم، وبعدين وقّف.';
 
   @override
-  String get voiceDenied =>
-      'أحتاج إذن المايك. افتح إعدادات التطبيق واسمح بالتسجيل.';
+  String get voiceDenied => 'أحتاج إذن المايك. افتح إعدادات التطبيق واسمح بالتسجيل.';
 
   @override
   String get voiceFailed => 'ما قدرت أحوّل الكلام. جرّب مرة ثانية.';
@@ -4225,8 +4270,7 @@ class ZadL10nArSa extends ZadL10nAr {
   String get subscribePulseClose => 'سكّر';
 
   @override
-  String get voiceOutToday =>
-      'خلصت أسئلتك الصوتية (٣ كل ساعتين) — ترجع من نفسها، أو شاهد إعلان وخذ سؤال زيادة. اكتب سؤالك، أو اشترك وكلّم زاد بدون حد.';
+  String get voiceOutToday => 'خلصت أسئلتك الصوتية (٣ كل ساعتين) — ترجع من نفسها، أو شاهد إعلان وخذ سؤال زيادة. اكتب سؤالك، أو اشترك وكلّم زاد بدون حد.';
 
   @override
   String chatEmergency(String trade) {
@@ -4240,8 +4284,7 @@ class ZadL10nArSa extends ZadL10nAr {
   String get intChatSubtitle => 'اسأل عن مصاريفك، مخزونك، أو أي شي';
 
   @override
-  String get intChatClearBody =>
-      'بنمسح كل رسائل المحادثة مع عقل زاد. البيانات المالية والمخزون ما بتتأثر.';
+  String get intChatClearBody => 'بنمسح كل رسائل المحادثة مع عقل زاد. البيانات المالية والمخزون ما بتتأثر.';
 
   @override
   String intChatMemoryUsed(int count) {
@@ -4252,22 +4295,22 @@ class ZadL10nArSa extends ZadL10nAr {
   String get meshThinking => 'الشبكة العصبية تشتغل...';
 
   @override
-  String get financesNoCategories =>
-      'للحين ما حددت ميزانية لأي فئة. اضغط \"تحديد فئة\" عشان زاد يتابع لك كل فئة لحالها.';
+  String get voiceSheetBrainDown => 'ما قدرت أوصل لعقل زاد الحين';
+
+  @override
+  String get financesNoCategories => 'للحين ما حددت ميزانية لأي فئة. اضغط \"تحديد فئة\" عشان زاد يتابع لك كل فئة لحالها.';
 
   @override
   String get financesNoBudget => 'للحين ما حددت ميزانيتك';
 
   @override
-  String get financesInsightEmpty =>
-      'ما فيه بيانات كافية لتحليل هالفئة حالياً.';
+  String get financesInsightEmpty => 'ما فيه بيانات كافية لتحليل هالفئة حالياً.';
 
   @override
   String get gateTitle => 'قبل ما نبدأ، كم معك هالشهر؟';
 
   @override
-  String get gateBody =>
-      'زاد ما يخترع أرقام. من هالرقم نحسب «المتاح» و«المتبقي» كل يوم، وتقدر تعدّله في أي وقت.';
+  String get gateBody => 'زاد ما يخترع أرقام. من هالرقم نحسب «المتاح» و«المتبقي» كل يوم، وتقدر تعدّله في أي وقت.';
 
   @override
   String get gateCeiling => 'رصيدك لهالشهر';
@@ -4276,7 +4319,48 @@ class ZadL10nArSa extends ZadL10nAr {
   String get gateStart => 'يلّا نبدأ';
 
   @override
+  String eventToday(String title) {
+    return 'زوّدناه عشان «$title» اليوم';
+  }
+
+  @override
   String get txForPerson => 'لمين؟ (خلّها فاضية إذا لك أو للبيت كله)';
+
+  @override
+  String get habitTrialStarted => 'يلا ✅ التجربة بدأت اليوم لمدة أسبوعين، وبعدها أقولك النتيجة بالأرقام.';
+
+  @override
+  String get habitTrialDeclined => 'تمام، ما راح أقترحها مرة ثانية هالفترة.';
+
+  @override
+  String get habitTrialKept => 'تمام ✅ ثبّتناها — بتذكرها وأبني عليها.';
+
+  @override
+  String get habitTrialAlready => 'تمام، ردك انسجّل من قبل.';
+
+  @override
+  String get habitTrialGone => 'التجربة هذي ما عادت موجودة.';
+
+  @override
+  String get habitTrialFailed => 'المعذرة، ما قدرت أسجّل ردك الحين — جرّب مرة ثانية بعد شوي.';
+
+  @override
+  String get learningWrong => '❌ مو صح';
+
+  @override
+  String get learningKept => 'تمام ✅ بتذكرها.';
+
+  @override
+  String get learningCorrected => 'تمام، مشكور إنك صحّحت لي — ما راح أقولها مرة ثانية.';
+
+  @override
+  String get learningAlready => 'تمام، ردك انسجّل من قبل.';
+
+  @override
+  String get learningGone => 'الملاحظة هذي ما عادت موجودة.';
+
+  @override
+  String get learningFailed => 'المعذرة، ما قدرت أسجّل ردك الحين — جرّب مرة ثانية بعد شوي.';
 
   @override
   String get txNoneHere => 'ما فيه معاملات هنا';
@@ -4302,19 +4386,200 @@ class ZadL10nArSa extends ZadL10nAr {
   String get txPullToRetry => 'اسحب الشاشة لتحت عشان نحاول مرة ثانية.';
 
   @override
-  String get txNoneHint =>
-      'أول ما تسجّل مصروف — أو توصلك رسالة من البنك — بتلقاها هنا.';
+  String get txNoneHint => 'أول ما تسجّل مصروف — أو توصلك رسالة من البنك — بتلقاها هنا.';
 
   @override
-  String get homeBankStalledHint =>
-      'إذا كانت مفعّلة: طفّها وشغّلها مرة ثانية من الصفحة اللي بتفتح.';
+  String get subsBnpl => 'اشترِ الحين وادفع بعدين';
 
   @override
-  String get homeLocationOffBanner =>
-      '📍 موقعك مو مفعّل.. فعّل الموقع عشان زاد يربط عروض السوبرماركت والمحلات القريبة منك ويسوّي شغله صح';
+  String get oblNoneHint => 'الأقساط والفواتير الثابتة بتطلع هنا أول ما تنسجل';
+
+  @override
+  String dealCached(String when) {
+    return 'البحث مشغول الحين — هذي آخر عروض لقيناها$when';
+  }
+
+  @override
+  String get dealFailed => 'تعذّر البحث الحين — جرّب تحدّث مرة ثانية بعد شوي';
+
+  @override
+  String get dealFailedHint => 'خدمة البحث مشغولة الحين. اضغط تحديث مرة ثانية بعد شوي — ولو تكررت شيّك على النت.';
+
+  @override
+  String get goalTitle => 'وش أهم هدف لبيتك الحين؟';
+
+  @override
+  String get goalBody => 'اختر واحد — زاد بيتابعه معك كل أسبوع لمدة ٣ شهور، وتقدر تلغيه في أي وقت.';
+
+  @override
+  String get heldNone => 'هالأسبوع ما سكتّ عن أي شي — كل اللي يستاهل ينقال انقال.';
+
+  @override
+  String get heldFailed => 'ما أقدر أقرا اللي سكتّ عنه الحين.';
+
+  @override
+  String get heldAskHint => 'تقدر تسألني «وش اللي ما قلته لي؟» في الشات وأقولك بالتفصيل.';
+
+  @override
+  String get heldActionWaiting => 'للحين أنتظر';
+
+  @override
+  String get heldReasonMuted => 'أنت قلت لي أوقف هالنوع فترة';
+
+  @override
+  String get heldReasonLearnedQuiet => 'لاحظت إنك غالباً ما تتعامل مع هالنوع، فقللت منه';
+
+  @override
+  String get heldReasonPacing => 'كان واصلك شي قبل شوي';
+
+  @override
+  String get heldReasonDailyCap => 'وصلت لعدد رسائل اليوم';
+
+  @override
+  String get heldKindSalary => '«هذا الراتب؟»';
+
+  @override
+  String get heldKindShortage => 'أشياء بتخلص قريب';
+
+  @override
+  String get diagMenuSubtitle => 'إشعارات البنك ورسائل زاد — واقفة وين بالضبط';
+
+  @override
+  String get diagBankNote => 'آخر ١٤ يوم: كل إشعار أرسله الجوال، ووش سوّى فيه زاد وليش.';
+
+  @override
+  String get diagBankEmptyTitle => 'ما وصل السيرفر أي إشعار';
+
+  @override
+  String get diagBankNothing => 'الجوال شغّال بس ما وصل السيرفر أي إشعار بنك. لو دفعت بالبطاقة، فالبنك يرسل الرسالة من تطبيق مو متابَع — أرسل لنا اسمه.';
+
+  @override
+  String get diagUnknown => 'ما أدري';
+
+  @override
+  String get diagNotLinked => 'مو مربوط';
+
+  @override
+  String get diagPushOff => 'الجوال مو مسجّل يستقبل إشعارات زاد';
+
+  @override
+  String get diagProNoChannel => 'زاد ما لقى طريق يوصلك: لا تليجرام مربوط ولا الجوال مسجّل للإشعارات. اربط تليجرام من الإعدادات، أو افتح التطبيق واسمح بالإشعارات.';
+
+  @override
+  String get diagProNothing => 'السيرفر ما أرسل شي آخر ١٤ يوم. هذا مو طبيعي — أرسل لنا لقطة الشاشة هذي.';
+
+  @override
+  String get diagIngestPromo => 'العقل شافها إعلان أو عرض، مو فلوس تحركت';
+
+  @override
+  String get diagIngestUnavailable => 'العقل ما رد وقتها والمصدر مو معروف';
+
+  @override
+  String get diagIngestFailedTxn => 'عملية فشلت أو للحين معلّقة';
+
+  @override
+  String get diagIngestServerError => 'خطأ في السيرفر — بنجربها مرة ثانية';
+
+  @override
+  String get diagMomentNoChannel => 'ما فيه طريق يوصلك: لا تليجرام ولا إشعارات التطبيق';
+
+  @override
+  String get diagMomentSkipped => 'تأجلت أو انشالت (هدوء أو حد اليوم)';
+
+  @override
+  String adThirdOpens(String attempts) {
+    return 'هالإعلان يكمّل الثلاثة ويفتح $attempts';
+  }
+
+  @override
+  String get appointmentGuardAsk => 'تسجّله كذا ولا تغيّر الوقت؟';
+
+  @override
+  String get scanPantryWithMedicines => 'الموجود بتزيد كميته، واللي في قائمة المشتريات بينشال منها، والأدوية بتروح للصيدلية.';
+
+  @override
+  String get dealsEmptyTitle => 'ما فيه عروض للحين';
+
+  @override
+  String get dealsEmptyBody => 'زاد يدوّر كل أسبوع في صفحات المحلات وتطبيقات التوصيل وفواتير البيوت. أول ما يلقى شي بيطلع هنا.';
+
+  @override
+  String dealsUntil(String date) {
+    return 'لين $date';
+  }
+
+  @override
+  String get recipesOnDeal => 'عليه عرض الحين';
+
+  @override
+  String get recipesTrendingGroup => 'ترند الحين';
+
+  @override
+  String get patternLearningTitle => 'للحين أتعلّم';
+
+  @override
+  String get patternReadFailed => 'ما قدرت أقرا نمطك الحين. اسحب لتحت وجرّب مرة ثانية.';
+
+  @override
+  String get patternWhen => 'متى تشتري';
+
+  @override
+  String get patternWhenUnknown => 'أحتاج ٤ مشاوير شراء على الأقل عشان أعرف متى تشتري';
+
+  @override
+  String get patternItemsHint => 'اضغط على صنف عشان تقول لزاد كل قد إيش تشتريه';
+
+  @override
+  String get patternSourceCustomer => 'أنت اللي حددتها';
+
+  @override
+  String get patternEditNotInPantry => 'الصنف هذا مو في مخزونك الحين';
+
+  @override
+  String patternEditSaved(String item) {
+    return 'انحفظ — زاد بيحسب $item على كذا';
+  }
+
+  @override
+  String get homeBankStalledHint => 'إذا كانت مفعّلة: طفّها وشغّلها مرة ثانية من الصفحة اللي بتفتح.';
+
+  @override
+  String get homeLocationOffBanner => '📍 موقعك مو مفعّل.. فعّل الموقع عشان زاد يربط عروض السوبرماركت والمحلات القريبة منك ويسوّي شغله صح';
 
   @override
   String get homeLocationLater => 'مو الحين';
+
+  @override
+  String get channelCardTitle => 'ما فيه طريقة أوصلك فيها';
+
+  @override
+  String get channelCardBody => 'الإشعارات مقفلة وتليجرام مو مربوط، فمواعيد الدوا والفواتير وتنبيه الميزانية ما بتوصلك. وحدة منهم تكفي.';
+
+  @override
+  String briefWhyMissed(String count) {
+    return 'جرعات اليوم اللي فات وقتها وما انسجلت: $count.';
+  }
+
+  @override
+  String get briefWhyOverspent => 'المتاح لهالدورة تحت الصفر: رصيد أول الدورة ناقص اللي انصرف والالتزامات الثابتة.';
+
+  @override
+  String briefWhyRunningOutApprox(String name, String left, String perDay) {
+    return '$name: باقي $left، واستهلاكك للحين ينقاس — تقريباً $perDay في اليوم، فهذا تقدير.';
+  }
+
+  @override
+  String briefMedicineLow(String name, String days) {
+    return '$name بيخلص بعد $days يوم';
+  }
+
+  @override
+  String get briefBudgetDangerDetail => 'شوف فلوسي — للحين فيه وقت تلحق';
+
+  @override
+  String briefWhyBudgetDanger(String available, String days, String daily) {
+    return 'المتاح $available على $days يوم = $daily في اليوم، ومعدل صرفك لين الحين يقول إنه ما بيكفي.';
+  }
 
   @override
   String accountRestoreBody(int days) {
@@ -4322,8 +4587,19 @@ class ZadL10nArSa extends ZadL10nAr {
   }
 
   @override
-  String get accountRestoreFailed =>
-      'تعذّر استرجاع الحساب الحين. افتح التطبيق مرة ثانية وجرّب.';
+  String get accountRestoreFailed => 'تعذّر استرجاع الحساب الحين. افتح التطبيق مرة ثانية وجرّب.';
+
+  @override
+  String get settingsFoodPatternBody => 'مرة في الشهر بالكثير، زاد يوصف أكل البيت من المشتريات المسجلة ويقترح إضافات. وصف مشتريات مو نصيحة طبية.';
+
+  @override
+  String get commuteConsentBody => 'زاد بيحسب متى تطلع من البيت وترجع، من طلعتك ورجعتك للبيت. عشان يضبط تنبيهاتك على يومك ويكلمك في الوقت المناسب.\n\nينحسب على جوالك، وللسيرفر يروح ملخص المواعيد والأيام بس، بدون أي إحداثيات أو أماكن شغل أو خط سير. ما أحد من العائلة يشوفه. ولو قفلت المفتاح، ينمسح من الجوال والسيرفر.';
+
+  @override
+  String get commuteConsentDecline => 'لا، مو الحين';
+
+  @override
+  String get settingsPetCallsBody => 'زادو يرسل لك لما يجوع أو يعطش، على تليجرام والإشعارات. قفلها ما يوقف تحية الصبح ولا العروض.';
 
   @override
   String get homeWidgetSubsEmpty => 'أضف اشتراك';
@@ -4354,6 +4630,12 @@ class ZadL10nArSa extends ZadL10nAr {
   String get homeWidgetShortagesEmpty => 'ما فيه نواقص';
 
   @override
+  String get placesOutingsWaiting => 'شغّال. أول ما تطلع وترجع البيت، طلعتك بتظهر هنا.';
+
+  @override
+  String get chefAsk => 'اسأل الشيف عن هالوصفة';
+
+  @override
   String get tourDone => 'يلّا نبدأ';
 
   @override
@@ -4363,12 +4645,10 @@ class ZadL10nArSa extends ZadL10nAr {
   String get tourHomeBody => 'فلوسك المتاحة، وأهم شي لازم يتسوّى اليوم.';
 
   @override
-  String get tourMicBody =>
-      'قل «سجّل ٥٠ ريال قهوة» أو اسأل أي سؤال، وزاد يرد عليك.';
+  String get tourMicBody => 'قل «سجّل ٥٠ ريال قهوة» أو اسأل أي سؤال، وزاد يرد عليك.';
 
   @override
-  String get tourCameraBody =>
-      'صوّر الفاتورة، وزاد يسجلها في مصاريفك ويضيف الأغراض للمخزون.';
+  String get tourCameraBody => 'صوّر الفاتورة، وزاد يسجلها في مصاريفك ويضيف الأغراض للمخزون.';
 
   @override
   String get tourMoreBody => 'العائلة وعقل زاد وحسابك وكل المزايا.';
@@ -4377,8 +4657,12 @@ class ZadL10nArSa extends ZadL10nAr {
   String get shoppingBasketEmpty => 'السلة فاضية — أضف اللي ناقصك';
 
   @override
-  String get tickerError =>
-      'ما قدرنا نجيب الأسعار الحية الحين — جرّب مرة ثانية';
+  String adLadderAfter(String messages) {
+    return 'كل إعلان بعدها = $messages';
+  }
+
+  @override
+  String get tickerError => 'ما قدرنا نجيب الأسعار الحية الحين — جرّب مرة ثانية';
 
   @override
   String get tickerEmpty => 'للحين ما فيه أسعار حية لبلدك — اضغط للتحديث';
@@ -4454,15 +4738,13 @@ class ZadL10nArSa extends ZadL10nAr {
   String get pantryOccasional => 'أشتريها على فترات';
 
   @override
-  String get pantryOccasionalBody =>
-      'ما راح تنحسب ناقصة إذا خلصت، وما راح أذكّرك فيها';
+  String get pantryOccasionalBody => 'ما راح تنحسب ناقصة إذا خلصت، وما راح أذكّرك فيها';
 
   @override
   String get pantryExpiryPick => 'اختر التاريخ';
 
   @override
-  String get pantryExpiryEstimateNote =>
-      'إذا تركته كذا بحفظ التاريخ التقديري، غيّره إذا تعرف التاريخ الصحيح';
+  String get pantryExpiryEstimateNote => 'إذا تركته كذا بحفظ التاريخ التقديري، غيّره إذا تعرف التاريخ الصحيح';
 
   @override
   String get notifNoneNew => 'ما فيه تنبيهات جديدة';
@@ -4485,8 +4767,7 @@ class ZadL10nArSa extends ZadL10nAr {
   String get introTitle => 'عرّفني عليك';
 
   @override
-  String get introLead =>
-      'خمسة أسئلة وسؤال اختياري، عشان أكلمك صح وأنتبه للي في رعايتك.';
+  String get introLead => 'خمسة أسئلة وسؤال اختياري، عشان أكلمك صح وأنتبه للي في رعايتك.';
 
   @override
   String get introNameQuestion => 'وش أناديك؟';
@@ -4552,41 +4833,34 @@ class ZadL10nArSa extends ZadL10nAr {
   String get introSaveFailed => 'ما قدرت أحفظ — تأكد من النت وجرّب مرة ثانية.';
 
   @override
-  String get firstStepsLead =>
-      'ثلاث خطوات في دقيقتين، وزاد يبدأ يشتغل معك من اليوم.';
+  String get firstStepsLead => 'ثلاث خطوات في دقيقتين، وزاد يبدأ يشتغل معك من اليوم.';
 
   @override
-  String get firstStepsSpendBody =>
-      'أي شي صرفته اليوم — قهوة، مواصلات، خبز. من هنا زاد يبدأ يفهم شهرك.';
+  String get firstStepsSpendBody => 'أي شي صرفته اليوم — قهوة، مواصلات، خبز. من هنا زاد يبدأ يفهم شهرك.';
 
   @override
   String get firstStepsSpendDone => 'انسجل ✓';
 
   @override
-  String get firstStepsAlertsBody =>
-      'عشان أقولك إذا الميزانية قربت تخلص، وتوصلك مواعيد الدواء والفواتير في وقتها.';
+  String get firstStepsAlertsBody => 'عشان أقولك إذا الميزانية قربت تخلص، وتوصلك مواعيد الدواء والفواتير في وقتها.';
 
   @override
   String get firstStepsAlertsDone => 'مفعّلة ✓';
 
   @override
-  String get firstStepsTelegramBody =>
-      'بدونه التذكيرات وسؤال «اقفل يومك» ما راح توصلك وأنت برّا التطبيق.';
+  String get firstStepsTelegramBody => 'بدونه التذكيرات وسؤال «اقفل يومك» ما راح توصلك وأنت برّا التطبيق.';
 
   @override
   String get firstStepsGo => 'يلّا على زاد';
 
   @override
-  String get petLinesHungry =>
-      'بطني تقرقر… تأكّلني؟ 🍎\nجوعان مرة 🥺 شي صغير بس\nشامّ ريحة أكل؟ لا هذا أنا الجوعان 😅';
+  String get petLinesHungry => 'بطني تقرقر… تأكّلني؟ 🍎\nجوعان مرة 🥺 شي صغير بس\nشامّ ريحة أكل؟ لا هذا أنا الجوعان 😅';
 
   @override
-  String get petLinesThirsty =>
-      'عطشان… شوي موية؟ 💧\nريقي ناشف 🥵 اسقني\nكاسة موية وحدة وأصير تمام 💧';
+  String get petLinesThirsty => 'عطشان… شوي موية؟ 💧\nريقي ناشف 🥵 اسقني\nكاسة موية وحدة وأصير تمام 💧';
 
   @override
-  String get petLinesSleepy =>
-      'نعسان… 😴 تصبح على خير\nهاااه 🥱 نكمّل بكرة؟\nعيوني تسكّر لحالها… 💤';
+  String get petLinesSleepy => 'نعسان… 😴 تصبح على خير\nهاااه 🥱 نكمّل بكرة؟\nعيوني تسكّر لحالها… 💤';
 
   @override
   String petLinesSad(String name) {
@@ -4594,16 +4868,13 @@ class ZadL10nArSa extends ZadL10nAr {
   }
 
   @override
-  String get petLinesHappy =>
-      'أنا مبسوط معك 💚\nشكراً إنك ذاكرني 🥰\nأنت أحلى صاحب 🤗';
+  String get petLinesHappy => 'أنا مبسوط معك 💚\nشكراً إنك ذاكرني 🥰\nأنت أحلى صاحب 🤗';
 
   @override
-  String get petLinesIdleLogged =>
-      'وش أخبار يومك؟ ✨\nأنا هنا لو احتجتني 💚\nسجّلت اليوم — كفو عليك 👏';
+  String get petLinesIdleLogged => 'وش أخبار يومك؟ ✨\nأنا هنا لو احتجتني 💚\nسجّلت اليوم — كفو عليك 👏';
 
   @override
-  String get petLinesIdleNotLogged =>
-      'سجّلت مصاريفك اليوم؟ 📝\nمصروف واحد بس وأفرح فيك 🌱';
+  String get petLinesIdleNotLogged => 'سجّلت مصاريفك اليوم؟ 📝\nمصروف واحد بس وأفرح فيك 🌱';
 
   @override
   String get petLinesFed => 'يمّ يمّ! 😋\nتسلم يدك 🍎\nأحلى أكلة 🤤';

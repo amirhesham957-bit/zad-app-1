@@ -7,6 +7,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/l10n/app_language.dart';
 import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/alerts/data/notification_permission.dart';
 import 'package:zad/features/alerts/data/push_registrar.dart';
@@ -260,7 +261,9 @@ class AlertsController extends Notifier<AlertsView> {
   /// opened the app on the home, where nothing else says it took.
   Future<void> _habitAnswered(HabitTrialRef trial, {required bool yes}) async {
     ref.read(shellNavigationProvider.notifier).open(ShellTab.home);
-    final l10n = zadL10nArabic;
+    // The account's Arabic (ZAD_PLAN ١٠.١٦): a Saudi or Gulf customer reads
+    // the Saudi reply, as on the screens.
+    final l10n = ref.read(zadL10nProvider);
     String reply;
     try {
       final outcome = await ref
@@ -280,7 +283,9 @@ class AlertsController extends Notifier<AlertsView> {
   /// a trial, the reply comes back as a notification of its own.
   Future<void> _learningAnswered(String learningId, {required bool yes}) async {
     ref.read(shellNavigationProvider.notifier).open(ShellTab.home);
-    final l10n = zadL10nArabic;
+    // The account's Arabic (ZAD_PLAN ١٠.١٦): a Saudi or Gulf customer reads
+    // the Saudi reply, as on the screens.
+    final l10n = ref.read(zadL10nProvider);
     String reply;
     try {
       final outcome = await ref
