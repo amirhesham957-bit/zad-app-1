@@ -6542,6 +6542,48 @@ abstract class ZadL10n {
   /// **'مش هتتحسب ناقصة لما تخلص، ومش هفكّرك بيها'**
   String get pantryOccasionalBody;
 
+  /// Pantry add/edit: the expiry field when no date is set; tapping opens the calendar.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختار التاريخ'**
+  String get pantryExpiryPick;
+
+  /// Pantry add: the guessed expiry from the item kind, shown as an estimate, never as a fact.
+  ///
+  /// In ar, this message translates to:
+  /// **'تقديري: {date}'**
+  String pantryExpiryEstimate(String date);
+
+  /// Pantry add: under the estimate — it is saved unless changed.
+  ///
+  /// In ar, this message translates to:
+  /// **'لو سبته كده هحفظ التاريخ التقديري، غيّره لو عارف التاريخ الحقيقي'**
+  String get pantryExpiryEstimateNote;
+
+  /// Pantry add/edit: quick chip, expires in three days.
+  ///
+  /// In ar, this message translates to:
+  /// **'٣ أيام'**
+  String get pantryExpiryIn3Days;
+
+  /// Pantry add/edit: quick chip, expires in a week.
+  ///
+  /// In ar, this message translates to:
+  /// **'أسبوع'**
+  String get pantryExpiryInWeek;
+
+  /// Pantry add/edit: quick chip, expires in a month.
+  ///
+  /// In ar, this message translates to:
+  /// **'شهر'**
+  String get pantryExpiryInMonth;
+
+  /// Pantry add/edit: tooltip of the × that removes the expiry date.
+  ///
+  /// In ar, this message translates to:
+  /// **'امسح التاريخ'**
+  String get pantryExpiryClear;
+
   /// Notification center: spoken when there is nothing new.
   ///
   /// In ar, this message translates to:

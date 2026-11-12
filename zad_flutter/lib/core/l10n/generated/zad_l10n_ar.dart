@@ -3625,6 +3625,30 @@ class ZadL10nAr extends ZadL10n {
       'مش هتتحسب ناقصة لما تخلص، ومش هفكّرك بيها';
 
   @override
+  String get pantryExpiryPick => 'اختار التاريخ';
+
+  @override
+  String pantryExpiryEstimate(String date) {
+    return 'تقديري: $date';
+  }
+
+  @override
+  String get pantryExpiryEstimateNote =>
+      'لو سبته كده هحفظ التاريخ التقديري، غيّره لو عارف التاريخ الحقيقي';
+
+  @override
+  String get pantryExpiryIn3Days => '٣ أيام';
+
+  @override
+  String get pantryExpiryInWeek => 'أسبوع';
+
+  @override
+  String get pantryExpiryInMonth => 'شهر';
+
+  @override
+  String get pantryExpiryClear => 'امسح التاريخ';
+
+  @override
   String get notifNoneNew => 'مفيش تنبيهات جديدة';
 
   @override
@@ -4358,6 +4382,13 @@ class ZadL10nArSa extends ZadL10nAr {
   @override
   String get pantryOccasionalBody =>
       'ما راح تنحسب ناقصة إذا خلصت، وما راح أذكّرك فيها';
+
+  @override
+  String get pantryExpiryPick => 'اختر التاريخ';
+
+  @override
+  String get pantryExpiryEstimateNote =>
+      'إذا تركته كذا بحفظ التاريخ التقديري، غيّره إذا تعرف التاريخ الصحيح';
 
   @override
   String get notifNoneNew => 'ما فيه تنبيهات جديدة';

@@ -3679,6 +3679,30 @@ class ZadL10nEn extends ZadL10n {
       'It won\'t count as short when it runs out, and I won\'t remind you';
 
   @override
+  String get pantryExpiryPick => 'Pick a date';
+
+  @override
+  String pantryExpiryEstimate(String date) {
+    return 'Estimated: $date';
+  }
+
+  @override
+  String get pantryExpiryEstimateNote =>
+      'Leave it and I\'ll save this estimate; change it if you know the real date';
+
+  @override
+  String get pantryExpiryIn3Days => '3 days';
+
+  @override
+  String get pantryExpiryInWeek => 'A week';
+
+  @override
+  String get pantryExpiryInMonth => 'A month';
+
+  @override
+  String get pantryExpiryClear => 'Clear the date';
+
+  @override
   String get notifNoneNew => 'No new notifications';
 
   @override
