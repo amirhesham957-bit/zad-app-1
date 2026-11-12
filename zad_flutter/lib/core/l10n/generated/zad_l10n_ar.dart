@@ -3912,6 +3912,70 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get profileRegionGeneral => 'عام';
+
+  @override
+  String get pantryCatAll => 'الكل';
+
+  @override
+  String get pantryCatGrocery => 'البقالة';
+
+  @override
+  String get pantryCatVegetables => 'الخضار';
+
+  @override
+  String get pantryCatFruit => 'الفواكه';
+
+  @override
+  String get pantryCatMeat => 'اللحوم';
+
+  @override
+  String get pantryCatDairy => 'الألبان';
+
+  @override
+  String get pantryCatDrinks => 'المشروبات';
+
+  @override
+  String get pantryCatCare => 'العناية';
+
+  @override
+  String get pantryCatOther => 'أخرى';
+
+  @override
+  String get pantryUnitPiece => 'حبة';
+
+  @override
+  String get pantryUnitKilo => 'كجم';
+
+  @override
+  String get pantryUnitGram => 'جرام';
+
+  @override
+  String get pantryUnitLitre => 'لتر';
+
+  @override
+  String get pantryUnitCan => 'علبة';
+
+  @override
+  String get pantryUnitBag => 'كيس';
+
+  @override
+  String get pantryUnitBottle => 'قرشة';
+
+  @override
+  String get pantryUnitCrate => 'صندوق';
+
+  @override
+  String get shopShareHeader => 'قائمة تسوق زاد:';
+
+  @override
+  String shopShareTotal(String total, String currency) {
+    return 'الإجمالي: $total $currency';
+  }
+
+  @override
+  String shopShareEstimate(int priced, int all) {
+    return '(تقدير لـ $priced من $all صنف)';
+  }
 }
 
 /// The translations for Arabic, as used in Saudi Arabia (`ar_SA`).

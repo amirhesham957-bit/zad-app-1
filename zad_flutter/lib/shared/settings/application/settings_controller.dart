@@ -74,6 +74,9 @@ class SettingsController extends Notifier<SettingsView> {
   DateTime? _lastFetch;
   bool _fetching = false;
 
+  /// Bumped by every save, so a read can tell one happened while it was out.
+  int _saves = 0;
+
   @override
   SettingsView build() {
     final cached = ref.read(settingsRepositoryProvider).cached();
@@ -91,12 +94,25 @@ class SettingsController extends Notifier<SettingsView> {
 
     _fetching = true;
     state = state.copyWith(isRefreshing: true, clearError: true);
+    final savesBefore = _saves;
+    final savingBefore = state.isSaving;
 
     try {
-      final settings = await ref.read(settingsRepositoryProvider).refresh();
+      final repository = ref.read(settingsRepositoryProvider);
+      final read = await repository.refresh();
       if (!ref.mounted) return;
       _lastFetch = now;
-      state = SettingsView(settings: settings, queuedWrites: _queuedWrites());
+      // A save that ran while the read was out is newer than its answer: the
+      // repository's own checks can pass before the save lands, and putting
+      // the read on screen afterwards undid the salary day (the flake in
+      // `settings_controller_test`). The phone's copy is the latest then.
+      final raced = _saves != savesBefore || savingBefore || state.isSaving;
+      final settings = raced ? repository.cached() ?? read : read;
+      state = SettingsView(
+        settings: settings,
+        queuedWrites: _queuedWrites(),
+        isSaving: state.isSaving,
+      );
     } on Object catch (error) {
       if (!ref.mounted) return;
       // The cached values stay on screen. A failed read is never a reason to
@@ -131,6 +147,7 @@ class SettingsController extends Notifier<SettingsView> {
 
   Future<bool> _save(Future<AccountSettings> Function() write) async {
     if (!ref.mounted || state.isSaving) return false;
+    _saves++;
     state = state.copyWith(isSaving: true, clearError: true);
 
     try {

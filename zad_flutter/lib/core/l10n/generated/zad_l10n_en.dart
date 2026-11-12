@@ -3321,8 +3321,7 @@ class ZadL10nEn extends ZadL10n {
   String get tickerError => 'Couldn\'t fetch live prices right now — try again';
 
   @override
-  String get tickerEmpty =>
-      'No live prices for your country yet — tap to refresh';
+  String get tickerEmpty => 'No live prices for your country yet — tap to refresh';
 
   @override
   String get tickerRefresh => 'Refresh prices';
@@ -3366,8 +3365,7 @@ class ZadL10nEn extends ZadL10n {
   String get notifEmptyTitle => 'No notifications right now.';
 
   @override
-  String get notifEmptyBody =>
-      'We\'ll let you know as soon as something needs your attention';
+  String get notifEmptyBody => 'We\'ll let you know as soon as something needs your attention';
 
   @override
   String get notifBankSection => 'Bank transactions waiting for you';
@@ -3553,8 +3551,7 @@ class ZadL10nEn extends ZadL10n {
   String get pantryEmptyTitle => 'Your pantry is empty';
 
   @override
-  String get pantryEmptyBody =>
-      'Start adding products to organise your home\'s pantry';
+  String get pantryEmptyBody => 'Start adding products to organise your home\'s pantry';
 
   @override
   String get pantryScan => 'Scan';
@@ -3675,8 +3672,7 @@ class ZadL10nEn extends ZadL10n {
   String get pantryOccasional => 'I buy it now and then';
 
   @override
-  String get pantryOccasionalBody =>
-      'It won\'t count as short when it runs out, and I won\'t remind you';
+  String get pantryOccasionalBody => 'It won\'t count as short when it runs out, and I won\'t remind you';
 
   @override
   String get pantryExpiryPick => 'Pick a date';
@@ -3687,8 +3683,7 @@ class ZadL10nEn extends ZadL10n {
   }
 
   @override
-  String get pantryExpiryEstimateNote =>
-      'Leave it and I\'ll save this estimate; change it if you know the real date';
+  String get pantryExpiryEstimateNote => 'Leave it and I\'ll save this estimate; change it if you know the real date';
 
   @override
   String get pantryExpiryIn3Days => '3 days';
@@ -3737,8 +3732,7 @@ class ZadL10nEn extends ZadL10n {
   String get introTitle => 'Tell me about you';
 
   @override
-  String get introLead =>
-      'Five questions and one optional, so I talk to you right and look after the people you care for.';
+  String get introLead => 'Five questions and one optional, so I talk to you right and look after the people you care for.';
 
   @override
   String get introNameQuestion => 'What should I call you?';
@@ -3816,8 +3810,7 @@ class ZadL10nEn extends ZadL10n {
   String get introHouseholdQuestion => 'How many people live at home?';
 
   @override
-  String get introHouseholdHint =>
-      'Counting you. So I can work out what the home uses.';
+  String get introHouseholdHint => 'Counting you. So I can work out what the home uses.';
 
   @override
   String get introHouseholdMany => '7 or more';
@@ -3840,22 +3833,19 @@ class ZadL10nEn extends ZadL10n {
   String get introSave => 'Let\'s go';
 
   @override
-  String get introSaveFailed =>
-      'I couldn\'t save — check your connection and try again.';
+  String get introSaveFailed => 'I couldn\'t save — check your connection and try again.';
 
   @override
   String get firstStepsTitle => 'First steps';
 
   @override
-  String get firstStepsLead =>
-      'Three steps in two minutes, and Zad starts working with you today.';
+  String get firstStepsLead => 'Three steps in two minutes, and Zad starts working with you today.';
 
   @override
   String get firstStepsSpendTitle => 'Log your first expense';
 
   @override
-  String get firstStepsSpendBody =>
-      'Anything you spent today — coffee, a ride, bread. That\'s where Zad starts to understand your month.';
+  String get firstStepsSpendBody => 'Anything you spent today — coffee, a ride, bread. That\'s where Zad starts to understand your month.';
 
   @override
   String get firstStepsSpendDone => 'Logged ✓';
@@ -3867,8 +3857,7 @@ class ZadL10nEn extends ZadL10n {
   String get firstStepsAlertsTitle => 'Turn on notifications';
 
   @override
-  String get firstStepsAlertsBody =>
-      'So I can tell you when the budget is running low, and remind you of medicine and bills on time.';
+  String get firstStepsAlertsBody => 'So I can tell you when the budget is running low, and remind you of medicine and bills on time.';
 
   @override
   String get firstStepsAlertsDone => 'On ✓';
@@ -3880,8 +3869,7 @@ class ZadL10nEn extends ZadL10n {
   String get firstStepsTelegramTitle => 'Connect the Telegram bot';
 
   @override
-  String get firstStepsTelegramBody =>
-      'Without it, reminders and the «close your day» question won\'t reach you outside the app.';
+  String get firstStepsTelegramBody => 'Without it, reminders and the «close your day» question won\'t reach you outside the app.';
 
   @override
   String get firstStepsGo => 'On to Zad';
@@ -3890,16 +3878,13 @@ class ZadL10nEn extends ZadL10n {
   String get firstStepsLater => 'Finish later — open Zad';
 
   @override
-  String get petLinesHungry =>
-      'My tummy\'s rumbling… feed me? 🍎\nSo hungry 🥺 just a little something\nSmell food? No, that\'s me being hungry 😅';
+  String get petLinesHungry => 'My tummy\'s rumbling… feed me? 🍎\nSo hungry 🥺 just a little something\nSmell food? No, that\'s me being hungry 😅';
 
   @override
-  String get petLinesThirsty =>
-      'Thirsty… a little water? 💧\nMy mouth is dry 🥵 water me\nOne glass of water and I\'m perfect 💧';
+  String get petLinesThirsty => 'Thirsty… a little water? 💧\nMy mouth is dry 🥵 water me\nOne glass of water and I\'m perfect 💧';
 
   @override
-  String get petLinesSleepy =>
-      'Sleepy… 😴 good night\nYaaawn 🥱 carry on tomorrow?\nMy eyes are closing on their own… 💤';
+  String get petLinesSleepy => 'Sleepy… 😴 good night\nYaaawn 🥱 carry on tomorrow?\nMy eyes are closing on their own… 💤';
 
   @override
   String petLinesSad(String name) {
@@ -3907,16 +3892,13 @@ class ZadL10nEn extends ZadL10n {
   }
 
   @override
-  String get petLinesHappy =>
-      'I\'m happy with you 💚\nThanks for remembering me 🥰\nYou\'re the best friend 🤗';
+  String get petLinesHappy => 'I\'m happy with you 💚\nThanks for remembering me 🥰\nYou\'re the best friend 🤗';
 
   @override
-  String get petLinesIdleLogged =>
-      'How\'s your day? ✨\nI\'m here if you need me 💚\nYou logged today — well done 👏';
+  String get petLinesIdleLogged => 'How\'s your day? ✨\nI\'m here if you need me 💚\nYou logged today — well done 👏';
 
   @override
-  String get petLinesIdleNotLogged =>
-      'Logged your spending today? 📝\nJust one expense and I\'ll be proud of you 🌱';
+  String get petLinesIdleNotLogged => 'Logged your spending today? 📝\nJust one expense and I\'ll be proud of you 🌱';
 
   @override
   String get petLinesFed => 'Yum yum! 😋\nThank you 🍎\nBest meal ever 🤤';
@@ -3928,12 +3910,10 @@ class ZadL10nEn extends ZadL10n {
   String get petLinesWatered => 'Ahh, refreshed! 💧\nMuch better 😌';
 
   @override
-  String get petLinesNotThirsty =>
-      'I don\'t want water now 🙈\nI\'ve had enough 😄';
+  String get petLinesNotThirsty => 'I don\'t want water now 🙈\nI\'ve had enough 😄';
 
   @override
-  String get petLinesPetted =>
-      'Hehe, that tickles 🤭\nMore! More! 🥰\nLove you 💚';
+  String get petLinesPetted => 'Hehe, that tickles 🤭\nMore! More! 🥰\nLove you 💚';
 
   @override
   String get cookDone => 'Cooked it';
@@ -3980,4 +3960,68 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get profileRegionGeneral => 'General';
+
+  @override
+  String get pantryCatAll => 'All';
+
+  @override
+  String get pantryCatGrocery => 'Grocery';
+
+  @override
+  String get pantryCatVegetables => 'Vegetables';
+
+  @override
+  String get pantryCatFruit => 'Fruit';
+
+  @override
+  String get pantryCatMeat => 'Meat';
+
+  @override
+  String get pantryCatDairy => 'Dairy';
+
+  @override
+  String get pantryCatDrinks => 'Drinks';
+
+  @override
+  String get pantryCatCare => 'Personal care';
+
+  @override
+  String get pantryCatOther => 'Other';
+
+  @override
+  String get pantryUnitPiece => 'Piece';
+
+  @override
+  String get pantryUnitKilo => 'kg';
+
+  @override
+  String get pantryUnitGram => 'g';
+
+  @override
+  String get pantryUnitLitre => 'Litre';
+
+  @override
+  String get pantryUnitCan => 'Can / box';
+
+  @override
+  String get pantryUnitBag => 'Bag';
+
+  @override
+  String get pantryUnitBottle => 'Bottle';
+
+  @override
+  String get pantryUnitCrate => 'Crate';
+
+  @override
+  String get shopShareHeader => 'Zad shopping list:';
+
+  @override
+  String shopShareTotal(String total, String currency) {
+    return 'Total: $total $currency';
+  }
+
+  @override
+  String shopShareEstimate(int priced, int all) {
+    return '(estimate for $priced of $all items)';
+  }
 }

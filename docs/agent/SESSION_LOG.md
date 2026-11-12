@@ -310,3 +310,17 @@ related:
 - **الشريحة:** `app_ar_SA.arb` من ٢٠٧ لـ٣٠٦ نص + `saudi_coverage_test` (أي نص مصري جديد من غير نسخة سعودي يفشل) + أزرار الإشعارات على `zadL10nProvider`.
 - **تست متقطع مش من الشريحة:** `settings_controller_test` «the salary day is saved the same way» وقع مرة في التشغيل الكامل (state = null بعد `setCycleStartDay` رجّع true — سباق مع القراية الأولى)، وعدّى ٣ من ٣ لوحده.
 - **فخ:** `flutter gen-l10n` بقى بيعمل format افتراضياً ⇒ diff ضخم في الملفات المولّدة. ولّد بـ`format: false` مؤقتاً في `l10n.yaml` (ورجّعه)، ورجّع `zad_l10n.dart`/`zad_l10n_en.dart` من main لو مفيش مفاتيح جديدة.
+
+## ٢٠٢٦-١١-١٣ (بالليل، تاني) — ١٠.١٦ اتقفل
+
+- **اندمج:** #517 (النصوص السعودي). الفرع القديم `feat/10-16-saudi-screens` والـstash بتاعه اتمسحوا (الفرع ماكانش على الريموت).
+- **قرار المالك:** البنود ١–٤ اللي فاضلة في ١٠.١٦ (الموقع التقريبي، تقييم لكل منطقة، مراجعة أهل المنطقة، المصري الفرعي) ⇐ بعد الإطلاق. البند ٥ (الفئات والوحدات ونص واتساب) ⇐ الشريحة ٧، و١٠.١٦ = `[x]`.
+- **التست المتقطع اتصلح من جذره:** `SettingsController.refresh` كان بيحط رد القراية على الشاشة بعد ما حفظ يخلص في النص (الريبو عدّى فحصه قبل الحفظ، وبعدين كتابة الكاش خدت وقت). اتعمل تست بيعيدها كل مرة (`_LateAnswer`) — وقع قبل الإصلاح بنفس العرض (`Expected 25, Actual null`) وعدّى بعده؛ ومجلد الإعدادات ٢٠ من ٢٠. الإصلاح: عدّاد حفظ `_saves`، ولو حفظ حصل والقراية برّه ⇐ نسخة الموبايل (`cached()`) هي اللي بتتعرض. وبالمرة القراية مابقتش بتمسح `isSaving` لو جت في نص حفظ.
+- **فخ:** `const new(...)` هو شكل الكونستركتور هنا — الـsubclass في التست لازم `new({... super.x})` مش `_Name(...)` (اللينت `unnecessary_type_name_in_constructor`).
+
+## ٢٠٢٦-١١-١٢ — موقع زاد التسويقي (`website/`)
+
+- **اتعمل:** موقع Next.js 16 + Tailwind 4 + React Three Fiber/drei + Motion + Lenis في `website/` (عربي RTL، خط Cairo من `zad_flutter/assets/fonts`). هيرو ثري دي (الجزرة + عملات + كبسولات)، قصة أفقية بالسكرول (فلوسك/مطبخك/دواك/عيلتك)، عقل زاد، زرار Google Play على `com.aistudio.zad.wrtqvx`، وApp Store «قريباً» (`lib/links.ts`).
+- **اتقاس:** `next build` EXIT=0، `eslint` EXIT=0، وشوفته في Chrome على 1440 و390 من غير overflow أفقي.
+- **مستني المالك:** النشر على Vercel (مفيش أداة Vercel ولا HyperFrames في الجلسة) — Root Directory = `website`. ولينك Play مش متأكد إنه منشور.
+- **فخ:** Motion بيحوّل `useScroll`+`useTransform` على opacity/transform لـWAAPI، وأي offset برّه 0..1 بيوقّع الصفحة كلها («Offsets must be monotonically non-decreasing»). و`new Date()` في Server Component بيكسر الـprerender في Next 16 (`cacheComponents`).
