@@ -242,6 +242,7 @@ jobs:
           supabase/sql/tests/scratch_scaffold.sql supabase/sql/tests/past_appointments_scaffold.sql supabase/migrations/20261028030000_past_appointments.sql supabase/sql/tests/past_appointments_test.sql
           supabase/sql/tests/founder_channel_test.sql
           supabase/sql/tests/support_desk_test.sql
+          supabase/sql/tests/scratch_scaffold.sql supabase/sql/tests/pantry_learning_scaffold.sql supabase/migrations/20261112230000_pantry_learning_on_server.sql supabase/sql/tests/pantry_learning_test.sql
           LIST
 
   # النشر من الريبو، بعد ما الفحص يعدي — مش من على جهاز حد.
