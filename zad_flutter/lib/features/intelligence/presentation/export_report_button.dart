@@ -17,7 +17,7 @@ import 'package:zad/features/intelligence/domain/brain_report.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/budget/application/category_budgets_controller.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart';
-import 'package:zad/shared/inventory/data/consumption_learner.dart';
+import 'package:zad/shared/inventory/data/pantry_learning.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/scan/domain/scanned_receipt.dart'
     show kStandardCategories;
@@ -36,7 +36,7 @@ import 'package:zad/shared/transactions/application/transactions_controller.dart
   final currency = ref.read(budgetControllerProvider).snapshot?.currency ?? '';
   String money(double v) =>
       '${NumberFormat('#,##0.##', 'en').format(v)} $currency'.trim();
-  final learner = ref.read(consumptionLearnerProvider);
+  final learning = ref.read(pantryLearningViewProvider);
   final report = buildBrainReport(
     transactions: ref.read(transactionsControllerProvider).rows,
     subscriptions: ref.read(subscriptionsControllerProvider).items,
@@ -48,7 +48,7 @@ import 'package:zad/shared/transactions/application/transactions_controller.dart
     budget: ref.read(settingsControllerProvider).settings?.monthlyLimit ?? 0,
     today: today,
     local: (t) => tz.TZDateTime.from(t.toUtc(), zone),
-    predictDaysLeft: learner.predictDaysLeft,
+    predictDaysLeft: learning.predictDaysLeft,
     money: money,
   );
   return (
