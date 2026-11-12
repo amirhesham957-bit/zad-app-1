@@ -65,6 +65,13 @@ const EVAL_KEY = (Deno.env.get("ZAD_EVAL_KEY") ?? "").trim();
 const INTERNAL_KEYS: string[] = paidGeminiKeys((n) => Deno.env.get(n)).length > 0
   ? freeGeminiKeys((n) => Deno.env.get(n))
   : [];
+// المالك ١٢/١١: لما المدفوع يخلص على السلسلة كلها، السلسلة تتجرب تاني على المجاني قبل جروك — استقرار البداية.
+// بيرجع في قرار ٨.٢ (المدفوع لوحده لداتا العملاء)، فهو مفتاح صريح: `ZAD_FREE_AFTER_PAID=1`. سياسة الخصوصية v4
+// بتقول إن جيميناي المجاني ممكن جوجل تستخدم محتواه. من غير المفتاح، السلوك زي ما كان.
+const FREE_AFTER_PAID = INTERNAL_KEYS.length > 0 && (Deno.env.get("ZAD_FREE_AFTER_PAID") ?? "").trim() === "1";
+// تهدئة لكل موديل على المجاني لوحده: تهدئة المدفوع ماتمنعش المجاني من المحاولة.
+const freeCooldownUntil = new Map<string, number>();
+
 const CALL_KEYS: string[] = [...GEMINI_KEY_POOL, ...(EVAL_KEY ? [EVAL_KEY] : []), ...INTERNAL_KEYS];
 const EVAL_KEY_INDEX: number | null = EVAL_KEY ? GEMINI_KEY_POOL.length : null;
 const INTERNAL_KEY_START = GEMINI_KEY_POOL.length + (EVAL_KEY ? 1 : 0);
@@ -314,6 +321,31 @@ export async function callModel(opts: {
       if (modelCooldownMs > 0) modelCooldownUntil.set(model, Date.now() + modelCooldownMs);
       trail.push(`${model}: ${e.short}`);
       console.warn(`[zad-brain] model ${model} unavailable (${e.short}); falling over`);
+    }
+  }
+
+  // المدفوع خلص ⇒ نفس السلسلة على المفاتيح المجانية (حارة internal: مفاتيحها الأول) قبل جروك.
+  const lane = currentLane();
+  if (FREE_AFTER_PAID && !freeBusy && lane !== "eval" && lane !== "internal") {
+    const t = Date.now();
+    for (const model of chain.filter((m) => (freeCooldownUntil.get(m) ?? 0) <= t)) {
+      const left = deadline - Date.now();
+      if (left < MIN_GEMINI_ATTEMPT_MS && GROQ_KEY_POOL.length > 0) {
+        trail.push("free keys: budget spent");
+        break;
+      }
+      const timeoutMs = Math.max(MIN_GEMINI_ATTEMPT_MS, Math.min(GEMINI_CALL_TIMEOUT_MS, left));
+      try {
+        const reply = await inLane("internal", () => withRetry(() => sendGemini({ ...opts, model, timeoutMs })));
+        freeCooldownUntil.delete(model);
+        console.warn(`[zad-brain] paid key unavailable; ${model} answered on a free key`);
+        return { ...reply, model };
+      } catch (e) {
+        if (e instanceof ConfigError) throw e;
+        if (!(e instanceof ProviderUnavailableError)) throw e;
+        if (modelCooldownMs > 0) freeCooldownUntil.set(model, Date.now() + modelCooldownMs);
+        trail.push(`free ${model}: ${e.short}`);
+      }
     }
   }
 

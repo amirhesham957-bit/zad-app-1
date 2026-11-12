@@ -117,6 +117,7 @@ import { buildGroqSystemPrompt, groqToolOrder } from "./groqPrompt.ts";
 import { ANSWER_FROM_RESULTS_NOTE, historyForAnswer, isWrite, needsAnswerAfterTools, recordCall, silentWriteFallback, visibleReceipts } from "./receipts.ts";
 import { decideGate, GATE_RESPONSE_SCHEMA, gatePrompt, type GateVerdict, knownFinancialSender, looksLikeMoneyMoved, parseGateVerdict, proposalFieldsFromVerdict, ruleGate, txnKindFor } from "./notificationGate.ts";
 import { decideLifeEvent } from "../_shared/lifeEventDecide.ts";
+import { isOfferApp, OFFER_SCHEMA, offerExpiresAt, offerPrompt, parseOffer, storeFromPackage } from "./notificationOffers.ts";
 import { eventInstant, LIFE_EVENT_SCHEMA, type LifeEvent, type LifeKind, lifeEventCard, lifeEventPrompt, lifeKindOf, parseLifeEvent } from "./lifeEvents.ts";
 // المرحلة ٣ — الوكلاء المتخصصون: توجيه + هوية في البرومبت + trace في zad_brain_runs.
 import { intentToolHints, mentionsLifeFact, priorAssistantText, shouldWidenTools, LIMIT_NOT_CHANGED_REPLY, SNAPSHOT_REFUSAL_REPLY, snapshotLeak, unbackedLimitClaim, unbackedReminderClaim, unbackedWriteClaim, WRITE_NOT_DONE_REPLY, unbackedDeleteClaim, DELETE_NOT_DONE_REPLY, recordSpecialistTrace, routeSpecialists, specialistPromptBlock, scopeToolsForSpecialist } from "./specialists.ts";
@@ -8407,6 +8408,52 @@ async function recordLifeEvent(
   return { life_event_id: id, offered };
 }
 
+/**
+ * عرض من إشعار تطبيق تسوق أو توصيل (ZAD_PLAN ١٠.١٤): نداء تاني للموديل يطلّع المحل والصنف والخصم والكود
+ * والانتهاء، وصف في zad_notification_offers **لصاحبه بس**. مفيش كارت ولا رسالة تليجرام: العرض بيستنى لحد ما
+ * العميل يسأل (find_deals) أو يفتح العروض — إشعار التطبيق نفسه وصله خلاص.
+ */
+async function recordNotificationOffer(
+  sb: SupabaseClient,
+  userId: string,
+  ingestEventId: string,
+  packageName: string,
+  title: string,
+  text: string,
+  rawText: string,
+): Promise<{ offer_id: string | null }> {
+  const tz = await accountTimeZone(sb, userId);
+  const now = localNowContext(tz);
+  let offer = null;
+  try {
+    const p = offerPrompt({ packageName, title, text, todayLocal: `${now.date} ${now.time} (${now.weekday})` });
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const reply = await Promise.race([
+      callModel({
+        model: MODEL_ROUTINE, system: p.system, tools: [], history: [{ role: "user", text: p.user }], maxTokens: 300,
+        responseSchema: OFFER_SCHEMA, groqModel: DECISION_GROQ_MODEL,
+      }),
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error("offer read timed out")), NOTIFICATION_GATE_TIMEOUT_MS);
+      }),
+    ]).finally(() => clearTimeout(timer));
+    offer = parseOffer(reply.text ?? "", rawText, storeFromPackage(packageName));
+  } catch (e) {
+    console.warn("[notification_offer] model unavailable:", (e as Error)?.message);
+  }
+  if (!offer) return { offer_id: null };
+  const { data: row, error } = await sb.from("zad_notification_offers").upsert({
+    user_id: userId, ingest_event_id: ingestEventId, package_name: packageName.slice(0, 120),
+    store: offer.store, item: offer.item, discount_percent: offer.discountPercent, discount_amount: offer.discountAmount,
+    currency: offer.currency, code: offer.code, link: offer.link,
+    expires_at: offerExpiresAt(offer.expiresOn, now.utc_offset),
+  }, { onConflict: "user_id,ingest_event_id" }).select("id").maybeSingle();
+  if (error || !row) {
+    console.error("[notification_offer] insert failed:", error?.message ?? "no row");
+    return { offer_id: null };
+  }
+  return { offer_id: (row as { id: string }).id };
+}
 
 async function handleNotificationIngest(sb: SupabaseClient, userId: string, body: any): Promise<Response> {
   const packageName = String(body.package_name ?? "").trim();
@@ -8477,7 +8524,9 @@ async function handleNotificationIngest(sb: SupabaseClient, userId: string, body
       .eq("user_id", userId).eq("dedupe_hash", dedupeHash);
   };
 
-  const rule = ruleGate(rawText);
+  // ١٠.١٤: تطبيق تسوق أو توصيل — كلمات الإعلان عنده هي العرض نفسه، مش ضجيج.
+  const offerSource = isOfferApp(packageName);
+  const rule = ruleGate(rawText, offerSource);
   if (rule) {
     await mark("ignored", rule);
     return new Response(JSON.stringify({ ok: true, status: "ignored", classification: rule }), { headers: CORS_HEADERS });
@@ -8503,7 +8552,7 @@ async function handleNotificationIngest(sb: SupabaseClient, userId: string, body
   } catch (e) {
     console.warn("[notification_gate] model unavailable:", (e as Error)?.message);
   }
-  const gate = decideGate(verdict, knownSender, looksLikeMoneyMoved(rawText));
+  const gate = decideGate(verdict, knownSender, looksLikeMoneyMoved(rawText), offerSource);
   const gateTag = `gate:${verdict?.kind ?? "unavailable"}:${verdict ? verdict.confidence.toFixed(2) : "-"}${knownSender ? ":known" : ""}`;
   console.log(`[notification_gate] ${packageName} → ${gate} (${gateTag})`);
   if (gate === "ignore") {
@@ -8532,6 +8581,12 @@ async function handleNotificationIngest(sb: SupabaseClient, userId: string, body
     const res = await recordLifeEvent(sb, userId, ingestEventId, kind, title, text, rawText);
     await mark("ignored", `life_event:${kind}`);
     return new Response(JSON.stringify({ ok: true, status: "life_event", classification: "informational_only", gate: verdict.kind, ...res }), { headers: CORS_HEADERS });
+  }
+
+  if (gate === "offer") {
+    const res = await recordNotificationOffer(sb, userId, ingestEventId, packageName, title, text, rawText);
+    await mark("ignored", res.offer_id ? "offer" : "offer:empty");
+    return new Response(JSON.stringify({ ok: true, status: "offer", classification: "informational_only", gate: "promo_or_ad", ...res }), { headers: CORS_HEADERS });
   }
 
   const parsed = body.parsed ?? {};
