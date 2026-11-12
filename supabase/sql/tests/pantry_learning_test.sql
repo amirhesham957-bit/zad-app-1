@@ -64,7 +64,7 @@ begin
   if not (a ->> 'ok')::boolean then raise exception 'answer refused: %', a; end if;
   select * into r from public.zad_pantry_learning() where item_name = 'حليب';
   if r.ask then raise exception 'milk must not be asked again after «لسه»'; end if;
-  if (select answer from public.zad_pantry_bets where item_name = 'حليب') <> 'still_have' then
+  if (select answer from public.zad_pantry_bets where item_name = 'حليب') is distinct from 'still_have' then
     raise exception 'the bet was not judged'; end if;
 end $$;
 
@@ -93,9 +93,9 @@ end $$;
 -- Somebody else's item is not found; a bad answer is refused.
 do $$
 begin
-  if (public.zad_pantry_bet_answer('00000000-0000-0000-0000-000000000005', 'finished') ->> 'reason') <> 'not_found' then
+  if (public.zad_pantry_bet_answer('00000000-0000-0000-0000-000000000005', 'finished') ->> 'reason') is distinct from 'not_found' then
     raise exception 'another account''s item must not be answerable'; end if;
-  if (public.zad_pantry_bet_answer('00000000-0000-0000-0000-000000000002', 'maybe') ->> 'reason') <> 'bad_answer' then
+  if (public.zad_pantry_bet_answer('00000000-0000-0000-0000-000000000002', 'maybe') ->> 'reason') is distinct from 'bad_answer' then
     raise exception 'unknown answers must be refused'; end if;
 end $$;
 
@@ -103,7 +103,7 @@ end $$;
 do $$
 begin
   perform public.zad_pantry_bet_answer('00000000-0000-0000-0000-000000000002', 'used_one');
-  if (select confidence from public.zad_pantry_bets where item_name = 'رز') <> 'unasked' then
+  if (select confidence from public.zad_pantry_bets where item_name = 'رز') is distinct from 'unasked' then
     raise exception 'an unasked answer must say so'; end if;
 end $$;
 

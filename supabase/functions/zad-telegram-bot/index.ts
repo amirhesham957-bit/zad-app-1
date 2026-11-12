@@ -602,7 +602,12 @@ async function answerCheckinsByText(ctx: Context, sb: SupabaseClient, userId: st
       continue;
     }
     await sb.from("telegram_checkin_prompts")
-      .update({ status: a.level.fraction === 0 ? "answered_no" : "answered_yes", answered_at: new Date().toISOString() })
+      // answer_fraction: the trigger judges the bet in zad_pantry_bets by it («قليل» = it was running out).
+      .update({
+        status: a.level.fraction === 0 ? "answered_no" : "answered_yes",
+        answered_at: new Date().toISOString(),
+        answer_fraction: a.level.fraction,
+      })
       .eq("id", prompt.id).eq("status", "pending");
     lines.push(a.level.fraction === 0 ? `سجلتها خلصت ✅ ${label}` : `تمام ✅ ${label}: ${a.level.label}`);
   }
@@ -2808,7 +2813,11 @@ bot.on("callback_query:data", async (ctx) => {
     }
 
     await sb.from("telegram_checkin_prompts")
-      .update({ status: checkin.stillInStock ? "answered_yes" : "answered_no", answered_at: new Date().toISOString() })
+      .update({
+        status: checkin.stillInStock ? "answered_yes" : "answered_no",
+        answered_at: new Date().toISOString(),
+        answer_fraction: checkin.fraction,
+      })
       .eq("id", prompt.id);
 
     const itemLabel = isolate(sanitizeName(prompt.item_name));
