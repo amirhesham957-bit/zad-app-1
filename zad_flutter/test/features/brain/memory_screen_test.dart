@@ -74,6 +74,7 @@ void main() {
     WidgetTester tester,
     MemorySnapshot snapshot, {
     MemoryWriteFailure? failure,
+    String? country,
   }) async {
     fake = _Memory(snapshot, failure: failure);
     // A tall phone: the screen is one scrolling column of three cards, and
@@ -87,6 +88,7 @@ void main() {
         overrides: [
           memoryControllerProvider.overrideWith(() => fake),
           accountTimeZoneProvider.overrideWithValue('Africa/Cairo'),
+          accountCountryProvider.overrideWithValue(country),
           nowProvider.overrideWithValue(() => _now),
         ],
         child: MaterialApp(
@@ -283,5 +285,38 @@ void main() {
     // The form has no «مين في رعايتك» field; dropping it made the save read
     // back as a different profile and report «ماتحفظش».
     expect(fake.saved?.caresFor, <String>['parents']);
+  });
+
+  testWidgets('a Saudi account picks its region in the form (10.16); an '
+      'Egyptian one never sees it', (tester) async {
+    const me = MemorySnapshot(
+      profile: CustomerProfile(
+        preferredName: 'أمير',
+        gender: 'male',
+        caresFor: <String>['parents'],
+      ),
+    );
+    await pump(tester, me, country: 'SA');
+    await tester.tap(find.text('تعديل'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.ensureVisible(find.text('حجازي'));
+    await tester.pump();
+    expect(find.text('منطقتك'), findsOneWidget);
+    await tester.tap(find.text('حجازي'));
+    await tester.pump();
+    await tester.ensureVisible(find.text('احفظ'));
+    await tester.pump();
+    await tester.tap(find.text('احفظ'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(fake.saved?.dialectRegion, 'SA_HIJAZ');
+
+    await pump(tester, me, country: 'EG');
+    await tester.tap(find.text('تعديل'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.text('منطقتك'), findsNothing);
+    expect(find.text('حجازي'), findsNothing);
   });
 }

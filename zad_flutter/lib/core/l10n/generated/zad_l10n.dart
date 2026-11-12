@@ -7051,6 +7051,42 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'أكتر'**
   String get cookMore;
+
+  /// Profile form: title of the Saudi region chips (ZAD_PLAN 10.16).
+  ///
+  /// In ar, this message translates to:
+  /// **'منطقتك'**
+  String get profileRegionTitle;
+
+  /// Profile form: region chip, Jeddah/Makkah/Madinah.
+  ///
+  /// In ar, this message translates to:
+  /// **'حجازي'**
+  String get profileRegionHijazi;
+
+  /// Profile form: region chip, Riyadh/Qassim.
+  ///
+  /// In ar, this message translates to:
+  /// **'نجدي'**
+  String get profileRegionNajdi;
+
+  /// Profile form: region chip, Eastern Province.
+  ///
+  /// In ar, this message translates to:
+  /// **'شرقي'**
+  String get profileRegionEast;
+
+  /// Profile form: region chip, the south (Abha, Jazan, Najran).
+  ///
+  /// In ar, this message translates to:
+  /// **'جنوبي'**
+  String get profileRegionSouth;
+
+  /// Profile form: region chip, plain Saudi with no region.
+  ///
+  /// In ar, this message translates to:
+  /// **'عام'**
+  String get profileRegionGeneral;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

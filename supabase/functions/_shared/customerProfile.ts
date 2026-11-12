@@ -28,6 +28,8 @@ export interface CustomerProfileRow {
   kids_count?: number | null;
   city?: string | null;
   dialect?: string | null;
+  /** المنطقة اللي اختارها في «ملفي» (ZAD_PLAN ١٠.١٦)؛ GENERAL = سعودي عام. */
+  dialect_region?: string | null;
   interests?: string[] | null;
   notes?: string | null;
   /** null = لسه ماتسألش؛ [] = مسؤول عن نفسه بس. */
@@ -131,6 +133,8 @@ export function customerCard(
     kids_count: r.kids_count ?? null,
     city: r.city ?? null,
     dialect: r.dialect ?? null,
+    // المنطقة اللي العميل اختارها في «ملفي» (ZAD_PLAN ١٠.١٦) — للهجة بس، مش «ناقص» لو null.
+    dialect_region: r.dialect_region ?? null,
     interests: r.interests ?? [],
     notes: r.notes ?? null,
     cares_for: r.cares_for ?? null,

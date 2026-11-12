@@ -3907,6 +3907,24 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get cookMore => 'أكتر';
+
+  @override
+  String get profileRegionTitle => 'منطقتك';
+
+  @override
+  String get profileRegionHijazi => 'حجازي';
+
+  @override
+  String get profileRegionNajdi => 'نجدي';
+
+  @override
+  String get profileRegionEast => 'شرقي';
+
+  @override
+  String get profileRegionSouth => 'جنوبي';
+
+  @override
+  String get profileRegionGeneral => 'عام';
 }
 
 /// The translations for Arabic, as used in Saudi Arabia (`ar_SA`).

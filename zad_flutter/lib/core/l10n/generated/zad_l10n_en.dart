@@ -3962,4 +3962,22 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get cookMore => 'More';
+
+  @override
+  String get profileRegionTitle => 'Your region';
+
+  @override
+  String get profileRegionHijazi => 'Hijazi';
+
+  @override
+  String get profileRegionNajdi => 'Najdi';
+
+  @override
+  String get profileRegionEast => 'Eastern';
+
+  @override
+  String get profileRegionSouth => 'Southern';
+
+  @override
+  String get profileRegionGeneral => 'General';
 }
