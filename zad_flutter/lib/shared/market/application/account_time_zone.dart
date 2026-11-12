@@ -27,7 +27,7 @@ import 'package:zad/shared/settings/data/settings_repository.dart';
 /// 3. `Africa/Cairo` — the SQL's own fallback for an unknown country, and
 ///    deliberately not the device's zone.
 final accountTimeZoneProvider = Provider<String>((ref) {
-  final country = ref.watch(settingsRepositoryProvider).cached()?.country;
+  final country = ref.watch(cachedAccountSettingsProvider)?.country;
   if (country != null && country.isNotEmpty) return marketTimeZone(country);
 
   final fromBudget = ref.watch(budgetRepositoryProvider).cached()?.timeZone;
@@ -42,7 +42,7 @@ final accountTimeZoneProvider = Provider<String>((ref) {
 /// must open without it.
 final accountCountryProvider = Provider<String?>((ref) {
   try {
-    final country = ref.watch(settingsRepositoryProvider).cached()?.country;
+    final country = ref.watch(cachedAccountSettingsProvider)?.country;
     return country == null || country.isEmpty ? null : country;
   } on Object {
     return null;

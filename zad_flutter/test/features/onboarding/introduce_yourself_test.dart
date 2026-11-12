@@ -4,6 +4,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:zad/core/l10n/app_language.dart';
+import 'package:zad/core/l10n/generated/zad_l10n.dart';
 import 'package:zad/features/onboarding/application/first_steps_controller.dart';
 import 'package:zad/features/onboarding/application/introduction_gate.dart';
 import 'package:zad/features/onboarding/presentation/introduce_yourself_screen.dart';
@@ -127,7 +129,7 @@ void main() {
     });
   });
 
-  testWidgets('a son who looks after his parents says so in four taps', (
+  testWidgets('a son who looks after his parents says so in five taps', (
     tester,
   ) async {
     final memory = _Memory(null);
@@ -164,6 +166,12 @@ void main() {
     await tester.pump();
     await tester.tap(find.text('أبويا أو أمي'));
     await tester.pump();
+    // How many live at home is asked too (ZAD_PLAN ١٠.١): the pantry's
+    // forecasts scale with it.
+    expect(go().onPressed, isNull);
+    await tester.ensureVisible(find.text('4'));
+    await tester.tap(find.text('4'));
+    await tester.pump();
     expect(go().onPressed, isNotNull);
 
     // Payday is optional; the 5th here.
@@ -181,7 +189,86 @@ void main() {
     expect(memory.saved?.householdRole, 'son');
     expect(memory.saved?.caresFor, <String>['parents']);
     expect(memory.saved?.payDay, 5);
+    expect(memory.saved?.householdSize, 4);
     // The first steps (ZAD_PLAN 2.9) follow the introduction.
     expect(steps.armed, isTrue);
+  });
+
+  Future<_Memory> pumpIntro(WidgetTester tester, {Locale? locale}) async {
+    final memory = _Memory(null);
+    tester.view
+      ..physicalSize = const Size(1080, 3600)
+      ..devicePixelRatio = 2.5;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          memoryControllerProvider.overrideWith(() => memory),
+          profileControllerProvider.overrideWith(_Profile.new),
+          firstStepsControllerProvider.overrideWith(_Steps.new),
+        ],
+        child: MaterialApp(
+          // The test device speaks English; the account's Arabic is chosen.
+          locale: locale ?? const Locale('ar'),
+          supportedLocales: kZadLocales,
+          localizationsDelegates: ZadL10n.localizationsDelegates,
+          home: const IntroduceYourselfScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    return memory;
+  }
+
+  testWidgets('living alone answers the household question as one', (
+    tester,
+  ) async {
+    final memory = await pumpIntro(tester);
+    // Living alone says nothing about gender, so that is asked as usual.
+    await tester.tap(find.text('راجل'));
+    await tester.pump();
+    await tester.tap(find.text('عايش لوحدي'));
+    await tester.pump();
+    await tester.tap(find.text('محدش — مسؤول عن نفسي بس'));
+    await tester.pump();
+    await tester.ensureVisible(find.text('يلا بينا'));
+    await tester.tap(find.text('يلا بينا'));
+    await tester.pump();
+    expect(memory.saved?.householdRole, 'single');
+    expect(memory.saved?.householdSize, 1);
+  });
+
+  testWidgets('seven or more is stored as seven', (tester) async {
+    final memory = await pumpIntro(tester);
+    await tester.tap(find.text('أب'));
+    await tester.pump();
+    await tester.tap(find.text('أولادي'));
+    await tester.pump();
+    await tester.ensureVisible(find.text('7 أو أكتر'));
+    await tester.tap(find.text('7 أو أكتر'));
+    await tester.pump();
+    await tester.ensureVisible(find.text('يلا بينا'));
+    await tester.tap(find.text('يلا بينا'));
+    await tester.pump();
+    expect(memory.saved?.householdSize, 7);
+  });
+
+  testWidgets('a Saudi account reads the introduction in Saudi', (
+    tester,
+  ) async {
+    await pumpIntro(tester, locale: kSaudiArabic);
+    expect(find.text('عرّفني عليك'), findsOneWidget);
+    expect(find.text('وش أناديك؟'), findsOneWidget);
+    expect(find.text('عيالي'), findsOneWidget);
+    expect(find.text('كم شخص ساكن في البيت؟'), findsOneWidget);
+    // Nothing Egyptian left on the screen.
+    for (final egyptian in <String>[
+      'أناديك بإيه؟',
+      'غير كده',
+      'مش ثابت / مش عايز أقول',
+      'يلا بينا',
+    ]) {
+      expect(find.text(egyptian), findsNothing, reason: egyptian);
+    }
   });
 }

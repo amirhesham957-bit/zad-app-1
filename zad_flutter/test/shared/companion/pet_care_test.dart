@@ -1,6 +1,9 @@
+import 'package:flutter/widgets.dart' show Locale;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:timezone/data/latest.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
+import 'package:zad/core/l10n/app_language.dart';
+import 'package:zad/core/l10n/generated/zad_l10n.dart';
 import 'package:zad/shared/alerts/application/local_reminders.dart';
 import 'package:zad/shared/companion/domain/pet_care.dart';
 import 'package:zad/shared/orb/domain/companion_state.dart';
@@ -203,9 +206,35 @@ void main() {
     });
   });
 
-  test('every mood has something to say', () {
-    for (final s in CompanionState.values) {
-      expect(PetLines.forMood(s, name: 'زادو', loggedToday: false), isNotEmpty);
+  test('every mood has something to say, in every Arabic', () {
+    for (final l10n in <ZadL10n>[
+      lookupZadL10n(const Locale('ar')),
+      lookupZadL10n(kSaudiArabic),
+      lookupZadL10n(const Locale('en')),
+    ]) {
+      for (final s in CompanionState.values) {
+        for (final logged in <bool>[true, false]) {
+          final line = PetLines.forMood(
+            l10n,
+            s,
+            name: 'زادو',
+            loggedToday: logged,
+          );
+          expect(line.trim(), isNotEmpty);
+          expect(line, isNot(contains('\n')));
+        }
+      }
     }
+  });
+
+  test('a Saudi account hears Saudi from the companion', () {
+    final saudi = lookupZadL10n(kSaudiArabic);
+    final egyptian = lookupZadL10n(const Locale('ar'));
+    expect(saudi.petLinesHungry, isNot(egyptian.petLinesHungry));
+    expect(PetLines.lines(saudi.petLinesNotThirsty).join(), contains('الحين'));
+    expect(
+      PetLines.lines(egyptian.petLinesNotThirsty).join(),
+      contains('دلوقتي'),
+    );
   });
 }
