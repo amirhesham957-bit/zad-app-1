@@ -550,3 +550,18 @@ Deno.test("withBuyingCycle: a tight budget or a stated want keeps its own senten
 Deno.test("tasteItems: a word for all the groceries is not an item to hunt", () => {
   assertEquals(tasteItems(["المقاضي", "زيت", "خزين البيت"], []), ["زيت"]);
 });
+
+Deno.test("item preferences (10.1 slice 4d): the table's preferred brand wins, a rejected brand's offer is dropped", async () => {
+  const { preferredBrands, rejectedBrands, withoutRejectedBrands, statedBrands } = await import("./tasteDeals.ts");
+  const rows = [
+    { item_name: "حليب", kind: "preferred_brand", brand: "نادك" },
+    { item_name: "حليب", kind: "rejected_brand", brand: "المراعي" },
+    { item_name: "صوص ترافل", kind: "accidental", brand: null },
+  ];
+  const preferred = preferredBrands(rows);
+  assertEquals([...preferred.values()], [...statedBrands(["حليب نادك"]).values()]);
+  const offers = [{ item: "حليب المراعي كامل الدسم ١ لتر" }, { item: "حليب نادك ١ لتر" }, { item: "رز المراعي" }];
+  const kept = withoutRejectedBrands(offers, rejectedBrands(rows)).map((o) => o.item);
+  assertEquals(kept, ["حليب نادك ١ لتر", "رز المراعي"], "only the milk of the rejected brand goes; its rice stays");
+  assertEquals(withoutRejectedBrands(offers, new Map()).length, 3);
+});

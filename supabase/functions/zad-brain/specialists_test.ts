@@ -245,3 +245,12 @@ Deno.test("diet 3.2 (7/11): a general turn no longer carries add_pharmacy_item, 
     assert(names.includes("add_pharmacy_item"), `${m} -> ${who.primary}`);
   }
 });
+
+Deno.test("item preferences (10.1 slice 4d): brand and accident talk brings set_item_preference, small talk does not", () => {
+  for (const m of ["إحنا بنجيب نادك مش المراعي", "الصوص ده اتجاب بالغلط مش هنجيبه تاني", "البراند ده وحش", "ما نجيب الا الربيع"]) {
+    assert(intentToolHints(m).includes("set_item_preference"), m);
+  }
+  for (const m of ["صباح الخير", "سجل ٥٠ جنيه قهوة"]) {
+    assert(!intentToolHints(m).includes("set_item_preference"), m);
+  }
+});

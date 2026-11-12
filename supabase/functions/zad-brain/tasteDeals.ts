@@ -168,6 +168,36 @@ export function statedBrands(notes: readonly string[]): Map<number, string> {
   return out;
 }
 
+/** صف من zad_item_preferences (١٠.١ الشريحة ٤د). */
+export interface ItemPreferenceRow { item_name: string | null; kind: string | null; brand: string | null }
+
+/** البراند المفضل لكل عيلة أساسيات من الجدول — بيغلب المحسوب من المشتريات والملاحظات. */
+export function preferredBrands(rows: readonly ItemPreferenceRow[]): Map<number, string> {
+  return statedBrands(rows.filter((r) => r.kind === "preferred_brand" && r.brand).map((r) => `${r.item_name ?? ""} ${r.brand}`));
+}
+
+/** البراندات المرفوضة لكل عيلة أساسيات. */
+export function rejectedBrands(rows: readonly ItemPreferenceRow[]): Map<number, Set<string>> {
+  const out = new Map<number, Set<string>>();
+  for (const r of rows) {
+    if (r.kind !== "rejected_brand" || !r.brand) continue;
+    const { group, words } = brandWords(`${r.item_name ?? ""} ${r.brand}`);
+    if (group === undefined || !words[0]) continue;
+    (out.get(group) ?? out.set(group, new Set()).get(group)!).add(words[0]);
+  }
+  return out;
+}
+
+/** العروض من غير اللي على براند البيت رفضه لنفس الصنف («مش المراعي» ⇒ عرض حليب المراعي مايتقالش). */
+export function withoutRejectedBrands<T extends { item?: unknown }>(offers: readonly T[], rejected: ReadonlyMap<number, Set<string>>): T[] {
+  if (rejected.size === 0) return [...offers];
+  return offers.filter((o) => {
+    const { group, words } = brandWords(String(o.item ?? ""));
+    const no = group === undefined ? undefined : rejected.get(group);
+    return !no || !words.some((w) => no.has(w));
+  });
+}
+
 /**
  * المحل اللي العميل قال إنه بيشتري منه («إحنا بنجيب من كيو»، ٤.١٥) — ملاحظات remember بسكوب store_preference، الملاحظة
  * اسم المحل بس. اللي بعد «مش/بدل/مو» اترفض. بيتعدّ من محلاته المتكررة وقبلها، لأنه قالها بنفسه.
@@ -668,7 +698,7 @@ export async function withBuyingCycle(sb: SupabaseClient, userId: string, deal: 
 export async function loadTasteDeal(sb: SupabaseClient, userId: string, now = Date.now(), opts: { tight?: boolean; comfortable?: boolean } = {}): Promise<TasteDeal | null> {
   try {
     const family = await householdFamilyId(sb, userId);
-    const [{ data: shop }, { data: profile }, { data: user }, { data: txns }, { data: past }, broke, { data: home }, { data: bought }, { data: said }] = await Promise.all([
+    const [{ data: shop }, { data: profile }, { data: user }, { data: txns }, { data: past }, broke, { data: home }, { data: bought }, { data: said }, { data: prefs }] = await Promise.all([
       sb.from("zad_shopping_list").select("item_name").or(householdFilter(userId, family)).eq("is_purchased", false).limit(20),
       sb.from("zad_customer_profile").select("interests").eq("user_id", userId).maybeSingle(),
       sb.from("zad_users").select("country,travel_country,travel_since,last_lat,last_lon,last_location_at").eq("id", userId).maybeSingle(),
@@ -686,6 +716,9 @@ export async function loadTasteDeal(sb: SupabaseClient, userId: string, now = Da
       // ٤.١٥: والمحل اللي قال إنه بيشتري منه.
       sb.from("zad_memory").select("note,scope,valid_until").eq("user_id", userId).in("scope", [BRAND_PREFERENCE_SCOPE, STORE_PREFERENCE_SCOPE, TRANSPORT_SCOPE])
         .is("superseded_by", null).order("created_at", { ascending: false }).limit(20),
+      // ١٠.١ الشريحة ٤د: تفضيلات البيت المتسجّلة صنف صنف — المفضل بيغلب، والمرفوض عرضه مايتقالش.
+      sb.from("zad_item_preferences").select("item_name,kind,brand").or(householdFilter(userId, family)).limit(100)
+        .then((r) => r, () => ({ data: [] })),
     ]);
     const tight = broke || opts.tight === true;
     const interests = (profile as { interests?: unknown } | null)?.interests;
@@ -717,7 +750,13 @@ export async function loadTasteDeal(sb: SupabaseClient, userId: string, now = Da
       ...favoriteStores((txns ?? []) as Array<{ merchant_name: string | null }>),
     ].filter((name, i, all) => all.findIndex((o) => itemKey(o) === itemKey(name)) === i);
     const skip = askedDealKeys(past as Array<{ facts?: unknown; created_at?: string | null; delivery?: unknown }>, now);
-    const brands = new Map([...houseBrands(boughtNames), ...statedBrands(saidOf(BRAND_PREFERENCE_SCOPE))]);
+    const prefRows = (prefs ?? []) as ItemPreferenceRow[];
+    const brands = new Map([
+      ...houseBrands(boughtNames),
+      ...statedBrands(saidOf(BRAND_PREFERENCE_SCOPE)),
+      ...preferredBrands(prefRows),
+    ]);
+    const rejected = rejectedBrands(prefRows);
     // ٤.٨: الفلوس مرتاحة ⇒ عرض على أساسي بيتخزّن واتشرى قبل كده بيتقال كفرصة تخزين.
     const stockable = opts.comfortable && !tight ? storableBought(boughtNames) : new Set<number>();
     // ٤.٧: المحلات حوالين نقطته. فشل أو مفيش نقطة = من غير ترتيب بالقرب، مش من غير عرض.
@@ -757,13 +796,18 @@ export async function loadTasteDeal(sb: SupabaseClient, userId: string, now = Da
     if (feeErr) console.warn("[taste_deal] delivery fees read failed:", feeErr.message);
     const deliveryFor = (r: StoredDealRow & { currency?: string | null }) =>
       deliveryOf(feeRows as Array<{ app_key?: string; fee?: number; currency?: string }> | null, r.store, r.currency ?? null);
-    const storedRaw = rankByRelevance(storedDeals(stored as StoredDealRow[] | null, tripOf, deliveryFor) as Array<{ item?: unknown; store?: unknown }>, affinity);
+    const storedRaw = withoutRejectedBrands(
+      rankByRelevance(storedDeals(stored as StoredDealRow[] | null, tripOf, deliveryFor) as Array<{ item?: unknown; store?: unknown }>, affinity),
+      rejected,
+    );
     const fromStore = items.length ? pick(storedRaw) : null;
     if (fromStore) return await withDealLink(fromStore, country, { fetcher: linkCheck.fetcher });
     if (items.length) {
       const res = await dealSource.search({ items, location: countryNameAr(country), country }, userId);
       const liveRaw = (res as { deals?: unknown } | null)?.deals;
-      const live = pick(Array.isArray(liveRaw) ? rankByRelevance(liveRaw as Array<{ item?: unknown; store?: unknown }>, affinity) : liveRaw);
+      const live = pick(Array.isArray(liveRaw)
+        ? withoutRejectedBrands(rankByRelevance(liveRaw as Array<{ item?: unknown; store?: unknown }>, affinity), rejected)
+        : liveRaw);
       if (live) return await withDealLink(live, country, { fetcher: linkCheck.fetcher });
     }
     // الاحتياج الأول دايماً؛ العرض الناري بس لما مفيش عرض على حاجة ناقصة، وبعده عرض أساسي لأي بيت.
