@@ -7205,6 +7205,60 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'(تقدير لـ {priced} من {all} صنف)'**
   String shopShareEstimate(int priced, int all);
+
+  /// Brain action log: what a tool the chat ran did (ZAD_PLAN 10.2a).
+  ///
+  /// In ar, this message translates to:
+  /// **'تغيير إعداد'**
+  String get agentToolSetAppSetting;
+
+  /// Brain action log: what a tool the chat ran did (ZAD_PLAN 10.2a).
+  ///
+  /// In ar, this message translates to:
+  /// **'نسيان ملاحظة'**
+  String get agentToolDeleteMemory;
+
+  /// Brain action log: what a tool the chat ran did (ZAD_PLAN 10.2a).
+  ///
+  /// In ar, this message translates to:
+  /// **'دفع اشتراك'**
+  String get agentToolMarkSubscriptionPaid;
+
+  /// Brain action log: what a tool the chat ran did (ZAD_PLAN 10.2a).
+  ///
+  /// In ar, this message translates to:
+  /// **'النواقص للقايمة'**
+  String get agentToolAddShortages;
+
+  /// Brain action log: what a tool the chat ran did (ZAD_PLAN 10.2a).
+  ///
+  /// In ar, this message translates to:
+  /// **'تأجيل جرعة'**
+  String get agentToolSnoozeDose;
+
+  /// Brain action log: what a tool the chat ran did (ZAD_PLAN 10.2a).
+  ///
+  /// In ar, this message translates to:
+  /// **'بلاغ سعر'**
+  String get agentToolReportPrice;
+
+  /// Brain action log: what a tool the chat ran did (ZAD_PLAN 10.2a).
+  ///
+  /// In ar, this message translates to:
+  /// **'مسح الأماكن'**
+  String get agentToolClearPlaceVisits;
+
+  /// Brain action log: what a tool the chat ran did (ZAD_PLAN 10.2a).
+  ///
+  /// In ar, this message translates to:
+  /// **'رأيك في وصفة'**
+  String get agentToolRateRecipe;
+
+  /// Brain action log: what a tool the chat ran did (ZAD_PLAN 10.2a).
+  ///
+  /// In ar, this message translates to:
+  /// **'قفل تنبيه'**
+  String get agentToolDismissInsight;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

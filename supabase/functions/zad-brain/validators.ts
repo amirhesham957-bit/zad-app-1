@@ -775,6 +775,61 @@ export const validateSetAppSetting: Validator = (input, _snap, ctx) => {
   return { ok: true };
 };
 
+const str = (v: unknown) => typeof v === "string" ? v.trim() : "";
+const once = (ctx: RunContext, name: string) => (ctx.counts[name] ?? 0) >= 1;
+
+export const validateMarkSubscriptionPaid: Validator = (input, _snap, ctx) => {
+  if (once(ctx, "mark_subscription_paid")) return { ok: false, reason: "دفعة واحدة في اللفة — التانية في رسالة لوحدها" };
+  if (!str(input.title)) return { ok: false, reason: "title ناقص — اسم الاشتراك زي ما قاله" };
+  if (input.amount !== undefined && input.amount !== null && !(typeof input.amount === "number" && input.amount > 0 && input.amount < 10_000_000)) {
+    return { ok: false, reason: "amount لازم رقم موجب" };
+  }
+  return { ok: true };
+};
+
+export const validateAddShortagesToShopping: Validator = (_input, _snap, ctx) =>
+  once(ctx, "add_shortages_to_shopping") ? { ok: false, reason: "النواقص اتضافت خلاص في اللفة دي" } : { ok: true };
+
+export const validateSnoozePharmacyDose: Validator = (input, _snap, ctx) => {
+  if ((ctx.counts["snooze_pharmacy_dose"] ?? 0) >= 3) return { ok: false, reason: "اتأجل كفاية في اللفة دي" };
+  if (!str(input.name)) return { ok: false, reason: "اسم الدوا ناقص" };
+  if (input.minutes !== undefined && input.minutes !== null &&
+    !(typeof input.minutes === "number" && Number.isInteger(input.minutes) && input.minutes >= 5 && input.minutes <= 240)) {
+    return { ok: false, reason: "الدقايق من ٥ لـ٢٤٠" };
+  }
+  if (input.dose_time !== undefined && input.dose_time !== null && !HHMM.test(String(input.dose_time))) {
+    return { ok: false, reason: "dose_time بصيغة HH:MM" };
+  }
+  return { ok: true };
+};
+
+export const validateReportPrice: Validator = (input, _snap, ctx) => {
+  if ((ctx.counts["report_price"] ?? 0) >= 3) return { ok: false, reason: "٣ أسعار في اللفة كفاية" };
+  const item = str(input.item);
+  if (item.length < 2 || item.length > 80) return { ok: false, reason: "اسم الصنف ناقص" };
+  if (!(typeof input.price === "number" && Number.isFinite(input.price) && input.price > 0 && input.price < 1_000_000)) {
+    return { ok: false, reason: "السعر لازم رقم موجب قاله العميل" };
+  }
+  return { ok: true };
+};
+
+export const validateClearPlaceVisits: Validator = (_input, _snap, ctx) =>
+  once(ctx, "clear_place_visits") ? { ok: false, reason: "اتمسحت خلاص" } : { ok: true };
+
+export const validateRateRecipe: Validator = (input, _snap, ctx) => {
+  if ((ctx.counts["rate_recipe"] ?? 0) >= 3) return { ok: false, reason: "كفاية آراء في اللفة دي" };
+  if (!str(input.recipe_name)) return { ok: false, reason: "اسم الوصفة ناقص" };
+  if (typeof input.liked !== "boolean") return { ok: false, reason: "liked لازم true أو false" };
+  return { ok: true };
+};
+
+export const validateDismissInsight: Validator = (input, _snap, ctx) => {
+  if ((ctx.counts["dismiss_insight"] ?? 0) >= 2) return { ok: false, reason: "اتقفل كفاية في اللفة دي" };
+  if (str(input.about).length < 2) return { ok: false, reason: "about ناقص — كلمة من عنوان الرؤية" };
+  if (!["not_relevant", "wrong_data", "timing"].includes(String(input.reason))) return { ok: false, reason: "reason: not_relevant أو wrong_data أو timing" };
+  return { ok: true };
+};
+
 /** ملاحظة واحدة في اللفة، ولازم تكون من memory اللي العميل شايفها — مش id مهلوس. */
 export const validateDeleteMemory: Validator = (input, snap, ctx) => {
   if ((ctx.counts["delete_memory"] ?? 0) >= 1) return { ok: false, reason: "ملاحظة واحدة في المرة — اسأله عن الباقي" };
@@ -1250,6 +1305,13 @@ export const VALIDATORS: Record<string, Validator> = {
   set_sleep_window: validateSetSleepWindow,
   set_app_setting: validateSetAppSetting,
   delete_memory: validateDeleteMemory,
+  mark_subscription_paid: validateMarkSubscriptionPaid,
+  add_shortages_to_shopping: validateAddShortagesToShopping,
+  snooze_pharmacy_dose: validateSnoozePharmacyDose,
+  report_price: validateReportPrice,
+  clear_place_visits: validateClearPlaceVisits,
+  rate_recipe: validateRateRecipe,
+  dismiss_insight: validateDismissInsight,
   plan_gathering: validateGathering("plan_gathering"),
   add_gathering_to_list: validateGathering("add_gathering_to_list"),
   delete_document: validateDeleteDocument,
@@ -1298,6 +1360,9 @@ export const MUTATING_TOOLS = [
   "set_sleep_window",
   // ZAD_PLAN ١٠.٢(أ): مفاتيح الإعدادات و«انسى» بالكلام.
   "set_app_setting", "delete_memory",
+  // ١٠.٢(أ) شريحة ٢. mark_subscription_paid في CONFIRM_REQUIRED تحت (فلوس).
+  "mark_subscription_paid", "add_shortages_to_shopping", "snooze_pharmacy_dose", "report_price",
+  "clear_place_visits", "rate_recipe", "dismiss_insight",
   // مواعيد العميل (20260914004000)
   "add_appointment", "update_appointment", "delete_appointment",
   "add_place_reminder", "cancel_place_reminder",
@@ -1315,7 +1380,11 @@ export const MUTATING_TOOLS = [
  * لاقتراح ينتظر ضغطة تأكيد صريحة من العميل، وبعدين بتتنفذ من agent_confirm بنفس مسار
  * التحقق والتنفيذ. حارس أمان، مش تفصيل تقني.
  */
-export const CONFIRM_REQUIRED_TOOLS = ["log_transaction", "update_transaction", "delete_transaction", "set_monthly_limit"];
+export const CONFIRM_REQUIRED_TOOLS = [
+  "log_transaction", "update_transaction", "delete_transaction", "set_monthly_limit",
+  // «دفعت النت» = مصروف بيتسجل (ZAD_PLAN ١٠.٢أ) — نفس حارس الفلوس.
+  "mark_subscription_paid",
+];
 
 /**
  * What a child's account may not do through the brain: the ledger, the budget and the

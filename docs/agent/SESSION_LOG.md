@@ -333,3 +333,12 @@ related:
 - **الشريحة:** `dialect_region` في `update_customer_profile` (الـsanitizer كان بيرميه)، `set_app_setting`، `delete_memory` — بالنية (`APP_SETTING_INTENT`، `FORGET_INTENT`). `appByVoice_test.ts` (٦ تستات، mutation-checked).
 - **فخ:** `package.json` غير متتبّع في جذر الريبو بيكسر `deno check`/`deno test` محلياً («Could not find a matching package … node_modules») ⇒ `DENO_NO_PACKAGE_JSON=1`. CI مافيهوش الملف.
 - **فخ:** مجموعة التقييم الليلي مقفولة على ٢٠٠ بالظبط (`judge_test`) — حالة جديدة = تبديل حالة، مش إضافة.
+
+## ٢٠٢٦-١١-١٣ (بالليل، رابع) — «بلّغ عن الرد» اتنقل، و١٠.٢(أ) اتقفل
+
+- **اندمج:** #519. **مفتوح:** #521 (٨.٣ «بلّغ عن الرد» — شغل جلسة zad-app-1-d2، اتنقل من الفولدر الرئيسي لـworktree `/workspaces/zad-reply-reports` على `feat/reply-reports` بطلب المالك؛ الجلسة التانية وافقت تقف). بعد دمجه: يتحقق على الحي إن `20261113040000` في `schema_migrations` وإن `zad_reply_reports` عليه RLS ومن غير صلاحيات لـanon/authenticated.
+- **`package.json` و`pnpm-lock.yaml` في الجذر** اتنقلوا لـ`/workspaces/zad-root-node-backup/` (المالك: امسحه أو حطه برّه) — Deno بقى يشتغل من غير `DENO_NO_PACKAGE_JSON`. `node_modules/` و`website/` في الجذر فضلوا (مش بتوعي).
+- **الشريحة ٢ من (أ):** ٧ أدوات (شوف ZAD_PLAN ١٠.٢). التست لقى غلطة حقيقية قبل الكومِت: التجديد الجاي كان بيتحسب من يوم الدفعة فإيجار يوم ٣١ كان بيبقى ٣٠ — بقى من المرساة الأصلية.
+- **فخ:** `one_writer_test` بيسمح بالكتابة في `zad_dose_snoozes`/`zad_pharmacy_doses` من `_shared/doseDoor.ts` بس — أي أداة جرعات جديدة تنادي دالة هناك.
+- **فخ:** الموبايل بيعرف «اللفة لمست الفلوس» من اسم الأداة (`touchedMoney`) — أداة بتكتب مصروف واسمها مافيهوش transaction/expense لازم تتضاف بالاسم.
+- **القرص ٩٨٪** (~٦٠٠ ميجا فاضيين) — ماتبنيش release قبل ما تفضّي مكان.

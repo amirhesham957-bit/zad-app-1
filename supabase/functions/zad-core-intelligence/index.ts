@@ -21,7 +21,7 @@ import { azureSpeechConfig, azureTtsHealth } from "./azureVoice.ts";
 import { voiceNameFor, zadVoiceGender } from "../_shared/zadVoice.ts";
 import { normalizePrescription, normalizeTimetable, PRESCRIPTION_PROMPT, TIMETABLE_PROMPT } from "./documentScan.ts";
 import { normalizeStatement, STATEMENT_PROMPT, statementMimeOk } from "./statementScan.ts";
-import { mealSuggestionsCacheKey, mealSuggestionsCachePattern } from "./recipeCache.ts";
+import { mealSuggestionsCacheKey, mealSuggestionsCachePattern } from "../_shared/recipeCache.ts";
 import { receiptPaymentMethod, receiptPurchaseDate } from "./receiptDate.ts";
 import { RECEIPT_SYSTEM_PROMPT } from "./receiptPrompt.ts";
 import { inventoryPrompt, medicinePrompt } from "./visionPrompts.ts";

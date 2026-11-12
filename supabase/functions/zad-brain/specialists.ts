@@ -205,6 +205,14 @@ const GATHERING_INTENT = /عزومه|عزايم|عازم|عازمين|هعزم|�
 const APP_SETTING_INTENT = /(نداء|نداءات|زادو|صوره الاكل).{0,30}(وقف|اقفل|بطل|شيل|شغل|رجع|افتح)|(وقف|اقفل|بطل|شيل|شغل|رجع|افتح).{0,30}(نداء|نداءات|زادو|صوره الاكل)/;
 // «انسى إني…»، «امسح من ذاكرتك» — مش «نسيت» (العميل هو اللي نسي).
 const FORGET_INTENT = /(^|\s)(انسي|انساها|انساه|انسيها|انسيه)(\s|$)|امسح.{0,20}(ذاكرتك|من دماغك|اللي قلتهولك|اللي قلتلك)|شيل.{0,20}من (ذاكرتك|دماغك)|(متفتكرش|ماتفتكرش|لا تتذكر)/;
+// ١٠.٢(أ) شريحة ٢ — كل زرار ليه كلماته.
+const SUB_PAID_INTENT = /(دفعت|سددت|سدّدت|خلصت|ادفعت)\s*(اشتراك|فاتور|قسط|ايجار|إيجار|النت|الانترنت|نتفل|شاهد|سبوتي|الجيم|النادي)|(اشتراك|فاتور|قسط).{0,25}(اتدفع|دفعته|دفعتها|سددته|سددتها)/;
+const SHORTAGES_INTENT = /(ضيف|حط|نزل|انزل|اكتب).{0,15}(النواقص|الناقص|اللي ناقص|اللي خلص)|(النواقص|الناقص).{0,20}(القايمه|القائمه|المشتريات|الليسته)/;
+const DOSE_SNOOZE_INTENT = /(اجل|أجل|اجّل|اخر|أخر).{0,20}(جرعه|الدوا|الدواء|البرشام|تذكير ال)|(فكرني|ذكرني|نبهني).{0,20}(بالدوا|بالدواء|بالجرعه|بالبرشام).{0,25}(بعد|كمان)/;
+const PRICE_REPORT_INTENT = /(في|ف|عند|من)\s+\S+.{0,25}(بقي|بقى|صار|ب|بـ)\s*[0-9٠-٩]+|(سعر|بسعر).{0,25}(في|عند)\s+(كارفور|هايبر|سبينيس|بنده|الدانوب|العثيم|لولو|اسواق|السوبرماركت|المحل)/;
+const VISITS_CLEAR_INTENT = /(امسح|شيل|احذف|امسحي).{0,20}(الاماكن|الأماكن|الزيارات|المحلات اللي رحتها|اماكني)/;
+const RECIPE_RATING_INTENT = /(الوصفه|الاكله|الأكله|الطبخه|اللي اقترحته|اللي اقترحتها).{0,30}(عجبني|عجبتني|ماعجبنيش|ما عجبتني|ماعجبتنيش|حلوه|وحشه|مش حلوه|تحفه|زي الزفت)|(عجبني|ماعجبنيش|ماعجبتنيش|ما عجبني).{0,20}(الوصفه|الاكله|الطبخه|اللي اقترحته)/;
+const INSIGHT_DISMISS_INTENT = /(مش عايز|مش عاوز|ما ابغي|ماابي|مابي|بطل|وقف|اقفل|شيل).{0,25}(تنبيه|التنبيه|الرؤيه|النصيحه|الكارت|الملاحظه)/;
 const SLEEP_INTENT = /(بنام|بنامي|بانام|بصحي|بصحى|بقوم من النوم|مواعيد نومي).{0,30}(الساعه|[0-9٠-٩])|ماتبعتليش.{0,25}(قبل|بعد|بالليل|الصبح)|ماتصحينيش/;
 // «سجّل رقم السباك محمد ٠١٠٠…» من غير سؤال قبلها.
 const TECHNICIAN_SAVE_INTENT = /(سباك|كهربائي|كهربجي|نجار|فني|الفنيين).{0,60}[0-9٠-٩]{7}|[0-9٠-٩]{7}.{0,60}(سباك|كهربائي|كهربجي|نجار|فني|الفنيين)/;
@@ -283,6 +291,13 @@ export function intentToolHints(message: string, priorReply = ""): string[] {
   if (SLEEP_INTENT.test(norm)) tools.push("set_sleep_window");
   if (APP_SETTING_INTENT.test(norm)) tools.push("set_app_setting");
   if (FORGET_INTENT.test(norm)) tools.push("delete_memory", "remember");
+  if (SUB_PAID_INTENT.test(norm)) tools.push("mark_subscription_paid");
+  if (SHORTAGES_INTENT.test(norm)) tools.push("add_shortages_to_shopping");
+  if (DOSE_SNOOZE_INTENT.test(norm)) tools.push("snooze_pharmacy_dose");
+  if (PRICE_REPORT_INTENT.test(norm)) tools.push("report_price");
+  if (VISITS_CLEAR_INTENT.test(norm)) tools.push("clear_place_visits");
+  if (RECIPE_RATING_INTENT.test(norm)) tools.push("rate_recipe");
+  if (INSIGHT_DISMISS_INTENT.test(norm)) tools.push("dismiss_insight");
   if (STORE_LOCATION_INTENT.test(norm)) tools.push("store_location");
   if (SAME_PRODUCT_INTENT.test(norm)) tools.push("answer_same_product");
   if (WEATHER_INTENT.test(norm)) tools.push("weather_forecast");

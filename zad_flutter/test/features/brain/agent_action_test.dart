@@ -1,7 +1,9 @@
 // The undo button is offered only where the server can undo, and every tool
 // the brain can write with reads as Arabic, not as its identifier.
 
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:zad/core/l10n/generated/zad_l10n.dart';
 import 'package:zad/features/brain/domain/agent_action.dart';
 
 AgentAction _action({
@@ -79,6 +81,30 @@ void main() {
       expect(label, isNot('تعديل من زاد'), reason: tool);
       expect(label, isNot(contains('_')), reason: tool);
     }
+  });
+
+  test('the tools the screens gave the chat (ZAD_PLAN 10.2a) have words', () {
+    for (final tool in <String>[
+      'set_app_setting',
+      'delete_memory',
+      'mark_subscription_paid',
+      'add_shortages_to_shopping',
+      'snooze_pharmacy_dose',
+      'report_price',
+      'clear_place_visits',
+      'rate_recipe',
+      'dismiss_insight',
+    ]) {
+      expect(agentToolLabel(tool), isNot('تعديل من زاد'), reason: tool);
+    }
+  });
+
+  test('the new tools read in the app language, from the ARB files', () {
+    final en = lookupZadL10n(const Locale('en'));
+    expect(agentToolLabel('rate_recipe', en), 'Rated a recipe');
+    expect(agentToolLabel('rate_recipe'), 'رأيك في وصفة');
+    // The older labels are untouched by the language.
+    expect(agentToolLabel('log_transaction', en), 'تسجيل معاملة');
   });
 
   test('an unknown tool reads as a change by زاد, never as its id', () {

@@ -42,6 +42,23 @@ export function doseAlreadyReply(names: readonly string[]): string {
   return `جرعة ${label} دي متسجلة قبل كده ✅ — مش هتتحسب مرتين.`;
 }
 
+/**
+ * «أجّل جرعة البنادول ربع ساعة» بالكلام (ZAD_PLAN ١٠.٢أ) — نفس صف «فكّرني بعدين»، بس الخانة محسوبة من
+ * مواعيد الدوا مش من تذكير. الدوا لازم يكون بتاع العميل (اتقرا بـuser_id قبلها في العقل)، والدقايق ٥–٢٤٠.
+ */
+export async function snoozeDose(
+  sb: SupabaseClient, userId: string, itemId: string, scheduledAt: string, minutes: number,
+): Promise<{ ok: true; until: string } | { ok: false; reason: string }> {
+  const until = new Date(Date.now() + minutes * 60_000).toISOString();
+  const { data, error } = await sb.from("zad_dose_snoozes").upsert(
+    { user_id: userId, item_id: itemId, scheduled_at: scheduledAt, snooze_until: until },
+    { onConflict: "user_id,item_id,scheduled_at" },
+  ).select("item_id");
+  if (error) return { ok: false, reason: error.message };
+  if (!data?.length) return { ok: false, reason: "التأجيل ما اتكتبش" };
+  return { ok: true, until };
+}
+
 // ── تسوية تذكير الجرعة: زرار أو كلام، نفس المسار (٢٠٢٦-٠٩-١٩، ومخدتهاش ٢٠٢٦-٠٩-٢٥) ──
 //
 // الترتيب مقصود بالحرف: بنقرا اللحظة من `zad_voice_moments` (مصدر الحقيقة الوحيد لأسماء
