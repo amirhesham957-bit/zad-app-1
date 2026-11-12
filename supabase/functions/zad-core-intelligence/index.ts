@@ -755,6 +755,8 @@ async function callGeminiPool(opts: {
     console.error("[CoreIntel] No Gemini keys configured (ZAD_API_KEY_1..20 / GEMINI_API_KEY all unset)");
     return { content: null, ok: false };
   }
+  // «paid key 1/1» / «free key 4/10» / «public key 3/11»: اللوج بيقول أنهي مسبح، مش رقم من غير مقام.
+  const poolName = opts.publicContent ? "public" : opts.freeAfterPaid ? "free" : PAID_TIER ? "paid" : "free";
   const start = opts.publicContent
     ? nextPublicKeyIndex()
     : opts.freeAfterPaid
@@ -787,12 +789,12 @@ async function callGeminiPool(opts: {
       return { content: null, ok: false };
     }
     if (result.status === 429) {
-      console.warn(`[CoreIntel] Gemini key ${keyIndex + 1} hit 429/quota, switching to next Gemini key...`);
+      console.warn(`[CoreIntel] Gemini ${poolName} key ${keyIndex + 1}/${pool.length} hit 429 on ${opts.model}, switching to the next key`);
     } else {
-      console.error(`[CoreIntel] Gemini key ${keyIndex + 1} failed (status ${result.status}):`, JSON.stringify(result.raw));
+      console.error(`[CoreIntel] Gemini ${poolName} key ${keyIndex + 1}/${pool.length} failed (status ${result.status}):`, JSON.stringify(result.raw));
     }
   }
-  console.warn("[CoreIntel] All Gemini keys exhausted");
+  console.warn(`[CoreIntel] All ${pool.length} ${poolName} Gemini keys exhausted on ${opts.model}`);
   return { content: null, ok: false };
 }
 
@@ -3604,7 +3606,8 @@ async function handle(req: Request): Promise<Response> {
           model: VISION_FALLBACK_MODELS[0] ?? GEMINI_MODEL_ROUTINE, systemPrompt: system,
           content: [{ type: "image_url", image_url: { url: picture } }, { type: "text", text: user }],
           temperature: 0.1, maxTokens: 3000, jsonMode: true, thinkingBudget: 0, timeoutMs: 45_000,
-          deadline: Date.now() + 50_000,
+          // نشرة محل عامة، مفيهاش داتا عميل ⇒ مسبح المحتوى العام (المجاني ثم المدفوع)، مش المدفوع لوحده.
+          deadline: Date.now() + 50_000, publicContent: true,
         });
         if (!answer.ok || !answer.content) return jsonResponse({ ok: false, reason: "no_model" });
         const parsed = (() => { try { return JSON.parse(answer.content!); } catch { return null; } })();

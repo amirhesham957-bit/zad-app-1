@@ -85,6 +85,17 @@ const CALL_KEYS: string[] = [...GEMINI_KEY_POOL, ...(EVAL_KEY ? [EVAL_KEY] : [])
 const EVAL_KEY_INDEX: number | null = EVAL_KEY ? GEMINI_KEY_POOL.length : null;
 const INTERNAL_KEY_START = GEMINI_KEY_POOL.length + (EVAL_KEY ? 1 : 0);
 
+/**
+ * «paid key 1/1» / «free key 7/10» / «eval key» — the slot inside its own pool. The log used to print the call index
+ * over the customer pool's size («key 12/1»), which read as twelve keys tried out of one.
+ */
+export function keySlotLabel(keyIndex: number, poolSize: number, evalIndex: number | null, internalStart: number, internalSize: number, paidTier: boolean): string {
+  if (evalIndex !== null && keyIndex === evalIndex) return "eval key";
+  if (keyIndex >= internalStart && internalSize > 0) return `free key ${keyIndex - internalStart + 1}/${internalSize}`;
+  return `${paidTier ? "paid" : "free"} key ${keyIndex + 1}/${poolSize}`;
+}
+const PAID_TIER = paidGeminiKeys((n) => Deno.env.get(n)).length > 0;
+
 /** Whether the nightly eval has its own key; without one it does not run. */
 export function hasEvalKey(): boolean {
   return EVAL_KEY_INDEX !== null;
@@ -712,7 +723,7 @@ async function sendGemini(o: {
       const q = summarizeQuota429(lastQuotaBody);
       quotaTrail.push(`key${keyIndex + 1}:${q.quotaId}=${q.quotaValue}/retry=${q.retryDelay}`);
       console.warn(
-        `[zad-brain] Gemini key ${keyIndex + 1}/${GEMINI_KEY_POOL.length} hit 429 — ` +
+        `[zad-brain] Gemini ${keySlotLabel(keyIndex, GEMINI_KEY_POOL.length, EVAL_KEY_INDEX, INTERNAL_KEY_START, INTERNAL_KEYS.length, PAID_TIER)} hit 429 on ${o.model} — ` +
           `quotaId=${q.quotaId} limit=${q.quotaValue} retryDelay=${q.retryDelay}; switching to next key`,
       );
       continue;
@@ -762,8 +773,8 @@ async function sendGemini(o: {
     // اتقصّت. هو اللي بيفرّق بين "الكوتة اليومية خلصت" و"حد الدقيقة اتضرب برشقة": حد
     // يومي متضروب بيرجع retryDelay بالساعات، وحد الدقيقة بيرجعه بالثواني.
     throw new ProviderUnavailableError(
-      `gemini 429 on ${o.model} (all ${GEMINI_KEY_POOL.length} keys exhausted) [${quotaTrail.join(" | ")}]: ${lastQuotaBody}`,
-      `429 all ${GEMINI_KEY_POOL.length} keys`,
+      `gemini 429 on ${o.model} (all ${quotaTrail.length} ${currentLane()}-lane keys exhausted) [${quotaTrail.join(" | ")}]: ${lastQuotaBody}`,
+      `429 all ${quotaTrail.length} ${currentLane()} keys`,
     );
   }
 
