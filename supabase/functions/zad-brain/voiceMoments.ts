@@ -869,6 +869,8 @@ export function momentFallback(moment: string, facts: Record<string, unknown>): 
 export interface MomentCustomer {
   gender?: string | null;
   dialect?: string | null;
+  /** مدينة الملف — بتحدد اللهجة جوه البلد (حجازي/نجدي…، ١٠.١٦). */
+  city?: string | null;
   /** صوت زاد اللي العميل اختاره (zad_customer_profile.zad_voice)؛ null = بنت. */
   zad_voice?: string | null;
   /** What was said the last times in this same moment — not to be repeated. */
@@ -902,7 +904,7 @@ export function buildMomentPrompt(
     male
       ? "دلوقتي بتكتب رسالة لحظة من يوم العميل (إشعار، ولو فيه صوت يتقال بصوتك، وهو صوت ولد) — صاحبه المقرب اللي شايل معاه بيته وصحته وفلوسه. كلامك عن نفسك بصيغة المذكر."
       : "دلوقتي بتكتبي رسالة لحظة من يوم العميل (إشعار، ولو فيه صوت يتقال بصوتك) — صاحبته المقربة اللي شايلة معاه بيته وصحته وفلوسه.",
-    conversationProfile(country, { preferred: customer.dialect }).instruction,
+    conversationProfile(country, { preferred: customer.dialect, city: customer.city }).instruction,
     genderLine,
     voiceEmotionalRange(zadVoiceGender(customer.zad_voice)),
     range.length > 1
@@ -1214,10 +1216,10 @@ export async function processVoiceMoments(
       }
       const [{ data: userRow }, { data: profileRow }] = await Promise.all([
         sb.from("zad_users").select("country,name").eq("id", row.user_id).maybeSingle(),
-        sb.from("zad_customer_profile").select("preferred_name,gender,dialect,zad_voice").eq("user_id", row.user_id).maybeSingle(),
+        sb.from("zad_customer_profile").select("preferred_name,gender,dialect,zad_voice,city").eq("user_id", row.user_id).maybeSingle(),
       ]);
       const u = userRow as { country?: string | null; name?: string | null } | null;
-      const cp = profileRow as { preferred_name?: string | null; gender?: string | null; dialect?: string | null; zad_voice?: string | null } | null;
+      const cp = profileRow as { preferred_name?: string | null; gender?: string | null; dialect?: string | null; zad_voice?: string | null; city?: string | null } | null;
 
       let composed: ComposedMoment | null = null;
       let composedBy = "model";
@@ -1236,7 +1238,7 @@ export async function processVoiceMoments(
         const cadence = await momentCadence(sb, row, now(), deps.timeZoneOf ?? ((r) => momentTimeZone(sb, r)));
         const prompt = buildMomentPrompt(
           { moment: deliveryMoment, facts: row.facts }, u?.country ?? null, cp?.preferred_name || u?.name || null,
-          { gender: cp?.gender, dialect: cp?.dialect, zad_voice: cp?.zad_voice, recent, cadence },
+          { gender: cp?.gender, dialect: cp?.dialect, city: cp?.city, zad_voice: cp?.zad_voice, recent, cadence },
         );
         composed = parseComposedMoment(await deps.compose(prompt.system, prompt.user), voice, momentLimits(deliveryMoment), emotionRangeForMoment(deliveryMoment));
       } catch (e) {
