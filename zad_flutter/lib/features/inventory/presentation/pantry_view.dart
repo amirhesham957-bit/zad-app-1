@@ -30,7 +30,7 @@ import 'package:zad/shared/chat/application/chat_controller.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart'
     hide PantryView;
 import 'package:zad/shared/inventory/application/shopping_controller.dart';
-import 'package:zad/shared/inventory/data/consumption_learner.dart';
+import 'package:zad/shared/inventory/data/pantry_learning.dart';
 import 'package:zad/shared/inventory/domain/inventory_item.dart';
 import 'package:zad/shared/inventory/domain/product_family.dart';
 import 'package:zad/shared/inventory/domain/quantity.dart';
@@ -194,14 +194,9 @@ class _PantryViewState extends ConsumerState<PantryView> {
   /// Kotlin's `runAutoReplenish`: every low, non-stagnant item not already
   /// on the list goes onto it.
   Future<void> _replenish(List<InventoryItem> low) async {
-    // The on-device learner only filters out stagnant rows: one that cannot
-    // be read filters nothing, rather than leaving the list unwritten.
-    ConsumptionLearner? learner;
-    try {
-      learner = ref.read(consumptionLearnerProvider);
-    } on Object {
-      learner = null;
-    }
+    // The server's reading only filters out stagnant rows: none yet filters
+    // nothing, rather than leaving the list unwritten.
+    final learning = ref.read(pantryLearningViewProvider);
     final shopping = ref.read(shoppingControllerProvider.notifier);
     final onList = ref
         .read(shoppingControllerProvider)
@@ -209,7 +204,7 @@ class _PantryViewState extends ConsumerState<PantryView> {
         .map((s) => s.itemName)
         .toSet();
     for (final i in low) {
-      if ((learner?.isStagnant(i) ?? false) || onList.contains(i.itemName)) {
+      if (learning.isStagnant(i) || onList.contains(i.itemName)) {
         continue;
       }
       await shopping.add(i.itemName);

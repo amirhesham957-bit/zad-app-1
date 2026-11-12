@@ -162,6 +162,11 @@ abstract final class OutboxKind {
   /// Queued rather than called directly so a notification arriving with no
   /// signal is not lost, and so a replay cannot ingest the same message twice.
   static const String notificationIngest = 'notification_ingest';
+
+  /// Answer «هل خلص؟» through `zad_pantry_bet_answer`, judging the server's
+  /// bet. One entry per item (`pantry_checkin:<item id>`): a second answer
+  /// before the queue drains replaces the first.
+  static const String answerPantryCheckIn = 'answer_pantry_checkin';
 }
 
 /// Where an entry stands.

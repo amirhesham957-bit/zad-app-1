@@ -3,6 +3,7 @@
 /// only, since two questions at once is nagging.
 library;
 
+import 'dart:async';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -11,7 +12,7 @@ import 'package:zad/core/design/tokens/zad_extended_colors.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart';
-import 'package:zad/shared/inventory/data/consumption_learner.dart';
+import 'package:zad/shared/inventory/data/pantry_learning.dart';
 
 /// The card for the nearest candidate, or nothing.
 class InventoryCheckInSlot extends ConsumerWidget {
@@ -24,19 +25,26 @@ class InventoryCheckInSlot extends ConsumerWidget {
     if (candidates.isEmpty) return const SizedBox.shrink();
     final item = candidates.first.item;
     final pantry = ref.read(pantryControllerProvider.notifier);
+    final learning = ref.read(pantryLearningProvider.notifier);
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: InventoryCheckInCard(
         itemName: item.itemName,
-        // −1: one unit used, which the learner learns from.
-        onDecrement: () => pantry.adjust(item.id, -1),
-        // خلص: the whole count at once, so the shortage fires now.
-        onFinished: () => pantry.adjust(item.id, -item.quantity),
-        // لسه: a three-day pause, not a correction.
-        onStillHave: () {
-          ref.read(consumptionLearnerProvider).snoozeCheckIn(item.itemName);
-          ref.read(checkInRevisionProvider.notifier).bump();
+        // Each answer judges the server's bet (zad_pantry_bets); the count
+        // moves through the pantry's own path, which the server learns from.
+        // −1: one unit used.
+        onDecrement: () {
+          unawaited(learning.answer(item.id, CheckInAnswer.usedOne));
+          unawaited(pantry.adjust(item.id, -1));
         },
+        // خلص: the whole count at once, so the shortage fires now.
+        onFinished: () {
+          unawaited(learning.answer(item.id, CheckInAnswer.finished));
+          unawaited(pantry.adjust(item.id, -item.quantity));
+        },
+        // لسه: the server records the same count and asks again in 3 days.
+        onStillHave: () =>
+            unawaited(learning.answer(item.id, CheckInAnswer.stillHave)),
       ),
     );
   }

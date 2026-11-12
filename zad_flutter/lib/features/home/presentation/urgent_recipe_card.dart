@@ -22,7 +22,7 @@ import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/chat/application/chat_controller.dart';
 import 'package:zad/shared/insights/application/local_insights.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart';
-import 'package:zad/shared/inventory/data/consumption_learner.dart';
+import 'package:zad/shared/inventory/data/pantry_learning.dart';
 import 'package:zad/shared/inventory/domain/inventory_item.dart';
 import 'package:zad/shared/inventory/domain/product_family.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
@@ -34,8 +34,7 @@ typedef UrgentItems = ({List<String> triggers, bool stagnantOnly});
 /// Kotlin's trigger selection, or null when nothing is urgent.
 final urgentRecipeItemsProvider = Provider<UrgentItems?>((ref) {
   final items = ref.watch(pantryControllerProvider.select((v) => v.items));
-  ref.watch(checkInRevisionProvider);
-  final learner = ref.read(consumptionLearnerProvider);
+  final learning = ref.watch(pantryLearningViewProvider);
   final zone = tz.getLocation(ref.watch(accountTimeZoneProvider));
   final local = tz.TZDateTime.from(ref.read(nowProvider)().toUtc(), zone);
   final today = DateTime.utc(local.year, local.month, local.day);
@@ -56,7 +55,7 @@ final urgentRecipeItemsProvider = Provider<UrgentItems?>((ref) {
 
   final stagnant = <String>{
     for (final i in cookable)
-      if (i.quantity > 0 && learner.isStagnant(i)) i.itemName,
+      if (i.quantity > 0 && learning.isStagnant(i)) i.itemName,
   }.take(3).toList();
 
   bool urgentItem(int? expiryDays, int? daysLeft) =>
@@ -69,7 +68,7 @@ final urgentRecipeItemsProvider = Provider<UrgentItems?>((ref) {
           !stagnant.contains(i.itemName) &&
           urgentItem(
             i.daysUntilExpiry(today),
-            learner.predictDaysLeft(i.itemName),
+            learning.predictDaysLeft(i.itemName),
           ))
         i.itemName,
   }.take(5 - stagnant.length).toList();

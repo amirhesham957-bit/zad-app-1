@@ -9,7 +9,6 @@ import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart';
 import 'package:zad/shared/inventory/application/pantry_intake.dart';
 import 'package:zad/shared/inventory/application/shopping_controller.dart';
-import 'package:zad/shared/inventory/data/consumption_learner.dart';
 import 'package:zad/shared/inventory/data/shopping_list_repository.dart';
 import 'package:zad/shared/inventory/domain/receipt_intake.dart';
 import 'package:zad/shared/inventory/domain/shopping_item.dart';
@@ -102,16 +101,6 @@ Future<void> afterReceiptPurchase(
 }) async {
   ref.read(transactionsControllerProvider.notifier).reloadFromCache();
   ref.read(budgetControllerProvider.notifier).recomputePending();
-  try {
-    final learner = ref.read(consumptionLearnerProvider);
-    for (final line in lines) {
-      if (line.to == PurchaseLineTo.pantry) {
-        learner.recordPurchase(line.product ?? line.name);
-      }
-    }
-  } on Object {
-    // «هل خلص؟» learns from the next purchase instead.
-  }
   if (pharmacy != null && pharmacy.bought.isNotEmpty) {
     try {
       final shopping = ref.read(shoppingListRepositoryProvider);

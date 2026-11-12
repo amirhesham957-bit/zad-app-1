@@ -21,7 +21,7 @@ import 'package:zad/core/data/providers.dart';
 import 'package:zad/shared/alerts/data/alert_prefs.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart';
-import 'package:zad/shared/inventory/data/consumption_learner.dart';
+import 'package:zad/shared/inventory/data/pantry_learning.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/notifications/domain/app_notification.dart';
 import 'package:zad/shared/settings/application/settings_controller.dart';
@@ -132,7 +132,13 @@ Future<int> generateSmartNotifications(
     ));
   }
 
-  // 4. The learner's check-in.
+  // 4. The server's check-in (zad_pantry_learning). Waited for: read cold,
+  // the reading is still on its way and would say nothing.
+  try {
+    await ref.read(pantryLearningProvider.future);
+  } on Object {
+    // No reading, no question.
+  }
   for (final c in ref.read(checkInCandidatesProvider).take(2)) {
     final name = c.item.itemName;
     if (unreadWith((t) => t.contains(name))) continue;
