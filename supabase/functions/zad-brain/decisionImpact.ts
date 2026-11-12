@@ -112,3 +112,64 @@ export function monthlyAverages(
   const scale = 30 / Math.max(fromShift ? 21 : 30, historyDays);
   return { income: round(income * scale), spend: round(spend * scale), historyDays };
 }
+
+// ── «ضروري ولا تهور» (ZAD_PLAN ١٠.١ الشريحة ٤هـ) ──────────────────────────────────────────────────────
+// المالك ١٢/١١: «يقولي اللي ملهوش لازمة أو ده تهور» — بالأرقام، والمقياس فلوس الأيام الجاية مش «حرام تصرف».
+// شرا مرة واحدة بيتقاس على المتاح لحد آخر الدورة: بياكل كام يوم من الأيام الباقية بصرفها العادي.
+//   • fits       — يوم أو أقل.
+//   • noticeable — لحد ربع الأيام الباقية.
+//   • heavy      — أكتر من ربعها، والمتاح لسه يكفيه.
+//   • over       — أكتر من المتاح كله: الأيام الجاية هتتمشّى بالسالب.
+// بيت بيشتري بالجملة أول الشهر (household rhythm = monthly_bulk) وجوه أول أيام القبض: شرا البقالة الكبير ده خطته،
+// مش تهور — in_bulk_window بيقول كده والعقل مايسمّيهوش تهور.
+
+export type RunwayVerdict = "fits" | "noticeable" | "heavy" | "over";
+
+export interface MonthRunway {
+  /** صرف اليوم العادي من المتاح: المتاح ÷ الأيام الباقية. */
+  per_day: number;
+  days_left: number;
+  /** كام يوم من الأيام الباقية الشرا ده بياكلها. */
+  days_eaten: number;
+  /** المتاح بعده. */
+  left_after: number;
+  verdict: RunwayVerdict;
+  /** البيت بيشتري بالجملة بعد القبض، وإحنا جوه الأيام دي. */
+  in_bulk_window: boolean;
+}
+
+export function monthRunway(input: {
+  cost: number;
+  available: number | null | undefined;
+  daysLeft: number | null | undefined;
+  rhythm?: string | null;
+  daysElapsed?: number | null;
+  bulkWindowDays?: number;
+}): MonthRunway | null {
+  const cost = Number(input.cost);
+  const available = Number(input.available);
+  const daysLeft = Math.round(Number(input.daysLeft));
+  // Unknown available (null) is not zero: no verdict rather than «over».
+  if (input.available === null || input.available === undefined) return null;
+  if (!(cost > 0) || !Number.isFinite(available) || !(daysLeft >= 1)) return null;
+  const leftAfter = Math.round((available - cost) * 100) / 100;
+  const perDay = available > 0 ? available / daysLeft : 0;
+  const eaten = perDay > 0 ? cost / perDay : Infinity;
+  const verdict: RunwayVerdict = cost > available
+    ? "over"
+    : eaten <= 1
+    ? "fits"
+    : eaten <= daysLeft / 4
+    ? "noticeable"
+    : "heavy";
+  const elapsed = Number(input.daysElapsed);
+  return {
+    per_day: Math.round(perDay * 100) / 100,
+    days_left: daysLeft,
+    days_eaten: Number.isFinite(eaten) ? Math.round(eaten * 10) / 10 : daysLeft,
+    left_after: leftAfter,
+    verdict,
+    in_bulk_window: input.rhythm === "monthly_bulk" && Number.isFinite(elapsed) && elapsed >= 0 &&
+      elapsed < (input.bulkWindowDays ?? 5),
+  };
+}

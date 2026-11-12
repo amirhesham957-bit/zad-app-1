@@ -66,3 +66,24 @@ Deno.test("averages: income and spending per month from the last 90 days; transf
   assertEquals(young.spend, 3000);
   assert(young.historyDays < 60);
 });
+
+// ── «ضروري ولا تهور» (ZAD_PLAN ١٠.١ الشريحة ٤هـ) ──
+import { monthRunway } from "./decisionImpact.ts";
+
+Deno.test("month runway: a purchase is told in days of the money left, not as a sermon", () => {
+  // 3000 left for 15 days = 200 a day.
+  assertEquals(monthRunway({ cost: 150, available: 3000, daysLeft: 15 })?.verdict, "fits");
+  const ps = monthRunway({ cost: 2500, available: 3000, daysLeft: 15 })!;
+  assertEquals([ps.verdict, ps.days_eaten, ps.left_after], ["heavy", 12.5, 500]);
+  assertEquals(monthRunway({ cost: 600, available: 3000, daysLeft: 15 })?.verdict, "noticeable");
+  assertEquals(monthRunway({ cost: 3500, available: 3000, daysLeft: 15 })?.verdict, "over");
+  assertEquals(monthRunway({ cost: 100, available: -200, daysLeft: 10 })?.verdict, "over");
+  assertEquals(monthRunway({ cost: 0, available: 3000, daysLeft: 15 }), null);
+  assertEquals(monthRunway({ cost: 100, available: null, daysLeft: 15 }), null);
+});
+
+Deno.test("month runway: a bulk-buying home inside its payday days is on plan", () => {
+  assertEquals(monthRunway({ cost: 1500, available: 6000, daysLeft: 28, rhythm: "monthly_bulk", daysElapsed: 2 })?.in_bulk_window, true);
+  assertEquals(monthRunway({ cost: 1500, available: 6000, daysLeft: 20, rhythm: "monthly_bulk", daysElapsed: 10 })?.in_bulk_window, false);
+  assertEquals(monthRunway({ cost: 1500, available: 6000, daysLeft: 28, rhythm: "weekly", daysElapsed: 2 })?.in_bulk_window, false);
+});
