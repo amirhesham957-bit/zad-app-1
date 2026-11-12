@@ -8832,8 +8832,9 @@ export function groqSystemFor(snap: any, dialectHintText?: string): string {
     preferred: snap?.customer?.dialect,
     text: dialectHintText ?? snap?.dialect_hint_text,
     currency: snap?.currency,
+    city: snap?.customer?.city,
   });
-  return buildGroqSystemPrompt(snap, dialectPromptBlock(profile.dialect) + childToneBlock(snap), dialectReminder(profile.dialect));
+  return buildGroqSystemPrompt(snap, dialectPromptBlock(profile.dialect, profile.region) + childToneBlock(snap), dialectReminder(profile.dialect, profile.region));
 }
 
 /**
@@ -8878,8 +8879,9 @@ export function buildChatSystemPrompt(snap: any, voiceMode = false, offered?: Re
     preferred: snap?.customer?.dialect,
     text: snap?.dialect_hint_text,
     currency: snap?.currency,
+    city: snap?.customer?.city,
   });
-  return `${dialectPromptBlock(profile.dialect)}${childToneBlock(snap)}
+  return `${dialectPromptBlock(profile.dialect, profile.region)}${childToneBlock(snap)}
 
 أنت "${assistant.nameAr}" — واحد من البيت: فاهم أهله وفلوسهم ومطبخهم ودواهم، وبيكلّمهم زي صاحب قريب مش زي برنامج.
 
@@ -8955,7 +8957,7 @@ ${JSON.stringify(promptSnapshot(snap))}
 === نهاية SNAPSHOT ===
 (أجزاء تانية من البيت بتتقري بـ read_house لما تحتاجها.)
 
-${dialectReminder(profile.dialect)}`;
+${dialectReminder(profile.dialect, profile.region)}`;
 }
 
 export function buildSystemPrompt(snap: any): string {
@@ -10491,13 +10493,13 @@ async function handleRequest(req: Request): Promise<Response> {
       const sbx = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
       const [{ data: u }, { data: prof }] = await Promise.all([
         sbx.from("zad_users").select("country,currency,name").eq("id", uid).maybeSingle(),
-        sbx.from("zad_customer_profile").select("preferred_name,dialect,zad_voice").eq("user_id", uid).maybeSingle(),
+        sbx.from("zad_customer_profile").select("preferred_name,dialect,zad_voice,city").eq("user_id", uid).maybeSingle(),
       ]);
       const urow = u as { country?: string | null; currency?: string | null; name?: string | null } | null;
-      const prow = prof as { preferred_name?: string | null; dialect?: string | null; zad_voice?: string | null } | null;
-      const profile = conversationProfile(urow?.country, { preferred: prow?.dialect, currency: urow?.currency });
+      const prow = prof as { preferred_name?: string | null; dialect?: string | null; zad_voice?: string | null; city?: string | null } | null;
+      const profile = conversationProfile(urow?.country, { preferred: prow?.dialect, currency: urow?.currency, city: prow?.city });
       const system = explainSystem(body.topic, {
-        soul: soulBlock(prow?.zad_voice), dialectBlock: dialectPromptBlock(profile.dialect), dialectReminder: dialectReminder(profile.dialect),
+        soul: soulBlock(prow?.zad_voice), dialectBlock: dialectPromptBlock(profile.dialect, profile.region), dialectReminder: dialectReminder(profile.dialect, profile.region),
         customerName: prow?.preferred_name ?? urow?.name ?? null,
       });
       try {

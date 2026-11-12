@@ -24,6 +24,10 @@ interface DialectSpec {
 const FORMAL_BAN =
   "ممنوع الفصحى الرسمية تماماً (زي «يمكنك»، «سوف»، «لقد»، «عذراً»، «هل ترغب في»، «تم بنجاح»). اكتب زي ما حد من البلد دي بيكتب لصاحبه على الواتساب.";
 
+/** ١٠.١٦ (٤): زي أهل المنطقة بس باحترام — اللهجة مش معناها ألفاظ شارع. */
+const RESPECT_LINE =
+  "وكلامك محترم: زي ما واحد محترم من المنطقة دي بيكلّم حد عزيز عليه — من غير شتايم ولا ألفاظ سوقية ولا تريقة على العميل، حتى لو هو بيهزر كده.";
+
 export const DIALECTS: Record<DialectCode, DialectSpec> = {
   EG: {
     locale: "ar-EG",
@@ -104,6 +108,99 @@ export const DIALECTS: Record<DialectCode, DialectSpec> = {
     examples: ["Done, logged it 👌", "No worries, fixing that now", "You spent a bit more on eating out this month"],
   },
 };
+
+// ── لهجات جوه البلد (ZAD_PLAN ١٠.١٦، ٢٠٢٦-١١-١٢) ──────────────────────────────────────
+//
+// الشكوى: «سعودي على مصري ملغبط». السعودية كانت لهجة واحدة (نجدي في الأمثلة) لجدة والرياض
+// والدمام وأبها. المنطقة **بتدقّق** لهجة البلد بس، مابتغيّرهاش: الكود المتخزن في
+// `zad_customer_profile.dialect` والمقارنات (الحملات، رسايل البوت) فاضلين على `SA`، فمفيش
+// مايجريشن. المنطقة جاية من مدينة الملف؛ لو العميل نفسه بيتكلم لهجة تانية، البلوك بيقول
+// للموديل يمشي على كلامه (أولوية الخطة: اختياره ⇐ كلامه ⇐ مدينته ⇐ البلد).
+//
+// ⚠️ القواعد والأمثلة دي محتاجة مراجعة من حد من كل منطقة قبل ما تتنشر (شرط المالك في ١٠.١٦).
+
+export type RegionCode = "SA_HIJAZ" | "SA_NAJD" | "SA_EAST" | "SA_SOUTH";
+
+interface RegionSpec {
+  /** اللهجة الأم — المنطقة بتشتغل بس لو لهجة العميل دي. */
+  parent: DialectCode;
+  short: string;
+  rules: string;
+  examples: string[];
+}
+
+export const REGIONS: Record<RegionCode, RegionSpec> = {
+  SA_HIJAZ: {
+    parent: "SA",
+    short: "تكلّمي حجازي زي أهل جدة.",
+    rules: "تكلّم حجازي عادي زي أهل جدة ومكة والمدينة لما يسولفوا — «دحين»، «إيش»، «كدا»، «مرّة»، «أبغى» — لا فصحى ولا نجدي ولا مصري.",
+    examples: ["أبشر، سجّلتها لك 👌", "ولا يهمك، دحين أظبطها لك", "شوف، الشهر دا صرفت مرّة على المطاعم"],
+  },
+  SA_NAJD: {
+    parent: "SA",
+    short: "تكلّمي نجدي زي أهل الرياض.",
+    rules: "تكلّم نجدي عادي زي أهل الرياض والقصيم لما يسولفون — «الحين»، «وش»، «أبي»، «زين»، «ترى» — لا فصحى ولا مصري.",
+    examples: ["أبشر، سجلتها لك 👌", "ولا يهمك، الحين أضبطها لك", "ترى هالشهر صرفت زيادة على المطاعم"],
+  },
+  SA_EAST: {
+    parent: "SA",
+    short: "تكلّمي زي أهل الشرقية.",
+    rules: "تكلّم زي أهل الشرقية (الدمام والخبر والأحساء) لما يسولفون — «الحين»، «وايد»، «زين»، «شلون» — لا فصحى ولا مصري.",
+    examples: ["أبشر، سجلتها لك", "لا تشيل هم، الحين أسويها لك", "هالشهر صرفت وايد على المطاعم"],
+  },
+  SA_SOUTH: {
+    parent: "SA",
+    short: "تكلّمي سعودي بسيط زي أهل الجنوب.",
+    // الجنوب لهجاته كتير (عسير، جازان، نجران، الباحة) — مانقلّدش كلمات مش متأكدين منها: سعودي
+    // بسيط مفهوم للكل، والموديل يمشي على كلام العميل لو بان.
+    rules: "تكلّم سعودي بسيط وقريب زي أهل الجنوب (أبها وخميس مشيط وجازان ونجران) لما يسولفون — لا فصحى ولا مصري، ولا تقلّد كلمات ما تعرفها؛ وإذا العميل كتب بلهجته امشِ عليها.",
+    examples: ["أبشر، سجلتها لك", "ولا يهمك، الحين أضبطها لك", "هالشهر صرفت زيادة شوي على المطاعم"],
+  },
+};
+
+/** أسماء المدن زي ما العميل بيكتبها — بيانات مطابقة، مش نصوص عرض. */
+const CITY_TO_REGION: Array<[RegionCode, string[]]> = [
+  ["SA_HIJAZ", ["جدة", "جده", "jeddah", "jiddah", "jedda", "مكة", "مكه", "مكة المكرمة", "makkah", "mecca", "makkah al mukarramah", "المدينة", "المدينه", "المدينة المنورة", "المدينه المنوره", "madinah", "medina", "al madinah", "الطائف", "الطايف", "taif", "ينبع", "yanbu", "رابغ", "rabigh"]],
+  ["SA_NAJD", ["الرياض", "رياض", "riyadh", "القصيم", "qassim", "al qassim", "بريدة", "بريده", "buraydah", "buraidah", "عنيزة", "عنيزه", "unaizah", "حائل", "حايل", "hail", "ha'il", "الخرج", "alkharj", "al kharj", "المجمعة", "majmaah", "الزلفي", "zulfi", "الدوادمي", "dawadmi", "شقراء"]],
+  ["SA_EAST", ["الدمام", "دمام", "dammam", "الخبر", "khobar", "al khobar", "الظهران", "dhahran", "الأحساء", "الاحساء", "الحسا", "al ahsa", "al-ahsa", "hofuf", "الهفوف", "القطيف", "qatif", "الجبيل", "jubail", "حفر الباطن", "hafar al batin"]],
+  ["SA_SOUTH", ["أبها", "ابها", "abha", "خميس مشيط", "khamis mushait", "khamis mushayt", "جازان", "جيزان", "jazan", "jizan", "نجران", "najran", "الباحة", "الباحه", "baha", "al baha", "بيشة", "بيشه", "bisha"]],
+];
+
+function normCity(raw: unknown): string {
+  return String(raw ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/[ًٌٍَُِّْـ]/g, "")
+    .replace(/[أإآ]/g, "ا")
+    .replace(/ة/g, "ه")
+    .replace(/ى/g, "ي")
+    .replace(/^(?:مدينة|مدينه|city of)\s+/, "")
+    .replace(/[,،].*$/, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** منطقة المدينة، أو null لو مش معروفة. */
+export function regionForCity(city: unknown): RegionCode | null {
+  const c = normCity(city);
+  if (!c) return null;
+  for (const [region, names] of CITY_TO_REGION) {
+    if (names.some((n) => normCity(n) === c)) return region;
+  }
+  return null;
+}
+
+/** المنطقة بتدقّق اللهجة بس لو لهجة العميل هي اللهجة الأم بتاعتها (جدة لعميل بيتكلم مصري = مصري). */
+export function resolveRegion(dialect: DialectCode, input: { city?: unknown }): RegionCode | null {
+  const region = regionForCity(input.city);
+  return region && REGIONS[region].parent === dialect ? region : null;
+}
+
+/** القواعد والأمثلة النهائية: المنطقة لو موجودة، وإلا لهجة البلد. */
+export function dialectSpec(code: DialectCode, region?: RegionCode | null): { rules: string; short: string; examples: string[] } {
+  const r = region && REGIONS[region]?.parent === code ? REGIONS[region] : null;
+  return r ?? DIALECTS[code];
+}
 
 const COUNTRY_TO_DIALECT: Record<string, DialectCode> = {
   EG: "EG", SA: "SA", AE: "GULF", KW: "GULF", QA: "GULF", BH: "GULF", OM: "GULF",
@@ -195,8 +292,8 @@ export function resolveDialect(input: {
 }
 
 /** بلوك اللهجة لأول البرومبت — مكتوب باللهجة نفسها، بأمثلة ومنع الفصحى. */
-export function dialectPromptBlock(code: DialectCode): string {
-  const d = DIALECTS[code];
+export function dialectPromptBlock(code: DialectCode, region?: RegionCode | null): string {
+  const d = dialectSpec(code, region);
   if (code === "TR" || code === "EN") {
     return `**LANGUAGE (mandatory):** ${d.rules}\nExamples: ${d.examples.map((e) => `«${e}»`).join(" · ")}\nIf the customer clearly writes in another language or dialect, follow theirs.`;
   }
@@ -206,13 +303,15 @@ export function dialectPromptBlock(code: DialectCode): string {
     `**اللهجة (إجباري):** ${d.rules}`,
     `أمثلة لطريقة الرد: ${d.examples.map((e) => `«${e}»`).join(" · ")}`,
     FORMAL_BAN,
+    RESPECT_LINE,
     "لو العميل كتب بلهجة تانية بوضوح أو طلب لهجة معينة، امشي على لهجته هو وسجّلها في ملفه.",
   ].join("\n");
 }
 
 /** سطر أخير في البرومبت — آخر حاجة الموديل يقراها قبل ما يكتب. */
-export function dialectReminder(code: DialectCode): string {
+export function dialectReminder(code: DialectCode, region?: RegionCode | null): string {
+  const d = dialectSpec(code, region);
   return code === "TR" || code === "EN"
-    ? `Final reminder: ${DIALECTS[code].rules}`
-    : `تذكير أخير قبل ما تكتب: ${DIALECTS[code].rules} ${DIALECTS[code].examples[0] ? `(زي «${DIALECTS[code].examples[0]}»)` : ""}`;
+    ? `Final reminder: ${d.rules}`
+    : `تذكير أخير قبل ما تكتب: ${d.rules} ${d.examples[0] ? `(زي «${d.examples[0]}»)` : ""}`;
 }

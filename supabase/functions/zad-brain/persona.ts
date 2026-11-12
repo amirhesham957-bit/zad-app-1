@@ -1,20 +1,23 @@
 import { voiceEmotionalRange, zadVoiceGender } from "../_shared/zadVoice.ts";
-import { DIALECTS, resolveDialect, type DialectCode } from "../_shared/dialect.ts";
+import { DIALECTS, dialectSpec, resolveDialect, resolveRegion, type DialectCode, type RegionCode } from "../_shared/dialect.ts";
 import { isChildSnapshot } from "./validators.ts";
 
 export interface ConversationProfile {
   locale: string;
   instruction: string;
   dialect: DialectCode;
+  /** المنطقة جوه البلد (حجازي/نجدي…) من مدينة الملف، أو null (١٠.١٦). */
+  region: RegionCode | null;
 }
 
 /**
  * لهجة الكلام مع العميل. المصدر الوحيد دلوقتي `_shared/dialect.ts` (التعليمة مكتوبة باللهجة
  * نفسها). `preferred` = اللهجة اللي العميل اختارها في ملفه، و`text` = كلامه — لو باين فيه لهجة.
  */
-export function conversationProfile(country: unknown, opts: { preferred?: unknown; text?: string | null; currency?: unknown } = {}): ConversationProfile {
+export function conversationProfile(country: unknown, opts: { preferred?: unknown; text?: string | null; currency?: unknown; city?: unknown } = {}): ConversationProfile {
   const dialect = resolveDialect({ preferred: opts.preferred, text: opts.text, country, currency: opts.currency });
-  return { locale: DIALECTS[dialect].locale, instruction: DIALECTS[dialect].rules, dialect };
+  const region = resolveRegion(dialect, { city: opts.city });
+  return { locale: DIALECTS[dialect].locale, instruction: dialectSpec(dialect, region).rules, dialect, region };
 }
 
 /**
