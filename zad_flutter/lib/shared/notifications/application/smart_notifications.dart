@@ -117,7 +117,7 @@ Future<int> generateSmartNotifications(
   final low = ref
       .read(pantryControllerProvider)
       .items
-      .where((i) => i.quantity <= (i.lowStockThreshold ?? 2))
+      .where((i) => i.isLowStock)
       .take(3)
       .toList();
   if (low.isNotEmpty &&

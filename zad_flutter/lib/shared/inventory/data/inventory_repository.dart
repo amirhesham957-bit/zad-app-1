@@ -98,7 +98,10 @@ class InventoryRepository {
       quantity: quantity,
       unit: unit,
       category: category,
-      lowStockThreshold: lowStockThreshold,
+      // Chosen here rather than left to the server's trigger, so the row
+      // reads right while it is still queued (ZAD_PLAN ١٠.١ slice 3).
+      lowStockThreshold:
+          lowStockThreshold ?? defaultLowStockThreshold(quantity, unit),
       expiryDate: expiryDate,
       isPending: true,
     );
