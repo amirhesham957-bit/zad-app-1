@@ -4,7 +4,7 @@ import { googleNearbyAny, googlePlacesKeys } from "./googlePlaces.ts";
 // مفتاح. بيتنادى من CI بعد كل نشر (مفتاح service role) عشان «المفتاح اتحط؟ وشغال؟» تبقى
 // إجابة مقاسة مش تخمين. كل الشبكة بتتحقن عشان يتختبر من غير نداءات حقيقية.
 
-import { aiDataTier, geminiKeys as geminiKeyPool, groqKeys as groqKeyPool, MAX_KEYS } from "../_shared/keyPool.ts";
+import { aiDataTier, freeGeminiKeys, geminiKeys as geminiKeyPool, groqKeys as groqKeyPool, MAX_KEYS } from "../_shared/keyPool.ts";
 
 export interface ProbeResult {
   configured: boolean;
@@ -88,6 +88,9 @@ async function probe(
 export async function providerHealth(env: Env, envNames: string[], fetchImpl: typeof fetch = fetch): Promise<Record<string, unknown>> {
   const geminiKeys = geminiKeyPool(env);
   const groqKeys = groqKeyPool(env);
+  // المجاني اللي بيشيل بعد المدفوع (ZAD_FREE_AFTER_PAID، المالك ١٢/١١). من غير مدفوع هو نفسه gemini_pool.
+  // ListModels زي المدفوع: بيثبت إن المفتاح مقروء ومقبول من غير ما يصرف من كوتة الـ٢٠ طلب في اليوم.
+  const freeKeys = aiDataTier(env) === "paid" ? freeGeminiKeys(env) : [];
 
   // Google Places: the same call nearby_pois makes, so "configured but the Places API is not
   // enabled on the key's project" shows here as ok:false instead of as an empty shop list.
@@ -148,6 +151,10 @@ export async function providerHealth(env: Env, envNames: string[], fetchImpl: ty
         }),
       },
     }), async (res) => groqLimitsNote(res.headers))),
+    ...freeKeys.map((k) => probe(fetchImpl, k, (key) => ({
+      url: "https://generativelanguage.googleapis.com/v1beta/models?pageSize=1",
+      init: { headers: { "x-goog-api-key": key } },
+    }))),
   ]);
 
   return {
@@ -164,7 +171,9 @@ export async function providerHealth(env: Env, envNames: string[], fetchImpl: ty
     // المالك ١٢/١١: المجاني بيشيل الشات لما المدفوع يخلص (zad-brain/callModel.ts، ZAD_FREE_AFTER_PAID).
     free_after_paid: aiDataTier(env) === "paid" && (env("ZAD_FREE_AFTER_PAID") ?? "").trim() === "1",
     gemini_pool: rest.slice(0, geminiKeys.length),
-    groq_pool: rest.slice(geminiKeys.length),
+    groq_pool: rest.slice(geminiKeys.length, geminiKeys.length + groqKeys.length),
+    // فاضي لو مفيش مدفوع (المجاني هو gemini_pool ساعتها).
+    free_pool: rest.slice(geminiKeys.length + groqKeys.length),
     community_chat_configured: !!env("TELEGRAM_COMMUNITY_CHAT_ID"),
     unread_ai_key_names: unreadAiKeyNames(envNames),
     other_key_like_secret_names: interestingSecretNames(envNames).filter((n) => !["LOCATIONIQ_API_KEY", "PEXELS_API_KEY"].includes(n)),
