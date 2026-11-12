@@ -195,5 +195,12 @@
   "petLinesFull": "شبعان خلاص 🤭\nما أقدر آكل زيادة 😅",
   "petLinesWatered": "آآه انتعشت! 💧\nكذا أحسن بكثير 😌",
   "petLinesNotThirsty": "ما أبي موية الحين 🙈\nشربت كفاية 😄",
-  "petLinesPetted": "هيهي تدغدغني 🤭\nبعد! بعد! 🥰\nأحبك 💚"
+  "petLinesPetted": "هيهي تدغدغني 🤭\nبعد! بعد! 🥰\nأحبك 💚",
+  "cookDone": "طبختها",
+  "cookSheetTitle": "أخصم اللي استخدمته من البيت",
+  "cookSheetHint": "هذي الكميات اللي أتوقعها — عدّلها إذا استخدمت أكثر أو أقل.",
+  "cookConfirm": "أخصم {count}",
+  "cookNothing": "ما لقيت مكونات هالوصفة في بيتك.",
+  "cookDoneSnack": "خصمت {count} من البيت ✅",
+  "cookMore": "أكثر"
 }
