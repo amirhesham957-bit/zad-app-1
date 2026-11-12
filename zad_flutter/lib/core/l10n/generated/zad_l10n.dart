@@ -92,6 +92,7 @@ abstract class ZadL10n {
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('ar'),
+    Locale('ar', 'SA'),
     Locale('en')
   ];
 
@@ -5969,6 +5970,15 @@ class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {
 
 ZadL10n lookupZadL10n(Locale locale) {
 
+  // Lookup logic when language+country codes are specified.
+  switch (locale.languageCode) {
+    case 'ar': {
+  switch (locale.countryCode) {
+    case 'SA': return ZadL10nArSa();
+   }
+  break;
+   }
+  }
 
   // Lookup logic when only language code is specified.
   switch (locale.languageCode) {

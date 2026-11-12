@@ -5,7 +5,10 @@
 //
 //   flutter test tool/screens/render_screens_test.dart
 //
-// Pictures land in build/screens/ (gitignored), one per screenful.
+// Pictures land in build/screens/ (gitignored), one per screenful. The Saudi
+// screens (ZAD_PLAN ١٠.١٦) land in build/screens_sa/:
+//
+//   flutter test tool/screens/render_screens_test.dart --dart-define=ZAD_SCREENS_LOCALE=ar_SA
 
 import 'dart:convert';
 import 'dart:io';
@@ -21,6 +24,8 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:zad/app/zad_shell.dart';
 import 'package:zad/core/design/zad_theme.dart';
+import 'package:zad/core/l10n/app_language.dart';
+import 'package:zad/core/l10n/generated/zad_l10n.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart';
 import 'package:zad/shared/inventory/domain/inventory_item.dart';
 import 'package:zad/shared/pharmacy/application/pharmacy_controller.dart';
@@ -32,7 +37,10 @@ import '../../test/support/shell_harness.dart';
 
 void main() {
   final harness = ShellHarness();
-  final out = Directory('build/screens')..createSync(recursive: true);
+  const saudi =
+      String.fromEnvironment('ZAD_SCREENS_LOCALE') == 'ar_SA';
+  final out = Directory(saudi ? 'build/screens_sa' : 'build/screens')
+    ..createSync(recursive: true);
 
   setUpAll(() async {
     tz_data.initializeTimeZones();
@@ -66,7 +74,9 @@ void main() {
           child: MaterialApp(
             debugShowCheckedModeBanner: false,
             theme: ZadTheme.light(),
-            locale: const Locale('ar'),
+            locale: saudi ? kSaudiArabic : const Locale('ar'),
+            localizationsDelegates: ZadL10n.localizationsDelegates,
+            supportedLocales: kZadLocales,
             home: const Directionality(
               textDirection: TextDirection.rtl,
               child: ZadShell(),

@@ -34,22 +34,41 @@ enum AppLanguage {
   english,
 }
 
-/// The two languages the app has.
-const List<Locale> kZadLocales = <Locale>[Locale('ar'), Locale('en')];
+/// Saudi Arabic (ZAD_PLAN ١٠.١٦): `app_ar_SA.arb` overrides the strings that
+/// read Egyptian; every other string falls back to `ar`.
+const Locale kSaudiArabic = Locale('ar', 'SA');
 
-/// The locale a choice comes to on a phone set to [phone].
+/// The languages the app has.
+const List<Locale> kZadLocales = <Locale>[
+  Locale('ar'),
+  kSaudiArabic,
+  Locale('en'),
+];
+
+/// The Arabic the account speaks — `'SA'` for Saudi, null for the default
+/// (Egyptian) one. Comes from the account's market and the customer's own
+/// dialect choice, which live in `shared/`; the app binds it at start
+/// (`app/bootstrap.dart`). Null in tests and before the account is known.
+final arabicVariantProvider = Provider<String?>((ref) => null);
+
+/// The locale a choice comes to on a phone set to [phone], for an account
+/// whose Arabic is [arabicVariant].
 Locale resolveAppLocale(
   AppLanguage choice,
   Locale phone, {
   bool englishFollowsPhone = kEnglishFollowsPhone,
-}) => switch (choice) {
-  AppLanguage.arabic => const Locale('ar'),
-  AppLanguage.english => const Locale('en'),
-  AppLanguage.system =>
-    englishFollowsPhone && phone.languageCode != 'ar'
-        ? const Locale('en')
-        : const Locale('ar'),
-};
+  String? arabicVariant,
+}) {
+  final arabic = arabicVariant == 'SA' ? kSaudiArabic : const Locale('ar');
+  return switch (choice) {
+    AppLanguage.arabic => arabic,
+    AppLanguage.english => const Locale('en'),
+    AppLanguage.system =>
+      englishFollowsPhone && phone.languageCode != 'ar'
+          ? const Locale('en')
+          : arabic,
+  };
+}
 
 /// The choice, remembered on this phone.
 class AppLanguageController extends Notifier<AppLanguage> {
@@ -97,6 +116,7 @@ final appLocaleProvider = Provider<Locale>(
   (ref) => resolveAppLocale(
     ref.watch(appLanguageProvider),
     ref.watch(phoneLocaleProvider),
+    arabicVariant: ref.watch(arabicVariantProvider),
   ),
 );
 

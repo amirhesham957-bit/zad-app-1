@@ -3296,3 +3296,453 @@ class ZadL10nAr extends ZadL10n {
   @override
   String get quotaScanFromImages => 'صورة من رصيد الصور';
 }
+
+/// The translations for Arabic, as used in Saudi Arabia (`ar_SA`).
+class ZadL10nArSa extends ZadL10nAr {
+  ZadL10nArSa() : super('ar_SA');
+
+  @override
+  String get commonWait => 'لحظة';
+
+  @override
+  String get navMyFamily => 'عائلتي';
+
+  @override
+  String get pulseOneSaved => 'شي واحد محفوظ';
+
+  @override
+  String get pulseTwoSaved => 'شيئين محفوظين';
+
+  @override
+  String pulseFewSaved(int n) {
+    return '$n أشياء محفوظة';
+  }
+
+  @override
+  String pulseManySaved(int n) {
+    return '$n شي محفوظ';
+  }
+
+  @override
+  String pulseOffline(String what) {
+    return 'ما فيه نت — $what وبتنرسل أول ما يرجع النت';
+  }
+
+  @override
+  String get pulseThinking => 'زاد يفكّر…';
+
+  @override
+  String get pulseSyncing => 'نزامن…';
+
+  @override
+  String get authPreparingAccount => 'نجهّز حسابك…';
+
+  @override
+  String get shareTooLarge =>
+      'الملف أكبر من إن زاد يقراه مرة وحدة — أرسله أصغر';
+
+  @override
+  String get shareUnsupported => 'زاد يقرا الكلام والصور وملفات PDF وCSV بس';
+
+  @override
+  String get shareUnreadable =>
+      'ما قدرت أفتح اللي انشارك — جرّب ترسله مرة ثانية';
+
+  @override
+  String get shareWhatImage => 'وش هذي الصورة؟';
+
+  @override
+  String get shareWhatImageHint =>
+      'زاد بيقراها ويوريك وش لقى قبل ما يسجل أي شي';
+
+  @override
+  String get shareReceipt => 'فاتورة شراء';
+
+  @override
+  String get drawerGroupHome => 'البيت والعائلة';
+
+  @override
+  String get drawerGroupMore => 'أكثر';
+
+  @override
+  String get homeBankListening => 'أتابع رسائل البنك وأحدّث رصيدك تلقائياً';
+
+  @override
+  String get homeBankStopped => 'قراءة رسائل البنك وقفت — اضغط للإصلاح';
+
+  @override
+  String get homeBirthday => 'كل عام وأنت بخير! 🎂';
+
+  @override
+  String homeBirthdayName(String who) {
+    return 'كل عام وأنت بخير يا $who! 🎂';
+  }
+
+  @override
+  String get homeBirthdayWish => 'زاد يتمنى لك سنة حلوة مليانة خير وراحة بال.';
+
+  @override
+  String get homeCloseDay => 'سكّر يومك';
+
+  @override
+  String get homeCloseDayHint => 'عشر ثواني: صرفت شي كاش اليوم؟ ورفيقك يتعشى';
+
+  @override
+  String get coverageBlind => 'للحين ما أشوف أي مصروف هالدورة';
+
+  @override
+  String get coverageBlindHint => 'سكّر يومك أو اربط البنك عشان أشوف';
+
+  @override
+  String get coverageFullHint => 'كمّل كذا، الأرقام اللي فوق حقيقية';
+
+  @override
+  String get coveragePartialHint => 'سكّر يومك أو اربط البنك عشان أشوف أكثر';
+
+  @override
+  String get briefTitle => 'موجز زاد اليوم';
+
+  @override
+  String get briefAllGood => 'كل شي تمام — ما فيه شي مستعجل اليوم.';
+
+  @override
+  String get briefAskZad => 'اسأل زاد عن أي شي';
+
+  @override
+  String get glanceStockEmpty => 'المخزون للحين فاضي';
+
+  @override
+  String get glanceStockEmptyHint =>
+      'صوّر فاتورة السوبرماركت أو أضف أصنافك، وزاد يقولك وش قرّب يخلص قبل ما تحتاجه';
+
+  @override
+  String get glancePharmacyEmptyLabel => 'ما فيه أدوية مسجّلة';
+
+  @override
+  String glanceActiveMedicines(int count) {
+    return '$count دواء نشط • للحين نجمع بيانات الالتزام';
+  }
+
+  @override
+  String get glancePharmacyEmptyHint =>
+      'صوّر شريط الدواء أو أضفه يدوي، وزاد بيذكّرك بمواعيد الجرعات وينبّهك قبل ما يخلص';
+
+  @override
+  String get glanceTookDose => 'أخذت الجرعة';
+
+  @override
+  String get glanceSubsNone => 'ما فيه اشتراكات مسجّلة';
+
+  @override
+  String get glanceSubsEmpty => 'ما فيه اشتراكات للحين';
+
+  @override
+  String get glanceSubsEmptyHint =>
+      'أضف اشتراكاتك الشهرية عشان زاد يحسبها في المتاح ويذكّرك بمواعيد التجديد';
+
+  @override
+  String groceryWhatToAdd(String shop, String amount) {
+    return 'اشتريت من $shop بـ $amount — وش أضيف للمخزون؟';
+  }
+
+  @override
+  String get groceryOtherItem => 'اسم منتج ثاني…';
+
+  @override
+  String get activationGoalHint => 'زاد بيتابعه معك كل أسبوع';
+
+  @override
+  String get activationAllSet =>
+      'كل شي جاهز! 🎉 جرّب تقول لزاد \"صرفت ٥٠ بقالة\" بالصوت أو من بوت تليجرام — بيطلب منك تأكيد ويسجلها.';
+
+  @override
+  String get amazonOnList => 'في قائمة التسوق';
+
+  @override
+  String get amazonUpdatedToday => 'تحدّث اليوم';
+
+  @override
+  String get amazonDisclosure =>
+      'رابط شراء بالعمولة — زاد ياخذ عمولة بدون أي زيادة عليك';
+
+  @override
+  String get amazonNoNeeds => 'أضف اللي ناقصك، أو شوف عروض اليوم';
+
+  @override
+  String amazonManyNeeds(int count) {
+    return 'ناقصك $count أغراض — اطلب كل واحد بضغطة';
+  }
+
+  @override
+  String get homeOffline => 'ما فيه اتصال بالإنترنت';
+
+  @override
+  String get homeOfflineHint =>
+      'بياناتك تنحفظ على الجوال وبتتزامن أول ما يرجع النت';
+
+  @override
+  String get homeServerDown => 'ما قدرت أوصل للسيرفر';
+
+  @override
+  String get homePreparing => 'نجهّز ميزانيتك';
+
+  @override
+  String get homeServerDownHint =>
+      'بنحاول مرة ثانية من نفسنا. تقدر تسحب الشاشة لتحت الحين.';
+
+  @override
+  String get homePreparingHint => 'ثانية وحدة وبتلقى كل شي هنا.';
+
+  @override
+  String get checkInNotYet => 'للحين لا';
+
+  @override
+  String get commonNotNow => 'مو الحين';
+
+  @override
+  String get quietRestoreFailed => 'ما قدرت أرجّع التنبيهات. جرّب مرة ثانية.';
+
+  @override
+  String recipeStagnant(String names) {
+    return 'عندك $names من فترة وما استخدمتها 🤔';
+  }
+
+  @override
+  String recipeRunningOut(String names) {
+    return 'عندك $names بيخلص قريب 👀';
+  }
+
+  @override
+  String get recipeRunningOutHint => 'وصفات مقترحة فيه قبل ما يروح عليك';
+
+  @override
+  String get recipeOpenChat => 'اضغط للمزيد في محادثة زاد ←';
+
+  @override
+  String get profileSaveFailed => 'ما قدرنا نحفظ الملف — جرّب مرة ثانية';
+
+  @override
+  String get whoBody =>
+      'اسمك، وتحب أكلمك بصيغة المذكّر ولا المؤنّث، وشغلك وموعد راتبك — عشان أكلمك صح وأتذكرك.';
+
+  @override
+  String get whoGo => 'يلّا نتعرّف';
+
+  @override
+  String get chatVoiceUnavailable => 'الصوت مو متاح الحين — الرد مكتوب قدامك';
+
+  @override
+  String get chatNewBody =>
+      'الكلام اللي فات بينمسح من هالجوال. واللي تعلّمه زاد عنك بيظل مثل ما هو.';
+
+  @override
+  String get chatWelcome =>
+      'هلا والله! أنا زاد 🤖، مساعدك العائلي الذكي. كيف أقدر أساعدك اليوم؟\nاسألني عن الوصفات، أو راجع ثلاجتك، أو أضف النواقص لقائمة التسوق!';
+
+  @override
+  String get chatBusy =>
+      'الذكاء الاصطناعي مشغول شوي الحين 🙏 جرّب مرة ثانية بعد لحظات.';
+
+  @override
+  String get chatResend => 'ما وصلت — أرسلها مرة ثانية';
+
+  @override
+  String get chatThinking => 'أفكّر…';
+
+  @override
+  String get refillBack => 'رصيدك رجع — أرسل رسالتك مرة ثانية';
+
+  @override
+  String refillDays(int days) {
+    return 'رصيدك يتجدد بعد $days أيام';
+  }
+
+  @override
+  String refillIn(String span) {
+    return 'رصيدك يتجدد بعد $span';
+  }
+
+  @override
+  String get chatSubscribeMore => 'اشترك وخذ محاولات أكثر';
+
+  @override
+  String get chatNotDone => 'للحين ما تنفّذ.';
+
+  @override
+  String get chatDoIt => 'سوّها';
+
+  @override
+  String get chatTranscribing => 'أحوّل الكلام…';
+
+  @override
+  String get chatSend => 'أرسل';
+
+  @override
+  String get voiceTooShort =>
+      'ضغطت الزر بسرعة — اضغط وابدأ تكلّم، وبعدين وقّف.';
+
+  @override
+  String get voiceDenied =>
+      'أحتاج إذن المايك. افتح إعدادات التطبيق واسمح بالتسجيل.';
+
+  @override
+  String get voiceFailed => 'ما قدرت أحوّل الكلام. جرّب مرة ثانية.';
+
+  @override
+  String get subscribePulseTitle => 'اشترك وزاد يكون معك على طول';
+
+  @override
+  String get subscribePulseClose => 'سكّر';
+
+  @override
+  String get voiceOutToday =>
+      'خلصت أسئلتك الصوتية (٣ كل ساعتين) — ترجع من نفسها، أو شاهد إعلان وخذ سؤال زيادة. اكتب سؤالك، أو اشترك وكلّم زاد بدون حد.';
+
+  @override
+  String chatEmergency(String trade) {
+    return 'طوارئ في البيت؟ الـ$trade حقّك قدامك بضغطة.';
+  }
+
+  @override
+  String get chatTechnicians => 'الفنيين حقّي';
+
+  @override
+  String get intChatSubtitle => 'اسأل عن مصاريفك، مخزونك، أو أي شي';
+
+  @override
+  String get intChatClearBody =>
+      'بنمسح كل رسائل المحادثة مع عقل زاد. البيانات المالية والمخزون ما بتتأثر.';
+
+  @override
+  String intChatMemoryUsed(int count) {
+    return 'مبني على $count شي زاد يتذكره عنك';
+  }
+
+  @override
+  String get meshThinking => 'الشبكة العصبية تشتغل...';
+
+  @override
+  String get financesNoCategories =>
+      'للحين ما حددت ميزانية لأي فئة. اضغط \"تحديد فئة\" عشان زاد يتابع لك كل فئة لحالها.';
+
+  @override
+  String get financesNoBudget => 'للحين ما حددت ميزانيتك';
+
+  @override
+  String get financesInsightEmpty =>
+      'ما فيه بيانات كافية لتحليل هالفئة حالياً.';
+
+  @override
+  String get gateTitle => 'قبل ما نبدأ، كم معك هالشهر؟';
+
+  @override
+  String get gateBody =>
+      'زاد ما يخترع أرقام. من هالرقم نحسب «المتاح» و«المتبقي» كل يوم، وتقدر تعدّله في أي وقت.';
+
+  @override
+  String get gateCeiling => 'رصيدك لهالشهر';
+
+  @override
+  String get gateStart => 'يلّا نبدأ';
+
+  @override
+  String get txForPerson => 'لمين؟ (خلّها فاضية إذا لك أو للبيت كله)';
+
+  @override
+  String get txNoneHere => 'ما فيه معاملات هنا';
+
+  @override
+  String get txTryFilter => 'جرّب فلتر ثاني.';
+
+  @override
+  String get txPendingOne => 'محفوظة للحين';
+
+  @override
+  String txPendingCount(int count) {
+    return '$count محفوظة للحين';
+  }
+
+  @override
+  String get txLoadFailed => 'ما قدرت أجيب المعاملات';
+
+  @override
+  String get txNonePeriod => 'ما فيه معاملات في هالفترة';
+
+  @override
+  String get txPullToRetry => 'اسحب الشاشة لتحت عشان نحاول مرة ثانية.';
+
+  @override
+  String get txNoneHint =>
+      'أول ما تسجّل مصروف — أو توصلك رسالة من البنك — بتلقاها هنا.';
+
+  @override
+  String get homeBankStalledHint =>
+      'إذا كانت مفعّلة: طفّها وشغّلها مرة ثانية من الصفحة اللي بتفتح.';
+
+  @override
+  String get homeLocationOffBanner =>
+      '📍 موقعك مو مفعّل.. فعّل الموقع عشان زاد يربط عروض السوبرماركت والمحلات القريبة منك ويسوّي شغله صح';
+
+  @override
+  String get homeLocationLater => 'مو الحين';
+
+  @override
+  String accountRestoreBody(int days) {
+    return 'طلبت حذف حسابك، وبينحذف هو وكل بياناته نهائياً بعد $days يوم. تبغى ترجّعه؟';
+  }
+
+  @override
+  String get accountRestoreFailed =>
+      'تعذّر استرجاع الحساب الحين. افتح التطبيق مرة ثانية وجرّب.';
+
+  @override
+  String get homeWidgetSubsEmpty => 'أضف اشتراك';
+
+  @override
+  String get homeWidgetSubsToday => 'اليوم';
+
+  @override
+  String get homeWidgetPantryEmpty => 'أضف أصناف';
+
+  @override
+  String get homeWidgetPharmacyNone => 'ما فيه جرعات';
+
+  @override
+  String homeWidgetPharmacyActive(Object count) {
+    return '$count دواء';
+  }
+
+  @override
+  String get homeWidgetPharmacyEmpty => 'أضف دواء';
+
+  @override
+  String homeWidgetShortagesCount(int count) {
+    return '$count تنجاب';
+  }
+
+  @override
+  String get homeWidgetShortagesEmpty => 'ما فيه نواقص';
+
+  @override
+  String get tourDone => 'يلّا نبدأ';
+
+  @override
+  String get tourWelcomeBody => 'في نص دقيقة بنوريك وين كل شي.';
+
+  @override
+  String get tourHomeBody => 'فلوسك المتاحة، وأهم شي لازم يتسوّى اليوم.';
+
+  @override
+  String get tourMicBody =>
+      'قل «سجّل ٥٠ ريال قهوة» أو اسأل أي سؤال، وزاد يرد عليك.';
+
+  @override
+  String get tourCameraBody =>
+      'صوّر الفاتورة، وزاد يسجلها في مصاريفك ويضيف الأغراض للمخزون.';
+
+  @override
+  String get tourMoreBody => 'العائلة وعقل زاد وحسابك وكل المزايا.';
+
+  @override
+  String get shoppingBasketEmpty => 'السلة فاضية — أضف اللي ناقصك';
+}
