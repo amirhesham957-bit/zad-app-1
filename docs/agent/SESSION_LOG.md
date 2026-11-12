@@ -342,6 +342,14 @@ related:
 - **مستني المالك:** تغيير اسم فريق Vercel (السلَج لسه فيه اسمه في لينكات الـpreview) — الأداة اترفضت من نظام الصلاحيات.
 - **فخ:** `--font-display: var(--font-display)` في `@theme` بيلف على نفسه؛ متغير `next/font` لازم اسم مختلف (`--font-markazi`).
 
+## ٢٠٢٦-١١-١٣ (آخر الليل) — ١٠.٢(ب) اتقفل، على فرع `feat/10-2b-memory-heals`
+
+- **اتقاس على الحي:** ٣١ ملاحظة حية عند ٧ عملا، **صفر** ملاحظة اتحلّ محلها في تاريخ الجدول، صفر رابط contradicts رغم إن الليل شغال (`nightly-dream-reflection` آخر رن 200). ٥ أزواج متشابهة ٠٫٣٥–٠٫٦: ٢ نفس الحقيقة بكلام تاني (القسط، الكلام مع الوالدة)، ١ رفضين لنفس التنبيه، ٢ حقايق مختلفة (عيد ميلاد العميل وابنه) ⇒ التشابه لوحده مايفرّقش.
+- **اتبنى:** مايجريشن `20261113050000_memory_heals.sql` (`zad_memory_reviews` + `zad_memory_review_candidates` + `zad_memory_heal`، service_role بس)، `zad-brain/memoryHeals.ts` (موديل خفيف بيحكم same/update/contradiction/distinct، والحساس مابيروحش)، ومتوصّل في `nightly_dream_reflection` بعد ربط التناقضات. مفيش مسح أبداً.
+- **اتحقق:** SQL test (`memory_heals_test.sql`) ٢٠ فحص عدّوا على pgvector في docker (مش في CI: صورة CI مافيهاش pgvector، زي `memory_time_entities_test`)، واتعمله mutation على شرط `user_id` ووقع. `deno check` نجح، `memoryHeals_test.ts` ٨/٠، `_schema` ١٠/١٠.
+- **اتقفل (الجلسة التالية ١٢/١١):** المالك دمج #523 و#524. مهارات logo-design/rossark-motion-skill/screensdesign-data اتثبتت على main (`807e7f62`؛ `logo-design-skill/` في الجذر نسخة git خام وماتضافتش). الفرع اتعمله merge مع main (تعارض imports في `index.ts` + هنا). `deno check` كل الفانكشنز نضيف، `zad-brain` ١٤٦٧/٠، `_schema` ١٠/٠، `flutter analyze` نضيف، `flutter test` ٢١٢٢/٠. مراجعة الأمان (security-audit، وضع إرشادي): مفيش ملاحظات — الموديل بيرجّع رقم زوج مش id، `zad_memory_heal` بيتأكد من `user_id` للاتنين، الجدول RLS من غير صلاحيات، الدالتين service_role بس، والحقن أقصاه دمج غلط في ذاكرة نفس العميل (من غير مسح). سطر ZAD_PLAN ١٠.٢(ب) اتكتب. **بعد الدمج:** يتأكد على الحي إن `20261113050000` نزلت والجدول من غير صلاحيات لـanon/authenticated، وبعد أول ليلة: لوج `[dream] memory healed`.
+- **مفتوح من قبل:** #523 (١٠.٢أ شريحة ٢) اتعمله merge مع main واتحل التعارض في SESSION_LOG — mergeable، flutter ٢١٢٢/٠، العقل ١٤٥٩/٠. #524 (الدومين astralabshq.vercel.app في ٨.٣).
+- **اتحقق على الحي (#521):** المايجريشن نزلت، RLS شغال من غير سياسات، anon/authenticated من غير صلاحيات، الدالة لـauthenticated بس.
 ## ٢٠٢٦-١١-١٣ (بالليل، رابع) — «بلّغ عن الرد» اتنقل، و١٠.٢(أ) اتقفل
 
 - **اندمج:** #519. **مفتوح:** #521 (٨.٣ «بلّغ عن الرد» — شغل جلسة zad-app-1-d2، اتنقل من الفولدر الرئيسي لـworktree `/workspaces/zad-reply-reports` على `feat/reply-reports` بطلب المالك؛ الجلسة التانية وافقت تقف). بعد دمجه: يتحقق على الحي إن `20261113040000` في `schema_migrations` وإن `zad_reply_reports` عليه RLS ومن غير صلاحيات لـanon/authenticated.
