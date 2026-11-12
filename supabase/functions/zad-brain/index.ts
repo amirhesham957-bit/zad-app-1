@@ -4676,6 +4676,25 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       return JSON.stringify(data);
     }
 
+    case "set_item_preference": {
+      // ZAD_PLAN ١٠.١ الشريحة ٤د: صف في zad_item_preferences (البيت كله بيشوفه)، مش ملاحظة حرة.
+      const item = String(input?.item_name ?? "").trim().slice(0, 80);
+      const kind = String(input?.kind ?? "");
+      const brand = String(input?.brand ?? "").trim().slice(0, 60);
+      const { data, error } = await sb.rpc("zad_set_item_preference", {
+        p_item: item, p_kind: kind, p_brand: brand || null, p_user: userId,
+      });
+      if (error) return `فشل الحفظ: ${error.message}`;
+      const r = data as { ok?: boolean; reason?: string; marked_occasional?: number };
+      if (!r?.ok) {
+        return r?.reason === "brand_needed" ? "مرفوض: preferred_brand وrejected_brand محتاجين brand." : `مرفوض: ${r?.reason ?? "refused"}`;
+      }
+      if (kind === "accidental") {
+        return `اتسجّل إن ${item} اتجاب صدفة — مش هيدخل النواقص ولا قايمة الشرا${(r.marked_occasional ?? 0) > 0 ? "، وصفّه في المخزن بقى «على فترات»" : ""}.`;
+      }
+      return kind === "preferred_brand" ? `اتسجّل: ${item} ⇐ ${brand} (عروض الصبح بتمشي عليه).` : `اتسجّل: ${item} مش ${brand}.`;
+    }
+
     case "find_deals": {
       const store = String(input?.store ?? "").trim().slice(0, 60);
       const item = String(input?.item_name ?? "").trim().slice(0, 60);
@@ -6429,6 +6448,22 @@ export const CHAT_TOOLS: ToolDef[] = [
       type: "object",
       properties: { item_name: { type: "string", description: "اسم الصنف زي ما العميل قاله، مثلاً «زيت عافية»" } },
       required: ["item_name"],
+    },
+  },
+  {
+    // ZAD_PLAN ١٠.١ الشريحة ٤د — بتيجي بنية بس (ITEM_PREFERENCE_INTENT).
+    name: "set_item_preference",
+    description:
+      "سجّل تفضيل البيت لصنف: البراند اللي بيجيبوه (preferred_brand)، أو براند مابيجيبوهوش (rejected_brand)، أو إن الصنف " +
+      "اتجاب صدفة ومش هيتجاب تاني (accidental). «بنجيب نادك مش المراعي» = نداءين.",
+    input_schema: {
+      type: "object",
+      properties: {
+        item_name: { type: "string", description: "الصنف من غير ماركة: «حليب»، «رز»، «صوص ترافل»" },
+        kind: { type: "string", enum: ["preferred_brand", "rejected_brand", "accidental"] },
+        brand: { type: "string", description: "البراند — لازم مع preferred_brand وrejected_brand" },
+      },
+      required: ["item_name", "kind"],
     },
   },
   {
@@ -9014,7 +9049,8 @@ ${(offers("set_broke_mode") || snap?.broke_mode) ? `12. **وضع الطوارئ 
 ${(offers("start_savings_challenge") || snap?.savings_challenge) ? `13. **تحدي التوفير (savings_challenge)**: «تحدي توفير/ساعدني أوفّر/تحدي ٣٠ يوم» ⇒ start_savings_challenge. لو فيه تحدي شغال: اذكر اليوم (day من length_days) والسلسلة (streak) لما يكون ليها معنى، شجّعه يفضل تحت daily_cap، ولو سأل «ينفع أشتري كذا؟» قارن بالسقف اليومي.` : ""}
 ${snap?.commute ? `13هـ. **مواعيد يومه (commute)**: ${snap.commute} استخدمها في توقيت كلامك واقتراحاتك، ومتقولش تفاصيل عن مكانه؛ زاد مايعرفش أماكن.\n` : ""}${snap?.fuel_forecast ? `13د. **البنزين (fuel_forecast)**: ${snap.fuel_forecast}\n` : ""}${snap?.season_plan ? `13ج. **مواسم بلده (season_plan)**: ${snap.season_plan}\n` : ""}${(snap?.season_ahead) ? `13ب. **الموسم الجاي (season_ahead)**: اتبع season_ahead.instruction مرة في المحادثة لو الكلام عن البيت أو الشراء أو الميزانية — مش في كل رد، ومش في أول سطر.
 ` : ""}${(snap?.season) ? `14. **المواسم (season)**: لو season مش null، اتبع season.instruction في كل كلامك واقتراحاتك (رمضان: مفيش أكل بالنهار، فطار وسحور؛ العيد: العيدية والعزومات متوقعة). متفترضش إن العميل صايم أو بيحتفل لو قال غير كده.` : ""}
-${(offers("find_deals")) ? `15أ. **العروض (find_deals)**: «هاتلي عروض/دوّرلي على عرض/فيه عروض إيه/كود خصم» ⇒ نادِ find_deals الأول واعرض العروض بأسعارها ولينكاتها. الميزانية عمرها ما تكون سبب ترفض أو تأجّل بيه البحث أو تقول «انزل بص بنفسك» — ممكن يكون بيخطط للشهر الجاي أو عنده فلوس تانية. نصيحة الفلوس لو لازمة: سطر واحد في آخر الرد بعد العروض.
+${(offers("set_item_preference")) ? `15ب. **تفضيلات الصنف (set_item_preference)**: العميل قال البراند اللي بيجيبه أو اللي مش بيجيبه، أو إن صنف اتجاب صدفة ⇒ set_item_preference (مش remember)، ورد بسطر.
+` : ""}${(offers("find_deals")) ? `15أ. **العروض (find_deals)**: «هاتلي عروض/دوّرلي على عرض/فيه عروض إيه/كود خصم» ⇒ نادِ find_deals الأول واعرض العروض بأسعارها ولينكاتها. الميزانية عمرها ما تكون سبب ترفض أو تأجّل بيه البحث أو تقول «انزل بص بنفسك» — ممكن يكون بيخطط للشهر الجاي أو عنده فلوس تانية. نصيحة الفلوس لو لازمة: سطر واحد في آخر الرد بعد العروض.
 ` : ""}${(offers("suggest_recipes")) ? `15. **شيف زاد (suggest_recipes)**: «أطبخ إيه؟/أعمل أكل إيه من اللي عندي؟» ⇒ نادِ suggest_recipes واعرض من الوصفات اللي رجعت بس، باختصار — ممنوع تخترع وصفة من عندك. «افتحلي الشيف/صفحة الوصفات» ⇒ app_command(screen=recipes).` : ""}
 
 === SNAPSHOT ===
