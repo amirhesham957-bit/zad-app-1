@@ -4,7 +4,7 @@ import { useRef } from "react";
 import { motion, useReducedMotion, useScroll, useTransform, type MotionValue } from "motion/react";
 
 const text =
-  "كل بيت فيه حد شايل في دماغه الفلوس، والناقص في المطبخ، ومعاد الدوا، ومين عليه إيه. زاد اتعمل عشان الحد ده يرتاح.";
+  "في كل بيت شخصٌ يحمل همّ المال، وما ينقص المطبخ، ومواعيد الدواء، ومن عليه ماذا. صُمّم زاد ليرتاح هذا الشخص.";
 
 function Word({ word, range, progress }: { word: string; range: [number, number]; progress: MotionValue<number> }) {
   const opacity = useTransform(progress, range, [0.15, 1]);

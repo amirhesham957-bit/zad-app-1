@@ -22,10 +22,10 @@ export default function Download() {
         <div className="relative grid grid-cols-1 items-center gap-10 md:grid-cols-[1.4fr_1fr]">
           <div>
             <h2 className="display text-7xl leading-[0.95] md:text-[9rem]">
-              خلّي زاد <span className="text-mint-glow">يشيل عنك.</span>
+              دع زاد <span className="text-mint-glow">يحمل عنك.</span>
             </h2>
             <p className="mt-6 max-w-[36ch] text-lg text-white/80 md:text-xl">
-              مجاني على أندرويد دلوقتي. نسخة الآيفون في الطريق.
+              مجاني على أندرويد الآن، ونسخة الآيفون قريباً.
             </p>
             <div className="mt-10">
               <StoreButtons tone="green" />

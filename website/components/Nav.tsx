@@ -6,9 +6,10 @@ import { useState } from "react";
 import { PlayButton } from "./StoreButtons";
 
 const links = [
-  { href: "#story", label: "إزاي بيشتغل" },
+  { href: "#story", label: "كيف يعمل" },
   { href: "#brain", label: "عقل زاد" },
   { href: "#download", label: "التحميل" },
+  { href: "#support", label: "الدعم" },
 ];
 
 export default function Nav() {

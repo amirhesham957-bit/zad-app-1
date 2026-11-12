@@ -8,3 +8,7 @@ export const APP_STORE_URL: string | null = null;
 
 export const COMPANY = "Astra Labs";
 export const COMPANY_AR = "أسترا لابس";
+
+// Same inbox the app's support tickets go to
+// (zad_flutter/lib/features/support/data/support_tickets.dart).
+export const SUPPORT_EMAIL = "astralabs.supp@gmail.com";

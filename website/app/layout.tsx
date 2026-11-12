@@ -19,14 +19,14 @@ const display = Markazi_Text({
 export const metadata: Metadata = {
   title: "زاد | عقل واحد لبيتك كله",
   description:
-    "زاد بيسجّل مصاريفك من رسايل البنك، بيعرف ناقص إيه في المطبخ، وبيفكّرك بالدوا. ومعاه زادو. من أسترا لابس.",
+    "يسجّل زاد مصاريفك من رسائل البنك، ويعرف ما ينقص مطبخك، ويذكّرك بمواعيد الدواء. ومعه زادو. من أسترا لابس.",
   applicationName: "Zad",
   authors: [{ name: "Astra Labs" }],
   icons: { icon: "/carrot_logo.svg" },
   openGraph: {
     title: "زاد | عقل واحد لبيتك كله",
-    description: "مصاريفك، مطبخك، دواك وعيلتك في تطبيق واحد بيفكر معاك.",
-    locale: "ar_EG",
+    description: "مصاريفك ومطبخك ودواؤك وعائلتك، في تطبيق واحد يفكّر معك.",
+    locale: "ar_SA",
     type: "website",
   },
 };
