@@ -303,3 +303,10 @@ related:
 - **المجس:** تحذير «did not answer with results» = 546 `WORKER_RESOURCE_LIMIT` عند ~٩٨ ثانية على نداء المجس نفسه (curl، بودي ٢٩ بايت)؛ ٢٠٣ من ٢٠٦ نداء عملا 200. بعد #513: ٣ دفعات ٥٦/٣٧/٤٦ ثانية + نداء البحث ١٤ ثانية، كلهم 200، ٨ من ٨.
 - **ملاحظة مش عطل:** `pet_call` بيعمل لحد ٢٤ مهمة في اليوم لعميل واحد، كلها `cancelled` قبل الإرسال (إعادة كل ساعة) — الإرسال الفعلي ١ في اليوم بالكتير.
 - **فخ:** `query_logs` نافذته ٢٤ ساعة بالكتير، والتاريخ في `where` لازم يتحط في `iso_timestamp_*` مش نص في الـSQL.
+
+## ٢٠٢٦-١١-١٣ (بالليل) — ١٠.١٦ شريحة ٦ (النصوص السعودي)
+
+- **اتأكد على الحي:** #516 اندمج ونشره (run 43277021150) أخضر: `20261113030000_dialect_region` في `schema_migrations`، والعمود `zad_customer_profile.dialect_region` بالـcheck بتاعه موجود.
+- **الشريحة:** `app_ar_SA.arb` من ٢٠٧ لـ٣٠٦ نص + `saudi_coverage_test` (أي نص مصري جديد من غير نسخة سعودي يفشل) + أزرار الإشعارات على `zadL10nProvider`.
+- **تست متقطع مش من الشريحة:** `settings_controller_test` «the salary day is saved the same way» وقع مرة في التشغيل الكامل (state = null بعد `setCycleStartDay` رجّع true — سباق مع القراية الأولى)، وعدّى ٣ من ٣ لوحده.
+- **فخ:** `flutter gen-l10n` بقى بيعمل format افتراضياً ⇒ diff ضخم في الملفات المولّدة. ولّد بـ`format: false` مؤقتاً في `l10n.yaml` (ورجّعه)، ورجّع `zad_l10n.dart`/`zad_l10n_en.dart` من main لو مفيش مفاتيح جديدة.
