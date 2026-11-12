@@ -270,7 +270,25 @@ void main() {
       platform.refreshes.add(
         'token-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
       );
-      await pumpEventQueue();
+      // The stream's listener registers without being awaited, and the
+      // device box write after the enqueue is real disk IO that
+      // pumpEventQueue does not wait for. Waiting for that write keeps it
+      // from landing after tearDown closed the box (CI, 2026-11-12:
+      // "HiveError: Box has already been closed").
+      for (var i = 0; i < 200; i++) {
+        if (container
+                .read(pushRegistrarProvider)
+                .lastToken
+                ?.startsWith('token-bbb') ??
+            false) {
+          break;
+        }
+        await Future<void>.delayed(const Duration(milliseconds: 5));
+      }
+      expect(
+        container.read(pushRegistrarProvider).lastToken,
+        startsWith('token-bbb'),
+      );
       expect(outbox.entries().single.payload['token'], startsWith('token-bbb'));
       expect(
         container.read(alertsControllerProvider).permission,
