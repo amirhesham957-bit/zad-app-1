@@ -24,7 +24,7 @@ import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { mediaGate } from "./entitlement.ts";
 import { routePhoto } from "./photoRoute.ts";
 import { alertEmotion, alertSpeechText, geminiKeysFromEnv, pcmToMp3, synthesizeAlertPcm, wantsVoice, speechLimitForMoment } from "./voiceAlert.ts";
-import { detectDialectFromText } from "../_shared/dialect.ts";
+import { detectDialectFromText, voiceCountry } from "../_shared/dialect.ts";
 import { type BotDialect, chatBotDialect, localizeBotText } from "./botDialect.ts";
 import { countryKeyboard, COUNTRY_QUESTION, countrySavedReply, parseCountryCallback, shouldAskCountry } from "./countryAsk.ts";
 import { COMMUNITY_MARKETS, type CheapestRow, formatCommunityPricesPost } from "./communityPrices.ts";
@@ -389,8 +389,11 @@ async function deliverVoiceAlert(
   // صوت زاد اللي العميل اختاره في «ملفي» — نفس الصوت اللي بيسمعه في التطبيق. فشل القراءة = بنت.
   let voice: ZadVoiceGender = "female";
   try {
-    const { data } = await sb.from("zad_customer_profile").select("zad_voice").eq("user_id", userId).maybeSingle();
-    voice = zadVoiceGender((data as { zad_voice?: string | null } | null)?.zad_voice);
+    const { data } = await sb.from("zad_customer_profile").select("zad_voice,dialect").eq("user_id", userId).maybeSingle();
+    const vp = data as { zad_voice?: string | null; dialect?: string | null } | null;
+    voice = zadVoiceGender(vp?.zad_voice);
+    // لهجة «ملفي» بتكسب على بلد الحساب في لكنة الفويس، زي التطبيق (ZAD_PLAN ١٠.١٦).
+    country = voiceCountry(country, vp?.dialect);
   } catch (_e) { /* الافتراضي */ }
   const text = speech?.trim() ? alertSpeechText("", speech, speechLimitForMoment(moment)) : alertSpeechText(title, body);
   const pcm = await synthesizeAlertPcm(text, geminiKeysFromEnv(), fetch, { emotion, country, voice });

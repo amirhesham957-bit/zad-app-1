@@ -315,3 +315,20 @@ export function dialectReminder(code: DialectCode, region?: RegionCode | null): 
     ? `Final reminder: ${d.rules}`
     : `تذكير أخير قبل ما تكتب: ${d.rules} ${d.examples[0] ? `(زي «${d.examples[0]}»)` : ""}`;
 }
+
+/**
+ * بلد الصوت (لكنة Gemini TTS وصوت Azure) — ZAD_PLAN ١٠.١٦ (٣). اللهجة اللي العميل اختارها في «ملفي»
+ * (`zad_customer_profile.dialect`) بتكسب على بلد الحساب، زي ما بتكسب في كلام العقل (`resolveDialect`):
+ * مصري حسابه سعودي كان العقل بيكلّمه مصري والصوت بيقرا الكلام ده بلكنة سعودية (اتقاس ١٣/١١: الصوت
+ * بيقرا `zad_users.country` بس). لو اللهجة هي لهجة بلد الحساب أصلاً (إماراتي ⇐ GULF) بيفضل بلده هو.
+ * من غير اختيار = بلد الحساب زي الأول. EN = من غير لكنة (النص نفسه بيحدد).
+ */
+export function voiceCountry(country: unknown, preferred: unknown): string | null {
+  const account = countryCode(country);
+  const pref = String(preferred ?? "").trim().toUpperCase();
+  if (!pref || !Object.hasOwn(DIALECTS, pref)) return account;
+  const code = pref as DialectCode;
+  if (account && COUNTRY_TO_DIALECT[account] === code) return account;
+  if (code === "EN") return null;
+  return DIALECTS[code].locale.split("-")[1] ?? account;
+}
