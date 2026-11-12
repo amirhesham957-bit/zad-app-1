@@ -189,14 +189,18 @@ class PantryController extends Notifier<PantryView> {
       .read(consumptionObservationsProvider)
       .record(item.itemName, item.quantity, ObservationSource.manual);
 
-  /// Kotlin's `EditInventoryDialog`: name, count and unit. The learner hears
-  /// the new count, as it does after −/+.
+  /// Kotlin's `EditInventoryDialog`: name, count, unit and expiry. The
+  /// learner hears the new count, as it does after −/+.
+  ///
+  /// A null [expiryDate] keeps the row's date; [clearExpiry] removes it.
   Future<void> edit(
     InventoryItem item, {
     required String itemName,
     required double quantity,
     String? unit,
     String? restockMode,
+    DateTime? expiryDate,
+    bool clearExpiry = false,
   }) async {
     final updated = await ref
         .read(inventoryRepositoryProvider)
@@ -206,6 +210,8 @@ class PantryController extends Notifier<PantryView> {
             quantity: quantity,
             unit: unit,
             restockMode: restockMode,
+            expiryDate: expiryDate,
+            clearExpiry: clearExpiry,
           ),
         );
     if (updated.quantity != item.quantity) await _reading(updated);
