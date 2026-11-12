@@ -2,7 +2,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.6";
 import { secretMatches } from "../_shared/cronSecret.ts";
 import { observedWeeks } from "./profileMath.ts";
-import { favoriteStores, itemCycles, shoppingRhythm } from "./habits.ts";
+import { favoriteStores, householdRhythm, itemCycles, shoppingRhythm } from "./habits.ts";
 import { PURCHASE_SOURCES, purchaseDaysByItem } from "../_shared/restockCycle.ts";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -86,7 +86,7 @@ Deno.serve(async (req: Request) => {
       const subMonthly = (subs || []).reduce((sum, s) => sum + (s.amount || 0), 0);
 
       // الشريحة ٤ (habits.ts): المحلات، ومواعيد الشرا، ودورة كل صنف — بتوقيت سوق الحساب، ومخزن البيت كله.
-      const { data: me } = await supabase.from("zad_users").select("country").eq("id", userId).maybeSingle();
+      const { data: me } = await supabase.from("zad_users").select("country,cycle_start_day").eq("id", userId).maybeSingle();
       const { data: tzData } = await supabase.rpc("zad_market_timezone", { p_country: (me as { country?: string } | null)?.country ?? null });
       const tz = typeof tzData === "string" && tzData ? tzData : "UTC";
       const { data: fam } = await supabase.from("family_members").select("family_id").eq("user_id", userId).maybeSingle();
@@ -107,7 +107,11 @@ Deno.serve(async (req: Request) => {
       // Upsert profile
       const { error: upsertError } = await supabase.from("user_behavior_profile").upsert({
         favorite_stores: favoriteStores(habitTxns, tz),
-        shopping_rhythm: shoppingRhythm(habitTxns, tz),
+        // ١٠.١ الشريحة ٤هـ: إيقاع البيت كله (شهري بالجملة بعد القبض / أسبوعي / كل كام يوم) جنب مواعيده.
+        shopping_rhythm: (() => {
+          const r = shoppingRhythm(habitTxns, tz);
+          return { ...r, ...householdRhythm(habitTxns, tz, (me as { cycle_start_day?: number | null } | null)?.cycle_start_day, r.typical_gap_days) };
+        })(),
         item_cycles: itemCycles(pantry ?? [], purchaseDaysByItem(obs ?? [])),
         timezone: tz,
         user_id: userId,
