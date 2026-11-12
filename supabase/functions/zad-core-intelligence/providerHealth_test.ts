@@ -25,6 +25,32 @@ Deno.test("reports configured/status per provider and never echoes a key", async
   assertEquals(report.other_key_like_secret_names, ["GOOGLE_MAPS_API_KEY"]);
 });
 
+Deno.test("with a paid key, the free keys get their own probe and never leak", async () => {
+  const env: Record<string, string> = {
+    ZAD_PAID_KEY_1: "paid-1", ZAD_API_KEY_1: "free-1", ZAD_API_KEY_7: "free-7", ZAD_FREE_AFTER_PAID: "1",
+    GROQ_API_KEY_1: "groq-1",
+  };
+  const fakeFetch = ((url: string, init?: RequestInit) => {
+    const key = (init?.headers as Record<string, string> | undefined)?.["x-goog-api-key"];
+    if (key === "free-7") return Promise.resolve(new Response("API key not valid", { status: 400 }));
+    return Promise.resolve(new Response("{}", { status: 200 }));
+  }) as typeof fetch;
+  const report = await providerHealth((n) => env[n], Object.keys(env), fakeFetch);
+  assertEquals((report.gemini_pool as unknown[]).length, 1);
+  assertEquals((report.groq_pool as unknown[]).length, 1);
+  assertEquals((report.free_pool as Array<{ ok: boolean }>).map((p) => p.ok), [true, false]);
+  assertEquals(report.free_after_paid, true);
+  const text = JSON.stringify(report);
+  assert(!text.includes("free-1") && !text.includes("free-7") && !text.includes("paid-1"));
+});
+
+Deno.test("without a paid key the free keys are the gemini pool, not a second list", async () => {
+  const env: Record<string, string> = { ZAD_API_KEY_1: "free-1", ZAD_API_KEY_2: "free-2" };
+  const report = await providerHealth((n) => env[n], Object.keys(env), (() => Promise.resolve(new Response("{}"))) as typeof fetch);
+  assertEquals((report.gemini_pool as unknown[]).length, 2);
+  assertEquals(report.free_pool, []);
+});
+
 Deno.test("key-like secret names are picked out so a key saved under an unexpected name shows up", () => {
   assertEquals(interestingSecretNames(["LOCATION_IQ_KEY", "SUPABASE_URL", "PEXELS_API_KEY", "RAPIDAPI_KEY"]), ["LOCATION_IQ_KEY", "PEXELS_API_KEY", "RAPIDAPI_KEY"]);
 });
