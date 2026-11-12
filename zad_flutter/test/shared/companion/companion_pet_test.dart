@@ -9,6 +9,7 @@ import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:timezone/data/latest.dart' as tzdata;
 import 'package:zad/core/data/local/boxes.dart';
 import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/auth/application/session_controller.dart';
 import 'package:zad/shared/companion/application/pet_care_controller.dart';
 import 'package:zad/shared/companion/data/companion_remote.dart';
@@ -442,10 +443,8 @@ class _SignedOut extends SessionController {
 
 /// Every line [PetLines.fed] can say.
 abstract final class PetLinesSamples {
-  static final Set<String> fed = <String>{
-    for (var i = 0; i < 40; i++) PetLines.fed(PetCareOutcome.done),
-  };
-  static final Set<String> full = <String>{
-    for (var i = 0; i < 40; i++) PetLines.fed(PetCareOutcome.full),
-  };
+  static final Set<String> fed = PetLines.lines(zadL10nArabic.petLinesFed)
+      .toSet();
+  static final Set<String> full = PetLines.lines(zadL10nArabic.petLinesFull)
+      .toSet();
 }

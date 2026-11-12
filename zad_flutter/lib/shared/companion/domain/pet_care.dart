@@ -14,6 +14,7 @@ library;
 import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
+import 'package:zad/core/l10n/generated/zad_l10n.dart';
 import 'package:zad/shared/orb/domain/companion_state.dart';
 
 /// What came of a feed or a drink.
@@ -237,90 +238,52 @@ class PetCare {
   };
 }
 
-/// What the pet says. Display text, Arabic for the launch.
+/// What the pet says. Display text: each pool is one ARB string, one line
+/// per row (`petLines*` in `app_ar.arb`, Saudi in `app_ar_SA.arb`).
 abstract final class PetLines {
   /// A line for [mood]. [loggedToday] nudges toward the day's habit when
   /// nothing is wrong.
   static String forMood(
+    ZadL10n l10n,
     CompanionState mood, {
     required String name,
     required bool loggedToday,
     math.Random? rng,
-  }) {
-    final r = rng ?? math.Random();
-    final lines = switch (mood) {
-      CompanionState.hungry => const <String>[
-        'بطني بتصوصو… تأكّلني؟ 🍎',
-        'جعان أوي 🥺 حاجة صغيرة بس',
-        'شامم ريحة أكل؟ لأ ده أنا اللي جعان 😅',
-      ],
-      CompanionState.thirsty => const <String>[
-        'عطشان… شوية مية؟ 💧',
-        'ريقي ناشف 🥵 اسقيني',
-        'كوباية مية واحدة وأبقى زي الفل 💧',
-      ],
-      CompanionState.sleepy => const <String>[
-        'نعسان… 😴 تصبح على خير',
-        'هاااه 🥱 نكمّل بكرة؟',
-        'عيني بتقفل لوحدها… 💤',
-      ],
-      CompanionState.sad => <String>[
-        'وحشتني… ونسيت أكلي وميتي 🥺',
-        '$name زعلان شوية… تعالى نقعد سوا 💔',
-      ],
-      CompanionState.happy || CompanionState.celebrating => const <String>[
-        'أنا مبسوط معاك 💚',
-        'شكراً إنك فاكرني 🥰',
-        'إنت أحلى صاحب 🤗',
-      ],
-      _ =>
-        loggedToday
-            ? const <String>[
-                'يومك عامل إيه؟ ✨',
-                'أنا هنا لو احتجتني 💚',
-                'سجّلت النهارده — برافو عليك 👏',
-              ]
-            : const <String>[
-                'سجّلت مصروفاتك النهارده؟ 📝',
-                'مصروف واحد بس وأفرح بيك 🌱',
-              ],
-    };
-    return lines[r.nextInt(lines.length)];
-  }
-
-  /// After a meal.
-  static String fed(PetCareOutcome o, {math.Random? rng}) => _pick(switch (o) {
-    PetCareOutcome.done => const <String>[
-      'يمّ يمّ! 😋',
-      'تسلم إيدك 🍎',
-      'أحلى أكلة 🤤',
-    ],
-    PetCareOutcome.full => const <String>[
-      'شبعان خلاص 🤭',
-      'مش قادر آكل تاني 😅',
-    ],
+  }) => _pick(switch (mood) {
+    CompanionState.hungry => l10n.petLinesHungry,
+    CompanionState.thirsty => l10n.petLinesThirsty,
+    CompanionState.sleepy => l10n.petLinesSleepy,
+    CompanionState.sad => l10n.petLinesSad(name),
+    CompanionState.happy || CompanionState.celebrating => l10n.petLinesHappy,
+    _ => loggedToday ? l10n.petLinesIdleLogged : l10n.petLinesIdleNotLogged,
   }, rng);
 
-  /// After a drink.
-  static String watered(PetCareOutcome o, {math.Random? rng}) =>
+  /// After a meal.
+  static String fed(ZadL10n l10n, PetCareOutcome o, {math.Random? rng}) =>
       _pick(switch (o) {
-        PetCareOutcome.done => const <String>[
-          'آآه انتعشت! 💧',
-          'كده أحسن بكتير 😌',
-        ],
-        PetCareOutcome.full => const <String>[
-          'مش عايز مية دلوقتي 🙈',
-          'شربت كفاية 😄',
-        ],
+        PetCareOutcome.done => l10n.petLinesFed,
+        PetCareOutcome.full => l10n.petLinesFull,
+      }, rng);
+
+  /// After a drink.
+  static String watered(ZadL10n l10n, PetCareOutcome o, {math.Random? rng}) =>
+      _pick(switch (o) {
+        PetCareOutcome.done => l10n.petLinesWatered,
+        PetCareOutcome.full => l10n.petLinesNotThirsty,
       }, rng);
 
   /// After a pat.
-  static String petted({math.Random? rng}) => _pick(const <String>[
-    'هيهي بتزغزغني 🤭',
-    'كمان! كمان! 🥰',
-    'بحبك 💚',
-  ], rng);
+  static String petted(ZadL10n l10n, {math.Random? rng}) =>
+      _pick(l10n.petLinesPetted, rng);
 
-  static String _pick(List<String> l, math.Random? rng) =>
-      l[(rng ?? math.Random()).nextInt(l.length)];
+  /// Every line a pool can say.
+  static List<String> lines(String pool) => <String>[
+    for (final line in pool.split('\n'))
+      if (line.trim().isNotEmpty) line.trim(),
+  ];
+
+  static String _pick(String pool, math.Random? rng) {
+    final l = lines(pool);
+    return l[(rng ?? math.Random()).nextInt(l.length)];
+  }
 }

@@ -6547,6 +6547,372 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'مفيش تنبيهات جديدة'**
   String get notifNoneNew;
+
+  /// Introduce-yourself screen: title.
+  ///
+  /// In ar, this message translates to:
+  /// **'عرّفني بيك'**
+  String get introTitle;
+
+  /// Introduce-yourself: lead line.
+  ///
+  /// In ar, this message translates to:
+  /// **'خمس أسئلة وسؤال اختياري، عشان أكلمك صح وآخد بالي من اللي في رعايتك.'**
+  String get introLead;
+
+  /// Introduce-yourself: name question.
+  ///
+  /// In ar, this message translates to:
+  /// **'أناديك بإيه؟'**
+  String get introNameQuestion;
+
+  /// Introduce-yourself: name hint.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسمك أو اسم الدلع'**
+  String get introNameHint;
+
+  /// Introduce-yourself: gender question.
+  ///
+  /// In ar, this message translates to:
+  /// **'أكلمك بصيغة إيه؟'**
+  String get introGenderQuestion;
+
+  /// Gender chip.
+  ///
+  /// In ar, this message translates to:
+  /// **'راجل'**
+  String get introGenderMale;
+
+  /// Gender chip.
+  ///
+  /// In ar, this message translates to:
+  /// **'ست'**
+  String get introGenderFemale;
+
+  /// Introduce-yourself: role question.
+  ///
+  /// In ar, this message translates to:
+  /// **'إنت مين في البيت؟'**
+  String get introRoleQuestion;
+
+  /// Role chip (stored as father).
+  ///
+  /// In ar, this message translates to:
+  /// **'أب'**
+  String get introRoleFather;
+
+  /// Role chip (stored as mother).
+  ///
+  /// In ar, this message translates to:
+  /// **'أم'**
+  String get introRoleMother;
+
+  /// Role chip.
+  ///
+  /// In ar, this message translates to:
+  /// **'زوج'**
+  String get introRoleHusband;
+
+  /// Role chip.
+  ///
+  /// In ar, this message translates to:
+  /// **'زوجة'**
+  String get introRoleWife;
+
+  /// Role chip.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابن'**
+  String get introRoleSon;
+
+  /// Role chip.
+  ///
+  /// In ar, this message translates to:
+  /// **'بنت'**
+  String get introRoleDaughter;
+
+  /// Role chip (stored as single).
+  ///
+  /// In ar, this message translates to:
+  /// **'عايش لوحدي'**
+  String get introRoleSingle;
+
+  /// Role chip.
+  ///
+  /// In ar, this message translates to:
+  /// **'طالب'**
+  String get introRoleStudent;
+
+  /// Role chip.
+  ///
+  /// In ar, this message translates to:
+  /// **'جد/جدة'**
+  String get introRoleGrandparent;
+
+  /// Role chip (stored as other).
+  ///
+  /// In ar, this message translates to:
+  /// **'غير كده'**
+  String get introRoleOther;
+
+  /// Introduce-yourself: cares-for question.
+  ///
+  /// In ar, this message translates to:
+  /// **'مين في رعايتك؟'**
+  String get introCaresQuestion;
+
+  /// Cares-for hint.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختار كل اللي ينطبق.'**
+  String get introCaresHint;
+
+  /// Cares-for chip (stored as children).
+  ///
+  /// In ar, this message translates to:
+  /// **'أولادي'**
+  String get introCaresChildren;
+
+  /// Cares-for chip.
+  ///
+  /// In ar, this message translates to:
+  /// **'أبويا أو أمي'**
+  String get introCaresParents;
+
+  /// Cares-for chip.
+  ///
+  /// In ar, this message translates to:
+  /// **'زوجي أو زوجتي'**
+  String get introCaresSpouse;
+
+  /// Cares-for chip.
+  ///
+  /// In ar, this message translates to:
+  /// **'إخواتي'**
+  String get introCaresSiblings;
+
+  /// Cares-for chip.
+  ///
+  /// In ar, this message translates to:
+  /// **'جدي أو جدتي'**
+  String get introCaresGrandparents;
+
+  /// Cares-for: the empty answer.
+  ///
+  /// In ar, this message translates to:
+  /// **'محدش — مسؤول عن نفسي بس'**
+  String get introCaresNobody;
+
+  /// Introduce-yourself: household size (zad_customer_profile.household_size).
+  ///
+  /// In ar, this message translates to:
+  /// **'كام واحد عايش في البيت؟'**
+  String get introHouseholdQuestion;
+
+  /// Household size hint.
+  ///
+  /// In ar, this message translates to:
+  /// **'معاك إنت. عشان أحسب استهلاك البيت صح.'**
+  String get introHouseholdHint;
+
+  /// Household size chip: seven and up (stored as 7).
+  ///
+  /// In ar, this message translates to:
+  /// **'7 أو أكتر'**
+  String get introHouseholdMany;
+
+  /// Introduce-yourself: pay day.
+  ///
+  /// In ar, this message translates to:
+  /// **'بتقبض يوم كام في الشهر؟'**
+  String get introPayDayQuestion;
+
+  /// Pay day hint.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختياري — عشان أحسب شهرك من يوم القبض.'**
+  String get introPayDayHint;
+
+  /// Pay day: no answer.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش ثابت / مش عايز أقول'**
+  String get introPayDayNone;
+
+  /// Pay day option.
+  ///
+  /// In ar, this message translates to:
+  /// **'يوم {day}'**
+  String introPayDay(int day);
+
+  /// Introduce-yourself: save button.
+  ///
+  /// In ar, this message translates to:
+  /// **'يلا بينا'**
+  String get introSave;
+
+  /// Introduce-yourself: save failed.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقدرتش أحفظ — اتأكد من النت وجرّب تاني.'**
+  String get introSaveFailed;
+
+  /// First-steps screen title.
+  ///
+  /// In ar, this message translates to:
+  /// **'أول خطوة'**
+  String get firstStepsTitle;
+
+  /// First steps: lead.
+  ///
+  /// In ar, this message translates to:
+  /// **'تلات خطوات في دقيقتين، وزاد يبدأ يشتغل معاك من النهارده.'**
+  String get firstStepsLead;
+
+  /// First steps: step 1.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجّل أول مصروف'**
+  String get firstStepsSpendTitle;
+
+  /// First steps: step 1 body.
+  ///
+  /// In ar, this message translates to:
+  /// **'أي حاجة صرفتها النهارده — قهوة، مواصلات، عيش. من هنا زاد بيبدأ يفهم شهرك.'**
+  String get firstStepsSpendBody;
+
+  /// First steps: step 1 done.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتسجل ✓'**
+  String get firstStepsSpendDone;
+
+  /// First steps: step 1 button.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجّل مصروف'**
+  String get firstStepsSpendAction;
+
+  /// First steps: step 2.
+  ///
+  /// In ar, this message translates to:
+  /// **'فعّل الإشعارات'**
+  String get firstStepsAlertsTitle;
+
+  /// First steps: step 2 body.
+  ///
+  /// In ar, this message translates to:
+  /// **'عشان أقولك لما الميزانية تقرب تخلص، وتوصلك مواعيد الدوا والفواتير في وقتها.'**
+  String get firstStepsAlertsBody;
+
+  /// First steps: step 2 done.
+  ///
+  /// In ar, this message translates to:
+  /// **'متفعّلة ✓'**
+  String get firstStepsAlertsDone;
+
+  /// First steps: step 2 button.
+  ///
+  /// In ar, this message translates to:
+  /// **'فعّل'**
+  String get firstStepsAlertsAction;
+
+  /// First steps: step 3.
+  ///
+  /// In ar, this message translates to:
+  /// **'اربط بوت تليجرام'**
+  String get firstStepsTelegramTitle;
+
+  /// First steps: step 3 body.
+  ///
+  /// In ar, this message translates to:
+  /// **'من غيره التذكيرات وسؤال «اقفل يومك» مش هتوصلك وانت برّه التطبيق.'**
+  String get firstStepsTelegramBody;
+
+  /// First steps: all done.
+  ///
+  /// In ar, this message translates to:
+  /// **'يلا على زاد'**
+  String get firstStepsGo;
+
+  /// First steps: skip.
+  ///
+  /// In ar, this message translates to:
+  /// **'كمّل بعدين — افتح زاد'**
+  String get firstStepsLater;
+
+  /// Companion lines, one per row: hungry.
+  ///
+  /// In ar, this message translates to:
+  /// **'بطني بتصوصو… تأكّلني؟ 🍎\nجعان أوي 🥺 حاجة صغيرة بس\nشامم ريحة أكل؟ لأ ده أنا اللي جعان 😅'**
+  String get petLinesHungry;
+
+  /// Companion lines: thirsty.
+  ///
+  /// In ar, this message translates to:
+  /// **'عطشان… شوية مية؟ 💧\nريقي ناشف 🥵 اسقيني\nكوباية مية واحدة وأبقى زي الفل 💧'**
+  String get petLinesThirsty;
+
+  /// Companion lines: sleepy.
+  ///
+  /// In ar, this message translates to:
+  /// **'نعسان… 😴 تصبح على خير\nهاااه 🥱 نكمّل بكرة؟\nعيني بتقفل لوحدها… 💤'**
+  String get petLinesSleepy;
+
+  /// Companion lines: sad.
+  ///
+  /// In ar, this message translates to:
+  /// **'وحشتني… ونسيت أكلي وميتي 🥺\n{name} زعلان شوية… تعالى نقعد سوا 💔'**
+  String petLinesSad(String name);
+
+  /// Companion lines: happy.
+  ///
+  /// In ar, this message translates to:
+  /// **'أنا مبسوط معاك 💚\nشكراً إنك فاكرني 🥰\nإنت أحلى صاحب 🤗'**
+  String get petLinesHappy;
+
+  /// Companion lines: idle, logged today.
+  ///
+  /// In ar, this message translates to:
+  /// **'يومك عامل إيه؟ ✨\nأنا هنا لو احتجتني 💚\nسجّلت النهارده — برافو عليك 👏'**
+  String get petLinesIdleLogged;
+
+  /// Companion lines: idle, nothing logged.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجّلت مصروفاتك النهارده؟ 📝\nمصروف واحد بس وأفرح بيك 🌱'**
+  String get petLinesIdleNotLogged;
+
+  /// Companion lines: after a meal.
+  ///
+  /// In ar, this message translates to:
+  /// **'يمّ يمّ! 😋\nتسلم إيدك 🍎\nأحلى أكلة 🤤'**
+  String get petLinesFed;
+
+  /// Companion lines: fed while full.
+  ///
+  /// In ar, this message translates to:
+  /// **'شبعان خلاص 🤭\nمش قادر آكل تاني 😅'**
+  String get petLinesFull;
+
+  /// Companion lines: after a drink.
+  ///
+  /// In ar, this message translates to:
+  /// **'آآه انتعشت! 💧\nكده أحسن بكتير 😌'**
+  String get petLinesWatered;
+
+  /// Companion lines: watered while not thirsty.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش عايز مية دلوقتي 🙈\nشربت كفاية 😄'**
+  String get petLinesNotThirsty;
+
+  /// Companion lines: after a pat.
+  ///
+  /// In ar, this message translates to:
+  /// **'هيهي بتزغزغني 🤭\nكمان! كمان! 🥰\nبحبك 💚'**
+  String get petLinesPetted;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

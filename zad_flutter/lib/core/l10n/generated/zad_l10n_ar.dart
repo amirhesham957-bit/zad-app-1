@@ -3629,6 +3629,204 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get notifAlreadyKnew => 'عرفت خلاص';
+
+  @override
+  String get introTitle => 'عرّفني بيك';
+
+  @override
+  String get introLead =>
+      'خمس أسئلة وسؤال اختياري، عشان أكلمك صح وآخد بالي من اللي في رعايتك.';
+
+  @override
+  String get introNameQuestion => 'أناديك بإيه؟';
+
+  @override
+  String get introNameHint => 'اسمك أو اسم الدلع';
+
+  @override
+  String get introGenderQuestion => 'أكلمك بصيغة إيه؟';
+
+  @override
+  String get introGenderMale => 'راجل';
+
+  @override
+  String get introGenderFemale => 'ست';
+
+  @override
+  String get introRoleQuestion => 'إنت مين في البيت؟';
+
+  @override
+  String get introRoleFather => 'أب';
+
+  @override
+  String get introRoleMother => 'أم';
+
+  @override
+  String get introRoleHusband => 'زوج';
+
+  @override
+  String get introRoleWife => 'زوجة';
+
+  @override
+  String get introRoleSon => 'ابن';
+
+  @override
+  String get introRoleDaughter => 'بنت';
+
+  @override
+  String get introRoleSingle => 'عايش لوحدي';
+
+  @override
+  String get introRoleStudent => 'طالب';
+
+  @override
+  String get introRoleGrandparent => 'جد/جدة';
+
+  @override
+  String get introRoleOther => 'غير كده';
+
+  @override
+  String get introCaresQuestion => 'مين في رعايتك؟';
+
+  @override
+  String get introCaresHint => 'اختار كل اللي ينطبق.';
+
+  @override
+  String get introCaresChildren => 'أولادي';
+
+  @override
+  String get introCaresParents => 'أبويا أو أمي';
+
+  @override
+  String get introCaresSpouse => 'زوجي أو زوجتي';
+
+  @override
+  String get introCaresSiblings => 'إخواتي';
+
+  @override
+  String get introCaresGrandparents => 'جدي أو جدتي';
+
+  @override
+  String get introCaresNobody => 'محدش — مسؤول عن نفسي بس';
+
+  @override
+  String get introHouseholdQuestion => 'كام واحد عايش في البيت؟';
+
+  @override
+  String get introHouseholdHint => 'معاك إنت. عشان أحسب استهلاك البيت صح.';
+
+  @override
+  String get introHouseholdMany => '7 أو أكتر';
+
+  @override
+  String get introPayDayQuestion => 'بتقبض يوم كام في الشهر؟';
+
+  @override
+  String get introPayDayHint => 'اختياري — عشان أحسب شهرك من يوم القبض.';
+
+  @override
+  String get introPayDayNone => 'مش ثابت / مش عايز أقول';
+
+  @override
+  String introPayDay(int day) {
+    return 'يوم $day';
+  }
+
+  @override
+  String get introSave => 'يلا بينا';
+
+  @override
+  String get introSaveFailed => 'مقدرتش أحفظ — اتأكد من النت وجرّب تاني.';
+
+  @override
+  String get firstStepsTitle => 'أول خطوة';
+
+  @override
+  String get firstStepsLead =>
+      'تلات خطوات في دقيقتين، وزاد يبدأ يشتغل معاك من النهارده.';
+
+  @override
+  String get firstStepsSpendTitle => 'سجّل أول مصروف';
+
+  @override
+  String get firstStepsSpendBody =>
+      'أي حاجة صرفتها النهارده — قهوة، مواصلات، عيش. من هنا زاد بيبدأ يفهم شهرك.';
+
+  @override
+  String get firstStepsSpendDone => 'اتسجل ✓';
+
+  @override
+  String get firstStepsSpendAction => 'سجّل مصروف';
+
+  @override
+  String get firstStepsAlertsTitle => 'فعّل الإشعارات';
+
+  @override
+  String get firstStepsAlertsBody =>
+      'عشان أقولك لما الميزانية تقرب تخلص، وتوصلك مواعيد الدوا والفواتير في وقتها.';
+
+  @override
+  String get firstStepsAlertsDone => 'متفعّلة ✓';
+
+  @override
+  String get firstStepsAlertsAction => 'فعّل';
+
+  @override
+  String get firstStepsTelegramTitle => 'اربط بوت تليجرام';
+
+  @override
+  String get firstStepsTelegramBody =>
+      'من غيره التذكيرات وسؤال «اقفل يومك» مش هتوصلك وانت برّه التطبيق.';
+
+  @override
+  String get firstStepsGo => 'يلا على زاد';
+
+  @override
+  String get firstStepsLater => 'كمّل بعدين — افتح زاد';
+
+  @override
+  String get petLinesHungry =>
+      'بطني بتصوصو… تأكّلني؟ 🍎\nجعان أوي 🥺 حاجة صغيرة بس\nشامم ريحة أكل؟ لأ ده أنا اللي جعان 😅';
+
+  @override
+  String get petLinesThirsty =>
+      'عطشان… شوية مية؟ 💧\nريقي ناشف 🥵 اسقيني\nكوباية مية واحدة وأبقى زي الفل 💧';
+
+  @override
+  String get petLinesSleepy =>
+      'نعسان… 😴 تصبح على خير\nهاااه 🥱 نكمّل بكرة؟\nعيني بتقفل لوحدها… 💤';
+
+  @override
+  String petLinesSad(String name) {
+    return 'وحشتني… ونسيت أكلي وميتي 🥺\n$name زعلان شوية… تعالى نقعد سوا 💔';
+  }
+
+  @override
+  String get petLinesHappy =>
+      'أنا مبسوط معاك 💚\nشكراً إنك فاكرني 🥰\nإنت أحلى صاحب 🤗';
+
+  @override
+  String get petLinesIdleLogged =>
+      'يومك عامل إيه؟ ✨\nأنا هنا لو احتجتني 💚\nسجّلت النهارده — برافو عليك 👏';
+
+  @override
+  String get petLinesIdleNotLogged =>
+      'سجّلت مصروفاتك النهارده؟ 📝\nمصروف واحد بس وأفرح بيك 🌱';
+
+  @override
+  String get petLinesFed => 'يمّ يمّ! 😋\nتسلم إيدك 🍎\nأحلى أكلة 🤤';
+
+  @override
+  String get petLinesFull => 'شبعان خلاص 🤭\nمش قادر آكل تاني 😅';
+
+  @override
+  String get petLinesWatered => 'آآه انتعشت! 💧\nكده أحسن بكتير 😌';
+
+  @override
+  String get petLinesNotThirsty => 'مش عايز مية دلوقتي 🙈\nشربت كفاية 😄';
+
+  @override
+  String get petLinesPetted => 'هيهي بتزغزغني 🤭\nكمان! كمان! 🥰\nبحبك 💚';
 }
 
 /// The translations for Arabic, as used in Saudi Arabia (`ar_SA`).
@@ -4163,4 +4361,143 @@ class ZadL10nArSa extends ZadL10nAr {
 
   @override
   String get notifNoneNew => 'ما فيه تنبيهات جديدة';
+
+  @override
+  String get introTitle => 'عرّفني عليك';
+
+  @override
+  String get introLead =>
+      'خمسة أسئلة وسؤال اختياري، عشان أكلمك صح وأنتبه للي في رعايتك.';
+
+  @override
+  String get introNameQuestion => 'وش أناديك؟';
+
+  @override
+  String get introNameHint => 'اسمك أو اللقب اللي تحبه';
+
+  @override
+  String get introGenderQuestion => 'أكلمك بأي صيغة؟';
+
+  @override
+  String get introGenderMale => 'رجّال';
+
+  @override
+  String get introGenderFemale => 'امرأة';
+
+  @override
+  String get introRoleQuestion => 'وش دورك في البيت؟';
+
+  @override
+  String get introRoleSingle => 'ساكن لحالي';
+
+  @override
+  String get introRoleOther => 'غير كذا';
+
+  @override
+  String get introCaresHint => 'اختر كل اللي ينطبق.';
+
+  @override
+  String get introCaresChildren => 'عيالي';
+
+  @override
+  String get introCaresParents => 'أبوي أو أمي';
+
+  @override
+  String get introCaresSiblings => 'إخواني';
+
+  @override
+  String get introCaresNobody => 'ما أحد — مسؤول عن نفسي بس';
+
+  @override
+  String get introHouseholdQuestion => 'كم شخص ساكن في البيت؟';
+
+  @override
+  String get introHouseholdHint => 'معك أنت. عشان أحسب استهلاك البيت صح.';
+
+  @override
+  String get introHouseholdMany => '7 أو أكثر';
+
+  @override
+  String get introPayDayQuestion => 'متى ينزل راتبك في الشهر؟';
+
+  @override
+  String get introPayDayHint => 'اختياري — عشان أحسب شهرك من يوم الراتب.';
+
+  @override
+  String get introPayDayNone => 'مو ثابت / ما أبي أقول';
+
+  @override
+  String get introSave => 'يلّا نبدأ';
+
+  @override
+  String get introSaveFailed => 'ما قدرت أحفظ — تأكد من النت وجرّب مرة ثانية.';
+
+  @override
+  String get firstStepsLead =>
+      'ثلاث خطوات في دقيقتين، وزاد يبدأ يشتغل معك من اليوم.';
+
+  @override
+  String get firstStepsSpendBody =>
+      'أي شي صرفته اليوم — قهوة، مواصلات، خبز. من هنا زاد يبدأ يفهم شهرك.';
+
+  @override
+  String get firstStepsSpendDone => 'انسجل ✓';
+
+  @override
+  String get firstStepsAlertsBody =>
+      'عشان أقولك إذا الميزانية قربت تخلص، وتوصلك مواعيد الدواء والفواتير في وقتها.';
+
+  @override
+  String get firstStepsAlertsDone => 'مفعّلة ✓';
+
+  @override
+  String get firstStepsTelegramBody =>
+      'بدونه التذكيرات وسؤال «اقفل يومك» ما راح توصلك وأنت برّا التطبيق.';
+
+  @override
+  String get firstStepsGo => 'يلّا على زاد';
+
+  @override
+  String get petLinesHungry =>
+      'بطني تقرقر… تأكّلني؟ 🍎\nجوعان مرة 🥺 شي صغير بس\nشامّ ريحة أكل؟ لا هذا أنا الجوعان 😅';
+
+  @override
+  String get petLinesThirsty =>
+      'عطشان… شوي موية؟ 💧\nريقي ناشف 🥵 اسقني\nكاسة موية وحدة وأصير تمام 💧';
+
+  @override
+  String get petLinesSleepy =>
+      'نعسان… 😴 تصبح على خير\nهاااه 🥱 نكمّل بكرة؟\nعيوني تسكّر لحالها… 💤';
+
+  @override
+  String petLinesSad(String name) {
+    return 'اشتقت لك… ونسيت أكلي وموياتي 🥺\n$name زعلان شوي… تعال نقعد سوا 💔';
+  }
+
+  @override
+  String get petLinesHappy =>
+      'أنا مبسوط معك 💚\nشكراً إنك ذاكرني 🥰\nأنت أحلى صاحب 🤗';
+
+  @override
+  String get petLinesIdleLogged =>
+      'وش أخبار يومك؟ ✨\nأنا هنا لو احتجتني 💚\nسجّلت اليوم — كفو عليك 👏';
+
+  @override
+  String get petLinesIdleNotLogged =>
+      'سجّلت مصاريفك اليوم؟ 📝\nمصروف واحد بس وأفرح فيك 🌱';
+
+  @override
+  String get petLinesFed => 'يمّ يمّ! 😋\nتسلم يدك 🍎\nأحلى أكلة 🤤';
+
+  @override
+  String get petLinesFull => 'شبعان خلاص 🤭\nما أقدر آكل زيادة 😅';
+
+  @override
+  String get petLinesWatered => 'آآه انتعشت! 💧\nكذا أحسن بكثير 😌';
+
+  @override
+  String get petLinesNotThirsty => 'ما أبي موية الحين 🙈\nشربت كفاية 😄';
+
+  @override
+  String get petLinesPetted => 'هيهي تدغدغني 🤭\nبعد! بعد! 🥰\nأحبك 💚';
 }
