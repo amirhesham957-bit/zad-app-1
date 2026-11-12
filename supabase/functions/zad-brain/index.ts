@@ -9216,7 +9216,11 @@ async function handleRequest(req: Request): Promise<Response> {
       await sbProbe.from("zad_chat_turns").delete().eq("user_id", ACCEPTANCE_USER_ID);
       await sbProbe.from("zad_appointments").delete().eq("user_id", ACCEPTANCE_USER_ID);
       const probeStarted = Date.now();
-      for (const c of ACCEPTANCE_CASES) {
+      // دفعات (١٣/١١): التمن لفات في نداء واحد كانوا ٧٠–١٠٧ ثانية، ومرتين يوم ١٢/١١ الـworker وقع بـ546
+      // WORKER_RESOURCE_LIMIT عند ~٩٨ ثانية، فالنشر طلع «did not answer with results». الـCI بينادي ٣ ٣.
+      const offset = Math.max(0, Math.floor(Number(body.offset) || 0));
+      const limit = Number(body.limit) > 0 ? Math.floor(Number(body.limit)) : ACCEPTANCE_CASES.length;
+      for (const c of ACCEPTANCE_CASES.slice(offset, offset + limit)) {
         if (only && !only.has(c.id)) continue;
         if (Date.now() - probeStarted > 115_000) {
           results.push({ id: c.id, pass: false, failure: "skipped: probe budget" });
@@ -9307,7 +9311,7 @@ async function handleRequest(req: Request): Promise<Response> {
         status: passed === results.length ? "success" : "warning", duration_ms: Date.now() - probeStarted,
         payload: { passed, total: results.length, results, search, context },
       });
-      return new Response(JSON.stringify({ passed, total: results.length, results, search, context }), { headers: CORS_HEADERS });
+      return new Response(JSON.stringify({ passed, total: results.length, of: ACCEPTANCE_CASES.length, results, search, context }), { headers: CORS_HEADERS });
     }
 
     // التقييم الليلي (ZAD_DREAM_PLAN.md ٢.١، ع٣): حالات evals/cases.ts على العقل الحي، على مفتاح التقييم
