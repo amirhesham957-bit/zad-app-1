@@ -7,10 +7,12 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
-# 1. إلغاء أي بناء قديم/معلق تلقائياً عند الدفع الجديد لمنع زحمة الطوابير
+# 1. إلغاء أي بناء قديم/معلق تلقائياً عند الدفع الجديد لمنع زحمة الطوابير — في الـPR بس.
+# على main كل push بيستنى دوره: رن 1.0.8+9 [closed-testing] (fb22af25، ١٣/١١) اتلغى لما
+# اندمج بعده PR تاني بدقايق، فالإصدار اللي فيه تصليح الإعلانات ماتبناش ولا اترفع.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   # The app's own gates before any APK is built (ZAD_DREAM_PLAN.md ش١): 1,636 tests
