@@ -32,6 +32,8 @@ export interface NewcomerMed {
 export interface NewcomerQuestion {
   /** ثابت لنفس الناقصة — عليه بيتعمل منع التكرار (facts.newcomer.key). */
   key: string;
+  /** سؤال واحد عن كذا دوا: مفتاح كل دوا (facts.newcomer.keys)، فكلهم يتعلّموا «اتسألوا». */
+  keys?: string[];
   gap: NewcomerGap;
   question: string;
   /** نفس الحقول اللي askedThisMorning بيقراها — الجواب بيتسجل بنفس الطريق. */
@@ -54,8 +56,7 @@ export function newcomerQuestion(input: {
   birthday: { for: string | null; question: string } | null;
   askedKeys: ReadonlySet<string>;
 }): NewcomerQuestion | null {
-  const candidates: NewcomerQuestion[] = input.medsWithoutTimes
-    .map(doseTimesQuestion).filter((q): q is NewcomerQuestion => q !== null);
+  const candidates: NewcomerQuestion[] = doseTimesQuestions(input.medsWithoutTimes, input.askedKeys);
   if (blank(input.profile?.pay_day)) {
     candidates.push({
       key: "newcomer:pay_day",
@@ -92,6 +93,51 @@ export function newcomerQuestion(input: {
   return candidates.find((c) => !input.askedKeys.has(c.key)) ?? null;
 }
 
+/** أقصى أدوية في سؤال واحد — نفس حد update_pharmacy_item في اللفة (validators.ts). */
+export const DOSE_TIMES_GROUP_MAX = 8;
+
+/**
+ * أسئلة المواعيد: سؤال واحد لكل شخص بكل أدويته اللي مالهاش مواعيد ولسه مااتسألش عنها (قرار المالك ١٣/١١:
+ * فاتورة فيها ٥ أدوية كانت بتبقى ٥ أسئلة في ٥ صبحيات). الترتيب: العميل نفسه الأول، وبعده كل شخص بأول
+ * ظهور له. دوا واحد ⇒ نفس سؤال doseTimesQuestion بالظبط.
+ */
+export function doseTimesQuestions(meds: readonly NewcomerMed[], asked: ReadonlySet<string>): NewcomerQuestion[] {
+  const groups = new Map<string, Array<{ q: NewcomerQuestion; name: string }>>();
+  for (const med of meds) {
+    const q = doseTimesQuestion(med);
+    if (!q || asked.has(q.key)) continue;
+    const who = (med.for_person ?? "").trim();
+    const list = groups.get(who) ?? [];
+    if (list.some((x) => x.q.key === q.key) || list.length >= DOSE_TIMES_GROUP_MAX) continue;
+    list.push({ q, name: med.name.trim() });
+    groups.set(who, list);
+  }
+  const order = [...groups.keys()].sort((a, b) => (a === "" ? -1 : b === "" ? 1 : 0));
+  return order.map((who) => {
+    const group = groups.get(who)!;
+    if (group.length === 1) return group[0].q;
+    const qs = group.map((x) => x.q);
+    const shown = group.map((x) => x.name);
+    const whose = who ? ` بتوع ${who}` : "";
+    return {
+      key: qs[0].key,
+      keys: qs.map((q) => q.key),
+      gap: "dose_times",
+      question: `الأدوية دي${whose} بتتاخد الساعة كام؟ ${shown.map((n) => `«${n}»`).join("، ")} — قولّي ميعاد كل واحد وأنا أفكّرك`,
+      facts: {
+        daily_question_kind: "curiosity",
+        curiosity: {
+          key: qs[0].key,
+          kind: "newcomer",
+          tool: "update_pharmacy_item",
+          record: "update_pharmacy_item لكل دوا قال ميعاده: بالاسم وdose_times بالساعات اللي قالها بالظبط (times_explicit = true). " +
+            "اللي ماقالش ميعاده أو قال «مش عارف»: سيبه. ماتخمّنش ساعات، وماتحطش ميعاد دوا على دوا تاني.",
+        },
+      },
+    };
+  });
+}
+
 /**
  * سؤال مواعيد دوا مالوش مواعيد. نفس السؤال في أول ٧٢ ساعة، وبعدها مرة واحدة لكل دوا لأي حساب (الموجة ٣،
  * بند ٧: التطبيق بيقول وبيسمح بالتحديد من الموجة ١، والبوت ماكانش بيسأل) — تحية الصبح بتوصل تليجرام.
@@ -122,13 +168,14 @@ export function doseTimesQuestion(med: NewcomerMed): NewcomerQuestion | null {
 export function askedNewcomerKeys(rows: ReadonlyArray<{ facts?: unknown }> | null | undefined): Set<string> {
   const keys = new Set<string>();
   for (const row of rows ?? []) {
-    const key = (row?.facts as { newcomer?: { key?: unknown } } | null | undefined)?.newcomer?.key;
-    if (typeof key === "string" && key) keys.add(key);
+    const n = (row?.facts as { newcomer?: { key?: unknown; keys?: unknown } } | null | undefined)?.newcomer;
+    if (typeof n?.key === "string" && n.key) keys.add(n.key);
+    if (Array.isArray(n?.keys)) for (const k of n.keys) if (typeof k === "string" && k) keys.add(k);
   }
   return keys;
 }
 
 /** الحقول اللي بتتحط في facts اللحظة: السؤال + طريقة تسجيل الجواب + مفتاح منع التكرار. */
 export function newcomerFacts(q: NewcomerQuestion): Record<string, unknown> {
-  return { daily_question: q.question, ...q.facts, newcomer: { key: q.key, gap: q.gap } };
+  return { daily_question: q.question, ...q.facts, newcomer: { key: q.key, gap: q.gap, ...(q.keys ? { keys: q.keys } : {}) } };
 }

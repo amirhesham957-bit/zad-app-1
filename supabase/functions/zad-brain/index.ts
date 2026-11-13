@@ -80,6 +80,7 @@ import { CONFIRM_REQUIRED_TOOLS, freshContext, latinDigits, occurredAtIso, looks
 import { callModel, embedText, embedSelfTest, hasEvalKey, hasGroq, inLane, smokeTestTools, streamGeminiTurn, Turn, ToolDef } from "./callModel.ts";
 import { type Lane, laneFor } from "./keyLanes.ts";
 import { chatLane, FREE_BUSY_REPLY, freeDailyBudget, gateReply, historyWindow, turnsPerMinute } from "./freeLane.ts";
+import { medicineHolder, memberNoticeNames, tellMemberMedicineAdded } from "./familyMedicine.ts";
 import { type HoldCode, heldMessagesSummary, agentTaskNotice, buildRestaurantArrivalMessage, buildStoreArrivalMessage, dailyCapDecision, outlivesShelf, responsiveHourDecision, pacingDecision, pacingPriority, PACING_DUPLICATE_HOURS, decideOnBrainFailure, postponeForQuietHours, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, quietWindowOf, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey, doseAdherence, pickCrossChannelTwin, twinEnrichment, seenHereItems, type SeenHere, type StoreCategory, cheaperHereItems, type CheaperHere, normalizeForPerson, pharmacyIsRecurring, entityRecallText, itemKey, type MemoryEntity, normalizeMemoryEntities, resolveValidUntil, travelContext } from "./shared.ts";
 import { itemsForStore, storeArrivalTask, storeLocationFrom } from "./storeFit.ts";
 import { refreshDueHomeStates, saveHomeState } from "./homeState.ts";
@@ -2935,10 +2936,15 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       // Re-adding a medicine the customer already has is a correction, not a second
       // medicine. Fill in whatever the new call knows and leave the rest alone.
       // نفس الدوا لشخصين (ليا ولماما) دوايين مش تكرار — المفتاح الاسم + لمين.
-      const forPerson = normalizeForPerson(input.for_person);
+      // «لماما» وماما فرد في العيلة وموافقة على المتابعة ⇒ صيدليتها هي (familyMedicine.ts، قرار المالك ١٣/١١).
+      const holder = await medicineHolder(sb, userId, input);
+      if ("refused" in holder) return `مرفوض: ${holder.refused}`;
+      const medOwner = holder.ownerId;
+      const forPerson = holder.forPerson;
+      const forMember = holder.memberName ? ` في صيدلية ${holder.memberName}` : "";
       const { data: existingMeds } = await sb.from("zad_pharmacy_items")
         .select("id,name,dosage,dose_times,remaining_quantity,for_person")
-        .eq("user_id", userId);
+        .eq("user_id", medOwner);
       const dupe = (existingMeds ?? []).find(
         (row: { name: string; for_person: string | null }) =>
           row.name.trim().toLowerCase() === medName.toLowerCase() &&
@@ -2955,7 +2961,7 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
         if (Object.keys(patch).length > 0) {
           const u = await writeRows(
             sb.from("zad_pharmacy_items").update(patch)
-              .eq("id", dupe.id).eq("user_id", userId).select("id,name,dose_times"),
+              .eq("id", dupe.id).eq("user_id", medOwner).select("id,name,dose_times"),
             "تحديث الدواء",
           );
           if (!u.ok) return `مرفوض: ${u.reason}`;
@@ -2965,16 +2971,16 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
             tool: name, input, table: "zad_pharmacy_items", targetId: dupe.id,
             previous: dupe, next: u.rows[0],
           });
-          return `"${medName}" كان مسجل عندك أصلاً — حدّثت بياناته بدل ما أضيفه تاني`;
+          return `"${medName}" كان مسجل أصلاً${forMember || " عندك"} — حدّثت بياناته بدل ما أضيفه تاني`;
         }
-        return `"${medName}" مسجل عندك خلاص بنفس البيانات — مضفتش نسخة تانية`;
+        return `"${medName}" مسجل خلاص بنفس البيانات${forMember || " عندك"} — مضفتش نسخة تانية`;
       }
 
       const normalizedUnit = pharmacyUnit(input.unit);
 
       const w = await writeRows(
         sb.from("zad_pharmacy_items").insert({
-          user_id: userId,
+          user_id: medOwner,
           name: medName,
           dosage: input.dosage ? String(input.dosage).trim() : null,
           // Derived from the normalized list, not the model's own count: the two used to
@@ -3000,6 +3006,19 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       });
       // مفيش AlarmManager على السيرفر — المنبهات بتتفعّل لما التطبيق يعمل sync ويلاقي
       // الدواء الجديد (نفس آلية PharmacyReminderScheduler).
+      if (holder.memberName) {
+        const notice = memberNoticeNames(input.member_notice, medName);
+        if (notice) {
+          if (notice.names.length === 1 && notice.names[0] === medName && !doseTimes) notice.untimed.push(medName);
+          await tellMemberMedicineAdded(sb, medOwner, userId, notice.names, notice.untimed, {
+            recordConversation, proactiveTurn,
+            pushToTelegram: (u, t, b) => pushToTelegram(u, t, b),
+            pushToDevice: (c, u, t, b) => pushToDevice(c, u, t, b),
+          });
+        }
+        return `اتسجل "${medName}"${forMember} — التذكير هيروح لـ${holder.memberName}، ولو جرعة فاتت هبلغك.` +
+          (doseTimes ? ` المواعيد: ${doseTimes}.` : notice ? ` مواعيده لسه — سألت ${holder.memberName} عليها.` : "");
+      }
       return doseTimes
         ? `اتسجل "${medName}" — المواعيد: ${doseTimes}. التذكير هيشتغل بعد أول فتح للتطبيق.`
         : `اتسجل "${medName}" في الصيدلية`;
@@ -5634,7 +5653,7 @@ export const CHAT_TOOLS: ToolDef[] = [
         unit: { type: "string", description: "وحدة العبوة زي ما اتقالت أو اتكتبت في الفاتورة: قرص، كبسولة، شريط، علبة، زجاجة، مل، بخاخ، نقطة، كريم، كيس، أمبول" },
         quantity: { type: "number", description: "الكمية المتاحة عنده" },
         category: { type: "string", enum: ["عام", "مسكن", "مضاد حيوي", "فيتامين", "مزمن"] },
-        for_person: { type: "string", description: "لو الدوا لحد تاني غير العميل (أمه، أبوه، ابنه…) اكتب اسمه زي ما العميل قاله («ماما»، «يوسف»). فاضي = العميل نفسه." },
+        for_person: { type: "string", description: "لو الدوا لحد تاني غير العميل (أمه، أبوه، ابنه…) اكتب اسمه زي ما العميل قاله («ماما»، «يوسف»). فاضي = العميل نفسه. لو الشخص فرد في عيلته عنده حساب ووافق على متابعة أدويته، النظام بيسجّله في صيدليته هو والتذكير بيروحله — قول اللي رجع في النتيجة بالظبط." },
         is_recurring: { type: "boolean", description: RECURRING_HINT },
       },
       required: ["name"],

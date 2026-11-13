@@ -993,7 +993,9 @@ export const validateDeletePharmacyItem: Validator = (input, _snap, ctx) => {
 };
 
 export const validateUpdatePharmacyItem: Validator = (input, _snap, ctx) => {
-  if ((ctx.counts["update_pharmacy_item"] ?? 0) >= 3) return { ok: false, reason: "وصلت لحد أقصى ٣ تعديلات أدوية في المرة" };
+  // ٨ مش ٣ (١٣/١١): سؤال المواعيد بقى واحد لكل شخص (newcomer.ts doseTimesQuestions) — «الأول ٨ والتاني ٩ والتالت…»
+  // لفاتورة فيها ٥ أدوية كان بيتسجل منه ٣ بس. الحد ده = DOSE_TIMES_GROUP_MAX.
+  if ((ctx.counts["update_pharmacy_item"] ?? 0) >= 8) return { ok: false, reason: "وصلت لحد أقصى ٨ تعديلات أدوية في المرة" };
   if (String(input.name ?? "").trim().length < 2) return { ok: false, reason: "اسم الدواء مطلوب" };
   if (input.remaining_quantity !== undefined && (!Number.isFinite(input.remaining_quantity) || input.remaining_quantity < 0 || input.remaining_quantity > 9999)) return { ok: false, reason: "كمية الدواء لازم تكون بين ٠ و٩٩٩٩" };
   if (input.dose_times !== undefined) {

@@ -30,7 +30,7 @@ import { budgetComfortable } from "./householdLoad.ts";
 import { familyTime, type FamilyTime, isWeekendEve, weekendOuting, type WeekendOuting } from "./familyTime.ts";
 import { isBrokeModeActive } from "../_shared/brokeMode.ts";
 import { householdFamilyId, householdFilter } from "../_shared/household.ts";
-import { askedNewcomerKeys, doseTimesQuestion, isNewcomer, NEWCOMER_HOURS, newcomerFacts, newcomerQuestion, type NewcomerMed, type NewcomerQuestion } from "./newcomer.ts";
+import { askedNewcomerKeys, doseTimesQuestions, isNewcomer, NEWCOMER_HOURS, newcomerFacts, newcomerQuestion, type NewcomerMed, type NewcomerQuestion } from "./newcomer.ts";
 import { attentionBudget, type CircumstanceMode, loadCircumstance } from "./circumstances.ts";
 import { schoolDay, type TimetableRow, weekdayOfDate } from "./school.ts";
 import { eventAhead, eventAheadQuestion, SEASON_ASK_DAYS, TRAVEL_ASK_DAYS, type EventAhead } from "./eventAhead.ts";
@@ -1738,7 +1738,8 @@ export async function doseTimesAsk(sb: SupabaseClient, userId: string, now = Dat
         .then((r) => r.error ? undefined : askedNewcomerKeys(r.data as Array<{ facts?: unknown }>)),
     ]);
     if (meds === undefined || asked === undefined) return null;
-    return meds.map(doseTimesQuestion).find((q) => q !== null && !asked.has(q.key)) ?? null;
+    // سؤال واحد لكل شخص بكل أدويته (doseTimesQuestions)، مش دوا في كل صبحية.
+    return doseTimesQuestions(meds, asked)[0] ?? null;
   } catch (e) {
     console.warn("[dose_times_ask] read failed:", (e as Error)?.message);
     return null;
