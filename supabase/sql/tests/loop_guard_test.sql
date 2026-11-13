@@ -41,6 +41,10 @@ insert into zad_voice_moments (user_id, moment, status, error) values
   ('00000000-0000-0000-0000-00000000f001', 'good_night', 'failed', 'no channel delivered');
 insert into agent_tasks (user_id, kind, status, created_at) values
   ('00000000-0000-0000-0000-00000000f001', 'home_weekly_digest', 'pending', now() - interval '2 days');
+-- ١٠.٦: a weekly goal review made 2 days ago for 5 days from now is waiting, not stuck
+insert into agent_tasks (user_id, kind, status, created_at, scheduled_for) values
+  ('00000000-0000-0000-0000-00000000f001', 'goal_review', 'pending', now() - interval '2 days', now() + interval '5 days'),
+  ('00000000-0000-0000-0000-00000000f002', 'goal_review', 'pending', now() - interval '8 days', now() - interval '20 hours');
 do $$
 declare r jsonb;
 begin
