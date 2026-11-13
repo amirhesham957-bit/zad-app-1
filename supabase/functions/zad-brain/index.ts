@@ -7743,22 +7743,32 @@ const INTENT_RETRY_NOTE =
  * نداء موديل حلقة الشات، ومعاه إعادة محاولة واحدة بأدوات النية بس لو اللفة الأولى رجعت كلام من غير
  * أدوات والنية واضحة (intentToolHints). الأدوات من CHAT_TOOLS نفسها — نفس التحقق والتنفيذ.
  */
-/** خفاف في النداء الأول لو مفيش نية عليهم (رجيم ٣ب) — إرشادهم موجود برّه وصفهم. */
-const FIRST_CALL_LEAN_TOOLS = ["remember", "app_command", "update_appointment"];
+/**
+ * كاملين في النداء الأول حتى من غير نية (رجيم ٣.٢ الشريحة ٦، ١٣/١١): اللي بيتنادى فعلاً وإرشاده جوه وصفه.
+ * المقاس قبلها (٣٠ يوم من prompt_sizes.tools_called): log_transaction ٤٠٨، web_search ١٧٣، add_shopping_item ٤٥،
+ * read_house ٤٣، add_appointment ٣٣، add_pharmacy_item ١٥ — ووكيل المال كان بيبعت ٣٨ أداة كاملة (٢٧٫٦ ألف حرف)
+ * اتنادى منهم ٨ في ١٤ يوم. الباقي بيروح خفيف (الاسم وأول جملة والأنواع والـenum) ويرجع كامل لو عليه نية.
+ */
+const FIRST_CALL_FULL_TOOLS = [
+  "log_transaction", "web_search", "read_house", "add_shopping_item", "add_appointment",
+  "add_pharmacy_item", "log_pharmacy_dose", "add_inventory_item", "update_inventory_qty", "add_obligation",
+];
+/** الملف: كامل لو الرسالة فيها حقيقة عن حياته (mentionsLifeFact) — غير كده الاستخلاص بعد اللفة بيلقطها. */
+const LIFE_FACT_FULL_TOOLS = ["update_customer_profile", "remember"];
 /** كاملين دايماً على Groq: أقسام read_house وفئات log_transaction جوه الوصف. */
 const GROQ_ALWAYS_FULL = ["read_house", "log_transaction"];
 
 /**
  * التعريفات اللي بتتبعت في نداء من نداءات اللفة (رجيم السياق ٢ و٣ب). من النداء التاني: كله خفيف إلا
  * اللي اتنادت أو عليها نية — لفة فيها أداة كانت بتبعت البرومبت كله مرتين (١٢ ألف توكن × ٢). في
- * الأول: [FIRST_CALL_LEAN_TOOLS] بس خفاف لو مفيش نية عليهم — إرشاد remember في قاعدة 5b، وapp_command
- * وupdate_appointment بيفضل فيهم الـenum. الباقي إرشاده في وصفه بس (أقسام read_house، فئات
- * log_transaction، «مرة لكل صنف» في المخزون، الدوا والمواعيد والملف) فبيفضل كامل.
+ * الأول: [FIRST_CALL_FULL_TOOLS] واللي عليه نية كاملين، والملف لو [lifeFact]؛ الباقي خفيف (الشريحة ٦ — قبلها
+ * كان العكس: كله كامل إلا ٣).
  */
-export function toolsForCall<T extends ToolDef>(tools: T[], hinted: string[], called: string[], turn: number): T[] {
+export function toolsForCall<T extends ToolDef>(
+  tools: T[], hinted: string[], called: string[], turn: number, lifeFact = false,
+): T[] {
   if (turn > 0) return leanTools(tools, new Set([...hinted, ...called]));
-  const leanFirst = new Set(FIRST_CALL_LEAN_TOOLS);
-  return leanTools(tools, new Set(tools.map((t) => t.name).filter((n) => !leanFirst.has(n) || hinted.includes(n))));
+  return leanTools(tools, new Set([...FIRST_CALL_FULL_TOOLS, ...hinted, ...(lifeFact ? LIFE_FACT_FULL_TOOLS : [])]));
 }
 
 /**
@@ -7779,7 +7789,7 @@ async function callAgentModel(
   const called = history.flatMap((t) => "toolCalls" in t && Array.isArray(t.toolCalls) ? t.toolCalls.map((c) => c.name) : []);
   // Groq من التعريفات الأصلية: بيقرر الخفيف بنفسه، وread_house وlog_transaction يفضلوا كاملين.
   const groqTools = groqToolsFor(tools, hinted, message);
-  tools = toolsForCall(tools, hinted, called, turn);
+  tools = toolsForCall(tools, hinted, called, turn, mentionsLifeFact(message));
   const plain = () => callModel({ model: MODEL_ROUTINE, system, tools, history, maxTokens: 1200, groqSystem, groqTools });
   // بث حقيقي (تشخيص زاد ٢.٢): أول لفة بس، ولما الرسالة مش بتشير لأداة — رسالة فيها تلميح
   // أداة ممكن تتعاد بأدوات أضيق تحت، والنص اللي اتبث كان هيتشال. أي فشل في البث ⇒ النداء العادي.
@@ -8211,6 +8221,10 @@ async function handleAgentTurnInLane(
   turnSizes.parts.rules = promptParts.chat.length - promptSnapChars;
   turnSizes.parts.snapshot = promptSnapChars;
   turnSizes.total_chars += promptParts.chat.length;
+  // ٣.٢ الشريحة ٦: tools_chars = التعريفات كاملة؛ ده اللي النداء الأول بيبعته فعلاً (الخفيف محسوب).
+  turnSizes.first_call_tools_chars = JSON.stringify(toolsForCall(
+    scopedTools, intentToolHints(message, priorAssistantText(history)), [], 0, mentionsLifeFact(message),
+  )).length;
   // لو جيميناي كله وقع ووصلنا لـ Groq: برومبت مختصر بنفس اللهجة (الفجوة ١٣).
   const groqSystem = groqSystemFor(snap, [
     ...(Array.isArray(body.history) ? body.history : [])
@@ -9396,7 +9410,7 @@ function ruleLines(...rules: Array<string | null | undefined>): string {
 }
 
 /** نسخة برومبت الشات (٣.٢): بتتسجل مع أحجام كل لفة، فتغيّر في الردود يتربط بتغيّر البرومبت. غيّرها مع أي تعديل في القواعد. */
-export const CHAT_PROMPT_VERSION = "2026-11-07.2";
+export const CHAT_PROMPT_VERSION = "2026-11-13.1";
 
 /**
  * [offered]: أسامي الأدوات المعروضة في اللفة دي. قاعدة عن أداة مش معروضة، أو عن جزء من البيت
