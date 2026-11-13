@@ -58,6 +58,7 @@ import 'package:zad/shared/navigation/zad_screens.dart';
 import 'package:zad/shared/navigation/zad_slots.dart';
 import 'package:zad/shared/quota/presentation/ad_week_card.dart';
 import 'package:zad/shared/quota/presentation/out_of_attempts_card.dart';
+import 'package:zad/shared/quota/presentation/rewards_card.dart';
 
 /// Home.
 ///
@@ -185,6 +186,10 @@ class HomeScreen extends ConsumerWidget {
           ),
           // Attempts ran out: the ad button where it can be found (owner 6/11).
           const OutOfAttemptsCard(),
+          // «مكافآت زاد» (owner 13/11): the ad, the plans and the bot always
+          // have a way in, not only when attempts run low or the bot is
+          // unlinked. Hides itself while the card above shows.
+          const RewardsCard(),
           // «اشترك» (ZAD_PLAN ٨ب.٣): free customers, once a session.
           const SubscribePulseCard(),
           // «شفت ١٥ إعلان الأسبوع ده» — once a week, free customers only.

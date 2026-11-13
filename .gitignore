@@ -68,3 +68,6 @@ local.properties
 
 # Owner's local design references (other people's work) — never pushed (2026-11-13).
 .claude/design-refs/
+
+# AdMob verifies the developer site (ZAD_PLAN 10.3); *.txt above would hide it.
+!website/public/app-ads.txt

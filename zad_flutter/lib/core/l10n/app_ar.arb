@@ -2730,5 +2730,10 @@
   "agentToolRateRecipe": "رأيك في وصفة",
   "@agentToolRateRecipe": {"description": "Brain action log: what a tool the chat ran did (ZAD_PLAN 10.2a)."},
   "agentToolDismissInsight": "قفل تنبيه",
-  "@agentToolDismissInsight": {"description": "Brain action log: what a tool the chat ran did (ZAD_PLAN 10.2a)."}
+  "@agentToolDismissInsight": {"description": "Brain action log: what a tool the chat ran did (ZAD_PLAN 10.2a)."},
+  "rewardsCardTitle": "مكافآت زاد",
+  "rewardsCardBody": "شوف إعلان وخد رسايل زيادة، أو اشترك وارتاح من الإعلانات.",
+  "rewardsSubscribe": "اشترك في زاد بريميوم",
+  "rewardsTelegram": "بوت زاد على تليجرام",
+  "profileTelegramSubtitle": "اربط حسابك وخلّي التذكيرات توصلك"
 }

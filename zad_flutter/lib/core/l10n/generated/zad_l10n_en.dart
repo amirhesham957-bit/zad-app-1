@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'zad_l10n.dart';
 
 // ignore_for_file: type=lint
@@ -24,7 +25,8 @@ class ZadL10nEn extends ZadL10n {
   String get languageEnglish => 'English';
 
   @override
-  String get languageEnglishPreview => 'English is still being translated — many screens stay in Arabic until it is done.';
+  String get languageEnglishPreview =>
+      'English is still being translated — many screens stay in Arabic until it is done.';
 
   @override
   String get authTagline => 'Smart running for a calm home';
@@ -60,7 +62,8 @@ class ZadL10nEn extends ZadL10n {
   String get authResetTitle => 'Reset password';
 
   @override
-  String get authResetBody => 'Enter your email. We\'ll send you a link to reset your password.';
+  String get authResetBody =>
+      'Enter your email. We\'ll send you a link to reset your password.';
 
   @override
   String get authResetSent => 'Link sent!';
@@ -126,7 +129,8 @@ class ZadL10nEn extends ZadL10n {
   String get authSignOutTitle => 'Sign out?';
 
   @override
-  String get authSignOutBody => 'You\'ll need to sign in again to reach your accounts.';
+  String get authSignOutBody =>
+      'You\'ll need to sign in again to reach your accounts.';
 
   @override
   String get commonWait => 'Wait';
@@ -141,19 +145,23 @@ class ZadL10nEn extends ZadL10n {
   String get authErrorInvalidCredentials => 'The email or password is wrong.';
 
   @override
-  String get authErrorEmailTaken => 'This email already has an account. Try signing in with it, or reset the password.';
+  String get authErrorEmailTaken =>
+      'This email already has an account. Try signing in with it, or reset the password.';
 
   @override
-  String get authErrorWeakPassword => 'The password is too short — use at least 6 characters.';
+  String get authErrorWeakPassword =>
+      'The password is too short — use at least 6 characters.';
 
   @override
   String get authErrorInvalidEmail => 'This email doesn\'t look right.';
 
   @override
-  String get authErrorEmailNotConfirmed => 'You still need to confirm your email. Check your inbox for the link we sent.';
+  String get authErrorEmailNotConfirmed =>
+      'You still need to confirm your email. Check your inbox for the link we sent.';
 
   @override
-  String get authErrorRateLimited => 'Too many tries in a short time. Wait a little and try again.';
+  String get authErrorRateLimited =>
+      'Too many tries in a short time. Wait a little and try again.';
 
   @override
   String get authErrorSignupDisabled => 'Sign-up is closed right now.';
@@ -162,10 +170,12 @@ class ZadL10nEn extends ZadL10n {
   String get authErrorUserBanned => 'This account is suspended.';
 
   @override
-  String get authErrorOffline => 'No internet connection — signing in needs one.';
+  String get authErrorOffline =>
+      'No internet connection — signing in needs one.';
 
   @override
-  String get authErrorServer => 'The service isn\'t answering right now. Try again in a bit.';
+  String get authErrorServer =>
+      'The service isn\'t answering right now. Try again in a bit.';
 
   @override
   String get authErrorUnknown => 'Something unexpected went wrong. Try again.';
@@ -175,7 +185,8 @@ class ZadL10nEn extends ZadL10n {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count changes haven\'t reached the server yet. If you sign out now they won\'t be sent. Better to wait until you\'re back online.',
+      other:
+          '$count changes haven\'t reached the server yet. If you sign out now they won\'t be sent. Better to wait until you\'re back online.',
       one: 'One change hasn\'t reached the server yet. If you sign out now it won\'t be sent. Better to wait until you\'re back online.',
     );
     return '$_temp0';
@@ -191,13 +202,16 @@ class ZadL10nEn extends ZadL10n {
   String get paywallBasicPerkNoAds => 'No ads at all';
 
   @override
-  String get paywallBasicPerkAttempts => '300 attempts a month (about 10 a day)';
+  String get paywallBasicPerkAttempts =>
+      '300 attempts a month (about 10 a day)';
 
   @override
-  String get paywallBasicPerkPriority => 'Your place is kept at busy times, and Zad remembers your conversations longer';
+  String get paywallBasicPerkPriority =>
+      'Your place is kept at busy times, and Zad remembers your conversations longer';
 
   @override
-  String get paywallBasicPerkTelegram => 'Photos and voice notes in the Telegram bot';
+  String get paywallBasicPerkTelegram =>
+      'Photos and voice notes in the Telegram bot';
 
   @override
   String get paywallPlusTitle => 'Plus';
@@ -209,10 +223,12 @@ class ZadL10nEn extends ZadL10n {
   String get paywallAllBasicPerks => 'Everything in Basic';
 
   @override
-  String get paywallPlusPerkAttempts => '1,000 attempts a month (about 33 a day)';
+  String get paywallPlusPerkAttempts =>
+      '1,000 attempts a month (about 33 a day)';
 
   @override
-  String get paywallPlusPerkDaily => 'Enough for receipt scans and a deep analysis every day';
+  String get paywallPlusPerkDaily =>
+      'Enough for receipt scans and a deep analysis every day';
 
   @override
   String get paywallFamilyTitle => 'Family';
@@ -221,7 +237,8 @@ class ZadL10nEn extends ZadL10n {
   String get paywallFamilyBadge => 'Biggest allowance 👑';
 
   @override
-  String get paywallFamilyPerkAttempts => '2,500 attempts a month (about 83 a day)';
+  String get paywallFamilyPerkAttempts =>
+      '2,500 attempts a month (about 83 a day)';
 
   @override
   String get paywallFamilyPerkHeavy => 'For whoever leans on Zad most at home';
@@ -230,19 +247,22 @@ class ZadL10nEn extends ZadL10n {
   String get paywallNoPlayTitle => 'Google Play isn\'t available';
 
   @override
-  String get paywallNoPlayBody => 'Subscriptions go through Google Play. If Zad was installed from a file rather than the store, install it from Google Play and subscribe here.';
+  String get paywallNoPlayBody =>
+      'Subscriptions go through Google Play. If Zad was installed from a file rather than the store, install it from Google Play and subscribe here.';
 
   @override
   String get paywallNotOnPlayTitle => 'This plan isn\'t in the store yet';
 
   @override
-  String get paywallNotOnPlayBody => 'This plan isn\'t live on Google Play yet. Try again soon.';
+  String get paywallNotOnPlayBody =>
+      'This plan isn\'t live on Google Play yet. Try again soon.';
 
   @override
   String get paywallFailedTitle => 'We couldn\'t open Google Play';
 
   @override
-  String get paywallFailedBody => 'Something went wrong opening the payment. Check your connection and try again.';
+  String get paywallFailedBody =>
+      'Something went wrong opening the payment. Check your connection and try again.';
 
   @override
   String get commonOk => 'OK';
@@ -254,19 +274,22 @@ class ZadL10nEn extends ZadL10n {
   String get paywallHeadline => 'Choose the Zad plan that fits your family';
 
   @override
-  String get paywallSubhead => 'No ads, more attempts, a place kept at busy times — paid through the official Google Play store.';
+  String get paywallSubhead =>
+      'No ads, more attempts, a place kept at busy times — paid through the official Google Play store.';
 
   @override
   String get paywallSafePayment => 'Safe, secure payment';
 
   @override
-  String get paywallBillingNote => 'Payment and monthly renewal go securely through your Google Play account, and you can cancel any time from the store.';
+  String get paywallBillingNote =>
+      'Payment and monthly renewal go securely through your Google Play account, and you can cancel any time from the store.';
 
   @override
   String get paywallStayFree => 'Or stay on the free plan';
 
   @override
-  String get paywallFreeTerms => 'Every 2 hours: 20 messages, 3 voice questions and 2 images, and logging expenses is always free. A deep analysis costs 3 messages.';
+  String get paywallFreeTerms =>
+      'Every 2 hours: 20 messages, 3 voice questions and 2 images, and logging expenses is always free. A deep analysis costs 3 messages.';
 
   @override
   String get paywallFromPlay => 'From Google Play';
@@ -344,19 +367,23 @@ class ZadL10nEn extends ZadL10n {
   String get authPreparingAccount => 'Getting your account ready…';
 
   @override
-  String get shareTooLarge => 'The file is too big for Zad to read in one go — send a smaller one';
+  String get shareTooLarge =>
+      'The file is too big for Zad to read in one go — send a smaller one';
 
   @override
-  String get shareUnsupported => 'Zad reads text, pictures, PDF and CSV files only';
+  String get shareUnsupported =>
+      'Zad reads text, pictures, PDF and CSV files only';
 
   @override
-  String get shareUnreadable => 'I couldn\'t open what was shared — try sending it again';
+  String get shareUnreadable =>
+      'I couldn\'t open what was shared — try sending it again';
 
   @override
   String get shareWhatImage => 'What is this picture?';
 
   @override
-  String get shareWhatImageHint => 'Zad will read it and show you what it found before saving anything';
+  String get shareWhatImageHint =>
+      'Zad will read it and show you what it found before saving anything';
 
   @override
   String get shareReceipt => 'A shopping receipt';
@@ -425,7 +452,8 @@ class ZadL10nEn extends ZadL10n {
   String get placesOrbitHome => 'Home';
 
   @override
-  String get placesOrbitCaption => 'Closest to home means you go most often, not the real distance.';
+  String get placesOrbitCaption =>
+      'Closest to home means you go most often, not the real distance.';
 
   @override
   String placesHabitVisits(int count) {
@@ -493,17 +521,20 @@ class ZadL10nEn extends ZadL10n {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count transactions left out of the total — their currency has no exchange rate',
+      other:
+          '$count transactions left out of the total — their currency has no exchange rate',
       one: 'One transaction left out of the total — its currency has no exchange rate',
     );
     return '$_temp0';
   }
 
   @override
-  String get homeBankListening => 'Listening to bank messages and updating your balance';
+  String get homeBankListening =>
+      'Listening to bank messages and updating your balance';
 
   @override
-  String get homeBankStopped => 'Listening to bank messages stopped — tap to fix';
+  String get homeBankStopped =>
+      'Listening to bank messages stopped — tap to fix';
 
   @override
   String get homeBirthday => 'Happy birthday! 🎂';
@@ -514,7 +545,8 @@ class ZadL10nEn extends ZadL10n {
   }
 
   @override
-  String get homeBirthdayWish => 'Zad wishes you a lovely year full of good things and peace of mind.';
+  String get homeBirthdayWish =>
+      'Zad wishes you a lovely year full of good things and peace of mind.';
 
   @override
   String get homeBirthdayThanks => 'Thank you, Zad 💚';
@@ -534,13 +566,15 @@ class ZadL10nEn extends ZadL10n {
   String get homeCloseDay => 'Close your day';
 
   @override
-  String get homeCloseDayHint => 'Ten seconds: did you pay cash for anything today? And your companion gets dinner';
+  String get homeCloseDayHint =>
+      'Ten seconds: did you pay cash for anything today? And your companion gets dinner';
 
   @override
   String get coverageBlind => 'I can\'t see any spending this cycle yet';
 
   @override
-  String get coverageBlindHint => 'Close your day or link your bank so I can see';
+  String get coverageBlindHint =>
+      'Close your day or link your bank so I can see';
 
   @override
   String get coverageFull => 'I can see nearly all your spending';
@@ -554,7 +588,8 @@ class ZadL10nEn extends ZadL10n {
   }
 
   @override
-  String get coveragePartialHint => 'Close your day or link your bank so I can see more';
+  String get coveragePartialHint =>
+      'Close your day or link your bank so I can see more';
 
   @override
   String get briefTitle => 'Zad\'s brief for today';
@@ -569,7 +604,8 @@ class ZadL10nEn extends ZadL10n {
   String get glanceStockTitle => 'Stock health and shortages';
 
   @override
-  String get glanceStockSubtitle => 'Watching spoilage and what you really need';
+  String get glanceStockSubtitle =>
+      'Watching spoilage and what you really need';
 
   @override
   String get glanceOpenStock => 'Open the pantry →';
@@ -586,7 +622,8 @@ class ZadL10nEn extends ZadL10n {
   String get glanceStockEmpty => 'The pantry is empty';
 
   @override
-  String get glanceStockEmptyHint => 'Photograph a supermarket receipt or add your items, and Zad tells you what\'s running out before you need it';
+  String get glanceStockEmptyHint =>
+      'Photograph a supermarket receipt or add your items, and Zad tells you what\'s running out before you need it';
 
   @override
   String glanceLowCount(int count) {
@@ -647,7 +684,8 @@ class ZadL10nEn extends ZadL10n {
   String get glancePharmacyEmpty => 'The pharmacy is empty';
 
   @override
-  String get glancePharmacyEmptyHint => 'Photograph a medicine strip or add it by hand, and Zad reminds you of doses and warns you before it runs out';
+  String get glancePharmacyEmptyHint =>
+      'Photograph a medicine strip or add it by hand, and Zad reminds you of doses and warns you before it runs out';
 
   @override
   String get glanceNextDose => 'Next dose';
@@ -684,7 +722,8 @@ class ZadL10nEn extends ZadL10n {
   String get glanceSubsEmpty => 'No subscriptions yet';
 
   @override
-  String get glanceSubsEmptyHint => 'Add your monthly subscriptions so Zad counts them in what\'s available and reminds you of renewals';
+  String get glanceSubsEmptyHint =>
+      'Add your monthly subscriptions so Zad counts them in what\'s available and reminds you of renewals';
 
   @override
   String glanceNextRenewal(String title) {
@@ -725,7 +764,8 @@ class ZadL10nEn extends ZadL10n {
   String get activationTitle => 'Set Zad up for your home';
 
   @override
-  String get activationSubtitle => 'Four steps that make the balance, alerts and forecasts useful from day one';
+  String get activationSubtitle =>
+      'Four steps that make the balance, alerts and forecasts useful from day one';
 
   @override
   String activationProgress(int done, int total) {
@@ -736,19 +776,22 @@ class ZadL10nEn extends ZadL10n {
   String get activationBalance => 'Set your starting balance';
 
   @override
-  String get activationBalanceHint => 'Enter what you have now so Zad tracks money in and out accurately';
+  String get activationBalanceHint =>
+      'Enter what you have now so Zad tracks money in and out accurately';
 
   @override
   String get activationBank => 'Turn on bank notification reading';
 
   @override
-  String get activationBankHint => 'Let Zad pick up transactions and show them for you to confirm';
+  String get activationBankHint =>
+      'Let Zad pick up transactions and show them for you to confirm';
 
   @override
   String get activationFirstItem => 'Add your first home item';
 
   @override
-  String get activationFirstItemHint => 'Start with something you buy often so Zad learns how fast you use it';
+  String get activationFirstItemHint =>
+      'Start with something you buy often so Zad learns how fast you use it';
 
   @override
   String get activationGoal => 'Set your home\'s first goal';
@@ -757,7 +800,8 @@ class ZadL10nEn extends ZadL10n {
   String get activationGoalHint => 'Zad follows it with you every week';
 
   @override
-  String get activationAllSet => 'All set! 🎉 Try telling Zad \"spent 50 on groceries\" by voice or in the Telegram bot — it asks you to confirm and records it.';
+  String get activationAllSet =>
+      'All set! 🎉 Try telling Zad \"spent 50 on groceries\" by voice or in the Telegram bot — it asks you to confirm and records it.';
 
   @override
   String get commonOpen => 'Open';
@@ -792,7 +836,8 @@ class ZadL10nEn extends ZadL10n {
   String get amazonName => 'Amazon';
 
   @override
-  String get amazonDisclosure => 'Affiliate link — Zad earns a commission at no extra cost to you';
+  String get amazonDisclosure =>
+      'Affiliate link — Zad earns a commission at no extra cost to you';
 
   @override
   String get amazonOut => 'Ran out';
@@ -829,7 +874,8 @@ class ZadL10nEn extends ZadL10n {
   String get homeOffline => 'No internet connection';
 
   @override
-  String get homeOfflineHint => 'Your data is saved on the phone and syncs as soon as you\'re back online';
+  String get homeOfflineHint =>
+      'Your data is saved on the phone and syncs as soon as you\'re back online';
 
   @override
   String get homeTalkToZad => 'Talk to Zad';
@@ -875,7 +921,8 @@ class ZadL10nEn extends ZadL10n {
   String get homePreparing => 'Getting your budget ready';
 
   @override
-  String get homeServerDownHint => 'We\'ll try again on our own. You can pull the screen down now.';
+  String get homeServerDownHint =>
+      'We\'ll try again on our own. You can pull the screen down now.';
 
   @override
   String get homePreparingHint => 'One second and everything will be here.';
@@ -918,7 +965,8 @@ class ZadL10nEn extends ZadL10n {
   String get commonNotNow => 'Not now';
 
   @override
-  String get quietRestoreFailed => 'I couldn\'t bring the alerts back. Try again.';
+  String get quietRestoreFailed =>
+      'I couldn\'t bring the alerts back. Try again.';
 
   @override
   String get quietRestore => 'Bring the alerts back';
@@ -1017,7 +1065,8 @@ class ZadL10nEn extends ZadL10n {
   String get whoTitle => 'Introduce yourself';
 
   @override
-  String get whoBody => 'Your name, how you\'d like to be addressed, your work and payday — so I talk to you right and remember you.';
+  String get whoBody =>
+      'Your name, how you\'d like to be addressed, your work and payday — so I talk to you right and remember you.';
 
   @override
   String get whoGo => 'Let\'s get acquainted';
@@ -1027,29 +1076,27 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String monthName(String month) {
-    String _temp0 = intl.Intl.selectLogic(
-      month,
-      {
-        'm1': 'January',
-        'm2': 'February',
-        'm3': 'March',
-        'm4': 'April',
-        'm5': 'May',
-        'm6': 'June',
-        'm7': 'July',
-        'm8': 'August',
-        'm9': 'September',
-        'm10': 'October',
-        'm11': 'November',
-        'm12': 'December',
-        'other': '',
-      },
-    );
+    String _temp0 = intl.Intl.selectLogic(month, {
+      'm1': 'January',
+      'm2': 'February',
+      'm3': 'March',
+      'm4': 'April',
+      'm5': 'May',
+      'm6': 'June',
+      'm7': 'July',
+      'm8': 'August',
+      'm9': 'September',
+      'm10': 'October',
+      'm11': 'November',
+      'm12': 'December',
+      'other': '',
+    });
     return '$_temp0';
   }
 
   @override
-  String get chatVoiceUnavailable => 'Voice isn\'t available right now — the reply is written in front of you';
+  String get chatVoiceUnavailable =>
+      'Voice isn\'t available right now — the reply is written in front of you';
 
   @override
   String get chatNewTooltip => 'Start a new conversation';
@@ -1058,16 +1105,19 @@ class ZadL10nEn extends ZadL10n {
   String get chatNewTitle => 'Start a new conversation?';
 
   @override
-  String get chatNewBody => 'The conversation so far is cleared from this phone. What Zad has learned about you stays as it is.';
+  String get chatNewBody =>
+      'The conversation so far is cleared from this phone. What Zad has learned about you stays as it is.';
 
   @override
   String get chatClear => 'Clear';
 
   @override
-  String get chatWelcome => 'Welcome! I\'m Zad 🤖, your smart family assistant. How can I help you today?\nAsk me about recipes, check your fridge, or add what\'s missing to the shopping list!';
+  String get chatWelcome =>
+      'Welcome! I\'m Zad 🤖, your smart family assistant. How can I help you today?\nAsk me about recipes, check your fridge, or add what\'s missing to the shopping list!';
 
   @override
-  String get chatBusy => 'The AI is a bit busy right now 🙏 Try again in a moment.';
+  String get chatBusy =>
+      'The AI is a bit busy right now 🙏 Try again in a moment.';
 
   @override
   String get chatUnexpected => 'Something unexpected went wrong.';
@@ -1100,7 +1150,8 @@ class ZadL10nEn extends ZadL10n {
   String get chatReportOther => 'Something else';
 
   @override
-  String get chatReportSent => 'Thanks — we got your report and will review this reply.';
+  String get chatReportSent =>
+      'Thanks — we got your report and will review this reply.';
 
   @override
   String get chatReportFailed => 'The report didn\'t go through — try again';
@@ -1167,10 +1218,12 @@ class ZadL10nEn extends ZadL10n {
   String get chatSend => 'Send';
 
   @override
-  String get voiceTooShort => 'That was a quick tap — press, start talking, then stop.';
+  String get voiceTooShort =>
+      'That was a quick tap — press, start talking, then stop.';
 
   @override
-  String get voiceDenied => 'I need microphone permission. Open the app\'s settings and allow recording.';
+  String get voiceDenied =>
+      'I need microphone permission. Open the app\'s settings and allow recording.';
 
   @override
   String get voiceFailed => 'I couldn\'t turn the speech into text. Try again.';
@@ -1179,13 +1232,15 @@ class ZadL10nEn extends ZadL10n {
   String get subscribePulseTitle => 'Subscribe and keep Zad with you';
 
   @override
-  String get subscribePulseBody => 'No ads, more attempts, and voice without a limit.';
+  String get subscribePulseBody =>
+      'No ads, more attempts, and voice without a limit.';
 
   @override
   String get subscribePulseClose => 'Close';
 
   @override
-  String get voiceOutToday => 'That\'s your voice questions (3 every 2 hours) — they come back on their own, or watch an ad for one more. Type your question, or subscribe to talk to Zad without a limit.';
+  String get voiceOutToday =>
+      'That\'s your voice questions (3 every 2 hours) — they come back on their own, or watch an ad for one more. Type your question, or subscribe to talk to Zad without a limit.';
 
   @override
   String get voiceRecord => 'Record voice';
@@ -1208,7 +1263,8 @@ class ZadL10nEn extends ZadL10n {
   String get intChatTitle => 'Chat with Zad';
 
   @override
-  String get intChatSubtitle => 'Ask about your spending, your pantry, or anything';
+  String get intChatSubtitle =>
+      'Ask about your spending, your pantry, or anything';
 
   @override
   String get intChatHide => 'Hide the chat';
@@ -1238,7 +1294,8 @@ class ZadL10nEn extends ZadL10n {
   String get intChatClear => 'Clear the chat';
 
   @override
-  String get intChatClearBody => 'We\'ll clear every message in the chat with Zad\'s brain. Your money data and pantry aren\'t affected.';
+  String get intChatClearBody =>
+      'We\'ll clear every message in the chat with Zad\'s brain. Your money data and pantry aren\'t affected.';
 
   @override
   String get intChatEmpty => 'Ask Zad anything';
@@ -1285,13 +1342,15 @@ class ZadL10nEn extends ZadL10n {
   String get voiceChipCoffee => 'I spent 50 on coffee';
 
   @override
-  String get voiceSheetDenied => 'Give the app permission to use the microphone';
+  String get voiceSheetDenied =>
+      'Give the app permission to use the microphone';
 
   @override
   String get voiceSheetFailed => 'Something went wrong recognising your voice';
 
   @override
-  String get voiceSheetOutToday => 'That\'s your voice questions — 3 every 2 hours, back on their own';
+  String get voiceSheetOutToday =>
+      'That\'s your voice questions — 3 every 2 hours, back on their own';
 
   @override
   String get voiceSheetTooShort => 'I didn\'t hear anything clear — try again';
@@ -1320,10 +1379,12 @@ class ZadL10nEn extends ZadL10n {
   }
 
   @override
-  String get voiceInterruptHint => 'Zad is speaking… talk any time to interrupt';
+  String get voiceInterruptHint =>
+      'Zad is speaking… talk any time to interrupt';
 
   @override
-  String get voiceWorking => 'Zad\'s brain is thinking and doing what you asked…';
+  String get voiceWorking =>
+      'Zad\'s brain is thinking and doing what you asked…';
 
   @override
   String get voiceListening => 'Zad is listening — take your time';
@@ -1370,7 +1431,8 @@ class ZadL10nEn extends ZadL10n {
   String get budgetNoTransactions => 'No transactions yet.';
 
   @override
-  String get budgetNoTransactionsHint => 'Add a transaction or link your bank to track spending automatically';
+  String get budgetNoTransactionsHint =>
+      'Add a transaction or link your bank to track spending automatically';
 
   @override
   String get txEdit => 'Edit transaction';
@@ -1394,7 +1456,8 @@ class ZadL10nEn extends ZadL10n {
   String get financesSetCategory => 'Set a category';
 
   @override
-  String get financesNoCategories => 'You haven\'t set a budget for any category yet. Tap \"Set a category\" so Zad follows each one on its own.';
+  String get financesNoCategories =>
+      'You haven\'t set a budget for any category yet. Tap \"Set a category\" so Zad follows each one on its own.';
 
   @override
   String get financesAvailable => 'Available';
@@ -1444,7 +1507,8 @@ class ZadL10nEn extends ZadL10n {
   String get financesAnalysing => 'Analysing...';
 
   @override
-  String get financesInsightEmpty => 'Not enough data to analyse this category yet.';
+  String get financesInsightEmpty =>
+      'Not enough data to analyse this category yet.';
 
   @override
   String financesPredictedNext(String amount) {
@@ -1455,7 +1519,8 @@ class ZadL10nEn extends ZadL10n {
   String get gateTitle => 'Before we start, how much do you have this month?';
 
   @override
-  String get gateBody => 'Zad doesn\'t make numbers up. This is what \"available\" and \"left\" are worked out from each day, and you can change it any time.';
+  String get gateBody =>
+      'Zad doesn\'t make numbers up. This is what \"available\" and \"left\" are worked out from each day, and you can change it any time.';
 
   @override
   String get gateMarket => 'Country and currency';
@@ -1516,19 +1581,16 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String weekdayName(String day) {
-    String _temp0 = intl.Intl.selectLogic(
-      day,
-      {
-        'd1': 'Monday',
-        'd2': 'Tuesday',
-        'd3': 'Wednesday',
-        'd4': 'Thursday',
-        'd5': 'Friday',
-        'd6': 'Saturday',
-        'd7': 'Sunday',
-        'other': '',
-      },
-    );
+    String _temp0 = intl.Intl.selectLogic(day, {
+      'd1': 'Monday',
+      'd2': 'Tuesday',
+      'd3': 'Wednesday',
+      'd4': 'Thursday',
+      'd5': 'Friday',
+      'd6': 'Saturday',
+      'd7': 'Sunday',
+      'other': '',
+    });
     return '$_temp0';
   }
 
@@ -1574,7 +1636,8 @@ class ZadL10nEn extends ZadL10n {
   String get txDescription => 'Description';
 
   @override
-  String get txForPerson => 'For whom? (leave empty if for you or the whole house)';
+  String get txForPerson =>
+      'For whom? (leave empty if for you or the whole house)';
 
   @override
   String get txForPersonHint => 'Mum, Dad, Youssef…';
@@ -1600,13 +1663,15 @@ class ZadL10nEn extends ZadL10n {
   String get habitTrialDrop => '❌ Drop it';
 
   @override
-  String get habitTrialStarted => 'Let\'s go ✅ The trial starts today for two weeks, then I\'ll tell you how it went in numbers.';
+  String get habitTrialStarted =>
+      'Let\'s go ✅ The trial starts today for two weeks, then I\'ll tell you how it went in numbers.';
 
   @override
   String get habitTrialDeclined => 'OK, I won\'t suggest it again for a while.';
 
   @override
-  String get habitTrialKept => 'Done ✅ It\'s kept — I\'ll remember it and build on it.';
+  String get habitTrialKept =>
+      'Done ✅ It\'s kept — I\'ll remember it and build on it.';
 
   @override
   String get habitTrialDropped => 'OK, dropped. Thanks for trying.';
@@ -1618,7 +1683,8 @@ class ZadL10nEn extends ZadL10n {
   String get habitTrialGone => 'That trial no longer exists.';
 
   @override
-  String get habitTrialFailed => 'Sorry, I couldn\'t record your answer right now — try again in a bit.';
+  String get habitTrialFailed =>
+      'Sorry, I couldn\'t record your answer right now — try again in a bit.';
 
   @override
   String get learningTitle => '🧠 I\'ve learned';
@@ -1636,7 +1702,8 @@ class ZadL10nEn extends ZadL10n {
   String get learningKept => 'Got it ✅ I\'ll remember that.';
 
   @override
-  String get learningCorrected => 'OK, thanks for correcting me — I won\'t say it again.';
+  String get learningCorrected =>
+      'OK, thanks for correcting me — I won\'t say it again.';
 
   @override
   String get learningAlready => 'OK, your answer was already recorded.';
@@ -1645,7 +1712,8 @@ class ZadL10nEn extends ZadL10n {
   String get learningGone => 'That note no longer exists.';
 
   @override
-  String get learningFailed => 'Sorry, I couldn\'t record your answer right now — try again in a bit.';
+  String get learningFailed =>
+      'Sorry, I couldn\'t record your answer right now — try again in a bit.';
 
   @override
   String get txType => 'Type';
@@ -1719,7 +1787,8 @@ class ZadL10nEn extends ZadL10n {
   String get txPullToRetry => 'Pull the screen down to try again.';
 
   @override
-  String get txNoneHint => 'As soon as you log an expense — or a bank message arrives — you\'ll find it here.';
+  String get txNoneHint =>
+      'As soon as you log an expense — or a bank message arrives — you\'ll find it here.';
 
   @override
   String get dateDayHeader => 'EEEE, d MMMM';
@@ -1935,7 +2004,8 @@ class ZadL10nEn extends ZadL10n {
   String get oblNone => 'No commitments';
 
   @override
-  String get oblNoneHint => 'Fixed instalments and bills show here as soon as they\'re recorded';
+  String get oblNoneHint =>
+      'Fixed instalments and bills show here as soon as they\'re recorded';
 
   @override
   String oblDeleteConfirm(String title) {
@@ -2002,7 +2072,8 @@ class ZadL10nEn extends ZadL10n {
   String get debtNone => 'No debts recorded';
 
   @override
-  String get debtNoneHint => 'Add your debts and we\'ll help you plan the payoff';
+  String get debtNoneHint =>
+      'Add your debts and we\'ll help you plan the payoff';
 
   @override
   String get debtSnowball => 'Snowball (smallest first)';
@@ -2077,10 +2148,12 @@ class ZadL10nEn extends ZadL10n {
   String get dealSearching => 'Searching the web...';
 
   @override
-  String get dealFailed => 'Couldn\'t search right now — try refreshing in a bit';
+  String get dealFailed =>
+      'Couldn\'t search right now — try refreshing in a bit';
 
   @override
-  String get dealFailedHint => 'The search service is busy. Tap refresh again in a bit — and if it keeps happening, check your connection.';
+  String get dealFailedHint =>
+      'The search service is busy. Tap refresh again in a bit — and if it keeps happening, check your connection.';
 
   @override
   String get dealNone => 'No specific results right now';
@@ -2092,13 +2165,15 @@ class ZadL10nEn extends ZadL10n {
   String get goalTitle => 'What\'s your home\'s most important goal right now?';
 
   @override
-  String get goalBody => 'Pick one — Zad follows it with you every week for 3 months, and you can cancel any time.';
+  String get goalBody =>
+      'Pick one — Zad follows it with you every week for 3 months, and you can cancel any time.';
 
   @override
   String get goalSave => 'Save an amount every month';
 
   @override
-  String get goalSaveHint => 'Set the amount, and Zad watches your spending so you reach it';
+  String get goalSaveHint =>
+      'Set the amount, and Zad watches your spending so you reach it';
 
   @override
   String get goalMonthly => 'Monthly amount';
@@ -2107,13 +2182,15 @@ class ZadL10nEn extends ZadL10n {
   String get goalBudget => 'Stay within the month\'s budget';
 
   @override
-  String get goalBudgetHint => 'Zad warns you before spending outruns the budget';
+  String get goalBudgetHint =>
+      'Zad warns you before spending outruns the budget';
 
   @override
   String get goalDebts => 'Pay off my debts';
 
   @override
-  String get goalDebtsHint => 'Zad follows what\'s left and the next instalment with you';
+  String get goalDebtsHint =>
+      'Zad follows what\'s left and the next instalment with you';
 
   @override
   String get goalWaste => 'Waste less food';
@@ -2131,7 +2208,8 @@ class ZadL10nEn extends ZadL10n {
   String get goalWrite => 'Write your goal';
 
   @override
-  String get goalTooMany => 'You have 5 goals running — finish or cancel one first';
+  String get goalTooMany =>
+      'You have 5 goals running — finish or cancel one first';
 
   @override
   String get goalSaveFailed => 'I couldn\'t save the goal — try again';
@@ -2143,7 +2221,8 @@ class ZadL10nEn extends ZadL10n {
   String get heldTitle => 'What I held back, and why';
 
   @override
-  String get heldNone => 'Nothing held back this week — everything worth saying was said.';
+  String get heldNone =>
+      'Nothing held back this week — everything worth saying was said.';
 
   @override
   String get heldFailed => 'I can\'t read what I held back right now.';
@@ -2152,7 +2231,8 @@ class ZadL10nEn extends ZadL10n {
   String get heldLoading => 'Reading…';
 
   @override
-  String get heldAskHint => 'You can ask me «what didn\'t you tell me?» in the chat for the details.';
+  String get heldAskHint =>
+      'You can ask me «what didn\'t you tell me?» in the chat for the details.';
 
   @override
   String heldTimes(int count) {
@@ -2172,13 +2252,15 @@ class ZadL10nEn extends ZadL10n {
   String get heldReasonMuted => 'you asked me to stop this kind for a while';
 
   @override
-  String get heldReasonLearnedQuiet => 'I noticed you rarely act on this kind, so I send it less';
+  String get heldReasonLearnedQuiet =>
+      'I noticed you rarely act on this kind, so I send it less';
 
   @override
   String get heldReasonQuietHours => 'it was your sleeping time';
 
   @override
-  String get heldReasonReplyHour => 'I waited for the hour you usually reply in';
+  String get heldReasonReplyHour =>
+      'I waited for the hour you usually reply in';
 
   @override
   String get heldReasonPacing => 'something had just reached you';
@@ -2295,7 +2377,8 @@ class ZadL10nEn extends ZadL10n {
   String get diagTitle => 'Automation check';
 
   @override
-  String get diagMenuSubtitle => 'Bank notifications and Zad\'s messages — where exactly they stop';
+  String get diagMenuSubtitle =>
+      'Bank notifications and Zad\'s messages — where exactly they stop';
 
   @override
   String get diagRefresh => 'Refresh';
@@ -2304,43 +2387,53 @@ class ZadL10nEn extends ZadL10n {
   String get diagBankTitle => 'What reached the server from bank notifications';
 
   @override
-  String get diagBankNote => 'The last 14 days: every notification the phone sent, and what Zad did with it and why.';
+  String get diagBankNote =>
+      'The last 14 days: every notification the phone sent, and what Zad did with it and why.';
 
   @override
   String get diagReadFailedTitle => 'Couldn\'t read from the server';
 
   @override
-  String get diagReadFailedBody => 'Check your connection and pull down to refresh.';
+  String get diagReadFailedBody =>
+      'Check your connection and pull down to refresh.';
 
   @override
   String get diagBankEmptyTitle => 'No notification reached the server';
 
   @override
-  String get diagBankEmptyBody => 'If you paid by card lately, the break is on the phone — see the section above.';
+  String get diagBankEmptyBody =>
+      'If you paid by card lately, the break is on the phone — see the section above.';
 
   @override
   String get diagNotification => 'Notification';
 
   @override
-  String get diagBankNoAccess => 'Stopped at the first step: notification access is off. Turn it on in the section above.';
+  String get diagBankNoAccess =>
+      'Stopped at the first step: notification access is off. Turn it on in the section above.';
 
   @override
-  String get diagBankNotBound => 'Access is on but the reading service never connected. Turn access off and on again.';
+  String get diagBankNotBound =>
+      'Access is on but the reading service never connected. Turn access off and on again.';
 
   @override
-  String get diagBankSilent => 'The reading service has seen nothing for two days — Android stopped it. Turn access off and on, and take Zad out of battery saving.';
+  String get diagBankSilent =>
+      'The reading service has seen nothing for two days — Android stopped it. Turn access off and on, and take Zad out of battery saving.';
 
   @override
-  String get diagBankStuck => 'Some notifications were read on the phone but not sent yet. Go online and keep Zad open for a minute.';
+  String get diagBankStuck =>
+      'Some notifications were read on the phone but not sent yet. Go online and keep Zad open for a minute.';
 
   @override
-  String get diagBankNothing => 'The phone is working but no bank notification reached the server. If you paid by card, your bank sends from an app we don\'t follow — tell us its name.';
+  String get diagBankNothing =>
+      'The phone is working but no bank notification reached the server. If you paid by card, your bank sends from an app we don\'t follow — tell us its name.';
 
   @override
-  String get diagBankSetAside => 'Notifications reached the server but all were set aside — the reason is next to each one below.';
+  String get diagBankSetAside =>
+      'Notifications reached the server but all were set aside — the reason is next to each one below.';
 
   @override
-  String get diagBankWaiting => 'Some transactions are waiting for you. Confirm them from the notification or the home screen so they are recorded.';
+  String get diagBankWaiting =>
+      'Some transactions are waiting for you. Confirm them from the notification or the home screen so they are recorded.';
 
   @override
   String get diagBankOk => 'Working: notifications arrive and are recorded.';
@@ -2349,7 +2442,8 @@ class ZadL10nEn extends ZadL10n {
   String get diagProTitle => 'Messages Zad starts';
 
   @override
-  String get diagProNote => 'Good morning, doses, appointments, «close your day» — whether they arrived and why.';
+  String get diagProNote =>
+      'Good morning, doses, appointments, «close your day» — whether they arrived and why.';
 
   @override
   String get diagTelegram => 'Telegram';
@@ -2367,22 +2461,27 @@ class ZadL10nEn extends ZadL10n {
   String get diagNotLinked => 'Not linked';
 
   @override
-  String get diagPushOff => 'This phone is not registered for Zad\'s notifications';
+  String get diagPushOff =>
+      'This phone is not registered for Zad\'s notifications';
 
   @override
   String get diagProEmptyTitle => 'Zad started no message in the last 14 days';
 
   @override
-  String get diagProEmptyBody => 'The first good-morning arrives next morning if there is a way to reach you.';
+  String get diagProEmptyBody =>
+      'The first good-morning arrives next morning if there is a way to reach you.';
 
   @override
-  String get diagProNoChannel => 'Zad has no way to reach you: no Telegram linked and this phone isn\'t registered for notifications. Link Telegram in settings, or open the app and allow notifications.';
+  String get diagProNoChannel =>
+      'Zad has no way to reach you: no Telegram linked and this phone isn\'t registered for notifications. Link Telegram in settings, or open the app and allow notifications.';
 
   @override
-  String get diagProNothing => 'The server sent nothing in 14 days. That isn\'t normal — send us a screenshot of this.';
+  String get diagProNothing =>
+      'The server sent nothing in 14 days. That isn\'t normal — send us a screenshot of this.';
 
   @override
-  String get diagProFailing => 'Most messages failed — the reason is next to each one below.';
+  String get diagProFailing =>
+      'Most messages failed — the reason is next to each one below.';
 
   @override
   String get diagProOk => 'Working: Zad starts messages and they reach you.';
@@ -2436,7 +2535,8 @@ class ZadL10nEn extends ZadL10n {
   String get diagIngestNonFinancial => 'Not about money';
 
   @override
-  String get diagIngestUnavailable => 'The brain didn\'t answer and the sender is unknown';
+  String get diagIngestUnavailable =>
+      'The brain didn\'t answer and the sender is unknown';
 
   @override
   String get diagIngestInfo => 'An information message (balance or alert)';
@@ -2445,7 +2545,8 @@ class ZadL10nEn extends ZadL10n {
   String get diagIngestFailedTxn => 'A failed or pending transaction';
 
   @override
-  String get diagIngestMerged => 'The same transaction arrived elsewhere and was merged';
+  String get diagIngestMerged =>
+      'The same transaction arrived elsewhere and was merged';
 
   @override
   String get diagIngestServerError => 'A server error — it will be retried';
@@ -2454,10 +2555,12 @@ class ZadL10nEn extends ZadL10n {
   String get diagIngestReviewing => 'Arrived, still being reviewed';
 
   @override
-  String get diagMomentNoChannel => 'No way to reach you: no Telegram and no app notifications';
+  String get diagMomentNoChannel =>
+      'No way to reach you: no Telegram and no app notifications';
 
   @override
-  String get diagMomentSkipped => 'Postponed or dropped (quiet hours or the daily cap)';
+  String get diagMomentSkipped =>
+      'Postponed or dropped (quiet hours or the daily cap)';
 
   @override
   String get diagMomentSent => 'Delivered';
@@ -2482,7 +2585,8 @@ class ZadL10nEn extends ZadL10n {
   String get introPantryTitle => 'Your pantry';
 
   @override
-  String get introPantryBody => 'Keep track of everything in your kitchen and home';
+  String get introPantryBody =>
+      'Keep track of everything in your kitchen and home';
 
   @override
   String get introFamilyTitle => 'The whole family';
@@ -2494,7 +2598,8 @@ class ZadL10nEn extends ZadL10n {
   String get introAssistantTitle => 'A smart assistant';
 
   @override
-  String get introAssistantBody => 'AI that sees what you need and learns from you';
+  String get introAssistantBody =>
+      'AI that sees what you need and learns from you';
 
   @override
   String get introBudgetTitle => 'A smarter budget';
@@ -2554,7 +2659,8 @@ class ZadL10nEn extends ZadL10n {
   String get scanLineToPharmacy => 'To pharmacy 💊';
 
   @override
-  String get scanPantryWithMedicines => 'What you have goes up, what\'s on the shopping list comes off it, and medicines go to the pharmacy.';
+  String get scanPantryWithMedicines =>
+      'What you have goes up, what\'s on the shopping list comes off it, and medicines go to the pharmacy.';
 
   @override
   String get dealsTitle => 'Deals and shops nearby';
@@ -2569,13 +2675,15 @@ class ZadL10nEn extends ZadL10n {
   String get dealsEmptyTitle => 'No deals yet';
 
   @override
-  String get dealsEmptyBody => 'Zad searches store pages, delivery apps and households\' receipts every week. Anything it finds shows up here.';
+  String get dealsEmptyBody =>
+      'Zad searches store pages, delivery apps and households\' receipts every week. Anything it finds shows up here.';
 
   @override
   String get dealsFailedTitle => 'Couldn\'t load the deals';
 
   @override
-  String get dealsFailedBody => 'Check your connection and pull down to try again.';
+  String get dealsFailedBody =>
+      'Check your connection and pull down to try again.';
 
   @override
   String get dealsCodesHeader => 'Discount codes';
@@ -2584,7 +2692,8 @@ class ZadL10nEn extends ZadL10n {
   String get dealsStoresHeader => 'Store deals';
 
   @override
-  String get dealsFootnote => 'Deals come from their sources with their dates — a deal may have ended. The Amazon button opens a search in your country\'s store, and Zad earns a small commission from it.';
+  String get dealsFootnote =>
+      'Deals come from their sources with their dates — a deal may have ended. The Amazon button opens a search in your country\'s store, and Zad earns a small commission from it.';
 
   @override
   String get dealsOnAmazon => 'On Amazon';
@@ -2677,13 +2786,15 @@ class ZadL10nEn extends ZadL10n {
   String get homeDealsSeeAll => 'All deals';
 
   @override
-  String get homeDealsSearching => 'Looking for deals in your stores — tap to see what we found';
+  String get homeDealsSearching =>
+      'Looking for deals in your stores — tap to see what we found';
 
   @override
   String get sheinShop => 'Shop on SHEIN';
 
   @override
-  String get sheinDisclosure => 'Zad earns a commission from SHEIN on purchases through these links, at no extra cost to you.';
+  String get sheinDisclosure =>
+      'Zad earns a commission from SHEIN on purchases through these links, at no extra cost to you.';
 
   @override
   String get homeNearbyTitle => 'Shops near you';
@@ -2692,13 +2803,15 @@ class ZadL10nEn extends ZadL10n {
   String get homeNearbySeeAll => 'My places';
 
   @override
-  String get homeNearbyFind => 'See the supermarkets and pharmacies near you — tap to set your location';
+  String get homeNearbyFind =>
+      'See the supermarkets and pharmacies near you — tap to set your location';
 
   @override
   String get homeDealsOrderOnAmazon => 'Order it on Amazon — fast delivery';
 
   @override
-  String get amazonAssociatesDisclosure => 'As an Amazon Associate, Zad earns from qualifying purchases — at no extra cost to you.';
+  String get amazonAssociatesDisclosure =>
+      'As an Amazon Associate, Zad earns from qualifying purchases — at no extra cost to you.';
 
   @override
   String get homeDealsWhyNeed => 'You\'re out';
@@ -2742,16 +2855,19 @@ class ZadL10nEn extends ZadL10n {
   String get patternTitle => 'Your shopping pattern';
 
   @override
-  String get patternMenuSubtitle => 'Your stores, when you shop, and each item\'s cycle';
+  String get patternMenuSubtitle =>
+      'Your stores, when you shop, and each item\'s cycle';
 
   @override
   String get patternLearningTitle => 'Still learning';
 
   @override
-  String get patternLearningMessage => 'Zad works out your pattern every night from your receipts and spending. Scan a receipt or log a purchase and check back tomorrow.';
+  String get patternLearningMessage =>
+      'Zad works out your pattern every night from your receipts and spending. Scan a receipt or log a purchase and check back tomorrow.';
 
   @override
-  String get patternReadFailed => 'Couldn\'t read your pattern right now. Pull down to try again.';
+  String get patternReadFailed =>
+      'Couldn\'t read your pattern right now. Pull down to try again.';
 
   @override
   String get patternWeekly => 'Your average weekly spending';
@@ -2778,7 +2894,8 @@ class ZadL10nEn extends ZadL10n {
   }
 
   @override
-  String get patternWhenUnknown => 'I need at least 4 shopping trips to know when you shop';
+  String get patternWhenUnknown =>
+      'I need at least 4 shopping trips to know when you shop';
 
   @override
   String get patternPartMorning => 'in the morning';
@@ -2838,7 +2955,8 @@ class ZadL10nEn extends ZadL10n {
   String get patternEditReset => 'Let Zad decide';
 
   @override
-  String get patternEditNotInPantry => 'This item isn\'t in your pantry right now';
+  String get patternEditNotInPantry =>
+      'This item isn\'t in your pantry right now';
 
   @override
   String patternEditSaved(String item) {
@@ -2846,13 +2964,16 @@ class ZadL10nEn extends ZadL10n {
   }
 
   @override
-  String get homeBankOffBanner => '⚠️ Bank message reading has stopped. Tap here to turn it back on so your balance and spending update by themselves.';
+  String get homeBankOffBanner =>
+      '⚠️ Bank message reading has stopped. Tap here to turn it back on so your balance and spending update by themselves.';
 
   @override
-  String get homeBankStalledHint => 'If it is already on: switch it off and on again on the screen that opens.';
+  String get homeBankStalledHint =>
+      'If it is already on: switch it off and on again on the screen that opens.';
 
   @override
-  String get homeLocationOffBanner => '📍 Your location is off. Turn it on so Zad can match supermarket deals and nearby shops and do its job properly.';
+  String get homeLocationOffBanner =>
+      '📍 Your location is off. Turn it on so Zad can match supermarket deals and nearby shops and do its job properly.';
 
   @override
   String get homeLocationLater => 'Not now';
@@ -2861,7 +2982,8 @@ class ZadL10nEn extends ZadL10n {
   String get channelCardTitle => 'Zad has no way to reach you';
 
   @override
-  String get channelCardBody => 'Notifications are off and Telegram isn\'t linked, so medicine times, bills and budget alerts won\'t reach you. Either one is enough.';
+  String get channelCardBody =>
+      'Notifications are off and Telegram isn\'t linked, so medicine times, bills and budget alerts won\'t reach you. Either one is enough.';
 
   @override
   String get channelCardNotifications => 'Turn on notifications';
@@ -2883,7 +3005,8 @@ class ZadL10nEn extends ZadL10n {
   }
 
   @override
-  String get briefWhyOverspent => 'This period\'s available money is below zero: the opening balance minus what was spent and the fixed commitments.';
+  String get briefWhyOverspent =>
+      'This period\'s available money is below zero: the opening balance minus what was spent and the fixed commitments.';
 
   @override
   String briefWhyRenewal(String name) {
@@ -2906,7 +3029,8 @@ class ZadL10nEn extends ZadL10n {
   }
 
   @override
-  String get briefWhyFamily => 'Someone in the family chat said it\'s needed, and Zad picked it up reviewing the chat.';
+  String get briefWhyFamily =>
+      'Someone in the family chat said it\'s needed, and Zad picked it up reviewing the chat.';
 
   @override
   String briefMedicineLow(String name, String days) {
@@ -2922,7 +3046,8 @@ class ZadL10nEn extends ZadL10n {
   }
 
   @override
-  String get briefBudgetDangerDetail => 'Open money — there\'s still time to catch up';
+  String get briefBudgetDangerDetail =>
+      'Open money — there\'s still time to catch up';
 
   @override
   String briefSeasonRamadan(String days) {
@@ -2948,7 +3073,8 @@ class ZadL10nEn extends ZadL10n {
   }
 
   @override
-  String get briefWhySeason => 'From the Umm al-Qura calendar in your country\'s time — prices rise before the season.';
+  String get briefWhySeason =>
+      'From the Umm al-Qura calendar in your country\'s time — prices rise before the season.';
 
   @override
   String get accountRestoreTitle => 'Your account is scheduled for deletion';
@@ -2965,7 +3091,8 @@ class ZadL10nEn extends ZadL10n {
   String get accountRestoreYes => 'Restore my account';
 
   @override
-  String get accountRestoreFailed => 'Couldn\'t restore the account right now. Reopen the app and try again.';
+  String get accountRestoreFailed =>
+      'Couldn\'t restore the account right now. Reopen the app and try again.';
 
   @override
   String get settingsCompanionSection => 'Your companion';
@@ -2974,7 +3101,8 @@ class ZadL10nEn extends ZadL10n {
   String get settingsFoodPatternTitle => 'Your home\'s food picture';
 
   @override
-  String get settingsFoodPatternBody => 'At most once a month, Zad describes your home\'s food from recorded purchases and suggests additions. A description of purchases, not medical advice.';
+  String get settingsFoodPatternBody =>
+      'At most once a month, Zad describes your home\'s food from recorded purchases and suggests additions. A description of purchases, not medical advice.';
 
   @override
   String get commuteTitle => 'Learn when I leave and come back';
@@ -2986,7 +3114,8 @@ class ZadL10nEn extends ZadL10n {
   String get commuteConsentTitle => 'Let Zad learn your daily times?';
 
   @override
-  String get commuteConsentBody => 'Zad works out when you usually leave home and return, from your leaving and coming home, so it can fit reminders to your day and reach you at the right time.\n\nThis is worked out on your phone. Only a summary of times and weekdays goes to the server: no coordinates, workplace or route. Nobody in your family sees it. Turning this off erases it from your phone and the server.';
+  String get commuteConsentBody =>
+      'Zad works out when you usually leave home and return, from your leaving and coming home, so it can fit reminders to your day and reach you at the right time.\n\nThis is worked out on your phone. Only a summary of times and weekdays goes to the server: no coordinates, workplace or route. Nobody in your family sees it. Turning this off erases it from your phone and the server.';
 
   @override
   String get commuteConsentAgree => 'I agree';
@@ -2998,7 +3127,8 @@ class ZadL10nEn extends ZadL10n {
   String get settingsPetCallsTitle => 'Zado\'s calls';
 
   @override
-  String get settingsPetCallsBody => 'Zado messages you when it\'s hungry or thirsty, on Telegram and by notification. Turning this off doesn\'t stop the morning greeting or the deals.';
+  String get settingsPetCallsBody =>
+      'Zado messages you when it\'s hungry or thirsty, on Telegram and by notification. Turning this off doesn\'t stop the morning greeting or the deals.';
 
   @override
   String get homeWidgetSubs => 'Subscriptions';
@@ -3068,7 +3198,8 @@ class ZadL10nEn extends ZadL10n {
   String get placesOutingsTurnOn => 'Start recording my outings';
 
   @override
-  String get placesOutingsWaiting => 'It\'s on. Your next trip out and back will appear here.';
+  String get placesOutingsWaiting =>
+      'It\'s on. Your next trip out and back will appear here.';
 
   @override
   String get familyHeaderTitle => 'My family';
@@ -3077,7 +3208,8 @@ class ZadL10nEn extends ZadL10n {
   String get shellLanguageShort => 'ع';
 
   @override
-  String get chefHomeTapHint => 'Tap and I\'ll suggest a dish from your pantry.';
+  String get chefHomeTapHint =>
+      'Tap and I\'ll suggest a dish from your pantry.';
 
   @override
   String get chefFullRecipe => 'Full recipe and chef\'s secrets';
@@ -3185,7 +3317,8 @@ class ZadL10nEn extends ZadL10n {
   }
 
   @override
-  String get brainReportWaits => 'Log 3 expenses and Zad\'s full report is ready';
+  String get brainReportWaits =>
+      'Log 3 expenses and Zad\'s full report is ready';
 
   @override
   String get profileLanguageSubtitle => 'Arabic or English, one tap';
@@ -3206,7 +3339,8 @@ class ZadL10nEn extends ZadL10n {
   String get tourOpen => 'Tour of Zad';
 
   @override
-  String get profileTourSubtitle => 'A quick walk through every part of the app';
+  String get profileTourSubtitle =>
+      'A quick walk through every part of the app';
 
   @override
   String get tourNext => 'Next';
@@ -3226,13 +3360,15 @@ class ZadL10nEn extends ZadL10n {
   String get tourWelcomeTitle => 'Welcome to Zad';
 
   @override
-  String get tourWelcomeBody => 'In half a minute you\'ll know where everything is.';
+  String get tourWelcomeBody =>
+      'In half a minute you\'ll know where everything is.';
 
   @override
   String get tourHomeTitle => 'Home';
 
   @override
-  String get tourHomeBody => 'Your available money, and what matters most today.';
+  String get tourHomeBody =>
+      'Your available money, and what matters most today.';
 
   @override
   String get tourMoneyTitle => 'My money';
@@ -3244,25 +3380,29 @@ class ZadL10nEn extends ZadL10n {
   String get tourMicTitle => 'Talk to Zad';
 
   @override
-  String get tourMicBody => 'Say \"log 50 for coffee\" or ask anything, and Zad answers.';
+  String get tourMicBody =>
+      'Say \"log 50 for coffee\" or ask anything, and Zad answers.';
 
   @override
   String get tourCameraTitle => 'Scan a receipt';
 
   @override
-  String get tourCameraBody => 'Snap a receipt and Zad logs the spending and fills the pantry.';
+  String get tourCameraBody =>
+      'Snap a receipt and Zad logs the spending and fills the pantry.';
 
   @override
   String get tourHouseTitle => 'My home';
 
   @override
-  String get tourHouseBody => 'Pantry, shopping list, pharmacy and the chef\'s recipes.';
+  String get tourHouseBody =>
+      'Pantry, shopping list, pharmacy and the chef\'s recipes.';
 
   @override
   String get tourMoreTitle => 'More';
 
   @override
-  String get tourMoreBody => 'Family, Zad\'s brain, your account and every feature.';
+  String get tourMoreBody =>
+      'Family, Zad\'s brain, your account and every feature.';
 
   @override
   String get tourBellTitle => 'Notifications';
@@ -3279,7 +3419,8 @@ class ZadL10nEn extends ZadL10n {
   }
 
   @override
-  String get adLadderFirst => 'The second ad adds a voice question, the third an image too';
+  String get adLadderFirst =>
+      'The second ad adds a voice question, the third an image too';
 
   @override
   String get adLadderSecond => 'The third ad gives an image too';
@@ -3345,7 +3486,8 @@ class ZadL10nEn extends ZadL10n {
   String get tickerError => 'Couldn\'t fetch live prices right now — try again';
 
   @override
-  String get tickerEmpty => 'No live prices for your country yet — tap to refresh';
+  String get tickerEmpty =>
+      'No live prices for your country yet — tap to refresh';
 
   @override
   String get tickerRefresh => 'Refresh prices';
@@ -3389,7 +3531,8 @@ class ZadL10nEn extends ZadL10n {
   String get notifEmptyTitle => 'No notifications right now.';
 
   @override
-  String get notifEmptyBody => 'We\'ll let you know as soon as something needs your attention';
+  String get notifEmptyBody =>
+      'We\'ll let you know as soon as something needs your attention';
 
   @override
   String get notifBankSection => 'Bank transactions waiting for you';
@@ -3575,7 +3718,8 @@ class ZadL10nEn extends ZadL10n {
   String get pantryEmptyTitle => 'Your pantry is empty';
 
   @override
-  String get pantryEmptyBody => 'Start adding products to organise your home\'s pantry';
+  String get pantryEmptyBody =>
+      'Start adding products to organise your home\'s pantry';
 
   @override
   String get pantryScan => 'Scan';
@@ -3696,7 +3840,8 @@ class ZadL10nEn extends ZadL10n {
   String get pantryOccasional => 'I buy it now and then';
 
   @override
-  String get pantryOccasionalBody => 'It won\'t count as short when it runs out, and I won\'t remind you';
+  String get pantryOccasionalBody =>
+      'It won\'t count as short when it runs out, and I won\'t remind you';
 
   @override
   String get pantryExpiryPick => 'Pick a date';
@@ -3707,7 +3852,8 @@ class ZadL10nEn extends ZadL10n {
   }
 
   @override
-  String get pantryExpiryEstimateNote => 'Leave it and I\'ll save this estimate; change it if you know the real date';
+  String get pantryExpiryEstimateNote =>
+      'Leave it and I\'ll save this estimate; change it if you know the real date';
 
   @override
   String get pantryExpiryIn3Days => '3 days';
@@ -3742,7 +3888,8 @@ class ZadL10nEn extends ZadL10n {
   String get pantryStarterTitle => 'Add your home\'s basics in one tap';
 
   @override
-  String get pantryStarterBody => 'Tick what you have now; Zad keeps track and tells you before it runs out.';
+  String get pantryStarterBody =>
+      'Tick what you have now; Zad keeps track and tells you before it runs out.';
 
   @override
   String pantryStarterAdd(int count) {
@@ -3756,7 +3903,8 @@ class ZadL10nEn extends ZadL10n {
   String get introTitle => 'Tell me about you';
 
   @override
-  String get introLead => 'Five questions and one optional, so I talk to you right and look after the people you care for.';
+  String get introLead =>
+      'Five questions and one optional, so I talk to you right and look after the people you care for.';
 
   @override
   String get introNameQuestion => 'What should I call you?';
@@ -3834,7 +3982,8 @@ class ZadL10nEn extends ZadL10n {
   String get introHouseholdQuestion => 'How many people live at home?';
 
   @override
-  String get introHouseholdHint => 'Counting you. So I can work out what the home uses.';
+  String get introHouseholdHint =>
+      'Counting you. So I can work out what the home uses.';
 
   @override
   String get introHouseholdMany => '7 or more';
@@ -3857,19 +4006,22 @@ class ZadL10nEn extends ZadL10n {
   String get introSave => 'Let\'s go';
 
   @override
-  String get introSaveFailed => 'I couldn\'t save — check your connection and try again.';
+  String get introSaveFailed =>
+      'I couldn\'t save — check your connection and try again.';
 
   @override
   String get firstStepsTitle => 'First steps';
 
   @override
-  String get firstStepsLead => 'Three steps in two minutes, and Zad starts working with you today.';
+  String get firstStepsLead =>
+      'Three steps in two minutes, and Zad starts working with you today.';
 
   @override
   String get firstStepsSpendTitle => 'Log your first expense';
 
   @override
-  String get firstStepsSpendBody => 'Anything you spent today — coffee, a ride, bread. That\'s where Zad starts to understand your month.';
+  String get firstStepsSpendBody =>
+      'Anything you spent today — coffee, a ride, bread. That\'s where Zad starts to understand your month.';
 
   @override
   String get firstStepsSpendDone => 'Logged ✓';
@@ -3881,7 +4033,8 @@ class ZadL10nEn extends ZadL10n {
   String get firstStepsAlertsTitle => 'Turn on notifications';
 
   @override
-  String get firstStepsAlertsBody => 'So I can tell you when the budget is running low, and remind you of medicine and bills on time.';
+  String get firstStepsAlertsBody =>
+      'So I can tell you when the budget is running low, and remind you of medicine and bills on time.';
 
   @override
   String get firstStepsAlertsDone => 'On ✓';
@@ -3893,7 +4046,8 @@ class ZadL10nEn extends ZadL10n {
   String get firstStepsTelegramTitle => 'Connect the Telegram bot';
 
   @override
-  String get firstStepsTelegramBody => 'Without it, reminders and the «close your day» question won\'t reach you outside the app.';
+  String get firstStepsTelegramBody =>
+      'Without it, reminders and the «close your day» question won\'t reach you outside the app.';
 
   @override
   String get firstStepsGo => 'On to Zad';
@@ -3902,13 +4056,16 @@ class ZadL10nEn extends ZadL10n {
   String get firstStepsLater => 'Finish later — open Zad';
 
   @override
-  String get petLinesHungry => 'My tummy\'s rumbling… feed me? 🍎\nSo hungry 🥺 just a little something\nSmell food? No, that\'s me being hungry 😅';
+  String get petLinesHungry =>
+      'My tummy\'s rumbling… feed me? 🍎\nSo hungry 🥺 just a little something\nSmell food? No, that\'s me being hungry 😅';
 
   @override
-  String get petLinesThirsty => 'Thirsty… a little water? 💧\nMy mouth is dry 🥵 water me\nOne glass of water and I\'m perfect 💧';
+  String get petLinesThirsty =>
+      'Thirsty… a little water? 💧\nMy mouth is dry 🥵 water me\nOne glass of water and I\'m perfect 💧';
 
   @override
-  String get petLinesSleepy => 'Sleepy… 😴 good night\nYaaawn 🥱 carry on tomorrow?\nMy eyes are closing on their own… 💤';
+  String get petLinesSleepy =>
+      'Sleepy… 😴 good night\nYaaawn 🥱 carry on tomorrow?\nMy eyes are closing on their own… 💤';
 
   @override
   String petLinesSad(String name) {
@@ -3916,13 +4073,16 @@ class ZadL10nEn extends ZadL10n {
   }
 
   @override
-  String get petLinesHappy => 'I\'m happy with you 💚\nThanks for remembering me 🥰\nYou\'re the best friend 🤗';
+  String get petLinesHappy =>
+      'I\'m happy with you 💚\nThanks for remembering me 🥰\nYou\'re the best friend 🤗';
 
   @override
-  String get petLinesIdleLogged => 'How\'s your day? ✨\nI\'m here if you need me 💚\nYou logged today — well done 👏';
+  String get petLinesIdleLogged =>
+      'How\'s your day? ✨\nI\'m here if you need me 💚\nYou logged today — well done 👏';
 
   @override
-  String get petLinesIdleNotLogged => 'Logged your spending today? 📝\nJust one expense and I\'ll be proud of you 🌱';
+  String get petLinesIdleNotLogged =>
+      'Logged your spending today? 📝\nJust one expense and I\'ll be proud of you 🌱';
 
   @override
   String get petLinesFed => 'Yum yum! 😋\nThank you 🍎\nBest meal ever 🤤';
@@ -3934,10 +4094,12 @@ class ZadL10nEn extends ZadL10n {
   String get petLinesWatered => 'Ahh, refreshed! 💧\nMuch better 😌';
 
   @override
-  String get petLinesNotThirsty => 'I don\'t want water now 🙈\nI\'ve had enough 😄';
+  String get petLinesNotThirsty =>
+      'I don\'t want water now 🙈\nI\'ve had enough 😄';
 
   @override
-  String get petLinesPetted => 'Hehe, that tickles 🤭\nMore! More! 🥰\nLove you 💚';
+  String get petLinesPetted =>
+      'Hehe, that tickles 🤭\nMore! More! 🥰\nLove you 💚';
 
   @override
   String get cookDone => 'Cooked it';
@@ -3946,7 +4108,8 @@ class ZadL10nEn extends ZadL10n {
   String get cookSheetTitle => 'Take what you used off the pantry';
 
   @override
-  String get cookSheetHint => 'These are my guesses — change them if you used more or less.';
+  String get cookSheetHint =>
+      'These are my guesses — change them if you used more or less.';
 
   @override
   String cookConfirm(int count) {
@@ -3954,7 +4117,8 @@ class ZadL10nEn extends ZadL10n {
   }
 
   @override
-  String get cookNothing => 'None of this recipe\'s ingredients are in your pantry.';
+  String get cookNothing =>
+      'None of this recipe\'s ingredients are in your pantry.';
 
   @override
   String cookDoneSnack(int count) {
@@ -4075,4 +4239,21 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get agentToolDismissInsight => 'Closed an insight';
+
+  @override
+  String get rewardsCardTitle => 'Zad rewards';
+
+  @override
+  String get rewardsCardBody =>
+      'Watch an ad for extra messages, or subscribe and skip the ads.';
+
+  @override
+  String get rewardsSubscribe => 'Go Zad Premium';
+
+  @override
+  String get rewardsTelegram => 'Zad bot on Telegram';
+
+  @override
+  String get profileTelegramSubtitle =>
+      'Link your account so reminders reach you';
 }

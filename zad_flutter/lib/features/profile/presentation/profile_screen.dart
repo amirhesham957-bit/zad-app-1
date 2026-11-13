@@ -205,6 +205,15 @@ class ProfileScreen extends ConsumerWidget {
                     onTap: () =>
                         unawaited(ZadScreens.showPaywallScreen(context)),
                   ),
+                  // The bot had no row anywhere once Home's card hid itself
+                  // (owner 13/11).
+                  _MenuRow(
+                    icon: ZadIcons.send,
+                    title: context.l10n.rewardsTelegram,
+                    subtitle: context.l10n.profileTelegramSubtitle,
+                    onTap: () =>
+                        unawaited(ZadScreens.showTelegramBotSheet(context)),
+                  ),
                   _MenuRow(
                     icon: ZadIcons.inventory,
                     title: context.l10n.patternTitle,

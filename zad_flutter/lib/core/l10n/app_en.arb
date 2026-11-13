@@ -1306,5 +1306,10 @@
   "agentToolRateRecipe": "Rated a recipe",
   "@agentToolRateRecipe": {"description": "Brain action log: what a tool the chat ran did (ZAD_PLAN 10.2a)."},
   "agentToolDismissInsight": "Closed an insight",
-  "@agentToolDismissInsight": {"description": "Brain action log: what a tool the chat ran did (ZAD_PLAN 10.2a)."}
+  "@agentToolDismissInsight": {"description": "Brain action log: what a tool the chat ran did (ZAD_PLAN 10.2a)."},
+  "rewardsCardTitle": "Zad rewards",
+  "rewardsCardBody": "Watch an ad for extra messages, or subscribe and skip the ads.",
+  "rewardsSubscribe": "Go Zad Premium",
+  "rewardsTelegram": "Zad bot on Telegram",
+  "profileTelegramSubtitle": "Link your account so reminders reach you"
 }
