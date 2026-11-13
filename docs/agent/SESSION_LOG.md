@@ -499,3 +499,13 @@ related:
 - **Apify (قرار المالك: القانوني بس):** `apifyPool.ts` — مفاتيح من `APIFY_API_TOKEN` (كذا مفتاح) أو `_1.._9`، بداية عشوائية، والمفتاح اللي يرد 401/402/403/429 يتعدّى. `browser: true` على محل في `OFFICIAL_FLYER_SITES` ⇐ صفحته من متصفح Apify بعد robots.txt ومن غير بروكسي. `flyer_page_probe` لقياس صفحة قبل إضافة محل. `provider_health.apify.keys` بيقول كام مفتاح اتقري. core ٢٥٩/٠، `apifyPool_test` ٧.
 - **فاضل بعد الدمج:** `provider_health` ⇐ `apify.keys` لازم ٧؛ `flyer_page_probe` على صفحات عروض كارفور مصر وسبينيس والـ٦ اللي ماردّوش؛ كل محل يطلّع روابط PDF/صور يتضاف سطر بـ`browser: true` وشكل الرابط بالظبط.
 - **فخ:** `/tmp` بيتمسح بين الجلسات — الـAVD لازم يتعمل تاني. والقرص `/` ٩٧٪.
+
+## ٢٠٢٦-١١-١٣ (آخر الليل، خامس) — #550/#551 على الحي، نقل pg_net (#552)، و٣.٢ الشريحة ٨ (#553)
+
+- **اتحقق على الحي:** رنين `Edge Functions` بتوع #550 و#551 على main نجحوا (sql-tests، check، deploy). `20261113160000` و`20261113170000` في `schema_migrations`، والدوال التلاتة جواها `exception`، وعمودين `batch_id`/`for_person` موجودين.
+- **#552 (٨.٥ خطوة ٢، الجزء ٢):** `20261113180000` — `drop`/`create extension pg_net with schema extensions` + `grant usage on schema net` للخمس أدوار. اتقاس قبلها: مفيش حاجة برّه الامتداد معتمدة عليه، الـ٦ دوال `security definer` وبينادوا بالاسم الكامل، والـevent trigger `issue_pg_net_access` بيرجّع الصلاحيات لوحده. CI أخضر.
+- **التست محلي بس:** امتداد بديل SQL (`supabase/sql/tests/pg_net_standin/`) بنفس `relocatable = false` ونفس grants الـPUBLIC. `pg_net_schema_test` ٤/٤، بيقع من غير النقل، والمايجريشن مرتين سليمة. حدّه: مايمسكش سطر grant ناقص.
+- **#553 (مسودة، فوق #545):** القواعد ١ و٣ و٤ و٥b و٦ بكلام أقل ومن غير تكرار SOUL — ١٠٣١١ ⇐ ٩٠٤٥ حرف لوكيل المال على لقطة فاضية. `2026-11-14.1`. العقل ١٥٠٣/٠، والحارس اتجرّب بالكسر.
+- **فخ:** بناء pg_net من المصدر جوه دوكر اترفض من auto-mode — البديل SQL كفاية للنقل والصلاحيات.
+- **فخ:** `deno run` على `index.ts` بيعلّق (فيه `Deno.serve`) — القياس من جوه `deno test`.
+- **مستني المالك:** يدمج #552 (الدمج = النشر: بعد تكّة `agent-tasks-processor`، بعيد عن ٠٢–٠٤ UTC)؛ ولو CI قال `must be owner of extension pg_net` يترجع. #553 يطلع من المسودة بعد ليلة تقييم #544/#545.
