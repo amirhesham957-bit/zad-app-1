@@ -479,10 +479,9 @@ export const validateDeleteInventoryItem: Validator = (input, _snap, ctx) => {
   return { ok: true };
 };
 
-const PHARMACY_UNITS = [
-  "قرص", "أقراص", "حبة", "حبات", "حبوب", "كبسولة", "كبسولات",
-  "مل", "كريم", "بخاخ", "نقطة", "قطرة", "كيس", "أكياس", "أمبول", "أمبولات", "علبة"
-];
+// الوحدة نص حر من ١٣/١١: «شريط» من الفاتورة كان بيترفض هنا (٥ من ٧ أدوية عند المالك، «التسجيل فشل» ٩ مرات).
+// التوحيد بيحصل في pharmacyUnit (index.ts) وzad_pharmacy_unit في الداتابيز — المعروف بيتوحّد والباقي بيفضل زي ما اتكتب.
+const PHARMACY_UNIT_MAX = 30;
 const DOSE_TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 /**
@@ -510,8 +509,9 @@ export const validateAddPharmacyItem: Validator = (input, _snap, ctx) => {
   if ((ctx.counts["add_pharmacy_item"] ?? 0) >= 3) return { ok: false, reason: "وصلت لحد أقصى ٣ أدوية في المرة" };
   const name = String(input.name ?? "").trim();
   if (name.length < 2) return { ok: false, reason: "اسم الدواء قصير أوي" };
-  if (input.unit !== undefined && !PHARMACY_UNITS.includes(input.unit)) {
-    return { ok: false, reason: `الوحدة لازم تكون واحدة من: ${PHARMACY_UNITS.join("، ")}` };
+  if (input.unit !== undefined && input.unit !== null) {
+    const unit = String(input.unit).trim();
+    if (unit.length > PHARMACY_UNIT_MAX) return { ok: false, reason: `الوحدة طويلة أوي (${PHARMACY_UNIT_MAX} حرف بالكتير)` };
   }
   if (input.dose_times !== undefined && input.dose_times !== null && String(input.dose_times).length > 0) {
     // طبّع الأول (أرقام عربية، فواصل عربية/شرطات) ثم تحقق — بدل رفض صامت

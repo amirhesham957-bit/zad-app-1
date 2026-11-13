@@ -2817,7 +2817,8 @@ bot.on("callback_query:data", async (ctx) => {
       category: row.category,
     });
     if (!added.ok) {
-      console.error("telegram add_pharmacy through zad-brain failed");
+      // السبب كان بيضيع (١٣/١١: ٩ مرات «failed» من غير ولا كلمة ليه).
+      console.error("telegram add_pharmacy through zad-brain failed:", (added.summary ?? "no summary").slice(0, 300));
       await sb.from("telegram_pending_pharmacy").update({ status: "pending" }).eq("id", row.id);
       await ctx.reply("معلش، التسجيل فشل — جرب تاني.");
       return;
