@@ -238,6 +238,7 @@ jobs:
           supabase/sql/tests/scratch_scaffold.sql supabase/sql/tests/forecasts_scaffold.sql supabase/sql/tests/forecast_runs_out_scaffold.sql supabase/migrations/20261026214500_forecast_ledger.sql supabase/migrations/20261026233000_forecast_runs_out.sql supabase/sql/tests/forecasts_test.sql
           supabase/sql/tests/scratch_scaffold.sql supabase/sql/tests/three_ads_one_attempt_test.sql
           supabase/sql/tests/scratch_scaffold.sql supabase/sql/tests/three_voice_questions_a_day_test.sql
+          supabase/sql/tests/scratch_scaffold.sql supabase/sql/tests/asks_after_you_scaffold.sql supabase/migrations/20261113110000_asks_after_you.sql supabase/sql/tests/asks_after_you_test.sql
           supabase/sql/tests/scratch_scaffold.sql supabase/migrations/20261113100000_cse_daily_share.sql supabase/sql/tests/cse_daily_share_test.sql
           supabase/sql/tests/scratch_scaffold.sql supabase/sql/tests/two_hour_quota_ad_ladder_test.sql
           supabase/sql/tests/scratch_scaffold.sql supabase/sql/tests/past_appointments_scaffold.sql supabase/migrations/20261028030000_past_appointments.sql supabase/sql/tests/past_appointments_test.sql
