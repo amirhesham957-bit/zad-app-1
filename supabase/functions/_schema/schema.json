@@ -65,6 +65,7 @@
     "id",
     "last_reviewed_at",
     "metric",
+    "progress_kind",
     "status",
     "target_value",
     "title",

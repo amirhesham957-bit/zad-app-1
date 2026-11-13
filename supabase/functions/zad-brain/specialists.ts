@@ -206,6 +206,9 @@ const APP_SETTING_INTENT = /(نداء|نداءات|زادو|صوره الاكل)
 // «انسى إني…»، «امسح من ذاكرتك» — مش «نسيت» (العميل هو اللي نسي).
 // ١٠.٢(ج): «شاركها مع العيلة» / «خليها ليا» — المشاركة أو الرجوع عنها بطلب صاحب الملاحظة.
 const FAMILY_SHARE_INTENT = /(شارك|شاركها|شاركه|شاركي).{0,25}(العيل|عيلت|البيت|ماما|بابا|مراتي|جوزي)|(خليها|خليه|خلّيها|خلّيه) (ليا|ليّا|بيني وبينك)|(ماتشارك|متشارك|ما تشارك|وقف مشارك|بطل تشارك|بطّل تشارك|شيلها من العيل)/;
+// ١٠.٢(د): «حطيت ٥٠٠ للمصيف» / «حوشت ٢٠٠» — أو رقم لوحده رد على «حطيت كام الأسبوع ده؟» من المتابعة.
+const GOAL_PROGRESS_INTENT = /(حطيت|حوشت|حوشنا|وفرت|وفرنا|جمعت|ادخرت|شلت|حطينا).{0,30}[0-9٠-٩]|[0-9٠-٩].{0,30}(للهدف|علي جنب|في الحصاله|للحصاله)/;
+const GOAL_PROGRESS_ASKED = /(حطيت|حطيتي|حطيتوا|حوشت|وفرت) كام/;
 const FORGET_INTENT = /(^|\s)(انسي|انساها|انساه|انسيها|انسيه)(\s|$)|امسح.{0,20}(ذاكرتك|من دماغك|اللي قلتهولك|اللي قلتلك)|شيل.{0,20}من (ذاكرتك|دماغك)|(متفتكرش|ماتفتكرش|لا تتذكر)/;
 // ١٠.٢(أ) شريحة ٢ — كل زرار ليه كلماته.
 const SUB_PAID_INTENT = /(دفعت|سددت|سدّدت|خلصت|ادفعت)\s*(اشتراك|فاتور|قسط|ايجار|إيجار|النت|الانترنت|نتفل|شاهد|سبوتي|الجيم|النادي)|(اشتراك|فاتور|قسط).{0,25}(اتدفع|دفعته|دفعتها|سددته|سددتها)/;
@@ -294,6 +297,9 @@ export function intentToolHints(message: string, priorReply = ""): string[] {
   if (APP_SETTING_INTENT.test(norm)) tools.push("set_app_setting");
   if (FORGET_INTENT.test(norm)) tools.push("delete_memory", "remember");
   if (FAMILY_SHARE_INTENT.test(norm)) tools.push("share_memory_with_family");
+  if (GOAL_PROGRESS_INTENT.test(norm) || (GOAL_PROGRESS_ASKED.test(normalize(priorReply)) && /[0-9٠-٩]/.test(norm))) {
+    tools.push("add_goal_progress");
+  }
   if (SUB_PAID_INTENT.test(norm)) tools.push("mark_subscription_paid");
   if (SHORTAGES_INTENT.test(norm)) tools.push("add_shortages_to_shopping");
   if (DOSE_SNOOZE_INTENT.test(norm)) tools.push("snooze_pharmacy_dose");
