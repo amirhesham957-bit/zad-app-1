@@ -224,6 +224,13 @@ export function momentLimits(moment: string): { text: number; speech: number } {
 
 /** توجيه إضافي للموديل لكل لحظة محتاجة شكل خاص (مش مجرد جملتين). */
 const MOMENT_GUIDANCE: Record<string, string> = {
+  // «زاد يسأل عليك» (ZAD_PLAN ١٠.١٢، المالك ١١/١١).
+  ignored_days:
+    "العميل بقاله days_away يوم ما فتحش التطبيق ولا كلّمك. ابعتيله سؤال صاحب وحشه: إنت كويس؟ طمّني عليك — " +
+    "من غير لوم ولا عتاب ولا إحساس بالذنب، ومن غير ما تطلبي يفتح التطبيق، ومن غير فلوس ولا أرقام ولا عروض ولا بيع. " +
+    "سؤال واحد بسيط يرد عليه بكلمة. لو expenses_recorded_while_away أكبر من صفر، ممكن تقولي في نص جملة إنك فضلتي " +
+    "ماسكة البيت وهو غايب (من غير العدد ولا المبالغ). لو step = 2 فدي آخر مرة هتسألي في الغياب ده: خليها أهدى وأقصر، " +
+    "وقولي إنك موجودة لما يحب يرجع — من غير ما تقوليها كتهديد ولا وداع.",
   morning_greeting:
     "لو فيه daily_question في البيانات، اختمي text وspeech بيه كسؤال واحد خفيف بلهجته (نفس المعنى، مش لازم نفس الكلمات) — " +
     "من غير ما تبرري ليه بتسألي، ومن غير أسئلة تانية. لو daily_question_kind = curiosity فده حاجة لاحظتيها في حساباته: " +
@@ -846,6 +853,19 @@ export function momentFallback(moment: string, facts: Record<string, unknown>): 
         : `${pick(CLOSE_DAY_SEEN_OPEN)} ${things}: ${listed.join("، ")}${more > 0 ? ` وكمان ${more}` : ""}. ${pick(CLOSE_DAY_SEEN_ASK)}`;
       return { title: pick(CLOSE_DAY_TITLES), text, speech: "" };
     }
+    case "ignored_days": {
+      // «زاد يسأل عليك» (ZAD_PLAN ١٠.١٢) لو الموديل ماردش: سؤال من غير لوم، والتانية آخر مرة من غير ما تتقال كتهديد.
+      const second = Number(facts.step) >= 2;
+      return {
+        title: second ? "💛 لسه فاكرك" : "💛 وحشتني",
+        text: second
+          ? "بقالك فترة مش هنا، وأنا لسه فاكرك. لو حابب تكمّل معايا، رسالة واحدة منك كفاية."
+          : "بقالي كام يوم ماسمعتش منك — إنت كويس؟ طمّني عليك بكلمة.",
+        speech: second
+          ? "بقالك فترة مش هنا، وأنا لسه فاكرك. لو حابب نكمّل سوا، ابعتلي كلمة بس."
+          : "بقالي كام يوم ماسمعتش صوتك، إنت كويس؟ طمّني عليك بكلمة.",
+      };
+    }
     case "tasbiha_reminder": {
       const streak = typeof facts.streak_days === "number" ? facts.streak_days : 0;
       return {
@@ -992,6 +1012,20 @@ export function parseComposedMoment(
   return { title, text, speech: requireSpeech ? speech : "", ...(emotion ? { emotion } : {}) };
 }
 
+/**
+ * العميل ظهر بعد [lastSeenAt]؟ فتح التطبيق (`app_open`) أو رسالة منه في أي قناة. قراية فشلت = اعتبره رجع:
+ * سؤال «إنت فين؟» لحد لسه كلّمنا أوحش من سؤال مااتبعتش.
+ */
+export async function cameBackSince(sb: SupabaseClient, userId: string, lastSeenAt: string): Promise<boolean> {
+  if (!lastSeenAt || !Number.isFinite(Date.parse(lastSeenAt))) return true;
+  const [opened, said] = await Promise.all([
+    sb.from("zad_product_events").select("id").eq("user_id", userId).eq("name", "app_open").gt("at", lastSeenAt).limit(1),
+    sb.from("zad_chat_turns").select("id").eq("user_id", userId).eq("role", "user").gt("created_at", lastSeenAt).limit(1),
+  ]);
+  if (opened.error || said.error) return true;
+  return (opened.data ?? []).length > 0 || (said.data ?? []).length > 0;
+}
+
 /** الجرعة لسه ماتاخدتش؟ (ممكن العميل داس "خدته" بعد ما اللحظة اتسجلت) */
 export async function isStillRelevant(sb: SupabaseClient, row: VoiceMomentRow): Promise<boolean> {
   // ميعاد اتلغى أو خلص بعد ما التذكير اتسجل = مفيش تذكير.
@@ -1008,6 +1042,8 @@ export async function isStillRelevant(sb: SupabaseClient, row: VoiceMomentRow): 
     const { data: ch } = await sb.from("zad_savings_challenges").select("status").eq("id", challengeId).maybeSingle();
     return (ch as { status?: string } | null)?.status !== "abandoned";
   }
+  // «زاد يسأل عليك»: رجع (فتح التطبيق أو كلّم زاد) بعد ما السؤال اتسجل = مفيش سؤال.
+  if (row.moment === "ignored_days") return !(await cameBackSince(sb, row.user_id, str(row.facts?.last_seen_at, 40)));
   // التسبيحة: لو سبّح بعد ما التذكير اتسجل، مفيش تذكير.
   if (row.moment === "tasbiha_reminder") {
     const localDate = str(row.facts?.local_date, 10);
