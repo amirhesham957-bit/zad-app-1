@@ -35,6 +35,9 @@ import {
   purchasePreview, type PendingPurchase, type PurchaseLine, type PurchaseMode,
 } from "./purchasePhoto.ts";
 import { splitPhotoMedicines } from "./pharmacyPhoto.ts";
+import { amazonPicks, amazonPicksReply } from "./amazonPicks.ts";
+import { householdFamilyId, householdFilter } from "../_shared/household.ts";
+import { marketFor } from "../_shared/amazonMarket.ts";
 import { checkInPriority } from "../_shared/consumptionRate.ts";
 import { PURCHASE_SOURCES, purchaseDaysByItem, restockKey } from "../_shared/restockCycle.ts";
 import { extendCallback, formatExtend, formatLookup, parseExtendCallback, parseSupportCommand, SUPPORT_TEXT, SUPPORT_USAGE } from "./supportDesk.ts";
@@ -1255,6 +1258,42 @@ bot.callbackQuery(/^sx:/, async (ctx) => {
   if (error) console.error("[support] extend failed:", error.message);
   await ctx.editMessageText(error ? SUPPORT_TEXT.extendFailed : formatExtend(res as Record<string, unknown> | null))
     .catch(() => {});
+});
+
+/**
+ * ترشيحات أمازون (ZAD_PLAN ١٠.٤): أهم ٣ حاجات ناقصة في البيت، بزراير لمتجر أمازون بتاع بلده وتاجه.
+ * من غير موديل — نفس الاحتياج والكتالوج بتوع شريط أمازون في الرئيسية. المخزن مخزن البيت (زي restock_link).
+ */
+async function replyAmazonPicks(sb: SupabaseClient, userId: string, reply: Context["reply"]): Promise<void> {
+  const family = await householdFamilyId(sb, userId);
+  const [inv, cons, shop, catalog, user] = await Promise.all([
+    sb.from("zad_inventory").select("item_name,quantity,low_stock_threshold,unit").or(householdFilter(userId, family)).limit(300),
+    sb.from("zad_consumption").select("item_name,avg_daily_qty,rate_known").eq("user_id", userId).limit(300),
+    sb.from("zad_shopping_list").select("item_name,is_purchased").or(householdFilter(userId, family)).eq("is_purchased", false).limit(100),
+    sb.from("affiliate_products").select("id,product_name_ar,product_name_search_keywords,asin,asin_verified,image_url,average_price_sar,is_active").eq("is_active", true).limit(200),
+    sb.from("zad_users").select("country").eq("id", userId).maybeSingle(),
+  ]);
+  const failed = [inv, cons, shop, catalog, user].find((r) => r.error);
+  if (inv.error || shop.error) {
+    console.error("[amazon_picks] read failed:", failed?.error?.message);
+    await reply("مقدرتش أشوف المخزن دلوقتي — جرب تاني كمان شوية.");
+    return;
+  }
+  if (failed) console.error("[amazon_picks] partial read:", failed.error?.message);
+  const market = marketFor((user.data as { country?: string | null } | null)?.country, (n) => Deno.env.get(n));
+  const picks = amazonPicks(inv.data ?? [], cons.data ?? [], shop.data ?? [], catalog.data ?? [], market);
+  const rows = amazonButtonRows(picks, (u) => amazonOpenUrl(SUPABASE_URL, u));
+  await reply(amazonPicksReply(picks, market.domain), rows.length ? { reply_markup: toGrammyKeyboard(rows) } : undefined);
+}
+
+bot.command("amazon", async (ctx) => {
+  const sb = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+  const userId = await resolveUserId(sb, ctx.chat.id);
+  if (!userId) {
+    await ctx.reply("الحساب ده مش مربوط — افتح تطبيق زاد واعمل كود ربط.");
+    return;
+  }
+  await replyAmazonPicks(sb, userId, ctx.reply.bind(ctx));
 });
 
 bot.command("tahlil", async (ctx) => {
@@ -2575,6 +2614,11 @@ bot.on("callback_query:data", async (ctx) => {
       return;
     }
     await ctx.reply(`✅ ${isolate(sanitizeName(done.summary ?? row.summary))}`);
+    return;
+  }
+
+  if (data === "az") {
+    await replyAmazonPicks(sb, userId, ctx.reply.bind(ctx));
     return;
   }
 
