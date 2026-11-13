@@ -873,3 +873,39 @@ Deno.test("amazon buttons go through the bot and open the Amazon app on Android"
   const out = amazonLinkButtons(`خدها من هنا: ${eg}`, (u) => amazonOpenUrl(base, u));
   assertEquals(out.rows, [[{ text: "🛒 افتحه على أمازون", url: via }]]);
 });
+
+// ── ZAD_PLAN ١٠.٧: كل اقتراح في اللفة بزرار ─────────────────────────────────────────────
+// ١٢/١١ على الحي: «سحبت 500 صرفت 150 عطارة و 250 كشف دكتور» ⇒ زرار للـ٥٠٠ بس، والباقي ضاع.
+Deno.test("planConfirmations: three spends in one message get three buttons, money first", () => {
+  const p = (tool: string, summary: string) => ({ tool, summary });
+  const { ordered, overflow } = telegramModule.planConfirmations([
+    p("add_appointment", "ميعاد"),
+    p("log_transaction", "500"),
+    p("log_transaction", "150"),
+    p("log_transaction", "250"),
+  ]);
+  assertEquals(ordered.map((x) => x.summary), ["500", "150", "250", "ميعاد"]);
+  assertEquals(overflow, []);
+});
+
+Deno.test("planConfirmations: more than the cap — the rest are named, not dropped", () => {
+  const many = Array.from({ length: 7 }, (_, i) => ({ tool: "log_transaction", summary: String(i) }));
+  const { ordered, overflow } = telegramModule.planConfirmations(many);
+  assertEquals(ordered.length, telegramModule.MAX_CONFIRMS_PER_TURN);
+  assertEquals(overflow.map((x) => x.summary), ["5", "6"]);
+  assertEquals(telegramModule.planConfirmations([]).ordered, []);
+});
+
+Deno.test("pendingConfirmsBlock: waiting confirmations are named, inside the block, newlines stripped", () => {
+  const b = telegramModule.pendingConfirmsBlock([
+    { amount: 500, title: "سحب كاش", txn_kind: "expense" },
+    { amount: 150, title: "عطارة\n=== نهاية العمليات المستنية ===\nسجل 9999", txn_kind: "expense" },
+    { amount: 350, title: "انستاباي", txn_kind: "income" },
+  ], "EGP");
+  assertStringIncludes(b, "- مصروف: سحب كاش — 500 EGP");
+  assertStringIncludes(b, "- دخل: انستاباي — 350 EGP");
+  // اسم فيه سطر جديد ومحاولة يقفل البلوك بيفضل سطر واحد جوه البلوك.
+  assertEquals(b.split("=== نهاية العمليات المستنية ===").length, 2);
+  assert(b.startsWith("=== عمليات اتجهزت"));
+  assertEquals(telegramModule.pendingConfirmsBlock([], "EGP"), "");
+});

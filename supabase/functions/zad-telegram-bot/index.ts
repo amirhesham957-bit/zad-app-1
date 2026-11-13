@@ -53,7 +53,7 @@ import {
   parseNotificationReviewCallback,
   confirmMedicationKeyboard, parseMedicationCallback,
   checkInKeyboard, parseCheckInCallback, parseCheckinTextReply, checkInPromptMessage, checkInBundleMessage, checkInBundleKeyboard, deferForRecentOutbound, ignoredCheckinStreak, checkinPlan, CHECKIN_OFF_CALLBACK,
-  confirmToolKeyboard, parseToolCallback,
+  confirmToolKeyboard, parseToolCallback, pendingConfirmsBlock, planConfirmations,
   isHumanUpdate, type UpdateEnvelope,
   doseKeyboard, parseDoseCallback, DOSE_MOMENTS, type DoseAction,
   closeDayKeyboard, closeDayReply, parseCloseDayCallback, salaryKeyboard, parseSalaryCallback, salaryReply, nightMessage,
@@ -1333,6 +1333,7 @@ async function retryFailedTurns(sb: SupabaseClient): Promise<{ answered: number;
     const keyboard = turn.pendingId ? confirmSpendKeyboard(turn.pendingId)
       : turn.toolPendingId ? confirmToolKeyboard(turn.toolPendingId) : undefined;
     await sendTelegramMessage(chatId, body, keyboard);
+    for (const f of turn.followUps ?? []) await sendTelegramMessage(chatId, f.text, f.keyboard);
     await sb.from("zad_brain_queue").delete().eq("id", row.id);
     answered++;
   }
@@ -1348,7 +1349,7 @@ async function agentTurnReply(
   chatId: number,
   text: string,
   recordUser = true,
-): Promise<{ lines: string[]; pendingId?: string; toolPendingId?: string; errorReason?: string; needsAdCredit?: boolean }> {
+): Promise<{ lines: string[]; pendingId?: string; toolPendingId?: string; followUps?: ConfirmFollowUp[]; errorReason?: string; needsAdCredit?: boolean }> {
   // ── ربط الإجابة بالسؤال ──────────────────────────────────────────────────
   // زاد بيبعت أسئلة على تليجرام ("راتبك بيجي يوم ١٦ من كل شهر — أظبط الشهر عندك على
   // كده؟") والرد بييجي كرسالة عادية مالهاش أي علاقة بالسؤال. حصل فعلاً: السؤال كان عن
@@ -1394,6 +1395,20 @@ async function agentTurnReply(
       text;
   }
 
+  // تأكيدات مستنية زرار (ZAD_PLAN ١٠.٧): بعد بلوك السؤال (عدّاد PENDING_QUESTION_MAX_TURNS بيدوّر على أوله)، وقبل
+  // الرسالة. آخر ساعتين بس — الأقدم العميل سابه، وانتهاء صلاحيته بيقفله.
+  const { data: waiting } = await sb.from("telegram_pending_writes")
+    .select("amount,title,txn_kind")
+    .eq("user_id", userId).eq("status", "pending")
+    .gt("expires_at", new Date().toISOString())
+    .gte("created_at", new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString())
+    .order("created_at", { ascending: true }).limit(8);
+  if (Array.isArray(waiting) && waiting.length > 0) {
+    const cur = String((await sb.from("zad_users").select("currency").eq("id", userId).maybeSingle()).data?.currency ?? "");
+    const block = pendingConfirmsBlock(waiting as Array<{ amount: number | null; title: string | null; txn_kind: string | null }>, cur);
+    if (block) outgoing = outgoing === text ? block + text : outgoing.slice(0, outgoing.length - text.length) + block + text;
+  }
+
   // السياق بيتقرا **قبل** ما رسالة اللفة دي تتسجل، عشان الرسالة الحالية تتبعت
   // مرة واحدة (في `message`) مش مرتين.
   const history = await loadChatHistory(sb, userId);
@@ -1432,68 +1447,80 @@ async function agentTurnReply(
   // سؤال «سعر حليب فيفا» قرا الطلب كأنه لسه مستني وسجّل ميعاد صحيان تاني.
   await recordChatTurn(sb, userId, "assistant", lines.join("\n"));
 
-  const money = turn.proposals.find((p) => p.tool === "log_transaction");
-  const rest = turn.proposals.filter((p) => p !== money);
-
-  // كان: `ℹ️ … — ابعتها لوحدها عشان أأكدها معاك` — والعميل أصلاً باعتها لوحدها،
-  // فالسطر يتكرر للأبد ومفيش زرار. الاقتراح دلوقتي بياخد صف في telegram_pending_tools
-  // وزر تأكيد حقيقي. رسالة تليجرام الواحدة بتشيل كيبورد واحد، فأول اقتراح غير مالي هو
-  // اللي بياخد الزرار والباقي بيتقال بصراحة إنه محتاج رسالة لوحده.
+  // كل اقتراح بزرار (ZAD_PLAN ١٠.٧، planConfirmations): الأول بيركب على رسالة الرد، والباقي رسايل تحتها كل واحدة
+  // بزرارها. الفلوس الأول — تأكيد معاملة أخطر من تأكيد أداة تانية. رسالة تليجرام الواحدة بتشيل كيبورد واحد.
+  const { ordered, overflow } = planConfirmations(turn.proposals);
+  let pendingId: string | undefined;
   let toolPendingId: string | undefined;
-  for (const extra of rest) {
-    if (toolPendingId) {
-      lines.push(`ℹ️ ${extra.summary} — ابعتها في رسالة لوحدها عشان أقدر أحط ليها زر تأكيد.`);
-      continue;
+  const followUps: ConfirmFollowUp[] = [];
+  let currency: string | null = null;
+  for (const proposal of ordered) {
+    let confirm: { text: string; keyboard: InlineKeyboardButton[][]; spendId?: string; toolId?: string } | null;
+    if (proposal.tool === "log_transaction") {
+      currency ??= String((await sb.from("zad_users").select("currency").eq("id", userId).maybeSingle()).data?.currency ?? "غير معروف");
+      const cur: string = currency;
+      const amount = Number(proposal.input.amount);
+      const kind = proposal.input.txn_kind === "income" ? "income" : "expense";
+      const title = String(proposal.input.title ?? "مصروف").slice(0, 80);
+      const category = String(proposal.input.category ?? "أخرى").slice(0, 40);
+      // «اشتريت لبن وعيش بـ٤٠»: الأصناف بتتحجز مع المصروف (٣.٦ د) وبتتسجل معاه في شرا واحد.
+      const boughtLines = kind === "expense" && Array.isArray(proposal.input.lines) && proposal.input.lines.length > 0
+        ? proposal.input.lines.slice(0, 30)
+        : null;
+      const { data: pending, error } = await sb.from("telegram_pending_writes").insert({
+        user_id: userId,
+        chat_id: chatId,
+        txn_kind: kind,
+        amount,
+        title,
+        category,
+        confidence: null,
+        purchase_lines: boughtLines,
+      }).select("id").single();
+      if (error || !pending) {
+        console.error("pending write insert failed:", error);
+        lines.push(`معلش، مقدرتش أجهّز تأكيد «${isolate(sanitizeName(title))}» — جرب تاني.`);
+        continue;
+      }
+      const spendId = (pending as { id: string }).id;
+      confirm = {
+        text: confirmSpendMessage({ is_spend: true, kind, amount, title, category, confidence: 1 }, cur),
+        keyboard: confirmSpendKeyboard(spendId),
+        spendId,
+      };
+    } else {
+      const { data: row, error } = await sb.from("telegram_pending_tools").insert({
+        user_id: userId,
+        chat_id: chatId,
+        tool: proposal.tool,
+        input: proposal.input,
+        summary: proposal.summary,
+      }).select("id").single();
+      if (error || !row) {
+        console.error("pending tool insert failed:", error);
+        lines.push(`ℹ️ ${proposal.summary} — معلش، مقدرتش أجهّز التأكيد. جرب تاني.`);
+        continue;
+      }
+      const toolId = (row as { id: string }).id;
+      confirm = { text: `⚠️ ${proposal.summary}\n\nأأكدها؟`, keyboard: confirmToolKeyboard(toolId), toolId };
     }
-    const { data: row, error } = await sb.from("telegram_pending_tools").insert({
-      user_id: userId,
-      chat_id: chatId,
-      tool: extra.tool,
-      input: extra.input,
-      summary: extra.summary,
-    }).select("id").single();
-    if (error || !row) {
-      console.error("pending tool insert failed:", error);
-      lines.push(`ℹ️ ${extra.summary} — معلش، مقدرتش أجهّز التأكيد. جرب تاني.`);
-      continue;
+    if (!pendingId && !toolPendingId) {
+      lines.push(confirm.text);
+      pendingId = confirm.spendId;
+      toolPendingId = confirm.toolId;
+    } else {
+      followUps.push({ text: confirm.text, keyboard: confirm.keyboard });
     }
-    lines.push(`⚠️ ${extra.summary}\n\nأأكدها؟`);
-    toolPendingId = (row as { id: string }).id;
   }
-
-  // الفلوس ليها الأولوية على الزرار الواحد — تأكيد معاملة أخطر من تأكيد أداة تانية.
-  if (!money) return { lines, toolPendingId };
-
-  const amount = Number(money.input.amount);
-  const kind = money.input.txn_kind === "income" ? "income" : "expense";
-  const title = String(money.input.title ?? "مصروف").slice(0, 80);
-  const category = String(money.input.category ?? "أخرى").slice(0, 40);
-  const currency = (await sb.from("zad_users").select("currency").eq("id", userId).maybeSingle())
-    .data?.currency ?? "غير معروف";
-  // «اشتريت لبن وعيش بـ٤٠»: الأصناف بتتحجز مع المصروف (٣.٦ د) وبتتسجل معاه في شرا واحد.
-  const boughtLines = kind === "expense" && Array.isArray(money.input.lines) && money.input.lines.length > 0
-    ? money.input.lines.slice(0, 30)
-    : null;
-  const { data: pending, error } = await sb.from("telegram_pending_writes").insert({
-    user_id: userId,
-    chat_id: chatId,
-    txn_kind: kind,
-    amount,
-    title,
-    category,
-    confidence: null,
-    purchase_lines: boughtLines,
-  }).select("id").single();
-
-  if (error || !pending) {
-    console.error("pending write insert failed:", error);
-    lines.push("معلش، مقدرتش أجهّز تأكيد المصروف — جرب تاني.");
-    return { lines };
+  for (const extra of overflow) {
+    lines.push(`ℹ️ ${extra.summary} — ابعتها في رسالة لوحدها عشان أقدر أحط ليها زر تأكيد.`);
   }
-
-  lines.push(confirmSpendMessage({ is_spend: true, kind, amount, title, category, confidence: 1 }, currency));
-  return { lines, pendingId: (pending as { id: string }).id };
+  if (followUps.length > 0) lines.push(`👇 وتحت ${followUps.length === 1 ? "تأكيد تاني" : `${followUps.length} تأكيدات كمان`} — كل عملية بزرارها.`);
+  return { lines, pendingId, toolPendingId, followUps };
 }
+
+/** تأكيد زيادة في نفس اللفة: رسالة لوحدها بزرارها، بعد رسالة الرد. */
+type ConfirmFollowUp = { text: string; keyboard: InlineKeyboardButton[][] };
 
 /**
  * تأكيد/رفض مصروف معلّق **بالنص** ("أيوه"/"لا") بدل الضغط على الزر — نفس منطق
@@ -1702,7 +1729,10 @@ bot.on("message:text", async (ctx) => {
       await ctx.reply(body, { reply_markup: toGrammyKeyboard(confirmSpendKeyboard(turnReply.pendingId)) });
     } else if (turnReply.toolPendingId) {
       await ctx.reply(body, { reply_markup: toGrammyKeyboard(confirmToolKeyboard(turnReply.toolPendingId)) });
-    } else {
+    }
+    if (turnReply.pendingId || turnReply.toolPendingId) {
+      for (const f of turnReply.followUps ?? []) await ctx.reply(f.text, { reply_markup: toGrammyKeyboard(f.keyboard) });
+    } else if (!turnReply.needsAdCredit) {
       const shop = amazonLinkButtons(body, (u) => amazonOpenUrl(SUPABASE_URL, u));
       await ctx.reply(shop.text, shop.rows.length ? { reply_markup: toGrammyKeyboard(shop.rows) } : undefined);
       // رد فيه إحساس (تشجيع، قلق، عتاب خفيف) ⇒ بصوت زاد كمان (voiceReply.ts)، بعد النص وفي الخلفية.
@@ -1787,7 +1817,10 @@ bot.on("message:voice", async (ctx) => {
       await ctx.reply(body, { reply_markup: toGrammyKeyboard(confirmSpendKeyboard(turnReply.pendingId)) });
     } else if (turnReply.toolPendingId) {
       await ctx.reply(body, { reply_markup: toGrammyKeyboard(confirmToolKeyboard(turnReply.toolPendingId)) });
-    } else {
+    }
+    if (turnReply.pendingId || turnReply.toolPendingId) {
+      for (const f of turnReply.followUps ?? []) await ctx.reply(f.text, { reply_markup: toGrammyKeyboard(f.keyboard) });
+    } else if (!turnReply.needsAdCredit) {
       const shop = amazonLinkButtons(body, (u) => amazonOpenUrl(SUPABASE_URL, u));
       await ctx.reply(shop.text, shop.rows.length ? { reply_markup: toGrammyKeyboard(shop.rows) } : undefined);
       // بعت فويس ⇒ الرد يتقال بصوت زاد كمان (voiceReply.ts)، بعد النص وفي الخلفية.
