@@ -65,6 +65,9 @@ alter function public.zad_memory_set_embedding(uuid, text, extensions.vector)
 ١. **أول PR:** نحط `EXCEPTION WHEN others THEN` حوالين نداء `net.http_post` في الدوال التلاتة اللي مالهاش
    (`zad_notify_admin`، `notify_telegram_on_low_stock`، `notify_telegram_on_insight`) — تنبيه ضايع أهون من معاملة
    أو صنف ماتسجّلش. ده يتعمل بغض النظر عن النقل.
+   **اتعمل ١٣/١١:** `20261113160000_net_calls_never_block_writes.sql` — قراية السر والنداء جوه البلوك، و`raise warning`.
+   التست `net_calls_never_block_writes_test.sql` (في CI) بـ`net.http_post` بيرمي دايماً: الكتابة بتنزل والنداء اتجرّب؛
+   اتجرّب بالكسر (من غير EXCEPTION وقع عند تريجر المخزن).
 
 ٢. **المايجريشن:**
 
