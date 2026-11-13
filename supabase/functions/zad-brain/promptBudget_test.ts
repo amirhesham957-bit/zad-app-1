@@ -84,3 +84,20 @@ Deno.test("context diet 3b: Groq gets every specialist tool, lean, instead of dr
   const firstChars = JSON.stringify(first).length;
   assertEquals(firstChars < 20_000, true, `${firstChars}`);
 });
+
+Deno.test("context diet 3.2 slice 8: the always-sent rules are shorter and no rule went missing", async () => {
+  const { buildChatSystemPrompt } = await import("./index.ts");
+  const offered = new Set(["log_transaction", "read_house", "remember", "update_customer_profile", "add_appointment", "add_obligation", "web_search"]);
+  const p = buildChatSystemPrompt({ country: "EG", currency: "EGP", customer: {} }, false, offered);
+  const rules = p.slice(0, p.lastIndexOf("=== SNAPSHOT ==="));
+  // كانت ١٠٣١١ حرف على لقطة فاضية لوكيل المال (١٣/١١، بعد الشريحة ٧).
+  assertEquals(rules.length < 9_200, true, `${rules.length}`);
+  // كل قاعدة اتكتبت أقصر، مااتشالتش.
+  for (const anchor of [
+    "متخترعش اسم تاني", "متخمّنش", "update_customer_profile في نفس الرد", "«صوت زاد»",
+    "اكتب زي ما بني آدم بيكتب في الشات", "«تحب أساعدك في حاجة تانية؟»", "متبدأش ردين بنفس الكلمة",
+    "نفّذ الأمر فوراً", "من غير ما تنادي الأداة في نفس الرد",
+    "\"remember\" فوراً وإنت بترد", "\"salary_plan\"", "\"transport\"", "متستنتجش من معاملة واحدة",
+    "replaces_note_id", "الحساس بيتسأل الأول", "\"valid_until\"", "«مش لاقي» والإجابة قدامك",
+  ]) assertEquals(rules.includes(anchor), true, anchor);
+});
