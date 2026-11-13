@@ -13,6 +13,7 @@ import 'package:zad/core/l10n/app_language.dart';
 import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/auth/presentation/password_recovery_listener.dart';
 import 'package:zad/features/places/application/street_alerts_controller.dart';
+import 'package:zad/shared/ads/application/app_open.dart';
 import 'package:zad/shared/ads/application/interstitials.dart';
 
 /// Whether the app follows the phone's dark mode.
@@ -52,6 +53,8 @@ class _ZadAppState extends ConsumerState<ZadApp> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     ZadColors.isDark = _systemIsDark;
+    // A return after four hours away may carry an App Open ad.
+    ref.read(appOpenProvider);
   }
 
   @override

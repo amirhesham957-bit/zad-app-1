@@ -66,7 +66,7 @@ class _ZadInlineAdState extends ConsumerState<ZadInlineAd> {
           });
         },
         onAdFailedToLoad: (ad, e) {
-          debugPrint('[ads] inline load failed: $e');
+          logAdLoadFailure('inline', e);
           unawaited(ad.dispose());
         },
       ),
