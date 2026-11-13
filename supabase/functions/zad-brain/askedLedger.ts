@@ -25,6 +25,11 @@ function keyOf(facts: unknown): string | null {
   if (f?.daily_question_kind === "profile" && typeof f.daily_question_field === "string") {
     return profileAskKey(f.daily_question_field);
   }
+  // ١٠.٢(ج) (familyShare.ts): كل ملاحظة بتتسأل عن مشاركتها مرة واحدة.
+  const share = (facts as { family_share?: { memory_id?: unknown } } | null)?.family_share;
+  if (f?.daily_question_kind === "family_share" && typeof share?.memory_id === "string" && share.memory_id !== "") {
+    return `family_share:${share.memory_id}`;
+  }
   if (f?.daily_question_kind === "occasion" && f.occasion_ask && typeof f.occasion_ask === "object") {
     return occasionAskKey(typeof f.occasion_ask.for === "string" ? f.occasion_ask.for : null);
   }

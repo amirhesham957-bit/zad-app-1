@@ -61,6 +61,7 @@ import { crossRate, describeRate, rankDeals, summarizePriceTrend } from "./price
 import { homeMap } from "./crowdFloor.ts";
 import { lowStockToAdd, productFamilyOf } from "./lowStock.ts";
 import { type HealPair, healMemory } from "./memoryHeals.ts";
+import { sharedFromCurrentMembers } from "./familyShare.ts";
 import { categoryForCharge, dismissalNote, type DismissReason, doseSlotToSnooze, type ShownInsight, matchInsight, paidRenewal } from "./appByVoice.ts";
 import { mealSuggestionsCachePattern } from "../_shared/recipeCache.ts";
 import { deliverRestockLink } from "./restockLink.ts";
@@ -582,6 +583,8 @@ export function travelField(row: Record<string, string | null> | null, nowMs = D
 type MemoryRow = {
   id: string; scope: string; note: string; confidence: number; evidence_count: number;
   last_seen: string | null; valid_until?: string | null; about?: string[] | null;
+  /** ١٠.٢(ج): ملاحظة شاركها فرد تاني في العيلة — اسمه، و«العميل» فيها = هو. */
+  shared_by?: string;
 };
 
 /** شكل الملاحظة في الـSNAPSHOT: «until» و«about» بس لو ليهم قيمة. */
@@ -591,6 +594,7 @@ export function memoryForSnapshot(m: MemoryRow) {
     evidence_count: m.evidence_count, last_seen: m.last_seen,
     ...(m.valid_until ? { until: String(m.valid_until).slice(0, 10) } : {}),
     ...(m.about && m.about.length ? { about: m.about } : {}),
+    ...(m.shared_by ? { shared_by: m.shared_by } : {}),
   };
 }
 
@@ -1053,7 +1057,7 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
         .eq("family_id", familyId).order("created_at", { ascending: false }).limit(12),
       sb.from("family_tasbiha").select("tree_name,level,score,total_clicks,streak_days,is_mature,last_tasbih_at")
         .eq("family_id", familyId).order("last_tasbih_at", { ascending: false, nullsFirst: false }).limit(10),
-      sb.from("zad_memory").select("id,scope,note,confidence,evidence_count,last_seen,valid_until")
+      sb.from("zad_memory").select("id,user_id,scope,note,confidence,evidence_count,last_seen,valid_until")
         .eq("family_id", familyId).neq("user_id", userId)
         .is("superseded_by", null).or(`valid_until.is.null,valid_until.gt.${new Date().toISOString()}`)
         .limit(20),
@@ -1062,7 +1066,6 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
       // شات العيلة (20261003120000): آخر ٢٤ ساعة من اللي وافقوا إن زاد يقرا رسايلهم بس.
       sb.rpc("zad_family_chat_for_brain", { p_viewer: userId }),
     ]);
-    familySharedMemory = (sharedMemRes.data ?? []) as typeof familySharedMemory;
     // تصويت العيلة: صفوف التصويت، والأفراد بمعرّفاتهم (الأصوات بالمعرّف)، ومين موافق إن زاد يقرا رسايله.
     const [pollRowsRes, pollMembersRes, pollConsentRes] = await Promise.all([
       sb.from("chat_messages").select("id,sender_id,metadata,created_at")
@@ -1072,6 +1075,12 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
       sb.from("family_members").select("id,alias,user_id,role").eq("family_id", familyId).limit(20),
       sb.from("zad_family_chat_consent").select("user_id").eq("family_id", familyId),
     ]);
+    // ١٠.٢(ج): ملاحظة متشاركة بتبان بس لو كاتبها لسه في العيلة (الخروج = الموافقة خلصت؛ نفس شرط السياسة
+    // family_shared_memory_select في 20261113060000). الأفراد ماتقروش ⇒ ولا ملاحظة.
+    familySharedMemory = sharedFromCurrentMembers(
+      (sharedMemRes.data ?? []) as Array<MemoryRow & { user_id?: string }>,
+      pollMembersRes.error ? null : (pollMembersRes.data ?? []) as Array<{ user_id?: string | null; alias?: string | null }>,
+    );
     familyPollList = pollRowsRes.error ? [] : pollSummaries({
       rows: (pollRowsRes.data ?? []) as PollRow[],
       members: (pollMembersRes.data ?? []) as PollMember[],
@@ -4479,6 +4488,38 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       await recordAction(sb, userId, scope, { tool: name, input, table: "zad_memory", targetId: memoryId, previous: before, next: null });
       return `status=deleted — اتنسيت: «${String((before as { note?: string }).note ?? "").slice(0, 80)}»`;
     }
+    case "share_memory_with_family": {
+      // ١٠.٢(ج): الكتابة كلها في zad_memory_share_with_family — صاحب الملاحظة بس، ومش حساب طفل، وفي عيلة فيها حد تاني.
+      const memoryId = String(input.memory_id);
+      const share = input.share === true;
+      const { data: before } = await sb.from("zad_memory").select("id,note,family_id")
+        .eq("id", memoryId).eq("user_id", userId).maybeSingle();
+      if (!before) return "مرفوض: الملاحظة دي مش من ذاكرة العميل نفسه.";
+      const { data: res, error: shareErr } = await sb.rpc("zad_memory_share_with_family", {
+        p_user: userId, p_memory: memoryId, p_share: share,
+      });
+      if (shareErr) return `مرفوض: ${shareErr.message}`;
+      const r = (res ?? {}) as { ok?: boolean; reason?: string };
+      if (!r.ok) {
+        const why: Record<string, string> = {
+          no_family: "العميل مش في عيلة على زاد — مفيش حد يتشارك معاه.",
+          alone: "العيلة فيها العميل لوحده لسه — لما حد ينضم تقدر تشاركها.",
+          child: "حساب الطفل مابيشاركش ملاحظاته.",
+          unknown_note: "الملاحظة دي مش موجودة أو اتحلّ محلها.",
+        };
+        return `ماتشاركتش: ${why[r.reason ?? ""] ?? r.reason ?? "سبب مش معروف"}`;
+      }
+      // new_state مقروء من الداتابيز بعد الكتابة (20260809180000)، مش نسخة متعدلة.
+      const { data: after } = await sb.from("zad_memory").select("id,note,family_id")
+        .eq("id", memoryId).eq("user_id", userId).maybeSingle();
+      ctx.mutationCount++;
+      ctx.mutations.push({ tool: name, old: before, new: after });
+      await recordAction(sb, userId, scope, { tool: name, input, table: "zad_memory", targetId: memoryId, previous: before, next: after });
+      const note = String((before as { note?: string }).note ?? "").slice(0, 80);
+      return share
+        ? `status=shared — «${note}» بقت معروفة لعقل زاد عند باقي العيلة. قوله إنه يقدر يرجّعها ليه لوحده في أي وقت.`
+        : `status=private — «${note}» رجعت ليه لوحده.`;
+    }
     case "handover_card": {
       // كارت تسليم الشفت (handover.ts، الشريحة ٣٤): من حساب العميل نفسه بس، للأيام الجاية بتوقيت السوق. صفر توكنز.
       const timeZone = snap?.cycle?.timezone ?? "UTC";
@@ -6353,6 +6394,22 @@ export const CHAT_TOOLS: ToolDef[] = [
     },
   },
   {
+    name: "share_memory_with_family",
+    description:
+      "ZAD_PLAN ١٠.٢(ج) — شارك ملاحظة من ذاكرة العميل مع عيلته (عقل زاد عند باقي الأفراد يشوفها)، أو رجّعها ليه لوحده. " +
+      "share = true بس لما **العميل نفسه** يوافق صراحة («أيوه شاركها»، «خلّي العيلة تعرف») — على سؤال الصبح (asked_this_morning.kind = family_share) " +
+      "أو لما يطلبها هو. share = false لما يقول «خليها ليا» أو «ماتشاركهاش». memory_id = asked_this_morning.memory_id لو ده جواب السؤال، " +
+      "وإلا من memory في الـsnapshot بالظبط. ملاحظة فرد تاني ماتتلمسش، وحساب الطفل مابيشاركش.",
+    input_schema: {
+      type: "object",
+      properties: {
+        memory_id: { type: "string", description: "id الملاحظة" },
+        share: { type: "boolean", description: "true = شاركها مع العيلة، false = خليها خاصة" },
+      },
+      required: ["memory_id", "share"],
+    },
+  },
+  {
     name: "handover_card",
     description:
       "كارت تسليم للي فاضل في البيت لما العميل يسافر أو يغيب كام يوم: جرعات الأدوية ومواعيدها (ولمين) واللي هيخلص، المواعيد، " +
@@ -8004,6 +8061,8 @@ async function handleAgentTurnInLane(
       ...(snap?.asked_this_morning?.kind === "occasion" ? ["remember_occasion"] : []),
       // «روحت الدكتور امبارح؟» (ZAD_PLAN ٨ج.٦): «آه، قالي أرجع بعد أسبوعين» مافيهاش نية تجيب أدوات المواعيد.
       ...(snap?.asked_this_morning?.kind === "appointment_follow_up" ? ["remember", "add_appointment", "add_pharmacy_item"] : []),
+      // «أشاركها مع عيلتك؟» (١٠.٢ج): «أيوه» لوحدها مافيهاش نية تجيب الأداة.
+      ...(snap?.asked_this_morning?.kind === "family_share" ? ["share_memory_with_family"] : []),
       // سؤال أول ٧٢ ساعة عن مواعيد دوا: «٨ الصبح» لوحدها مافيهاش اسم الدوا يجيب الأداة.
       ...(snap?.asked_this_morning?.tool ? [snap.asked_this_morning.tool] : []),
       // «صلحت الحنفية» — الأداة جاهزة لو قال الاسم والرقم في نفس الرسالة.
@@ -9290,7 +9349,7 @@ export function buildChatSystemPrompt(snap: any, voiceMode = false, offered?: Re
 ${snap?.customer?.cares_for != null ? `   - **customer.cares_for = مين في رعايته.** «parents» معناها إنه ابن/بنت مسؤول عن أبوه وأمه — مش رب أسرة عنده عيال: متفترضش عيال، واسأل عن الأهل (دواهم، مواعيد دكاترتهم، مصاريفهم) واقترح تتابعهم في الصيدلية والمواعيد باسمهم. «children» عيال، «spouse» زوج/زوجة، إلخ. [] = مسؤول عن نفسه بس. null = لسه ماقالش.\n` : ""}   - لو customer.gender مش معروف: **متخمّنش** — صيغة محايدة دافية. ولو العميل استخدم صيغة واضحة لنفسه («أنا تعبانة»، «أنا أبوهم») سجّلها بـ update_customer_profile فوراً وثبّت عليها.
    - أي حاجة يقولها عن نفسه (اسمه، شغله، قبضه، عياله، مدينته، لهجته) ⇒ update_customer_profile في نفس الرد من غير ما تعلن إنك سجلت (مش remember — remember للي مالوش خانة).
 ${snap?.name_asked_in_conversation !== true && (!Array.isArray(((snap?.customer?.missing_important ?? null) as string[] | null)) || ((snap?.customer?.missing_important ?? null) as string[] | null)!.some((k) => k === "preferred_name" || k === "gender")) ? `   - **الاسم والنوع ليهم علاقة بكل رد**: لو preferred_name أو gender في customer.missing_important ومحدش سأل عنهم في المحادثة دي، اسأل في آخر ردك سؤال واحد خفيف بلهجته — «أناديك بإيه؟» ولو النوع مجهول كمان «وأكلمك بصيغة راجل ولا ست؟». ولو سأل «إنت تعرف اسمي؟» أو «ليه مش عارف أنا مين؟» قول بصراحة إنه لسه ماقالكش واسأله على طول، ونبّهه إنه يقدر يكتبهم في «ملفي» من صفحة البروفايل. متألّفش اسم ولا نوع أبداً.\n` : ""}${(!Array.isArray(((snap?.customer?.missing_important ?? null) as string[] | null)) || ((snap?.customer?.missing_important ?? null) as string[] | null)!.some((k) => k !== "preferred_name" && k !== "gender")) ? `   - لو فيه حاجة تانية في customer.missing_important ليها علاقة بالكلام دلوقتي (مثلاً بيسأل عن الميزانية وpay_day مش معروف)، اسأل عنها **سؤال واحد خفيف** في آخر ردك — مش استجواب، ومش أكتر من سؤال في المحادثة، ومتسألش عن حاجة اتسألت قبل كده في نفس المحادثة.\n` : ""}   - **صوتك (customer.zad_voice)**: بنت أو ولد، العميل بيختاره من «ملفي» (عقل زاد ← «إنت مين عند زاد» ← تعديل ← «صوت زاد»). طلب يغيّره ⇒ قوله المكان ده بجملة؛ ماتقولش إنك غيّرته ومتقترحش صوت حسب نوعه.
-${snap?.asked_this_morning ? `   - **asked_this_morning** (لو مش null) = السؤال اللي إنت سألته للعميل في تحية الصبح (أو بعد الضهر في أول أيامه). لو رسالته جواب عليه («يوم ٢٥»، «بطّلتها»، «دي كانت كهربا»)، سجّل الجواب في نفس الرد، وقول في جملة واحدة إيه اللي اتسجل وهيتعمل بيه إيه («تمام، يوم ٢٥ — هبدأ شهرك منه») عشان يعرف إنك فهمت: kind = profile ⇒ update_customer_profile في الخانة field؛ kind = curiosity ⇒ اتبع record (وtransaction_id لو موجود)؛ kind = occasion ⇒ سألته عن عيد ميلاد for (غايب = هو نفسه): التاريخ اللي قاله ⇒ remember_occasion (person = for، وفاضي لو هو نفسه)؛ kind = gift ⇒ عرضت تحجز amount لهدية for: لو وافق (أو قال مبلغ تاني) نادِ set_life_goal بعنوان «هدية عيد ميلاد <for>» وtarget_value المبلغ وdeadline_date = deadline، واقترح فكرتين هدية في حدود المبلغ؛ kind = event_reserve ⇒ سألته يحجز مبلغ لحدث جاي (for = اسمه، deadline = يومه): لو قال مبلغ نادِ set_life_goal بعنوان for بالظبط وtarget_value المبلغ وdeadline_date = deadline، وقوله إن المبلغ ده متشال لـfor، ولو قال لأ سيبه؛ kind = appointment_follow_up ⇒ سألته عن ميعاد for اللي كان يوم on: جوابه ⇒ remember بملاحظة فيها اسم الميعاد ويومه واللي حصل بكلامه هو (اتقاله إيه، الخطوة الجاية) — من غير تشخيص ولا رأي طبي من عندك؛ قال ميعاد متابعة بيوم ⇒ add_appointment؛ مارحش أو اتأجل ⇒ اعرض تحجزله ميعاد جديد، ومتحجزش من غير ما يقول الوقت؛ الدكتور كتبله دوا ⇒ اعرض تضيفه للصيدلية (add_pharmacy_item). ماتعيدش السؤال ولا تفتح موضوعه لو رسالته عن حاجة تانية، ولو قال مش عايز يتكلم فيه سيبه.\n` : ""}${offers("store_location") ? "   - **لوكيشن المحل**: «هات اللوكيشن» أو «فين المحل ده؟» بعد تنبيه محل ⇒ store_location وابعت map_url زي ما رجع. ماتسألوش هو في أنهي منطقة، وماتألّفش عنوان.\n" : ""}${offers("remember_occasion") ? "   - **المناسبات**: لما العميل يقول تاريخ عيد ميلاد أو ذكرى جواز (ليه أو لحد من عيلته) ⇒ remember_occasion، مش remember. الشهر واليوم بس، ومن غير ما تخمّن يوم ماقالهوش.\n" : ""}${(offers("set_life_circumstance") || offers("end_life_circumstance") || (snap?.circumstance?.mode ?? "normal") !== "normal") ? `   - **حالة البيت (circumstance)**: لو العميل قال إن حد عيان أو عندهم طوارئ أو امتحانات، اسأله «أهدّي التنبيهات كام يوم؟» أو سجّل على طول بـset_life_circumstance لو طلبها؛ ولو قال «رجّع» ⇒ end_life_circumstance. **ماتستنتجش ظرف من مشتريات أو نبرة.** لو circumstance.mode = exceptional: ردود أقصر، ماتفتحش مواضيع جديدة، ماتسألش أسئلة فضول، وأي اقتراح صرف أو توفير أو عرض يستنى إلا لو سأل — والصحة والمواعيد والأمان زي ما هم؛ ماتذكرش «إيه الظرف» لو هو مقالوش في المحادثة. لو recovery: خفيف، موضوع واحد بالكتير من عندك.\n` : ""}${snap?.life_shift ? `   - **التحول السلوكي (life_shift)**: لو فيه تحول confirmed = null، اسأله مرة واحدة خفيفة لو الكلام قريب («لاحظت إن مصاريف الأسبوع بقت حوالي X بدل Y — حصل تغيير في البيت؟») من غير ما تفترض السبب، وجوابه ⇒ confirm_life_shift. طول ما التحول قايم، ماتعاملش الطبيعي الجديد كأنه «صرف زيادة» أو «غريب»، ومتوسطات القرارات والسقف المقترح بتتحسب من يومه لوحدها.\n` : ""}${offers("household_resilience") ? `   - **شهر صعب**: لو العميل قلقان («الشهر ده تقيل»، «مش هنعدّي») نادِ household_resilience: لو تاريخه فيه شهر زي ده رجع منه، قولها كحقيقة منه — طمأنة مش وعظ ولا وعد.\n` : ""}${(offers("decision_impact") || offers("log_decision")) ? `   - **القرارات الكبيرة**: «لو اشتريت…» أو «أفكر أنقل…» أو «أشتريه ولا لأ؟» = decision_impact بس. لو رجع this_month: قول الرقم بكلامه («بياكل X يوم من الـY الباقيين، ويفضل Z») — verdict = over أو heavy تقوله صراحة إنه هيزنق الأيام الجاية، fits ماتعلّقش عليه، والقرار قراره؛ ولو in_bulk_window = true وده شرا البيت بتاع أول الشهر، ده نظامه مش تهور. لما يقول إنه **عمل** القرار فعلاً («خلاص اشتريتها»، «قررنا ننقله») ⇒ log_decision بنفس الأرقام، وقوله إنك هتراجع معاه بعد شهر وبعد ٣ شهور. **decisions** (لو مش null) = اللي اتسجّل، ومعاه last_review لو اتراجع — ماتسجّلش اللي موجود تاني.\n` : ""}2. **اللغة واللهجة (${profile.locale})**: اتبع بلوك «اللهجة» اللي فوق في كل رد — مش أول جملة بس.
+${snap?.asked_this_morning ? `   - **asked_this_morning** (لو مش null) = السؤال اللي إنت سألته للعميل في تحية الصبح (أو بعد الضهر في أول أيامه). لو رسالته جواب عليه («يوم ٢٥»، «بطّلتها»، «دي كانت كهربا»)، سجّل الجواب في نفس الرد، وقول في جملة واحدة إيه اللي اتسجل وهيتعمل بيه إيه («تمام، يوم ٢٥ — هبدأ شهرك منه») عشان يعرف إنك فهمت: kind = profile ⇒ update_customer_profile في الخانة field؛ kind = curiosity ⇒ اتبع record (وtransaction_id لو موجود)؛ kind = occasion ⇒ سألته عن عيد ميلاد for (غايب = هو نفسه): التاريخ اللي قاله ⇒ remember_occasion (person = for، وفاضي لو هو نفسه)؛ kind = gift ⇒ عرضت تحجز amount لهدية for: لو وافق (أو قال مبلغ تاني) نادِ set_life_goal بعنوان «هدية عيد ميلاد <for>» وtarget_value المبلغ وdeadline_date = deadline، واقترح فكرتين هدية في حدود المبلغ؛ kind = event_reserve ⇒ سألته يحجز مبلغ لحدث جاي (for = اسمه، deadline = يومه): لو قال مبلغ نادِ set_life_goal بعنوان for بالظبط وtarget_value المبلغ وdeadline_date = deadline، وقوله إن المبلغ ده متشال لـfor، ولو قال لأ سيبه؛ kind = appointment_follow_up ⇒ سألته عن ميعاد for اللي كان يوم on: جوابه ⇒ remember بملاحظة فيها اسم الميعاد ويومه واللي حصل بكلامه هو (اتقاله إيه، الخطوة الجاية) — من غير تشخيص ولا رأي طبي من عندك؛ قال ميعاد متابعة بيوم ⇒ add_appointment؛ مارحش أو اتأجل ⇒ اعرض تحجزله ميعاد جديد، ومتحجزش من غير ما يقول الوقت؛ الدكتور كتبله دوا ⇒ اعرض تضيفه للصيدلية (add_pharmacy_item)؛ kind = family_share ⇒ سألته يشارك ملاحظة (memory_id) مع عيلته: «أيوه» ⇒ share_memory_with_family بـshare = true، «لأ» ⇒ ولا أداة ولا تسأل تاني. ماتعيدش السؤال ولا تفتح موضوعه لو رسالته عن حاجة تانية، ولو قال مش عايز يتكلم فيه سيبه.\n` : ""}${offers("store_location") ? "   - **لوكيشن المحل**: «هات اللوكيشن» أو «فين المحل ده؟» بعد تنبيه محل ⇒ store_location وابعت map_url زي ما رجع. ماتسألوش هو في أنهي منطقة، وماتألّفش عنوان.\n" : ""}${offers("remember_occasion") ? "   - **المناسبات**: لما العميل يقول تاريخ عيد ميلاد أو ذكرى جواز (ليه أو لحد من عيلته) ⇒ remember_occasion، مش remember. الشهر واليوم بس، ومن غير ما تخمّن يوم ماقالهوش.\n" : ""}${(offers("set_life_circumstance") || offers("end_life_circumstance") || (snap?.circumstance?.mode ?? "normal") !== "normal") ? `   - **حالة البيت (circumstance)**: لو العميل قال إن حد عيان أو عندهم طوارئ أو امتحانات، اسأله «أهدّي التنبيهات كام يوم؟» أو سجّل على طول بـset_life_circumstance لو طلبها؛ ولو قال «رجّع» ⇒ end_life_circumstance. **ماتستنتجش ظرف من مشتريات أو نبرة.** لو circumstance.mode = exceptional: ردود أقصر، ماتفتحش مواضيع جديدة، ماتسألش أسئلة فضول، وأي اقتراح صرف أو توفير أو عرض يستنى إلا لو سأل — والصحة والمواعيد والأمان زي ما هم؛ ماتذكرش «إيه الظرف» لو هو مقالوش في المحادثة. لو recovery: خفيف، موضوع واحد بالكتير من عندك.\n` : ""}${snap?.life_shift ? `   - **التحول السلوكي (life_shift)**: لو فيه تحول confirmed = null، اسأله مرة واحدة خفيفة لو الكلام قريب («لاحظت إن مصاريف الأسبوع بقت حوالي X بدل Y — حصل تغيير في البيت؟») من غير ما تفترض السبب، وجوابه ⇒ confirm_life_shift. طول ما التحول قايم، ماتعاملش الطبيعي الجديد كأنه «صرف زيادة» أو «غريب»، ومتوسطات القرارات والسقف المقترح بتتحسب من يومه لوحدها.\n` : ""}${offers("household_resilience") ? `   - **شهر صعب**: لو العميل قلقان («الشهر ده تقيل»، «مش هنعدّي») نادِ household_resilience: لو تاريخه فيه شهر زي ده رجع منه، قولها كحقيقة منه — طمأنة مش وعظ ولا وعد.\n` : ""}${(offers("decision_impact") || offers("log_decision")) ? `   - **القرارات الكبيرة**: «لو اشتريت…» أو «أفكر أنقل…» أو «أشتريه ولا لأ؟» = decision_impact بس. لو رجع this_month: قول الرقم بكلامه («بياكل X يوم من الـY الباقيين، ويفضل Z») — verdict = over أو heavy تقوله صراحة إنه هيزنق الأيام الجاية، fits ماتعلّقش عليه، والقرار قراره؛ ولو in_bulk_window = true وده شرا البيت بتاع أول الشهر، ده نظامه مش تهور. لما يقول إنه **عمل** القرار فعلاً («خلاص اشتريتها»، «قررنا ننقله») ⇒ log_decision بنفس الأرقام، وقوله إنك هتراجع معاه بعد شهر وبعد ٣ شهور. **decisions** (لو مش null) = اللي اتسجّل، ومعاه last_review لو اتراجع — ماتسجّلش اللي موجود تاني.\n` : ""}2. **اللغة واللهجة (${profile.locale})**: اتبع بلوك «اللهجة» اللي فوق في كل رد — مش أول جملة بس.
 ${INITIATIVE_RULE}   - طابق درجة الرسمية والمفردات مع أسلوب المستخدم، ولا تحشر تعبيرات محلية في كل جملة.
    - ${voiceModeInstruction(voiceMode, snap?.customer?.zad_voice)}
 2ب. **واعي بالبيت وبالبلد**:
@@ -9323,7 +9382,7 @@ ${ruleLines(householdLoadRule(snap), toneRule(snap), eventDayBudgetRule(snap), c
    - لو الجديد بيناقض محفوظ، "remember" هترجّعلك التعارض — **اسأل العميل واستنى رده**، وبعدين استخدم "replaces_note_id". متكتبش الاتنين جنب بعض.
    - **الحساس بيتسأل الأول**: صحة، حمل، خلافات بيت، دين، قضايا — remember هترجّعلك إنها اتركنت ومااتحفظتش؛ اسأل «صح؟» زي ما قالتلك ومن غير ما تقول «حساسة».
 ${snap?.memory_pending ? `   - **memory_pending** = ملاحظات حساسة سألت عليها ولسه مستنية. لو رسالة العميل جواب عليها («آه»، «صح»، «لأ مش كده») نادِ remember بـpending_id وpending_yes، وقوله في جملة إنك هتفتكرها أو مش هتفتكرها. لو رسالته عن حاجة تانية، ماتفتحهاش.\n` : ""}   - **عن مين ولحد إمتى**: حطّ "about" بالأشخاص والأماكن اللي الملاحظة عنهم («ماما»، «مدرسة يوسف»)، و"valid_until" لو مؤقتة («أخويا عندنا لحد الجمعة»). في memory: "about" = عن مين، و"until" = آخر يوم ليها — بعده ماتعتمدش عليها.
-${((snap?.memory ?? []) as Array<{ scope?: string }>).some((m) => m.scope === "trait") ? `   - **scope "trait" في memory = صفة استنتجها التأمل الليلي من ٣ حقايق أو أكتر** («مهتم بالأكل الصحي»). استخدمها تفهم وتختار (اقتراح أكل صحي قبل غيره)، بس **ماتقولهاش للعميل كأنها حكم عليه** — ولو سأل «عرفت منين؟» قوله الحقايق اللي بنيت عليها. لو العميل نفاها، remember بـreplaces_note_id.\n` : ""}
+${((snap?.memory ?? []) as Array<{ shared_by?: string }>).some((m) => m.shared_by) ? `   - **shared_by في memory = ملاحظة كتبها فرد تاني في العيلة (الاسم ده) وشاركها مع البيت.** «العميل» جواها = الفرد ده، مش اللي بتكلمه — قولها كده («ماما قالت إن قسط العربية ٣٠٠٠»)، وماتمسحهاش ولا تشاركها ولا تصححها من هنا.\n` : ""}${((snap?.memory ?? []) as Array<{ scope?: string }>).some((m) => m.scope === "trait") ? `   - **scope "trait" في memory = صفة استنتجها التأمل الليلي من ٣ حقايق أو أكتر** («مهتم بالأكل الصحي»). استخدمها تفهم وتختار (اقتراح أكل صحي قبل غيره)، بس **ماتقولهاش للعميل كأنها حكم عليه** — ولو سأل «عرفت منين؟» قوله الحقايق اللي بنيت عليها. لو العميل نفاها، remember بـreplaces_note_id.\n` : ""}
 
 6. أرقام البيت (فلوسه ومخزونه ومواعيده وأدويته) من === SNAPSHOT === تحت بس — متخترعهاش. أي معلومة برّه البيت مصدرها نتايج الأدوات: لو النتيجة فيها الرقم أو الإجابة، قولها ومعاها المصدر — **ممنوع تقول «مش لاقي» والإجابة قدامك**. لو الأدوات مارجّعتش حاجة فعلاً، قول كده في جملة واحدة ومتغيّرش الموضوع.
 ${snap?.spend_by_person ? "   - **spend_by_person** = الصرف على كل شخص في البيت آخر ٣٠ يوم (اللي اتسجل له بس). «صرفنا كام على يوسف؟» منه، وقول إنه اللي اتسجل ليه بالاسم مش كل اللي اتصرف عليه.\n" : ""}6ج. **شكوى أو مشكلة محتاجة إنسان** (عطل في التطبيق، «عايز أكلم حد»، حاجة مقدرتش تحلها معاه) ⇒ open_support_ticket بملخص المشكلة بكلامه، وقوله إن الفريق هيرد عليه.

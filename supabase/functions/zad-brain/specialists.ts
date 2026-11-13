@@ -204,6 +204,8 @@ const GATHERING_INTENT = /عزومه|عزايم|عازم|عازمين|هعزم|�
 // ZAD_PLAN ١٠.٢(أ): «بطّل زادو ينده عليا»، «رجّع صورة الأكل» — مفاتيح الإعدادات بالكلام.
 const APP_SETTING_INTENT = /(نداء|نداءات|زادو|صوره الاكل).{0,30}(وقف|اقفل|بطل|شيل|شغل|رجع|افتح)|(وقف|اقفل|بطل|شيل|شغل|رجع|افتح).{0,30}(نداء|نداءات|زادو|صوره الاكل)/;
 // «انسى إني…»، «امسح من ذاكرتك» — مش «نسيت» (العميل هو اللي نسي).
+// ١٠.٢(ج): «شاركها مع العيلة» / «خليها ليا» — المشاركة أو الرجوع عنها بطلب صاحب الملاحظة.
+const FAMILY_SHARE_INTENT = /(شارك|شاركها|شاركه|شاركي).{0,25}(العيل|عيلت|البيت|ماما|بابا|مراتي|جوزي)|(خليها|خليه|خلّيها|خلّيه) (ليا|ليّا|بيني وبينك)|(ماتشارك|متشارك|ما تشارك|وقف مشارك|بطل تشارك|بطّل تشارك|شيلها من العيل)/;
 const FORGET_INTENT = /(^|\s)(انسي|انساها|انساه|انسيها|انسيه)(\s|$)|امسح.{0,20}(ذاكرتك|من دماغك|اللي قلتهولك|اللي قلتلك)|شيل.{0,20}من (ذاكرتك|دماغك)|(متفتكرش|ماتفتكرش|لا تتذكر)/;
 // ١٠.٢(أ) شريحة ٢ — كل زرار ليه كلماته.
 const SUB_PAID_INTENT = /(دفعت|سددت|سدّدت|خلصت|ادفعت)\s*(اشتراك|فاتور|قسط|ايجار|إيجار|النت|الانترنت|نتفل|شاهد|سبوتي|الجيم|النادي)|(اشتراك|فاتور|قسط).{0,25}(اتدفع|دفعته|دفعتها|سددته|سددتها)/;
@@ -291,6 +293,7 @@ export function intentToolHints(message: string, priorReply = ""): string[] {
   if (SLEEP_INTENT.test(norm)) tools.push("set_sleep_window");
   if (APP_SETTING_INTENT.test(norm)) tools.push("set_app_setting");
   if (FORGET_INTENT.test(norm)) tools.push("delete_memory", "remember");
+  if (FAMILY_SHARE_INTENT.test(norm)) tools.push("share_memory_with_family");
   if (SUB_PAID_INTENT.test(norm)) tools.push("mark_subscription_paid");
   if (SHORTAGES_INTENT.test(norm)) tools.push("add_shortages_to_shopping");
   if (DOSE_SNOOZE_INTENT.test(norm)) tools.push("snooze_pharmacy_dose");

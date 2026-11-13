@@ -20,6 +20,7 @@ import { challengeDayIndex } from "../_shared/savingsChallenge.ts";
 import { seasonFor } from "../_shared/season.ts";
 import { curiosityQuestion } from "./curiosity.ts";
 import { loadAppointmentFollowUp } from "./appointmentFollowUp.ts";
+import { loadFamilyShareAsk } from "./familyShare.ts";
 import { type DoseHabit, loadDoseHabit } from "./doseHabit.ts";
 import { sameProductAsk } from "./productIdentity.ts";
 import { askedClothesKeys, clothingNudge, loadWeather, weatherAlert, type WeatherFacts } from "./weather.ts";
@@ -234,6 +235,8 @@ const MOMENT_GUIDANCE: Record<string, string> = {
     "لو daily_question_kind = gift فالسؤال عرض: تحجزي gift_offer.amount من المتاح لهدية gift_offer.for — قوليه بالرقم والعملة. " +
     "لو daily_question_kind = appointment_follow_up فده ميعاد كان عنده امبارح (appointment_follow_up.title): اسأليه عنه " +
     "باهتمام صاحب — روح ولا لأ وحصل إيه — من غير ما تفترضي النتيجة ولا تقولي أي حاجة طبية. " +
+    "لو daily_question_kind = family_share فالسؤال عرض: تشاركي الحقيقة دي (family_share.note) مع عيلته عشان زاد يفتكرها " +
+    "لهم كمان — قوليها بكلامه في جملة، ووضّحي إن من غير موافقته مش هتتشارك. " +
     "لو daily_question_kind = event_reserve فالسؤال عن حدث كبير جاي (event_reserve.title بعد in_days يوم): اسألي تحبي تحجزي " +
     "مبلغ ليه وقد إيه — من غير ما تقترحي رقم. " +
     "ماتخترعيش مناسبة مش في occasions. " +
@@ -1437,6 +1440,11 @@ export async function morningFacts(
     ? null
     : (await sameProductAsk(sb, userId)) ?? await curiosityQuestion(sb, userId, Date.parse(dayStart));
   const askOccasion = !curious && occasionAsk ? occasionAsk : null;
+  // ١٠.٢(ج) — «أشاركها مع عيلتك؟» (familyShare.ts): آخر واحد في الخانة، مش مستعجل، ومرة في الأسبوع بالكتير.
+  const familyShare = profile === undefined || !asked || quiet || ask || gift || bigEvent || followUp || curious || askOccasion ||
+      !attentionBudget(circumstance.mode).curiosity
+    ? null
+    : await loadFamilyShareAsk(sb, userId, asked, nowMs);
   // أول ٧٢ ساعة (newcomer.ts): خانة سؤال اليوم للناقصة اللي بتشغّل حارس، قبل دوران خانات الملف.
   const newcomer = quiet || gift || bigEvent ? null : await newcomerAsk(sb, userId, local.date, { occasionRows, people });
   // الجو (weather.ts): أزمة جو بتتقال حتى في الظرف (أمان)، وتبديل هدوم الموسم مرة في الموسم ومش في الظرف.
@@ -1506,6 +1514,13 @@ export async function morningFacts(
         },
       }
       : {}),
+    ...(familyShare
+      ? {
+        daily_question: familyShare.question,
+        daily_question_kind: "family_share",
+        family_share: { memory_id: familyShare.memory_id, note: familyShare.note },
+      }
+      : {}),
     ...(weather && !quiet ? { weather: { place: weather.place, today: todayOf(weather, local.date) } } : {}),
     ...(alert ? { weather_alert: { kind: alert.kind, day: alert.day, line: alert.line } } : {}),
     ...(clothes ? { weather_clothes: { key: clothes.key, season: clothes.season, line: clothes.line } } : {}),
@@ -1568,7 +1583,7 @@ export const NEWCOMER_MOMENT = "newcomer_question";
 function habitQuestion(h: DoseHabit): Record<string, unknown> {
   return {
     daily_question_field: undefined, occasion_ask: undefined, gift_offer: undefined, event_reserve: undefined,
-    appointment_follow_up: undefined,
+    appointment_follow_up: undefined, family_share: undefined,
     daily_question: h.question,
     ...h.facts,
   };
@@ -1578,7 +1593,7 @@ function habitQuestion(h: DoseHabit): Record<string, unknown> {
 function withoutQuestion(q: NewcomerQuestion): Record<string, unknown> {
   return {
     daily_question_field: undefined, curiosity: undefined, occasion_ask: undefined, gift_offer: undefined, event_reserve: undefined,
-    appointment_follow_up: undefined,
+    appointment_follow_up: undefined, family_share: undefined,
     ...newcomerFacts(q),
   };
 }
