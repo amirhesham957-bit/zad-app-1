@@ -67,10 +67,20 @@ Deno.test("context diet 3b: Groq gets every specialist tool, lean, instead of dr
     assertEquals(byName.get(n), tools.find((t) => t.name === n));
   }
 
-  // النداء الأول على Gemini: التلاتة بس خفاف، والباقي كامل.
+  // النداء الأول على Gemini (٣.٢ الشريحة ٦): اللي بيتنادى وإرشاده في وصفه كامل، والباقي خفيف.
   const first = toolsForCall(tools, [], [], 0);
-  const changed = first.filter((t, i) => t !== tools[i]).map((t) => t.name).sort();
-  assertEquals(changed, ["app_command", "remember", "update_appointment"].filter((n) => tools.some((t) => t.name === n)).sort());
+  const kept = first.filter((t, i) => t === tools[i]).map((t) => t.name).sort();
+  assertEquals(kept, ["add_appointment", "add_obligation", "log_transaction", "read_house", "web_search"]);
   // عليهم نية ⇒ كاملين.
   assertEquals(toolsForCall(tools, ["remember"], [], 0).find((t) => t.name === "remember"), tools.find((t) => t.name === "remember"));
+  // حقيقة عن حياته ⇒ الملف كامل؛ من غيرها خفيف (الاستخلاص بعد اللفة بيلقطها).
+  const profile = tools.find((t) => t.name === "update_customer_profile");
+  assertEquals(toolsForCall(tools, [], [], 0, true).find((t) => t.name === "update_customer_profile"), profile);
+  assertEquals(first.find((t) => t.name === "update_customer_profile") === profile, false);
+  // والخفيف لسه فيه الـenum وrequired — اللي الموديل بيحتاجه عشان النداء يعدّي التحقق.
+  const leanProfile = first.find((t) => t.name === "update_customer_profile")!;
+  assertEquals(JSON.stringify(leanProfile.input_schema).includes('"female"'), true);
+  // الحجم: وكيل المال على «مرحبا» تحت ٢٠ ألف حرف أدوات في النداء الأول (كان ٢٧٫٦ ألف).
+  const firstChars = JSON.stringify(first).length;
+  assertEquals(firstChars < 20_000, true, `${firstChars}`);
 });

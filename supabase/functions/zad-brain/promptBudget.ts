@@ -12,6 +12,8 @@ export interface PromptSizes {
   /** تعريفات الأدوات المعروضة (JSON)، وعددها. */
   tools_chars: number;
   tools_count: number;
+  /** اللي النداء الأول بيبعته فعلاً بعد التخفيف (index.ts toolsForCall) — بيتملى بعد الحساب. */
+  first_call_tools_chars?: number;
   /** المحادثة اللي اتبعتت مع اللفة. */
   history_chars: number;
   history_turns: number;
