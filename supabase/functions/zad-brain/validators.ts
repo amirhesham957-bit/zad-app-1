@@ -830,6 +830,18 @@ export const validateDismissInsight: Validator = (input, _snap, ctx) => {
   return { ok: true };
 };
 
+/** ١٠.٢(ج): ملاحظة واحدة في اللفة، share بوليان، والـid من سؤال الصبح أو من memory — مش مهلوس. */
+export const validateShareMemory: Validator = (input, snap, ctx) => {
+  if ((ctx.counts["share_memory_with_family"] ?? 0) >= 1) return { ok: false, reason: "ملاحظة واحدة في المرة" };
+  if (typeof input.share !== "boolean") return { ok: false, reason: "share لازم true أو false" };
+  const id = typeof input.memory_id === "string" ? input.memory_id.trim() : "";
+  if (!id) return { ok: false, reason: "memory_id ناقص" };
+  const s = snap as { memory?: Array<{ id?: unknown }>; asked_this_morning?: { memory_id?: unknown } | null } | null;
+  if (s?.asked_this_morning?.memory_id === id) return { ok: true };
+  if (!(s?.memory ?? []).some((m) => m.id === id)) return { ok: false, reason: "الـid ده مش في memory ولا في سؤال الصبح" };
+  return { ok: true };
+};
+
 /** ملاحظة واحدة في اللفة، ولازم تكون من memory اللي العميل شايفها — مش id مهلوس. */
 export const validateDeleteMemory: Validator = (input, snap, ctx) => {
   if ((ctx.counts["delete_memory"] ?? 0) >= 1) return { ok: false, reason: "ملاحظة واحدة في المرة — اسأله عن الباقي" };
@@ -1312,6 +1324,7 @@ export const VALIDATORS: Record<string, Validator> = {
   clear_place_visits: validateClearPlaceVisits,
   rate_recipe: validateRateRecipe,
   dismiss_insight: validateDismissInsight,
+  share_memory_with_family: validateShareMemory,
   plan_gathering: validateGathering("plan_gathering"),
   add_gathering_to_list: validateGathering("add_gathering_to_list"),
   delete_document: validateDeleteDocument,
@@ -1363,6 +1376,8 @@ export const MUTATING_TOOLS = [
   // ١٠.٢(أ) شريحة ٢. mark_subscription_paid في CONFIRM_REQUIRED تحت (فلوس).
   "mark_subscription_paid", "add_shortages_to_shopping", "snooze_pharmacy_dose", "report_price",
   "clear_place_visits", "rate_recipe", "dismiss_insight",
+  // ١٠.٢(ج): مشاركة ملاحظة مع العيلة بموافقة صاحبها.
+  "share_memory_with_family",
   // مواعيد العميل (20260914004000)
   "add_appointment", "update_appointment", "delete_appointment",
   "add_place_reminder", "cancel_place_reminder",

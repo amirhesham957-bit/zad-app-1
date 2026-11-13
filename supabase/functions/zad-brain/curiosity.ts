@@ -520,7 +520,7 @@ export const ASKED_RELEVANT_MS = 20 * 3_600_000;
 
 export interface AskedThisMorning {
   question: string;
-  kind: "profile" | "curiosity" | "gift" | "occasion" | "event_reserve" | "appointment_follow_up";
+  kind: "profile" | "curiosity" | "gift" | "occasion" | "event_reserve" | "appointment_follow_up" | "family_share";
   /** خانة zad_customer_profile لو السؤال من أسئلة الملف. */
   field?: string;
   record?: string;
@@ -535,6 +535,8 @@ export interface AskedThisMorning {
   /** ميعاد امبارح اللي اتسأل عنه (appointmentFollowUp.ts): for = عنوانه، on = يومه. */
   appointment_id?: string;
   on?: string;
+  /** الملاحظة اللي اتسأل يشاركها مع عيلته (familyShare.ts، ١٠.٢ج). */
+  memory_id?: string;
   sent_at: string;
 }
 
@@ -582,6 +584,11 @@ export function askedThisMorning(
       ...(typeof followUp.on === "string" ? { on: followUp.on } : {}),
       sent_at: row.sent_at,
     };
+  }
+  const share = facts.family_share as { memory_id?: unknown } | undefined;
+  if (facts.daily_question_kind === "family_share" && share && typeof share === "object" && typeof share.memory_id === "string") {
+    // ١٠.٢(ج) — «أشاركها مع عيلتك؟»: «أيوه» ⇒ share_memory_with_family بالـmemory_id ده.
+    return { question, kind: "family_share", memory_id: share.memory_id, sent_at: row.sent_at };
   }
   const occasionAsk = facts.occasion_ask as { for?: unknown } | undefined;
   if (facts.daily_question_kind === "occasion" && occasionAsk && typeof occasionAsk === "object") {
