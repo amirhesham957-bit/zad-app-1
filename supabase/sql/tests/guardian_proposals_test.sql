@@ -23,6 +23,7 @@ create table if not exists public.zad_brain_health_alerts (
 insert into public.dashboard_admins values ('00000000-0000-0000-0000-0000000000a2') on conflict do nothing;
 
 \i supabase/migrations/20261011240000_guardian_proposals.sql
+\i supabase/migrations/20261113080000_guardians_wake.sql
 
 begin;
 -- 22 digests to a1 in the last month, none answered; 25 medicine follow-ups, none answered
@@ -41,6 +42,20 @@ begin
   assert not exists (select 1 from zad_guardian_proposals where subject = 'med_followup'), 'medicine proposed for a pause';
   r := zad_guardian_nightly();
   assert (r->>'proposed')::int = 0, 'proposed twice';
+end $$;
+-- ١٠.٦: five more digests went out — the open proposal shows today's numbers, not the day it was made
+insert into agent_tasks (user_id, kind, status, updated_at)
+select '00000000-0000-0000-0000-0000000000a1', 'home_weekly_digest', 'done', now() - interval '3 days' - (g || ' hours')::interval
+  from generate_series(1, 5) g;
+do $$
+declare r jsonb;
+begin
+  r := zad_guardian_nightly();
+  assert (r->>'proposed')::int = 0, 'refreshing made a second proposal';
+  assert (select (evidence->>'delivered')::int from zad_guardian_proposals where kind = 'pause_kind') = 27,
+    (select evidence::text from zad_guardian_proposals where kind = 'pause_kind');
+  assert (select why from zad_guardian_proposals where kind = 'pause_kind') like '%27 مرة%';
+  assert (select evidence ? 'refreshed_at' from zad_guardian_proposals where kind = 'pause_kind');
   -- nothing changes for someone else until the owner says so
   assert not _agent_proactive_suppressed('00000000-0000-0000-0000-0000000000a2', 'home_weekly_digest'),
     'a proposal acted before approval';
@@ -70,14 +85,35 @@ do $$ begin
 end $$;
 rollback;
 
--- investigate: a loop break three days running
+-- investigate: a loop break on the three full days before today. The proposal runs at 05:03 UTC and
+-- the loop guard writes today's row at 05:13, so today's row is never there (١٠.٦).
 begin;
 insert into zad_brain_health_alerts (alert_date, kind, total_runs, bad_runs, bad_pct, top_error)
-select current_date - d, 'loop_break', 4, 2, 0, 'فواتير من غير أسعار 2' from generate_series(0, 2) d;
+select (now() at time zone 'UTC')::date - d, 'loop_break', 4, 2, 0, 'فواتير من غير أسعار 2' from generate_series(1, 3) d;
 do $$ begin
   assert zad_propose_guardians() = 1;
   assert (select kind from zad_guardian_proposals) = 'investigate';
+  assert (select (evidence->>'date')::date from zad_guardian_proposals) = (now() at time zone 'UTC')::date - 1;
   assert zad_propose_guardians() = 0, 'investigate proposed twice';
+end $$;
+rollback;
+
+-- what production saw: breaks yesterday and the day before, today's row not written yet ⇒ two days, no proposal
+begin;
+insert into zad_brain_health_alerts (alert_date, kind, total_runs, bad_runs, bad_pct, top_error)
+select (now() at time zone 'UTC')::date - d, 'loop_break', 4, 2, 0, 'x' from generate_series(1, 2) d;
+do $$ begin
+  assert zad_propose_guardians() = 0, 'two days proposed as three';
+end $$;
+rollback;
+
+-- a clean day in the middle breaks the run
+begin;
+insert into zad_brain_health_alerts (alert_date, kind, total_runs, bad_runs, bad_pct, top_error)
+select (now() at time zone 'UTC')::date - d, 'loop_break', 4, case when d = 2 then 0 else 2 end, 0, 'x'
+  from generate_series(1, 3) d;
+do $$ begin
+  assert zad_propose_guardians() = 0, 'a clean day counted as a break';
 end $$;
 rollback;
 
