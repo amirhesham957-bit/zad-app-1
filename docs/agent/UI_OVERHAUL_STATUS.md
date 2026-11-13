@@ -7,6 +7,14 @@ disagree, the code is right and this file gets corrected.
 
 The owner's request list is the source of this work. The owner's code rules are at the end.
 
+> **Visual direction since 2026-11-13 (owner): «Editorial», not Material.** Custom `ZadBentoCard` / `ZadPillButton` /
+> `ZadGlassHeader` instead of `Card` / `ElevatedButton` / `ListTile` / `AppBar`; big bold headings, generous space, huge
+> money figures; «فلوسي» dark (`#09090B`, cards `#141417`, 1px white borders at 0.08, a soft warm ambient glow), home and
+> «بيتي» warm light (`#F7F6F2`, white cards, radius 28, no heavy shadows) with a floating pill nav bar; bouncing scroll
+> everywhere and a soft spring press on every card and button. All of it as tokens inside `lib/core/design/`, never hex
+> in a screen. Full rules and the first slice: ZAD_PLAN ١٠.٨. The six reference images are meant to live in
+> `.claude/design-refs/` — local only (gitignored: other people's work; the level to reach, never to copy). Look at them before building, not at this summary. Prototype the owner picks the type from: https://claude.ai/artifact/CJ6ZNeA3M9BHsRKsbWY1yr
+
 ## How far each thing was checked
 
 "Tests" means `flutter analyze` and the full `flutter test`, which include
