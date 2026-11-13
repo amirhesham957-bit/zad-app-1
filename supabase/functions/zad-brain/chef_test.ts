@@ -1,5 +1,5 @@
-import { assertEquals, assertStringIncludes } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { formatChefResult, pantryForChef } from "./chef.ts";
+import { assert, assertEquals, assertStringIncludes } from "https://deno.land/std@0.224.0/assert/mod.ts";
+import { formatChefResult, pantryForChef, recipeVideo } from "./chef.ts";
 import { APP_COMMAND_SCREENS, validateTool, freshContext } from "./validators.ts";
 import { scopeToolsForSpecialist } from "./specialists.ts";
 
@@ -62,4 +62,25 @@ Deno.test("app_command can open the chef, prices, goals and nearby", async () =>
 Deno.test("the pantry specialist gets the chef", () => {
   const tools = [{ name: "suggest_recipes" }, { name: "add_debt" }];
   assertEquals(scopeToolsForSpecialist(tools, "pantry").map((t) => t.name), ["suggest_recipes"]);
+});
+
+// ZAD_PLAN ١٠.٩: وصفة من فيديو بتوصل للشات والبوت برابطها، زي صفحة الشيف. كانت الرابط بيتشال هنا.
+Deno.test("formatChefResult: a recipe from a video carries its link to the chat and the bot", () => {
+  const out = formatChefResult({
+    text: "دي اقتراحات",
+    recipes: [
+      { recipe_name: "محشي كرنب", missing_ingredients_to_buy: [], source_url: "https://www.tiktok.com/@chef/video/123", source_handle: "chef_nono" },
+      { recipe_name: "شوربة عدس", missing_ingredients_to_buy: [] },
+    ],
+  });
+  assertStringIncludes(out, "1. محشي كرنب — مكتملة من المخزون · فيديو chef_nono: https://www.tiktok.com/@chef/video/123");
+  assert(!/2\. شوربة عدس.*فيديو/.test(out), "a recipe with no video got a link");
+});
+
+Deno.test("recipeVideo: only an https link on a video platform, the name on one line", () => {
+  assertEquals(recipeVideo({ source_url: "https://youtu.be/abc", source_handle: "مطبخ\nنور @x" }), { url: "https://youtu.be/abc", handle: "مطبخ نور x" });
+  assertEquals(recipeVideo({ source_url: "https://m.youtube.com/watch?v=1" })?.url, "https://m.youtube.com/watch?v=1");
+  for (const bad of ["http://www.tiktok.com/x", "https://tiktok.com.evil.example/x", "https://evil.example/tiktok.com/x", "javascript:alert(1)", "https://www.tiktok.com/x y", 42, null]) {
+    assertEquals(recipeVideo({ source_url: bad }), null, String(bad));
+  }
 });

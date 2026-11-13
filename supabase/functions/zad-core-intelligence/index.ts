@@ -3405,7 +3405,7 @@ async function handle(req: Request): Promise<Response> {
           if (!answer.ok || !answer.content) continue;
           videos.push(readSocialVideo((() => { try { return JSON.parse(answer.content!); } catch { return null; } })(), hit.url, new Date(), hit.handle));
         }
-        return jsonResponse({ ok: true, platform, hits: found, read: videos.length, videos });
+        return jsonResponse({ ok: true, platform, hits: found, read: videos.length, videos, search: platform === "tiktok" ? lastWebSearchSource : platform });
       }
 
       case "store_deals_tiktok": {

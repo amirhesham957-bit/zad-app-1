@@ -53,12 +53,29 @@ export function videoCountry(source: SocialSource, video: SocialVideo): string |
   return source.country ?? video.deals[0]?.country ?? null;
 }
 
+/**
+ * الصف اللي بيتكتب في zad_social_recipes على قد قيود الجدول (handle ١–٤٠، name ٢–٨٠). اسم قناة يوتيوب أطول من ٤٠ كان
+ * بيكسر الصف كله (`zad_social_recipes_handle_check`، مرة في اليوم ١٢–١٣/١١)، والفيديو مايتسجلش «اتقرا» فبيتقري تاني كل
+ * يوم (ZAD_PLAN ١٠.٩). اسم وصفة برّه الحدود بيبقى null (الصف بيتسجل إنه اتقرا، والشيف مابيعرضهوش). نقي.
+ */
+export function socialRecipeRow(source: SocialSource, video: SocialVideo): Record<string, unknown> {
+  const oneLine = (v: unknown) => typeof v === "string" ? v.replace(/\s+/g, " ").trim() : "";
+  const handle = oneLine(video.handle).slice(0, 40) || (source.platform ?? "tiktok");
+  const name = oneLine(video.recipe?.name).slice(0, 80);
+  return {
+    source_url: video.url, handle, country: videoCountry(source, video),
+    name: name.length >= 2 ? name : null, ingredients: video.recipe?.ingredients ?? [], stores: video.stores,
+  };
+}
+
 export async function runSocialRecipes(
   sb: SupabaseClient, slot: number, scan: (payload: Record<string, unknown>) => Promise<{ ok?: boolean; videos?: SocialVideo[] } | null>,
   now: Date = new Date(),
-): Promise<{ ok: boolean; sources: number; videos: number; recipes: number; deals: number; refused: number }> {
+): Promise<{ ok: boolean; sources: number; videos: number; recipes: number; deals: number; refused: number; empty: Record<string, number> }> {
   const started = Date.now();
-  const totals = { ok: true, sources: 0, videos: 0, recipes: 0, deals: 0, refused: 0 };
+  // «empty» = المنصة رجّعت صفر فيديو وليه (no_key، youtube_403، search:none…). تيك توك وقف يومين ١١–١٣/١١ (البحث
+  // المجاني خلص ووقع على أخبار جوجل) والملخص كان بيقول ok:true من غير ما حد يعرف.
+  const totals = { ok: true, sources: 0, videos: 0, recipes: 0, deals: 0, refused: 0, empty: {} as Record<string, number> };
   const [{ data: knownRows }, { data: storeRows }] = await Promise.all([
     sb.from("zad_social_recipes").select("source_url").order("found_at", { ascending: false }).limit(1000),
     sb.from("zad_deal_seed_stores").select("country,store,currency").in("country", Object.keys(SOCIAL_COUNTRIES)),
@@ -69,13 +86,14 @@ export async function runSocialRecipes(
     if (Date.now() - started > RUN_BUDGET_MS) break;
     const reply = await scan({ ...source, known });
     totals.sources++;
+    if (!reply?.videos?.length) {
+      const why = `${source.platform ?? "tiktok"}:${reply?.ok === false ? String((reply as { reason?: unknown }).reason ?? "failed") : reply ? `search:${String((reply as { search?: unknown }).search ?? "none")}` : "no_reply"}`.slice(0, 60);
+      totals.empty[why] = (totals.empty[why] ?? 0) + 1;
+    }
     for (const video of reply?.videos ?? []) {
       totals.videos++;
       // بيتسجل حتى لو مش وصفة: عشان مايتقريش تاني.
-      const { error } = await sb.from("zad_social_recipes").upsert({
-        source_url: video.url, handle: video.handle, country: videoCountry(source, video),
-        name: video.recipe?.name ?? null, ingredients: video.recipe?.ingredients ?? [], stores: video.stores,
-      }, { onConflict: "source_url" });
+      const { error } = await sb.from("zad_social_recipes").upsert(socialRecipeRow(source, video), { onConflict: "source_url" });
       if (error) console.error("[social_recipes] write failed:", error.message);
       else if (video.recipe) totals.recipes++;
       for (const deal of video.deals) {

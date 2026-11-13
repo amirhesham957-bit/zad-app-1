@@ -32,6 +32,19 @@ interface ChefRecipe {
   cost_estimate?: unknown;
   missing_ingredients_to_buy?: unknown;
   from_inventory?: unknown;
+  /** الفيديو اللي الوصفة جاية منه (تيك توك/يوتيوب/إنستجرام، ٧.٤) — التطبيق بيعرضه، والشات والبوت كمان (١٠.٩). */
+  source_url?: unknown;
+  source_handle?: unknown;
+}
+
+const VIDEO_HOST = /^https:\/\/([a-z0-9-]+\.)*(tiktok\.com|youtube\.com|youtu\.be|instagram\.com)(\/|$)/i;
+
+/** رابط فيديو الوصفة لو من منصة معروفة وhttps، وإلا null. نقي. */
+export function recipeVideo(x: { source_url?: unknown; source_handle?: unknown }): { url: string; handle: string } | null {
+  const url = typeof x.source_url === "string" ? x.source_url.trim() : "";
+  if (!VIDEO_HOST.test(url) || url.length > 300 || /\s/.test(url)) return null;
+  const handle = typeof x.source_handle === "string" ? x.source_handle.replace(/[@«»]/g, " ").replace(/\s+/g, " ").trim().slice(0, 40) : "";
+  return { url, handle };
 }
 
 /**
@@ -59,12 +72,15 @@ export function formatChefResult(result: unknown, currency = ""): string {
     if (Number.isFinite(minutes) && minutes > 0) parts.push(`${Math.round(minutes)} دقيقة`);
     const cost = Number(x.cost_estimate);
     if (Number.isFinite(cost) && cost > 0) parts.push(`حوالي ${Math.round(cost)}${currency ? ` ${currency}` : ""}`);
+    const video = recipeVideo(x);
+    if (video) parts.push(`فيديو${video.handle ? ` ${video.handle}` : ""}: ${video.url}`);
     return `${i + 1}. ${name} — ${parts.join(" · ")}`;
   });
   return [
     ...(intro ? [`شيف زاد: ${intro}`] : []),
     "وصفات شيف زاد (اعرض من دول بس، باختصار، والمكتملة من المخزون الأول):",
     ...lines,
+    "الوصفة اللي جنبها «فيديو» جاية من فيديو حقيقي: اكتب رابطه زي ما هو مع الوصفة، وماتكتبش رابط لوصفة مالهاش.",
     "لو العميل عاوز الخطوات أو يضيف الناقص لقايمة الشراء: افتحله صفحة الشيف (app_command screen=recipes).",
   ].join("\n");
 }
