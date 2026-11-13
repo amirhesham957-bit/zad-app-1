@@ -2,7 +2,10 @@
 import { assert, assertEquals, assertStringIncludes } from "jsr:@std/assert@1";
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { askedThisMorning } from "./curiosity.ts";
-import { askedNewcomerKeys, isNewcomer, NEWCOMER_HOURS, newcomerFacts, newcomerQuestion } from "./newcomer.ts";
+import {
+  askedNewcomerKeys, DOSE_TIMES_GROUP_MAX, doseTimesQuestion, doseTimesQuestions, isNewcomer, NEWCOMER_HOURS, newcomerFacts,
+  newcomerQuestion,
+} from "./newcomer.ts";
 import { BUSY_DAY_OPTIONAL_MOMENTS, morningFacts, NEWCOMER_MOMENT, processVoiceMoments, TEMPLATE_MOMENTS } from "./voiceMoments.ts";
 import { buildChatSystemPrompt } from "./index.ts";
 import { weatherSource } from "./weather.ts";
@@ -205,4 +208,40 @@ Deno.test("afternoon: past 72 hours, or every gap already asked, the moment is d
     assertEquals([res.sent, res.skipped, pushed], [0, 1, 0]);
     assert(updates.some((u) => u.error === "nothing to ask"));
   }
+});
+
+// سؤال واحد لكل شخص (قرار المالك ١٣/١١): فاتورة فيها ٥ أدوية كانت ٥ أسئلة في ٥ صبحيات.
+
+Deno.test("doseTimesQuestions: one question per person with all their untimed medicines", () => {
+  const qs = doseTimesQuestions([
+    { name: "Vonaspire", for_person: "ماما" },
+    { name: "Mucosta", for_person: "ماما" },
+    { name: "Geoprost", for_person: null },
+    { name: "Diosmin", for_person: null },
+    { name: "كونكور", for_person: "بابا" },
+  ], new Set());
+  assertEquals(qs.length, 3);
+  // العميل نفسه الأول.
+  assertEquals(qs[0].keys, ["newcomer:dose_times:geoprost", "newcomer:dose_times:diosmin"]);
+  assertEquals((qs[0].question.match(/الساعة كام/g) ?? []).length, 1);
+  assert(qs[0].question.includes("«Geoprost»") && qs[0].question.includes("«Diosmin»"), qs[0].question);
+  assert(qs[1].question.includes("بتوع ماما"), qs[1].question);
+  // دوا واحد ⇒ نفس السؤال القديم بالظبط.
+  assertEquals(qs[2], doseTimesQuestion({ name: "كونكور", for_person: "بابا" }));
+});
+
+Deno.test("doseTimesQuestions: an asked medicine leaves its group, and a sent group is remembered as asked", () => {
+  const meds = [{ name: "A", for_person: null }, { name: "B", for_person: null }, { name: "C", for_person: null }];
+  const [q] = doseTimesQuestions(meds, new Set(["newcomer:dose_times:a"]));
+  assertEquals(q.keys, ["newcomer:dose_times:b", "newcomer:dose_times:c"]);
+  // اللحظة اللي اتبعتت فيها السؤال ده ⇒ الاتنين اتسألوا، ومفيش سؤال تاني.
+  const asked = askedNewcomerKeys([{ facts: newcomerFacts(q) }]);
+  assert(asked.has("newcomer:dose_times:b") && asked.has("newcomer:dose_times:c"));
+  assertEquals(doseTimesQuestions(meds, new Set([...asked, "newcomer:dose_times:a"])), []);
+});
+
+Deno.test("doseTimesQuestions: a group is capped at the per-turn update limit", () => {
+  const many = Array.from({ length: DOSE_TIMES_GROUP_MAX + 3 }, (_, i) => ({ name: `دوا ${i}`, for_person: null }));
+  const [q] = doseTimesQuestions(many, new Set());
+  assertEquals(q.keys?.length, DOSE_TIMES_GROUP_MAX);
 });

@@ -385,6 +385,7 @@
     "user_id"
   ],
   "telegram_pending_pharmacy": [
+    "batch_id",
     "category",
     "chat_id",
     "created_at",
@@ -392,6 +393,7 @@
     "dosage",
     "dose_times",
     "expires_at",
+    "for_person",
     "id",
     "name",
     "quantity",

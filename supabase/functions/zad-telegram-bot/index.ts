@@ -34,7 +34,11 @@ import {
   parsePurchaseCallback, purchaseDoneLine, purchaseFromPending, purchaseKeyboard, purchaseLinesFromPhoto,
   purchasePreview, type PendingPurchase, type PurchaseLine, type PurchaseMode,
 } from "./purchasePhoto.ts";
-import { splitPhotoMedicines } from "./pharmacyPhoto.ts";
+import {
+  batchDoneMessage, batchMedicineKeyboard, batchMedicineMessage, captionPerson, parseBatchCallback, routedMemberName,
+  splitPhotoMedicines,
+} from "./pharmacyPhoto.ts";
+import { familyMedicineCandidates } from "../_shared/familyMembers.ts";
 import { amazonPicks, amazonPicksReply } from "./amazonPicks.ts";
 import { householdFamilyId, householdFilter } from "../_shared/household.ts";
 import { marketFor } from "../_shared/amazonMarket.ts";
@@ -71,7 +75,6 @@ import {
 import {
   clampForTelegram,
   confirmSpendMessage, deriveWebhookSecret, money, receiptWallet,
-  confirmMedicationMessage,
   isolate, sanitizeName,
 } from "./context.ts";
 
@@ -2086,30 +2089,32 @@ bot.on("message:photo", async (ctx) => {
   }
 
   if (route === "pharmacy" && result.items.length > 0) {
-    // المعروف يدخل مع الشرا، والجديد بزرار تأكيد لوحده (pharmacyPhoto.ts): دوا جديد بيفتح تذكيرات،
-    // فمايتضافش من غير ضغطة.
+    // المعروف يدخل مع الشرا، والجديد بتأكيد واحد للفاتورة كلها (قرار المالك ١٣/١١ — كانت رسالة لكل دوا):
+    // دوا جديد بيفتح تذكيرات، فمايتضافش من غير ضغطة. ولمين من الكابشن («دا دوا مامتي»)، ولو مقالش
+    // الأزرار بتسأل — والعقل (add_pharmacy_item) هو اللي بيقرر صيدلية مين.
     const { data: meds } = await sb.from("zad_pharmacy_items").select("name").eq("user_id", userId);
     const { known, fresh } = splitPhotoMedicines(
       result.items,
       ((meds ?? []) as Array<{ name: string | null }>).map((m) => m.name ?? ""),
     );
-    for (const med of fresh) {
-      const { data: pendingMed, error: medErr } = await sb.from("telegram_pending_pharmacy").insert({
+    if (fresh.length > 0) {
+      const who = captionPerson(ctx.message.caption);
+      const batchId = crypto.randomUUID();
+      const { error: medErr } = await sb.from("telegram_pending_pharmacy").insert(fresh.map((med) => ({
         user_id: userId, chat_id: ctx.chat.id, name: med.name, unit: med.unit, quantity: med.quantity,
-        category: "عام", daily_dose_count: 1, dose_times: null,
-      }).select("id").single();
-      if (medErr || !pendingMed) {
-        console.error("photo pharmacy pending insert failed:", medErr?.message);
-        continue;
+        category: "عام", daily_dose_count: 1, dose_times: null, batch_id: batchId,
+        for_person: who?.kind === "person" ? who.label : null,
+      })));
+      if (medErr) {
+        console.error("photo pharmacy pending insert failed:", medErr.message);
+      } else {
+        const members = who === null
+          ? (await familyMedicineCandidates(sb, userId).catch(() => [])).filter((m) => m.granted)
+          : [];
+        await ctx.reply(batchMedicineMessage(fresh, who, known.length), {
+          reply_markup: toGrammyKeyboard(batchMedicineKeyboard(batchId, who, members)),
+        });
       }
-      await ctx.reply(
-        confirmMedicationMessage({
-          is_medication: true, name: med.name, dosage: "", daily_dose_count: 1,
-          dose_times: "لسه — قولي بتاخده الساعة كام بعد ما تأكد", unit: med.unit, quantity: med.quantity,
-          category: "عام", confidence: 0.75,
-        }),
-        { reply_markup: toGrammyKeyboard(confirmMedicationKeyboard((pendingMed as { id: string }).id)) },
-      );
     }
     const lines = purchaseLinesFromPhoto(known.map((m) => ({ ...m, category: "عام" })), "pharmacy");
     if (total || lines.length > 0) {
@@ -2758,6 +2763,88 @@ bot.on("callback_query:data", async (ctx) => {
     const { data: u } = await sb.from("zad_users").select("currency").eq("id", userId).maybeSingle();
     const cur = (u as { currency?: string } | null)?.currency ?? "غير معروف";
     await ctx.reply(`اتسجل ✅ ${isolate(sanitizeName(row.title))} — ${isolate(money(row.amount, cur))}` + bankTwinNote(confirmed.summary));
+    return;
+  }
+
+  // فاتورة صيدلية = تأكيد واحد (pharmacyPhoto.ts، قرار المالك ١٣/١١). نفس بروتوكول تأكيد الدوا الواحد تحت:
+  // claim بـstatus، والكتابة من العقل (add_pharmacy_item) دوا دوا — وهو اللي بيقرر صيدلية مين وبيتأكد من الموافقة.
+  const pharmacyBatch = parseBatchCallback(data);
+  if (pharmacyBatch) {
+    const { data: batchRows } = await sb.from("telegram_pending_pharmacy")
+      .select("id,name,unit,quantity,category,for_person,status,expires_at")
+      .eq("batch_id", pharmacyBatch.batchId)
+      .eq("user_id", userId)
+      .order("created_at");
+    const rows = (batchRows ?? []) as Array<{
+      id: string; name: string; unit: string; quantity: number; category: string;
+      for_person: string | null; status: string; expires_at: string;
+    }>;
+    if (rows.length === 0) {
+      await ctx.reply("الطلب ده مش موجود أو مش بتاعك.");
+      return;
+    }
+    const open = rows.filter((r) => r.status === "pending");
+    if (open.length === 0) {
+      await ctx.reply("الطلب ده اتعامل معاه قبل كده.");
+      return;
+    }
+    if (pharmacyBatch.choice.kind === "cancel" || open.some((r) => new Date(r.expires_at) < new Date())) {
+      const expired = pharmacyBatch.choice.kind !== "cancel";
+      await sb.from("telegram_pending_pharmacy").update({ status: "cancelled" })
+        .eq("batch_id", pharmacyBatch.batchId).eq("user_id", userId).eq("status", "pending");
+      await ctx.editMessageReplyMarkup({ reply_markup: { inline_keyboard: [] } }).catch(() => {});
+      await ctx.reply(expired ? "الطلب ده انتهت صلاحيته — ابعت الصورة تاني." : "تمام، ملغي ✖️");
+      return;
+    }
+
+    let target: Record<string, unknown> = {};
+    let forLabel: string | null = null;
+    if (pharmacyBatch.choice.kind === "caption" && open[0].for_person) {
+      target = { for_person: open[0].for_person };
+      forLabel = open[0].for_person;
+    } else if (pharmacyBatch.choice.kind === "member") {
+      const prefix = pharmacyBatch.choice.prefix;
+      const match = (await familyMedicineCandidates(sb, userId).catch(() => []))
+        .filter((m) => m.granted && m.userId.toLowerCase().startsWith(prefix));
+      if (match.length !== 1) {
+        await ctx.reply("مقدرتش ألاقي الفرد ده في عيلتك، أو مابقاش موافق إنك تتابع أدويته. سجّلهم «بتوعي» أو ابعت الصورة تاني.");
+        return;
+      }
+      target = { for_member_id: match[0].userId };
+    }
+
+    const { data: claimedRows, error: claimError } = await sb.from("telegram_pending_pharmacy")
+      .update({ status: "confirmed" })
+      .eq("batch_id", pharmacyBatch.batchId).eq("user_id", userId).eq("status", "pending")
+      .select("id");
+    if (claimError) {
+      await ctx.reply("حصلت مشكلة، جرب تاني.");
+      return;
+    }
+    const claimed = new Set(((claimedRows ?? []) as Array<{ id: string }>).map((r) => r.id));
+    const todo = open.filter((r) => claimed.has(r.id));
+    const names = todo.map((r) => r.name);
+    const added: string[] = [];
+    const failed: string[] = [];
+    let memberName: string | null = null;
+    for (const [i, row] of todo.entries()) {
+      const res = await agentExecute(userId, "add_pharmacy_item", {
+        name: row.name, unit: row.unit, quantity: row.quantity, category: row.category, ...target,
+        // صاحب الصيدلية (لو فرد تاني) بيتبلّغ مرة واحدة بالفاتورة كلها، مع آخر دوا.
+        member_notice: i === todo.length - 1 ? { names, untimed: names } : false,
+      });
+      if (res.ok) {
+        added.push(row.name);
+        memberName ??= routedMemberName(res.summary);
+      } else {
+        console.error("telegram batch add_pharmacy through zad-brain failed:", row.name, (res.summary ?? "no summary").slice(0, 300));
+        failed.push(row.name);
+        // يرجع pending: الزرار نفسه بيعيد اللي فشل بس.
+        await sb.from("telegram_pending_pharmacy").update({ status: "pending" }).eq("id", row.id);
+      }
+    }
+    if (failed.length === 0) await ctx.editMessageReplyMarkup({ reply_markup: { inline_keyboard: [] } }).catch(() => {});
+    await ctx.reply(batchDoneMessage({ added, failed, memberName, forLabel }));
     return;
   }
 
