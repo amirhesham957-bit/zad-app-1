@@ -193,3 +193,22 @@ Deno.test("«ضفت «شراب كحة»» and «بكرة الساعة ٨ أذك�
   assertEquals(unbackedReminderClaim(school, "تبي أذكرك الساعة ٨ الصبح ولا ٧ ونص؟"), false);
   assertEquals(unbackedReminderClaim(school, "تحب أفكرك الساعة كام بالظبط؟"), false);
 });
+
+// ZAD_PLAN ١٠.٧ — بوت تليجرام ١٢/١١: العميل صحّح تصنيف إيداع، والرد وعد «ثواني أظبطها» ومفيش ولا أداة اتنفذت.
+Deno.test("a promise to fix it «in a second» with no tool is a claim; an offer is not", async () => {
+  const { shouldWidenTools, unbackedWriteClaim } = await import("./specialists.ts");
+  const m = "لا دا إيداع تحويل جالي من ضمن المصاريف";
+  for (const r of [
+    "ولا يهمك، خلاص اعتبرناها جوه المصاريف، هعمل تخصيص للإيداع ده. ثواني أظبطها لك 👌",
+    "تمام، ثواني وأعدلها لك",
+    "حاضر، هظبطهالك دلوقتي",
+    "ماشي، هغيرها لمصروف",
+  ]) {
+    assert(unbackedWriteClaim(m, r), r);
+    assert(shouldWidenTools(r), r);
+  }
+  // عرض أو سؤال مش ادعاء.
+  for (const r of ["تحب أظبطها لك كمصروف؟", "لو عايز أغيرها لمصروف قولّي", "تبي أعدلها لك؟"]) {
+    assertEquals(unbackedWriteClaim(m, r), false, r);
+  }
+});

@@ -305,6 +305,48 @@ export function amazonLinkButtons(
   return { text, rows };
 }
 
+/** أقصى عدد زراير تأكيد في لفة واحدة؛ اللي زيادة بيتقال له يتبعت لوحده (رسايل كتير ورا بعض = إزعاج). */
+export const MAX_CONFIRMS_PER_TURN = 5;
+
+/**
+ * ترتيب اقتراحات اللفة على زراير التأكيد (ZAD_PLAN ١٠.٧). كان أول `log_transaction` بس اللي بياخد زرار،
+ * والتاني بيتحجز في telegram_pending_tools من غير زرار، والتالت بيتقاله «ابعتها لوحدها» — فـ«سحبت 500 صرفت
+ * 150 عطارة و 250 كشف» (١٢/١١) اتسجل منها الـ٥٠٠ بس والباقي ضاع، والرسالة اللي بعدها اتقرت كأنها نفس الكلام.
+ * دلوقتي كل اقتراح بزرار: الفلوس الأول بترتيبها، بعدها الباقي، لحد MAX_CONFIRMS_PER_TURN.
+ */
+export function planConfirmations<T extends { tool: string }>(
+  proposals: readonly T[],
+  max = MAX_CONFIRMS_PER_TURN,
+): { ordered: T[]; overflow: T[] } {
+  const all = [
+    ...proposals.filter((p) => p.tool === "log_transaction"),
+    ...proposals.filter((p) => p.tool !== "log_transaction"),
+  ];
+  return { ordered: all.slice(0, Math.max(0, max)), overflow: all.slice(Math.max(0, max)) };
+}
+
+/**
+ * تأكيدات اتجهزت ولسه مستنية زرار العميل، كسياق للفة الجاية (ZAD_PLAN ١٠.٧). ١٢/١١: «و 20 جنيه عيش» بعد «سحبت 500…»
+ * طلّع «سحب ٥٠٠» تاني، لأن العقل شاف في التاريخ «جهزتهم» ومايعرفش إنهم لسه مستنيين. الأسماء جوه البلوك بيانات من
+ * كلام العميل، والتعليمات برّه البلوك. فاضي = مفيش حاجة مستنية.
+ */
+export function pendingConfirmsBlock(
+  rows: ReadonlyArray<{ amount: number | null; title: string | null; txn_kind?: string | null }>,
+  currency: string,
+): string {
+  const shown = rows.slice(0, 8)
+    .map((r) => {
+      const title = String(r.title ?? "").replace(/[\r\n=]+/g, " ").trim().slice(0, 60) || "مصروف";
+      const amount = r.amount == null ? "" : ` — ${r.amount} ${currency}`;
+      return `- ${r.txn_kind === "income" ? "دخل" : "مصروف"}: ${title}${amount}`;
+    });
+  if (shown.length === 0) return "";
+  return "=== عمليات اتجهزت ومستنية زرار تأكيد العميل (لسه ماتسجلتش) ===\n" +
+    shown.join("\n") + "\n" +
+    "=== نهاية العمليات المستنية ===\n" +
+    "ماتقترحش أي عملية من دول تاني — زرارها عند العميل. لو الرسالة اللي تحت فيها عملية جديدة، اقترح الجديدة بس.\n\n";
+}
+
 /** Confirm/cancel for a parsed spend intent. Only the pending-row id travels in
  * callback_data — the amount/title/category live in telegram_pending_writes, because
  * callback_data is capped at 64 bytes and a truncated amount would be a silent
