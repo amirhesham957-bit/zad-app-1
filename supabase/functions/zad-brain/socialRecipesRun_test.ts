@@ -1,6 +1,6 @@
 import { assertEquals } from "jsr:@std/assert@1";
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
-import { rotateForDay, runSocialRecipes, SOCIAL_SLOTS, socialSources, videoCountry } from "./socialRecipesRun.ts";
+import { rotateForDay, runSocialRecipes, SOCIAL_SLOTS, socialRecipeRow, socialSources, videoCountry } from "./socialRecipesRun.ts";
 
 Deno.test("every source lands in exactly one slot", () => {
   const all = [0, 1, 2].flatMap((s) => socialSources(s)).map((s) => JSON.stringify(s));
@@ -64,4 +64,29 @@ Deno.test("a read video is stored, and only a known store's deal goes live", asy
   // Each deal is filed under the platform it came from.
   const kinds = puts.map((p) => ((p as { p: { source_kind?: string } }).p).source_kind);
   assertEquals(new Set(kinds).size > 1, true);
+});
+
+// ZAD_PLAN ١٠.٩: اسم قناة يوتيوب أطول من ٤٠ كان بيكسر الصف كله (zad_social_recipes_handle_check)، والفيديو بيتقري تاني كل يوم.
+Deno.test("a recipe row always fits the table: long channel names cut, odd recipe names dropped, not the row", () => {
+  const source = { platform: "youtube" as const, topic: "محشي", country: "EG" };
+  const video = (handle: string, name: string | null) => ({ url: "https://www.youtube.com/watch?v=1", handle, recipe: name === null ? null : { name, ingredients: ["رز"] }, stores: [], deals: [] });
+  const long = socialRecipeRow(source, video("قناة مطبخ ".repeat(8), "محشي كرنب"));
+  assertEquals((long.handle as string).length <= 40, true);
+  assertEquals(long.name, "محشي كرنب");
+  assertEquals(socialRecipeRow(source, video("  ", "x")).handle, "youtube");
+  assertEquals(socialRecipeRow(source, video("a", "x")).name, null, "a one-letter name would break the name check");
+  assertEquals((socialRecipeRow(source, video("a", "و".repeat(120))).name as string).length, 80);
+  assertEquals(socialRecipeRow(source, video("a", null)).name, null);
+});
+
+Deno.test("a platform that brings nothing says why in the run summary", async () => {
+  const chain = (data: unknown) => {
+    const c: Record<string, unknown> = { select: () => c, order: () => c, limit: () => Promise.resolve({ data }), in: () => Promise.resolve({ data }) };
+    return c;
+  };
+  const sb = { from: () => ({ ...chain([]), upsert: () => Promise.resolve({ error: null }) }), rpc: () => Promise.resolve({ data: null, error: null }) } as unknown as SupabaseClient;
+  const out = await runSocialRecipes(sb, 0, (p) =>
+    Promise.resolve(p.platform === "instagram" ? { ok: false, reason: "no_key" } as never : { ok: true, videos: [], search: p.platform === "tiktok" ? "google_news" : "youtube" } as never), new Date(0));
+  assertEquals(Object.keys(out.empty).sort().filter((k) => k.startsWith("tiktok")), ["tiktok:search:google_news"]);
+  assertEquals(out.empty["instagram:no_key"] > 0, true);
 });
