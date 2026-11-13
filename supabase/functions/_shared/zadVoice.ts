@@ -264,7 +264,8 @@ export const MOMENT_EMOTIONS: Record<string, VoiceEmotion> = {
   place_reminder: "playful",
   goal_achieved: "proud",
   tasbiha_reminder: "playful",
-  ignored_days: "sulky",
+  // «زاد يسأل عليك» (ZAD_PLAN ١٠.١٢): سؤال صاحب، مش عتاب — اللي غاب مايتلامش.
+  ignored_days: "caring",
   // «فين راحت فلوسي؟» كل جمعة — النبرة بتتحدد من الأرقام (voiceMoments.summarizeWeek).
   weekly_money_proud: "proud",
   // حكاية البيت الشهرية (ZAD_PLAN ٥.٢).
@@ -316,7 +317,7 @@ export const MOMENT_EMOTION_RANGE: Record<string, readonly VoiceEmotion[]> = {
   place_reminder: ["playful", "cheerful", "caring"],
   goal_achieved: ["proud", "cheerful", "playful"],
   tasbiha_reminder: ["playful", "tender", "warm"],
-  ignored_days: ["sulky", "sad", "playful"],
+  ignored_days: ["caring", "warm", "playful", "tender"],
   weekly_money_proud: ["proud", "cheerful", "playful"],
   weekly_money_reproach: ["reproachful", "playful", "worried"],
   weekly_money_story: ["warm", "cheerful", "caring"],
