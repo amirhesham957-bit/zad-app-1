@@ -90,7 +90,7 @@ import { pickPantryMatch, samePantryItem, type PantryRow } from "./pantryMatch.t
 import { txnSourceType } from "./provenance.ts";
 import { productNameKey } from "./productIdentity.ts";
 import { dealCodeRows } from "./dealCodes.ts";
-import { loadHomeDeals, loadSeasonDigest } from "./seasonDigest.ts";
+import { loadHomeDeals, loadSeasonDigest, ownOffersOpenedBy } from "./seasonDigest.ts";
 import { findChatDeals } from "./chatDeals.ts";
 import { webPrice, webPriceReply } from "./webPrice.ts";
 import { brokeModePlan, isBrokeModeActive } from "../_shared/brokeMode.ts";
@@ -10860,8 +10860,22 @@ async function handleRequest(req: Request): Promise<Response> {
       }
       const polarity: Polarity = body.signal === "dismiss" ? "dislike" : "like";
       const sbSignal = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
-      for (const t of signalTerms(String(body.item ?? "").slice(0, 80), String(body.store ?? "").slice(0, 60)).slice(0, 2)) {
+      const signalStore = String(body.store ?? "").slice(0, 60);
+      for (const t of signalTerms(String(body.item ?? "").slice(0, 80), signalStore).slice(0, 2)) {
         await bumpAffinity(sbSignal, signalUser, polarity, t, 0.5);
+      }
+      // ١٠.١٤: ضغطة على كارت محل عنده كود منه في إشعاره = فتح عرضه (opened_at). بتاعه هو بس — الفلتر على user_id.
+      if (polarity === "like" && signalStore.trim()) {
+        const { data: ownRows } = await sbSignal.from("zad_notification_offers")
+          .select("id,store,opened_at,expires_at").eq("user_id", signalUser).is("opened_at", null)
+          .gt("expires_at", new Date().toISOString()).limit(20)
+          .then((r) => r, () => ({ data: null }));
+        const opened = ownOffersOpenedBy((ownRows ?? []) as Array<{ id: string; store: string | null; opened_at: string | null; expires_at: string }>, signalStore);
+        if (opened.length) {
+          const { error: openErr } = await sbSignal.from("zad_notification_offers")
+            .update({ opened_at: new Date().toISOString() }).eq("user_id", signalUser).in("id", opened);
+          if (openErr) console.warn("[deal_signal] offer opened mark failed:", openErr.message);
+        }
       }
       return new Response(JSON.stringify({ ok: true }), { headers: CORS_HEADERS });
     }
