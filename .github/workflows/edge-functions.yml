@@ -251,6 +251,7 @@ jobs:
           supabase/sql/tests/scratch_scaffold.sql supabase/sql/tests/goals_over_days_scaffold.sql supabase/migrations/20261113070000_goals_over_days.sql supabase/sql/tests/goals_over_days_test.sql
           supabase/sql/tests/scratch_scaffold.sql supabase/sql/tests/household_shopping_scaffold.sql supabase/migrations/20261011140000_one_household_shopping_list.sql supabase/sql/tests/product_identity_scaffold.sql supabase/migrations/20261011200000_product_identity.sql supabase/sql/tests/loop_guard_scaffold.sql supabase/migrations/20261011220000_loop_guard.sql supabase/migrations/20261113080000_guardians_wake.sql supabase/sql/tests/loop_guard_test.sql
           supabase/sql/tests/scratch_scaffold.sql supabase/sql/tests/guardian_outcomes_scaffold.sql supabase/migrations/20261011230000_guardian_outcomes.sql supabase/sql/tests/guardian_proposals_test.sql
+          supabase/sql/tests/scratch_scaffold.sql supabase/migrations/20261020090000_companion_care.sql supabase/sql/tests/pet_call_scaffold.sql supabase/migrations/20261020100000_pet_call.sql supabase/sql/tests/pet_calls_honor_pause_scaffold.sql supabase/migrations/20261108150000_pet_calls_switch.sql supabase/sql/tests/guardian_outcomes_scaffold.sql supabase/migrations/20261011230000_guardian_outcomes.sql supabase/migrations/20261011240000_guardian_proposals.sql supabase/migrations/20261113090000_pet_calls_honor_pause.sql supabase/sql/tests/pet_calls_honor_pause_test.sql
           LIST
 
   # النشر من الريبو، بعد ما الفحص يعدي — مش من على جهاز حد.
