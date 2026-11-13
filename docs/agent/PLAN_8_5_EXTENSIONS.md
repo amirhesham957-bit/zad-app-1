@@ -11,7 +11,11 @@ related:
 # خطة ٨.٥ — نقل `pg_net` و`vector` من `public` لـ`extensions`
 
 > [!info] الحالة
-> خطة مكتوبة بس — **مااتنفذش منها حاجة**. كل الأرقام اتقاست على الحي ١٣/١١/٢٠٢٦.
+> الخطوة ١ (`vector`، #548) والخطوة ٢ الجزء ١ (التريجرز، #550) اندمجوا. الجزء ٢ (نقل `pg_net`) = `20261113180000`،
+> واتجرّب محلياً على امتداد بديل SQL بس (`supabase/sql/tests/pg_net_standin/`) — نفس `relocatable = false` ونفس
+> الـgrants لـPUBLIC — لأن CI مافيهوش pg_net. كل الأرقام اتقاست على الحي ١٣/١١/٢٠٢٦.
+> **اتقاس كمان:** صاحب الامتداد `supabase_admin` و`postgres` مش superuser (زي `vector` اللي اتنقل بنجاح عن طريق
+> supautils)؛ والـevent trigger `issue_pg_net_access` بيدّي `USAGE` على `net` للخمس أدوار تلقائياً بعد `create extension`.
 > كل امتداد في PR لوحده، و`vector` الأول لأنه أسهل يترجع.
 
 ## ليه
