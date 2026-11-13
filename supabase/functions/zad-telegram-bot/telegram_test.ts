@@ -112,10 +112,10 @@ Deno.test("formatTransactionsMessage signs expenses and income differently", () 
   assert(msg.includes("+5000.00"));
 });
 
-Deno.test("mainMenuKeyboard has exactly the three read-only v1 options", () => {
+Deno.test("mainMenuKeyboard has the three read-only options plus Amazon picks (١٠.٤)", () => {
   const kb = mainMenuKeyboard();
-  assertEquals(kb.length, 3);
-  assertEquals(kb.flat().map((b) => b.callback_data).sort(), ["b", "i", "t"]);
+  assertEquals(kb.length, 4);
+  assertEquals(kb.flat().map((b) => b.callback_data).sort(), ["az", "b", "i", "t"]);
 });
 
 Deno.test("dismissKeyboard encodes the insight id and all three reason codes", () => {
