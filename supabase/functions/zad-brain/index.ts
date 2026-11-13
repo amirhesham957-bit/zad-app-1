@@ -2970,18 +2970,7 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
         return `"${medName}" مسجل عندك خلاص بنفس البيانات — مضفتش نسخة تانية`;
       }
 
-      // zad_pharmacy_unit (migration 20261001220000) is the rule for every path; this
-      // mirrors it so the row the tool writes is already what the trigger keeps.
-      const rawUnit = String(input.unit ?? "قرص").trim();
-      const normalizedUnit = /^(حب|قرص|أقراص|اقراص)/.test(rawUnit) ? "قرص"
-        : rawUnit.startsWith("كبسول") ? "كبسولة"
-        : rawUnit.startsWith("كيس") || rawUnit.startsWith("أكياس") ? "كيس"
-        : rawUnit.startsWith("أمبول") ? "أمبول"
-        : rawUnit.startsWith("مل") ? "مل"
-        : /^(كريم|مرهم|جل|جيل|دهان|لوشن)/.test(rawUnit) ? "دهان"
-        : rawUnit.startsWith("بخاخ") ? "بخاخ"
-        : rawUnit.startsWith("نقط") || rawUnit.startsWith("قطر") ? "نقطة"
-        : "قرص";
+      const normalizedUnit = pharmacyUnit(input.unit);
 
       const w = await writeRows(
         sb.from("zad_pharmacy_items").insert({
@@ -5640,7 +5629,9 @@ export const CHAT_TOOLS: ToolDef[] = [
         daily_dose_count: { type: "number", description: "لازم يساوي عدد المواعيد في dose_times" },
         dose_times: { type: "string", description: "الساعات اللي العميل نطقها بنفسه بس، HH:MM مفصولة بفاصلة، ٢٤ ساعة. ممنوع 24:00 — استخدم 00:00. سيبها فاضية لو هو قال عدد مرات بس." },
         times_explicit: { type: "boolean", description: "true بس لو العميل نطق الساعات دي حرفياً في كلامه" },
-        unit: { type: "string", enum: ["قرص", "أقراص", "حبة", "حبات", "حبوب", "كبسولة", "كبسولات", "مل", "كريم", "مرهم", "دهان", "بخاخ", "نقطة", "قطرة", "كيس", "أكياس", "أمبول", "أمبولات", "علبة"] },
+        // نص حر (١٣/١١): «شريط» من الفاتورة كان بيترفض من الـenum قبل ما يوصل للمعالجة — ٥ من ٧ أدوية عند المالك.
+        // zad_pharmacy_unit في الداتابيز هي القاعدة: المعروف بيتوحّد والباقي بيفضل زي ما اتكتب.
+        unit: { type: "string", description: "وحدة العبوة زي ما اتقالت أو اتكتبت في الفاتورة: قرص، كبسولة، شريط، علبة، زجاجة، مل، بخاخ، نقطة، كريم، كيس، أمبول" },
         quantity: { type: "number", description: "الكمية المتاحة عنده" },
         category: { type: "string", enum: ["عام", "مسكن", "مضاد حيوي", "فيتامين", "مزمن"] },
         for_person: { type: "string", description: "لو الدوا لحد تاني غير العميل (أمه، أبوه، ابنه…) اكتب اسمه زي ما العميل قاله («ماما»، «يوسف»). فاضي = العميل نفسه." },
@@ -9402,6 +9393,21 @@ function promptSnapshot(snap: any): Record<string, unknown> {
   const out: Record<string, unknown> = { ...(snap ?? {}) };
   for (const key of HOUSE_SECTIONS_ON_REQUEST) delete out[key];
   return out;
+}
+
+/**
+ * وحدة الدوا زي zad_pharmacy_unit في الداتابيز بالظبط (migration 20261001220000): المعروف بيتوحّد والباقي بيفضل زي
+ * ما اتكتب. قبل ١٣/١١ اللي مش معروف كان بيبقى «قرص»، فـ«علبة» و«شريط» من الفاتورة كانوا بيتسجلوا قرص واحد.
+ */
+export function pharmacyUnit(raw: unknown): string {
+  const unit = String(raw ?? "").trim();
+  if (!unit) return "قرص";
+  const u = unit.toLowerCase();
+  if (/^(حب|قرص|أقراص|اقراص|tab|pill)/.test(u)) return "قرص";
+  if (/^(كريم|مرهم|جل|جيل|دهان|لوشن|cream|ointment|gel|lotion)/.test(u)) return "دهان";
+  if (/^(كبسول|cap)/.test(u)) return "كبسولة";
+  if (/^(نقط|نقطة|قطر)/.test(u)) return "نقطة";
+  return unit.slice(0, 30);
 }
 
 /** سطور قواعد اختيارية: اللي فاضي مابيتكتبش (٣.٢ — «مفيش tone.» وأخواتها كانوا بيتبعتوا مع كل لفة). */

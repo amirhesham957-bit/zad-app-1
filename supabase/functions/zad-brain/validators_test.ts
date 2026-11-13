@@ -845,9 +845,10 @@ Deno.test("add_pharmacy_item rejects a dose count that disagrees with the schedu
   assertEquals(v.ok, false);
 });
 
-Deno.test("add_pharmacy_item rejects an unknown unit", async () => {
-  const v = await validateAddPharmacyItem({ name: "دوا", unit: "زجاجة" }, {}, freshContext("u"));
-  assertEquals(v.ok, false);
+// ١٣/١١: الوحدة نص حر — «زجاجة» و«شريط» من الفاتورة وحدات حقيقية، والرفض كان بيوقّع تسجيل الدوا (pharmacyStripUnit_test).
+Deno.test("add_pharmacy_item accepts a unit outside the old list, and bounds its length", async () => {
+  assertEquals((await validateAddPharmacyItem({ name: "دوا", unit: "زجاجة" }, {}, freshContext("u"))).ok, true);
+  assertEquals((await validateAddPharmacyItem({ name: "دوا", unit: "x".repeat(31) }, {}, freshContext("u"))).ok, false);
 });
 
 // ── add_subscription / update_subscription / delete_subscription ────────────
