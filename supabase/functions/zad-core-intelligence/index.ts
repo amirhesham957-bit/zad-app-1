@@ -44,6 +44,7 @@ async function callerCountry(req: Request, userId: unknown): Promise<string | nu
 }
 import { googleNearbyAny, googlePlacesKeys } from "./googlePlaces.ts";
 import { dealRelevance, loadAffinity, rankByRelevance } from "../_shared/dealRelevance.ts";
+import { cseCaps, type SearchPurpose, takeCse } from "./cseBudget.ts";
 import { DEAL_SEARCH_CACHE_MS, dealSearchCacheKey, refused, SOURCE_REST_MS, withoutResting } from "./sourcePool.ts";
 import { tiktokDealHits, tiktokDealsPrompt, tiktokQuery, withPriceFromPercent } from "./tiktokDeals.ts";
 import { isFreshPick, PICK_MIN_LIKES, readSocialPick, type SocialPick, tiktokPostedAt } from "./socialPicks.ts";
@@ -554,7 +555,7 @@ async function storeInstagramAccount(
   const { data: known } = await supabase.from("zad_deal_store_accounts")
     .select("username, checked_at").eq("country", country).eq("store", store).eq("platform", "instagram").maybeSingle();
   if (known && Date.now() - Date.parse(String(known.checked_at)) < 30 * 86_400_000) return known.username ?? null;
-  const hits = await webSearchSnippets(`${searchStoreName(store)} instagram ${countryName}`, 8, country);
+  const hits = await webSearchSnippets(`${searchStoreName(store)} instagram ${countryName}`, 8, country, undefined, "deals");
   let username: string | null = null;
   let followers: number | null = null;
   for (const candidate of instagramHandles(hits.map((h) => h.url)).slice(0, 2)) {
@@ -1525,7 +1526,7 @@ async function callGroundedJson(systemPrompt: string, userPrompt: string): Promi
 async function dealsFromWebSearch(
   items: string[], location: string, country: unknown,
 ): Promise<{ deals: ReturnType<typeof readDeals>; sources: string[] } | null> {
-  const perItem = await Promise.all(items.map((item) => webSearchSnippets(dealQuery(item, location), 4, country)));
+  const perItem = await Promise.all(items.map((item) => webSearchSnippets(dealQuery(item, location), 4, country, undefined, "deals")));
   const seen = new Set<string>();
   const hits = perItem.flat().filter((h) => !seen.has(h.url) && seen.add(h.url)).slice(0, 16);
   if (hits.length === 0) return null;
@@ -1610,12 +1611,15 @@ async function tavilySnippets(query: string, maxResults: number): Promise<WebHit
  * Groq compound اتشال، بحث Gemini خلصت كوتته، وBing News أخبار بس — «مين كسب كاس العالم للأندية
  * آخر مرة؟» مالوش إجابة فيها. الاتنين ليهم باقة مجانية؛ أول ما مفتاح يتحط في Supabase يبقى أول مصدر.
  */
-async function keyedSearchSnippets(query: string, maxResults: number): Promise<WebHit[]> {
+async function keyedSearchSnippets(query: string, maxResults: number, purpose: SearchPurpose = "other"): Promise<WebHit[]> {
   // جوجل Programmable Search (٢٠٢٦-١٠-١٨، مفتاح المالك): بحث حقيقي في الويب كله، باقة مجانية يومية.
   // محتاج المفتاح ورقم المحرك (cx) الاتنين — واحد من غير التاني مايشتغلش، فبيتخطّى بهدوء.
   const googleKey = Deno.env.get("GOOGLE_SEARCH_API_KEY") ?? Deno.env.get("GOOGLE_CSE_KEY");
   const googleCx = Deno.env.get("GOOGLE_SEARCH_CX") ?? Deno.env.get("GOOGLE_CSE_ID");
-  if (googleKey && googleCx) {
+  // حصة CSE متقسّمة (١٠.٩): العروض ماتاخدش أكتر من نصيبها، فالوصفات (تيك توك) والشات يفضلّهم رصيد.
+  const budget = googleKey && googleCx ? await takeCse((fn, args) => supabase.rpc(fn, args), purpose, cseCaps((n) => Deno.env.get(n))) : null;
+  if (budget?.note) lastWebSearchAttempts.push(`google_cse:${budget.note}`);
+  if (googleKey && googleCx && budget?.ok) {
     try {
       const url = `https://www.googleapis.com/customsearch/v1?key=${encodeURIComponent(googleKey)}&cx=${encodeURIComponent(googleCx)}` +
         `&q=${encodeURIComponent(query)}&num=${Math.min(10, Math.max(1, maxResults))}`;
@@ -1782,33 +1786,35 @@ async function restSource(name: string, reason: string): Promise<void> {
 }
 
 /** بحث العروض بكاش ٦ ساعات، عشان السيرفر مايسألش نفس السؤال. نتيجة فاضية مابتتحفظش. */
-async function cachedDealSearch(query: string, maxResults: number, country: unknown): Promise<WebHit[]> {
+async function cachedDealSearch(query: string, maxResults: number, country: unknown, purpose: SearchPurpose): Promise<WebHit[]> {
   const key = dealSearchCacheKey(query, maxResults, country);
   const cached = await getCachedAiResponse(key, DEAL_SEARCH_CACHE_MS);
   if (Array.isArray(cached?.hits)) {
     lastWebSearchSource = "cache";
     return cached.hits as WebHit[];
   }
-  const hits = await webSearchSnippets(query, maxResults, country);
+  const hits = await webSearchSnippets(query, maxResults, country, undefined, purpose);
   if (hits.length > 0) await setCachedAiResponse(key, "deal_search", { hits });
   return hits;
 }
 
-export async function webSearchSnippets(query: string, maxResults = 8, country?: unknown, queryEn?: string): Promise<WebHit[]> {
+export async function webSearchSnippets(
+  query: string, maxResults = 8, country?: unknown, queryEn?: string, purpose: SearchPurpose = "other",
+): Promise<WebHit[]> {
   lastWebSearchAttempts = [];
   const arabic = /[\u0600-\u06FF]/.test(query);
   const live = isLiveQuery(query);
   const sources: Array<[string, () => Promise<WebHit[]>]> = live
     ? [
       ["bing_news", () => bingNewsSnippets(query, arabic, 10, country)],
-      ["search_api", () => keyedSearchSnippets(query, maxResults)],
+      ["search_api", () => keyedSearchSnippets(query, maxResults, purpose)],
       ["tavily", () => tavilySnippets(query, maxResults)],
       ["google_news", () => googleNewsSnippets(query, arabic, 10, country)],
       ["gemini_google_search", () => groundedSearchSnippets(query, maxResults)],
       ["groq_compound", () => compoundSearchSnippets(query, maxResults)],
     ]
     : [
-      ["search_api", () => keyedSearchSnippets(query, maxResults)],
+      ["search_api", () => keyedSearchSnippets(query, maxResults, purpose)],
       ["tavily", () => tavilySnippets(query, maxResults)],
       ["gemini_google_search", () => groundedSearchSnippets(query, maxResults)],
       // معلومة ثابتة أو حدث عدّى: الموسوعة قبل الأخبار (٢٠٢٦-١٠-٠٢). بتتفلتر هنا لكل لغة على سؤالها.
@@ -3275,7 +3281,7 @@ async function handle(req: Request): Promise<Response> {
         const currency = typeof payload?.currency === "string" ? payload.currency.toUpperCase() : market.currency;
         // ٤.٣: مدينة الهدف لو معروفة ('' = البلد كله).
         const city = cleanCity(payload?.city);
-        const hits = await cachedDealSearch(storeDealsQuery(store, market.name, city), 8, market.code);
+        const hits = await cachedDealSearch(storeDealsQuery(store, market.name, city), 8, market.code, "deals");
         if (hits.length === 0) return jsonResponse({ ok: true, deals: [], hits: 0, source: lastWebSearchSource });
         const { system, user } = storeDealsPrompt(store, market.name, currency, hits, new Date().toISOString().slice(0, 10), city);
         const parsed = await callJsonModel(system, user, 1500, "routine");
@@ -3393,7 +3399,7 @@ async function handle(req: Request): Promise<Response> {
           found = ig.items.length;
           hits = instagramRecipeHits(ig.items, handle, known, 3);
         } else {
-          const searched = await cachedDealSearch(handle ? recipeAccountQuery(handle) : recipeTopicQuery(topic, marketOf(countryCode).name), 10, countryCode ?? undefined);
+          const searched = await cachedDealSearch(handle ? recipeAccountQuery(handle) : recipeTopicQuery(topic, marketOf(countryCode).name), 10, countryCode ?? undefined, "recipes");
           found = searched.length;
           hits = socialVideoHits(searched, handle, known, handle ? null : countryCode, 3);
         }
@@ -3419,7 +3425,7 @@ async function handle(req: Request): Promise<Response> {
         // نوع المحل بيحدد كلمات البحث. فشل القراية = «عروض» بس، زي الأول.
         const { data: seedRow } = await supabase.from("zad_deal_seed_stores").select("kind").eq("country", country).eq("store", store).maybeSingle()
           .then((r) => r, () => ({ data: null }));
-        const found = await cachedDealSearch(tiktokQuery(store, market.name, city, (seedRow as { kind?: string } | null)?.kind), 10, country);
+        const found = await cachedDealSearch(tiktokQuery(store, market.name, city, (seedRow as { kind?: string } | null)?.kind), 10, country, "deals");
         const videos = tiktokDealHits(found, store, country, 3);
         const today = new Date().toISOString().slice(0, 10);
         const deals: ReturnType<typeof readStoreDeals> = [];

@@ -29,6 +29,7 @@ export function mainMenuKeyboard(): InlineKeyboardButton[][] {
     [{ text: "الرصيد المتبقي", callback_data: "b" }],
     [{ text: "آخر المعاملات", callback_data: "t" }],
     [{ text: "التنبيهات المعلقة", callback_data: "i" }],
+    [{ text: "🛒 ناقصك إيه من أمازون؟", callback_data: "az" }],
   ];
 }
 

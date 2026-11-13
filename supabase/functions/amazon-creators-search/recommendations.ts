@@ -8,75 +8,10 @@
 // هنا الاحتياج بيتحسب من المخزون + معدل الاستهلاك + قايمة التسوق، واللينك بيتبني بالتاج والدومين
 // من أسرار المشروع. كل التاج من السيرفر: تغيير السر يغيّر كل اللينكات من غير نسخة جديدة.
 
-export interface InventoryRow { item_name: string; quantity: number | null; low_stock_threshold: number | null; unit?: string | null }
-export interface ConsumptionRow { item_name: string; avg_daily_qty: number | null; rate_known: boolean | null }
-export interface ShoppingRow { item_name: string; is_purchased: boolean | null }
-export interface CatalogRow {
-  id: string; product_name_ar: string; product_name_search_keywords: string[] | null;
-  asin: string | null; asin_verified: boolean | null; image_url: string | null; average_price_sar: number | null; is_active: boolean | null;
-}
-
-export interface Need { name: string; reason: string; score: number; days_left: number | null }
-
-
-export function normalizeAr(raw: string): string {
-  return raw.trim().toLowerCase()
-    .replace(/[ً-ْـ]/g, "")
-    .replace(/[أإآ]/g, "ا")
-    .replace(/ة/g, "ه")
-    .replace(/ى/g, "ي")
-    .replace(/\s+/g, " ");
-}
-
 // المتجر والتاج حسب بلد العميل — في _shared/amazonMarket.ts، نفس اللي zad-brain بيستعمله.
 export { marketFor, productUrl, searchUrl } from "../_shared/amazonMarket.ts";
 export type { AmazonMarket } from "../_shared/amazonMarket.ts";
 
-/** الاحتياج الحقيقي: خلص (٤) > هيخلص خلال ٣ أيام حسب استهلاكه (٤) > قليل (٣) > في قايمة التسوق (٢) > بيستهلكه باستمرار وقرّب (١). */
-export function computeNeeds(inv: InventoryRow[], cons: ConsumptionRow[], shopping: ShoppingRow[], limit = 10): Need[] {
-  const rate = new Map(cons.filter((c) => c.rate_known && (c.avg_daily_qty ?? 0) > 0).map((c) => [normalizeAr(c.item_name), Number(c.avg_daily_qty)]));
-  const needs = new Map<string, Need>();
-  const consider = (name: string, score: number, reason: string, daysLeft: number | null = null) => {
-    const key = normalizeAr(name);
-    if (!key) return;
-    const prev = needs.get(key);
-    if (!prev || score > prev.score) needs.set(key, { name: name.trim(), reason, score, days_left: daysLeft });
-  };
-  for (const item of inv) {
-    const qty = Number(item.quantity ?? 0);
-    const r = rate.get(normalizeAr(item.item_name));
-    const daysLeft = r ? Math.max(0, Math.round((qty / r) * 10) / 10) : null;
-    if (qty <= 0) consider(item.item_name, 4, "خلص من مخزونك", 0);
-    else if (daysLeft !== null && daysLeft <= 3) consider(item.item_name, 4, `هيخلص خلال ${Math.max(1, Math.ceil(daysLeft))} يوم حسب استهلاكك`, daysLeft);
-    else if (qty <= Number(item.low_stock_threshold ?? 2)) consider(item.item_name, 3, "قارب على النفاد", daysLeft);
-    else if (daysLeft !== null && daysLeft <= 10) consider(item.item_name, 1, "بتستهلكه باستمرار", daysLeft);
-  }
-  for (const s of shopping) if (!s.is_purchased) consider(s.item_name, 2, "في قايمة التسوق");
-  return [...needs.values()].sort((a, b) => b.score - a.score || (a.days_left ?? 99) - (b.days_left ?? 99)).slice(0, limit);
-}
-
-/** صف كتالوج متحقق منه بيدّي صورة وسعر ولينك منتج مباشر؛ غير كده بحث بالتاج (مستحيل يرجّع 404). */
-export function matchCatalog(need: Need, catalog: CatalogRow[]): CatalogRow | null {
-  const key = normalizeAr(need.name);
-  let best: CatalogRow | null = null;
-  let bestScore = 0;
-  for (const p of catalog) {
-    if (!p.is_active) continue;
-    const hay = [p.product_name_ar, ...(p.product_name_search_keywords ?? [])].map(normalizeAr).filter(Boolean);
-    const score = hay.some((h) => h === key) ? 2 : hay.some((h) => h.length >= 2 && (h.includes(key) || key.includes(h))) ? 1 : 0;
-    if (score > bestScore) { bestScore = score; best = p; }
-  }
-  return best;
-}
-
-/** The URL when Amazon itself serves it (a product photo), else null — never a stock picture. */
-export function amazonImageOrNull(url: unknown): string | null {
-  if (typeof url !== "string") return null;
-  let u: URL;
-  try { u = new URL(url.trim()); } catch { return null; }
-  if (u.protocol !== "https:") return null;
-  const host = u.hostname.toLowerCase();
-  const hosts = ["m.media-amazon.com", "images-na.ssl-images-amazon.com", "images-eu.ssl-images-amazon.com",
-    "images-fe.ssl-images-amazon.com", "images-amazon.com", "ssl-images-amazon.com"];
-  return hosts.some((h) => host === h || host.endsWith(`.${h}`)) ? u.toString() : null;
-}
+// الاحتياج والمطابقة في _shared/amazonNeeds.ts — نفسها اللي بوت تليجرام بيرشّح بيها (١٠.٤).
+export { amazonImageOrNull, computeNeeds, matchCatalog, normalizeAr } from "../_shared/amazonNeeds.ts";
+export type { CatalogRow, ConsumptionRow, InventoryRow, Need, ShoppingRow } from "../_shared/amazonNeeds.ts";
