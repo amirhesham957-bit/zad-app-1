@@ -48,3 +48,22 @@ export function goalPace(goal: GoalPaceInput, now: Date = new Date()): GoalPaceR
   else pace = "on_track";
   return { pace, expected_by_now: expected, days_left: daysLeft };
 }
+
+/**
+ * ZAD_PLAN ١٠.٢(د) — «وفّرلي ٢٠٠٠ قبل رمضان» تتقسم خطوات: هدف فلوس بميعاد ⇒ يحط كام في الأسبوع من النهارده عشان
+ * يوصل (الباقي ÷ الأسابيع الباقية، لفوق لأقرب واحد). null = مالوش رقم أو ميعاد، أو خلص، أو الميعاد عدى.
+ */
+export function stepPerWeek(
+  goal: Pick<GoalPaceInput, "target_value" | "current_value" | "deadline_date">,
+  now: Date = new Date(),
+): number | null {
+  const target = Number(goal.target_value);
+  const current = Number(goal.current_value ?? 0);
+  const end = goal.deadline_date ? Date.parse(`${goal.deadline_date}T23:59:59Z`) : NaN;
+  if (!(target > 0) || !Number.isFinite(current) || !Number.isFinite(end)) return null;
+  const remaining = target - current;
+  const t = now.getTime();
+  if (remaining <= 0 || t > end) return null;
+  const weeksLeft = Math.max(1, Math.ceil((end - t) / (7 * DAY_MS)));
+  return Math.ceil(remaining / weeksLeft);
+}

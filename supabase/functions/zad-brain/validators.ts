@@ -1043,6 +1043,21 @@ export const validateQueryFamily: Validator = (_input, _snap, ctx) => {
   return { ok: true };
 };
 
+/** ١٠.٢(د): «حطيت ٥٠٠ للمصيف» — هدف فلوس موجود في life_goals، ورقم قاله العميل. */
+export const validateAddGoalProgress: Validator = (input, snap, ctx) => {
+  if ((ctx.counts["add_goal_progress"] ?? 0) >= 2) return { ok: false, reason: "اتسجل كفاية في اللفة دي" };
+  const amount = Number(input.amount);
+  if (!Number.isFinite(amount) || amount === 0 || Math.abs(amount) > 100_000_000) {
+    return { ok: false, reason: "amount لازم رقم مش صفر — المبلغ اللي العميل قاله" };
+  }
+  const title = String(input.goal_title ?? "").trim();
+  const goals = ((snap as { life_goals?: Array<{ title?: unknown; kind?: unknown }> } | null)?.life_goals ?? []);
+  const goal = goals.find((g) => g.title === title);
+  if (!goal) return { ok: false, reason: "goal_title لازم يكون عنوان هدف من life_goals بالظبط" };
+  if (goal.kind !== "amount") return { ok: false, reason: "الهدف ده مش مبلغ — تقدمه بيتحسب من المهام لوحده" };
+  return { ok: true };
+};
+
 // حلقة الأهداف — هدف حياة طويل المدى العميل حطه. العقل يقدر يضيف أو يلغي بس،
 // التقدم بيتحسب من إنجاز المهام المرتبطة (trigger سيرفر-سايد) مش من هنا.
 export const validateSetLifeGoal: Validator = (input, _snap, ctx) => {
@@ -1054,6 +1069,10 @@ export const validateSetLifeGoal: Validator = (input, _snap, ctx) => {
   if (input.target_value != null) {
     const t = Number(input.target_value);
     if (!Number.isFinite(t) || t <= 0 || t > 100_000_000) return { ok: false, reason: "target_value لازم رقم موجب منطقي" };
+    // ١٠.٢(د): من غير unit هدف الفلوس كان بيتعد «مهام» — متابعة أسبوعية بتزوّد ١ على الـ٢٠٠٠.
+    if (input.action !== "cancel" && input.unit !== "money" && input.unit !== "count") {
+      return { ok: false, reason: "unit لازم مع target_value: money لو مبلغ فلوس، count لو عدد مرات" };
+    }
   }
   if (input.deadline_date != null && Number.isNaN(new Date(String(input.deadline_date)).getTime())) {
     return { ok: false, reason: "deadline_date لازم تاريخ صحيح" };
@@ -1247,6 +1266,7 @@ export const VALIDATORS: Record<string, Validator> = {
   schedule_task: validateScheduleTask,
   query_family: validateQueryFamily,
   set_life_goal: validateSetLifeGoal,
+  add_goal_progress: validateAddGoalProgress,
   remember_occasion: validateRememberOccasion,
   emit_insight: validateEmitInsight,
   ask_user: validateAskUser,
@@ -1378,6 +1398,8 @@ export const MUTATING_TOOLS = [
   "clear_place_visits", "rate_recipe", "dismiss_insight",
   // ١٠.٢(ج): مشاركة ملاحظة مع العيلة بموافقة صاحبها.
   "share_memory_with_family",
+  // ١٠.٢(د): تقدم هدف فلوس بكلام العميل.
+  "add_goal_progress",
   // مواعيد العميل (20260914004000)
   "add_appointment", "update_appointment", "delete_appointment",
   "add_place_reminder", "cancel_place_reminder",
