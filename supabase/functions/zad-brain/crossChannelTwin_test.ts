@@ -26,8 +26,9 @@ Deno.test("إشعارين من نفس التطبيق مابيتدمجوش — م
   assertEquals(pickCrossChannelTwin([sib()], { ...insta, packageName: "com.google.android.apps.messaging" }, NOW), null);
 });
 
-Deno.test("بعد ٥ دقايق، أو عملة تانية، أو اتجاه عكسي = مش دمج", () => {
-  assertEquals(pickCrossChannelTwin([sib({ created_at: ago(6 * 60) })], insta, NOW), null);
+Deno.test("بعد ١٥ دقيقة، أو عملة تانية، أو اتجاه عكسي = مش دمج (١٣/١١: النافذة ±١٥)", () => {
+  assertEquals(pickCrossChannelTwin([sib({ created_at: ago(14 * 60) })], insta, NOW)?.id, "p1");
+  assertEquals(pickCrossChannelTwin([sib({ created_at: ago(16 * 60) })], insta, NOW), null);
   assertEquals(pickCrossChannelTwin([sib({ currency: "USD" })], insta, NOW), null);
   assertEquals(pickCrossChannelTwin([sib({ txn_kind: "income" })], insta, NOW), null);
 });

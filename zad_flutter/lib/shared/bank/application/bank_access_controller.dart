@@ -14,6 +14,7 @@ library;
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/shared/bank/data/bank_capture_marker.dart';
 import 'package:zad/shared/bank/data/device_send_key.dart';
@@ -57,6 +58,29 @@ String bankPulseEvent(BankAccessHealth health) => switch (health) {
   BankAccessHealth.grantedButSilent => 'bank.silent',
   BankAccessHealth.stalled => 'bank.stalled',
 };
+
+/// Whether Android exempts Zad from battery optimisation, or null when it
+/// cannot be told (a test host, a platform without it). A provider so tests
+/// say the answer.
+final batteryUnrestrictedProvider = Provider<Future<bool?> Function()>(
+  (ref) => () async {
+    try {
+      return await Permission.ignoreBatteryOptimizations.isGranted;
+    } on Object {
+      return null;
+    }
+  },
+);
+
+/// The event for [unrestricted] (owner's 2026-11-13 decision): the server
+/// learns which phones may stop the listener in the background — the owner's
+/// own deposit was lost that way that day. Null sends nothing.
+String? batteryPulseEvent({required bool? unrestricted}) =>
+    switch (unrestricted) {
+      true => 'battery.exempt',
+      false => 'battery.restricted',
+      null => null,
+    };
 
 /// At most one pulse per state in this window, however often the app opens.
 const Duration kBankPulseEvery = Duration(hours: 12);
@@ -253,6 +277,19 @@ class BankAccessController extends Notifier<BankAccessState> {
       // the phone. The owner's phone read «flowing» for two days while not
       // one notification reached the server (2026-11-04): this is the line
       // that would have said where they were.
+      // Only while reading is on: the exemption matters to a phone that sends.
+      if (state.granted) {
+        unawaited(
+          ref
+              .read(batteryUnrestrictedProvider)()
+              .then((unrestricted) {
+                final name = batteryPulseEvent(unrestricted: unrestricted);
+                if (name == null) return false;
+                return events.log(name, every: kBankPulseEvery);
+              })
+              .catchError((Object _) => false),
+        );
+      }
       if (state.pending >= kBankBacklogAt) {
         unawaited(
           events
