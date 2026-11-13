@@ -13,7 +13,7 @@ The owner's request list is the source of this work. The owner's code rules are 
 > «بيتي» warm light (`#F7F6F2`, white cards, radius 28, no heavy shadows) with a floating pill nav bar; bouncing scroll
 > everywhere and a soft spring press on every card and button. All of it as tokens inside `lib/core/design/`, never hex
 > in a screen. Full rules and the first slice: ZAD_PLAN ١٠.٨. The six reference images are meant to live in
-> `.claude/design-refs/` — **not in the repo yet**; look at them before building, not at this summary.
+> `.claude/design-refs/` — local only (gitignored: other people's work; the level to reach, never to copy). Look at them before building, not at this summary. Prototype the owner picks the type from: https://claude.ai/artifact/CJ6ZNeA3M9BHsRKsbWY1yr
 
 ## How far each thing was checked
 

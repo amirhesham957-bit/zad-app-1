@@ -65,3 +65,6 @@ build-out/
 .aider*
 
 local.properties
+
+# Owner's local design references (other people's work) — never pushed (2026-11-13).
+.claude/design-refs/
