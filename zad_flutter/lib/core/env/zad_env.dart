@@ -78,6 +78,13 @@ abstract final class ZadEnv {
     'ADMOB_NATIVE_UNIT',
   );
 
+  /// The AdMob App Open unit: one full-screen ad when the customer comes
+  /// back after four hours away (`AppOpen`, ZAD_PLAN ١٠.٣ د). Empty turns it
+  /// off in release; debug builds use Google's test unit.
+  static const String admobAppOpenUnit = String.fromEnvironment(
+    'ADMOB_APP_OPEN_UNIT',
+  );
+
   /// Children's school zones (docs/agent/ZAD_LIVING_BRAIN.md slice 2). On by
   /// default — the sideloaded APK. A Google Play build can pass
   /// `--dart-define=ENABLE_KIDS_GEOFENCING=false` if review asks for it

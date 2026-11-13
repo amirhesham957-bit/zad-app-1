@@ -388,3 +388,10 @@ related:
 - **الإعلانات (#531، الإيجنت):** `AdsSdk.prepare` كان بيسأل `canRequestAds()` قبل `requestConsentInfoUpdate()` ⇒ false دايماً ⇒ البانر والـnative والـinterstitial ماكانوش بيتحمّلوا خالص. اتصلح + لوج لأي فشل تحميل + native في الإشعارات + App Open (`ADMOB_APP_OPEN_UNIT`).
 - **مستني المالك:** يدمج #532 و#531، يعمل وحدة App Open ويحطها secret، `app-ads.txt` على موقع المطوّر، وبيلد closed-testing جديد.
 - **فخ المحاكي:** الـAPK المتسطّب بـImpeller بيوقّع المحاكي بـswiftshader (exit 139، «bad color buffer handle»). اللي اشتغل: `-gpu guest`.
+
+## ٢٠٢٦-١١-١٣ — ليه 1.0.7+8 مافيهاش ولا إعلان (١٠.٣)
+
+- **السبب (في الكود، مش في AdMob):** `AdsSdk.prepare(askConsent: false)` كان بيسأل `canRequestAds()` قبل أي `requestConsentInfoUpdate()`، ودي بترجع false دايماً لحد التحديث (مكتوبة في دوكس جوجل). التحديث كان في طريق المكافأة بس ⇒ البانر والـNative والملء شاشة ماكانوش بيطلبوا إعلان أصلاً، ومن غير لوج. الوحدات والـApp ID والـCI كانوا سليمين.
+- **اتصلح على `fix/ads-show-in-release`:** التحديث مرة لكل تشغيلة لكل الأنواع (الفورم من ضغطة بس)، `logAdLoadFailure` بيكتب الكود والسبب، Native في إشعارات التطبيق، وApp Open بعد ٤ ساعات غياب على `ADMOB_APP_OPEN_UNIT` (فاضي = مقفول). تستات `ads_sdk_test` و`app_open_test` (الاتنين اتجرّبوا بالكسر).
+- **فاضل على المالك:** وحدة App Open في AdMob + سرّ `ADMOB_APP_OPEN_UNIT` في GitHub؛ `app-ads.txt` على دومين المطوّر في Play؛ ولو اللوج قال `code 3 (no fill)` يبقى AdMob لسه بيراجع التطبيق — استنى، مش غلطة.
+- **فخ:** `logcat | grep "\[ads\]"` هو أسرع طريقة تعرف الإعلان واقف ليه.

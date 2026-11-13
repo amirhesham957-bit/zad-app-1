@@ -116,7 +116,8 @@ jobs:
             --dart-define=SUPABASE_ANON_KEY="${{ secrets.SUPABASE_ANON_KEY }}" \
             --dart-define=ADMOB_INTERSTITIAL_UNIT="${{ secrets.ADMOB_INTERSTITIAL_UNIT }}" \
             --dart-define=ADMOB_INLINE_UNIT="${{ secrets.ADMOB_INLINE_UNIT }}" \
-            --dart-define=ADMOB_NATIVE_UNIT="${{ secrets.ADMOB_NATIVE_UNIT }}"
+            --dart-define=ADMOB_NATIVE_UNIT="${{ secrets.ADMOB_NATIVE_UNIT }}" \
+            --dart-define=ADMOB_APP_OPEN_UNIT="${{ secrets.ADMOB_APP_OPEN_UNIT }}"
         working-directory: zad_flutter
 
       - uses: actions/upload-artifact@v4
@@ -132,7 +133,8 @@ jobs:
             --dart-define=SUPABASE_ANON_KEY="${{ secrets.SUPABASE_ANON_KEY }}" \
             --dart-define=ADMOB_INTERSTITIAL_UNIT="${{ secrets.ADMOB_INTERSTITIAL_UNIT }}" \
             --dart-define=ADMOB_INLINE_UNIT="${{ secrets.ADMOB_INLINE_UNIT }}" \
-            --dart-define=ADMOB_NATIVE_UNIT="${{ secrets.ADMOB_NATIVE_UNIT }}"
+            --dart-define=ADMOB_NATIVE_UNIT="${{ secrets.ADMOB_NATIVE_UNIT }}" \
+            --dart-define=ADMOB_APP_OPEN_UNIT="${{ secrets.ADMOB_APP_OPEN_UNIT }}"
         working-directory: zad_flutter
 
       - uses: actions/upload-artifact@v4
@@ -161,7 +163,8 @@ jobs:
             --dart-define=SUPABASE_ANON_KEY="${{ secrets.SUPABASE_ANON_KEY }}" \
             --dart-define=ADMOB_INTERSTITIAL_UNIT="${{ secrets.ADMOB_INTERSTITIAL_UNIT }}" \
             --dart-define=ADMOB_INLINE_UNIT="${{ secrets.ADMOB_INLINE_UNIT }}" \
-            --dart-define=ADMOB_NATIVE_UNIT="${{ secrets.ADMOB_NATIVE_UNIT }}"
+            --dart-define=ADMOB_NATIVE_UNIT="${{ secrets.ADMOB_NATIVE_UNIT }}" \
+            --dart-define=ADMOB_APP_OPEN_UNIT="${{ secrets.ADMOB_APP_OPEN_UNIT }}"
           rm -f "$KEYSTORE_PATH"
         working-directory: zad_flutter
 

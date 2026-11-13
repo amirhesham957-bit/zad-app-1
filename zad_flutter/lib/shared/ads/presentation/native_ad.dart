@@ -73,7 +73,7 @@ class _ZadNativeAdState extends ConsumerState<ZadNativeAd> {
           setState(() => _ad = ad as NativeAd);
         },
         onAdFailedToLoad: (ad, e) {
-          debugPrint('[ads] native load failed: $e');
+          logAdLoadFailure('native', e);
           unawaited(ad.dispose());
         },
       ),
