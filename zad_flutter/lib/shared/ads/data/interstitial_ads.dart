@@ -66,7 +66,7 @@ class AdMobInterstitialAds implements InterstitialAds {
             _loading = false;
           },
           onAdFailedToLoad: (e) {
-            debugPrint('[ads] interstitial load failed: $e');
+            logAdLoadFailure('interstitial', e);
             _loading = false;
           },
         ),

@@ -96,7 +96,7 @@ class AdMobRewardedAds implements RewardedAds {
             }
           },
           onAdFailedToLoad: (e) {
-            debugPrint('[ads] load failed: $e');
+            logAdLoadFailure('rewarded', e);
             if (!loaded.isCompleted) loaded.complete(null);
           },
         ),

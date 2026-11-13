@@ -18,6 +18,7 @@ import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/l10n/l10n.dart';
+import 'package:zad/shared/ads/presentation/native_ad.dart';
 import 'package:zad/shared/affiliate/data/affiliate_repository.dart';
 import 'package:zad/shared/affiliate/domain/affiliate.dart';
 import 'package:zad/shared/insights/application/insights_controller.dart';
@@ -247,7 +248,7 @@ class _CenterState extends ConsumerState<NotificationCenterScreen> {
                           context.l10n.notifAppSection,
                           color: scheme.onSurface,
                         ),
-                        for (final n in sorted)
+                        for (final (i, n) in sorted.indexed) ...<Widget>[
                           NotificationCard(
                             title: n.title,
                             message: n.message,
@@ -257,6 +258,9 @@ class _CenterState extends ConsumerState<NotificationCenterScreen> {
                             isRead: n.isRead,
                             onTap: () => unawaited(controller.markRead(n)),
                           ),
+                          // Between cards, never inside one (ZAD_PLAN ١٠.٣ ب).
+                          if (nativeAdAfter(i)) const ZadNativeAd(),
+                        ],
                       ],
                     ],
                   ),
