@@ -13,6 +13,15 @@
 /// «شاهد إعلان», every banner, native card and interstitial asked
 /// `canRequestAds()`, got false, and quietly loaded nothing: the closed-test
 /// build 1.0.7+8 showed no ad at all.
+///
+/// And when the update itself fails, UMP has learnt nothing: its status stays
+/// `unknown` and `canRequestAds()` answers false for good. That is what the
+/// release build logged on 2026-11-14 — «Publisher misconfiguration … no
+/// form(s) configured for the input app ID» (no message set up under AdMob's
+/// Privacy & messaging) — so not one ad was ever requested, on any phone. A
+/// failed update with the status still `unknown` therefore lets ads load;
+/// Google limits what it serves where consent is owed. A known `required`
+/// status still keeps every ad off until the customer answers the form.
 library;
 
 import 'dart:async';
@@ -22,7 +31,7 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 /// The SDK's one-time setup.
 abstract final class AdsSdk {
-  static Future<void>? _consentInfo;
+  static Future<bool>? _consentInfo;
   static Future<bool>? _sdk;
 
   /// Forgets this run's setup, for tests.
@@ -36,9 +45,10 @@ abstract final class AdsSdk {
   /// form is never shown: where one is still owed, this answers false.
   static Future<bool> prepare({bool askConsent = true}) async {
     try {
-      await (_consentInfo ??= _updateConsentInfo());
-      if (askConsent) await _showFormIfRequired();
-      if (!await ConsentInformation.instance.canRequestAds()) {
+      final updated = await (_consentInfo ??= _updateConsentInfo());
+      if (askConsent && updated) await _showFormIfRequired();
+      if (!await ConsentInformation.instance.canRequestAds() &&
+          !(!updated && await _statusUnknown())) {
         // Asked again next time: the network may have been down, or the
         // form dismissed.
         _consentInfo = null;
@@ -56,20 +66,33 @@ abstract final class AdsSdk {
   }
 
   /// Google's advice: every launch. On an error UMP keeps the last run's
-  /// status, which `canRequestAds()` then reads.
-  static Future<void> _updateConsentInfo() {
-    final done = Completer<void>();
+  /// status, which `canRequestAds()` then reads. Answers whether the update
+  /// went through.
+  static Future<bool> _updateConsentInfo() {
+    final done = Completer<bool>();
     ConsentInformation.instance.requestConsentInfoUpdate(
       ConsentRequestParameters(),
       () {
-        if (!done.isCompleted) done.complete();
+        if (!done.isCompleted) done.complete(true);
       },
       (e) {
         debugPrint('[ads] consent info update failed: ${e.message}');
-        if (!done.isCompleted) done.complete();
+        if (!done.isCompleted) done.complete(false);
       },
     );
     return done.future;
+  }
+
+  /// UMP knows nothing about this phone — no update ever went through.
+  static Future<bool> _statusUnknown() async {
+    final unknown =
+        await ConsentInformation.instance.getConsentStatus() ==
+        ConsentStatus.unknown;
+    if (unknown) {
+      debugPrint('[ads] consent status unknown after a failed update; '
+          'requesting ads anyway');
+    }
+    return unknown;
   }
 
   static Future<void> _showFormIfRequired() {
