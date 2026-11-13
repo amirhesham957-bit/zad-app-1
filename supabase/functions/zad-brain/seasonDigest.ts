@@ -390,8 +390,13 @@ const numOrNull = (v: unknown) => {
  * الحاجات اللي البيت محتاجها فعلاً بس، من غير أكواد ولا عروض محلات.
  */
 export function pickHomeDeals(
-  input: Pick<DealInputs, "broke" | "needs" | "favorites" | "bought" | "deals" | "codes"> & { merchants?: string[]; wants?: string[]; season?: string[] },
+  input: Pick<DealInputs, "broke" | "needs" | "favorites" | "bought" | "deals" | "codes"> & {
+    merchants?: string[]; wants?: string[]; season?: string[];
+    /** أكواد جت للعميل نفسه في إشعار تطبيق (١٠.١٤، ownOfferCodes) — بتكسب على كود المحل العام وبتطلع الأول. */
+    own?: DigestCodeRow[];
+  },
 ): { cards: HomeDealCard[]; codes: DigestCodeRow[] } {
+  const own = input.broke ? [] : (input.own ?? []);
   const none = new Set<string>();
   const personal = pickDigest(input.deals, input.needs, input.broke ? [] : input.favorites, input.broke ? [] : input.bought, none, HOME_MAX_DEALS, input);
   // مفيش حاجة شخصية ⇒ أقوى الخصومات الحقيقية في البلد، عشان الشريط مايختفيش عن بيت جديد (مراجعة ٦/١١). «أنا مفلس» ⇒ لأ.
@@ -399,7 +404,8 @@ export function pickHomeDeals(
   const cards = picked
     .filter((c) => !input.broke || c.why === "need") // «أنا مفلس»: القايمة واللي هيخلص بس — مش رغبات ولا موسم
     .map((c): HomeDealCard => {
-      const k = input.broke ? undefined : input.codes.find((r) => sameStoreName(r.store, c.store));
+      const k = input.broke ? undefined
+        : own.find((r) => sameStoreName(r.store, c.store)) ?? input.codes.find((r) => sameStoreName(r.store, c.store));
       return {
         ...c,
         code: k
@@ -409,7 +415,62 @@ export function pickHomeDeals(
     });
   if (input.broke) return { cards, codes: [] };
   const stores = [...input.favorites, ...cards.map((c) => c.store)];
-  return { cards, codes: pickDigestCodes(input.codes, stores, none, HOME_MAX_CODES, input.merchants ?? []) };
+  const ownCodes: DigestCodeRow[] = [];
+  for (const r of own) {
+    if (ownCodes.length >= HOME_MAX_CODES) break;
+    if (!ownCodes.some((o) => o.store_key === r.store_key)) ownCodes.push(r); // كود واحد لكل تطبيق
+  }
+  const taken = new Set(ownCodes.map((r) => r.store_key));
+  const rest = pickDigestCodes(input.codes.filter((r) => !taken.has(r.store_key)), stores, none, HOME_MAX_CODES - ownCodes.length, input.merchants ?? []);
+  return { cards, codes: [...ownCodes, ...rest] };
+}
+
+/**
+ * العميل ضغط على عرض محل (deal_signal) ⇒ عروض إشعاراته الشغالة للمحل ده اللي لسه مااتفتحتش (١٠.١٤: «أنهي عروض بيفتحها»).
+ * الشريط بيحط كوده هو على كارت المحل لو عنده، فالضغطة على كارت المحل ده هي فتح عرضه. نقي.
+ */
+export function ownOffersOpenedBy(
+  rows: ReadonlyArray<{ id: string; store: string | null; opened_at: string | null; expires_at: string }>,
+  store: string,
+  now = Date.now(),
+): string[] {
+  if (!store.trim()) return [];
+  return rows
+    .filter((r) => !r.opened_at && Date.parse(r.expires_at) > now && sameStoreName(r.store ?? "", store))
+    .map((r) => r.id);
+}
+
+/** صف من zad_notification_offers (١٠.١٤) — عرض جه للعميل نفسه في إشعار تطبيق. */
+export interface OwnNotificationOffer {
+  store: string | null;
+  code: string | null;
+  discount_percent: number | string | null;
+  discount_amount: number | string | null;
+  currency: string | null;
+  link: string | null;
+  expires_at: string;
+}
+
+/**
+ * عروض إشعارات العميل اللي فيها كود وخصم ⇒ صفوف أكواد للشريط (١٠.١٤): الأحدث الأول، الشغال بس. من غير نسبة ولا
+ * مبلغ الكارت مابيعرضش الكود، فمابيدخلش. source_url = رابط العرض لو اتحفظ (دومين محل معروف بس)، وإلا فاضي. نقي.
+ */
+export function ownOfferCodes(rows: readonly OwnNotificationOffer[], now = Date.now()): DigestCodeRow[] {
+  return rows
+    .filter((r) => (r.store ?? "").trim() && (r.code ?? "").trim() && Date.parse(r.expires_at) > now)
+    .filter((r) => (numOrNull(r.discount_percent) ?? 0) > 0 || (numOrNull(r.discount_amount) ?? 0) > 0)
+    .map((r) => ({
+      store: r.store!.trim(),
+      store_key: codeStoreKey(r.store!),
+      code: r.code!.trim(),
+      discount_percent: r.discount_percent,
+      discount_amount: r.discount_amount,
+      currency: r.currency,
+      min_order: null,
+      valid_until: r.expires_at,
+      source_kind: "notification",
+      source_url: r.link ?? "",
+    }));
 }
 
 /** شريط الرئيسية لعميل واحد. country null = بلده مش معروف (مفيش عروض تتعرض). */
@@ -420,7 +481,13 @@ export async function loadHomeDeals(
 ): Promise<{ country: string | null; cards: HomeDealCard[]; codes: DigestCodeRow[] }> {
   const input = await loadDealInputs(sb, userId, now);
   if (!input) return { country: null, cards: [], codes: [] };
-  const picked = pickHomeDeals(input);
+  // ١٠.١٤: عروضه هو من إشعاراته — بتاعته بس (RLS على user_id، والفلتر هنا صريح كمان). فشل القراية = من غيرها.
+  const { data: ownRows } = await sb.from("zad_notification_offers")
+    .select("store,code,discount_percent,discount_amount,currency,link,expires_at")
+    .eq("user_id", userId).gt("expires_at", new Date(now).toISOString()).not("code", "is", null)
+    .order("created_at", { ascending: false }).limit(20)
+    .then((r) => r, () => ({ data: null }));
+  const picked = pickHomeDeals({ ...input, own: ownOfferCodes((ownRows ?? []) as OwnNotificationOffer[], now) });
   const others = input.deals.map((d) => d.source_url ?? "").filter((u) => u && !picked.cards.some((c) => c.url === u));
   const cards = await withPagePreviews(sb, picked.cards, others);
   return { country: input.country, ...picked, cards };

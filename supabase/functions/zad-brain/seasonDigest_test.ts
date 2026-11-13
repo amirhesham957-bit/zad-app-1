@@ -1,5 +1,5 @@
 import { assert, assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { type DigestCodeRow, type DigestDealRow, digestKey, digestPhoto, pickDigest, pickDigestCodes, pickHomeDeals } from "./seasonDigest.ts";
+import { type DigestCodeRow, type DigestDealRow, digestKey, digestPhoto, pickDigest, pickDigestCodes, pickHomeDeals, ownOfferCodes, ownOffersOpenedBy } from "./seasonDigest.ts";
 import { codeStoreKey } from "./dealCodes.ts";
 
 const row = (o: Partial<DigestDealRow>): DigestDealRow => ({
@@ -162,4 +162,49 @@ Deno.test("7.3: a country's own season brings its items into the deal pick", () 
   assertEquals(seasonNeeds({ ...base, country: "SA", now: Date.parse("2027-04-25T12:00:00Z") }).includes("رنجة"), false);
   assertEquals(seasonNeeds({ ...base, country: "EG", now: Date.parse("2027-09-05T12:00:00Z") }), []);
   assert(seasonNeeds({ ...base, kidsCount: 1, country: "EG", now: Date.parse("2027-09-05T12:00:00Z") }).includes("كراسات"));
+});
+
+// ZAD_PLAN ١٠.١٤: كود جه للعميل نفسه في إشعار تطبيق بيكسب على كود المحل العام وبيطلع الأول.
+Deno.test("home strip: the customer's own notification code wins on its store's card and leads the codes", () => {
+  const own = ownOfferCodes([
+    { store: "كارفور", code: "MINE25", discount_percent: 25, discount_amount: null, currency: "EGP", link: null, expires_at: "2099-01-01T00:00:00Z" },
+    { store: "كارفور", code: "OLDER5", discount_percent: 5, discount_amount: null, currency: "EGP", link: null, expires_at: "2099-01-01T00:00:00Z" },
+  ]);
+  const out = pickHomeDeals({
+    broke: false, needs: ["لبن"], favorites: [], bought: [],
+    deals: [row({ item_name: "لبن جهينة 1 لتر", price: 35, price_before: 40 })],
+    codes: [code({})],
+    own,
+  });
+  assertEquals(out.cards[0].code?.code, "MINE25");
+  assertEquals(out.cards[0].code?.percent, 25);
+  // كود واحد لكل محل: بتاعه، مش العام ومش الأقدم.
+  assertEquals(out.codes.map((c) => c.code), ["MINE25"]);
+  assertEquals(out.codes[0].source_kind, "notification");
+  // «أنا مفلس»: ولا كود، حتى بتاعه.
+  assertEquals(pickHomeDeals({ broke: true, needs: ["لبن"], favorites: [], bought: [], deals: [row({ item_name: "لبن جهينة 1 لتر", price: 35, price_before: 40 })], codes: [], own }).codes, []);
+});
+
+Deno.test("ownOfferCodes: only a live code with a discount", () => {
+  const now = Date.parse("2026-11-13T12:00:00Z");
+  const base = { store: "نون", code: "NOON10", discount_percent: 10, discount_amount: null, currency: "SAR", link: "https://www.noon.com/x", expires_at: "2026-11-14T00:00:00Z" };
+  assertEquals(ownOfferCodes([base], now).map((r) => [r.code, r.source_url]), [["NOON10", "https://www.noon.com/x"]]);
+  assertEquals(ownOfferCodes([{ ...base, expires_at: "2026-11-13T11:00:00Z" }], now), [], "expired");
+  assertEquals(ownOfferCodes([{ ...base, code: null }], now), [], "no code");
+  assertEquals(ownOfferCodes([{ ...base, discount_percent: null }], now), [], "no discount: the card would hide it");
+  assertEquals(ownOfferCodes([{ ...base, store: " " }], now), [], "no store");
+});
+
+Deno.test("ownOffersOpenedBy: a tap on a store's card opens his live, unopened offers of that store only", () => {
+  const now = Date.parse("2026-11-13T12:00:00Z");
+  const live = "2026-11-20T00:00:00Z";
+  const rows = [
+    { id: "a", store: "Noon", opened_at: null, expires_at: live },
+    { id: "b", store: "نون", opened_at: "2026-11-12T00:00:00Z", expires_at: live },
+    { id: "c", store: "Noon", opened_at: null, expires_at: "2026-11-13T11:00:00Z" },
+    { id: "d", store: "Talabat", opened_at: null, expires_at: live },
+  ];
+  assertEquals(ownOffersOpenedBy(rows, "noon", now), ["a"]);
+  assertEquals(ownOffersOpenedBy(rows, "", now), []);
+  assertEquals(ownOffersOpenedBy(rows, "Carrefour", now), []);
 });
