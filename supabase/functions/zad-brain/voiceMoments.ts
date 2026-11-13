@@ -1970,7 +1970,7 @@ export const UNCOUNTED_MOMENTS: readonly string[] = [...NEVER_HELD_MOMENTS, CHAT
  */
 const SPOKEN_IN_QUIET_HOURS: ReadonlySet<string> = new Set(["good_night", ...CLIENT_MOMENTS, SALARY_CYCLE_MOMENT]);
 
-export type MomentHold = "quiet_hours" | "daily_cap" | "busy_day" | "circumstance";
+export type MomentHold = "quiet_hours" | "daily_cap" | "busy_day" | "circumstance" | "silent_account";
 
 /**
  * «يوم مزحوم» (ZAD_LIVING_BRAIN.md الشريحة ١٨): لحظات تقدر تستنى يوم تاني — تذكير، عتاب على الغياب، حكاية
@@ -1992,6 +1992,17 @@ export const CIRCUMSTANCE_OPTIONAL_MOMENTS: ReadonlySet<string> = new Set([
   // «اقفل يومك» بتسكت في الظروف (ZAD_DREAM_PLAN §٧ فكرة ١).
   CLOSE_DAY_MOMENT,
 ]);
+
+/**
+ * الحساب الساكت (قرار المالك ١٣/١١، ٢ج): عمره ماكلّم زاد ومالوش داتا ⇒ مفيش أي لحظة اختيارية لحد أول كلمة أو أول صف
+ * (`zad_account_silent`، ٣ أيام سماح للحساب الجديد). اللي مابيتمسكش (جرعات، مواعيد، جرعة فرد في العيلة، المدرسة)
+ * وترحيب تليجرام (العميل لسه رابط) بيعدّوا — دول مابيتعملوش أصلاً غير لما حد يدخّل داتا.
+ */
+export function silentAccountHold(moment: string, silent: boolean): MomentHold | null {
+  if (!silent) return null;
+  if (NEVER_HELD_MOMENTS.has(moment) || moment === TELEGRAM_WELCOME_MOMENT || moment === CHAT_VOICE_REPLY_MOMENT) return null;
+  return "silent_account";
+}
 
 /** قرار نقي: `null` = اتقال، وإلا سبب التخطي. */
 export function momentGate(
@@ -2047,6 +2058,15 @@ async function holdMoment(
   sb: SupabaseClient, row: VoiceMomentRow, nowMs: number, timeZoneOf: (row: VoiceMomentRow) => Promise<string>,
 ): Promise<MomentHold | null> {
   if (NEVER_HELD_MOMENTS.has(row.moment)) return null;
+  // ٢ج: فشل القراية = مش ساكت — السكوت عن خطأ أوحش من رسالة زيادة.
+  try {
+    const { data: silent, error } = await sb.rpc("zad_account_silent", { p_user: row.user_id });
+    if (error) throw error;
+    const held = silentAccountHold(row.moment, silent === true);
+    if (held) return held;
+  } catch (e) {
+    console.warn("[voice_moments] silent account read failed:", (e as Error)?.message);
+  }
   const tz = await timeZoneOf(row);
   const hour = localHourIn(tz, nowMs);
   // نافذة نومه هو (الشريحة ٣٧). فشل القراية = الافتراضي ١١–٧، مش «مفيش هدوء».
