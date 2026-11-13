@@ -695,7 +695,8 @@ export function pickDuplicateProposalSibling(
 }
 
 /** نافذة الدمج التلقائي بين قنوات مختلفة لنفس الدفعة — أضيق من نافذة السؤال (١٥ دقيقة). */
-export const CROSS_CHANNEL_TWIN_WINDOW_MS = 5 * 60 * 1000;
+// ١٣/١١ (قرار المالك): ±١٥ دقيقة بدل ٥ — SMS البنك ساعات بيتأخر عن إشعار التطبيق. نفس شروط التطبيق المختلف والعملة والاتجاه.
+export const CROSS_CHANNEL_TWIN_WINDOW_MS = 15 * 60 * 1000;
 
 /**
  * نفس الدفعة جت من تطبيق تاني؟ ← تتدمج من غير سؤال (٢٠٢٦-٠٩-٢٥).
@@ -709,6 +710,23 @@ export const CROSS_CHANNEL_TWIN_WINDOW_MS = 5 * 60 * 1000;
  * المبلغ ورا بعض بتوصلوا من **نفس** القنوات مرتين، فإشعارين من نفس التطبيق مابيتدمجوش
  * هنا — بيفضلوا على السؤال القديم.
  */
+/**
+ * الدمج بيكمّل الاقتراح الأول (١٣/١١، طلب المالك): لو اسمه كان اسم البنك بس («BDC») والرسالة التانية فيها التاجر،
+ * التاجر بيتنقل. اقتراح لسه مستني بس — اللي اتقيد ماتتغيرش حركته من ورا العميل. null = مفيش حاجة تتكمّل.
+ */
+export function twinEnrichment(
+  twin: { status: string; merchant_name: string | null; bank_name: string | null },
+  incoming: { merchant: string | null; bank: string | null },
+): { merchant_name: string; title: string } | null {
+  if (!["awaiting_confirmation", "needs_classification"].includes(twin.status)) return null;
+  const fold = (v: string | null) => (v ?? "").trim().toLowerCase();
+  const merchant = (incoming.merchant ?? "").trim();
+  if (!merchant || fold(merchant) === fold(incoming.bank) || merchant.includes("@")) return null;
+  const has = fold(twin.merchant_name);
+  if (has && has !== fold(twin.bank_name)) return null;
+  return { merchant_name: merchant.slice(0, 80), title: merchant.slice(0, 80) };
+}
+
 export function pickCrossChannelTwin(
   siblings: Array<{
     id: string; status: string; txn_kind: string | null; currency: string | null;

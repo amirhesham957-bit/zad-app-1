@@ -112,6 +112,7 @@ void main() {
     bool granted = true,
     int pending = 0,
     DateTime? lastSeenAnyAt,
+    bool? batteryUnrestricted,
   }) async {
     listener = _FakeListener(granted: granted, pending: pending)
       ..lastSeenAnyAt = lastSeenAnyAt;
@@ -132,6 +133,9 @@ void main() {
           ),
         ),
         bankListenerProvider.overrideWithValue(listener),
+        batteryUnrestrictedProvider.overrideWithValue(
+          () async => batteryUnrestricted,
+        ),
         productEventsProvider.overrideWithValue(
           ProductEvents(
             send: (name) async => pulses.add(name),
@@ -310,6 +314,39 @@ void main() {
 
     expect(pulses, <String>['bank.stalled']);
   });
+
+  test(
+    'the battery exemption reaches the server while reading is on',
+    () async {
+      await build(batteryUnrestricted: false);
+      await container.read(bankAccessControllerProvider.notifier).refresh();
+      await Future<void>.delayed(Duration.zero);
+      expect(pulses, contains('battery.restricted'));
+
+      pulses.clear();
+      container.dispose();
+      await build(batteryUnrestricted: true);
+      await container.read(bankAccessControllerProvider.notifier).refresh();
+      await Future<void>.delayed(Duration.zero);
+      expect(pulses, contains('battery.exempt'));
+    },
+  );
+
+  test(
+    'no battery event when reading is off or the answer is unknown',
+    () async {
+      await build(granted: false, batteryUnrestricted: false);
+      await container.read(bankAccessControllerProvider.notifier).refresh();
+      await Future<void>.delayed(Duration.zero);
+      expect(pulses.where((p) => p.startsWith('battery.')), isEmpty);
+
+      container.dispose();
+      await build();
+      await container.read(bankAccessControllerProvider.notifier).refresh();
+      await Future<void>.delayed(Duration.zero);
+      expect(pulses.where((p) => p.startsWith('battery.')), isEmpty);
+    },
+  );
 
   test('the pulse names every state', () {
     expect(BankAccessHealth.values.map(bankPulseEvent).toSet(), <String>{

@@ -80,7 +80,7 @@ import { CONFIRM_REQUIRED_TOOLS, freshContext, latinDigits, occurredAtIso, looks
 import { callModel, embedText, embedSelfTest, hasEvalKey, hasGroq, inLane, smokeTestTools, streamGeminiTurn, Turn, ToolDef } from "./callModel.ts";
 import { type Lane, laneFor } from "./keyLanes.ts";
 import { chatLane, FREE_BUSY_REPLY, freeDailyBudget, gateReply, historyWindow, turnsPerMinute } from "./freeLane.ts";
-import { type HoldCode, heldMessagesSummary, agentTaskNotice, buildRestaurantArrivalMessage, buildStoreArrivalMessage, dailyCapDecision, outlivesShelf, responsiveHourDecision, pacingDecision, pacingPriority, PACING_DUPLICATE_HOURS, decideOnBrainFailure, postponeForQuietHours, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, quietWindowOf, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey, doseAdherence, pickCrossChannelTwin, seenHereItems, type SeenHere, type StoreCategory, cheaperHereItems, type CheaperHere, normalizeForPerson, pharmacyIsRecurring, entityRecallText, itemKey, type MemoryEntity, normalizeMemoryEntities, resolveValidUntil, travelContext } from "./shared.ts";
+import { type HoldCode, heldMessagesSummary, agentTaskNotice, buildRestaurantArrivalMessage, buildStoreArrivalMessage, dailyCapDecision, outlivesShelf, responsiveHourDecision, pacingDecision, pacingPriority, PACING_DUPLICATE_HOURS, decideOnBrainFailure, postponeForQuietHours, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, quietWindowOf, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey, doseAdherence, pickCrossChannelTwin, twinEnrichment, seenHereItems, type SeenHere, type StoreCategory, cheaperHereItems, type CheaperHere, normalizeForPerson, pharmacyIsRecurring, entityRecallText, itemKey, type MemoryEntity, normalizeMemoryEntities, resolveValidUntil, travelContext } from "./shared.ts";
 import { itemsForStore, storeArrivalTask, storeLocationFrom } from "./storeFit.ts";
 import { refreshDueHomeStates, saveHomeState } from "./homeState.ts";
 import { DOSE_SNOOZE_MINUTES, isDoseAction, muteCheckin, settleDoseReminder, snoozeDose } from "../_shared/doseDoor.ts";
@@ -119,7 +119,7 @@ import { customerCard, IDENTITY_MEMORY_SCOPES, identityOverwrites, sanitizeProfi
 import { rateConfidence } from "../_shared/consumptionRate.ts";
 import { buildGroqSystemPrompt, groqToolOrder } from "./groqPrompt.ts";
 import { ANSWER_FROM_RESULTS_NOTE, historyForAnswer, isWrite, needsAnswerAfterTools, recordCall, silentWriteFallback, visibleReceipts } from "./receipts.ts";
-import { decideGate, GATE_RESPONSE_SCHEMA, gatePrompt, type GateVerdict, knownFinancialSender, looksLikeMoneyMoved, parseGateVerdict, proposalFieldsFromVerdict, ruleGate, txnKindFor } from "./notificationGate.ts";
+import { decideGate, GATE_RESPONSE_SCHEMA, gatePrompt, type GateVerdict, knownFinancialSender, looksLikeMoneyMoved, parseGateVerdict, proposalFieldsFromVerdict, proposalTitle, ruleGate, txnKindFor } from "./notificationGate.ts";
 import { decideLifeEvent } from "../_shared/lifeEventDecide.ts";
 import { isOfferApp, OFFER_SCHEMA, offerExpiresAt, offerPrompt, parseOffer, storeFromPackage } from "./notificationOffers.ts";
 import { eventInstant, LIFE_EVENT_SCHEMA, type LifeEvent, type LifeKind, lifeEventCard, lifeEventPrompt, lifeKindOf, parseLifeEvent } from "./lifeEvents.ts";
@@ -9129,7 +9129,9 @@ async function handleNotificationIngest(sb: SupabaseClient, userId: string, body
     status: needsClassification ? "needs_classification" : "awaiting_confirmation",
     txn_kind: txnKind,
     amount: Math.round(amount * 100) / 100,
-    title: suggestedTitle ?? (String(parsed.title ?? title).trim().slice(0, 80) || packageName),
+    title: suggestedTitle ?? proposalTitle({
+      merchant: sourceLabel, bank: fields.bankName, clientTitle: String(parsed.title ?? ""), notificationTitle: title, packageName,
+    }),
     category: String(parsed.category ?? (txnKind === "income" ? "دخل" : txnKind === "transfer" ? "تحويل" : "أخرى")).trim().slice(0, 40),
     currency: fields.currency,
     wallet: "card",
@@ -9224,7 +9226,7 @@ async function handleNotificationIngest(sb: SupabaseClient, userId: string, body
     // المعاملة؟" — ومهما ضغط العميل، دالة الحسم نفسها بتمنع القيد التاني (20260913213000).
     // فشل الاستعلام ده مايوقفش الاستلام: الحارس الحقيقي في دالة الحسم مش هنا.
     const { data: amountSiblings, error: amountSiblingsError } = await sb.from("zad_transaction_proposals")
-      .select("id,status,txn_kind,transaction_id,created_at,currency,source_event_id")
+      .select("id,status,txn_kind,transaction_id,created_at,currency,source_event_id,merchant_name,bank_name")
       .eq("user_id", userId)
       .eq("amount", proposalRow.amount)
       .neq("idempotency_key", dedupeHash)
@@ -9238,6 +9240,7 @@ async function handleNotificationIngest(sb: SupabaseClient, userId: string, body
     const siblingRows = (amountSiblings ?? []) as Array<{
       id: string; status: string; txn_kind: string | null; transaction_id: string | null;
       created_at: string; currency: string | null; source_event_id: string | null;
+      merchant_name: string | null; bank_name: string | null;
     }>;
     const siblingEventIds = siblingRows.map((r) => r.source_event_id).filter((v): v is string => !!v);
     const packageOf = new Map<string, string>();
@@ -9252,6 +9255,14 @@ async function handleNotificationIngest(sb: SupabaseClient, userId: string, body
       Date.now(),
     );
     if (twin) {
+      // الرسالة التانية بتكمّل الأولى: التاجر لو الأولى كان فيها اسم البنك بس.
+      const twinRow = siblingRows.find((r) => r.id === twin.id);
+      const patch = twinRow ? twinEnrichment(twinRow, { merchant: sourceLabel, bank: fields.bankName }) : null;
+      if (patch) {
+        const { error: enrichErr } = await sb.from("zad_transaction_proposals").update(patch)
+          .eq("id", twin.id).eq("user_id", userId).in("status", ["awaiting_confirmation", "needs_classification"]);
+        if (enrichErr) console.error("[notification_ingest] twin enrichment failed:", enrichErr.message);
+      }
       await mark("ignored", `merged_cross_channel:${twin.id}`);
       return new Response(JSON.stringify({
         ok: true, status: "ignored", reason: "merged_cross_channel", proposal_id: twin.id,
