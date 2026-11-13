@@ -163,6 +163,10 @@ abstract final class ZadScreens {
   /// The subscription paywall.
   static late OpenScreen showPaywallScreen;
 
+  // ── telegram
+  /// The bot sheet: open the bot with the account's start code.
+  static late OpenScreen showTelegramBotSheet;
+
   // ── pharmacy
   /// Adds a medicine, from a scan when `scanned` is given.
   static late Future<void> Function(

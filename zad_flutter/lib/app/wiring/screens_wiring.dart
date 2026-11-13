@@ -118,6 +118,7 @@ void wireScreens() {
   ZadScreens.showNotificationCenter = showNotificationCenter;
   ZadScreens.showCompanionStudio = showCompanionStudio;
   ZadScreens.showPaywallScreen = showPaywallScreen;
+  ZadScreens.showTelegramBotSheet = showTelegramBotSheet;
   ZadScreens.showAddMedicineSheet = showAddMedicineSheet;
   ZadScreens.showPricesScreen = showPricesScreen;
   ZadScreens.showProfileScreen = showProfileScreen;

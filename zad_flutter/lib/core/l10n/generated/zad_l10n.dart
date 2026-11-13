@@ -62,7 +62,8 @@ import 'zad_l10n_en.dart';
 /// be consistent with the languages listed in the ZadL10n.supportedLocales
 /// property.
 abstract class ZadL10n {
-  ZadL10n(String locale) : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+  ZadL10n(String locale)
+    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
@@ -82,18 +83,19 @@ abstract class ZadL10n {
   /// Additional delegates can be added by appending to this list in
   /// MaterialApp. This list does not have to be used at all if a custom list
   /// of delegates is preferred or required.
-  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates = <LocalizationsDelegate<dynamic>>[
-    delegate,
-    GlobalMaterialLocalizations.delegate,
-    GlobalCupertinoLocalizations.delegate,
-    GlobalWidgetsLocalizations.delegate,
-  ];
+  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
+      <LocalizationsDelegate<dynamic>>[
+        delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ];
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('ar'),
     Locale('ar', 'SA'),
-    Locale('en')
+    Locale('en'),
   ];
 
   /// The app's name, in the task switcher.
@@ -7307,6 +7309,36 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'قفل تنبيه'**
   String get agentToolDismissInsight;
+
+  /// No description provided for @rewardsCardTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'مكافآت زاد'**
+  String get rewardsCardTitle;
+
+  /// No description provided for @rewardsCardBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'شوف إعلان وخد رسايل زيادة، أو اشترك وارتاح من الإعلانات.'**
+  String get rewardsCardBody;
+
+  /// No description provided for @rewardsSubscribe.
+  ///
+  /// In ar, this message translates to:
+  /// **'اشترك في زاد بريميوم'**
+  String get rewardsSubscribe;
+
+  /// No description provided for @rewardsTelegram.
+  ///
+  /// In ar, this message translates to:
+  /// **'بوت زاد على تليجرام'**
+  String get rewardsTelegram;
+
+  /// No description provided for @profileTelegramSubtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'اربط حسابك وخلّي التذكيرات توصلك'**
+  String get profileTelegramSubtitle;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {
@@ -7318,34 +7350,38 @@ class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {
   }
 
   @override
-  bool isSupported(Locale locale) => <String>['ar', 'en'].contains(locale.languageCode);
+  bool isSupported(Locale locale) =>
+      <String>['ar', 'en'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_ZadL10nDelegate old) => false;
 }
 
 ZadL10n lookupZadL10n(Locale locale) {
-
   // Lookup logic when language+country codes are specified.
   switch (locale.languageCode) {
-    case 'ar': {
-  switch (locale.countryCode) {
-    case 'SA': return ZadL10nArSa();
-   }
-  break;
-   }
+    case 'ar':
+      {
+        switch (locale.countryCode) {
+          case 'SA':
+            return ZadL10nArSa();
+        }
+        break;
+      }
   }
 
   // Lookup logic when only language code is specified.
   switch (locale.languageCode) {
-    case 'ar': return ZadL10nAr();
-    case 'en': return ZadL10nEn();
+    case 'ar':
+      return ZadL10nAr();
+    case 'en':
+      return ZadL10nEn();
   }
 
   throw FlutterError(
     'ZadL10n.delegate failed to load unsupported locale "$locale". This is likely '
     'an issue with the localizations generation tool. Please file an issue '
     'on GitHub with a reproducible sample app and the gen-l10n configuration '
-    'that was used.'
+    'that was used.',
   );
 }

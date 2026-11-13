@@ -310,5 +310,10 @@
   "chefAsk": "اسأل الشيف عن هالوصفة",
   "adLadderAfter": "كل إعلان بعدها = {messages}",
   "eventToday": "زوّدناه عشان «{title}» اليوم",
-  "briefWhyMissed": "جرعات اليوم اللي فات وقتها وما انسجلت: {count}."
+  "briefWhyMissed": "جرعات اليوم اللي فات وقتها وما انسجلت: {count}.",
+  "rewardsCardTitle": "مكافآت زاد",
+  "rewardsCardBody": "شف إعلان وخذ رسائل زيادة، أو اشترك وارتاح من الإعلانات.",
+  "rewardsSubscribe": "اشترك في زاد بريميوم",
+  "rewardsTelegram": "بوت زاد على تليجرام",
+  "profileTelegramSubtitle": "اربط حسابك وخلّ التذكيرات توصلك"
 }
