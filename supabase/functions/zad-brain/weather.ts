@@ -45,6 +45,11 @@ export interface DayWeather {
   min: number;
   rain_mm: number;
   wind_kmh: number;
+  /**
+   * الساعات اللي فيها احتمال مطر بس: [الساعة المحلية، الاحتمال ٪، مم]. اختياري — كاش اتحفظ قبل
+   * ما الحقل يتضاف مافيهوش، ومن غيره مفيش تنبيه «هتمطر خلال ساعات».
+   */
+  rain_hours?: Array<[number, number, number]>;
 }
 
 export interface WeatherFacts {
@@ -89,8 +94,24 @@ export function parseForecast(raw: unknown): DayWeather[] | null {
       wind_kmh: Math.round(num(d.wind_speed_10m_max?.[i]) ?? 0),
     });
   }
+  // الساعات: لو الشكل غريب بنكمل من غيرها — التوقع اليومي لوحده لسه مفيد.
+  const h = (raw as { hourly?: Record<string, unknown[]> } | null)?.hourly;
+  if (h && Array.isArray(h.time)) {
+    for (let i = 0; i < h.time.length; i++) {
+      const m = /^(\d{4}-\d{2}-\d{2})T(\d{2}):/.exec(String(h.time[i] ?? ""));
+      if (!m) continue;
+      const p = Math.round(num(h.precipitation_probability?.[i]) ?? 0);
+      const mm = Math.round((num(h.precipitation?.[i]) ?? 0) * 10) / 10;
+      if (p < RAIN_HOUR_KEEP_PCT && mm < 0.1) continue;
+      const day = days.find((x) => x.date === m[1]);
+      if (day) (day.rain_hours ??= []).push([Number(m[2]), p, mm]);
+    }
+  }
   return days.length ? days : null;
 }
+
+/** ساعة بأقل من كده ومن غير مطر محسوس مابتتحفظش في الكاش. */
+const RAIN_HOUR_KEEP_PCT = 30;
 
 /** مفتاح الكاش: المكان مقرّب لـ٢ رقم عشري (~١ كم) — مش العميل. */
 export function placeKey(lat: number, lon: number): string {
@@ -121,6 +142,7 @@ export function forecastUrl(lat: number, lon: number, timeZone: string): string 
   return "https://api.open-meteo.com/v1/forecast?" + new URLSearchParams({
     latitude: lat.toFixed(4), longitude: lon.toFixed(4),
     daily: "weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max",
+    hourly: "precipitation_probability,precipitation",
     timezone: timeZone || "auto", forecast_days: String(FORECAST_DAYS),
   }).toString();
 }
@@ -365,4 +387,48 @@ export function askedClothesKeys(rows: ReadonlyArray<{ facts?: unknown }> | null
     if (typeof key === "string" && key) keys.add(key);
   }
   return keys;
+}
+
+// ── «احتمال مطر في الساعات الجاية» (المالك ١٥/١١): تنبيه خفيف، مرة في اليوم بالكتير ───────────────
+
+/** ساعة تتحسب مطر: احتمال ≥ ٥٠٪، أو ≥ نص مم متوقع. */
+export const RAIN_SOON_PCT = 50;
+export const RAIN_SOON_MM = 0.5;
+/** بنبص كام ساعة لقدام من ساعة الفحص. الفحص كل ٣ ساعات (٩، ١٢، ٣، ٦)، فأربعة بتغطي الفجوة. */
+export const RAIN_SOON_AHEAD_HOURS = 4;
+
+export interface RainSoon {
+  /** أول ساعة فيها مطر (محلي، ٠–٢٣). */
+  from_hour: number;
+  /** أعلى احتمال في الشباك. */
+  pct: number;
+  /** مجموع المم في الشباك. */
+  mm: number;
+  line: string;
+}
+
+/** ساعة محلية ⇒ «الساعة ٣ العصر». */
+export function hourPhrase(h: number): string {
+  const twelve = h % 12 === 0 ? 12 : h % 12;
+  const part = h < 5 ? "بالليل" : h < 12 ? "الصبح" : h < 15 ? "الضهر" : h < 18 ? "العصر" : h < 20 ? "المغرب" : "بالليل";
+  return `الساعة ${twelve} ${part}`;
+}
+
+/** مطر في الساعات الجاية النهارده (من [localHour] لحد [ahead] ساعات قدام)، وإلا null. */
+export function rainSoon(
+  w: Pick<WeatherFacts, "place" | "days"> | null, today: string, localHour: number, ahead = RAIN_SOON_AHEAD_HOURS,
+): RainSoon | null {
+  const day = w?.days.find((d) => d.date === today);
+  if (!w || !day?.rain_hours) return null;
+  const window = day.rain_hours.filter(([h]) => h >= localHour && h <= localHour + ahead);
+  const wet = window.filter(([, p, mm]) => p >= RAIN_SOON_PCT || mm >= RAIN_SOON_MM);
+  if (wet.length === 0) return null;
+  const from = Math.min(...wet.map(([h]) => h));
+  const pct = Math.max(...window.map(([, p]) => p));
+  const mm = Math.round(window.reduce((a, [, , x]) => a + x, 0) * 10) / 10;
+  const when = from <= localHour ? "دلوقتي" : `من حوالي ${hourPhrase(from)}`;
+  return {
+    from_hour: from, pct, mm,
+    line: `فيه احتمال مطر في ${w.place} ${when}${pct > 0 ? ` (${pct}٪)` : ""} — لو نازل خد شمسية، وشيل الغسيل من البلكونة.`,
+  };
 }

@@ -23,7 +23,7 @@ import { loadAppointmentFollowUp } from "./appointmentFollowUp.ts";
 import { loadFamilyShareAsk } from "./familyShare.ts";
 import { type DoseHabit, loadDoseHabit } from "./doseHabit.ts";
 import { sameProductAsk } from "./productIdentity.ts";
-import { askedClothesKeys, clothingNudge, loadHomePoint, loadWeather, weatherAlert, type WeatherFacts } from "./weather.ts";
+import { askedClothesKeys, clothingNudge, loadHomePoint, loadWeather, rainSoon, weatherAlert, type WeatherFacts } from "./weather.ts";
 import { loadTasteDeal, saysTheDeal, withBuyingCycle } from "./tasteDeals.ts";
 import { loadDealCode } from "./dealCodes.ts";
 import { budgetComfortable } from "./householdLoad.ts";
@@ -56,9 +56,25 @@ export interface ComposedMoment {
 }
 
 /** لحظات بتتقال مكتوبة بس — "والباقي كتابي عادي". كل اللي مش هنا بيتقال بصوتها. */
-export const TEXT_ONLY_MOMENTS: ReadonlySet<string> = new Set(["dose_nudge", "close_day", "salary_cycle"]);
+export const TEXT_ONLY_MOMENTS: ReadonlySet<string> = new Set(["dose_nudge", "close_day", "salary_cycle", "rain_soon"]);
 /** بتتقال بالقالب بس، من غير صياغة موديل. */
-export const TEMPLATE_MOMENTS: ReadonlySet<string> = new Set(["newcomer_question", "close_day", "salary_cycle"]);
+export const TEMPLATE_MOMENTS: ReadonlySet<string> = new Set(["newcomer_question", "close_day", "salary_cycle", "rain_soon"]);
+
+/** «احتمال مطر في الساعات الجاية» (20261115010000، المالك ١٥/١١): مرة في اليوم بالكتير، مكتوبة، من غير موديل. */
+export const RAIN_SOON_MOMENT = "rain_soon";
+
+/** المطر اللي هيتقال، أو سبب إنه مايتقالش. التاريخ والساعة من وقت الإرسال، مش وقت التسجيل. */
+export async function rainSoonFacts(
+  sb: SupabaseClient, userId: string, local: { date: string; time: string; time_zone: string }, queuedDate: string,
+): Promise<Record<string, unknown> | string> {
+  if (queuedDate && queuedDate !== local.date) return "day changed";
+  const { data: sentToday } = await sb.from("zad_voice_moments").select("id")
+    .eq("user_id", userId).eq("moment", RAIN_SOON_MOMENT).eq("status", "sent")
+    .like("dedupe_key", `${RAIN_SOON_MOMENT}:${local.date}:%`).limit(1);
+  if (sentToday && (sentToday as unknown[]).length > 0) return "already warned today";
+  const hit = rainSoon(await morningWeather(sb, userId, local, null), local.date, Number(local.time.slice(0, 2)));
+  return hit ? { rain: { from_hour: hit.from_hour, pct: hit.pct, mm: hit.mm, line: hit.line } } : "no rain ahead";
+}
 
 /** آخر كام «اقفل يومك» محدش رد عليهم ⇒ السؤال كل [CLOSE_DAY_QUIET_EVERY] ليالي بدل كل ليلة. */
 export const CLOSE_DAY_IGNORED_RUN = 3;
@@ -507,6 +523,10 @@ export function momentFallback(moment: string, facts: Record<string, unknown>): 
   const item = str(facts.item_name) || "الدوا";
   const at = spokenTime(facts.scheduled_at ?? facts.starts_at, str(facts.time_zone, 40) || undefined);
   switch (moment) {
+    case RAIN_SOON_MOMENT: {
+      const line = str((facts.rain as { line?: unknown } | undefined)?.line, 300) || "فيه احتمال مطر في الساعات الجاية — لو نازل خد شمسية.";
+      return { title: "🌧️ احتمال مطر", text: line, speech: "" };
+    }
     case "dose_due": {
       // تذكير مجموعة (أدوية بينها ≤٣٠ دقيقة، 20260926120000): مواعيد كل واحد في نفس الرسالة.
       const schedule = str(facts.schedule_text, 200);
@@ -1225,6 +1245,17 @@ export async function processVoiceMoments(
         } catch (e) {
           console.warn("[voice_moments] good night facts failed:", (e as Error)?.message);
         }
+      }
+      if (row.moment === RAIN_SOON_MOMENT && !("rain" in (row.facts ?? {}))) {
+        const local = localNowContext(str(row.facts?.time_zone, 60) || "UTC", new Date(now()));
+        const rain = await rainSoonFacts(sb, row.user_id, local, str(row.facts?.local_date, 10));
+        if (typeof rain === "string") {
+          await sb.from("zad_voice_moments").update({ status: "skipped", error: rain }).eq("id", row.id);
+          result.skipped++;
+          continue;
+        }
+        row.facts = { ...(row.facts ?? {}), ...rain };
+        await sb.from("zad_voice_moments").update({ facts: row.facts }).eq("id", row.id);
       }
       // السؤال التاني في أول ٧٢ ساعة: بيتحسب وقت الإرسال (ممكن يكون اتجاوب الصبح)، ومن غير ناقصة مفيش لحظة.
       if (row.moment === NEWCOMER_MOMENT && !("daily_question" in (row.facts ?? {}))) {
