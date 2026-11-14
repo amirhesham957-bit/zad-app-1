@@ -174,8 +174,10 @@ export const validateConfirmObligation: Validator = (input, snap, ctx) => {
 /** «شربنا ٣ مية» (consumeItem.ts): الكمية المستعملة رقم موجب؛ الصنف بيتلاقى في التنفيذ (المطابقة أوسع من اللقطة). */
 export const validateConsumeItem: Validator = (input, _snap, ctx) => {
   if (typeof input.item_name !== "string" || !input.item_name.trim()) return { ok: false, reason: "item_name مطلوب" };
-  if (typeof input.amount !== "number" || !(input.amount > 0) || input.amount > 1000) {
-    return { ok: false, reason: "amount رقم أكبر من صفر — الكمية اللي اتستعملت" };
+  // «فتحنا علبة لبن» من غير استعمال = amount 0 مع opened.
+  const min = input.opened === true ? 0 : Number.MIN_VALUE;
+  if (typeof input.amount !== "number" || !(input.amount >= min) || input.amount > 1000) {
+    return { ok: false, reason: "amount رقم أكبر من صفر — الكمية اللي اتستعملت (أو 0 مع opened)" };
   }
   if ((ctx.counts["consume_item"] ?? 0) >= 8) return { ok: false, reason: "وصلت لحد ٨ أصناف في المرة" };
   return { ok: true };

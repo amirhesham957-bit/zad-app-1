@@ -42,7 +42,7 @@ import { familyMedicineCandidates } from "../_shared/familyMembers.ts";
 import { amazonPicks, amazonPicksReply } from "./amazonPicks.ts";
 import { householdFamilyId, householdFilter } from "../_shared/household.ts";
 import { marketFor } from "../_shared/amazonMarket.ts";
-import { checkInPriority } from "../_shared/consumptionRate.ts";
+import { checkInPriority, openedLeftDays } from "../_shared/consumptionRate.ts";
 import { PURCHASE_SOURCES, purchaseDaysByItem, restockKey } from "../_shared/restockCycle.ts";
 import { extendCallback, formatExtend, formatLookup, parseExtendCallback, parseSupportCommand, SUPPORT_TEXT, SUPPORT_USAGE } from "./supportDesk.ts";
 import {
@@ -422,7 +422,7 @@ async function deliverVoiceAlert(
  */
 async function findCheckInCandidates(sb: SupabaseClient, userId: string): Promise<Array<{ item_name: string; quantity: number; unit: string | null }>> {
   const [{ data: inv }, { data: cons }, { data: pending }, { data: occasional, error: occErr }, { data: seen }, { data: priors, error: priorErr }] = await Promise.all([
-    sb.from("zad_inventory").select("item_name,quantity,category,unit,created_at,restock_mode,restock_cycle_days").eq("user_id", userId),
+    sb.from("zad_inventory").select("item_name,quantity,category,unit,created_at,restock_mode,restock_cycle_days,opened_at,opened_life_days").eq("user_id", userId),
     sb.from("zad_consumption").select("item_name,avg_daily_qty,rate_known").eq("user_id", userId),
     sb.from("telegram_checkin_prompts").select("item_name").eq("user_id", userId).eq("status", "pending"),
     // حاجات على فترات مابتتسألش «لسه عندك؟» (ZAD_PLAN ٣.١٠).
@@ -456,6 +456,7 @@ async function findCheckInCandidates(sb: SupabaseClient, userId: string): Promis
   return ((inv ?? []) as Array<{
     item_name: string; quantity: number; category: string | null; unit: string | null; created_at: string | null;
     restock_mode: string | null; restock_cycle_days: number | null;
+    opened_at: string | null; opened_life_days: number | null;
   }>)
     .filter((item) => !pendingItems.has(item.item_name) && !occasionalItems.has(item.item_name.trim()))
     .map((item) => ({
@@ -470,6 +471,7 @@ async function findCheckInCandidates(sb: SupabaseClient, userId: string): Promis
         boughtOn.get(restockKey(item.item_name)) ?? (item.created_at ? [item.created_at] : []),
         Date.now(),
         priorByItem.get(item.item_name),
+        openedLeftDays(item.opened_at, item.opened_life_days),
       ),
     }))
     .filter((x): x is { item: typeof x.item; priority: number } => x.priority != null && x.priority >= 1)

@@ -88,7 +88,7 @@ import { DOSE_SNOOZE_MINUTES, isDoseAction, muteCheckin, settleDoseReminder, sno
 import { type KindOutcome, LEARN_WINDOW_DAYS, learnedPriority, learnedQuietUntil, outcomesByKind, type Stance, stanceOf } from "./outcomeLearning.ts";
 import { deliverPetCall } from "./petCall.ts";
 import { pickPantryMatch, samePantryItem, type PantryRow } from "./pantryMatch.ts";
-import { consumeReply, matchConsumeRow, quantityAfter, usedInRowUnits, type ConsumeRow } from "./consumeItem.ts";
+import { consumeReply, matchConsumeRow, openedNote, openedState, quantityAfter, usedInRowUnits, type ConsumeRow } from "./consumeItem.ts";
 import { txnSourceType } from "./provenance.ts";
 import { productNameKey } from "./productIdentity.ts";
 import { dealCodeRows } from "./dealCodes.ts";
@@ -876,7 +876,7 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
       sb.from("zad_transactions").select("id,amount,title,category,is_expense,txn_kind,created_at,merchant_name,bank_name,for_person")
         .eq("user_id", userId).gte("created_at", new Date(Date.now() - 120 * 86400000).toISOString())
         .order("created_at", { ascending: false }).limit(600),
-      sb.from("zad_inventory").select("item_name,category,quantity,unit,expiry_date,low_stock_threshold,created_at,restock_mode,restock_cycle_days")
+      sb.from("zad_inventory").select("item_name,category,quantity,unit,expiry_date,low_stock_threshold,created_at,restock_mode,restock_cycle_days,opened_at,opened_life_days")
         .or(householdFilter(userId, householdFamily)),
       sb.from("zad_subscriptions").select("title,amount,renewal_date,is_active,due_day,billing_cycle")
         .eq("user_id", userId).eq("is_active", true),
@@ -1285,7 +1285,16 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
         confidence = "cycle";
       }
     }
-    return { name: item.item_name, qty: item.quantity, unit: item.unit, daysLeft, confidence, rateKnown: cons?.rateKnown ?? false };
+    // مفتوح (20261114220000): عمره بعد الفتح بيحدّ الأيام الباقية — «اللبن مفتوح من ٤ أيام».
+    const open = openedState(item.opened_at, item.opened_life_days);
+    if (open && open.left !== null && (daysLeft === null || open.left < daysLeft)) {
+      daysLeft = open.left;
+      confidence = "opened";
+    }
+    return {
+      name: item.item_name, qty: item.quantity, unit: item.unit, daysLeft, confidence, rateKnown: cons?.rateKnown ?? false,
+      ...(open ? { openedDaysAgo: open.daysAgo } : {}),
+    };
   });
   const stockUnknownNames = stock.filter((s) => !s.rateKnown).map((s) => s.name);
   // A staple under several brands is one stock: the brain said «المية قليلة، عبوة واحدة»
@@ -2839,10 +2848,13 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       const row = match.row;
       const before = Math.max(0, Number(row.quantity) || 0);
       if (before <= 0) return `«${row.item_name}» متسجل خلصان أصلاً — مفيش حاجة تتطرح.`;
-      const used = usedInRowUnits(Number(input.amount), input.unit, row.item_name);
+      const used = usedInRowUnits(Number(input.amount) || 0, input.unit, row.item_name);
       const after = quantityAfter(before, used);
+      // «فتحنا علبة لبن» (خطة المخزن ٣، 20261114220000): عمرها بعد الفتح بيتحسب في التريجر من اسمها.
+      const opened = input.opened === true;
       const w = await writeRows(
-        sb.from("zad_inventory").update({ quantity: after }).eq("id", row.id).select("id,quantity"),
+        sb.from("zad_inventory").update(opened ? { quantity: after, opened_at: new Date().toISOString() } : { quantity: after })
+          .eq("id", row.id).select("id,quantity,opened_at,opened_life_days"),
         "تسجيل الاستهلاك",
       );
       if (!w.ok) return `مرفوض: ${w.reason}`;
@@ -2853,7 +2865,8 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
         previous: { quantity: row.quantity }, next: w.rows[0],
       });
       // المعدل متربط بصاحب الصف (نفس add_inventory_item)، فالقراية باسمه حتى لو اللي استهلك فرد تاني.
-      const { data: obs, error: obsErr } = await sb.rpc("zad_record_observation", {
+      // فتح من غير استعمال مش قراية جديدة.
+      const { data: obs, error: obsErr } = used <= 0 ? { data: null, error: null } : await sb.rpc("zad_record_observation", {
         p_user: row.user_id ?? userId, p_item: row.item_name, p_qty: after, p_source: "chat_consume",
       });
       if (obsErr) {
@@ -2864,7 +2877,9 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
           samples: (obs as any)?.samples ?? 0, rateKnown: (obs as any)?.rate_known === true,
         });
       }
-      return consumeReply(row.item_name, row.unit, before, after, input.dish ? String(input.dish).trim() : null);
+      const reply = consumeReply(row.item_name, row.unit, before, after, input.dish ? String(input.dish).trim() : null);
+      const life = Number((w.rows[0] as { opened_life_days?: number | null })?.opened_life_days);
+      return opened ? `${reply}${openedNote(row.item_name, Number.isFinite(life) && life > 0 ? life : null)}` : reply;
     }
     case "add_inventory_item": {
       const itemName = await householdName(sb, userId, String(input.item_name).trim());
@@ -5677,7 +5692,7 @@ export const CHAT_TOOLS: ToolDef[] = [
   },
   {
     name: "consume_item",
-    description: "العميل قال إنه استعمل/أكل/شرب حاجة من المخزون («شربنا ٣ مية»، «خلّصنا علبة جبنة»، «فتحنا كيس رز»): زاد بيطرحها من الكمية ويتعلّم معدل البيت. amount بالعدد اللي قاله (٣ مية = 3) — زاد بيحوّل للعبوة لو الصنف كرتونة فيها كذا حبة. أكلة («عملنا مكرونة بالصلصة»): نادِ الأداة لكل مكوّن موجود في المخزون بكمية تقديرية بوحدة الصنف على قد البيت، وdish = اسم الأكلة. لو العميل قال الفاضل مش المستعمل استخدم update_inventory_qty.",
+    description: "العميل قال إنه استعمل/أكل/شرب حاجة من المخزون («شربنا ٣ مية»، «خلّصنا علبة جبنة»، «فتحنا كيس رز»): زاد بيطرحها من الكمية ويتعلّم معدل البيت، ويفتكر إمتى اتفتح (opened). amount بالعدد اللي قاله (٣ مية = 3) — زاد بيحوّل للعبوة لو الصنف كرتونة فيها كذا حبة. أكلة («عملنا مكرونة بالصلصة»): نادِ الأداة لكل مكوّن موجود في المخزون بكمية تقديرية بوحدة الصنف على قد البيت، وdish = اسم الأكلة. لو العميل قال الفاضل مش المستعمل استخدم update_inventory_qty.",
     input_schema: {
       type: "object",
       properties: {
@@ -5685,6 +5700,7 @@ export const CHAT_TOOLS: ToolDef[] = [
         amount: { type: "number", description: "الكمية اللي اتستعملت (مش اللي فاضلة)" },
         unit: { type: "string", description: "الوحدة اللي العميل قالها لو قالها: «كرتونة»، «علبة»، «زجاجة»" },
         dish: { type: "string", description: "اسم الأكلة لو الاستهلاك من طبخة" },
+        opened: { type: "boolean", description: "true لو العميل فتح عبوة جديدة («فتحنا علبة لبن»، «فتحت الجبنة») — زاد بيحسب عمرها بعد الفتح. amount ساعتها 0 لو مااستعملش منها لسه" },
       },
       required: ["item_name", "amount"],
     },

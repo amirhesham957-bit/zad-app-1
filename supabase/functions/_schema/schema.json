@@ -944,6 +944,8 @@
     "id",
     "item_name",
     "low_stock_threshold",
+    "opened_at",
+    "opened_life_days",
     "quantity",
     "restock_cycle_days",
     "restock_mode",

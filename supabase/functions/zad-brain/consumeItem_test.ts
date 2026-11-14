@@ -1,5 +1,5 @@
 import { assertEquals } from "jsr:@std/assert@1";
-import { matchConsumeRow, piecesPerPack, quantityAfter, usedInRowUnits } from "./consumeItem.ts";
+import { matchConsumeRow, openedState, piecesPerPack, quantityAfter, usedInRowUnits } from "./consumeItem.ts";
 import { intentToolHints } from "./specialists.ts";
 import { validateConsumeItem, freshContext } from "./validators.ts";
 
@@ -50,4 +50,17 @@ Deno.test("validateConsumeItem: a positive amount, at most 8 items a turn", () =
   assertEquals((validateConsumeItem({ item_name: "", amount: 1 }, {}, ctx) as any).ok, false);
   ctx.counts["consume_item"] = 8;
   assertEquals((validateConsumeItem({ item_name: "مية", amount: 1 }, {}, ctx) as any).ok, false);
+});
+
+Deno.test("openedState: days since opening and what is left of its open life", () => {
+  const now = Date.parse("2026-11-14T12:00:00Z");
+  assertEquals(openedState("2026-11-10T12:00:00Z", 4, now), { daysAgo: 4, left: 0 });
+  assertEquals(openedState("2026-11-13T12:00:00Z", 7, now), { daysAgo: 1, left: 6 });
+  assertEquals(openedState("2026-11-01T12:00:00Z", null, now), { daysAgo: 13, left: null });
+  assertEquals(openedState(null, 4, now), null);
+});
+
+Deno.test("validateConsumeItem: opening without using is amount 0 with opened", () => {
+  assertEquals(validateConsumeItem({ item_name: "لبن", amount: 0, opened: true }, {}, freshContext("u")), { ok: true });
+  assertEquals((validateConsumeItem({ item_name: "لبن", amount: 0 }, {}, freshContext("u")) as any).ok, false);
 });

@@ -228,3 +228,16 @@ Deno.test("someone outside the family cannot consume its pantry", async () => {
   assert(out.startsWith("مرفوض"), out);
   assertEquals(writes.length, 0);
 });
+
+Deno.test("«فتحنا علبة لبن» marks it opened without taking any off, and records no reading", async () => {
+  const { sb, rpcs, tables } = fakeDb({
+    family_members: FAMILY,
+    zad_inventory: [{ id: "m", user_id: "dad", family_id: "f1", item_name: "لبن", quantity: 3, unit: "علبة", created_at: "2026-11-01" }],
+  });
+  const out = await executeTool(sb, "dad", "consume_item", { item_name: "لبن", amount: 0, opened: true }, {}, freshContext("dad"), {} as any);
+  assert(!out.startsWith("مرفوض"), out);
+  assertEquals(tables.zad_inventory[0].quantity, 3);
+  assert(typeof tables.zad_inventory[0].opened_at === "string", "opened_at set");
+  assert(out.includes("اتفتح"), out);
+  assertEquals(rpcs.filter((r) => r.fn === "zad_record_observation").length, 0);
+});
