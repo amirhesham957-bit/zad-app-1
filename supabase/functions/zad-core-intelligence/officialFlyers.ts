@@ -16,6 +16,8 @@ export interface OfficialFlyerSite {
   currency: string;
   page: string;
   pdf: RegExp;
+  /** الصفحة محتاجة جافاسكريبت ⇒ بتتفتح في متصفح Apify (apifyPool.ts)، بعد robots.txt برضه. */
+  browser?: boolean;
 }
 
 export const OFFICIAL_FLYER_SITES: OfficialFlyerSite[] = [
