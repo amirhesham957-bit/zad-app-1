@@ -21,6 +21,8 @@ import 'package:zad/core/design/tokens/zad_extended_colors.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/chat/presentation/chat_screen.dart';
+import 'package:zad/shared/ads/application/interstitials.dart';
+import 'package:zad/shared/ads/presentation/inline_ad.dart';
 import 'package:zad/shared/chat/application/chat_controller.dart';
 import 'package:zad/shared/chat/application/voice_input_controller.dart';
 import 'package:zad/shared/chat/domain/chat_message.dart';
@@ -131,6 +133,11 @@ class _ChatTabState extends ConsumerState<ChatTab> {
   late bool _autoTtsOn = _autoTts(_box);
   bool _awaitingVoiceReply = false;
 
+  /// Replies that answered a request in this run: each carries one inline
+  /// ad under it (owner 11/11), as in [ChatScreen]. This tab is the chat
+  /// most people use, and until 2026-11-14 it showed no ad at all.
+  final Set<String> _adAfter = <String>{};
+
   @override
   void initState() {
     super.initState();
@@ -233,7 +240,16 @@ class _ChatTabState extends ConsumerState<ChatTab> {
         was,
         now,
       ) {
-        if (was != true || now || !_awaitingVoiceReply) return;
+        if (was != true || now) return;
+        // Only a reply that just landed carries the ad and the break.
+        final landed = ref.read(chatControllerProvider).messages.lastOrNull;
+        if (landed != null && !landed.isUser) {
+          setState(() => _adAfter.add(landed.id));
+          unawaited(
+            ref.read(interstitialsProvider).atBreak(InterstitialBreak.aiReply),
+          );
+        }
+        if (!_awaitingVoiceReply) return;
         _awaitingVoiceReply = false;
         // Only a reply that just landed: after a failure the last message is
         // the customer's own, and the answer before it is not this turn's.
@@ -355,7 +371,15 @@ class _ChatTabState extends ConsumerState<ChatTab> {
                   Padding(
                     key: ValueKey<String>(m.id),
                     padding: const EdgeInsets.only(bottom: 12),
-                    child: _IntChatBubble(message: m),
+                    child: _adAfter.contains(m.id)
+                        ? Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: <Widget>[
+                              _IntChatBubble(message: m),
+                              const ZadInlineAd(),
+                            ],
+                          )
+                        : _IntChatBubble(message: m),
                   ),
               if (chat.isAwaitingReply) ...<Widget>[
                 const _TypingIndicator(),
