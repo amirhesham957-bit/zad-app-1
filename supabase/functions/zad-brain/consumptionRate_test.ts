@@ -79,3 +79,19 @@ Deno.test("checkInPriority: an essential is asked about as early as the list add
   const p = checkInPriority({ name: "حليب", quantity: 2, category: "الألبان" }, null, [ago(11), ago(7), ago(3)], NOW)!;
   assertEquals(p >= 1, true);
 });
+
+Deno.test("checkInPriority: the household prior asks bread with 2 days left and leaves water with 3", () => {
+  const bread = checkInPriority({ name: "عيش", quantity: 10 }, null, [], NOW, { daysLeft: 2, held: false })!;
+  const water = checkInPriority({ name: "مياه", quantity: 1 }, null, [], NOW, { daysLeft: "3.0", held: false })!;
+  assertEquals(bread >= 1, true);
+  assertEquals(water < 1, true);
+  // Run out by the prior: asked first.
+  assertEquals(checkInPriority({ name: "حليب", quantity: 3 }, null, [], NOW, { daysLeft: 0, held: false })! > bread, true);
+});
+
+Deno.test("checkInPriority: «لسه» holds the prior; a learned rate and occasional items beat it", () => {
+  assertEquals(checkInPriority({ name: "عيش", quantity: 10 }, null, [], NOW, { daysLeft: 0, held: true }), null);
+  // Learned: 10 left at 1 a day = 10 days, whatever the prior says.
+  assertEquals(checkInPriority({ name: "عيش", quantity: 10 }, 1, [], NOW, { daysLeft: 0, held: false }), 0.2);
+  assertEquals(checkInPriority({ name: "عيش", quantity: 10, restockMode: "occasional" }, null, [], NOW, { daysLeft: 0, held: false }), null);
+});
