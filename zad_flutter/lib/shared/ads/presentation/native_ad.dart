@@ -19,6 +19,7 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/env/zad_env.dart';
 import 'package:zad/shared/ads/application/ads_policy.dart';
+import 'package:zad/shared/ads/data/ad_revenue.dart';
 import 'package:zad/shared/ads/data/ads_sdk.dart';
 
 /// The unit in use: Google's native test unit outside release, the
@@ -65,6 +66,7 @@ class _ZadNativeAdState extends ConsumerState<ZadNativeAd> {
         ),
       ),
       listener: NativeAdListener(
+        onPaidEvent: AdRevenue.reporter(AdFormat.native),
         onAdLoaded: (ad) {
           if (!mounted) {
             unawaited(ad.dispose());

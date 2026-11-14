@@ -22,6 +22,7 @@ import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/recipes/application/recipes_controller.dart';
 import 'package:zad/features/recipes/domain/recipe.dart';
 import 'package:zad/features/recipes/presentation/recipe_detail_screen.dart';
+import 'package:zad/shared/ads/presentation/inline_ad.dart';
 import 'package:zad/shared/ads/presentation/native_ad.dart';
 import 'package:zad/shared/affiliate/data/affiliate_repository.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
@@ -201,6 +202,12 @@ class RecipesView extends ConsumerWidget {
           itemBuilder: (_, i) => _RecipeCard(recipe: recipes[i]),
         ),
       ),
+      // A reading page: one banner at its end, after the last card (10.3 e).
+      if (recipes.isNotEmpty)
+        const SliverPadding(
+          padding: EdgeInsets.symmetric(horizontal: ZadSpacing.gutter),
+          sliver: SliverToBoxAdapter(child: ZadInlineAd()),
+        ),
     ];
   }
 }

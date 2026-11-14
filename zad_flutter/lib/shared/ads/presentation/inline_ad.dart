@@ -20,6 +20,7 @@ import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/env/zad_env.dart';
 import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/ads/application/ads_policy.dart';
+import 'package:zad/shared/ads/data/ad_revenue.dart';
 import 'package:zad/shared/ads/data/ads_sdk.dart';
 
 /// The unit in use: Google's adaptive-banner test unit outside release, the
@@ -54,6 +55,7 @@ class _ZadInlineAdState extends ConsumerState<ZadInlineAd> {
       size: size,
       request: const AdRequest(),
       listener: BannerAdListener(
+        onPaidEvent: AdRevenue.reporter(AdFormat.banner),
         onAdLoaded: (ad) async {
           final real = await (ad as BannerAd).getPlatformAdSize();
           if (!mounted) {

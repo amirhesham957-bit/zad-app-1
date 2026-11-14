@@ -11,6 +11,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:zad/core/env/zad_env.dart';
+import 'package:zad/shared/ads/data/ad_revenue.dart';
 import 'package:zad/shared/ads/data/ads_sdk.dart';
 
 /// The unit in use: Google's test unit outside release (tapping one's own
@@ -61,6 +62,7 @@ class AdMobInterstitialAds implements InterstitialAds {
         request: const AdRequest(),
         adLoadCallback: InterstitialAdLoadCallback(
           onAdLoaded: (ad) {
+            ad.onPaidEvent = AdRevenue.reporter(AdFormat.interstitial);
             _ad = ad;
             _loadedAt = DateTime.now();
             _loading = false;

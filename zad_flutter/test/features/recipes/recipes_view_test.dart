@@ -14,6 +14,7 @@ import 'package:zad/features/recipes/application/recipes_controller.dart';
 import 'package:zad/features/recipes/domain/recipe.dart';
 import 'package:zad/features/recipes/presentation/recipe_detail_screen.dart';
 import 'package:zad/features/recipes/presentation/recipes_view.dart' as ui;
+import 'package:zad/shared/ads/application/ads_policy.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart';
 import 'package:zad/shared/inventory/application/shopping_controller.dart';
@@ -123,6 +124,8 @@ void main() {
           pantryControllerProvider.overrideWith(() => _Pantry(pantry)),
           shoppingControllerProvider.overrideWith(_Shopping.new),
           budgetControllerProvider.overrideWith(_Budget.new),
+          // The banner after the last recipe (10.3 e) reads the plan's ads.
+          adsAllowedProvider.overrideWithValue(false),
         ],
         child: MaterialApp(
           theme: ZadTheme.light(),
@@ -247,6 +250,8 @@ void main() {
           pantryControllerProvider.overrideWith(() => _Pantry(_kitchen)),
           shoppingControllerProvider.overrideWith(_Shopping.new),
           budgetControllerProvider.overrideWith(_Budget.new),
+          // The banner after the last recipe (10.3 e) reads the plan's ads.
+          adsAllowedProvider.overrideWithValue(false),
         ],
         child: MaterialApp(
           theme: ZadTheme.light(),
