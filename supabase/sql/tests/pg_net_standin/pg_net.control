@@ -1,0 +1,3 @@
+comment = 'stand-in for pg_net 0.20.3 (same control settings, SQL only) for local migration tests'
+default_version = '0.20.3'
+relocatable = false
