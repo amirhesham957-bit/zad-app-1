@@ -48,6 +48,7 @@ import { cseCaps, type SearchPurpose, takeCse } from "./cseBudget.ts";
 import { DEAL_SEARCH_CACHE_MS, dealSearchCacheKey, refused, SOURCE_REST_MS, withoutResting } from "./sourcePool.ts";
 import { tiktokDealHits, tiktokDealsPrompt, tiktokQuery, withPriceFromPercent } from "./tiktokDeals.ts";
 import { isFreshPick, PICK_MIN_LIKES, readSocialPick, type SocialPick, tiktokPostedAt } from "./socialPicks.ts";
+import { readWeekTrends, weekTrendHits, weekTrendsPrompt, weekTrendsQuery } from "./weekTrends.ts";
 import { brochureEntries, OFFICIAL_FLYER_SITES, OFFICIAL_FLYER_UA, officialFlyerDeals, officialFlyerPrompt, robotsAllows, siteForPdf } from "./officialFlyers.ts";
 import { fillMarketCurrency, DEAL_SEARCH_TIMEOUT_MS, dealQuery, dealsFromHitsPrompt, dealSearchItems, readDeals, readReverseCity, readStoreDeals, reverseCityUrl, sameCurrency, cleanCity, searchStoreName, storeDealsPrompt, storeDealsQuery, videoDealsPrompt, youtubeDealVideos, instagramDealPosts, postDealsPrompt, flyerDealsPrompt, readDealCodes, type DealCode } from "./liveDeals.ts";
 import { fuelPricePrompt, fuelPriceQuery, readFuelPrice } from "./fuelPrice.ts";
@@ -3449,6 +3450,31 @@ async function handle(req: Request): Promise<Response> {
         }
         return jsonResponse({
           ok: true, deals, codes, picks, hits: found.length, videos: videos.length, read, source: "tiktok", search: lastWebSearchSource,
+        });
+      }
+
+      // ──────────────────────────────────────────────
+      // WEEK_TRENDS — «هبات الأسبوع» في بلد (weekTrends.ts، طلب المالك ١٤/١١). بحث ويب عادي ⇐ نداء جيميناي واحد بيختار
+      // من النتايج برقمها. مفيش طلب لتيك توك نفسه. Service role بس: zad-brain's trends_week_run.
+      // ──────────────────────────────────────────────
+      case "week_trends": {
+        if (!isServiceRoleToken(bearerToken(req), supabaseKey)) return jsonResponse({ error: "unauthorized" }, 401);
+        const market = marketOf(payload?.country);
+        const country = market.code;
+        const found = await cachedDealSearch(weekTrendsQuery(market.name), 10, country, "deals");
+        const hits = weekTrendHits(found, country);
+        if (hits.length === 0) {
+          return jsonResponse({ ok: true, trends: [], hits: found.length, videos: 0, search: lastWebSearchSource });
+        }
+        const { system, user } = weekTrendsPrompt(market.name, hits, new Date().toISOString().slice(0, 10));
+        const answer = await readPublicDeals({
+          systemPrompt: system, content: user, maxTokens: 1200, timeoutMs: 25_000, deadline: Date.now() + 30_000, groqText: user,
+        });
+        const parsed = answer.ok && answer.content ? (() => { try { return JSON.parse(answer.content!); } catch { return null; } })() : null;
+        const trends = readWeekTrends(parsed, hits);
+        return jsonResponse({
+          ok: answer.ok, trends, hits: found.length, videos: hits.length, search: lastWebSearchSource,
+          ...(answer.ok ? {} : { reason: "model_failed" }),
         });
       }
 

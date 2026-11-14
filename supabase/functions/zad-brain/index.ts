@@ -166,7 +166,8 @@ import { loadWeather, weatherForSnapshot, weatherRule } from "./weather.ts";
 import { medicinePrice, medicinePriceReply, pricePayload } from "./medicinePrice.ts";
 import { linksForChat } from "./dealLink.ts";
 import { knownLinkCheck } from "./knownLinks.ts";
-import { socialPickRows } from "./socialPicksStore.ts";
+import { socialPickRows, weekTrendRows } from "./socialPicksStore.ts";
+import { videoAlive } from "./videoLinks.ts";
 import { dealCountry, dealsAtPlace, dealsHere, dealSource, linkCheck, nearbySource, type StoredDealRow } from "./tasteDeals.ts";
 import { dealPutPayload, findCustomerCities, type FlyerReadRow, flyerEntries, INSTAGRAM_STORES_PER_RUN, accountDayTargets, isInstagramHashtagDay, nextFlyer, searchedDeals, STORES_PER_RUN, TIKTOK_STORES_PER_RUN, YOUTUBE_STORES_PER_RUN } from "./storeDeals.ts";
 import { replyCadence, replyCadenceRule } from "./replyCadence.ts";
@@ -10040,6 +10041,41 @@ async function handleRequest(req: Request): Promise<Response> {
       const sbSocial = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
       const out = await runSocialRecipes(sbSocial, Number(body.slot) || 0, (p) => callCoreIntel("social_recipes_scan", p, "social_recipes_run", 60_000));
       return new Response(JSON.stringify(out), { headers: CORS_HEADERS });
+    }
+
+    // «هبات الأسبوع» (طلب المالك ١٤/١١): كل بلد فيه عميل، بحث ويب عادي ⇐ core week_trends ⇐ oEmbed الرسمي بيأكد
+    // إن الفيديو لسه عام ⇐ zad_social_picks بنوع trend. مفيش كشط ولا متصفح.
+    if (body.action === "trends_week_run") {
+      if (!(await secretMatches(req.headers.get("ZAD-PROACTIVE-CRON-SECRET"), "ZAD_PROACTIVE_CRON_SECRET"))) {
+        return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: CORS_HEADERS });
+      }
+      const sbTrends = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+      const { data: users, error: usersErr } = await sbTrends.from("zad_users").select("country").not("country", "is", null);
+      if (usersErr) {
+        console.error("[trends_week_run] countries failed:", usersErr.message);
+        return new Response(JSON.stringify({ error: "countries_failed" }), { status: 500, headers: CORS_HEADERS });
+      }
+      const countries = [...new Set(((users ?? []) as Array<{ country: string }>).map((u) => String(u.country).toUpperCase()))]
+        .filter((c) => /^[A-Z]{2}$/.test(c)).sort();
+      const started = Date.now();
+      const out: Array<Record<string, unknown>> = [];
+      for (const country of countries) {
+        if (Date.now() - started > 110_000) break;
+        const reply = await callCoreIntel("week_trends", { country }, "trends_week_run", 45_000);
+        const trends = Array.isArray(reply?.trends) ? reply.trends as Array<Record<string, unknown>> : [];
+        const alive: Array<Record<string, unknown>> = [];
+        for (const t of trends) {
+          if (typeof t?.source_url === "string" && await videoAlive(t.source_url)) alive.push(t);
+        }
+        const rows = weekTrendRows(country, alive);
+        if (rows.length) {
+          const { error: putErr } = await sbTrends.from("zad_social_picks").upsert(rows, { onConflict: "source_url" });
+          if (putErr) console.error("[trends_week_run] write failed:", country, putErr.message);
+        }
+        out.push({ country, ok: reply?.ok ?? false, hits: reply?.hits ?? 0, videos: reply?.videos ?? 0, trends: trends.length, alive: alive.length, put: rows.length, search: reply?.search ?? null, reason: reply?.reason ?? null });
+      }
+      console.log(`[trends_week_run] ${out.length}/${countries.length} countries`, JSON.stringify(out));
+      return new Response(JSON.stringify({ ok: true, countries: countries.length, out }), { headers: CORS_HEADERS });
     }
 
     if (body.action === "deals_tiktok_run") {

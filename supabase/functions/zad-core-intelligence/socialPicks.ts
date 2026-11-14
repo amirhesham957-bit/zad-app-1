@@ -9,7 +9,8 @@
  * من غير وصف ولا صورة (اتقاس تاني ١٠/١١). الفيديو نفسه مابيتنزلش (شروط المنصتين، وقاعدة المصادر القانونية في ZAD_PLAN).
  */
 
-export const PICK_KINDS = ["offer", "recipe", "idea", "restaurant", "supermarket", "delivery"] as const;
+// trend = «هبة الأسبوع» (weekTrends.ts): بتيجي من تشغيلة الترند بس، مش من PICK_RULE.
+export const PICK_KINDS = ["offer", "recipe", "idea", "restaurant", "supermarket", "delivery", "trend"] as const;
 export type PickKind = typeof PICK_KINDS[number];
 
 /** بيتحط في برومبت القراية جنب العروض والأكواد. */
