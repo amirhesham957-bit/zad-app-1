@@ -92,7 +92,7 @@ related:
 - **Flutter:** `~/flutter/bin` (موجود). **Deno:** `~/.deno/bin/deno` (موجود). **Android SDK: مش موجود**
   في الكودسبيس ده — بناء الـAPK محتاج تسطيب (CLAUDE.md) وسواب على ٨ جيجا.
 - **`env.json`:** في كل worktree جديد `cp env.example.json env.json` قبل `flutter test`.
-- **GitHub:** `gh pr create` شغال؛ `gh pr merge` ممنوع (المالك بيدمج).
+- **GitHub:** `gh pr create` و`gh pr merge --squash` شغالين. من ١٤/١١ المالك سمح للجلسة تدمج الـPRs بتاعتها بعد ما CI يخضر (البناء على GitHub بدل المحلي). أي PR فيه `supabase/functions` أو `supabase/migrations` بيتنشر على الإنتاج لحظة الدمج، فبعده لازم تتحقق على الحي. ومتحطش `[closed-testing]` في رسالة الكومِت غير لو المالك طلب (بيبعت الـAAB للمختبِرين). ولو مسحت فرع PR بعد الدمج، أي PR متبني عليه بيتقفل لوحده.
 
 ## مستني المالك (مايتعملش من هنا)
 
