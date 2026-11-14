@@ -25,6 +25,7 @@ import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/core/money/money.dart';
 import 'package:zad/features/inventory/data/shopping_ai_remote.dart';
+import 'package:zad/shared/ads/presentation/inline_ad.dart';
 import 'package:zad/shared/affiliate/application/affiliate_match_controller.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart';
@@ -99,6 +100,8 @@ class _ShoppingListViewState extends ConsumerState<ShoppingListView> {
   ShoppingPriority? _priority;
   List<GrocerySuggestion> _suggestions = const <GrocerySuggestion>[];
   bool _filling = false;
+  // Counts smart fills that brought suggestions, so each gets a fresh ad.
+  int _fills = 0;
 
   @override
   void initState() {
@@ -150,12 +153,13 @@ class _ShoppingListViewState extends ConsumerState<ShoppingListView> {
         for (final i in ref.read(shoppingControllerProvider).items) i.itemName,
       };
       if (mounted) {
-        setState(
-          () => _suggestions = <GrocerySuggestion>[
+        setState(() {
+          _suggestions = <GrocerySuggestion>[
             for (final s in suggestions)
               if (!have.contains(s.name)) s,
-          ],
-        );
+          ];
+          if (_suggestions.isNotEmpty) _fills++;
+        });
       }
       final unpriced = ref
           .read(shoppingControllerProvider)
@@ -353,6 +357,8 @@ class _ShoppingListViewState extends ConsumerState<ShoppingListView> {
                       unawaited(controller.add(s.name));
                     },
                   ),
+                  // One ad per AI request (owner, 11/11), under the card.
+                  ZadInlineAd(key: ValueKey<int>(_fills)),
                 ],
                 const SizedBox(height: ZadSpacing.md),
                 Wrap(

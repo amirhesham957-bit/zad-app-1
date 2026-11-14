@@ -36,6 +36,7 @@ import 'package:zad/features/intelligence/presentation/behavior_card.dart';
 import 'package:zad/features/intelligence/presentation/brain_pulse.dart';
 import 'package:zad/features/intelligence/presentation/export_report_button.dart';
 import 'package:zad/features/intelligence/presentation/spending_charts.dart';
+import 'package:zad/shared/ads/presentation/inline_ad.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/chat/application/chat_controller.dart';
 import 'package:zad/shared/chat/data/zad_explain.dart';
@@ -427,6 +428,8 @@ class _Narrative extends ConsumerStatefulWidget {
 class _NarrativeState extends ConsumerState<_Narrative> {
   String? _text;
   bool _loading = false;
+  // Bumped when an answer lands so each request gets a fresh ad.
+  int _answers = 0;
 
   Future<void> _explain() async {
     setState(() => _loading = true);
@@ -439,6 +442,7 @@ class _NarrativeState extends ConsumerState<_Narrative> {
     setState(() {
       _text = text;
       _loading = false;
+      if (text != null) _answers++;
     });
     if (text == null) {
       ScaffoldMessenger.maybeOf(context)?.showSnackBar(
@@ -466,27 +470,34 @@ class _NarrativeState extends ConsumerState<_Narrative> {
     }
     final text = _text;
     if (text != null) {
-      return DecoratedBox(
-        decoration: BoxDecoration(
-          color: ZadColors.mint50,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(ZadSpacing.md),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              const Icon(
-                ZadIcons.assistant,
-                size: 16,
-                color: ZadColors.green700,
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          DecoratedBox(
+            decoration: BoxDecoration(
+              color: ZadColors.mint50,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(ZadSpacing.md),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  const Icon(
+                    ZadIcons.assistant,
+                    size: 16,
+                    color: ZadColors.green700,
+                  ),
+                  const SizedBox(width: ZadSpacing.sm),
+                  Expanded(child: Text(text, style: ZadType.bodySmall)),
+                ],
               ),
-              const SizedBox(width: ZadSpacing.sm),
-              Expanded(child: Text(text, style: ZadType.bodySmall)),
-            ],
-          ),
-        ),
-      ).animate().fadeIn(duration: ZadDuration.enter);
+            ),
+          ).animate().fadeIn(duration: ZadDuration.enter),
+          // One ad per AI request (owner, 11/11).
+          ZadInlineAd(key: ValueKey<int>(_answers)),
+        ],
+      );
     }
     return Align(
       alignment: AlignmentDirectional.centerStart,
@@ -641,6 +652,8 @@ class _ReportState extends ConsumerState<_ReportCard> {
   bool _loading = false;
   bool _failed = false;
   bool _sharing = false;
+  // Bumped when a report lands so each request gets a fresh ad.
+  int _reports = 0;
 
   Future<void> _generate() async {
     setState(() {
@@ -679,6 +692,7 @@ class _ReportState extends ConsumerState<_ReportCard> {
       setState(() {
         _report = report;
         _loading = false;
+        _reports++;
       });
     } on Object catch (e) {
       debugPrint('monthly_expense_report failed: $e');
@@ -743,7 +757,7 @@ class _ReportState extends ConsumerState<_ReportCard> {
   @override
   Widget build(BuildContext context) {
     final report = _report;
-    return _Card(
+    final card = _Card(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -881,6 +895,12 @@ class _ReportState extends ConsumerState<_ReportCard> {
           ],
         ],
       ),
+    );
+    if (report == null) return card;
+    // One ad per AI request, under the report and clear of its buttons.
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[card, ZadInlineAd(key: ValueKey<int>(_reports))],
     );
   }
 }

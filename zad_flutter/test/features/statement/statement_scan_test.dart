@@ -2,6 +2,7 @@
 // same review a CSV gets, a row the statement's own balance disagrees with
 // starts unticked, and the banner says what the balance check found.
 
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -14,6 +15,8 @@ import 'package:zad/core/data/providers.dart';
 import 'package:zad/features/statement/data/statement_reader.dart';
 import 'package:zad/features/statement/domain/statement_import.dart';
 import 'package:zad/features/statement/presentation/statement_import_screen.dart';
+import 'package:zad/shared/ads/application/ads_policy.dart';
+import 'package:zad/shared/ads/presentation/inline_ad.dart';
 import 'package:zad/shared/transactions/data/merchant_categories.dart';
 
 class _Reader implements StatementReader {
@@ -23,6 +26,9 @@ class _Reader implements StatementReader {
   final Object? error;
   String? mime;
 
+  /// When set, the read waits for it, so a test can look before the answer.
+  Completer<void>? gate;
+
   @override
   Future<Map<String, dynamic>?> read({
     required String userId,
@@ -30,6 +36,7 @@ class _Reader implements StatementReader {
     required String mimeType,
   }) async {
     mime = mimeType;
+    await gate?.future;
     if (error case final e?) Error.throwWithStackTrace(e, StackTrace.current);
     return answer;
   }
@@ -134,11 +141,14 @@ void main() {
     StatementFile file, {
     Map<String, dynamic>? answer,
     Object? error,
+    Completer<void>? gate,
+    bool settle = true,
   }) async {
-    final reader = _Reader(answer, error: error);
+    final reader = _Reader(answer, error: error)..gate = gate;
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          adsAllowedProvider.overrideWithValue(false),
           statementReaderProvider.overrideWithValue(reader),
           merchantCategoriesProvider.overrideWithValue(_NoCorrections()),
           signedInUserIdProvider.overrideWithValue(() => 'u1'),
@@ -146,7 +156,7 @@ void main() {
         child: MaterialApp(home: StatementImportScreen(initialFile: file)),
       ),
     );
-    await tester.pumpAndSettle();
+    if (settle) await tester.pumpAndSettle();
     return reader;
   }
 
@@ -162,6 +172,43 @@ void main() {
     expect(find.textContaining('في 1 صف ماقدرتش أقراه'), findsOneWidget);
     expect(find.textContaining('مش متطابق مع الصف ده'), findsOneWidget);
     expect(find.text('استيراد 2 معاملة'), findsOneWidget);
+  });
+
+  testWidgets('the AI reading of a statement carries one inline ad', (
+    tester,
+  ) async {
+    final gate = Completer<void>();
+    await pump(
+      tester,
+      (name: 'kashf.pdf', bytes: Uint8List.fromList(<int>[1, 2, 3])),
+      answer: _statement,
+      gate: gate,
+      settle: false,
+    );
+    await tester.pump();
+    expect(find.byType(ZadInlineAd), findsNothing);
+    gate.complete();
+    await tester.pumpAndSettle();
+    expect(find.text('استيراد 2 معاملة'), findsOneWidget);
+    expect(find.byType(ZadInlineAd), findsOneWidget);
+  });
+
+  testWidgets('a statement the AI could not read shows no ad', (tester) async {
+    await pump(tester, (
+      name: 'shot.png',
+      bytes: Uint8List.fromList(<int>[1]),
+    ));
+    expect(find.textContaining('ما لقيتش حركات'), findsOneWidget);
+    expect(find.byType(ZadInlineAd), findsNothing);
+  });
+
+  testWidgets('a failed statement read shows no ad', (tester) async {
+    await pump(
+      tester,
+      (name: 'shot.jpg', bytes: Uint8List.fromList(<int>[1])),
+      error: StateError('offline'),
+    );
+    expect(find.byType(ZadInlineAd), findsNothing);
   });
 
   testWidgets('nothing read: the pick step says so', (tester) async {

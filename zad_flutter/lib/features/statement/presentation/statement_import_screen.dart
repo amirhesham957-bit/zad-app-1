@@ -24,6 +24,7 @@ import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/features/statement/data/statement_reader.dart';
 import 'package:zad/features/statement/domain/statement_import.dart';
+import 'package:zad/shared/ads/presentation/inline_ad.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/quota/domain/server_refusal.dart';
 import 'package:zad/shared/transactions/application/transactions_controller.dart';
@@ -72,6 +73,8 @@ class _StatementImportScreenState extends ConsumerState<StatementImportScreen> {
   bool _reading = false;
   String? _error;
   ScannedStatement? _scanned;
+  // Counts statements the AI read, so each scan gets a fresh ad.
+  int _scans = 0;
 
   @override
   void initState() {
@@ -183,6 +186,7 @@ class _StatementImportScreenState extends ConsumerState<StatementImportScreen> {
       _error = error;
       if (scanned != null) {
         _scanned = scanned;
+        _scans++;
         _rows = scanned.rows;
         // A row the statement's balance disagrees with waits for a tick.
         _checked = <int>{
@@ -297,6 +301,7 @@ class _StatementImportScreenState extends ConsumerState<StatementImportScreen> {
         ),
         _ => _PreviewStep(
           scanned: _scanned,
+          scans: _scans,
           rows: _rows,
           checked: _checked,
           importing: _importing,
@@ -482,6 +487,7 @@ class _ColumnPicker extends StatelessWidget {
 class _PreviewStep extends StatelessWidget {
   const new({
     required this.scanned,
+    required this.scans,
     required this.rows,
     required this.checked,
     required this.importing,
@@ -490,6 +496,7 @@ class _PreviewStep extends StatelessWidget {
   });
 
   final ScannedStatement? scanned;
+  final int scans;
   final List<PreviewRow> rows;
   final Set<int> checked;
   final bool importing;
@@ -510,7 +517,11 @@ class _PreviewStep extends StatelessWidget {
           style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
         ),
       ),
-      if (scanned case final s?) _CheckBanner(scanned: s),
+      if (scanned case final s?) ...<Widget>[
+        _CheckBanner(scanned: s),
+        // One ad per AI request (owner, 11/11).
+        ZadInlineAd(key: ValueKey<int>(scans)),
+      ],
       Expanded(
         child: rows.isEmpty
             ? const Padding(

@@ -24,6 +24,7 @@ import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/recipes/domain/recipe.dart';
 import 'package:zad/features/recipes/presentation/cooked_sheet.dart';
 import 'package:zad/features/recipes/presentation/recipes_view.dart';
+import 'package:zad/shared/ads/presentation/inline_ad.dart';
 import 'package:zad/shared/affiliate/data/affiliate_repository.dart';
 import 'package:zad/shared/chat/application/chat_controller.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart';
@@ -142,6 +143,9 @@ class _RecipeDetailState extends ConsumerState<RecipeDetailDialog> {
   String? _error;
   int _retry = 0;
   bool _full = false;
+  // Counts recipes the model wrote (not the saved text), so each gets a
+  // fresh ad (owner, 11/11: one ad per AI request).
+  int _aiAnswers = 0;
   final Set<int> _checked = <int>{};
 
   @override
@@ -218,6 +222,7 @@ class _RecipeDetailState extends ConsumerState<RecipeDetailDialog> {
     setState(() {
       _text = text;
       _loading = false;
+      _aiAnswers++;
     });
   }
 
@@ -456,6 +461,8 @@ class _RecipeDetailState extends ConsumerState<RecipeDetailDialog> {
                           ],
                         ),
                       ],
+                      if (_aiAnswers > 0)
+                        ZadInlineAd(key: ValueKey<int>(_aiAnswers)),
                       const SizedBox(height: ZadSpacing.lg),
                       if (source != null)
                         OutlinedButton.icon(
