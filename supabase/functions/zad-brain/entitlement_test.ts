@@ -103,8 +103,16 @@ Deno.test("رسالة القفل بتفرق بين مش-مشمول وخلص-رص
   const premium = lockedReply({ allowed: false, reason: "premium_only" });
   assertEquals(premium.includes("للمشتركين"), true);
 
-  const exhausted = lockedReply({ allowed: false, reason: "quota_exhausted", cycle_reset_at: "2026-09-16T00:00:00Z" });
+  const exhausted = lockedReply({ allowed: false, reason: "quota_exhausted", tier: "plus", cycle_reset_at: "2026-09-16T00:00:00Z" });
   assertEquals(exhausted.includes("خلصت محاولات باقتك"), true);
+
+  // A free row that reaches quota_exhausted (an older server) still reads as the two-hour refill.
+  const freeExhausted = lockedReply(
+    { allowed: false, reason: "quota_exhausted", tier: "free", cycle_reset_at: "2026-10-12T15:30:00Z" },
+    "Africa/Cairo",
+  );
+  assertEquals(freeExhausted.includes("الشهر"), false);
+  assertEquals(freeExhausted.includes("كل ساعتين"), true);
 
   const needsAds = lockedReply({
     allowed: false,
@@ -114,9 +122,13 @@ Deno.test("رسالة القفل بتفرق بين مش-مشمول وخلص-رص
     cycle_reset_at: "2026-10-12T15:30:00Z",
     next_weekly_free_at: "2026-10-17T00:00:00Z",
   }, "Africa/Cairo");
-  // What it costs, what is left, and when the free 5 come back — on the customer's clock.
+  // What it costs, what is left, and when the free balance comes back — on the customer's clock.
   assertEquals(needsAds.includes("محتاج ٣ محاولات وفاضل معاك محاولة واحدة"), true);
-  assertEquals(needsAds.includes("بيرجع ٥ محاولات الساعة ٦:٣٠"), true);
+  assertEquals(needsAds.includes("بيتجدد لوحده الساعة ٦:٣٠"), true);
+  assertEquals(needsAds.includes("(كل ساعتين)"), true);
+  // The free plan refills every two hours (20261110210000): never «٥ محاولات», never «الشهر ده».
+  assertEquals(needsAds.includes("٥ محاولات"), false);
+  assertEquals(needsAds.includes("الشهر"), false);
   assertEquals(needsAds.includes("إعلان قصير"), true);
   assertEquals(needsAds.includes("الأسبوعية"), true);
   // The old 12-hour ad session is gone; nothing may promise it, or «unlimited».

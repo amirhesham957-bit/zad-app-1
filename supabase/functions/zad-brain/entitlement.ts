@@ -127,22 +127,28 @@ export async function consume(
  * name the two ways out in the order the customer is most likely to take them.
  *
  * Since 20261012020000 every request is priced in one balance, «محاولات», so the
- * message says what this one costs, what is left, and when the free 5 come back —
- * a paywall with no time on it reads as "never", and this one reopens in 5 hours.
+ * message says what this one costs, what is left, and when the free balance comes back —
+ * a paywall with no time on it reads as "never". Since 20261110210000 the free plan
+ * refills every two hours (20 messages), so no free message may say «الشهر ده» or a
+ * fixed count: the server owns the numbers, the message gives the time.
+ * `quota_exhausted` is the paid monthly wall; a free row only reaches it through an
+ * older server, and then it reads as the two-hour refill too.
  * `tz` is the account's market zone, so the time is the one on the customer's wall.
  */
 export function lockedReply(d: EntitlementDecision, tz = "UTC"): string {
   if (d.reason === "premium_only") {
     return "🔒 الميزة دي متاحة للمشتركين. افتح التطبيق واشترك عشان تفعّلها.";
   }
-  if (d.reason === "quota_exhausted") {
+  if (d.reason === "quota_exhausted" && d.tier !== "free") {
     const when = d.cycle_reset_at ? ` رصيدك بيتجدد ${arabicDate(d.cycle_reset_at, tz)}.` : "";
     return `🔒 خلصت محاولات باقتك الشهر ده.${when} تقدر ترقّي باقتك من التطبيق.`;
   }
   const need = typeof d.cost === "number" && typeof d.left === "number"
     ? `🔒 الطلب ده محتاج ${attempts(d.cost)} وفاضل معاك ${attempts(d.left)}.`
     : "🔒 خلص رصيد محاولاتك دلوقتي.";
-  const refill = d.cycle_reset_at ? ` رصيدك المجاني بيرجع ٥ محاولات الساعة ${arabicTime(d.cycle_reset_at, tz)}.` : "";
+  const refill = d.cycle_reset_at
+    ? ` رصيدك المجاني بيتجدد لوحده الساعة ${arabicTime(d.cycle_reset_at, tz)} (كل ساعتين).`
+    : " رصيدك المجاني بيتجدد لوحده كل ساعتين.";
   const weekly = d.next_weekly_free_at
     ? `واستشارتك الأسبوعية المجانية الجاية ${arabicDate(d.next_weekly_free_at, tz)}.`
     : "";
