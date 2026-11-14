@@ -10,6 +10,8 @@ import 'package:zad/core/l10n/generated/zad_l10n.dart';
 import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/inventory/data/shopping_ai_remote.dart';
 import 'package:zad/features/inventory/presentation/shopping_list_view.dart';
+import 'package:zad/shared/ads/application/ads_policy.dart';
+import 'package:zad/shared/ads/presentation/inline_ad.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart';
 import 'package:zad/shared/inventory/application/shopping_controller.dart';
@@ -53,6 +55,7 @@ class _Budget extends BudgetController {
 
 class _Ai implements ShoppingAiRemote {
   int calls = 0;
+  bool fail = false;
 
   @override
   Future<List<GrocerySuggestion>> suggest({
@@ -61,6 +64,7 @@ class _Ai implements ShoppingAiRemote {
     int familySize = 4,
   }) async {
     calls++;
+    if (fail) throw StateError('offline');
     return const <GrocerySuggestion>[
       (name: 'بيض', quantity: '30', reason: 'مفيش في المخزن'),
     ];
@@ -137,10 +141,11 @@ void main() {
 
   Future<_Ai> pump(
     WidgetTester tester, {
+    bool failAi = false,
     List<ShoppingItem>? items,
     List<InventoryItem> pantry = const <InventoryItem>[],
   }) async {
-    final ai = _Ai();
+    final ai = _Ai()..fail = failAi;
     list = _List(
       items ??
           <ShoppingItem>[
@@ -151,6 +156,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          adsAllowedProvider.overrideWithValue(false),
           shoppingControllerProvider.overrideWith(() => list),
           pantryControllerProvider.overrideWith(
             () => QuietPantry(PantryView(items: pantry)),
@@ -202,6 +208,23 @@ void main() {
     expect(ai.calls, 1);
     expect(find.text('قد تحتاج أيضاً'), findsOneWidget);
     expect(find.text('بيض · 30'), findsOneWidget);
+  });
+
+  testWidgets('the smart fill answer carries one inline ad', (tester) async {
+    await pump(tester);
+    await tester.pump();
+    expect(find.byType(ZadInlineAd), findsNothing);
+    await tester.tap(find.text('تعبئة ذكية'));
+    await tester.pumpAndSettle();
+    expect(find.byType(ZadInlineAd), findsOneWidget);
+  });
+
+  testWidgets('a failed smart fill shows no ad', (tester) async {
+    await pump(tester, failAi: true);
+    await tester.pump();
+    await tester.tap(find.text('تعبئة ذكية'));
+    await tester.pumpAndSettle();
+    expect(find.byType(ZadInlineAd), findsNothing);
   });
 
   testWidgets('seven lines of water are one line, read against the pantry', (

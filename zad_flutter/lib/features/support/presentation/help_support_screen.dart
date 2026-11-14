@@ -21,6 +21,7 @@ import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/features/support/data/support_assistant.dart';
 import 'package:zad/features/support/data/support_tickets.dart';
+import 'package:zad/shared/ads/presentation/inline_ad.dart';
 
 /// Opens the support screen.
 Future<void> showHelpSupportScreen(BuildContext context) =>
@@ -53,6 +54,10 @@ class _HelpSupportScreenState extends ConsumerState<HelpSupportScreen> {
   final TextEditingController _input = TextEditingController();
   final ScrollController _scroll = ScrollController();
   bool _typing = false;
+  // Index of the message the model answered last; the ad sits under it
+  // (owner, 11/11: one ad per AI request). -1 = none, so none on failure.
+  int _adAt = -1;
+  int _answers = 0;
 
   @override
   void dispose() {
@@ -85,9 +90,16 @@ class _HelpSupportScreenState extends ConsumerState<HelpSupportScreen> {
     setState(() {
       _messages.add((text: answer, isUser: false));
       _typing = false;
+      // The fallback is the failure text, not an answer: no ad on it.
+      if (answer != SupportAssistant.fallback) {
+        _adAt = _messages.length - 1;
+        _answers++;
+      }
     });
     _toBottom();
   }
+
+  bool get _showAd => !_typing && _adAt == _messages.length - 1;
 
   /// «كلّم فريق الدعم»: what happened, sent to a person.
   Future<void> _contactSupport() async {
@@ -337,10 +349,13 @@ class _HelpSupportScreenState extends ConsumerState<HelpSupportScreen> {
               horizontal: ZadSpacing.lg,
               vertical: ZadSpacing.lg,
             ),
-            itemCount: _messages.length + (_typing ? 1 : 0),
+            itemCount:
+                _messages.length + (_typing || _showAd ? 1 : 0),
             separatorBuilder: (_, _) => const SizedBox(height: ZadSpacing.md),
             itemBuilder: (context, i) => i == _messages.length
-                ? const _Typing()
+                ? (_typing
+                      ? const _Typing()
+                      : ZadInlineAd(key: ValueKey<int>(_answers)))
                 : _Bubble(_messages[i])
                       .animate()
                       .fadeIn(duration: ZadDuration.quick)
