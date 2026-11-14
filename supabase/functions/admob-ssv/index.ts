@@ -19,7 +19,9 @@ import {
   derToRawSignature,
   grantTarget,
   isFreshTimestamp,
+  isOurAdUnit,
   pickKey,
+  rewardedUnits,
   signedContent,
   type VerifierKey,
 } from "./verify.ts";
@@ -27,6 +29,7 @@ import {
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const KEYS_URL = "https://gstatic.com/admob/reward/verifier-keys.json";
+const REWARDED_UNITS = rewardedUnits(Deno.env.get("ZAD_ADMOB_REWARDED_UNITS"));
 
 // جوجل بتدوّر المفاتيح، فالكاش بـTTL بدل تثبيت في الكود. ساعة كفاية: الدوران
 // نادر، وإعادة الجلب أرخص من رفض منحة صحيحة بمفتاح جديد.
@@ -107,6 +110,14 @@ Deno.serve(async (req: Request) => {
     return new Response("ok, nothing to grant", { status: 200 });
   }
 
+  // التوقيع من جوجل، بس المفاتيح مشتركة بين كل حسابات AdMob: وحدة مش بتاعتنا = مفيش منحة.
+  // 403 مش 200: ده نداء مش من إعداداتنا، ومفيش حاجة نخلي AdMob تبطّل تعيدها.
+  const adUnit = p.get("ad_unit");
+  if (!isOurAdUnit(adUnit, REWARDED_UNITS)) {
+    console.warn("admob-ssv: signed callback from an ad unit that is not ours, nothing granted", { adUnit, txId });
+    return new Response("unknown ad unit", { status: 403 });
+  }
+
   const sb = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
   // transaction_id فريد من AdMob لكل مكافأة. الإدراج المشروط هو حارس التكرار:
@@ -126,7 +137,11 @@ Deno.serve(async (req: Request) => {
 
   const { data, error } = await sb.rpc("zad_ad_reward_grant", { p_user: userId });
   if (error) {
-    console.error("zad_ad_reward_grant failed:", error);
+    // الإيصال اتكتب قبل المنح؛ لو فضل، إعادة AdMob هتترفض «duplicate» والعميل يخسر مكافأة
+    // اتفرج عليها. نشيله عشان الإعادة تمنح. (فشل الشيل نفسه بيتسجل — ساعتها بس بتضيع.)
+    console.error("zad_ad_reward_grant failed, releasing the receipt so AdMob's retry grants:", error);
+    const { error: relErr } = await sb.from("zad_ad_ssv_receipts").delete().eq("transaction_id", txId);
+    if (relErr) console.error("ssv receipt release failed — this reward is lost:", txId, relErr);
     return new Response("grant failed", { status: 500 });
   }
   console.log("admob-ssv granted:", txId, JSON.stringify(data));

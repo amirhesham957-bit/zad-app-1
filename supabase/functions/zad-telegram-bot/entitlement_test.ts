@@ -62,14 +62,16 @@ Deno.test("المشترك اللي رصيده خلص بياخد رسالة رص�
 
 // الفرق المقصود عن بوابة zad-brain: دي بتفشل مقفولة. لو الفحص وقع، الميزة المدفوعة
 // ماتبقاش مجانية لأي حد بيجرب في اللحظة دي.
-Deno.test("المجاني بعد ٦ أسئلة صوتية بياخد رسالة «بكرة» مش رسالة ترقية", async () => {
+// voice_daily_cap بقى للباقات المدفوعة اللي ليها حد يومي بس؛ المجاني بياخد voice_cycle_cap (20261110210000).
+Deno.test("الحد اليومي للصوت بياخد رسالة «بكرة» من غير ما يدّعي إنه المجاني", async () => {
   const sb = sbWith({
-    zad_entitlement_status: { telegram_media: false, tier: "free" },
+    zad_entitlement_status: { telegram_media: true, tier: "starter" },
     zad_entitlement_consume: { allowed: false, reason: "voice_daily_cap", voice_daily: 6 },
   });
   const r = await mediaGate(sb, "u1", "voice");
   assertEquals(r.allowed, false);
-  assertEquals(r.reply!.includes("٦ في اليوم"), true);
+  assertEquals(r.reply!.includes("بكرة"), true);
+  assertEquals(r.reply!.includes("المجانية"), false);
 });
 
 Deno.test("فشل الفحص بيقفل الوسائط، مش بيفتحها", async () => {

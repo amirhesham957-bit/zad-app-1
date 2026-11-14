@@ -92,3 +92,31 @@ export function grantTarget(customData: string | null): string | null {
   const v = customData.trim().toLowerCase();
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(v) ? v : null;
 }
+
+/**
+ * وحدات المكافأة بتاعتنا. مفاتيح توقيع AdMob واحدة لكل حسابات AdMob في العالم، فالتوقيع
+ * بيثبت إن جوجل بعتت الـcallback — مش إن الإعلان من تطبيقنا. من غير الفحص ده أي حد عنده
+ * حساب AdMob يوجّه SSV بتاع وحدته لرابطنا ويحط رقم حسابه في custom_data، ويشحن رصيد زاد
+ * من إعلانات في تطبيقه هو (اتلقت في مراجعة ٢٠٢٦-١١-١٤). `ZAD_ADMOB_REWARDED_UNITS`
+ * (مفصولة بفاصلة) بتغيّر القايمة من غير نشر كود لو اتعملت وحدة مكافأة جديدة.
+ */
+export const DEFAULT_REWARDED_UNITS = ["5974535887"];
+
+export function rewardedUnits(env: string | undefined): string[] {
+  const list = (env ?? "").split(/[\s,]+/).map((u) => unitId(u)).filter((u): u is string => !!u);
+  return list.length ? list : DEFAULT_REWARDED_UNITS;
+}
+
+/** رقم الوحدة من `5974535887` أو `ca-app-pub-…/5974535887`. */
+function unitId(raw: string | null | undefined): string | null {
+  const v = (raw ?? "").trim();
+  if (!v) return null;
+  const tail = v.includes("/") ? v.slice(v.lastIndexOf("/") + 1) : v;
+  return /^\d+$/.test(tail) ? tail : null;
+}
+
+/** الإعلان من وحدة من وحداتنا. من غير ad_unit = مرفوض. */
+export function isOurAdUnit(adUnit: string | null, allowed: readonly string[]): boolean {
+  const id = unitId(adUnit);
+  return id !== null && allowed.includes(id);
+}
