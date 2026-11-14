@@ -7,6 +7,8 @@ disagree, the code is right and this file gets corrected.
 
 The owner's request list is the source of this work. The owner's code rules are at the end.
 
+> **Owner, 2026-11-13, after seeing the full redesign: evolution, not revolution.** Keep the current UI; add illustrations, motion, illustrated icons and a fourth-wall Zado only in the intro, login, home widgets (chef first), عيلتي and above all عقل زاد; logo and heading font are the owner's pick. Prototype: https://claude.ai/artifact/A828CzsTFJwVnuMtRSYURu — ZAD_PLAN ١٠.٨ has the order. The note below is now a list of principles, not a plan to restyle every screen.
+>
 > **Visual direction since 2026-11-13 (owner): «Editorial», not Material.** Custom `ZadBentoCard` / `ZadPillButton` /
 > `ZadGlassHeader` instead of `Card` / `ElevatedButton` / `ListTile` / `AppBar`; big bold headings, generous space, huge
 > money figures; «فلوسي» dark (`#09090B`, cards `#141417`, 1px white borders at 0.08, a soft warm ambient glow), home and
