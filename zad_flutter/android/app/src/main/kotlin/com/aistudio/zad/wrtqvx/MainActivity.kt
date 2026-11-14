@@ -3,6 +3,7 @@ package com.aistudio.zad.wrtqvx
 import android.media.AudioAttributes
 import android.media.AudioFormat
 import android.media.AudioTrack
+import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
 import android.media.RingtoneManager
@@ -213,11 +214,24 @@ class MainActivity : FlutterActivity() {
             if (!text.isNullOrEmpty()) deliverShare(mapOf("text" to text.take(MAX_SHARED_TEXT)))
             return
         }
+        // «Dirty stream» (فحص الأمان ١٤/١١): أي تطبيق تاني يقدر يبعت SEND بـ file:///data/data/<احنا>/… أو
+        // content:// من provider بتاعنا إحنا، وكنا هننسخ ملفاتنا الخاصة (الجلسة مثلاً) كأنها حاجة اتشاركت.
+        // المشاركة الحقيقية دايماً content:// من تطبيق تاني.
+        if (!isForeignContent(stream)) {
+            Log.w("ZadShare", "rejected shared uri: scheme=${stream.scheme} authority=${stream.authority}")
+            return
+        }
         val mime = intent.type
         Thread {
             val item = copyShared(stream, mime)
             runOnUiThread { deliverShare(item) }
         }.apply { isDaemon = true }.start()
+    }
+
+    private fun isForeignContent(uri: Uri): Boolean {
+        if (uri.scheme != ContentResolver.SCHEME_CONTENT) return false
+        val authority = uri.authority ?: return false
+        return authority != packageName && !authority.startsWith("$packageName.")
     }
 
     private fun deliverShare(item: Map<String, Any?>) {
