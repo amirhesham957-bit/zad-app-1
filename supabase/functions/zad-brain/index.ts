@@ -166,7 +166,7 @@ import { budgetAtStart, circumstanceBudget, circumstanceBudgetLine, circumstance
 import { homeEmergencyRule, technicianFollowUp, techniciansForSnapshot } from "./homeEmergency.ts";
 import { loadWhileAway, whileAwayBlock } from "./whileAway.ts";
 import { campaignAndTasteRules, type CampaignRow, pickHomeCampaign, recipeTaste } from "./campaigns.ts";
-import { loadWeather, weatherForSnapshot, weatherRule } from "./weather.ts";
+import { loadHomePoint, loadWeather, weatherForSnapshot, weatherRule } from "./weather.ts";
 import { medicinePrice, medicinePriceReply, pricePayload } from "./medicinePrice.ts";
 import { linksForChat } from "./dealLink.ts";
 import { knownLinkCheck } from "./knownLinks.ts";
@@ -1372,6 +1372,7 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
   const weatherFacts = await loadWeather(sb, {
     country: userRes.data?.country,
     city: (profileRow as { city?: string | null } | null)?.city ?? null,
+    point: await loadHomePoint(sb, userId),
     timeZone: budgetState.timezone ?? "UTC",
   });
   if (profileErr) {

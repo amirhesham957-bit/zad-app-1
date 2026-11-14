@@ -1,7 +1,7 @@
 // الطقس من Open-Meteo (weather.ts، الموجة ٤): المكان التقريبي، الكاش، والفشل.
 import { assert, assertEquals, assertStringIncludes } from "jsr:@std/assert@1";
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
-import { CAPITALS, forecastUrl, geocodeCity, loadWeather, parseForecast, placeKey, weatherForSnapshot, weatherRule, wmoLabel } from "./weather.ts";
+import { CAPITALS, forecastUrl, geocodeCity, homePointFrom, loadWeather, parseForecast, placeKey, weatherForSnapshot, weatherRule, wmoLabel } from "./weather.ts";
 import { intentToolHints } from "./specialists.ts";
 import { CHAT_TOOLS } from "./index.ts";
 import { freshContext, MUTATING_TOOLS, VALIDATORS } from "./validators.ts";
@@ -133,4 +133,28 @@ Deno.test("weather: snapshot shape, the prompt line, and the tool", () => {
   const ctx = freshContext("u");
   ctx.counts.weather_forecast = 2;
   assertEquals((VALIDATORS.weather_forecast({}, {}, ctx) as { ok: boolean }).ok, false);
+});
+
+Deno.test("weather: the phone's point at home, rounded to 0.1°, beats a city the geocoder can't find («اكتوبر», owner 14/11)", async () => {
+  const at = new Date(NOW - 86_400_000).toISOString();
+  const point = homePointFrom({ last_lat: 29.9234, last_lon: 31.0312, last_location_at: at, travel_country: null }, "السادس من أكتوبر", NOW);
+  assertEquals(point, { lat: 29.9, lon: 31, name: "السادس من أكتوبر" });
+  // مسافر، أو لوكيشن قديم، أو مفيش ⇒ مفيش نقطة (اسم المدينة/العاصمة زي الأول).
+  assertEquals(homePointFrom({ last_lat: 29.9, last_lon: 31, last_location_at: at, travel_country: "AE" }, null, NOW), null);
+  assertEquals(homePointFrom({ last_lat: 29.9, last_lon: 31, last_location_at: new Date(NOW - 31 * 86_400_000).toISOString() }, null, NOW), null);
+  assertEquals(homePointFrom({ last_lat: null, last_lon: 31, last_location_at: at }, null, NOW), null);
+  assertEquals(homePointFrom({ last_lat: 0, last_lon: 0, last_location_at: at }, null, NOW), null);
+  assertEquals(homePointFrom(null, null, NOW), null);
+
+  const urls: string[] = [];
+  const fetcher = (url: string) => { urls.push(url); return json(CAIRO); };
+  const c = cacheSb({});
+  const w = await loadWeather(c.sb, { country: "EG", city: "اكتوبر", point, timeZone: "Africa/Cairo", now: NOW, fetcher });
+  assertEquals([w?.place, w?.from], ["السادس من أكتوبر", "location"]);
+  assert(!urls.some((u) => u.includes("geocoding")), "no city lookup when the point is known");
+  assertStringIncludes(urls[0], "latitude=29.9000");
+  assertEquals(c.writes[0].place_key, placeKey(29.9, 31));
+  // نقطة من غير اسم ⇒ اسم المدينة من الملف.
+  const plain = await loadWeather(cacheSb({}).sb, { country: "EG", city: "اكتوبر", point: { lat: 29.9, lon: 31, name: null }, timeZone: "UTC", now: NOW, fetcher });
+  assertEquals(plain?.place, "اكتوبر");
 });
