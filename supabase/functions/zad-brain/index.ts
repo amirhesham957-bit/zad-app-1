@@ -151,6 +151,8 @@ import { toneFromState, toneRule, toneWithMessage, type ToneTxn } from "./tone.t
 import { notePurchaseIntent } from "./purchaseIntent.ts";
 import { isServiceLine } from "./serviceLine.ts";
 import { forcedLogReply, shouldForceLog } from "./forcedLog.ts";
+import { shouldForceConsume } from "./forcedConsume.ts";
+import { pantryLinesWithoutPrice, pricelessResult } from "./pricelessPurchase.ts";
 import { FORCED_REPLIES, forcedIntentTool } from "./forcedIntent.ts";
 import { loadRestockJudge, loadRestockVerdicts } from "./restockJudge.ts";
 import { describeWhereToBuy, type WhereDeal, type WhereReport, WHERE_WINDOW_DAYS, whereToBuy } from "./whereToBuy.ts";
@@ -8471,6 +8473,21 @@ async function handleAgentTurnInLane(
         toolResults.push({ id: call.id, name: call.name, content: ADVICE_TOOL_RESULT });
         continue;
       }
+      // «اشتريت ٣ علب لبن» من غير سعر (pricelessPurchase.ts، فحص ١٤/١١): الأصناف تدخل المخزن، والمصروف لأ.
+      const priceless = call.name === "log_transaction" ? pantryLinesWithoutPrice(call.input) : null;
+      if (priceless) {
+        const added: string[] = [];
+        const failed: string[] = [];
+        for (const line of priceless) {
+          const before = ctx.mutationCount;
+          const r = await runTool(sb, userId, "add_inventory_item", line, snap, ctx, scope);
+          const mutated = ctx.mutationCount > before;
+          recordCall(executed, consulted, "add_inventory_item", r, mutated);
+          (mutated ? added : failed).push(r);
+        }
+        toolResults.push({ id: call.id, name: call.name, content: pricelessResult(added, failed) });
+        continue;
+      }
       if (CONFIRM_REQUIRED_TOOLS.includes(call.name)) {
         // الحارس: أدوات الفلوس مابتتنفذش هنا مهما كان. بتتحقق بس، وبتتحوّل لاقتراح.
         const v = await validateTool(call.name, call.input, snap, ctx);
@@ -8558,6 +8575,36 @@ async function handleAgentTurnInLane(
         }
       } catch (e) {
         console.warn("[agent_turn] forced log retry failed:", (e as Error)?.message ?? e);
+      }
+    }
+  }
+
+  // «فتحنا علبة لبن» والموديل رد «خصمت علبة» من غير الأداة (forcedConsume.ts، فحص ١٤/١١: ١ من ٤). محاولة واحدة
+  // بـ consume_item بس؛ الرد بيتبدل بس لو المخزن اتكتب فعلاً.
+  if (shouldForceConsume(message, executed.map((e) => e.tool), proposals.length)) {
+    const consumeTool = CHAT_TOOLS.find((t) => t.name === "consume_item");
+    if (consumeTool) {
+      try {
+        const forced = await callModel({
+          model: MODEL_ROUTINE, system: systemPrompt, tools: [consumeTool], history, maxTokens: 400, forceTool: "consume_item",
+          groqSystem,
+        });
+        inputTokens += forced.usage.inTok;
+        outputTokens += forced.usage.outTok;
+        calls.model++;
+        calls.retries++;
+        if (forced.model && !calls.models.includes(forced.model)) calls.models.push(forced.model);
+        const call = forced.toolCalls.find((c) => c.name === "consume_item");
+        if (call) {
+          const before = ctx.mutationCount;
+          const result = await runTool(sb, userId, "consume_item", call.input, snap, ctx, scope);
+          if (ctx.mutationCount > before) {
+            recordCall(executed, consulted, "consume_item", result, true);
+            modelText = result;
+          }
+        }
+      } catch (e) {
+        console.warn("[agent_turn] forced consume retry failed:", (e as Error)?.message ?? e);
       }
     }
   }
