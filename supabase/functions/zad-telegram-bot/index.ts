@@ -45,6 +45,7 @@ import { marketFor } from "../_shared/amazonMarket.ts";
 import { checkInBasis, checkInPriority, checkInScore, openedLeftDays } from "../_shared/consumptionRate.ts";
 import { PURCHASE_SOURCES, purchaseDaysByItem, restockKey } from "../_shared/restockCycle.ts";
 import { extendCallback, formatExtend, formatLookup, parseExtendCallback, parseSupportCommand, SUPPORT_TEXT, SUPPORT_USAGE } from "./supportDesk.ts";
+import { AFFINITY_SCOPE } from "../_shared/dealRelevance.ts";
 import {
   adCreditKeyboard,
   InlineKeyboardButton, mainMenuKeyboard, dismissKeyboard,
@@ -59,7 +60,7 @@ import {
   notificationReviewKeyboard,
   parseNotificationReviewCallback,
   confirmMedicationKeyboard, parseMedicationCallback,
-  checkInKeyboard, parseCheckInCallback, parseCheckinTextReply, checkInPromptMessage, checkInBundleMessage, checkInBundleKeyboard, type CheckinWhy, deferForRecentOutbound, ignoredCheckinStreak, checkinPlan, CHECKIN_OFF_CALLBACK,
+  checkInKeyboard, parseCheckInCallback, parseCheckinTextReply, checkInPromptMessage, checkInBundleMessage, checkInBundleKeyboard, type CheckinWhy, FOOD_PROFILE_QUESTION, foodProfileQuestionDue, deferForRecentOutbound, ignoredCheckinStreak, checkinPlan, CHECKIN_OFF_CALLBACK,
   confirmToolKeyboard, parseToolCallback, pendingConfirmsBlock, planConfirmations,
   isHumanUpdate, type UpdateEnvelope,
   doseKeyboard, parseDoseCallback, DOSE_MOMENTS, type DoseAction,
@@ -585,7 +586,36 @@ async function nightCheckin(
   );
   if (plan === "rest") return null;
   const candidates = (await findCheckInCandidates(sb, userId)).slice(0, budget);
-  return candidates.length > 0 ? { candidates, plan } : null;
+  // فاضية = الحراس عدّوا ومفيش صنف عليه الدور: الليلة دي ممكن تبقى لسؤال ملف الأكل (askFoodProfile).
+  return { candidates, plan };
+}
+
+/** آخر مرة اتسأل فيها عن ملف الأكل — حدث في zad_product_events. */
+const FOOD_PROFILE_EVENT = "bot.food_profile_asked";
+
+/**
+ * خطة المخزن الواعي ٥ (المالك ١٤/١١): الليلة اللي مفيهاش سؤال مخزون، وملف الأكل فاضي (مفيش ولا «مش باكل» ولا
+ * «بحب» متسجلة)، زاد بيسأل مرة في الشهر بالكتير. الرد بيروح للعقل زي أي رسالة، وstatedPreference بيحفظه.
+ */
+async function askFoodProfile(sb: SupabaseClient, userId: string, chatId: number): Promise<boolean> {
+  const [{ count: known, error: knownErr }, { data: last, error: lastErr }] = await Promise.all([
+    sb.from("zad_memory").select("id", { count: "exact", head: true })
+      .eq("user_id", userId).eq("scope", AFFINITY_SCOPE).is("superseded_by", null),
+    sb.from("zad_product_events").select("at").eq("user_id", userId).eq("name", FOOD_PROFILE_EVENT)
+      .order("at", { ascending: false }).limit(1).maybeSingle(),
+  ]);
+  if (knownErr || lastErr) {
+    console.error("food profile check failed:", knownErr?.message ?? lastErr?.message);
+    return false;
+  }
+  if (!foodProfileQuestionDue(known ?? 0, (last as { at?: string } | null)?.at ?? null, Date.now())) return false;
+  const { error } = await sb.from("zad_product_events").insert({ user_id: userId, name: FOOD_PROFILE_EVENT });
+  if (error) {
+    console.error("food profile event failed:", error.message);
+    return false;
+  }
+  await sendTelegramMessage(chatId, FOOD_PROFILE_QUESTION);
+  return true;
 }
 
 /** بيسجّل الأسئلة ويرجّع id كل واحد باسمه — الأزرار بتشيل الـid. اللي فشل تسجيله بيتشال. */
@@ -684,6 +714,10 @@ async function runDailyCheckins(sb: SupabaseClient): Promise<{ usersChecked: num
     const night = await nightCheckin(sb, b.user_id);
     if (!night) continue;
     const { candidates, plan } = night;
+    if (candidates.length === 0) {
+      if (plan === "ask" && await askFoodProfile(sb, b.user_id, b.chat_id)) promptsSent++;
+      continue;
+    }
     let asked = 0;
     if (candidates.length === 1 && plan === "ask") {
       if (await sendCheckInPrompt(sb, b.user_id, b.chat_id, candidates[0].item_name, candidates[0].quantity, candidates[0].unit, candidates[0].why)) asked = 1;

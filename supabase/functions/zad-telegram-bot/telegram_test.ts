@@ -4,7 +4,7 @@ import {
   dealPhotoUrl, dealSourceRow,
   normalizeBindingCode, parseDismissCallback, isFamilyInviteCode, looksLikeLinkCode, FAMILY_CODE_REPLY, reasonForCode, memoryNoteForDismissal,
   formatBalanceMessage, formatTransactionsMessage, mainMenuKeyboard, dismissKeyboard,
-  checkInKeyboard, parseCheckInCallback, checkInPromptMessage, checkInReason,
+  checkInKeyboard, parseCheckInCallback, checkInPromptMessage, checkInReason, foodProfileQuestionDue, FOOD_PROFILE_QUESTION,
   confirmToolKeyboard, parseToolCallback,
   transactionProposalKeyboard, parseTransactionProposalCallback,
   duplicateProposalKeyboard, duplicateProposalMessage,
@@ -921,4 +921,13 @@ Deno.test("the night question says why: opened, the home's rate, the household, 
   // One item with a reason: the sentence, no bullet list; with the ignored note the list stays.
   assertEquals(checkInBundleMessage(["اللبن"], false, { kind: "opened", days: 4 }), checkInReason("اللبن", { kind: "opened", days: 4 }));
   assert(checkInBundleMessage(["اللبن"], true, { kind: "opened", days: 4 }).includes("• اللبن"));
+});
+
+Deno.test("the food-profile question: only when nothing is known, at most once in 30 days", () => {
+  const now = Date.parse("2026-11-14T20:00:00Z");
+  assertEquals(foodProfileQuestionDue(0, null, now), true);
+  assertEquals(foodProfileQuestionDue(1, null, now), false);
+  assertEquals(foodProfileQuestionDue(0, "2026-10-20T20:00:00Z", now), false);
+  assertEquals(foodProfileQuestionDue(0, "2026-10-14T20:00:00Z", now), true);
+  assert(FOOD_PROFILE_QUESTION.includes("حساسية"));
 });

@@ -102,7 +102,8 @@ import { RECEIPT_REACTIONS_PER_DAY, receiptKey, sanitizeReceiptFacts } from "../
 import { runSocialRecipes } from "./socialRecipesRun.ts";
 import { COMMUTE_SCOPE, readCommute } from "./commute.ts";
 import { fuelForecast, fuelForecastLine, type FuelTxn } from "./fuelForecast.ts";
-import { AFFINITY_SCOPE, affinityNote, type Polarity, signalTerms, statedPreference } from "../_shared/dealRelevance.ts";
+import { AFFINITY_SCOPE, affinityNote, loadAffinity, type Polarity, signalTerms, statedPreference } from "../_shared/dealRelevance.ts";
+import { foodProfile } from "./foodProfile.ts";
 import { seasonFor, seasonInstruction, upcomingSeason, upcomingSeasonInstruction } from "../_shared/season.ts";
 import { SEASON_PLAN_DAYS, seasonPlanInstruction, upcomingCalendarSeasons } from "../_shared/seasonCalendar.ts";
 import { type FastIntent, formatBalanceReply, parseFastPath } from "./fastPath.ts";
@@ -1333,6 +1334,12 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
       .order("created_at", { ascending: false }).limit(40),
   ]);
   if (campaignErr) console.error("[snapshot] app_campaigns failed:", campaignErr.message);
+  // ملف أكل البيت (foodProfile.ts): البراندات للبيت كله، والتفضيلات من الشات. فشل = من غيرهم.
+  const [{ data: foodPrefRows, error: foodPrefErr }, foodAffinity] = await Promise.all([
+    sb.from("zad_item_preferences").select("item_name,kind,brand").or(householdFilter(userId, householdFamily)).limit(60),
+    loadAffinity(sb, userId),
+  ]);
+  if (foodPrefErr) console.error("[snapshot] zad_item_preferences failed:", foodPrefErr.message);
   if (apptErr) {
     console.error("[snapshot] zad_appointments failed:", apptErr.message);
     dataErrors.push({ source: "مواعيدك" });
@@ -1725,6 +1732,15 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
       (profileRow as { dialect?: string | null } | null)?.dialect ?? null,
     ),
     recipe_taste: recipeTaste((tasteRows ?? []) as Array<{ recipe_name: string | null; liked: boolean | null }>),
+    // ملف أكل البيت (خطة المخزن ٥، foodProfile.ts): الأساسيات والبراندات واللي مابياكلوهوش. null = مش معروف لسه.
+    food_profile: foodProfile({
+      householdSize: (profileRow as { household_size?: number | null } | null)?.household_size ?? null,
+      staples: restockOf
+        ? (invRes.data ?? []).filter((item) => Number(item.quantity) >= 0 && restockOf(item).essential).map((item) => String(item.item_name))
+        : [],
+      preferences: (foodPrefRows ?? []) as Array<{ item_name: string | null; kind: string | null; brand: string | null }>,
+      affinities: foodAffinity,
+    }),
     // ميزانية المواعيد (eventDayBudget.ts): نفس المتاح متوزع بوزن أكبر على أيام المشاوير. null = مفيش مشوار في الأسبوع.
     event_day_budget: eventDayBudget({
       available, daysLeft: daysLeftInCycle,
