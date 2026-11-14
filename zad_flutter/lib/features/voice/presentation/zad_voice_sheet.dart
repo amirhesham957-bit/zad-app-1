@@ -23,6 +23,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/design/tokens/zad_palette.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/l10n/l10n.dart';
+import 'package:zad/shared/ads/presentation/inline_ad.dart';
 import 'package:zad/shared/chat/application/chat_controller.dart';
 import 'package:zad/shared/chat/application/voice_input_controller.dart';
 import 'package:zad/shared/mascot/presentation/zad_mascot.dart';
@@ -82,6 +83,10 @@ class _ZadVoiceSheetState extends ConsumerState<ZadVoiceSheet> {
   // Zad's answer, shown the moment it arrives: the audio takes seconds more,
   // and a silent sheet in between read as «مش شغال» (owner, 2026-10-01).
   String _reply = '';
+
+  /// Answers landed while the sheet is open. Keys the ad under the reply, so
+  /// each answer brings its own (owner 11/11: one ad per AI request).
+  int _answers = 0;
 
   /// A turn this sheet sent that has not settled yet.
   bool _awaitingTurn = false;
@@ -148,6 +153,7 @@ class _ZadVoiceSheetState extends ConsumerState<ZadVoiceSheet> {
         setState(() {
           _awaitingTurn = false;
           _turnFailed = after.error != null;
+          if (!_turnFailed) _answers++;
           _reply = _turnFailed
               ? ''
               : after.messages
@@ -331,6 +337,10 @@ class _ZadVoiceSheetState extends ConsumerState<ZadVoiceSheet> {
                         ),
                       ),
                     ),
+                    // The mic is the app's main way to ask Zad, and until
+                    // 2026-11-14 its answers carried no ad (owner: «أي طلب
+                    // ذكاء فيه إعلان»). Takes no room until an ad loads.
+                    ZadInlineAd(key: ValueKey<int>(_answers)),
                   ],
                   const SizedBox(height: 16),
                   Semantics(
