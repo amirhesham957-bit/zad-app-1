@@ -18,6 +18,8 @@ export interface RunContext {
    * لازم تاخد قيمة من كلامه بالحرف (رقم فني) بتترفض من غيره.
    */
   heard?: string;
+  /** رسالة العميل في اللفة دي بس (من غير اللي قبلها). موجودة في لفة الشات بس. */
+  said?: string;
   counts: Record<string, number>;
   mutationCount: number;
   insightCount: number;

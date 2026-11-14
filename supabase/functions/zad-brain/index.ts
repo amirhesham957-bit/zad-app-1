@@ -88,7 +88,7 @@ import { DOSE_SNOOZE_MINUTES, isDoseAction, muteCheckin, settleDoseReminder, sno
 import { type KindOutcome, LEARN_WINDOW_DAYS, learnedPriority, learnedQuietUntil, outcomesByKind, type Stance, stanceOf } from "./outcomeLearning.ts";
 import { deliverPetCall } from "./petCall.ts";
 import { pickPantryMatch, samePantryItem, type PantryRow } from "./pantryMatch.ts";
-import { consumeReply, matchConsumeRow, openedNote, openedState, quantityAfter, usedInRowUnits, type ConsumeRow } from "./consumeItem.ts";
+import { consumeReply, matchConsumeRow, openedNote, openedOnlyReply, openedState, openOnly, quantityAfter, usedInRowUnits, type ConsumeRow } from "./consumeItem.ts";
 import { txnSourceType } from "./provenance.ts";
 import { productNameKey } from "./productIdentity.ts";
 import { dealCodeRows } from "./dealCodes.ts";
@@ -2879,10 +2879,12 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       const row = match.row;
       const before = Math.max(0, Number(row.quantity) || 0);
       if (before <= 0) return `«${row.item_name}» متسجل خلصان أصلاً — مفيش حاجة تتطرح.`;
-      const used = usedInRowUnits(Number(input.amount) || 0, input.unit, row.item_name);
-      const after = quantityAfter(before, used);
       // «فتحنا علبة لبن» (خطة المخزن ٣، 20261114220000): عمرها بعد الفتح بيتحسب في التريجر من اسمها.
       const opened = input.opened === true;
+      // قرار المالك ١٤/١١: العلبة المفتوحة لسه في التلاجة وبتتعد — الفتح لوحده مابينقصش العدد. الموديل كان بيبعت
+      // amount 1 لـ«فتحنا علبة لبن»، فلو الرسالة فتح من غير فعل استعمال الكمية صفر مهما بعت.
+      const used = opened && openOnly(ctx.said) ? 0 : usedInRowUnits(Number(input.amount) || 0, input.unit, row.item_name);
+      const after = quantityAfter(before, used);
       const w = await writeRows(
         sb.from("zad_inventory").update(opened ? { quantity: after, opened_at: new Date().toISOString() } : { quantity: after })
           .eq("id", row.id).select("id,quantity,opened_at,opened_life_days"),
@@ -2908,9 +2910,11 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
           samples: (obs as any)?.samples ?? 0, rateKnown: (obs as any)?.rate_known === true,
         });
       }
+      const lifeRaw = Number((w.rows[0] as { opened_life_days?: number | null })?.opened_life_days);
+      const life = Number.isFinite(lifeRaw) && lifeRaw > 0 ? lifeRaw : null;
+      if (opened && used <= 0) return openedOnlyReply(row.item_name, row.unit, after, life);
       const reply = consumeReply(row.item_name, row.unit, before, after, input.dish ? String(input.dish).trim() : null);
-      const life = Number((w.rows[0] as { opened_life_days?: number | null })?.opened_life_days);
-      return opened ? `${reply}${openedNote(row.item_name, Number.isFinite(life) && life > 0 ? life : null)}` : reply;
+      return opened ? `${reply}${openedNote(row.item_name, life)}` : reply;
     }
     case "add_inventory_item": {
       const itemName = await householdName(sb, userId, String(input.item_name).trim());
@@ -5731,7 +5735,7 @@ export const CHAT_TOOLS: ToolDef[] = [
         amount: { type: "number", description: "الكمية اللي اتستعملت (مش اللي فاضلة)" },
         unit: { type: "string", description: "الوحدة اللي العميل قالها لو قالها: «كرتونة»، «علبة»، «زجاجة»" },
         dish: { type: "string", description: "اسم الأكلة لو الاستهلاك من طبخة" },
-        opened: { type: "boolean", description: "true لو العميل فتح عبوة جديدة («فتحنا علبة لبن»، «فتحت الجبنة») — زاد بيحسب عمرها بعد الفتح. amount ساعتها 0 لو مااستعملش منها لسه" },
+        opened: { type: "boolean", description: "true لو العميل فتح عبوة جديدة («فتحنا علبة لبن»، «فتحت الجبنة») — زاد بيحسب عمرها بعد الفتح. amount ساعتها 0 — العلبة المفتوحة لسه بتتعد في المخزون؛ amount أكبر من 0 بس لو قال إنه استعمل منها («فتحنا علبة لبن وشربنا نصها» = 0.5)" },
       },
       required: ["item_name", "amount"],
     },
@@ -8237,6 +8241,7 @@ async function handleAgentTurnInLane(
   ]);
   // كلام العميل نفسه في المحادثة (كل القنوات) — الأدوات اللي بتاخد قيمة منه بالحرف (رقم فني) بتتحقق عليه.
   ctx.heard = history.filter((t) => t.role === "user").map((t) => String((t as { text?: string }).text ?? "")).join("\n").slice(-3000);
+  ctx.said = String(message ?? "");
 
   // تقليل الأدوات المعروضة حسب الوكيل الموجّه — 39 أداة في كل طلب بتخلي الموديل
   // يتردد ويبطّئ. الأداة العامة (web_search/remember/...) بتفضل متاحة دايمًا. قبل البرومبت:
