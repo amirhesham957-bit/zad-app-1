@@ -50,3 +50,19 @@ Deno.test("an Instagram link we stored stays in the reply; one the model wrote i
   assertEquals(out.includes("/p/real/"), true);
   assertEquals(out.includes("/p/fake/"), false);
 });
+
+Deno.test("weekTrendRows: هبة تيك توك بنوع trend، والمحل لكل هبة (أو null)، والرابط لازم فيديو تيك توك", async () => {
+  const { weekTrendRows } = await import("./socialPicksStore.ts");
+  const rows = weekTrendRows("EG", [
+    { source_url: "https://www.tiktok.com/@chef.a/video/7400000000000000000", title: "صاحي كيو", summary: "ساندوتش", store: "كيو ماركت", posted_at: "2026-11-12T00:00:00Z" },
+    { source_url: "https://www.tiktok.com/@b/video/7400000000000000001", title: "كنافة دبي", summary: "", store: null },
+    { source_url: "https://evil.example/x", title: "رابط غريب" },
+    { source_url: "https://www.tiktok.com/@c/video/7400000000000000002?x=1", title: "فيه query" },
+    { source_url: "https://www.tiktok.com/@d/video/7400000000000000003", title: "x" },
+  ]);
+  assertEquals(rows.map((r) => [r.kind, r.platform, r.title, r.store, r.store_key === null]), [
+    ["trend", "tiktok", "صاحي كيو", "كيو ماركت", false],
+    ["trend", "tiktok", "كنافة دبي", null, true],
+  ]);
+  assertEquals(weekTrendRows("egypt", [{ source_url: "https://www.tiktok.com/@a/video/1", title: "abc" }]), []);
+});
