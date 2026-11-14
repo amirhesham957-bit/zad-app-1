@@ -12,6 +12,8 @@ import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:zad/core/data/local/boxes.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/features/voice/presentation/zad_voice_sheet.dart';
+import 'package:zad/shared/ads/application/ads_policy.dart';
+import 'package:zad/shared/ads/presentation/inline_ad.dart';
 import 'package:zad/shared/chat/application/chat_controller.dart';
 import 'package:zad/shared/chat/application/voice_input_controller.dart';
 import 'package:zad/shared/chat/domain/chat_message.dart';
@@ -55,6 +57,19 @@ class _Chat extends ChatController {
   void fail() => state = state.copyWith(
     isAwaitingReply: false,
     error: StateError('offline'),
+  );
+
+  void answer(String id) => state = state.copyWith(
+    isAwaitingReply: false,
+    messages: <ChatMessage>[
+      ...state.messages,
+      ChatMessage(
+        id: id,
+        text: 'رد $id',
+        isUser: false,
+        createdAt: DateTime.utc(2026, 9, 27, 2),
+      ),
+    ],
   );
 }
 
@@ -128,6 +143,9 @@ void main() {
             (ref) => VoiceOpeners(ref.watch(voiceSynthesizerProvider), _Kept()),
           ),
           localStoreProvider.overrideWithValue(store),
+          // The ad still mounts with ads off; it just takes no room and
+          // never touches the SDK.
+          adsAllowedProvider.overrideWithValue(false),
         ],
         child: const MaterialApp(
           home: Directionality(
@@ -182,5 +200,40 @@ void main() {
 
     expect(find.text('زاد بيتكلم…'), findsNothing);
     expect(find.text('بيفكر…'), findsOneWidget);
+  });
+
+  testWidgets('every answer from the mic carries its own inline ad', (
+    tester,
+  ) async {
+    await pump(tester);
+    expect(find.byType(ZadInlineAd), findsNothing);
+
+    await tester.tap(find.text('حلل مصاريفي'));
+    await tester.pump();
+    chat.answer('r1');
+    await tester.pump();
+    expect(find.byType(ZadInlineAd), findsOneWidget);
+    final first = tester.widget(find.byType(ZadInlineAd)).key;
+
+    await tester.tap(find.text('اقترح وجبة'));
+    await tester.pump();
+    chat.answer('r2');
+    await tester.pump();
+    expect(find.byType(ZadInlineAd), findsOneWidget);
+    expect(
+      tester.widget(find.byType(ZadInlineAd)).key,
+      isNot(first),
+      reason: 'a new answer asks for a new ad',
+    );
+  });
+
+  testWidgets('a failed turn shows no ad', (tester) async {
+    await pump(tester);
+    await tester.tap(find.text('حلل مصاريفي'));
+    await tester.pump();
+    chat.fail();
+    await tester.pump();
+
+    expect(find.byType(ZadInlineAd), findsNothing);
   });
 }
