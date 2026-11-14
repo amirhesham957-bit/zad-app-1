@@ -421,7 +421,7 @@ async function deliverVoiceAlert(
  * hard guarantee; this filter just avoids the wasted query/round-trip).
  */
 async function findCheckInCandidates(sb: SupabaseClient, userId: string): Promise<Array<{ item_name: string; quantity: number; unit: string | null }>> {
-  const [{ data: inv }, { data: cons }, { data: pending }, { data: occasional, error: occErr }, { data: seen }] = await Promise.all([
+  const [{ data: inv }, { data: cons }, { data: pending }, { data: occasional, error: occErr }, { data: seen }, { data: priors, error: priorErr }] = await Promise.all([
     sb.from("zad_inventory").select("item_name,quantity,category,unit,created_at,restock_mode,restock_cycle_days").eq("user_id", userId),
     sb.from("zad_consumption").select("item_name,avg_daily_qty,rate_known").eq("user_id", userId),
     sb.from("telegram_checkin_prompts").select("item_name").eq("user_id", userId).eq("status", "pending"),
@@ -432,8 +432,15 @@ async function findCheckInCandidates(sb: SupabaseClient, userId: string): Promis
       .in("source", [...PURCHASE_SOURCES])
       .gte("observed_at", new Date(Date.now() - 180 * 86_400_000).toISOString())
       .order("observed_at", { ascending: false }).limit(2000),
+    // المعدل المبدئي لكل صنف من غير معدل ولا عادة شرا (أفراد البيت × استهلاك الفرد) — نفس كارت الموبايل.
+    sb.rpc("zad_pantry_prior_days_for", { p_user: userId }),
   ]);
   if (occErr) console.error("checkin: occasional items failed:", occErr.message);
+  if (priorErr) console.error("checkin: household priors failed:", priorErr.message);
+  const priorByItem = new Map(
+    (Array.isArray(priors) ? priors as Array<{ item_name: string; days_left: number | string | null; held: boolean }> : [])
+      .map((p) => [p.item_name, { daysLeft: p.days_left, held: p.held === true }]),
+  );
   const occasionalItems = new Set((Array.isArray(occasional) ? occasional as string[] : []).map((n) => n.trim()));
 
   const consByItem = new Map(
@@ -461,6 +468,8 @@ async function findCheckInCandidates(sb: SupabaseClient, userId: string): Promis
         consByItem.get(item.item_name)?.avg_daily_qty,
         // صنف اتضاف بإيده من غير شرا متسجل: يوم إضافته هو أول شرا.
         boughtOn.get(restockKey(item.item_name)) ?? (item.created_at ? [item.created_at] : []),
+        Date.now(),
+        priorByItem.get(item.item_name),
       ),
     }))
     .filter((x): x is { item: typeof x.item; priority: number } => x.priority != null && x.priority >= 1)

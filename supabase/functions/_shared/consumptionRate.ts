@@ -41,7 +41,8 @@ export function needsCheckIn(
 /**
  * أولوية سؤال «لسه عندك؟» لصنف واحد: ≥ ١ = يستاهل يتسأل الليلة، وكل ما تكبر يتسأل الأول. null = مايتسألش.
  *  • بمعدل البيت (zad_consumption): الأيام اللي فاضلة؛ يومين أو أقل = ١ فأكتر (نفس needsCheckIn).
- *  • من غير معدل: دورة شرا الصنف في البيت ده (`restockCycle.ts`: البداية من نوعه، وبعدين وسيط المسافات بين مرات
+ *  • من غير معدل، بالمعدل المبدئي لو السيرفر عنده رقم للصنف ([prior]): الأيام الباقية بنفس الحساب.
+ *  • غير كده: دورة شرا الصنف في البيت ده (`restockCycle.ts`: البداية من نوعه، وبعدين وسيط المسافات بين مرات
  *    شراه، وتصحيح العميل لو قاله) — الأيام من آخر شرا ÷ dueAfterDays(الدورة)، نفس اللحظة اللي الحلم بيحطه فيها في
  *    قايمة الشرا. لبن البيت بيشتريه كل ٣ أيام = ١ بعد يومين ونص؛ حلاوة كل ٣٠ يوم = ٠٫٢ بعد ٦ أيام.
  * المقاس (١١/١١، حساب المالك): القاعدة القديمة «الكمية ≤ ٢» سألت ٨ مرات في أسبوع عن حلاوة ومسحوق ورول أون وسمن،
@@ -52,11 +53,20 @@ export function checkInPriority(
   avgDailyQty: number | null | undefined,
   purchaseDays: readonly string[],
   now: number = Date.now(),
+  prior?: { daysLeft: number | string | null; held: boolean } | null,
 ): number | null {
   if (!(item.quantity > 0)) return null;
   const rate = Number(avgDailyQty);
   if (rate > 0) return 2 / Math.max(item.quantity / rate, 0.1);
   if (item.restockMode === "occasional") return null;
+  // المعدل المبدئي (zad_pantry_prior_days_for، 20261114200000): استهلاك الفرد × أفراد البيت ÷ العبوة، من آخر
+  // قراية. السيرفر مابيرجّعهوش لصنف ليه عادة شرا (٣ أيام شرا أو أكتر) — دي بتفضل للدورة تحت. «لسه» في آخر ٣ أيام
+  // = مايتسألش.
+  if (prior) {
+    if (prior.held) return null;
+    const left = Number(prior.daysLeft);
+    if (Number.isFinite(left) && left >= 0) return 2 / Math.max(left, 0.1);
+  }
   const override = Number(item.cycleOverride);
   const cycle = Number.isInteger(override) && override >= 1 && override <= 365
     ? override
