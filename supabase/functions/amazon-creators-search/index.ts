@@ -77,8 +77,20 @@ Deno.serve(async (req: Request) => {
       }
 
       case "match_product": {
-        const { product_name, catalog } = payload as MatchRequest;
-        if (!product_name || !catalog?.length) {
+        // ١٤/١١ (فحص أمان): كانت مفتوحة لأي حد ومن غير حد للحجم، وبتنادي Groq بمفتاحنا على كتالوج جاي من
+        // الطلب — بروكسي موديل مجاني على حسابنا. التطبيق بيندهها وهو داخل (functions.invoke بيبعت التوكن).
+        const mToken = (req.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "");
+        const mSb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+        const { data: mCaller } = mToken ? await mSb.auth.getUser(mToken) : { data: { user: null } };
+        if (!mCaller?.user?.id) return jsonResponse({ error: "unauthorized" }, 401);
+        const { product_name: rawName, catalog: rawCatalog } = (payload ?? {}) as MatchRequest;
+        const product_name = String(rawName ?? "").slice(0, 100);
+        const catalog = (Array.isArray(rawCatalog) ? rawCatalog : []).slice(0, 300).map((c) => ({
+          id: String(c?.id ?? "").slice(0, 64),
+          name: String(c?.name ?? "").slice(0, 120),
+          keywords: (Array.isArray(c?.keywords) ? c.keywords : []).slice(0, 15).map((k) => String(k).slice(0, 40)),
+        }));
+        if (!product_name || !catalog.length) {
           return jsonResponse({ match: null, error: "Missing product_name or catalog" });
         }
 
@@ -161,36 +173,33 @@ Deno.serve(async (req: Request) => {
         return jsonResponse({ link: productUrl(marketFor(payload?.country, (n) => Deno.env.get(n)), String(asin)) });
       }
 
-      case "record_click": {
-        const { product_id, user_id, source_screen } = payload;
-        if (!product_id) return jsonResponse({ error: "Missing product_id" });
-
-        const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
-        const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-        const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-        const supabase = createClient(supabaseUrl, supabaseKey);
-
-        await supabase.from("affiliate_clicks").insert({
-          product_id,
-          user_id,
-          source_screen: source_screen || "shopping",
-        });
-        return jsonResponse({ success: true });
-      }
-
+      // ١٤/١١ (فحص أمان): الاتنين كانوا من غير أي تحقق — verify_jwt مقفول للفانكشن — وبياخدوا user_id من
+      // الطلب ويكتبوه بمفتاح الخدمة: أي حد على النت يقدر يسجّل ضغطات وطلبات باسم أي عميل. دلوقتي التوكن لازم،
+      // والعميل هو صاحب التوكن، وuser_id اللي في الطلب مابيتقريش.
+      case "record_click":
       case "record_catalog_request": {
-        const { searched_term, user_id } = payload;
-        if (!searched_term) return jsonResponse({ error: "Missing searched_term" });
+        const token = (req.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "");
+        const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+        const { data: caller, error: authError } = token ? await sb.auth.getUser(token) : { data: { user: null }, error: new Error("missing token") };
+        const userId = caller?.user?.id;
+        if (authError || !userId) return jsonResponse({ error: "unauthorized" }, 401);
 
-        const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
-        const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-        const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-        const supabase = createClient(supabaseUrl, supabaseKey);
-
-        await supabase.from("affiliate_catalog_requests").insert({
-          searched_term,
-          user_id,
-        });
+        if (action === "record_click") {
+          const { product_id, source_screen } = payload ?? {};
+          if (!product_id) return jsonResponse({ error: "Missing product_id" });
+          await sb.from("affiliate_clicks").insert({
+            product_id,
+            user_id: userId,
+            source_screen: String(source_screen || "shopping").slice(0, 60),
+          });
+        } else {
+          const { searched_term } = payload ?? {};
+          if (!searched_term) return jsonResponse({ error: "Missing searched_term" });
+          await sb.from("affiliate_catalog_requests").insert({
+            searched_term: String(searched_term).slice(0, 200),
+            user_id: userId,
+          });
+        }
         return jsonResponse({ success: true });
       }
 
