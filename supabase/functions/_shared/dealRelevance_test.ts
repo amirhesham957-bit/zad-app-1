@@ -53,3 +53,9 @@ Deno.test("a tap teaches the store and the item, not the size", () => {
   assertEquals(signalTerms("2 كيلو رز", "كارفور"), ["كارفور", "رز"]);
   assertEquals(signalTerms("", ""), []);
 });
+
+Deno.test("statedPreference: an allergy is a dislike — never offered, never suggested", () => {
+  assertEquals(statedPreference("بنتي عندها حساسية من الفول السوداني"), { polarity: "dislike", term: "الفول السوداني" });
+  assertEquals(statedPreference("عندي حساسيه من الجمبري"), { polarity: "dislike", term: "الجمبري" });
+  assertEquals(statedPreference("عندك حساسية من حاجة؟"), null);
+});

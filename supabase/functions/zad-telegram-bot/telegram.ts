@@ -696,6 +696,17 @@ export function parseCheckinTextReply(
  */
 export type CheckinWhy = { kind: "opened"; days: number } | { kind: "rate" | "prior" | "cycle" };
 
+/** سؤال ملف الأكل (خطة المخزن ٥): مرة في الشهر بالكتير، والرد بيروح للعقل زي أي رسالة. */
+export const FOOD_PROFILE_QUESTION =
+  "سؤال صغير عشان أقترح صح 🍽️ في أكل بيتكم مابياكلوهوش، أو حد عنده حساسية من حاجة؟ اكتبلي زي «مابناكلش سمك» أو «بنتي عندها حساسية من الفول السوداني».";
+
+/** يتسأل لو مفيش ولا تفضيل متسجل، وآخر مرة اتسأل من ٣٠ يوم أو أكتر (أو عمره ما اتسأل). */
+export function foodProfileQuestionDue(knownPreferences: number, lastAskedAt: string | null, nowMs: number): boolean {
+  if (knownPreferences > 0) return false;
+  const last = lastAskedAt ? Date.parse(lastAskedAt) : NaN;
+  return !Number.isFinite(last) || nowMs - last >= 30 * 86_400_000;
+}
+
 /** أول سطر في السؤال: السبب والسؤال. من غير سبب = الجملة القديمة. */
 export function checkInReason(itemName: string, why?: CheckinWhy | null): string {
   switch (why?.kind) {
