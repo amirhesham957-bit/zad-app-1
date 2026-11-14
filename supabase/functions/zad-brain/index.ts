@@ -1275,10 +1275,23 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
   // من غير معدل من زرار «−» (أغلب الأصناف): دورة شرا البيت (restockCycle.ts) — «الزيت بيتشرى كل ~٣٠ يوم، واتشرى من
   // ٢٥» ⇒ فاضل حوالي ٥ أيام. confidence = "cycle" فبيتقال «تقريباً» زي التقريبي (الملف السلوكي، المرحلة ٣).
   const restockOf = await loadRestockVerdicts(sb, userId, householdFamily).catch(() => null);
+  // المعدل المبدئي (خطة المخزن ١، 20261114200000): أفراد البيت × استهلاك الفرد ÷ العبوة، للصنف اللي مالوش معدل ولا عادة
+  // شرا — قبل دورة نوعه، زي zad_pantry_learning. من هنا بيوصل «هيخلص خلال أسبوع» في zad_home_state وعروض الصبح (خطوة ٦).
+  const { data: priorRows, error: priorErr } = await sb.rpc("zad_pantry_prior_days_for", { p_user: userId });
+  if (priorErr) console.error("[snapshot] zad_pantry_prior_days_for failed:", priorErr.message);
+  const priorDays = new Map(
+    (Array.isArray(priorRows) ? priorRows as Array<{ item_name: string; days_left: number | string | null }> : [])
+      .filter((r) => r.days_left !== null && Number.isFinite(Number(r.days_left)))
+      .map((r) => [r.item_name, Number(r.days_left)]),
+  );
   const stock = (invRes.data ?? []).map((item) => {
     const cons = consumptionByItem[item.item_name];
     let confidence: string = rateConfidence(cons?.avgDailyQty, cons?.rateKnown);
     let daysLeft: number | null = confidence === "unknown" ? null : item.quantity / cons!.avgDailyQty;
+    if (daysLeft === null && priorDays.has(item.item_name)) {
+      daysLeft = priorDays.get(item.item_name)!;
+      confidence = "prior";
+    }
     if (daysLeft === null && restockOf) {
       const v = restockOf(item);
       if (v.cycleDays !== null && v.daysSinceBought !== null && v.reason !== "occasional") {

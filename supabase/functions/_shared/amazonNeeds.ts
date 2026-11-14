@@ -24,7 +24,14 @@ export function normalizeAr(raw: string): string {
 
 
 /** الاحتياج الحقيقي: خلص (٤) > هيخلص خلال ٣ أيام حسب استهلاكه (٤) > قليل (٣) > في قايمة التسوق (٢) > بيستهلكه باستمرار وقرّب (١). */
-export function computeNeeds(inv: InventoryRow[], cons: ConsumptionRow[], shopping: ShoppingRow[], limit = 10): Need[] {
+/**
+ * [priorDays] (خطة المخزن ٦): الأيام الباقية بالمعدل المبدئي (zad_pantry_prior_days_for) للصنف اللي مالوش معدل
+ * متعلّم، بالاسم بعد normalizeAr. من غيرها الاحتياج كان بيشوف «خلص» و«قليل» بس عند بيت مالوش ولا معدل (حساب المالك ١٤/١١).
+ */
+export function computeNeeds(
+  inv: InventoryRow[], cons: ConsumptionRow[], shopping: ShoppingRow[], limit = 10,
+  priorDays?: ReadonlyMap<string, number>,
+): Need[] {
   const rate = new Map(cons.filter((c) => c.rate_known && (c.avg_daily_qty ?? 0) > 0).map((c) => [normalizeAr(c.item_name), Number(c.avg_daily_qty)]));
   const needs = new Map<string, Need>();
   const consider = (name: string, score: number, reason: string, daysLeft: number | null = null) => {
@@ -36,9 +43,11 @@ export function computeNeeds(inv: InventoryRow[], cons: ConsumptionRow[], shoppi
   for (const item of inv) {
     const qty = Number(item.quantity ?? 0);
     const r = rate.get(normalizeAr(item.item_name));
-    const daysLeft = r ? Math.max(0, Math.round((qty / r) * 10) / 10) : null;
+    const prior = r ? undefined : priorDays?.get(normalizeAr(item.item_name));
+    const daysLeft = r ? Math.max(0, Math.round((qty / r) * 10) / 10) : prior !== undefined && Number.isFinite(prior) ? Math.max(0, prior) : null;
+    const basis = r ? "حسب استهلاكك" : "على قد أفراد البيت";
     if (qty <= 0) consider(item.item_name, 4, "خلص من مخزونك", 0);
-    else if (daysLeft !== null && daysLeft <= 3) consider(item.item_name, 4, `هيخلص خلال ${Math.max(1, Math.ceil(daysLeft))} يوم حسب استهلاكك`, daysLeft);
+    else if (daysLeft !== null && daysLeft <= 3) consider(item.item_name, 4, `هيخلص خلال ${Math.max(1, Math.ceil(daysLeft))} يوم ${basis}`, daysLeft);
     else if (qty <= Number(item.low_stock_threshold ?? 2)) consider(item.item_name, 3, "قارب على النفاد", daysLeft);
     else if (daysLeft !== null && daysLeft <= 10) consider(item.item_name, 1, "بتستهلكه باستمرار", daysLeft);
   }
@@ -70,4 +79,15 @@ export function amazonImageOrNull(url: unknown): string | null {
   const hosts = ["m.media-amazon.com", "images-na.ssl-images-amazon.com", "images-eu.ssl-images-amazon.com",
     "images-fe.ssl-images-amazon.com", "images-amazon.com", "ssl-images-amazon.com"];
   return hosts.some((h) => host === h || host.endsWith(`.${h}`)) ? u.toString() : null;
+}
+
+/** صفوف zad_pantry_prior_days_for ⇒ خريطة بالاسم بعد normalizeAr لـcomputeNeeds. */
+export function priorDaysMap(rows: unknown): Map<string, number> {
+  const out = new Map<string, number>();
+  for (const r of Array.isArray(rows) ? rows as Array<{ item_name?: unknown; days_left?: unknown; held?: unknown }> : []) {
+    if (!r || typeof r !== "object") continue;
+    const d = Number(r.days_left);
+    if (typeof r.item_name === "string" && r.days_left !== null && Number.isFinite(d) && r.held !== true) out.set(normalizeAr(r.item_name), d);
+  }
+  return out;
 }

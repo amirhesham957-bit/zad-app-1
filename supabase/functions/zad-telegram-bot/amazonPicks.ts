@@ -14,8 +14,9 @@ export interface AmazonPick { name: string; reason: string; url: string }
 /** أهم ٣ حاجات محتاجها، كل واحدة بلينك أمازون بتاج متجر بلده. */
 export function amazonPicks(
   inv: InventoryRow[], cons: ConsumptionRow[], shopping: ShoppingRow[], catalog: CatalogRow[], market: AmazonMarket, limit = 3,
+  priorDays?: ReadonlyMap<string, number>,
 ): AmazonPick[] {
-  return computeNeeds(inv, cons, shopping, limit).map((need) => {
+  return computeNeeds(inv, cons, shopping, limit, priorDays).map((need) => {
     const product = matchCatalog(need, catalog);
     const verified = !!(product?.asin && product.asin_verified);
     return {
