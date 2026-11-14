@@ -54,8 +54,25 @@ export function checkInPriority(
   purchaseDays: readonly string[],
   now: number = Date.now(),
   prior?: { daysLeft: number | string | null; held: boolean } | null,
+  openedLeft?: number | null,
 ): number | null {
   if (!(item.quantity > 0)) return null;
+  // مفتوح (20261114220000): اللي فاضل من عمره بعد الفتح بيقدّم السؤال لو أقرب من أي حساب تاني.
+  const base = baseCheckInPriority(item, avgDailyQty, purchaseDays, now, prior);
+  if (prior?.held) return base; // «لسه» من أقل من ٣ أيام بيسكّت الصنف، مفتوح أو لأ.
+  if (openedLeft == null || !Number.isFinite(openedLeft) || openedLeft < 0) return base;
+  const byOpen = 2 / Math.max(openedLeft, 0.1);
+  return base == null ? byOpen : Math.max(base, byOpen);
+}
+
+/** «لسه عندك؟» من غير حساب الفتح. */
+function baseCheckInPriority(
+  item: { name: string; quantity: number; category?: string | null; restockMode?: string | null; cycleOverride?: number | string | null },
+  avgDailyQty: number | null | undefined,
+  purchaseDays: readonly string[],
+  now: number,
+  prior?: { daysLeft: number | string | null; held: boolean } | null,
+): number | null {
   const rate = Number(avgDailyQty);
   if (rate > 0) return 2 / Math.max(item.quantity / rate, 0.1);
   if (item.restockMode === "occasional") return null;
@@ -78,4 +95,16 @@ export function checkInPriority(
   if (since < 1) return null;
   // الأساسي (#482) بيتسأل عنه بدري، في نفس اللحظة اللي بيدخل فيها قايمة الشرا.
   return since / dueAfterDays(cycle, isEssential(item.restockMode, purchaseDays, cycle));
+}
+
+/** كام يوم فاضل من عمر الصنف بعد فتحه (zad_inventory.opened_at + opened_life_days)، أو null. */
+export function openedLeftDays(
+  openedAt: string | null | undefined,
+  lifeDays: number | string | null | undefined,
+  now: number = Date.now(),
+): number | null {
+  const at = openedAt ? Date.parse(openedAt) : NaN;
+  const life = Number(lifeDays);
+  if (!Number.isFinite(at) || !(life > 0)) return null;
+  return Math.max(0, life - (now - at) / 86_400_000);
 }

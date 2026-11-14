@@ -99,3 +99,24 @@ export function consumeReply(name: string, unit: string | null, before: number, 
   if (after <= 0) return `سجلت إن «${name}» خلص${forDish} — المفروض يتجاب.`;
   return `سجلت الاستهلاك من «${name}»${forDish}: كان ${fmt(before)}${u}، فاضل ${fmt(after)}${u}.`;
 }
+
+/** «مفتوح من كام يوم» وكام فاضل من عمره بعد الفتح (20261114220000). null = مش مفتوح. */
+export function openedState(
+  openedAt: string | null | undefined,
+  lifeDays: number | string | null | undefined,
+  now: number = Date.now(),
+): { daysAgo: number; left: number | null } | null {
+  const at = openedAt ? Date.parse(openedAt) : NaN;
+  if (!Number.isFinite(at)) return null;
+  const ago = Math.max(0, (now - at) / 86_400_000);
+  const life = Number(lifeDays);
+  return {
+    daysAgo: Math.floor(ago),
+    left: Number.isFinite(life) && life > 0 ? Math.max(0, Math.round((life - ago) * 10) / 10) : null,
+  };
+}
+
+/** سطر بعد «فتحنا …»: يفضل كويس قد إيه، لو نوعه بيبوظ بسرعة. */
+export function openedNote(name: string, lifeDays: number | null): string {
+  return lifeDays ? ` واتسجل إن «${name}» اتفتح النهارده — يفضل كويس حوالي ${lifeDays} أيام في التلاجة.` : ` واتسجل إن «${name}» اتفتح.`;
+}

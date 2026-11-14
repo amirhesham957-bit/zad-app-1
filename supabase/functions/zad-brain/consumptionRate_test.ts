@@ -1,5 +1,5 @@
 import { assertEquals } from "jsr:@std/assert@1";
-import { checkInPriority, needsCheckIn, rateConfidence } from "../_shared/consumptionRate.ts";
+import { checkInPriority, needsCheckIn, openedLeftDays, rateConfidence } from "../_shared/consumptionRate.ts";
 
 // الفجوة ٧: لبن ١ ← ٠ في ١٧.٦ ساعة (٢٠٢٦-٠٨-١٧) بقى ليه معدل تقريبي ١.٣٦ في اليوم.
 Deno.test("rateConfidence: one purchase cycle is an approximate rate, not an unknown one", () => {
@@ -94,4 +94,15 @@ Deno.test("checkInPriority: «لسه» holds the prior; a learned rate and occas
   // Learned: 10 left at 1 a day = 10 days, whatever the prior says.
   assertEquals(checkInPriority({ name: "عيش", quantity: 10 }, 1, [], NOW, { daysLeft: 0, held: false }), 0.2);
   assertEquals(checkInPriority({ name: "عيش", quantity: 10, restockMode: "occasional" }, null, [], NOW, { daysLeft: 0, held: false }), null);
+});
+
+Deno.test("checkInPriority: an opened item near the end of its open life is asked first; «لسه» still holds it", () => {
+  // Milk with 20 days of rate left but opened 4 days of its 4: asked.
+  const open = checkInPriority({ name: "حليب", quantity: 5 }, 0.25, [], NOW, null, 0)!;
+  assertEquals(open >= 1, true);
+  assertEquals(checkInPriority({ name: "حليب", quantity: 5 }, 0.25, [], NOW, null, null)! < 1, true);
+  assertEquals(checkInPriority({ name: "حليب", quantity: 5 }, 0.25, [], NOW, { daysLeft: null, held: true }, 0)! < 1, true);
+  assertEquals(openedLeftDays(new Date(NOW - 3 * 86_400_000).toISOString(), 4, NOW), 1);
+  assertEquals(openedLeftDays(null, 4, NOW), null);
+  assertEquals(openedLeftDays(new Date(NOW).toISOString(), null, NOW), null);
 });
