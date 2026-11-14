@@ -16,6 +16,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:zad/shared/ads/data/ad_revenue.dart';
 import 'package:zad/shared/ads/data/ads_sdk.dart';
 
 /// The rewarded ad unit. Debug and profile builds use Google's test unit:
@@ -92,6 +93,7 @@ class AdMobRewardedAds implements RewardedAds {
             if (loaded.isCompleted) {
               unawaited(ad.dispose()); // too late, the customer was told
             } else {
+              ad.onPaidEvent = AdRevenue.reporter(AdFormat.rewarded);
               loaded.complete(ad);
             }
           },

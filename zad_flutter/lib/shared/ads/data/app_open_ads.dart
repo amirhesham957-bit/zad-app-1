@@ -13,6 +13,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:zad/core/env/zad_env.dart';
+import 'package:zad/shared/ads/data/ad_revenue.dart';
 import 'package:zad/shared/ads/data/ads_sdk.dart';
 
 /// The unit in use: Google's App Open test unit outside release (tapping
@@ -55,6 +56,7 @@ class AdMobAppOpenAds implements AppOpenAds {
             if (loaded.isCompleted) {
               unawaited(ad.dispose()); // too late: the customer moved on
             } else {
+              ad.onPaidEvent = AdRevenue.reporter(AdFormat.appOpen);
               loaded.complete(ad);
             }
           },
