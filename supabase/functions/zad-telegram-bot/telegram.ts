@@ -690,10 +690,35 @@ export function parseCheckinTextReply(
 }
 
 /** [unit] من صف المخزون — السؤال بالوحدة («كام كيلو») عشان العميل يقدر يكتب رقم بدل الزرار. */
-export function checkInPromptMessage(itemName: string, unit?: string | null): string {
+/**
+ * ليه زاد بيسأل عن الصنف ده الليلة (خطة المخزن الواعي ٤، المالك ١٤/١١): سؤال واحد بسببه بدل «تذكير سريع» لكل حاجة.
+ * opened = مفتوح من [days] يوم؛ rate = معدل البيت المتعلّم؛ prior = حساب أفراد البيت؛ cycle = ميعاد شراه.
+ */
+export type CheckinWhy = { kind: "opened"; days: number } | { kind: "rate" | "prior" | "cycle" };
+
+/** أول سطر في السؤال: السبب والسؤال. من غير سبب = الجملة القديمة. */
+export function checkInReason(itemName: string, why?: CheckinWhy | null): string {
+  switch (why?.kind) {
+    case "opened": {
+      const d = Math.max(0, Math.floor(why.days));
+      const ago = d === 0 ? "النهارده" : d === 1 ? "من يوم" : d === 2 ? "من يومين" : `من ${d} أيام`;
+      return `${itemName} مفتوح ${ago} — لسه كويس؟ فاضل قد إيه؟`;
+    }
+    case "rate":
+      return `على قد استهلاككم، ${itemName} المفروض قرب يخلص — فاضل قد إيه؟`;
+    case "prior":
+      return `على قد أفراد البيت، ${itemName} المفروض قرب يخلص — فاضل قد إيه؟`;
+    case "cycle":
+      return `قرب ميعاد ما بتجيبوا ${itemName} — لسه فيه ولا خلص؟`;
+    default:
+      return `تذكير سريع: فاضل قد إيه من ${itemName}؟`;
+  }
+}
+
+export function checkInPromptMessage(itemName: string, unit?: string | null, why?: CheckinWhy | null): string {
   const u = (unit ?? "").trim();
   const hint = u ? `«فاضل ٢ ${u}»` : "«فاضل ٢»";
-  return `تذكير سريع: فاضل قد إيه من ${itemName}؟\nاختار، أو اكتبلي الكمية زي ${hint}.`;
+  return `${checkInReason(itemName, why)}\nاختار، أو اكتبلي الكمية زي ${hint}.`;
 }
 
 /**
@@ -701,7 +726,9 @@ export function checkInPromptMessage(itemName: string, unit?: string | null): st
  * كانت رسالتين ورا بعض كل يوم الساعة ٩ — المقاس على ١٤ يوم. كل زرار لسه شايل id السؤال بتاعه،
  * فالرد بيتعامل زي الأول بالظبط. [items] أساميهم متنضفة ومعزولة من المنادي.
  */
-export function checkInBundleMessage(items: string[], ignoredNote = false): string {
+export function checkInBundleMessage(items: string[], ignoredNote = false, why?: CheckinWhy | null): string {
+  // سؤال واحد بسببه (خطة المخزن ٤): الصنف في الجملة نفسها، من غير قايمة.
+  if (items.length === 1 && why && !ignoredNote) return checkInReason(items[0], why);
   const list = items.map((i) => `• ${i}`).join("\n");
   return ignoredNote
     ? `${CHECKIN_IGNORED_NOTE}\n${list}`

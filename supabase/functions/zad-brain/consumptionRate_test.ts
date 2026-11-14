@@ -1,5 +1,5 @@
 import { assertEquals } from "jsr:@std/assert@1";
-import { checkInPriority, needsCheckIn, openedLeftDays, rateConfidence } from "../_shared/consumptionRate.ts";
+import { checkInBasis, checkInPriority, checkInScore, needsCheckIn, openedLeftDays, rateConfidence } from "../_shared/consumptionRate.ts";
 
 // الفجوة ٧: لبن ١ ← ٠ في ١٧.٦ ساعة (٢٠٢٦-٠٨-١٧) بقى ليه معدل تقريبي ١.٣٦ في اليوم.
 Deno.test("rateConfidence: one purchase cycle is an approximate rate, not an unknown one", () => {
@@ -105,4 +105,19 @@ Deno.test("checkInPriority: an opened item near the end of its open life is aske
   assertEquals(openedLeftDays(new Date(NOW - 3 * 86_400_000).toISOString(), 4, NOW), 1);
   assertEquals(openedLeftDays(null, 4, NOW), null);
   assertEquals(openedLeftDays(new Date(NOW).toISOString(), null, NOW), null);
+});
+
+Deno.test("one question a night: the answer that teaches most wins, not only the nearest to run out", () => {
+  // Same urgency: the guessed (prior) staple beats the well-known rate.
+  assertEquals(checkInScore(2, "prior", true) > checkInScore(2, "known", false), true);
+  // An opened item outranks the same urgency on a rate.
+  assertEquals(checkInScore(1.5, "opened", false) > checkInScore(1.5, "approximate", false), true);
+  // Much more urgent still wins.
+  assertEquals(checkInScore(10, "known", false) > checkInScore(2, "prior", false), true);
+  assertEquals(checkInBasis(0.5, true, null, 2, null), "known");
+  assertEquals(checkInBasis(0.5, false, null, 2, null), "approximate");
+  assertEquals(checkInBasis(null, null, { daysLeft: "1.5", held: false }, 2, null), "prior");
+  assertEquals(checkInBasis(null, null, null, 2, null), "cycle");
+  assertEquals(checkInBasis(0.25, true, null, 5, 0.5), "opened");
+  assertEquals(checkInBasis(1, true, null, 1, 3), "known");
 });

@@ -4,7 +4,7 @@ import {
   dealPhotoUrl, dealSourceRow,
   normalizeBindingCode, parseDismissCallback, isFamilyInviteCode, looksLikeLinkCode, FAMILY_CODE_REPLY, reasonForCode, memoryNoteForDismissal,
   formatBalanceMessage, formatTransactionsMessage, mainMenuKeyboard, dismissKeyboard,
-  checkInKeyboard, parseCheckInCallback, checkInPromptMessage,
+  checkInKeyboard, parseCheckInCallback, checkInPromptMessage, checkInReason,
   confirmToolKeyboard, parseToolCallback,
   transactionProposalKeyboard, parseTransactionProposalCallback,
   duplicateProposalKeyboard, duplicateProposalMessage,
@@ -908,4 +908,17 @@ Deno.test("pendingConfirmsBlock: waiting confirmations are named, inside the blo
   assertEquals(b.split("=== نهاية العمليات المستنية ===").length, 2);
   assert(b.startsWith("=== عمليات اتجهزت"));
   assertEquals(telegramModule.pendingConfirmsBlock([], "EGP"), "");
+});
+
+Deno.test("the night question says why: opened, the home's rate, the household, or its buying time", () => {
+  assert(checkInReason("اللبن", { kind: "opened", days: 4.2 }).startsWith("اللبن مفتوح من 4 أيام"));
+  assert(checkInReason("اللبن", { kind: "opened", days: 1 }).includes("من يوم"));
+  assert(checkInReason("العيش", { kind: "prior" }).includes("أفراد البيت"));
+  assert(checkInReason("الرز", { kind: "rate" }).includes("استهلاككم"));
+  assert(checkInReason("الزيت", { kind: "cycle" }).includes("ميعاد"));
+  assert(checkInReason("الزيت").startsWith("تذكير سريع"));
+  assert(checkInPromptMessage("العيش", "رغيف", { kind: "prior" }).includes("«فاضل ٢ رغيف»"));
+  // One item with a reason: the sentence, no bullet list; with the ignored note the list stays.
+  assertEquals(checkInBundleMessage(["اللبن"], false, { kind: "opened", days: 4 }), checkInReason("اللبن", { kind: "opened", days: 4 }));
+  assert(checkInBundleMessage(["اللبن"], true, { kind: "opened", days: 4 }).includes("• اللبن"));
 });

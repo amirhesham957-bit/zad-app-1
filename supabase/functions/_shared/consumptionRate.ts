@@ -108,3 +108,32 @@ export function openedLeftDays(
   if (!Number.isFinite(at) || !(life > 0)) return null;
   return Math.max(0, life - (now - at) / 86_400_000);
 }
+
+/**
+ * سؤال واحد في الليلة (خطة المخزن الواعي ٤، المالك ١٤/١١): مين يستاهله أكتر من بين اللي عليهم الدور (أولوية ≥ ١).
+ * الإلحاح (الأولوية) × الأهمية (الأساسي في البيت ×١٫٥) × الشك (اللي معدّله متعلّم ومتأكد ×٠٫٧ — الإجابة بتعلّم
+ * أقل؛ التقريبي ١؛ دورة الشرا ١٫١؛ حساب أفراد البيت ١٫٢؛ المفتوح ١٫٣ — ممكن يكون باظ).
+ */
+export type CheckInBasis = "known" | "approximate" | "cycle" | "prior" | "opened";
+
+const BASIS_WEIGHT: Record<CheckInBasis, number> = { known: 0.7, approximate: 1, cycle: 1.1, prior: 1.2, opened: 1.3 };
+
+export function checkInScore(priority: number, basis: CheckInBasis, essential: boolean): number {
+  return priority * BASIS_WEIGHT[basis] * (essential ? 1.5 : 1);
+}
+
+/** على أي أساس الصنف عليه الدور: المفتوح لو هو اللي حاسم، وإلا المعدل/المبدئي/الدورة بنفس ترتيب checkInPriority. */
+export function checkInBasis(
+  avgDailyQty: number | null | undefined,
+  rateKnown: boolean | null | undefined,
+  prior: { daysLeft: number | string | null; held: boolean } | null | undefined,
+  quantity: number,
+  openedLeft: number | null | undefined,
+): CheckInBasis {
+  const rate = Number(avgDailyQty);
+  const byRate = rate > 0 ? quantity / rate : prior && Number.isFinite(Number(prior.daysLeft)) && prior.daysLeft !== null ? Number(prior.daysLeft) : null;
+  if (openedLeft != null && Number.isFinite(openedLeft) && (byRate === null || openedLeft < byRate)) return "opened";
+  if (rate > 0) return rateKnown ? "known" : "approximate";
+  if (byRate !== null) return "prior";
+  return "cycle";
+}
