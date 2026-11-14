@@ -1,6 +1,8 @@
 /// The app shell.
 library;
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -13,8 +15,10 @@ import 'package:zad/core/l10n/app_language.dart';
 import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/auth/presentation/password_recovery_listener.dart';
 import 'package:zad/features/places/application/street_alerts_controller.dart';
+import 'package:zad/shared/ads/application/ads_policy.dart';
 import 'package:zad/shared/ads/application/app_open.dart';
 import 'package:zad/shared/ads/application/interstitials.dart';
+import 'package:zad/shared/ads/data/ads_sdk.dart';
 
 /// Whether the app follows the phone's dark mode.
 ///
@@ -55,6 +59,15 @@ class _ZadAppState extends ConsumerState<ZadApp> with WidgetsBindingObserver {
     ZadColors.isDark = _systemIsDark;
     // A return after four hours away may carry an App Open ad.
     ref.read(appOpenProvider);
+    // Consent once a run, as soon as ads may show (Google's advice: at
+    // launch). Until 2026-11-14 the form was asked for only from a tap on
+    // «شاهد إعلان», so where the law asks for consent no banner, native
+    // card, interstitial or App Open ad ever loaded before that tap —
+    // measured on the emulator: «[ads] consent does not allow ads yet».
+    // Outside those regions UMP shows nothing and this only warms the SDK.
+    ref.listenManual<bool>(adsAllowedProvider, (was, allowed) {
+      if (allowed && was != true) unawaited(AdsSdk.prepare());
+    }, fireImmediately: true);
   }
 
   @override
