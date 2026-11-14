@@ -31,3 +31,7 @@ Deno.test("priceless: the result says no expense was recorded", () => {
   assertEquals(r.includes("expense_recorded=false"), true);
   assertEquals(r.includes("added: ضفت لبن"), true);
 });
+
+Deno.test("priceless: the state is also said in Arabic, so the reply does not claim an expense", () => {
+  assertEquals(pricelessResult([], []).includes("المصروف ما اتسجلش"), true);
+});
