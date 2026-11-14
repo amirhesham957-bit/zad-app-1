@@ -25,6 +25,18 @@ export function wantsForcedConsume(message: string): boolean {
   return CONSUME_VERB.test(m) && !QUESTION.test(m) && !OUTSIDE.test(m);
 }
 
+/**
+ * الصنف اللي الموديل اختاره تحت الإجبار لازم يكون في كلام العميل. فحص ١٤/١١ بعد النشر: «شربنا علبة عصير» ومفيش
+ * عصير في المخزن، فالموديل المجبور اختار «لبن» (الصنف الوحيد) واتخصم. كلمة واحدة من اسم الصنف (من غير «ال»)
+ * موجودة في الرسالة تكفي: «لبن لتر» ⇐ «فتحنا علبة لبن».
+ */
+export function itemSaidInMessage(item: string, message: string): boolean {
+  const words = (t: string) =>
+    normalize(t ?? "").split(/[^\p{L}\p{N}]+/u).map((w) => w.replace(/^(بال|وال|لل|ال)/, "")).filter((w) => w.length >= 2);
+  const said = new Set(words(message));
+  return words(item).some((w) => said.has(w));
+}
+
 /** بعد اللفة: مفيش اقتراح ولا كتابة على المخزن، والرسالة استهلاك صريح. */
 export function shouldForceConsume(message: string, executedTools: readonly string[], proposals: number): boolean {
   return proposals === 0 && !executedTools.some((t) => PANTRY_WRITES.has(t)) && wantsForcedConsume(message);

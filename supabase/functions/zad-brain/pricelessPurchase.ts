@@ -35,7 +35,11 @@ export function pantryLinesWithoutPrice(input: unknown): PantryLine[] | null {
 
 /** نتيجة الأداة للموديل: حالة، مش أمر (شوف التعليق على status=awaiting_user_confirmation في index.ts). */
 export function pricelessResult(added: string[], failed: string[]): string {
-  const parts = [`status=added_to_pantry_without_expense; price=unknown; expense_recorded=false`];
+  // «سجلتهالك» (فحص ١٤/١١ بعد النشر) بتفهم إن المصروف اتسجل — الحالة مكتوبة بالعربي كمان عشان الرد يطلع منها.
+  const parts = [
+    `status=added_to_pantry_without_expense; price=unknown; expense_recorded=false`,
+    `الأصناف دخلت المخزن. المصروف ما اتسجلش لأن العميل ماقالش السعر.`,
+  ];
   if (added.length) parts.push(`added: ${added.join(" | ")}`);
   if (failed.length) parts.push(`failed: ${failed.join(" | ")}`);
   return parts.join("\n");

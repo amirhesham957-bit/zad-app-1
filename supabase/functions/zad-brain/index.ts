@@ -151,7 +151,7 @@ import { toneFromState, toneRule, toneWithMessage, type ToneTxn } from "./tone.t
 import { notePurchaseIntent } from "./purchaseIntent.ts";
 import { isServiceLine } from "./serviceLine.ts";
 import { forcedLogReply, shouldForceLog } from "./forcedLog.ts";
-import { shouldForceConsume } from "./forcedConsume.ts";
+import { itemSaidInMessage, shouldForceConsume } from "./forcedConsume.ts";
 import { pantryLinesWithoutPrice, pricelessResult } from "./pricelessPurchase.ts";
 import { FORCED_REPLIES, forcedIntentTool } from "./forcedIntent.ts";
 import { loadRestockJudge, loadRestockVerdicts } from "./restockJudge.ts";
@@ -8595,7 +8595,8 @@ async function handleAgentTurnInLane(
         calls.retries++;
         if (forced.model && !calls.models.includes(forced.model)) calls.models.push(forced.model);
         const call = forced.toolCalls.find((c) => c.name === "consume_item");
-        if (call) {
+        // المجبور بيختار صنف حتى لو العميل ماقالوش («عصير» ⇒ «لبن»، ١٤/١١) — لازم يكون في كلامه.
+        if (call && itemSaidInMessage(String(call.input?.item_name ?? ""), message)) {
           const before = ctx.mutationCount;
           const result = await runTool(sb, userId, "consume_item", call.input, snap, ctx, scope);
           if (ctx.mutationCount > before) {
