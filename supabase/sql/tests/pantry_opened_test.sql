@@ -46,4 +46,19 @@ begin
   if (select opened_life_days from public.zad_inventory where item_name = 'حليب') is not null then raise exception 'no life without opening'; end if;
 end $$;
 
+-- The app writes as `authenticated`, which has no USAGE on schema private. The
+-- trigger must still work for it (42501 on every pantry write, 2026-11-14).
+set role authenticated;
+select set_config('request.jwt.claims', json_build_object('sub', :me)::text, false);
+insert into public.zad_inventory (id, user_id, item_name, quantity, unit, created_at, opened_at) values
+  ('00000000-0000-0000-0000-000000000005', :me, 'زبادي', 2, 'علبة', now(), now());
+update public.zad_inventory set quantity = 1 where item_name = 'زبادي';
+reset role;
+do $$
+begin
+  if (select opened_life_days from public.zad_inventory where item_name = 'زبادي') is null then
+    raise exception 'an opened item written by the app gets its life';
+  end if;
+end $$;
+
 select 'pantry_opened_test passed' as result;
