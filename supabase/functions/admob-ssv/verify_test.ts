@@ -4,7 +4,9 @@ import {
   derToRawSignature,
   isFreshTimestamp,
   grantTarget,
+  isOurAdUnit,
   pickKey,
+  rewardedUnits,
   signedContent,
 } from "./verify.ts";
 
@@ -108,4 +110,40 @@ Deno.test("grantTarget: UUID بس، والفاضي أو الغريب null", () =
   assertEquals(grantTarget(""), null);
   assertEquals(grantTarget("user-1"), null);
   assertEquals(grantTarget(`${id}' or 1=1`), null);
+});
+
+/**
+ * مفاتيح توقيع AdMob مشتركة بين كل الحسابات: callback موقَّع صح من وحدة حد تاني لازم مايمنحش.
+ */
+Deno.test("isOurAdUnit: وحدتنا بس، بالرقم أو بالمعرّف الكامل", () => {
+  const ours = rewardedUnits(undefined);
+  assertEquals(ours, ["5974535887"]);
+  assertEquals(isOurAdUnit("5974535887", ours), true);
+  assertEquals(isOurAdUnit("ca-app-pub-4433736715872551/5974535887", ours), true);
+  assertEquals(isOurAdUnit(" 5974535887 ", ours), true);
+  // وحدة حساب تاني، وحدة تجربة جوجل، فاضي، وغياب الپارامتر.
+  assertEquals(isOurAdUnit("1234567890", ours), false);
+  assertEquals(isOurAdUnit("ca-app-pub-3940256099942544/5224354917", ours), false);
+  assertEquals(isOurAdUnit("", ours), false);
+  assertEquals(isOurAdUnit(null, ours), false);
+  // رقمنا جوه رقم أطول مش رقمنا.
+  assertEquals(isOurAdUnit("59745358870", ours), false);
+});
+
+Deno.test("rewardedUnits: السرّ بيستبدل القايمة، والفاضي أو الغلط بيرجع للافتراضي", () => {
+  assertEquals(rewardedUnits("111, ca-app-pub-1/222"), ["111", "222"]);
+  assertEquals(rewardedUnits(""), ["5974535887"]);
+  assertEquals(rewardedUnits(" , abc"), ["5974535887"]);
+});
+
+Deno.test("index.ts بيفحص الوحدة قبل الإيصال، وبيشيل الإيصال لو المنح فشل", async () => {
+  const src = await Deno.readTextFile(new URL("./index.ts", import.meta.url));
+  // الحارس بالحرف: أي شرط زيادة قبله («false &&»، «|| …») بيعطّله.
+  const unitCheck = src.indexOf("if (!isOurAdUnit(adUnit, REWARDED_UNITS)) {");
+  assertEquals(src.includes('const adUnit = p.get("ad_unit");'), true);
+  const receipt = src.indexOf('from("zad_ad_ssv_receipts").insert');
+  const grant = src.indexOf('rpc("zad_ad_reward_grant"');
+  assertEquals(unitCheck > 0 && unitCheck < receipt && receipt < grant, true);
+  const release = src.indexOf('from("zad_ad_ssv_receipts").delete().eq("transaction_id", txId)');
+  assertEquals(release > grant, true, "a failed grant must free the receipt for AdMob's retry");
 });
