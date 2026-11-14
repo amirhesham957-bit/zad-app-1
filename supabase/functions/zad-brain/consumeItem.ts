@@ -120,3 +120,25 @@ export function openedState(
 export function openedNote(name: string, lifeDays: number | null): string {
   return lifeDays ? ` واتسجل إن «${name}» اتفتح النهارده — يفضل كويس حوالي ${lifeDays} أيام في التلاجة.` : ` واتسجل إن «${name}» اتفتح.`;
 }
+
+const normalizeSaid = (text: string) =>
+  text.replace(/[ً-ٰٟـ]/g, "").replace(/[أإآ]/g, "ا").replace(/ى/g, "ي").replace(/ة/g, "ه").toLowerCase();
+const OPEN_VERB = /(^|[^\p{L}])(فتحنا|فتحت|فتحوا|فتحتها|فتحناها)([^\p{L}]|$)/u;
+/** أي كلمة استعمال جنب الفتح («وشربنا نصها»، «وطبخنا بيها») = فيه كمية حقيقية اتشالت. */
+const USE_WORD = /(شرب|اكل|كلنا|كلت|طبخ|استعمل|استخدم|استهلك|خلص|حطينا|حطيت|عملنا|عملت|اخدنا|اخدت|نصها|نصه|ربعها|حته|شويه)/;
+
+/**
+ * «فتحنا علبة لبن» من غير ولا كلمة استعمال (قرار المالك ١٤/١١): العلبة المفتوحة لسه في التلاجة وبتتعد،
+ * فالكمية المطروحة صفر حتى لو الموديل بعت 1. لو مفيش رسالة (لفة مش شات) القرار للموديل زي الأول.
+ */
+export function openOnly(message: string | null | undefined): boolean {
+  const m = normalizeSaid(message ?? "").trim();
+  return m.length > 0 && OPEN_VERB.test(m) && !USE_WORD.test(m);
+}
+
+/** الرد لما العبوة اتفتحت ومااتشالش منها حاجة: العدد زي ما هو. */
+export function openedOnlyReply(name: string, unit: string | null, qty: number, lifeDays: number | null): string {
+  const u = unit ? ` ${unit}` : "";
+  const life = lifeDays ? ` يفضل كويس حوالي ${lifeDays} أيام في التلاجة.` : "";
+  return `سجلت إن «${name}» اتفتح النهارده، والعدد زي ما هو (${fmt(qty)}${u}) لحد ما يخلص.${life}`;
+}

@@ -1,5 +1,5 @@
 import { assertEquals } from "jsr:@std/assert@1";
-import { matchConsumeRow, openedState, piecesPerPack, quantityAfter, usedInRowUnits } from "./consumeItem.ts";
+import { matchConsumeRow, openedOnlyReply, openedState, openOnly, piecesPerPack, quantityAfter, usedInRowUnits } from "./consumeItem.ts";
 import { intentToolHints } from "./specialists.ts";
 import { validateConsumeItem, freshContext } from "./validators.ts";
 
@@ -63,4 +63,24 @@ Deno.test("openedState: days since opening and what is left of its open life", (
 Deno.test("validateConsumeItem: opening without using is amount 0 with opened", () => {
   assertEquals(validateConsumeItem({ item_name: "لبن", amount: 0, opened: true }, {}, freshContext("u")), { ok: true });
   assertEquals((validateConsumeItem({ item_name: "لبن", amount: 0 }, {}, freshContext("u")) as any).ok, false);
+});
+
+Deno.test("openOnly: opening a carton keeps it in the count (owner 14/11); any word of use lets the amount through", () => {
+  assertEquals(openOnly("فتحنا علبة لبن"), true);
+  assertEquals(openOnly("فتحت الجبنة النهارده"), true);
+  assertEquals(openOnly("فتحنا كيس رز جديد"), true);
+  assertEquals(openOnly("فتحنا علبة لبن وشربنا نصها"), false);
+  assertEquals(openOnly("فتحت كيس الرز وطبخت منه"), false);
+  assertEquals(openOnly("شربنا ٣ مية"), false);
+  assertEquals(openOnly("خلّصنا علبة جبنة"), false);
+  assertEquals(openOnly(""), false);
+  assertEquals(openOnly(undefined), false);
+});
+
+Deno.test("openedOnlyReply: says the count did not move and how long it keeps", () => {
+  assertEquals(
+    openedOnlyReply("لبن", "علبة", 3, 4),
+    "سجلت إن «لبن» اتفتح النهارده، والعدد زي ما هو (3 علبة) لحد ما يخلص. يفضل كويس حوالي 4 أيام في التلاجة.",
+  );
+  assertEquals(openedOnlyReply("رز", null, 2, null), "سجلت إن «رز» اتفتح النهارده، والعدد زي ما هو (2) لحد ما يخلص.");
 });
