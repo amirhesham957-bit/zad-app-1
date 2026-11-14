@@ -212,6 +212,8 @@ const GOAL_PROGRESS_ASKED = /(حطيت|حطيتي|حطيتوا|حوشت|وفرت
 const FORGET_INTENT = /(^|\s)(انسي|انساها|انساه|انسيها|انسيه)(\s|$)|امسح.{0,20}(ذاكرتك|من دماغك|اللي قلتهولك|اللي قلتلك)|شيل.{0,20}من (ذاكرتك|دماغك)|(متفتكرش|ماتفتكرش|لا تتذكر)/;
 // ١٠.٢(أ) شريحة ٢ — كل زرار ليه كلماته.
 const SUB_PAID_INTENT = /(دفعت|سددت|سدّدت|خلصت|ادفعت)\s*(اشتراك|فاتور|قسط|ايجار|إيجار|النت|الانترنت|نتفل|شاهد|سبوتي|الجيم|النادي)|(اشتراك|فاتور|قسط).{0,25}(اتدفع|دفعته|دفعتها|سددته|سددتها)/;
+// «شربنا ٣ مية»، «أكلنا الجبنة»، «طبخنا مكرونة» (خطة المخزن الواعي ٢): استهلاك من المخزن ⇒ consume_item.
+const CONSUME_INTENT = /(^|\s)(شربنا|شربت|شربوا|اكلنا|اكلت|اكلوا|كلنا|طبخنا|طبخت|استعملنا|استعملت|استخدمنا|استخدمت|استهلكنا|فتحنا|فتحت)(\s|$)/;
 const SHORTAGES_INTENT = /(ضيف|حط|نزل|انزل|اكتب).{0,15}(النواقص|الناقص|اللي ناقص|اللي خلص)|(النواقص|الناقص).{0,20}(القايمه|القائمه|المشتريات|الليسته)/;
 const DOSE_SNOOZE_INTENT = /(اجل|أجل|اجّل|اخر|أخر).{0,20}(جرعه|الدوا|الدواء|البرشام|تذكير ال)|(فكرني|ذكرني|نبهني).{0,20}(بالدوا|بالدواء|بالجرعه|بالبرشام).{0,25}(بعد|كمان)/;
 const PRICE_REPORT_INTENT = /(في|ف|عند|من)\s+\S+.{0,25}(بقي|بقى|صار|ب|بـ)\s*[0-9٠-٩]+|(سعر|بسعر).{0,25}(في|عند)\s+(كارفور|هايبر|سبينيس|بنده|الدانوب|العثيم|لولو|اسواق|السوبرماركت|المحل)/;
@@ -302,6 +304,7 @@ export function intentToolHints(message: string, priorReply = ""): string[] {
   }
   if (SUB_PAID_INTENT.test(norm)) tools.push("mark_subscription_paid");
   if (SHORTAGES_INTENT.test(norm)) tools.push("add_shortages_to_shopping");
+  if (CONSUME_INTENT.test(norm)) tools.push("consume_item");
   if (DOSE_SNOOZE_INTENT.test(norm)) tools.push("snooze_pharmacy_dose");
   if (PRICE_REPORT_INTENT.test(norm)) tools.push("report_price");
   if (VISITS_CLEAR_INTENT.test(norm)) tools.push("clear_place_visits");
@@ -505,7 +508,7 @@ const SPECIALIST_TOOL_SCOPE: Record<Exclude<SpecialistId, "general">, string[]> 
     "confirm_life_shift",
   ],
   pantry: [
-    "add_inventory_item", "update_inventory_qty", "delete_inventory_item",
+    "add_inventory_item", "update_inventory_qty", "consume_item", "delete_inventory_item",
     "add_shopping_item", "complete_shopping_item", "delete_shopping_item",
     "suggest_product", "check_price_online", "find_nearby_stores", "web_search", "where_to_buy",
     "suggest_recipes", "area_trends", "plan_gathering", "add_gathering_to_list",

@@ -176,3 +176,55 @@ Deno.test("once the family said «حليب» is «لبن», «اشتريت حل�
   assertEquals(tables.zad_inventory[0].quantity, 2);
   assertEquals(tables.zad_shopping_list[0].is_purchased, true, "the list line under the chosen name was not ticked");
 });
+
+// «شربنا ٣ مية» (pantry plan step 2, consumeItem.ts).
+Deno.test("dad's «شربنا ٣ مية» takes half a 6-bottle pack from the household's water and teaches its owner's rate", async () => {
+  const { sb, rpcs, tables } = fakeDb({
+    family_members: FAMILY,
+    zad_inventory: [
+      { id: "w", user_id: "mom", family_id: "f1", item_name: "زجاجة مياه بسعة 1.5 لتر من ايلانو 6 قطع ليتر", quantity: 2, unit: "قطعة", created_at: "2026-11-01" },
+      { id: "t", user_id: "mom", family_id: "f1", item_name: "طماطم", quantity: 3, unit: "كيلو", created_at: "2026-11-01" },
+    ],
+  });
+  const out = await executeTool(sb, "dad", "consume_item", { item_name: "مية", amount: 3 }, {}, freshContext("dad"), {} as any);
+  assert(!out.startsWith("مرفوض"), out);
+  assertEquals(tables.zad_inventory[0].quantity, 1.5);
+  assertEquals(tables.zad_inventory[1].quantity, 3, "tomatoes untouched");
+  const obs = rpcs.find((r) => r.fn === "zad_record_observation")!;
+  assertEquals([obs.args.p_user, obs.args.p_qty, obs.args.p_source], ["mom", 1.5, "chat_consume"]);
+});
+
+Deno.test("consume_item never goes below zero and says the item ran out", async () => {
+  const { sb, tables } = fakeDb({
+    family_members: FAMILY,
+    zad_inventory: [{ id: "c", user_id: "dad", family_id: "f1", item_name: "جبنة رومي", quantity: 1, unit: "علبة", created_at: "2026-11-01" }],
+  });
+  const out = await executeTool(sb, "dad", "consume_item", { item_name: "جبنة رومي", amount: 2, unit: "علبة" }, {}, freshContext("dad"), {} as any);
+  assertEquals(tables.zad_inventory[0].quantity, 0);
+  assert(out.includes("خلص"), out);
+});
+
+Deno.test("consume_item refuses a name that points at two items, and one that is not in the pantry", async () => {
+  const { sb, writes } = fakeDb({
+    family_members: FAMILY,
+    zad_inventory: [
+      { id: "a", user_id: "dad", family_id: "f1", item_name: "جبنة رومي", quantity: 1, unit: "علبة", created_at: "2026-11-01" },
+      { id: "b", user_id: "dad", family_id: "f1", item_name: "جبنة بيضا", quantity: 1, unit: "علبة", created_at: "2026-11-02" },
+    ],
+  });
+  const two = await executeTool(sb, "dad", "consume_item", { item_name: "جبنة", amount: 1 }, {}, freshContext("dad"), {} as any);
+  assert(two.startsWith("مرفوض") && two.includes("جبنة رومي") && two.includes("جبنة بيضا"), two);
+  const none = await executeTool(sb, "dad", "consume_item", { item_name: "زيتون", amount: 1 }, {}, freshContext("dad"), {} as any);
+  assert(none.startsWith("مرفوض"), none);
+  assertEquals(writes.length, 0);
+});
+
+Deno.test("someone outside the family cannot consume its pantry", async () => {
+  const { sb, writes } = fakeDb({
+    family_members: FAMILY,
+    zad_inventory: [{ id: "w", user_id: "mom", family_id: "f1", item_name: "مياه", quantity: 10, unit: "حبة", created_at: "2026-11-01" }],
+  });
+  const out = await executeTool(sb, "stranger", "consume_item", { item_name: "مياه", amount: 3 }, {}, freshContext("stranger"), {} as any);
+  assert(out.startsWith("مرفوض"), out);
+  assertEquals(writes.length, 0);
+});
