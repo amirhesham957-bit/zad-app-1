@@ -88,6 +88,7 @@ import { DOSE_SNOOZE_MINUTES, isDoseAction, muteCheckin, settleDoseReminder, sno
 import { type KindOutcome, LEARN_WINDOW_DAYS, learnedPriority, learnedQuietUntil, outcomesByKind, type Stance, stanceOf } from "./outcomeLearning.ts";
 import { deliverPetCall } from "./petCall.ts";
 import { pickPantryMatch, samePantryItem, type PantryRow } from "./pantryMatch.ts";
+import { consumeReply, matchConsumeRow, quantityAfter, usedInRowUnits, type ConsumeRow } from "./consumeItem.ts";
 import { txnSourceType } from "./provenance.ts";
 import { productNameKey } from "./productIdentity.ts";
 import { dealCodeRows } from "./dealCodes.ts";
@@ -2820,6 +2821,50 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
         tool: name, input, table: "zad_category_budgets", targetId: saved.rows[0].id, previous: capBefore ?? null, next: saved.rows[0],
       });
       return `اتحط سقف ${category} على ${input.amount}`;
+    }
+    case "consume_item": {
+      // «شربنا ٣ مية» (خطة المخزن الواعي ٢، consumeItem.ts): طرح من مخزن البيت + قراية للتعلّم.
+      const said = String(input.item_name ?? "").trim();
+      const houseFamily = await householdFamilyId(sb, userId);
+      const { data: house, error: houseErr } = await sb.from("zad_inventory")
+        .select("id,user_id,item_name,quantity,unit,created_at")
+        .or(householdFilter(userId, houseFamily)).limit(500);
+      if (houseErr) return `مرفوض: معرفتش أقرا المخزون (${houseErr.message})`;
+      const rows = (house ?? []) as Array<ConsumeRow & { user_id: string }>;
+      const match = matchConsumeRow(rows.filter((r) => r.user_id === userId), said) ?? matchConsumeRow(rows, said);
+      if (!match) return `مرفوض: «${said}» مش في مخزون البيت — اسأل العميل لو عايز يضيفه.`;
+      if ("ambiguous" in match) {
+        return `مرفوض: «${said}» ممكن يكون: ${match.ambiguous.join("، ")} — اسأل العميل أنهي واحد ونادي تاني بالاسم.`;
+      }
+      const row = match.row;
+      const before = Math.max(0, Number(row.quantity) || 0);
+      if (before <= 0) return `«${row.item_name}» متسجل خلصان أصلاً — مفيش حاجة تتطرح.`;
+      const used = usedInRowUnits(Number(input.amount), input.unit, row.item_name);
+      const after = quantityAfter(before, used);
+      const w = await writeRows(
+        sb.from("zad_inventory").update({ quantity: after }).eq("id", row.id).select("id,quantity"),
+        "تسجيل الاستهلاك",
+      );
+      if (!w.ok) return `مرفوض: ${w.reason}`;
+      ctx.mutationCount++;
+      ctx.mutations.push({ tool: name, old: before, new: { item: row.item_name, qty: after } });
+      await recordAction(sb, userId, scope, {
+        tool: name, input, table: "zad_inventory", targetId: row.id,
+        previous: { quantity: row.quantity }, next: w.rows[0],
+      });
+      // المعدل متربط بصاحب الصف (نفس add_inventory_item)، فالقراية باسمه حتى لو اللي استهلك فرد تاني.
+      const { data: obs, error: obsErr } = await sb.rpc("zad_record_observation", {
+        p_user: row.user_id ?? userId, p_item: row.item_name, p_qty: after, p_source: "chat_consume",
+      });
+      if (obsErr) {
+        console.error("zad_record_observation failed:", obsErr.message);
+      } else {
+        ctx.observations.push({
+          item: row.item_name, qty: after,
+          samples: (obs as any)?.samples ?? 0, rateKnown: (obs as any)?.rate_known === true,
+        });
+      }
+      return consumeReply(row.item_name, row.unit, before, after, input.dish ? String(input.dish).trim() : null);
     }
     case "add_inventory_item": {
       const itemName = await householdName(sb, userId, String(input.item_name).trim());
@@ -5628,6 +5673,20 @@ export const CHAT_TOOLS: ToolDef[] = [
         reason: { type: "string", description: "سبب واضح للتعديل، ١٠ حروف على الأقل" },
       },
       required: ["item_name", "reason"],
+    },
+  },
+  {
+    name: "consume_item",
+    description: "العميل قال إنه استعمل/أكل/شرب حاجة من المخزون («شربنا ٣ مية»، «خلّصنا علبة جبنة»، «فتحنا كيس رز»): زاد بيطرحها من الكمية ويتعلّم معدل البيت. amount بالعدد اللي قاله (٣ مية = 3) — زاد بيحوّل للعبوة لو الصنف كرتونة فيها كذا حبة. أكلة («عملنا مكرونة بالصلصة»): نادِ الأداة لكل مكوّن موجود في المخزون بكمية تقديرية بوحدة الصنف على قد البيت، وdish = اسم الأكلة. لو العميل قال الفاضل مش المستعمل استخدم update_inventory_qty.",
+    input_schema: {
+      type: "object",
+      properties: {
+        item_name: { type: "string", description: "اسم الصنف زي ما في المخزون، أو زي ما العميل قاله" },
+        amount: { type: "number", description: "الكمية اللي اتستعملت (مش اللي فاضلة)" },
+        unit: { type: "string", description: "الوحدة اللي العميل قالها لو قالها: «كرتونة»، «علبة»، «زجاجة»" },
+        dish: { type: "string", description: "اسم الأكلة لو الاستهلاك من طبخة" },
+      },
+      required: ["item_name", "amount"],
     },
   },
   {

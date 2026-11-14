@@ -171,6 +171,16 @@ export const validateConfirmObligation: Validator = (input, snap, ctx) => {
   return { ok: true };
 };
 
+/** «شربنا ٣ مية» (consumeItem.ts): الكمية المستعملة رقم موجب؛ الصنف بيتلاقى في التنفيذ (المطابقة أوسع من اللقطة). */
+export const validateConsumeItem: Validator = (input, _snap, ctx) => {
+  if (typeof input.item_name !== "string" || !input.item_name.trim()) return { ok: false, reason: "item_name مطلوب" };
+  if (typeof input.amount !== "number" || !(input.amount > 0) || input.amount > 1000) {
+    return { ok: false, reason: "amount رقم أكبر من صفر — الكمية اللي اتستعملت" };
+  }
+  if ((ctx.counts["consume_item"] ?? 0) >= 8) return { ok: false, reason: "وصلت لحد ٨ أصناف في المرة" };
+  return { ok: true };
+};
+
 export const validateUpdateInventoryQty: Validator = (input, snap) => {
   // «دي مش أساسية» / «دي أساسية» من غير كمية (ZAD_PLAN ٣.١٠).
   const mode = input.restock_mode;
@@ -1273,6 +1283,7 @@ export const VALIDATORS: Record<string, Validator> = {
   emit_insight: validateEmitInsight,
   ask_user: validateAskUser,
   update_inventory_qty: validateUpdateInventoryQty,
+  consume_item: validateConsumeItem,
   set_transaction_category: validateSetTransactionCategory,
   suggest_budget_change: validateSuggestBudgetChange,
   add_shopping_item: validateAddShoppingItem,
@@ -1373,7 +1384,7 @@ export const VALIDATORS: Record<string, Validator> = {
 export const MUTATING_TOOLS = [
   "start_family_poll", "log_decision", "set_life_circumstance", "end_life_circumstance", "confirm_life_shift",
   "remember_occasion", "save_trusted_technician", "answer_same_product",
-  "update_inventory_qty", "set_transaction_category", "merge_duplicate_expense",
+  "update_inventory_qty", "consume_item", "set_transaction_category", "merge_duplicate_expense",
   "reconcile_cash_balance", "confirm_cycle_start", "confirm_obligation",
   // المرحلة ٢-ب
   "log_transaction", "update_transaction", "delete_transaction", "set_monthly_limit", "set_category_budget",
