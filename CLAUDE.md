@@ -26,6 +26,20 @@ Project-specific rules for any Claude session working in this repo. Read alongsi
 - `ZadAiGeminiClient.kt` is a dormant optional client-side path (only activates if a user pastes their own key into the camera screen). As of 2026-08-01 the name is finally accurate: it calls Gemini's native `generateContent`, not Groq, and accepts several comma/space/newline-separated keys in the one stored string (`gemini_api_key` in SharedPreferences), rotating on 429. A stale **Groq** key left there by an older build simply fails and falls through to `zad-core-intelligence`. Never describe this path as required, and never assume a feature is broken just because no personal key is configured.
 - Required secrets for a working build: `SUPABASE_URL`, `SUPABASE_ANON_KEY` in `zad_flutter/env.json` (gitignored; copy `env.example.json`), passed with `--dart-define-from-file=env.json`. Server-side, `ZAD_API_KEY_1..5` (or legacy singular `GEMINI_API_KEY`), `GROQ_API_KEY_1`/`GROQ_API_KEY_2` (or the original singular `GROQ_API_KEY`), and `GROQ_API_KEY` are Supabase project secrets, not app secrets. `OPENROUTER_API_KEY` is no longer required by `zad-core-intelligence` (still used by `zad-brain`'s `ZAD_PROVIDER=openai_compatible` + `ZAD_BASE_URL` config, a separate function/config path — see `docs/agent/`).
 
+## Model economy (owner, 2026-11-14 — standing rule)
+
+The owner asked for delegation to save quota, so the default "don't spawn agents" does not apply here. The main
+model plans, routes, reviews and does the important execution itself: design, security, money, migrations,
+anything touching production, and the final verification. It delegates with the Agent tool to the agents in
+[`.claude/agents/`](./.claude/agents/):
+
+- `haiku-scout` (Haiku, read-only): finding files, grepping symbols, where something is used, summarising a file.
+- `haiku-runner` (Haiku): mechanical work with no judgement — a known check and its exit code, an exact edit already written out, a rename.
+- `sonnet-builder` (Sonnet): a well-specified slice (a test, a contained fix) once the plan and checks are decided.
+
+One or two quick tool calls are done directly, since spawning costs more. Independent agents run in parallel.
+An agent's "done" is not evidence: verify before reporting.
+
 ## Response style
 
 Default to terse, high-signal replies once a plan is executing — state what changed and why, skip preamble and restating the request back. Full explanations are for genuinely new architectural decisions, not routine edits. Never fabricate build/test results. **Toolchain presence varies by container — check, don't assume.** This section has flipped more than once because each revision recorded one container as if it were permanent. On 2026-09-04 a fresh Codespace had **neither** Deno **nor** an Android SDK: no `~/.deno`, no `/home/codespace/android-sdk`, no `local.properties`, `ANDROID_HOME` unset. Earlier notes here asserting both were present ("`deno 2.9.5`, confirmed 2026-08-16"; "SDK is now present, confirmed 2026-09-03") were true of those containers only. Verify before relying on either, and if missing, install rather than skipping the check — network to `deno.land`, `dl.google.com` and `services.gradle.org` works, and both installs succeeded in ~10 minutes total on 2026-09-04:
