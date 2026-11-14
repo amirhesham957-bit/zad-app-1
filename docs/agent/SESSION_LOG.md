@@ -491,3 +491,11 @@ related:
 - **مستني المالك:** (١) AdMob ⇐ Privacy & messaging ⇐ اعمل رسالة GDPR للتطبيق وانشرها — ده بيصلّح حتى النسخ المتسطّبة من غير بيلد. (٢) رفع بلاي من CI بيفشل `The caller does not have permission` من ١٣/١١ (مستخبي ورا `continue-on-error`) — صلاحيات حساب الخدمة في Play Console. (٣) يدمج #556 والـPR ده وبيلد closed-testing جديد.
 - **فخ المحاكي:** وقع ٤ مرات (exit 139، «bad color buffer handle»/«Failed to find ColorBuffer») بـguest وswiftshader، وبـImpeller ومن غيره — ماوصلتش لشاشة فيها إعلان. اللوج اتقرا قبل الوقوع.
 - **فخ:** سطر `I/Ads: This request is sent from a test device` بيطلع من غير ما الكود يطلب إعلان (الـSDK بيبدأ لوحده من المانيفست) — مش دليل تحميل.
+
+## ٢٠٢٦-١١-١٤ — رسالة GDPR اتنشرت، Apify القانوني، والشهادات
+
+- **الإعلانات:** المالك نشر رسالة GDPR في AdMob. على المحاكي (الـrelease بتصليح #557) سطر `consent info update failed` اختفى و`Initialized AdMob` ظهر مرتين. **ماشفتش إعلان على الشاشة**: المحاكي وقع للمرة الخامسة (GPU، exit 139) بعد الدخول. الاختبار الأخير على موبايل المالك.
+- **#558:** شيل `certificates/` من main — شهادات App Signing **العامة** (CN=Android)، مش مفاتيح، مفيش تسريب.
+- **Apify (قرار المالك: القانوني بس):** `apifyPool.ts` — مفاتيح من `APIFY_API_TOKEN` (كذا مفتاح) أو `_1.._9`، بداية عشوائية، والمفتاح اللي يرد 401/402/403/429 يتعدّى. `browser: true` على محل في `OFFICIAL_FLYER_SITES` ⇐ صفحته من متصفح Apify بعد robots.txt ومن غير بروكسي. `flyer_page_probe` لقياس صفحة قبل إضافة محل. `provider_health.apify.keys` بيقول كام مفتاح اتقري. core ٢٥٩/٠، `apifyPool_test` ٧.
+- **فاضل بعد الدمج:** `provider_health` ⇐ `apify.keys` لازم ٧؛ `flyer_page_probe` على صفحات عروض كارفور مصر وسبينيس والـ٦ اللي ماردّوش؛ كل محل يطلّع روابط PDF/صور يتضاف سطر بـ`browser: true` وشكل الرابط بالظبط.
+- **فخ:** `/tmp` بيتمسح بين الجلسات — الـAVD لازم يتعمل تاني. والقرص `/` ٩٧٪.

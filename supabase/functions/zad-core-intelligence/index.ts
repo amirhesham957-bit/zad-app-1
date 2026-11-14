@@ -50,6 +50,7 @@ import { tiktokDealHits, tiktokDealsPrompt, tiktokQuery, withPriceFromPercent } 
 import { isFreshPick, PICK_MIN_LIKES, readSocialPick, type SocialPick, tiktokPostedAt } from "./socialPicks.ts";
 import { readWeekTrends, weekTrendHits, weekTrendsPrompt, weekTrendsQuery } from "./weekTrends.ts";
 import { brochureEntries, OFFICIAL_FLYER_SITES, OFFICIAL_FLYER_UA, officialFlyerDeals, officialFlyerPrompt, robotsAllows, siteForPdf } from "./officialFlyers.ts";
+import { apifyTokens, flyerLinkSample, renderPageWithApify } from "./apifyPool.ts";
 import { fillMarketCurrency, DEAL_SEARCH_TIMEOUT_MS, dealQuery, dealsFromHitsPrompt, dealSearchItems, readDeals, readReverseCity, readStoreDeals, reverseCityUrl, sameCurrency, cleanCity, searchStoreName, storeDealsPrompt, storeDealsQuery, videoDealsPrompt, youtubeDealVideos, instagramDealPosts, postDealsPrompt, flyerDealsPrompt, readDealCodes, type DealCode } from "./liveDeals.ts";
 import { fuelPricePrompt, fuelPriceQuery, readFuelPrice } from "./fuelPrice.ts";
 import {
@@ -2074,7 +2075,7 @@ async function handle(req: Request): Promise<Response> {
           ? { error: error.message.slice(0, 120) }
           : budgetUsage((data ?? []) as { day: string; used: number }[], today, dailyCap((n) => Deno.env.get(n)));
       }
-      return jsonResponse({ ...keysReport, tts, azure_tts: azureTts, pipeline, brain_tools_probe: brainTools, telegram_voice_selftest: voiceNote, web_search_probe: webSearch, grounded_search_probe: groundedSearch, search_budget: searchBudget, youtube_probe: youtube, instagram_probe: instagram, tavily_probe: tavily });
+      return jsonResponse({ ...keysReport, tts, azure_tts: azureTts, pipeline, brain_tools_probe: brainTools, telegram_voice_selftest: voiceNote, web_search_probe: webSearch, grounded_search_probe: groundedSearch, search_budget: searchBudget, youtube_probe: youtube, instagram_probe: instagram, tavily_probe: tavily, apify: { keys: apifyTokens((n) => Deno.env.get(n)).length } });
     }
 
     // فحص صحة مزود الصوت — بدون بيانات مستخدم، بدون صوت فعلي: نداء minimal
@@ -3586,13 +3587,25 @@ async function handle(req: Request): Promise<Response> {
                 sites.push({ store: site.store, ok: false, reason: "robots_disallow" });
                 continue;
               }
-              const res = await fetch(page, { headers: { "User-Agent": OFFICIAL_FLYER_UA }, signal: AbortSignal.timeout(15_000) });
-              if (!res.ok) {
-                await res.body?.cancel();
-                sites.push({ store: site.store, ok: false, reason: `page_${res.status}` });
-                continue;
+              // صفحة محتاجة جافاسكريبت: متصفح Apify (apifyPool.ts) — نفس الصفحة، robots.txt اتحقق فوق، من غير بروكسي.
+              let html: string;
+              if (site.browser) {
+                const rendered = await renderPageWithApify(page.toString(), apifyTokens((n) => Deno.env.get(n)));
+                if (!rendered.ok) {
+                  sites.push({ store: site.store, ok: false, reason: `browser_${rendered.reason}` });
+                  continue;
+                }
+                html = rendered.html;
+              } else {
+                const res = await fetch(page, { headers: { "User-Agent": OFFICIAL_FLYER_UA }, signal: AbortSignal.timeout(15_000) });
+                if (!res.ok) {
+                  await res.body?.cancel();
+                  sites.push({ store: site.store, ok: false, reason: `page_${res.status}` });
+                  continue;
+                }
+                html = await res.text();
               }
-              const entries = brochureEntries(await res.text(), site);
+              const entries = brochureEntries(html, site);
               sites.push({ store: site.store, country: site.country, currency: site.currency, ok: true, entries });
             } catch (e) {
               sites.push({ store: site.store, ok: false, reason: (e as Error).name === "TimeoutError" ? "timeout" : "fetch_failed" });
@@ -3617,6 +3630,30 @@ async function handle(req: Request): Promise<Response> {
         const deals = readStoreDeals({ deals: raw }, [{ title: `نشرة ${site.store}: ${label}`, url: pdfUrl, snippet: "" }], site.currency, now);
         if (raw.length > 0 && deals.length === 0) console.warn("[official_flyers] every deal dropped:", JSON.stringify(raw.slice(0, 3)));
         return jsonResponse({ ok: true, store: site.store, country: site.country, currency: site.currency, raw: raw.length, deals, source: "flyer" });
+      }
+
+      // ──────────────────────────────────────────────
+      // FLYER_PAGE_PROBE — قياس صفحة نشرات محل قبل ما يتضاف لـOFFICIAL_FLYER_SITES (طلب المالك ١٤/١١). service role بس.
+      // robots.txt الأول، وبعدين متصفح Apify، وبيرجّع عينة روابط PDF وصور النشرات — مابيقراش ولا بيكتب عروض.
+      // ──────────────────────────────────────────────
+      case "flyer_page_probe": {
+        if (!isServiceRoleToken(bearerToken(req), supabaseKey)) return jsonResponse({ error: "unauthorized" }, 401);
+        let page: URL;
+        try {
+          page = new URL(String(payload?.url ?? ""));
+        } catch {
+          return jsonResponse({ ok: false, reason: "bad_url" }, 400);
+        }
+        if (page.protocol !== "https:") return jsonResponse({ ok: false, reason: "https_only" }, 400);
+        const robots = await fetch(new URL("/robots.txt", page), { headers: { "User-Agent": OFFICIAL_FLYER_UA }, signal: AbortSignal.timeout(10_000) })
+          .catch(() => null);
+        if (!robots) return jsonResponse({ ok: false, reason: "robots_unreachable" });
+        const robotsText = robots.ok ? await robots.text() : (await robots.body?.cancel(), "");
+        if (!robots.ok && robots.status !== 404) return jsonResponse({ ok: false, reason: `robots_${robots.status}` });
+        if (!robotsAllows(robotsText, page.pathname)) return jsonResponse({ ok: false, reason: "robots_disallow" });
+        const rendered = await renderPageWithApify(page.toString(), apifyTokens((n) => Deno.env.get(n)));
+        if (!rendered.ok) return jsonResponse({ ok: false, reason: rendered.reason, tried: rendered.tried });
+        return jsonResponse({ ok: true, html_chars: rendered.html.length, key_index: rendered.key_index, ...flyerLinkSample(rendered.html, page.toString()) });
       }
 
       // ──────────────────────────────────────────────
