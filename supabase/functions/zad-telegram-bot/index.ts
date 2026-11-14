@@ -40,6 +40,7 @@ import {
 } from "./pharmacyPhoto.ts";
 import { familyMedicineCandidates } from "../_shared/familyMembers.ts";
 import { amazonPicks, amazonPicksReply } from "./amazonPicks.ts";
+import { priorDaysMap } from "../_shared/amazonNeeds.ts";
 import { householdFamilyId, householdFilter } from "../_shared/household.ts";
 import { marketFor } from "../_shared/amazonMarket.ts";
 import { checkInBasis, checkInPriority, checkInScore, openedLeftDays } from "../_shared/consumptionRate.ts";
@@ -1334,6 +1335,9 @@ async function replyAmazonPicks(sb: SupabaseClient, userId: string, reply: Conte
     sb.from("affiliate_products").select("id,product_name_ar,product_name_search_keywords,asin,asin_verified,image_url,average_price_sar,is_active").eq("is_active", true).limit(200),
     sb.from("zad_users").select("country").eq("id", userId).maybeSingle(),
   ]);
+  // خطة المخزن ٦: «هيخلص خلال يومين على قد أفراد البيت» للي مالوش معدل. فشل = الاحتياج من غيره زي الأول.
+  const { data: priorRows, error: priorErr } = await sb.rpc("zad_pantry_prior_days_for", { p_user: userId });
+  if (priorErr) console.error("[amazon_picks] household prior failed:", priorErr.message);
   const failed = [inv, cons, shop, catalog, user].find((r) => r.error);
   if (inv.error || shop.error) {
     console.error("[amazon_picks] read failed:", failed?.error?.message);
@@ -1342,7 +1346,7 @@ async function replyAmazonPicks(sb: SupabaseClient, userId: string, reply: Conte
   }
   if (failed) console.error("[amazon_picks] partial read:", failed.error?.message);
   const market = marketFor((user.data as { country?: string | null } | null)?.country, (n) => Deno.env.get(n));
-  const picks = amazonPicks(inv.data ?? [], cons.data ?? [], shop.data ?? [], catalog.data ?? [], market);
+  const picks = amazonPicks(inv.data ?? [], cons.data ?? [], shop.data ?? [], catalog.data ?? [], market, 3, priorDaysMap(priorRows));
   const rows = amazonButtonRows(picks, (u) => amazonOpenUrl(SUPABASE_URL, u));
   await reply(amazonPicksReply(picks, market.domain), rows.length ? { reply_markup: toGrammyKeyboard(rows) } : undefined);
 }
