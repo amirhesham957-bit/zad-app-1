@@ -42,7 +42,7 @@ import { familyMedicineCandidates } from "../_shared/familyMembers.ts";
 import { amazonPicks, amazonPicksReply } from "./amazonPicks.ts";
 import { householdFamilyId, householdFilter } from "../_shared/household.ts";
 import { marketFor } from "../_shared/amazonMarket.ts";
-import { checkInPriority, openedLeftDays } from "../_shared/consumptionRate.ts";
+import { checkInBasis, checkInPriority, checkInScore, openedLeftDays } from "../_shared/consumptionRate.ts";
 import { PURCHASE_SOURCES, purchaseDaysByItem, restockKey } from "../_shared/restockCycle.ts";
 import { extendCallback, formatExtend, formatLookup, parseExtendCallback, parseSupportCommand, SUPPORT_TEXT, SUPPORT_USAGE } from "./supportDesk.ts";
 import {
@@ -59,7 +59,7 @@ import {
   notificationReviewKeyboard,
   parseNotificationReviewCallback,
   confirmMedicationKeyboard, parseMedicationCallback,
-  checkInKeyboard, parseCheckInCallback, parseCheckinTextReply, checkInPromptMessage, checkInBundleMessage, checkInBundleKeyboard, deferForRecentOutbound, ignoredCheckinStreak, checkinPlan, CHECKIN_OFF_CALLBACK,
+  checkInKeyboard, parseCheckInCallback, parseCheckinTextReply, checkInPromptMessage, checkInBundleMessage, checkInBundleKeyboard, type CheckinWhy, deferForRecentOutbound, ignoredCheckinStreak, checkinPlan, CHECKIN_OFF_CALLBACK,
   confirmToolKeyboard, parseToolCallback, pendingConfirmsBlock, planConfirmations,
   isHumanUpdate, type UpdateEnvelope,
   doseKeyboard, parseDoseCallback, DOSE_MOMENTS, type DoseAction,
@@ -420,7 +420,7 @@ async function deliverVoiceAlert(
  * already-pending prompt are excluded (the unique index on telegram_checkin_prompts is the
  * hard guarantee; this filter just avoids the wasted query/round-trip).
  */
-async function findCheckInCandidates(sb: SupabaseClient, userId: string): Promise<Array<{ item_name: string; quantity: number; unit: string | null }>> {
+async function findCheckInCandidates(sb: SupabaseClient, userId: string): Promise<Array<{ item_name: string; quantity: number; unit: string | null; why: CheckinWhy }>> {
   const [{ data: inv }, { data: cons }, { data: pending }, { data: occasional, error: occErr }, { data: seen }, { data: priors, error: priorErr }] = await Promise.all([
     sb.from("zad_inventory").select("item_name,quantity,category,unit,created_at,restock_mode,restock_cycle_days,opened_at,opened_life_days").eq("user_id", userId),
     sb.from("zad_consumption").select("item_name,avg_daily_qty,rate_known").eq("user_id", userId),
@@ -459,24 +459,35 @@ async function findCheckInCandidates(sb: SupabaseClient, userId: string): Promis
     opened_at: string | null; opened_life_days: number | null;
   }>)
     .filter((item) => !pendingItems.has(item.item_name) && !occasionalItems.has(item.item_name.trim()))
-    .map((item) => ({
-      item,
-      priority: checkInPriority(
+    .map((item) => {
+      const cons = consByItem.get(item.item_name);
+      const prior = priorByItem.get(item.item_name);
+      const opened = openedLeftDays(item.opened_at, item.opened_life_days);
+      const bought = boughtOn.get(restockKey(item.item_name)) ?? (item.created_at ? [item.created_at] : []);
+      const priority = checkInPriority(
         {
           name: item.item_name, quantity: item.quantity, category: item.category,
           restockMode: item.restock_mode, cycleOverride: item.restock_cycle_days,
         },
-        consByItem.get(item.item_name)?.avg_daily_qty,
+        cons?.avg_daily_qty,
         // صنف اتضاف بإيده من غير شرا متسجل: يوم إضافته هو أول شرا.
-        boughtOn.get(restockKey(item.item_name)) ?? (item.created_at ? [item.created_at] : []),
+        bought,
         Date.now(),
-        priorByItem.get(item.item_name),
-        openedLeftDays(item.opened_at, item.opened_life_days),
-      ),
-    }))
-    .filter((x): x is { item: typeof x.item; priority: number } => x.priority != null && x.priority >= 1)
-    .sort((a, b) => b.priority - a.priority)
-    .map(({ item }) => ({ item_name: item.item_name, quantity: item.quantity, unit: item.unit }));
+        prior,
+        opened,
+      );
+      const basis = checkInBasis(cons?.avg_daily_qty, cons?.rate_known, prior, item.quantity, opened);
+      // الأساسي: العميل قال، أو اتشرى ٣ أيام مختلفة أو أكتر (نفس isEssential من غير الدورة).
+      const essential = item.restock_mode === "staple" || new Set(bought.map((d) => d.slice(0, 10))).size >= 3;
+      const why: CheckinWhy = basis === "opened"
+        ? { kind: "opened", days: item.opened_at ? (Date.now() - Date.parse(item.opened_at)) / 86_400_000 : 0 }
+        : { kind: basis === "known" || basis === "approximate" ? "rate" : basis };
+      return { item, priority, score: priority == null ? 0 : checkInScore(priority, basis, essential), why };
+    })
+    .filter((x): x is { item: typeof x.item; priority: number; score: number; why: CheckinWhy } => x.priority != null && x.priority >= 1)
+    // سؤال واحد بس في الليلة (خطة المخزن ٤): للي إجابته بتفرق أكتر، مش للأقرب يخلص وبس.
+    .sort((a, b) => b.score - a.score)
+    .map(({ item, why }) => ({ item_name: item.item_name, quantity: item.quantity, unit: item.unit, why }));
 }
 
 /** The daily cron entry point. Capped at 2 prompts/user/day — this is a check-in nudge,
@@ -484,7 +495,8 @@ async function findCheckInCandidates(sb: SupabaseClient, userId: string): Promis
  * its two most pressing ones today (candidates aren't ranked beyond DB order — good enough
  * for a cap this small, not worth a scoring pass). Same cap applies to the real-time
  * job below (?job=live_checkin) — one shared daily budget, not two separate allowances. */
-const MAX_CHECKINS_PER_USER_PER_DAY = 2;
+// خطة المخزن الواعي ٤ (المالك ١٤/١١): سؤال واحد بسببه، مش اتنين «تذكير سريع» — المالك ساب ٧ ورا بعض.
+const MAX_CHECKINS_PER_USER_PER_DAY = 1;
 
 /** كام prompt اتبعت النهاردة (UTC) للمستخدم ده، بغض النظر عن حالته دلوقتي (pending/
  *  answered/expired) — العدّاد هو "كام مرة إتقلق النهاردة"، مش "كام لسه مستني رد". */
@@ -513,6 +525,7 @@ async function checkinsSentToday(sb: SupabaseClient, userId: string): Promise<nu
  *  لو الكتابة فشلت — الكولر بيقرر يعمل إيه بالفشل. */
 async function sendCheckInPrompt(
   sb: SupabaseClient, userId: string, chatId: number, itemName: string, quantity: number, unit: string | null,
+  why?: CheckinWhy | null,
 ): Promise<boolean> {
   const { data: prompt, error } = await sb.from("telegram_checkin_prompts")
     .insert({ user_id: userId, item_name: itemName, quantity_at_prompt: quantity })
@@ -522,7 +535,7 @@ async function sendCheckInPrompt(
     console.error("checkin prompt insert failed:", error?.message);
     return false;
   }
-  await sendTelegramMessage(chatId, checkInPromptMessage(isolate(sanitizeName(itemName)), unit ? sanitizeName(unit) : null), checkInKeyboard((prompt as { id: string }).id));
+  await sendTelegramMessage(chatId, checkInPromptMessage(isolate(sanitizeName(itemName)), unit ? sanitizeName(unit) : null, why), checkInKeyboard((prompt as { id: string }).id));
   return true;
 }
 
@@ -551,7 +564,7 @@ const CHECKIN_GAP_MS = 20 * 60 * 1000;
  */
 async function nightCheckin(
   sb: SupabaseClient, userId: string,
-): Promise<{ candidates: Array<{ item_name: string; quantity: number; unit: string | null }>; plan: "ask" | "ask_with_note" } | null> {
+): Promise<{ candidates: Array<{ item_name: string; quantity: number; unit: string | null; why: CheckinWhy }>; plan: "ask" | "ask_with_note" } | null> {
   const alreadySentToday = await checkinsSentToday(sb, userId);
   if (alreadySentToday > 0) return null;
   const budget = MAX_CHECKINS_PER_USER_PER_DAY - alreadySentToday;
@@ -673,7 +686,7 @@ async function runDailyCheckins(sb: SupabaseClient): Promise<{ usersChecked: num
     const { candidates, plan } = night;
     let asked = 0;
     if (candidates.length === 1 && plan === "ask") {
-      if (await sendCheckInPrompt(sb, b.user_id, b.chat_id, candidates[0].item_name, candidates[0].quantity, candidates[0].unit)) asked = 1;
+      if (await sendCheckInPrompt(sb, b.user_id, b.chat_id, candidates[0].item_name, candidates[0].quantity, candidates[0].unit, candidates[0].why)) asked = 1;
     } else if (candidates.length > 0) {
       asked = await sendCheckInBundle(sb, b.user_id, b.chat_id, candidates, plan === "ask_with_note");
     }
@@ -3514,7 +3527,10 @@ Deno.serve(async (req: Request) => {
           const prompts = night ? await insertCheckinPrompts(sb, user_id, night.candidates) : [];
           if (night && prompts.length > 0) {
             nightQuestions = {
-              text: checkInBundleMessage(prompts.map((p) => isolate(p.label)), night.plan === "ask_with_note"),
+              text: checkInBundleMessage(
+                prompts.map((p) => isolate(p.label)), night.plan === "ask_with_note",
+                prompts.length === 1 ? night.candidates.find((c) => c.item_name === prompts[0].item_name)?.why : null,
+              ),
               rows: checkInBundleKeyboard(prompts, night.plan === "ask_with_note"),
               items: prompts.map((p) => p.item_name),
             };
