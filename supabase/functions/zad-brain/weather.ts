@@ -50,7 +50,7 @@ export interface DayWeather {
 export interface WeatherFacts {
   place: string;
   /** المكان اتعرف إزاي: مدينة الملف، ولا عاصمة البلد. */
-  from: "city" | "capital";
+  from: "city" | "capital" | "location";
   days: DayWeather[];
   fetched_at: string;
 }
@@ -131,7 +131,15 @@ export function forecastUrl(lat: number, lon: number, timeZone: string): string 
  */
 export async function loadWeather(
   sb: SupabaseClient,
-  input: { country: string | null | undefined; city?: string | null; timeZone: string; now?: number; fetcher?: Fetch },
+  input: {
+    country: string | null | undefined;
+    city?: string | null;
+    /** نقطة الموبايل في بلده (homePoint) — أدق من اسم المدينة، ومقرّبة لـ٠٫١°. */
+    point?: HomePoint | null;
+    timeZone: string;
+    now?: number;
+    fetcher?: Fetch;
+  },
 ): Promise<WeatherFacts | null> {
   const country = String(input.country ?? "").toUpperCase();
   const capital = CAPITALS[country];
@@ -142,7 +150,11 @@ export async function loadWeather(
     let place = { name: capital.name, lat: capital.lat, lon: capital.lon };
     let from: WeatherFacts["from"] = "capital";
     const city = (input.city ?? "").trim();
-    if (city && city !== capital.name) {
+    if (input.point) {
+      // «اكتوبر» مابيتلاقاش في الـgeocoding فكان بيقع على القاهرة (المالك ١٤/١١: «الجو قلب ومنبهنيش»).
+      place = { name: input.point.name || city || capital.name, lat: input.point.lat, lon: input.point.lon };
+      from = "location";
+    } else if (city && city !== capital.name) {
       const cityKey = `city:${country}:${city.toLowerCase()}`;
       const { data: known } = await sb.from("zad_weather_cache").select("label,lat,lon").eq("place_key", cityKey).maybeSingle();
       const k = known as { label: string; lat: number; lon: number } | null;
@@ -193,6 +205,50 @@ export async function loadWeather(
   }
 }
 
+/** نقطة البيت للطقس: آخر لوكيشن للموبايل، مقرّب لـ٠٫١° (~١١ كم — كفاية للجو ومايحددش بيت). */
+export interface HomePoint {
+  lat: number;
+  lon: number;
+  name: string | null;
+}
+
+/** اللوكيشن أقدم من كده مابقاش دليل على مكانه. */
+export const HOME_POINT_MAX_AGE_MS = 30 * 86_400_000;
+
+/**
+ * نقطة الموبايل لو حديثة (٣٠ يوم) والعميل مش مسافر — وإلا null ونرجع لاسم المدينة. المسافر بيتقاله جو بلده
+ * (سلوك الطقس قبل كده)؛ النقطة دي للي في بلده بس.
+ */
+export function homePointFrom(
+  row: { last_lat?: number | null; last_lon?: number | null; last_location_at?: string | null; travel_country?: string | null } | null | undefined,
+  cityName: string | null | undefined,
+  now: number = Date.now(),
+): HomePoint | null {
+  const lat = Number(row?.last_lat);
+  const lon = Number(row?.last_lon);
+  const at = Date.parse(String(row?.last_location_at ?? ""));
+  if (!row || row.travel_country) return null;
+  if (row.last_lat == null || row.last_lon == null || !Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+  if (Math.abs(lat) > 90 || Math.abs(lon) > 180 || (lat === 0 && lon === 0)) return null;
+  if (!Number.isFinite(at) || now - at > HOME_POINT_MAX_AGE_MS) return null;
+  const round = (n: number) => Math.round(n * 10) / 10;
+  const name = String(cityName ?? "").trim();
+  return { lat: round(lat), lon: round(lon), name: name || null };
+}
+
+/** يقرا نقطة البيت من zad_users واسمها من zad_user_city (المدينة اللي اتعرفت من اللوكيشن). أي فشل = null. */
+export async function loadHomePoint(sb: SupabaseClient, userId: string, now: number = Date.now()): Promise<HomePoint | null> {
+  try {
+    const [{ data: u }, { data: c }] = await Promise.all([
+      sb.from("zad_users").select("last_lat,last_lon,last_location_at,travel_country").eq("id", userId).maybeSingle(),
+      sb.from("zad_user_city").select("city").eq("user_id", userId).maybeSingle(),
+    ]);
+    return homePointFrom(u as Parameters<typeof homePointFrom>[0], (c as { city?: string | null } | null)?.city, now);
+  } catch {
+    return null;
+  }
+}
+
 /** شكل الطقس في السناب شوت: النهارده وبكرة وبعده، من غير الحقول الداخلية. */
 export function weatherForSnapshot(w: WeatherFacts | null): Record<string, unknown> | null {
   if (!w) return null;
@@ -207,7 +263,7 @@ export function weatherForSnapshot(w: WeatherFacts | null): Record<string, unkno
 export function weatherRule(snap: { weather?: { place?: string } | null } | null | undefined): string {
   const w = snap?.weather;
   if (!w) return "   - **الجو (weather)**: مش معروف دلوقتي — لو اتسألت عنه قول كده، وماتخمّنش درجات حرارة.\n";
-  return `   - **الجو (weather)**: من Open-Meteo لـ${w.place} (تقريبي: مدينته أو عاصمة بلده). استخدمه لو الكلام عن خروج أو لبس ` +
+  return `   - **الجو (weather)**: من Open-Meteo لـ${w.place} (تقريبي: مكان موبايله أو مدينته أو عاصمة بلده). استخدمه لو الكلام عن خروج أو لبس ` +
     "أو غسيل أو سفر، وقول المدينة؛ الأرقام من days بس. مدينة تانية ⇒ weather_forecast.\n";
 }
 

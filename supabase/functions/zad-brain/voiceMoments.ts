@@ -23,7 +23,7 @@ import { loadAppointmentFollowUp } from "./appointmentFollowUp.ts";
 import { loadFamilyShareAsk } from "./familyShare.ts";
 import { type DoseHabit, loadDoseHabit } from "./doseHabit.ts";
 import { sameProductAsk } from "./productIdentity.ts";
-import { askedClothesKeys, clothingNudge, loadWeather, weatherAlert, type WeatherFacts } from "./weather.ts";
+import { askedClothesKeys, clothingNudge, loadHomePoint, loadWeather, weatherAlert, type WeatherFacts } from "./weather.ts";
 import { loadTasteDeal, saysTheDeal, withBuyingCycle } from "./tasteDeals.ts";
 import { loadDealCode } from "./dealCodes.ts";
 import { budgetComfortable } from "./householdLoad.ts";
@@ -1758,6 +1758,7 @@ async function morningWeather(
     return await loadWeather(sb, {
       country: (u as { country?: string | null } | null)?.country,
       city: (p as { city?: string | null } | null)?.city ?? null,
+      point: await loadHomePoint(sb, userId),
       timeZone: local.time_zone,
     });
   } catch {
