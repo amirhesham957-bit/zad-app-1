@@ -1315,5 +1315,11 @@
   "profileExportTitle": "Export my data",
   "profileExportSubtitle": "A copy of everything Zad knows about you",
   "profileExportFailed": "Couldn't prepare the file, try again",
-  "profileExportSubject": "My data from Zad"
+  "profileExportSubject": "My data from Zad",
+  "homeCareTitle": "Your subscriptions and medicines",
+  "homeCareRenewsToday": "Renews today",
+  "homeCareRenewsTomorrow": "Renews tomorrow",
+  "homeCareRenewsInDays": "Renews in {days} days",
+  "homeCareDoseAt": "Dose at {time}",
+  "homeCareDoseNow": "Dose due now"
 }

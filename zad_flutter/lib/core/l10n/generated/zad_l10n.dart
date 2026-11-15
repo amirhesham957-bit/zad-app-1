@@ -7363,6 +7363,42 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'بياناتي من زاد'**
   String get profileExportSubject;
+
+  /// No description provided for @homeCareTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'اشتراكاتك وأدويتك'**
+  String get homeCareTitle;
+
+  /// No description provided for @homeCareRenewsToday.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيتجدد النهارده'**
+  String get homeCareRenewsToday;
+
+  /// No description provided for @homeCareRenewsTomorrow.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيتجدد بكرة'**
+  String get homeCareRenewsTomorrow;
+
+  /// No description provided for @homeCareRenewsInDays.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيتجدد بعد {days} يوم'**
+  String homeCareRenewsInDays(Object days);
+
+  /// No description provided for @homeCareDoseAt.
+  ///
+  /// In ar, this message translates to:
+  /// **'الجرعة {time}'**
+  String homeCareDoseAt(Object time);
+
+  /// No description provided for @homeCareDoseNow.
+  ///
+  /// In ar, this message translates to:
+  /// **'جرعتها دلوقتي'**
+  String get homeCareDoseNow;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

@@ -11,6 +11,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart' show TemplateType;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/components/zad_appear.dart';
@@ -35,6 +36,7 @@ import 'package:zad/features/home/presentation/grocery_purchase_prompt.dart';
 import 'package:zad/features/home/presentation/home_activation_card.dart';
 import 'package:zad/features/home/presentation/home_amazon_strip.dart';
 import 'package:zad/features/home/presentation/home_blocks.dart';
+import 'package:zad/features/home/presentation/home_care_bar.dart';
 import 'package:zad/features/home/presentation/home_glance_widgets.dart';
 import 'package:zad/features/home/presentation/inventory_check_in_card.dart';
 import 'package:zad/features/home/presentation/metrics_duo.dart';
@@ -43,9 +45,11 @@ import 'package:zad/features/home/presentation/permission_banners.dart';
 import 'package:zad/features/home/presentation/quiet_banner.dart';
 import 'package:zad/features/home/presentation/sections_grid.dart';
 import 'package:zad/features/home/presentation/subscribe_pulse_card.dart';
+import 'package:zad/features/home/presentation/tasbiha_home_widget.dart';
 import 'package:zad/features/home/presentation/travel_banner.dart';
 import 'package:zad/features/home/presentation/urgent_recipe_card.dart';
 import 'package:zad/features/home/presentation/who_are_you_card.dart';
+import 'package:zad/shared/ads/presentation/native_ad.dart';
 import 'package:zad/shared/brain/data/home_signals_controller.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/budget/data/upcoming_outings.dart';
@@ -141,6 +145,12 @@ class HomeScreen extends ConsumerWidget {
           // The pantry, the shortages, the pharmacy and the subscriptions at
           // a look (owner, 2026-11-09), each opening its own page.
           const ZadAppearOnEntry(delayMs: 25, child: HomeGlanceWidgets()),
+          // «اشتراكاتك وأدويتك» (owner, 15/11): today's doses and the next
+          // renewals as one sideways bar, each card opening its page.
+          const ZadAppearOnEntry(delayMs: 25, child: HomeCareBar()),
+          // The tasbih is back on Home (owner, 15/11: «الحالية مفيهاش
+          // التسبيحة»); it had moved to the drawer's «المزيد» on 11/11.
+          const ZadAppearOnEntry(delayMs: 25, child: TasbihaHomeSlot()),
           // Every other section behind one line — the grid's first two rows
           // were the four tiles above a second time.
           const ZadAppearOnEntry(
@@ -166,8 +176,23 @@ class HomeScreen extends ConsumerWidget {
           ZadAppearOnEntry(delayMs: 35, child: ZadSlots.homeNearbyStores()),
           // «تسوق من أمازون»: a card per thing the home is short of.
           const ZadAppearOnEntry(delayMs: 40, child: HomeAmazonStrip()),
+          // One native ad (owner, 15/11: «الاعلان المدمج يزود ربحنا»),
+          // Google's medium template with its own «Ad» badge, between two
+          // reading sections — never beside a task or a button (owner 11/11).
+          // It takes no room until an ad loads, and none for subscribers,
+          // kids or where ads are off.
+          const ZadNativeAd(templateType: TemplateType.medium),
           // شيف زاد: the last recipes asked for, a tap to ask.
           ZadAppearOnEntry(delayMs: 45, child: ZadSlots.homeChefSection()),
+          // Out of attempts: the ad button where it can be found (owner
+          // 6/11), then «مكافآت زاد» (owner 13/11: the ad, the plans and the
+          // bot always have a way in; it hides itself while the card before
+          // it shows). Moved up on 15/11 from the foot of the page, where the
+          // owner never reached it: right after the chef, so the ad and
+          // «اشترك» are found without scrolling past the bank blocks.
+          // OutOfAttemptsCard must stay immediately before RewardsCard.
+          const OutOfAttemptsCard(),
+          const RewardsCard(),
           // «موجز زاد النهارده»: the brain says what matters today.
           const ZadAppearOnEntry(delayMs: 50, child: DailyBriefCard()),
           const SizedBox(height: 16),
@@ -184,12 +209,6 @@ class HomeScreen extends ConsumerWidget {
             gap: 16,
             child: ZadAppearOnEntry(delayMs: 30, child: CloseDayCard()),
           ),
-          // Attempts ran out: the ad button where it can be found (owner 6/11).
-          const OutOfAttemptsCard(),
-          // «مكافآت زاد» (owner 13/11): the ad, the plans and the bot always
-          // have a way in, not only when attempts run low or the bot is
-          // unlinked. Hides itself while the card above shows.
-          const RewardsCard(),
           // «اشترك» (ZAD_PLAN ٨ب.٣): free customers, once a session.
           const SubscribePulseCard(),
           // «شفت ١٥ إعلان الأسبوع ده» — once a week, free customers only.
@@ -208,7 +227,6 @@ class HomeScreen extends ConsumerWidget {
             gap: 18,
             child: ZadSlots.homeInsightsSection(onOpenCamera: onOpenCamera),
           ),
-          // The tasbih lives in the drawer's «المزيد» (ZAD_PLAN ١٠.٨).
           // Kotlin: the alert banner, then «العقل → الوصفات», then the gap.
           const AiAlertBannerSlot(),
           const UrgentRecipeSlot(),

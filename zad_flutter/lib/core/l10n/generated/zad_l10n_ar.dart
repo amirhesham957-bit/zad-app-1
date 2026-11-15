@@ -4158,6 +4158,28 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get profileExportSubject => 'بياناتي من زاد';
+
+  @override
+  String get homeCareTitle => 'اشتراكاتك وأدويتك';
+
+  @override
+  String get homeCareRenewsToday => 'بيتجدد النهارده';
+
+  @override
+  String get homeCareRenewsTomorrow => 'بيتجدد بكرة';
+
+  @override
+  String homeCareRenewsInDays(Object days) {
+    return 'بيتجدد بعد $days يوم';
+  }
+
+  @override
+  String homeCareDoseAt(Object time) {
+    return 'الجرعة $time';
+  }
+
+  @override
+  String get homeCareDoseNow => 'جرعتها دلوقتي';
 }
 
 /// The translations for Arabic, as used in Saudi Arabia (`ar_SA`).
@@ -5268,4 +5290,18 @@ class ZadL10nArSa extends ZadL10nAr {
 
   @override
   String get profileTelegramSubtitle => 'اربط حسابك وخلّ التذكيرات توصلك';
+
+  @override
+  String get homeCareRenewsToday => 'يتجدد اليوم';
+
+  @override
+  String get homeCareRenewsTomorrow => 'يتجدد بكرة';
+
+  @override
+  String homeCareRenewsInDays(Object days) {
+    return 'يتجدد بعد $days يوم';
+  }
+
+  @override
+  String get homeCareDoseNow => 'جرعتها الحين';
 }

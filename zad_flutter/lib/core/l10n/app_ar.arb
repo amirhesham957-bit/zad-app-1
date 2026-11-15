@@ -2739,5 +2739,11 @@
   "profileExportTitle": "تصدير بياناتي",
   "profileExportSubtitle": "نسخة من كل اللي زاد عارفه عنك",
   "profileExportFailed": "معرفناش نجهز الملف، جرّب تاني",
-  "profileExportSubject": "بياناتي من زاد"
+  "profileExportSubject": "بياناتي من زاد",
+  "homeCareTitle": "اشتراكاتك وأدويتك",
+  "homeCareRenewsToday": "بيتجدد النهارده",
+  "homeCareRenewsTomorrow": "بيتجدد بكرة",
+  "homeCareRenewsInDays": "بيتجدد بعد {days} يوم",
+  "homeCareDoseAt": "الجرعة {time}",
+  "homeCareDoseNow": "جرعتها دلوقتي"
 }

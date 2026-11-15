@@ -11,8 +11,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:zad/core/design/components/zad_idle_motion.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
-import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/l10n/l10n.dart';
@@ -119,20 +119,54 @@ class _WatchAdButtonState extends ConsumerState<WatchAdButton> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        OutlinedButton.icon(
-          key: const ValueKey<String>('watch-ad'),
-          style: OutlinedButton.styleFrom(
-            minimumSize: const Size.fromHeight(48),
-            foregroundColor: ZadColors.forestEmerald,
+        ZadShine(
+          child: OutlinedButton.icon(
+            key: const ValueKey<String>('watch-ad'),
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size.fromHeight(48),
+              foregroundColor: ZadColors.forestEmerald,
+            ),
+            onPressed: enabled ? () => unawaited(_watch()) : null,
+            icon: _busy
+                ? const SizedBox.square(
+                    dimension: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const ZadIdle(
+                    kind: ZadIdleKind.wiggle,
+                    child: Icon(Icons.card_giftcard_rounded, size: 20),
+                  ),
+            label: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Flexible(child: Text(label)),
+                // The reward as a pill, so it reads as a prize.
+                if (enabled && preview.reward > 0) ...<Widget>[
+                  const SizedBox(width: ZadSpacing.sm),
+                  DecoratedBox(
+                    key: const ValueKey<String>('watch-ad-pill'),
+                    decoration: BoxDecoration(
+                      color: ZadColors.mustardOchre.withValues(alpha: .18),
+                      borderRadius: BorderRadius.circular(ZadRadii.pill),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: ZadSpacing.sm,
+                        vertical: ZadSpacing.xs / 2,
+                      ),
+                      child: Text(
+                        '+${arabicDigits(preview.reward)}',
+                        style: ZadType.labelSmall.copyWith(
+                          color: ZadColors.ink,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
           ),
-          onPressed: enabled ? () => unawaited(_watch()) : null,
-          icon: _busy
-              ? const SizedBox.square(
-                  dimension: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Icon(ZadIcons.play, size: 20),
-          label: Text(label),
         ),
         if (preview.available && !preview.capped) ...<Widget>[
           const SizedBox(height: ZadSpacing.xs),

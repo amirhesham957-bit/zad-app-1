@@ -315,5 +315,9 @@
   "rewardsCardBody": "شف إعلان وخذ رسائل زيادة، أو اشترك وارتاح من الإعلانات.",
   "rewardsSubscribe": "اشترك في زاد بريميوم",
   "rewardsTelegram": "بوت زاد على تليجرام",
-  "profileTelegramSubtitle": "اربط حسابك وخلّ التذكيرات توصلك"
+  "profileTelegramSubtitle": "اربط حسابك وخلّ التذكيرات توصلك",
+  "homeCareRenewsToday": "يتجدد اليوم",
+  "homeCareRenewsTomorrow": "يتجدد بكرة",
+  "homeCareRenewsInDays": "يتجدد بعد {days} يوم",
+  "homeCareDoseNow": "جرعتها الحين"
 }
