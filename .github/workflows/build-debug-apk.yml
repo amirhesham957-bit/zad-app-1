@@ -184,7 +184,11 @@ jobs:
         env:
           PLAY_CONFIG_JSON: ${{ secrets.PLAY_CONFIG_JSON }}
         run: |
-          if [ -z "$PLAY_CONFIG_JSON" ]; then
+          # A manual run from a branch builds the APKs to test (owner 15/11) and never ships.
+          if [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            echo "::notice title=Play upload::branch run ($GITHUB_REF_NAME) — APKs only, nothing sent to Google Play."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          elif [ -z "$PLAY_CONFIG_JSON" ]; then
             echo "::warning title=Play upload::PLAY_CONFIG_JSON is not set — nothing sent to Google Play."
             echo "ready=false" >> "$GITHUB_OUTPUT"
           elif [ ! -f zad_flutter/build/app/outputs/bundle/release/app-release.aab ]; then
