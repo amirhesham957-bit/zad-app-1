@@ -26,6 +26,7 @@ import 'package:zad/shared/ads/presentation/ai_wait_ad.dart';
 import 'package:zad/shared/ads/presentation/inline_ad.dart';
 import 'package:zad/shared/ads/presentation/native_ad.dart';
 import 'package:zad/shared/affiliate/data/affiliate_repository.dart';
+import 'package:zad/shared/affiliate/presentation/amazon_buy_chip.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart';
 import 'package:zad/shared/inventory/application/shopping_controller.dart';
@@ -497,6 +498,7 @@ class RecipeSheet extends ConsumerWidget {
               const _Heading('ناقصك'),
               for (final item in recipe.missing)
                 _Ingredient(name: item, have: false),
+              const AmazonChipsNote(),
             ],
             if (recipe.deals.isNotEmpty) ...<Widget>[
               const SizedBox(height: ZadSpacing.lg),
@@ -623,6 +625,7 @@ class _Ingredient extends StatelessWidget {
             style: ZadType.bodySmall.copyWith(color: ZadColors.slate),
           ),
         ),
+        if (!have) AmazonBuyChip(itemName: name, sourceScreen: 'chef_missing'),
       ],
     ),
   );

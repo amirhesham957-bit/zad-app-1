@@ -1,7 +1,7 @@
 /// Kotlin's `InventoryScreen` (`ui/screens/InventoryScreen.kt`), copied:
 /// «كل المنتجات» / «النواقص» segmented tabs, the shortages banner with
-/// «نزّلها في التسوق», «ينتهي قريباً» with «اقتراح وصفة», the Amazon search
-/// chips and the two-column shortage cards, the category chips, the item
+/// «نزّلها في التسوق», «ينتهي قريباً» with «اقتراح وصفة», the two-column
+/// shortage cards, the category chips, the item
 /// cards (emoji tile, «منخفض», expiry · category, stock bar, −/+, edit,
 /// delete), the empty states, the two FABs («تصوير المخزون», «إضافة يدوية»),
 /// `AddInventoryDialog` and `EditInventoryDialog`.
@@ -28,6 +28,7 @@ import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/inventory/domain/pantry_categories.dart';
 import 'package:zad/features/inventory/presentation/pantry_starter_card.dart';
+import 'package:zad/shared/affiliate/presentation/amazon_buy_chip.dart';
 import 'package:zad/shared/chat/application/chat_controller.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart'
     hide PantryView;
@@ -425,7 +426,18 @@ class _PantryViewState extends ConsumerState<PantryView> {
                 ),
               ),
             )
-          else
+          else ...<Widget>[
+            if (rows.any(
+              (r) =>
+                  r.$1 != null &&
+                  !r.$3 &&
+                  !r.$1!.isOccasional &&
+                  r.$1!.isLowStock,
+            ))
+              const SliverPadding(
+                padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
+                sliver: SliverToBoxAdapter(child: AmazonChipsNote()),
+              ),
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 110),
               sliver: SliverList.separated(
@@ -489,6 +501,7 @@ class _PantryViewState extends ConsumerState<PantryView> {
                 },
               ),
             ),
+          ],
         ],
       );
     }
@@ -1053,6 +1066,14 @@ class _InventoryItemCard extends StatelessWidget {
                       ),
                     ),
                   ),
+                  if (isLow)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: AmazonBuyChip(
+                        itemName: item.itemName,
+                        sourceScreen: 'pantry_low',
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -1584,10 +1605,7 @@ class _AddState extends ConsumerState<_AddInventoryDialog> {
                   for (var i = 1; i < _categoryDefs.length; i++)
                     DropdownMenuEntry<int>(
                       value: i - 1,
-                      label: _categoryLabel(
-                        context.l10n,
-                        _categoryDefs[i].key,
-                      ),
+                      label: _categoryLabel(context.l10n, _categoryDefs[i].key),
                       leadingIcon: Icon(
                         _categoryDefs[i].icon,
                         size: 18,

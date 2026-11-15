@@ -27,6 +27,7 @@ import 'package:zad/features/recipes/presentation/recipes_view.dart';
 import 'package:zad/shared/ads/presentation/ai_wait_ad.dart';
 import 'package:zad/shared/ads/presentation/inline_ad.dart';
 import 'package:zad/shared/affiliate/data/affiliate_repository.dart';
+import 'package:zad/shared/affiliate/presentation/amazon_buy_chip.dart';
 import 'package:zad/shared/chat/application/chat_controller.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart';
 import 'package:zad/shared/inventory/application/shopping_controller.dart';
@@ -517,48 +518,82 @@ class _RecipeDetailState extends ConsumerState<RecipeDetailDialog> {
                   horizontal: ZadSpacing.lg,
                   vertical: ZadSpacing.md,
                 ),
-                child: SizedBox(
-                  height: 48,
-                  width: double.infinity,
-                  child: Row(
-                    children: <Widget>[
-                      // ZAD_PLAN 10.1 slice 4c: what the dish used comes off
-                      // the pantry, after the customer checks the amounts.
-                      OutlinedButton.icon(
-                        style: OutlinedButton.styleFrom(
-                          minimumSize: const Size(0, 48),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(ZadRadii.chip),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    // «من أمازون» per missing ingredient (owner, 2026-11-15);
+                    // scrolls past ~two rows so the footer never eats the
+                    // recipe.
+                    if (widget.recipe.missing.isNotEmpty) ...<Widget>[
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxHeight: 112),
+                        child: SingleChildScrollView(
+                          child: Wrap(
+                            spacing: ZadSpacing.sm,
+                            runSpacing: ZadSpacing.xs,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: <Widget>[
+                              for (final name in widget.recipe.missing)
+                                _MissingBuy(name: name),
+                            ],
                           ),
                         ),
-                        onPressed: () => unawaited(_cooked(parsed.ingredients)),
-                        icon: const Icon(Icons.soup_kitchen_outlined, size: 18),
-                        label: Text(l.cookDone, style: ZadType.labelLarge),
                       ),
-                      const SizedBox(width: ZadSpacing.sm),
-                      Expanded(
-                        child: FilledButton.icon(
-                          style: FilledButton.styleFrom(
-                            minimumSize: const Size(0, 48),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(
-                                ZadRadii.chip,
+                      const SizedBox(height: ZadSpacing.xs),
+                      const AmazonChipsNote(),
+                      const SizedBox(height: ZadSpacing.sm),
+                    ],
+                    SizedBox(
+                      height: 48,
+                      width: double.infinity,
+                      child: Row(
+                        children: <Widget>[
+                          // ZAD_PLAN 10.1 slice 4c: what the dish used comes
+                          // off the pantry, after the amounts are checked.
+                          OutlinedButton.icon(
+                            style: OutlinedButton.styleFrom(
+                              minimumSize: const Size(0, 48),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(
+                                  ZadRadii.chip,
+                                ),
+                              ),
+                            ),
+                            onPressed: () =>
+                                unawaited(_cooked(parsed.ingredients)),
+                            icon: const Icon(
+                              Icons.soup_kitchen_outlined,
+                              size: 18,
+                            ),
+                            label: Text(l.cookDone, style: ZadType.labelLarge),
+                          ),
+                          const SizedBox(width: ZadSpacing.sm),
+                          Expanded(
+                            child: FilledButton.icon(
+                              style: FilledButton.styleFrom(
+                                minimumSize: const Size(0, 48),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(
+                                    ZadRadii.chip,
+                                  ),
+                                ),
+                              ),
+                              onPressed: () =>
+                                  unawaited(_addToShopping(parsed.ingredients)),
+                              icon: const Icon(ZadIcons.shopping, size: 18),
+                              label: const Text(
+                                'إضافة النواقص لقائمة التسوق',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: ZadType.labelLarge,
                               ),
                             ),
                           ),
-                          onPressed: () =>
-                              unawaited(_addToShopping(parsed.ingredients)),
-                          icon: const Icon(ZadIcons.shopping, size: 18),
-                          label: const Text(
-                            'إضافة النواقص لقائمة التسوق',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: ZadType.labelLarge,
-                          ),
-                        ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -566,6 +601,23 @@ class _RecipeDetailState extends ConsumerState<RecipeDetailDialog> {
       ),
     );
   }
+}
+
+/// «اسم المكوّن» and its «من أمازون» chip, for the footer's wrap.
+class _MissingBuy extends StatelessWidget {
+  const new({required this.name});
+
+  final String name;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: <Widget>[
+      Text(name, style: ZadType.labelMedium.copyWith(color: ZadColors.slate)),
+      const SizedBox(width: ZadSpacing.xs),
+      AmazonBuyChip(itemName: name, sourceScreen: 'chef_missing'),
+    ],
+  );
 }
 
 class _Header extends StatelessWidget {
