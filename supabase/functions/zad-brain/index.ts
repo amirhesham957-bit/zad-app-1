@@ -151,6 +151,7 @@ import { toneFromState, toneRule, toneWithMessage, type ToneTxn } from "./tone.t
 import { notePurchaseIntent } from "./purchaseIntent.ts";
 import { isServiceLine } from "./serviceLine.ts";
 import { forcedLogReply, shouldForceLog } from "./forcedLog.ts";
+import { endsOnProposals, proposalsReply } from "./proposalStop.ts";
 import { itemSaidInMessage, shouldForceConsume } from "./forcedConsume.ts";
 import { kindFixCandidate, kindFixReply, kindFixTarget, shouldForceKindFix } from "./forcedKindFix.ts";
 import { pantryLinesWithoutPrice, pricelessResult } from "./pricelessPurchase.ts";
@@ -8408,8 +8409,10 @@ async function handleAgentTurnInLane(
 
   let inputTokens = 0, outputTokens = 0;
   // ميزان اللفة: كام نداء موديل في اللفة دي ومنين — عشان فرق التوكنز بين لفتين يتفسّر بالحجم ولا بعدد النداءات.
-  const calls = { model: 0, loops: 0, retries: 0, answer: 0, models: [] as string[] };
+  // stopped = لفات خلصت على اقتراحات فلوس من غير نداء موديل تاني (proposalStop.ts، ٣.٢).
+  const calls = { model: 0, loops: 0, retries: 0, answer: 0, stopped: 0, models: [] as string[] };
   let lateWidened = false;
+  const turnHints = intentToolHints(message, priorAssistantText(history));
   for (let turn = 0; turn < MAX_AGENT_TURNS; turn++) {
     let reply;
     try {
@@ -8473,6 +8476,7 @@ async function handleAgentTurnInLane(
     history.push({ role: "assistant", text: reply.text || undefined, toolCalls: reply.toolCalls });
 
     const toolResults: Array<{ id: string; name: string; content: string }> = [];
+    const proposalsBefore = proposals.length;
 
     for (const call of reply.toolCalls) {
       // «اخد قرض 50 ألف عشان المصيف؟» نفّذت add_debt على جروك (التقييم الليلي ٢٧/١٠): سؤال رأي مش دين اتاخد.
@@ -8544,6 +8548,16 @@ async function handleAgentTurnInLane(
     }
 
     history.push({ role: "tool", results: toolResults });
+    // كل نداءات اللفة بقت كروت «أكّد؟» ومفيش طلب تاني ⇒ الرد من الاقتراحات، من غير ما البرومبت كله يتبعت تاني.
+    if (endsOnProposals({
+      calledTools: reply.toolCalls.map((c) => c.name), proposedInRound: proposals.length - proposalsBefore,
+      hintedTools: turnHints, confirmTools: CONFIRM_REQUIRED_TOOLS, totalProposals: proposals.length, message,
+      calledBefore: history.flatMap((t) => "toolCalls" in t && Array.isArray(t.toolCalls) ? t.toolCalls.map((c) => c.name) : []),
+    })) {
+      modelText = proposalsReply(proposals.map((p) => p.summary));
+      calls.stopped++;
+      break;
+    }
     // من غير break مبكّر هنا عن قصد: كان فيه break إجباري بعد أول لفة تصحيح حتى لو
     // الموديل لسه بينادي أدوات بنجاح (طلب متسلسل زي "راجع مصاريف الأسبوع وقلل السقف"
     // بيحتاج أكتر من أداة واحدة بالتتابع). دلوقتي اللفة بتكمل طالما لسه فيه نداءات أدوات
