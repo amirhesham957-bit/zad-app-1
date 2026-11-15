@@ -152,6 +152,7 @@ import { notePurchaseIntent } from "./purchaseIntent.ts";
 import { isServiceLine } from "./serviceLine.ts";
 import { forcedLogReply, shouldForceLog } from "./forcedLog.ts";
 import { itemSaidInMessage, shouldForceConsume } from "./forcedConsume.ts";
+import { kindFixCandidate, kindFixReply, kindFixTarget, shouldForceKindFix } from "./forcedKindFix.ts";
 import { pantryLinesWithoutPrice, pricelessResult } from "./pricelessPurchase.ts";
 import { FORCED_REPLIES, forcedIntentTool } from "./forcedIntent.ts";
 import { loadRestockJudge, loadRestockVerdicts } from "./restockJudge.ts";
@@ -8553,10 +8554,27 @@ async function handleAgentTurnInLane(
     }
   }
 
+  // «الـ500 اللي اتسجلت دخل دي غلط، دي كانت مصروف» والموديل ماندهش أداة (forcedKindFix.ts، فحص ١٥/١١).
+  // من غير موديل: الحركة الوحيدة اللي نوعها عكس المطلوب (وبالمبلغ لو اتقال) ⇒ اقتراح update_transaction بكارت
+  // «أكّد؟». ولازم قبل forcedLog: الرسالة فيها مبلغ وفعل دفع، فكانت هتتسجل مصروف جديد فوق القديم.
+  const kindTarget = kindFixTarget(message);
+  if (kindTarget && shouldForceKindFix(message, executed.map((e) => e.tool), proposals.length)) {
+    const txn = kindFixCandidate(message, snap?.recent_transactions, kindTarget);
+    if (txn) {
+      const input = { transaction_id: txn.id, txn_kind: kindTarget };
+      const v = await validateTool("update_transaction", input, snap, ctx);
+      if (v.ok) {
+        ctx.counts["update_transaction"] = (ctx.counts["update_transaction"] ?? 0) + 1;
+        proposals.push({ tool: "update_transaction", input, summary: describeProposal("update_transaction", input, snap.currency ?? "غير معروف") });
+        modelText = kindFixReply(txn, kindTarget, snap.currency ?? "غير معروف");
+      }
+    }
+  }
+
   // رسالة فلوس واضحة («حلاقة 80»، «قبضت المرتب 18000») والموديل رد «تبي أسجلها؟» أو ادّعى التسجيل من غير أداة
   // (forcedLog.ts، التقييم الليلي ٢٧/١٠: ١٧ من ٢٠ فشل). محاولة واحدة بأداة log_transaction بس والنداء إجباري؛
   // النتيجة اقتراح بكارت «أكّد؟» زي أي اقتراح — نفس validateTool، ومفيش تسجيل من غير موافقته.
-  if (shouldForceLog(message, modelText, executed.map((e) => e.tool), proposals.length)) {
+  if (!kindTarget && shouldForceLog(message, modelText, executed.map((e) => e.tool), proposals.length)) {
     const logTool = CHAT_TOOLS.find((t) => t.name === "log_transaction");
     if (logTool) {
       try {
