@@ -482,6 +482,10 @@ class RecipeSheet extends ConsumerWidget {
                 _Completeness(recipe: recipe),
               ],
             ),
+            if (recipe.chefSecret case final secret?) ...<Widget>[
+              const SizedBox(height: ZadSpacing.lg),
+              _ChefSecret(secret),
+            ],
             if (recipe.used.isNotEmpty) ...<Widget>[
               const SizedBox(height: ZadSpacing.xl),
               const _Heading('من عندك'),
@@ -720,4 +724,47 @@ class RecipeRatingRow extends ConsumerWidget {
       ],
     );
   }
+}
+
+/// «سر الشيف»: the one trick that makes this dish, on a warm card.
+class _ChefSecret extends StatelessWidget {
+  const new(this.secret);
+
+  final String secret;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    key: const ValueKey<String>('recipe-chef-secret'),
+    padding: const EdgeInsets.all(ZadSpacing.md),
+    decoration: BoxDecoration(
+      color: ZadColors.mustardLight.withValues(alpha: 0.22),
+      borderRadius: BorderRadius.circular(ZadRadii.chip),
+    ),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Icon(
+          Icons.auto_awesome_rounded,
+          size: 20,
+          color: ZadColors.mustardOchre,
+        ),
+        const SizedBox(width: ZadSpacing.sm),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text(
+                context.l10n.recipesChefSecret,
+                style: ZadType.labelMedium.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: ZadSpacing.xs),
+              Text(secret, style: ZadType.bodyMedium),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
 }

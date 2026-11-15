@@ -2036,6 +2036,7 @@
       }
     }
   },
+  "recipesChefSecret": "سر الشيف",
   "recipesOnDeal": "عليه عرض دلوقتي",
   "recipesFromCreator": "من فيديو @{handle}",
   "@recipesFromCreator": {
