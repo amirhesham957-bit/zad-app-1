@@ -13,7 +13,7 @@ import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/zad_theme.dart';
 import 'package:zad/features/scan/presentation/camera_screen.dart';
 import 'package:zad/shared/ads/application/ads_policy.dart';
-import 'package:zad/shared/ads/presentation/inline_ad.dart';
+import 'package:zad/shared/ads/presentation/ai_wait_ad.dart';
 import 'package:zad/shared/navigation/destinations.dart';
 import 'package:zad/shared/scan/data/receipt_scanner.dart';
 import 'package:zad/shared/scan/data/vision_scanner.dart';
@@ -98,33 +98,33 @@ void main() {
     tester,
   ) async {
     final scanner = await open(tester, CameraMode.inventory);
-    expect(find.byType(ZadInlineAd), findsNothing);
+    expect(find.byType(ZadAiWaitAd), findsNothing);
 
     await tester.tap(find.text('   مسح المخزون'));
     await tester.pump();
     await tester.pump();
     expect(find.textContaining('جاري تحليل الصورة'), findsOneWidget);
-    expect(find.byType(ZadInlineAd), findsOneWidget);
+    expect(find.byType(ZadAiWaitAd), findsOneWidget);
 
     scanner.gate.complete();
     await tester.pump(const Duration(seconds: 1));
     await tester.pump(const Duration(seconds: 1));
     expect(find.textContaining('لم يتعرف AI'), findsOneWidget);
-    expect(find.byType(ZadInlineAd), findsNothing);
+    expect(find.byType(ZadAiWaitAd), findsNothing);
   });
 
   testWidgets('a medicine photo being read carries one ad', (tester) async {
     final scanner = await open(tester, CameraMode.pharmacy);
-    expect(find.byType(ZadInlineAd), findsNothing);
+    expect(find.byType(ZadAiWaitAd), findsNothing);
 
     await tester.tap(find.text('   مسح علبة دواء'));
     await tester.pump();
     await tester.pump();
-    expect(find.byType(ZadInlineAd), findsOneWidget);
+    expect(find.byType(ZadAiWaitAd), findsOneWidget);
 
     scanner.gate.complete();
     await tester.pump(const Duration(seconds: 1));
     await tester.pump(const Duration(seconds: 1));
-    expect(find.byType(ZadInlineAd), findsNothing);
+    expect(find.byType(ZadAiWaitAd), findsNothing);
   });
 }

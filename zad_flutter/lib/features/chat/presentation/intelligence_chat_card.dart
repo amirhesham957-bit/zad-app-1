@@ -21,7 +21,7 @@ import 'package:zad/core/design/tokens/zad_extended_colors.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/chat/presentation/chat_screen.dart';
-import 'package:zad/shared/ads/application/interstitials.dart';
+import 'package:zad/shared/ads/presentation/ai_wait_ad.dart';
 import 'package:zad/shared/ads/presentation/inline_ad.dart';
 import 'package:zad/shared/chat/application/chat_controller.dart';
 import 'package:zad/shared/chat/application/voice_input_controller.dart';
@@ -245,9 +245,6 @@ class _ChatTabState extends ConsumerState<ChatTab> {
         final landed = ref.read(chatControllerProvider).messages.lastOrNull;
         if (landed != null && !landed.isUser) {
           setState(() => _adAfter.add(landed.id));
-          unawaited(
-            ref.read(interstitialsProvider).atBreak(InterstitialBreak.aiReply),
-          );
         }
         if (!_awaitingVoiceReply) return;
         _awaitingVoiceReply = false;
@@ -385,7 +382,7 @@ class _ChatTabState extends ConsumerState<ChatTab> {
                 const _TypingIndicator(),
                 // One ad while the reply is pending; the per-answer ad above
                 // takes over when it lands (never two for one request).
-                const ZadInlineAd(),
+                const ZadAiWaitAd(),
                 Center(
                   child: NeuralMeshBadge(
                     status: NeuralMeshStatus.thinking,

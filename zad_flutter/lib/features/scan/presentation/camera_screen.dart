@@ -22,7 +22,7 @@ import 'package:zad/core/design/tokens/zad_extended_colors.dart';
 import 'package:zad/features/scan/application/camera_actions.dart';
 import 'package:zad/features/scan/presentation/camera_choice_sheet.dart';
 import 'package:zad/features/scan/presentation/document_scan_sheet.dart';
-import 'package:zad/shared/ads/presentation/inline_ad.dart';
+import 'package:zad/shared/ads/presentation/ai_wait_ad.dart';
 import 'package:zad/shared/inventory/domain/receipt_intake.dart';
 import 'package:zad/shared/market/domain/market.dart';
 import 'package:zad/shared/navigation/destinations.dart';
@@ -569,7 +569,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen> {
                 // customer waits; the buttons above are disabled meanwhile.
                 if (_analyzing) ...<Widget>[
                   const SizedBox(height: 16),
-                  const ZadInlineAd(),
+                  const ZadAiWaitAd(),
                 ],
                 const SizedBox(height: 24),
               ],

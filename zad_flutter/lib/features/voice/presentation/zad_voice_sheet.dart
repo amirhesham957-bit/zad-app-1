@@ -23,6 +23,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/design/tokens/zad_palette.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/l10n/l10n.dart';
+import 'package:zad/shared/ads/presentation/ai_wait_ad.dart';
 import 'package:zad/shared/ads/presentation/inline_ad.dart';
 import 'package:zad/shared/chat/application/chat_controller.dart';
 import 'package:zad/shared/chat/application/voice_input_controller.dart';
@@ -319,7 +320,7 @@ class _ZadVoiceSheetState extends ConsumerState<ZadVoiceSheet> {
                   // ad takes over below when it lands.
                   if (thinking && error == null) ...<Widget>[
                     const SizedBox(height: 12),
-                    const ZadInlineAd(),
+                    const ZadAiWaitAd(),
                   ],
                   if (_reply.isNotEmpty &&
                       error == null &&

@@ -24,6 +24,7 @@ import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/recipes/domain/recipe.dart';
 import 'package:zad/features/recipes/presentation/cooked_sheet.dart';
 import 'package:zad/features/recipes/presentation/recipes_view.dart';
+import 'package:zad/shared/ads/presentation/ai_wait_ad.dart';
 import 'package:zad/shared/ads/presentation/inline_ad.dart';
 import 'package:zad/shared/affiliate/data/affiliate_repository.dart';
 import 'package:zad/shared/chat/application/chat_controller.dart';
@@ -314,7 +315,7 @@ class _RecipeDetailState extends ConsumerState<RecipeDetailDialog> {
                         padding: EdgeInsets.symmetric(
                           horizontal: ZadSpacing.gutter,
                         ),
-                        child: ZadInlineAd(),
+                        child: ZadAiWaitAd(),
                       ),
                     ],
                   )

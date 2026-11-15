@@ -10,7 +10,7 @@ import 'package:zad/features/scan/application/document_scan_controller.dart';
 import 'package:zad/features/scan/application/scan_controller.dart';
 import 'package:zad/features/scan/presentation/document_scan_sheet.dart';
 import 'package:zad/shared/ads/application/ads_policy.dart';
-import 'package:zad/shared/ads/presentation/inline_ad.dart';
+import 'package:zad/shared/ads/presentation/ai_wait_ad.dart';
 import 'package:zad/shared/scan/domain/scanned_document.dart';
 
 class _Doc extends DocumentScanController {
@@ -49,15 +49,15 @@ void main() {
   testWidgets('the reading wait carries one inline ad', (tester) async {
     await open(tester, ScanStage.working);
     expect(find.text('بقرا الورقة…'), findsOneWidget);
-    expect(find.byType(ZadInlineAd), findsOneWidget);
+    expect(find.byType(ZadAiWaitAd), findsOneWidget);
   });
 
   testWidgets('before the photo and after a failure there is no ad', (
     tester,
   ) async {
     await open(tester, ScanStage.idle);
-    expect(find.byType(ZadInlineAd), findsNothing);
+    expect(find.byType(ZadAiWaitAd), findsNothing);
     await open(tester, ScanStage.failed);
-    expect(find.byType(ZadInlineAd), findsNothing);
+    expect(find.byType(ZadAiWaitAd), findsNothing);
   });
 }
