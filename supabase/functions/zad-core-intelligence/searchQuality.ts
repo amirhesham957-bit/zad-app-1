@@ -29,9 +29,16 @@ const STOP = new Set([
   "the", "a", "an", "of", "in", "on", "what", "is", "are", "price", "today", "how", "much", "who", "when", "for",
 ]);
 
+/**
+ * Search operators are instructions to the engine, not words a result will contain. «site:tiktok.com عروض كارفور
+ * الإمارات» counted `site`, `tiktok` and `com`, so a real TikTok hit had to carry two of the three to survive
+ * (ZAD_PLAN 10.9: TikTok recipes and deals at zero from 11/11 while the searches still ran).
+ */
+const SEARCH_OPERATOR = /(^|\s)-?(site|inurl|intitle|intext|filetype):\S+/gi;
+
 /** The words a result must share with the question. */
 export function keyTerms(query: string): string[] {
-  const words = normalizeForMatch(query).split(/[^\p{L}\p{N}]+/u)
+  const words = normalizeForMatch(query.replace(SEARCH_OPERATOR, " ")).split(/[^\p{L}\p{N}]+/u)
     .map((w) => w.replace(/^(وال|بال|فال|كال|لل|ال)(?=[\p{L}\p{N}]{2,})/u, ""))
     .filter((w) => w.length >= 2 && !STOP.has(w));
   return [...new Set(words)];
