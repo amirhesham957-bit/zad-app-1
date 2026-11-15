@@ -15,7 +15,7 @@ import { addressingBlock } from "../_shared/customerProfile.ts";
 import { pipelineHealth, ttsHealth } from "./pipelineHealth.ts";
 import { modelQuotaProbe } from "./modelProbe.ts";
 import { foodFallbackUrl, knownItemTerm, looksLikeFoodAlt, toFoodSearchTerm } from "./foodImageQuery.ts";
-import { DEFAULT_TEXT_MODEL, escalateOnBadJson } from "./textRouting.ts";
+import { DEFAULT_TEXT_MODEL, escalateOnBadJson, escalationModel } from "./textRouting.ts";
 import { bearerToken, chatReplyEmotion, extractDialectHint, requestGeminiVoice, requestVoiceWithFallback, validateVoicePayload, GEMINI_TTS_MODEL } from "./voice.ts";
 import { azureSpeechConfig, azureTtsHealth } from "./azureVoice.ts";
 import { voiceNameFor, zadVoiceGender } from "../_shared/zadVoice.ts";
@@ -103,7 +103,7 @@ const GROQ_CHAT_URL = "https://api.groq.com/openai/v1/chat/completions";
 // model from this project's catalogue, so the text/JSON fallback was dead. gpt-oss-120b was
 // probed the same day for both things this call site needs: tool_calls and
 // response_format json_object (callGroqPool passes jsonMode for the JSON actions).
-const GROQ_TEXT_MODEL = Deno.env.get("ZAD_GROQ_TEXT_MODEL") || "openai/gpt-oss-120b";
+const GROQ_TEXT_MODEL = Deno.env.get("ZAD_GROQ_TEXT_MODEL")?.trim() || "openai/gpt-oss-120b";
 // No GROQ_VISION_MODEL any more: images go to Gemini and nowhere else (see callVisionModel).
 // Kept as history because it cost real debugging: "llama-3.2-11b-vision-instruct", this
 // file's original vision default, was verified on 2026-07-25 to be absent from Groq's
@@ -399,11 +399,11 @@ const VISION_FALLBACK_MODELS: string[] = (Deno.env.get("ZAD_VISION_FALLBACKS") ?
   ? (Deno.env.get("ZAD_VISION_FALLBACKS") ?? "").split(",").map((s) => s.trim()).filter(Boolean)
   : ["gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-flash-lite-latest", "gemini-3.5-flash"];
 
-const GEMINI_MODEL_ROUTINE = Deno.env.get("ZAD_MODEL_ROUTINE") || "gemini-3.5-flash";
-const GEMINI_MODEL_BRAIN = Deno.env.get("ZAD_MODEL_BRAIN") || "gemini-3.5-flash";
+const GEMINI_MODEL_ROUTINE = Deno.env.get("ZAD_MODEL_ROUTINE")?.trim() || "gemini-3.5-flash";
+const GEMINI_MODEL_BRAIN = Deno.env.get("ZAD_MODEL_BRAIN")?.trim() || "gemini-3.5-flash";
 // النص والـJSON على الخفيف (٥٠٠/يوم) بدل ZAD_MODEL_ROUTINE/BRAIN (السرّين = gemini-3.5-flash،
 // ٢٠/يوم — ومشتركين مع الصور). التقيل بقى للصور وللتصعيد لو JSON الخفيف بايظ. textRouting.ts.
-const GEMINI_MODEL_TEXT = Deno.env.get("ZAD_MODEL_TEXT") || DEFAULT_TEXT_MODEL;
+const GEMINI_MODEL_TEXT = Deno.env.get("ZAD_MODEL_TEXT")?.trim() || DEFAULT_TEXT_MODEL;
 
 // Prepended to every system prompt on every provider. The per-action prompts below stay in
 // charge of their own output shape; this anchors tone/reliability once instead of being
@@ -1060,13 +1060,16 @@ async function callJsonModel(
     raw = geminiRetry.content;
   }
   if (!raw) return null;
-  // رد وصل بس مايتقراش (من الخفيف أو من Groq) ⇒ مرة على التقيل، مش null للعميل.
+  // رد وصل بس مايتقراش (من الخفيف أو من Groq) ⇒ مرة على موديل تاني، مش null للعميل.
+  const retryModel = escalationModel(model, GEMINI_MODEL_BRAIN, GEMINI_MODEL_TEXT);
   const { value, escalated } = await escalateOnBadJson(raw, async () =>
-    model === GEMINI_MODEL_BRAIN ? null : (await callGeminiPool({
-      model: GEMINI_MODEL_BRAIN, systemPrompt, content: userPrompt, temperature: 0.2, maxTokens, jsonMode: true,
+    retryModel === null ? null : (await callGeminiPool({
+      model: retryModel, systemPrompt, content: userPrompt, temperature: 0.2, maxTokens, jsonMode: true,
+      // The heavy model without thinking (it bills against maxTokens); the light one as it runs.
+      thinkingBudget: retryModel === GEMINI_MODEL_TEXT ? undefined : 0,
     })).content);
   if (escalated) {
-    console.warn(`[CoreIntel] callJsonModel: ${model} JSON unreadable — escalated to ${GEMINI_MODEL_BRAIN}: ${value === null ? "still unreadable" : "ok"}`);
+    console.warn(`[CoreIntel] callJsonModel: ${model} JSON unreadable — escalated to ${retryModel ?? "nothing (no other model)"}: ${value === null ? "still unreadable" : "ok"}`);
   }
   if (value === null) console.error("[CoreIntel] callJsonModel: JSON.parse failed, raw:", raw.slice(0, 300));
   // نفس نوع JSON.parse اللي المتصلين متعودين عليه.

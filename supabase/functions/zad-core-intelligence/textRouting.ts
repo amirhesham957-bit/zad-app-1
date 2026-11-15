@@ -15,8 +15,66 @@ export function parseModelJson(raw: string | null | undefined): unknown | null {
   try {
     return JSON.parse(t);
   } catch {
-    return null;
+    // JSON mode still slips now and then (2026-11-15: `"text":"…" "recipes":[…]`, the comma
+    // missing, on gemini-3.5-flash — the chef answered nothing). Repair, then read once more.
+    try {
+      return JSON.parse(repairModelJson(t));
+    } catch {
+      return null;
+    }
   }
+}
+
+/**
+ * يصلّح غلطتين بيعملهم الموديل حتى في JSON mode، برّه النصوص بس: فاصلة ناقصة بين قيمتين
+ * (`"a":1 "b":2`) وفاصلة زيادة قبل `}` أو `]`. مابيضيفش ولا بيغيّر أي قيمة — نص مقطوع
+ * (MAX_TOKENS) يفضل مايتقراش ويروح للتصعيد.
+ */
+export function repairModelJson(t: string): string {
+  let out = "";
+  let inString = false;
+  let escaped = false;
+  // The last thing outside a string closed a value, so the next value needs a comma first.
+  let afterValue = false;
+  for (let i = 0; i < t.length; i++) {
+    const c = t[i];
+    if (inString) {
+      out += c;
+      if (escaped) escaped = false;
+      else if (c === "\\") escaped = true;
+      else if (c === '"') { inString = false; afterValue = true; }
+      continue;
+    }
+    if (/\s/.test(c)) { out += c; continue; }
+    if (c === "}" || c === "]") {
+      out = out.replace(/,(\s*)$/, "$1");
+      out += c;
+      afterValue = true;
+      continue;
+    }
+    if (c === ":" || c === ",") { out += c; afterValue = false; continue; }
+    if (afterValue) out += ",";
+    if (c === '"') { out += c; inString = true; afterValue = false; continue; }
+    if (c === "{" || c === "[") { out += c; afterValue = false; continue; }
+    // A bare literal (number, true, false, null) is one token, read whole.
+    let j = i;
+    while (j < t.length && /[-+.\w]/.test(t[j])) j++;
+    if (j === i) { out += c; afterValue = false; continue; }
+    out += t.slice(i, j);
+    afterValue = true;
+    i = j - 1;
+  }
+  return out;
+}
+
+/**
+ * الموديل اللي يتسأل لو رد [model] مايتقراش: موديل **تاني** دايماً. لما ZAD_MODEL_BRAIN بقى نفس
+ * موديل الطلب (المفتاح المدفوع، 2026-11-15) التصعيد كان بيرجّع null من غير ما يسأل حد. null =
+ * مفيش موديل تاني (الاتنين واحد).
+ */
+export function escalationModel(model: string, brain: string, text: string): string | null {
+  const other = model === brain ? text : brain;
+  return other === model ? null : other;
 }
 
 /**
