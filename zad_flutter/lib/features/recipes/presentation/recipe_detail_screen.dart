@@ -308,6 +308,14 @@ class _RecipeDetailState extends ConsumerState<RecipeDetailDialog> {
                           color: ZadColors.inkMuted,
                         ),
                       ),
+                      const SizedBox(height: ZadSpacing.lg),
+                      // One ad while the chef works (owner 15/11).
+                      const Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: ZadSpacing.gutter,
+                        ),
+                        child: ZadInlineAd(),
+                      ),
                     ],
                   )
                 : _error != null

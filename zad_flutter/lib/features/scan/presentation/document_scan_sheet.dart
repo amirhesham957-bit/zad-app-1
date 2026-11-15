@@ -18,6 +18,7 @@ import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/features/scan/application/document_scan_controller.dart';
 import 'package:zad/features/scan/application/scan_controller.dart';
+import 'package:zad/shared/ads/presentation/inline_ad.dart';
 import 'package:zad/shared/ads/presentation/watch_ad_button.dart';
 import 'package:zad/shared/quota/domain/server_refusal.dart';
 import 'package:zad/shared/scan/data/receipt_scanner.dart';
@@ -170,7 +171,10 @@ class _Working extends StatelessWidget {
         'بقرا الورقة…',
         style: ZadType.bodyMedium.copyWith(color: ZadColors.inkMuted),
       ),
-      const SizedBox(height: ZadSpacing.xl),
+      const SizedBox(height: ZadSpacing.lg),
+      // One ad with every reading (owner 15/11); nothing to tap here.
+      const ZadInlineAd(),
+      const SizedBox(height: ZadSpacing.lg),
     ],
   );
 }

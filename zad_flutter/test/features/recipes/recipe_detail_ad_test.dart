@@ -1,5 +1,6 @@
 // One ad per AI request (owner, 11/11): the recipe the chef writes carries an
-// inline ad under its steps; while it loads, and when it fails, there is none.
+// inline ad under its steps; while it loads (15/11: the wait carries the one
+// ad, which the answer's ad then replaces) there is one; when it fails, none.
 
 import 'dart:async';
 import 'dart:convert';
@@ -92,7 +93,8 @@ void main() {
     gate = Completer<void>();
     await open(tester);
     await settle(tester);
-    expect(find.byType(ZadInlineAd), findsNothing);
+    expect(find.text('شيف زاد يجهز لك الوصفة…'), findsOneWidget);
+    expect(find.byType(ZadInlineAd), findsOneWidget);
 
     gate!.complete();
     await settle(tester);
