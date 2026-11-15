@@ -2735,5 +2735,9 @@
   "rewardsCardBody": "شوف إعلان وخد رسايل زيادة، أو اشترك وارتاح من الإعلانات.",
   "rewardsSubscribe": "اشترك في زاد بريميوم",
   "rewardsTelegram": "بوت زاد على تليجرام",
-  "profileTelegramSubtitle": "اربط حسابك وخلّي التذكيرات توصلك"
+  "profileTelegramSubtitle": "اربط حسابك وخلّي التذكيرات توصلك",
+  "profileExportTitle": "تصدير بياناتي",
+  "profileExportSubtitle": "نسخة من كل اللي زاد عارفه عنك",
+  "profileExportFailed": "معرفناش نجهز الملف، جرّب تاني",
+  "profileExportSubject": "بياناتي من زاد"
 }

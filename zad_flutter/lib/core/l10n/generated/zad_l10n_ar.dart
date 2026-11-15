@@ -4146,6 +4146,18 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get profileTelegramSubtitle => 'اربط حسابك وخلّي التذكيرات توصلك';
+
+  @override
+  String get profileExportTitle => 'تصدير بياناتي';
+
+  @override
+  String get profileExportSubtitle => 'نسخة من كل اللي زاد عارفه عنك';
+
+  @override
+  String get profileExportFailed => 'معرفناش نجهز الملف، جرّب تاني';
+
+  @override
+  String get profileExportSubject => 'بياناتي من زاد';
 }
 
 /// The translations for Arabic, as used in Saudi Arabia (`ar_SA`).
