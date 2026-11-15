@@ -60,7 +60,7 @@ import {
 import { tavilyProbe, tavilySearch } from "./tavily.ts";
 import { readSocialVideo, recipeAccountQuery, recipeTopicQuery, socialVideoHits, socialVideoPrompt, type SocialVideo } from "./socialRecipes.ts";
 import { instagramRecipeHits, PLATFORM_NAME, recipePlatform, youtubeRecipeHits, youtubeRecipeQuery } from "./socialRecipeSources.ts";
-import { avoidNames, chefDeals, type ChefDeal, type ChefDealRow, chefExpiring, chefPantryLine, dealsBlock, dealsForMissing, dishKey, type ExpiringItem, expiringBlock, NO_REPEAT_DAYS, type PantryRow, pickSocialRecipes, recipeSource, type SocialRecipeRow, socialRecipesBlock, trendBlock, trendCacheKey, trendQuery, withoutRecent } from "./chefInputs.ts";
+import { avoidNames, chefAngles, chefDeals, type ChefDeal, type ChefDealRow, chefExpiring, chefPantryLine, chefSecret, dealsBlock, dealsForMissing, dishKey, type ExpiringItem, expiringBlock, NO_REPEAT_DAYS, type PantryRow, pickSocialRecipes, recipeSource, type SocialRecipeRow, socialRecipesBlock, trendBlock, trendCacheKey, trendQuery, withoutRecent } from "./chefInputs.ts";
 import { householdFamilyId, householdFilter } from "../_shared/household.ts";
 import { budgetUsage, dailyCap, encyclopediaFirstForLatest, groundingPlan, KEY_REST_MS, keyRefused, paidQuotaExhausted, takeSearchBudget, tavilyFirstWhileGroundingRests, withPaidGroundingFirst } from "./paidSearch.ts";
 
@@ -1039,15 +1039,17 @@ async function callTextModel(
 async function callJsonModel(
   systemPrompt: string, userPrompt: string, maxTokens = 1500,
   tier: "routine" | "brain" = "brain",
+  // 0.2 keeps extraction faithful; the chef asks for more to vary its ideas.
+  temperature = 0.2,
 ) {
   const model = textModelFor(tier);
   const thinkingBudget = tier === "routine" || model !== GEMINI_MODEL_TEXT ? 0 : undefined;
-  const gemini = await callGeminiChain(model, { systemPrompt, content: userPrompt, temperature: 0.2, maxTokens, jsonMode: true, thinkingBudget });
+  const gemini = await callGeminiChain(model, { systemPrompt, content: userPrompt, temperature, maxTokens, jsonMode: true, thinkingBudget });
   let raw = gemini.content;
   let groqOk = true;
   if (!gemini.ok) {
     console.warn("[CoreIntel] Gemini pool exhausted for JSON — falling back to Groq");
-    const groq = await callGroqPool({ model: GROQ_TEXT_MODEL, systemPrompt, content: userPrompt, temperature: 0.2, maxTokens, jsonMode: true });
+    const groq = await callGroqPool({ model: GROQ_TEXT_MODEL, systemPrompt, content: userPrompt, temperature, maxTokens, jsonMode: true });
     raw = groq.content;
     groqOk = groq.ok;
   }
@@ -1056,7 +1058,7 @@ async function callJsonModel(
     // the slow path, so one delayed Gemini re-sweep has a real shot before failing honestly.
     console.warn("[CoreIntel] Groq pool also exhausted for JSON — one delayed retry before failing");
     await new Promise((r) => setTimeout(r, 1500));
-    const geminiRetry = await callGeminiPool({ model, systemPrompt, content: userPrompt, temperature: 0.2, maxTokens, jsonMode: true, thinkingBudget });
+    const geminiRetry = await callGeminiPool({ model, systemPrompt, content: userPrompt, temperature, maxTokens, jsonMode: true, thinkingBudget });
     raw = geminiRetry.content;
   }
   if (!raw) return null;
@@ -1064,7 +1066,7 @@ async function callJsonModel(
   const retryModel = escalationModel(model, GEMINI_MODEL_BRAIN, GEMINI_MODEL_TEXT);
   const { value, escalated } = await escalateOnBadJson(raw, async () =>
     retryModel === null ? null : (await callGeminiPool({
-      model: retryModel, systemPrompt, content: userPrompt, temperature: 0.2, maxTokens, jsonMode: true,
+      model: retryModel, systemPrompt, content: userPrompt, temperature, maxTokens, jsonMode: true,
       // The heavy model without thinking (it bills against maxTokens); the light one as it runs.
       thinkingBudget: retryModel === GEMINI_MODEL_TEXT ? undefined : 0,
     })).content);
@@ -2444,22 +2446,28 @@ async function handle(req: Request): Promise<Response> {
         // البرسونا جاية **بعد** dialectPrefix عن قصد: الأخير بيوصف لهجة السوق بتاع العميل
         // (MarketProfile.dialectInstruction، واحدة لكل بلد)، والبرسونا بتوصف الشخصية. الاتنين
         // منفصلين عشان تغيير البلد يغيّر اللهجة من غير ما يلمس الشخصية، والعكس.
+        const angles = chefAngles();
         const systemPrompt = promptPrefix +
           "إنتِ \"شيف زاد\" — ست بتفهم في الطبخ جداً وبتتكلم مع صاحب/صاحبة البيت زي حد قريب — بصيغة نوعه (قسم العميل فوق)، مش " +
           "زي كتاب وصفات. دافية وعملية ومختصرة، بتقولي الحلو والوحش على طول. اتكلمي عن " +
           "نفسك بصيغة المؤنث، وبنفس اللهجة الموصوفة فوق مش الفصحى.\n" +
           // طلب من تجربة حقيقية (٢٠٢٦-٠٩-١٤): «اعرضلي أكلات من مخزوني للتوفير، مع أكلات تانية وقولي
           // ناقصك فيها إيه أو مكتملة». كانت القاعدة «من المخزون بس»، فالنوعين ماكانوش بيتعرضوا مع بعض.
-          "اقترحي **من ٤ لـ٦ أفكار مختلفة فعلاً** في مجموعتين:\n" +
-          "١. «من مخزونك» (الأهم، للتوفير): ٢ لـ٣ وجبات تتعمل ١٠٠٪ من الأصناف اللي جوه قسم === المخزون === — " +
+          "اقترحي **من ٦ لـ٨ أفكار مختلفة فعلاً** في مجموعتين:\n" +
+          "١. «من مخزونك» (الأهم، للتوفير): ٣ لـ٤ وجبات تتعمل ١٠٠٪ من الأصناف اللي جوه قسم === المخزون === — " +
           "`missing_ingredients_to_buy` فاضية تماماً (الملح والزيت والمية والبهارات الأساسية مش محسوبين ناقص).\n" +
-          "٢. «وجبات تانية»: ٢ لـ٣ وجبات حلوة ينقصها صنف أو اتنين أو تلاتة بالكتير، رخاص ومتاحين — " +
+          "٢. «وجبات تانية»: ٣ لـ٤ وجبات حلوة ينقصها صنف أو اتنين أو تلاتة بالكتير، رخاص ومتاحين — " +
           "واكتبي الناقص بالظبط في `missing_ingredients_to_buy`.\n" +
           (trends
             ? "٣. «ترند دلوقتي»: ١ لـ٢ وجبة من الأكلات اللي الناس بتعملها اليومين دول، من قسم === أكلات رايجة === — " +
               "علّميها `\"trending\": true`، ولو ينفع تتعمل من المخزون يبقى أحسن. لو القسم مافيهوش أكلة واضحة، متعمليش المجموعة دي.\n"
             : "") +
           "ابدئي بمجموعة «من مخزونك». نوّعي: حاجة سريعة، وحاجة أدسم، وحاجة اقتصادية — مش نفس الأكلة بأسامي مختلفة.\n" +
+          // تنويع من السيرفر: زاويتين عشوائيتين كل طلب، فنفس المخزون مايجيبش نفس الأفكار.
+          "المرة دي خلي وصفتين على الأقل من الزوايا دي (لو المخزون يسمح، ومن غير ما تخترعي ناقص كتير): " + angles.join("، ") + ".\n" +
+          "لكل وصفة `chef_secret`: سر شيف واحد حقيقي بيفرق في الطعم أو القوام، جملة واحدة محددة " +
+          "(مثال: «حمّري البصل على نار هادية ١٠ دقايق لحد ما يكرمل قبل الصلصة» أو «رشة سكر على الطماطم بتكسر الحموضة») — " +
+          "مش نصيحة عامة زي «استمتعي» أو «اطبخي بحب».\n" +
           "كل وصفة لازم يكون فيها تفاصيل حقيقية تنفع حد يطبخ بيها: خطوات مرتبة وواضحة " +
           "(٤ خطوات على الأقل)، وقت تحضير واقعي، وتكلفة تقديرية بعملة العميل. مفيش " +
           "\"سوّي الأكل\" — قولي بالظبط بتعملي إيه وإمتى.\n" +
@@ -2484,7 +2492,7 @@ async function handle(req: Request): Promise<Response> {
           "{\"text\":\"سطر أو اتنين ودودين للعرض\"," +
           "\"recipes\":[{\"recipe_name\":\"\",\"image_keyword_en\":\"\",\"prep_time_minutes\":0," +
           "\"cost_estimate\":0,\"available_ingredients_used\":[],\"missing_ingredients_to_buy\":[]," +
-          "\"cooking_instructions\":[],\"trending\":false}]}\n" +
+          "\"cooking_instructions\":[],\"chef_secret\":\"\",\"trending\":false}]}\n" +
           "لو المخزون فاضي خالص، سيبي `recipes` مصفوفة فاضية واشرحي في `text`.\n" +
           (likedNames.length > 0
             ? "العميل عجبته الأكلات دي قبل كده: " + likedNames.join("، ") + " — خدي بالك من نفس الروح لو مناسب، مش شرط تكرريها.\n"
@@ -2520,7 +2528,7 @@ async function handle(req: Request): Promise<Response> {
           (liveDeals.length > 0 ? "\n" + dealsBlock(liveDeals) : "") +
           (socialPicked.length > 0 ? "\n" + socialRecipesBlock(socialPicked) : "") +
           (trends ? "\n" + trends : "");
-        const result = await logged(user_id, action, "callJsonModel", { args: [systemPrompt, userPrompt] }, () => callJsonModel(systemPrompt, userPrompt, week ? 4000 : undefined));
+        const result = await logged(user_id, action, "callJsonModel", { args: [systemPrompt, userPrompt] }, () => callJsonModel(systemPrompt, userPrompt, week ? 5000 : 4000, "brain", 0.8));
         // same honest-failure contract as recipe_details: null/ok:false on a genuine upstream
         // failure instead of baking in Arabic text that looks like a real AI reply. The Kotlin
         // client (ZadAiRepository.suggestMeals) already falls back to its own "لم أتمكن..."
@@ -2535,6 +2543,7 @@ async function handle(req: Request): Promise<Response> {
         // «من مخزونك» الأول، وكل وصفة معلّمة: التطبيق بيعرض «مكتملة من مخزونك» أو «ناقصك …».
         const flagged = withoutRecent(allowedRecipes as Array<{ recipe_name?: unknown; missing_ingredients_to_buy?: unknown; trending?: unknown }>, served).map((r) => ({
           ...r, from_inventory: recipeNeedsNoShopping(r?.missing_ingredients_to_buy), trending: !!trends && r?.trending === true,
+          chef_secret: chefSecret((r as { chef_secret?: unknown })?.chef_secret),
           deal_items: dealsForMissing(r?.missing_ingredients_to_buy, liveDeals),
           ...recipeSource((r as { source?: unknown })?.source, socialPicked),
         })).sort((a: { from_inventory: boolean }, b: { from_inventory: boolean }) => Number(b.from_inventory) - Number(a.from_inventory));
@@ -2542,6 +2551,7 @@ async function handle(req: Request): Promise<Response> {
         const ordered = week
           ? withoutRecent(allowedRecipes as Array<{ recipe_name?: unknown; missing_ingredients_to_buy?: unknown }>, served).slice(0, 7).map((r, i) => ({
             ...r, day: i + 1, from_inventory: recipeNeedsNoShopping(r?.missing_ingredients_to_buy), trending: false,
+            chef_secret: chefSecret((r as { chef_secret?: unknown })?.chef_secret),
             deal_items: dealsForMissing(r?.missing_ingredients_to_buy, liveDeals),
           ...recipeSource((r as { source?: unknown })?.source, socialPicked),
           }))

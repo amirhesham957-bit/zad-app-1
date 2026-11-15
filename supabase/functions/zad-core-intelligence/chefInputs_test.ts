@@ -1,5 +1,5 @@
 import { assert, assertEquals } from "jsr:@std/assert@1";
-import { avoidNames, chefPantryLine, trendBlock, trendCacheKey, trendQuery , chefDeals, chefExpiring, dealsBlock, dealsForMissing, dishKey, expiringBlock, pickSocialRecipes, recipeSource, socialRecipesBlock, withoutRecent } from "./chefInputs.ts";
+import { CHEF_ANGLES, avoidNames, chefAngles, chefSecret, chefPantryLine, trendBlock, trendCacheKey, trendQuery , chefDeals, chefExpiring, dealsBlock, dealsForMissing, dishKey, expiringBlock, pickSocialRecipes, recipeSource, socialRecipesBlock, withoutRecent } from "./chefInputs.ts";
 
 Deno.test("the server pantry: stocked only, merged, sorted, the app's shape", () => {
   assertEquals(
@@ -103,4 +103,22 @@ Deno.test("a recipe is credited only to a video that was offered", () => {
   assertEquals(recipeSource(undefined, picked), null);
   assertEquals(socialRecipesBlock([]), "");
   assertEquals(socialRecipesBlock(picked).includes("1. كشري: مكرونة، عدس"), true);
+});
+
+Deno.test("chef angles: two different ones, varying with the dice", () => {
+  const seq = (vals: number[]) => { let i = 0; return () => vals[i++ % vals.length]; };
+  const a = chefAngles(seq([0, 0]));
+  const b = chefAngles(seq([0.9, 0.5]));
+  assertEquals(a.length, 2);
+  assert(a[0] !== a[1]);
+  assert(a.join() !== b.join());
+  assertEquals(chefAngles(Math.random, 99).length, CHEF_ANGLES.length);
+});
+
+Deno.test("chef secret: one clean line, no section markers, capped", () => {
+  assertEquals(chefSecret("  حمّري البصل\n على نار هادية  "), "حمّري البصل على نار هادية");
+  assert(!chefSecret("=== المخزون === x")!.includes("==="));
+  assertEquals(chefSecret("س".repeat(500))!.length, 220);
+  assertEquals(chefSecret(""), null);
+  assertEquals(chefSecret(5), null);
 });
