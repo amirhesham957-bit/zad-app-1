@@ -8,6 +8,12 @@ const String kTermsVersion = '2.1';
 /// `TermsContent.LAST_UPDATED`.
 const String kTermsLastUpdated = 'November 2026';
 
+/// The published privacy policy (English web page).
+const String kPrivacyPolicyUrl = 'https://astralabshq.vercel.app/privacy.html';
+
+/// The published terms of use (English web page).
+const String kTermsUrl = 'https://astralabshq.vercel.app/terms.html';
+
 /// `TermsContent.TITLE`.
 const String kTermsTitle = 'Terms of Service & Privacy Policy';
 

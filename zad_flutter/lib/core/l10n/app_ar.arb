@@ -2739,5 +2739,116 @@
   "profileExportTitle": "تصدير بياناتي",
   "profileExportSubtitle": "نسخة من كل اللي زاد عارفه عنك",
   "profileExportFailed": "معرفناش نجهز الملف، جرّب تاني",
-  "profileExportSubject": "بياناتي من زاد"
+  "profileExportSubject": "بياناتي من زاد",
+  "introSayPantry": "التلاجة دي بتاعتي!",
+  "@introSayPantry": {
+    "description": "Zado's bubble on the intro's pantry scene."
+  },
+  "introSayFamily": "البيت كله في إيد واحدة",
+  "@introSayFamily": {
+    "description": "Zado's bubble on the intro's family scene."
+  },
+  "introSayAssistant": "بتعلّم منك كل يوم",
+  "@introSayAssistant": {
+    "description": "Zado's bubble on the intro's assistant scene."
+  },
+  "introSayBudget": "ونوفّر سوا",
+  "@introSayBudget": {
+    "description": "Zado's bubble on the intro's budget scene."
+  },
+  "authZadoWatching": "زادو بيبص على اللي بتكتبه… إلا كلمة السر.",
+  "@authZadoWatching": {
+    "description": "Hint under the sign-in form."
+  },
+  "authZadoNotLooking": "مش باصص، والله",
+  "@authZadoNotLooking": {
+    "description": "Hint under the sign-in form while the password field has focus; Zado covers his eyes."
+  },
+  "authZadoHello": "أهلاً يا {name}!",
+  "@authZadoHello": {
+    "description": "Zado's bubble on the sign-up screen while the customer types a name; {name} is the first word of it.",
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "consentTitle": "قبل ما نبدأ، ده اتفاقنا",
+  "@consentTitle": {
+    "description": "Title of the consent bottom sheet opened from sign-up."
+  },
+  "consentVersionLine": "الشروط {terms} وسياسة الخصوصية ٤٫٠ · {updated}",
+  "@consentVersionLine": {
+    "description": "Version line under the consent sheet's title; {terms} is the terms version, {updated} the terms' last-updated date.",
+    "placeholders": {
+      "terms": {"type": "String"},
+      "updated": {"type": "String"}
+    }
+  },
+  "consentPoint1Lead": "بنحفظ اللي بتدخّله بس.",
+  "@consentPoint1Lead": {
+    "description": "Consent sheet, point 1: the bold lead."
+  },
+  "consentPoint1Body": "حسابك وفلوسك ومخزونك وأدويتك ومواعيدك ورسايل العيلة، عشان زاد يساعدك بيهم.",
+  "@consentPoint1Body": {
+    "description": "Consent sheet, point 1: the text after the lead."
+  },
+  "consentPoint2Lead": "كل إذن بموافقتك.",
+  "@consentPoint2Lead": {
+    "description": "Consent sheet, point 2: the bold lead."
+  },
+  "consentPoint2Body": "إشعارات البنك والموقع والكاميرا والمايك، كل واحد بيتطلب لما تستخدم الميزة، وتقدر تقفله في أي وقت.",
+  "@consentPoint2Body": {
+    "description": "Consent sheet, point 2: the text after the lead."
+  },
+  "consentPoint3Lead": "مابنبيعش بياناتك لحد.",
+  "@consentPoint3Lead": {
+    "description": "Consent sheet, point 3: the bold lead."
+  },
+  "consentPoint3Body": "ومابنقراش كلمات سر البنك ولا أرقام الكروت ولا أكواد OTP.",
+  "@consentPoint3Body": {
+    "description": "Consent sheet, point 3: the text after the lead."
+  },
+  "consentPoint4Lead": "الذكاء الاصطناعي بيساعد، وممكن يغلط.",
+  "@consentPoint4Lead": {
+    "description": "Consent sheet, point 4: the bold lead."
+  },
+  "consentPoint4Body": "راجع الأرقام قبل أي قرار؛ زاد مش بنك ولا مستشار مالي.",
+  "@consentPoint4Body": {
+    "description": "Consent sheet, point 4: the text after the lead."
+  },
+  "consentPoint5Lead": "الخطة المجانية فيها إعلانات",
+  "@consentPoint5Lead": {
+    "description": "Consent sheet, point 5: the bold lead."
+  },
+  "consentPoint5Body": " من Google. حسابات الأطفال مفيهاش إعلانات خالص.",
+  "@consentPoint5Body": {
+    "description": "Consent sheet, point 5: the text after the lead."
+  },
+  "consentPoint6Lead": "بياناتك ملكك.",
+  "@consentPoint6Lead": {
+    "description": "Consent sheet, point 6: the bold lead."
+  },
+  "consentPoint6Body": "تصدّرها في أي وقت، أو تمسح حسابك، والمسح بيتم بعد ١٤ يوم تقدر ترجع فيهم.",
+  "@consentPoint6Body": {
+    "description": "Consent sheet, point 6: the text after the lead."
+  },
+  "consentPoint7Lead": "زاد للكبار من ١٨ سنة.",
+  "@consentPoint7Lead": {
+    "description": "Consent sheet, point 7: the bold lead."
+  },
+  "consentPoint7Body": "الأطفال بيدخلوا كأفراد في عيلة وليّ أمرهم.",
+  "@consentPoint7Body": {
+    "description": "Consent sheet, point 7: the text after the lead."
+  },
+  "consentLegalToggle": "النص القانوني الكامل (بالإنجليزي)",
+  "@consentLegalToggle": {
+    "description": "Collapsed section holding the English terms, on the consent sheet and the privacy policy."
+  },
+  "consentPrivacyLink": "سياسة الخصوصية",
+  "@consentPrivacyLink": {
+    "description": "Link button on the consent sheet that opens the published privacy policy (English web page)."
+  },
+  "consentTermsLink": "شروط الاستخدام",
+  "@consentTermsLink": {
+    "description": "Link button on the consent sheet that opens the published terms of use (English web page)."
+  }
 }

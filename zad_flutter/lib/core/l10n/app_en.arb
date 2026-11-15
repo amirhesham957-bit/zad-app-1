@@ -1315,5 +1315,42 @@
   "profileExportTitle": "Export my data",
   "profileExportSubtitle": "A copy of everything Zad knows about you",
   "profileExportFailed": "Couldn't prepare the file, try again",
-  "profileExportSubject": "My data from Zad"
+  "profileExportSubject": "My data from Zad",
+  "introSayPantry": "This fridge is mine!",
+  "introSayFamily": "The whole house in one hand",
+  "introSayAssistant": "I learn from you every day",
+  "introSayBudget": "And we save together",
+  "authZadoWatching": "Zado watches what you type… except the password.",
+  "authZadoNotLooking": "Not looking, promise",
+  "authZadoHello": "Hi {name}!",
+  "@authZadoHello": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "consentTitle": "Before we start, here is our deal",
+  "consentVersionLine": "Terms {terms} and Privacy Policy 4.0 · {updated}",
+  "@consentVersionLine": {
+    "placeholders": {
+      "terms": {"type": "String"},
+      "updated": {"type": "String"}
+    }
+  },
+  "consentPoint1Lead": "We only keep what you enter.",
+  "consentPoint1Body": "Your account, money, pantry, medicines, appointments and family chat, so Zad can help you with them.",
+  "consentPoint2Lead": "Every permission is yours to give.",
+  "consentPoint2Body": "Bank notifications, location, camera and microphone: each one is asked for when you use the feature, and you can switch it off at any time.",
+  "consentPoint3Lead": "We never sell your data.",
+  "consentPoint3Body": "And we never read bank passwords, card numbers or OTP codes.",
+  "consentPoint4Lead": "The AI helps, and it can be wrong.",
+  "consentPoint4Body": "Check the numbers before any decision; Zad is not a bank or a financial adviser.",
+  "consentPoint5Lead": "The free plan has ads",
+  "consentPoint5Body": " from Google. Children's accounts have no ads at all.",
+  "consentPoint6Lead": "Your data is yours.",
+  "consentPoint6Body": "Export it at any time, or delete your account; deletion completes after 14 days, during which you can come back.",
+  "consentPoint7Lead": "Zad is for adults, 18 and over.",
+  "consentPoint7Body": "Children join as members of their guardian's family.",
+  "consentLegalToggle": "Full legal text (in English)",
+  "consentPrivacyLink": "Privacy Policy",
+  "consentTermsLink": "Terms of Use"
 }
