@@ -48,7 +48,7 @@ class ZadApp extends ConsumerStatefulWidget {
 }
 
 class _ZadAppState extends ConsumerState<ZadApp> with WidgetsBindingObserver {
-  // Closing a full screen is a natural break for the interstitial pacer.
+  // Opening a full screen warms the interstitial for the next real break.
   late final InterstitialRouteObserver _adBreaks = InterstitialRouteObserver(
     () => ref.read(interstitialsProvider),
   );

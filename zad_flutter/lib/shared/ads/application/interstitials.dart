@@ -22,9 +22,6 @@ enum InterstitialBreak {
   /// An expense or income was saved and its sheet closed.
   saved,
 
-  /// A full screen was closed with back.
-  screenClosed,
-
   /// An AI request was sent and Zad is working; the full-screen ad covers
   /// the wait (owner 15/11). Paced by InterstitialPacer like every break —
   /// 4 min gap, 4 per hour — never every request; AdMob forbids an
@@ -157,19 +154,15 @@ final interstitialsProvider = Provider<Interstitials>((ref) {
   return i;
 });
 
-/// Reports [InterstitialBreak.screenClosed] when a full screen is popped.
-/// Sheets and dialogs are not screens and do not count.
+/// Warms the interstitial when a full screen opens. Closing a screen is not
+/// an ad break any more (owner 15/11): an ad after back felt like a
+/// punishment for moving around the app, and AdMob forbids an interstitial
+/// after every action. The breaks are a save, a scan and a long AI wait.
 class InterstitialRouteObserver extends NavigatorObserver {
   /// Creates it.
   new(this._interstitials);
 
   final Interstitials Function() _interstitials;
-
-  @override
-  void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) {
-    if (route is! PageRoute<dynamic> || previousRoute == null) return;
-    unawaited(_interstitials().atBreak(InterstitialBreak.screenClosed));
-  }
 
   @override
   void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
