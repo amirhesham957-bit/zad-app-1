@@ -244,11 +244,35 @@
   "placesOrbitHome": "البيت",
   "placesOrbitCaption": "الأقرب للبيت هو اللي بتروحه أكتر، مش المسافة الحقيقية.",
   "placesHabitVisits": "{count} مرات",
-  "@placesHabitVisits": {"placeholders": {"count": {"type": "int"}}},
+  "@placesHabitVisits": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "placesHabitVisitsOn": "{count} مرات · غالباً {day}",
-  "@placesHabitVisitsOn": {"placeholders": {"count": {"type": "int"}, "day": {"type": "String"}}},
+  "@placesHabitVisitsOn": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "day": {
+        "type": "String"
+      }
+    }
+  },
   "placesOrbitNode": "{name}، {count} مرات",
-  "@placesOrbitNode": {"placeholders": {"name": {"type": "String"}, "count": {"type": "int"}}},
+  "@placesOrbitNode": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "memoryGraphResetView": "رجّع الشبكة مكانها",
   "drawerGroupMore": "أكتر",
   "drawerKidsMode": "وضع الأطفال",
@@ -1057,7 +1081,9 @@
   "learningRight": "✅ صح",
   "learningWrong": "❌ مش صح",
   "openOfferSource": "🔗 افتح العرض",
-  "@openOfferSource": { "description": "Button on an offer notification: opens the offer's own post or video" },
+  "@openOfferSource": {
+    "description": "Button on an offer notification: opens the offer's own post or video"
+  },
   "learningKept": "تمام ✅ هفتكرها.",
   "learningCorrected": "تمام، شكراً إنك صحّحتني — مش هقولها تاني.",
   "learningAlready": "تمام، ردك اتسجّل قبل كده.",
@@ -2004,12 +2030,20 @@
   "recipesAddToPantry": "ضيف للمخزن",
   "recipesWeekDay": "اليوم {day}",
   "@recipesWeekDay": {
-    "placeholders": { "day": { "type": "int" } }
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
   },
   "recipesOnDeal": "عليه عرض دلوقتي",
   "recipesFromCreator": "من فيديو @{handle}",
   "@recipesFromCreator": {
-    "placeholders": { "handle": { "type": "String" } }
+    "placeholders": {
+      "handle": {
+        "type": "String"
+      }
+    }
   },
   "recipesTrendingGroup": "ترند دلوقتي",
   "homeDealsSeeAll": "كل العروض",
@@ -2136,38 +2170,152 @@
   "channelCardTelegram": "اربط تليجرام",
   "briefWhy": "ليه؟",
   "briefWhyDose": "من جدول {name}: جرعة الساعة {time}، ومفيش تسجيل إنها اتاخدت.",
-  "@briefWhyDose": {"placeholders": {"name": {"type": "String"}, "time": {"type": "String"}}},
+  "@briefWhyDose": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "briefWhyMissed": "جرعات النهارده اللي عدّى ميعادها ومااتسجلتش: {count}.",
-  "@briefWhyMissed": {"placeholders": {"count": {"type": "String"}}},
+  "@briefWhyMissed": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
   "briefWhyOverspent": "المتاح للدورة دي تحت الصفر: رصيد أول الدورة ناقص اللي اتصرف والالتزامات الثابتة.",
   "briefWhyRenewal": "«{name}» متسجل في اشتراكاتك، وده ميعاد تجديده الجاي.",
-  "@briefWhyRenewal": {"placeholders": {"name": {"type": "String"}}},
+  "@briefWhyRenewal": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "briefWhyShortage": "{name}: فاضل {left}، وده الحد اللي بيبقى عنده ناقص ({threshold}).",
-  "@briefWhyShortage": {"placeholders": {"name": {"type": "String"}, "left": {"type": "String"}, "threshold": {"type": "String"}}},
+  "@briefWhyShortage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "left": {
+        "type": "String"
+      },
+      "threshold": {
+        "type": "String"
+      }
+    }
+  },
   "briefWhyRunningOut": "{name}: فاضل {left}، وبتستهلك حوالي {perDay} في اليوم.",
-  "@briefWhyRunningOut": {"placeholders": {"name": {"type": "String"}, "left": {"type": "String"}, "perDay": {"type": "String"}}},
+  "@briefWhyRunningOut": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "left": {
+        "type": "String"
+      },
+      "perDay": {
+        "type": "String"
+      }
+    }
+  },
   "briefWhyRunningOutApprox": "{name}: فاضل {left}، واستهلاكك لسه بيتقاس — حوالي {perDay} في اليوم، فده تقدير.",
-  "@briefWhyRunningOutApprox": {"placeholders": {"name": {"type": "String"}, "left": {"type": "String"}, "perDay": {"type": "String"}}},
+  "@briefWhyRunningOutApprox": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "left": {
+        "type": "String"
+      },
+      "perDay": {
+        "type": "String"
+      }
+    }
+  },
   "briefWhyFamily": "حد في شات العيلة قال إنها ناقصة، وزاد لقطها وهو بيراجع الشات.",
   "briefMedicineLow": "{name} هيخلص بعد {days} يوم",
-  "@briefMedicineLow": {"placeholders": {"name": {"type": "String"}, "days": {"type": "String"}}},
+  "@briefMedicineLow": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "days": {
+        "type": "String"
+      }
+    }
+  },
   "briefMedicineLowDetail": "اطلب علبة جديدة قبل ما يخلص",
   "briefBudgetDanger": "الميزانية في خطر: باقي {daily} في اليوم لـ{days} يوم",
-  "@briefBudgetDanger": {"placeholders": {"daily": {"type": "String"}, "days": {"type": "String"}}},
+  "@briefBudgetDanger": {
+    "placeholders": {
+      "daily": {
+        "type": "String"
+      },
+      "days": {
+        "type": "String"
+      }
+    }
+  },
   "briefBudgetDangerDetail": "شوف فلوسي — لسه فيه وقت تلحق",
   "briefSeasonRamadan": "رمضان بعد {days} يوم",
-  "@briefSeasonRamadan": {"placeholders": {"days": {"type": "String"}}},
+  "@briefSeasonRamadan": {
+    "placeholders": {
+      "days": {
+        "type": "String"
+      }
+    }
+  },
   "briefSeasonHijjah": "العشر من ذي الحجة بعد {days} يوم",
-  "@briefSeasonHijjah": {"placeholders": {"days": {"type": "String"}}},
+  "@briefSeasonHijjah": {
+    "placeholders": {
+      "days": {
+        "type": "String"
+      }
+    }
+  },
   "briefSeasonDetail": "جهّز الأساسيات قبل ما الأسعار تعلى",
   "briefWhyMedicineLow": "{name}: الحبوب اللي فاضلة ÷ الجرعات في اليوم = {days} يوم.",
-  "@briefWhyMedicineLow": {"placeholders": {"name": {"type": "String"}, "days": {"type": "String"}}},
+  "@briefWhyMedicineLow": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "days": {
+        "type": "String"
+      }
+    }
+  },
   "briefWhyBudgetDanger": "المتاح {available} على {days} يوم = {daily} في اليوم، ومعدل صرفك لحد دلوقتي بيقول إنه مش هيكفي.",
-  "@briefWhyBudgetDanger": {"placeholders": {"available": {"type": "String"}, "days": {"type": "String"}, "daily": {"type": "String"}}},
+  "@briefWhyBudgetDanger": {
+    "placeholders": {
+      "available": {
+        "type": "String"
+      },
+      "days": {
+        "type": "String"
+      },
+      "daily": {
+        "type": "String"
+      }
+    }
+  },
   "briefWhySeason": "من تقويم أم القرى بتوقيت بلدك — والأسعار بتعلى قبل الموسم.",
   "accountRestoreTitle": "حسابك مجدول للحذف",
   "accountRestoreBody": "طلبت حذف حسابك، وهيتمسح هو وكل بياناته نهائياً بعد {days} يوم. تحب ترجّعه؟",
-  "@accountRestoreBody": {"placeholders": {"days": {"type": "int"}}},
+  "@accountRestoreBody": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
   "accountRestoreLeave": "خروج",
   "accountRestoreYes": "رجّع حسابي",
   "accountRestoreFailed": "تعذر استرجاع الحساب دلوقتي. افتح التطبيق تاني وجرّب.",
@@ -2198,7 +2346,13 @@
   "homeWidgetPharmacyEmpty": "ضيف دوا",
   "homeWidgetShortages": "النواقص",
   "homeWidgetShortagesCount": "{count} تتجاب",
-  "@homeWidgetShortagesCount": {"placeholders": {"count": {"type": "int"}}},
+  "@homeWidgetShortagesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "homeWidgetShortagesEmpty": "مفيش نواقص",
   "placesTabMine": "أماكني",
   "placesOutingsTurnOn": "فعّل تسجيل خروجاتي",
@@ -2262,475 +2416,1130 @@
   "tourBellBody": "كل تنبيهات زاد وتذكيراته في مكان واحد.",
   "shoppingBasketEmpty": "السلة فاضية — ضيف اللي ناقصك",
   "adWatchFor": "شاهد إعلان وخد {reward}",
-  "@adWatchFor": {"description": "Ad button: what one ad gives.", "placeholders": {"reward": {"type": "String"}}},
+  "@adWatchFor": {
+    "description": "Ad button: what one ad gives.",
+    "placeholders": {
+      "reward": {
+        "type": "String"
+      }
+    }
+  },
   "adLadderFirst": "الإعلان التاني بيزوّد سؤال صوتي، والتالت صورة كمان",
-  "@adLadderFirst": {"description": "Under the ad button before the first ad of the day."},
+  "@adLadderFirst": {
+    "description": "Under the ad button before the first ad of the day."
+  },
   "adLadderSecond": "الإعلان التالت بيدّي صورة كمان",
-  "@adLadderSecond": {"description": "Under the ad button after the first ad."},
+  "@adLadderSecond": {
+    "description": "Under the ad button after the first ad."
+  },
   "adLadderAfter": "كل إعلان بعد كده = {messages}",
-  "@adLadderAfter": {"description": "Under the ad button from the third ad on.", "placeholders": {"messages": {"type": "String"}}},
+  "@adLadderAfter": {
+    "description": "Under the ad button from the third ad on.",
+    "placeholders": {
+      "messages": {
+        "type": "String"
+      }
+    }
+  },
   "rewardVoiceOne": "سؤال صوتي",
-  "@rewardVoiceOne": {"description": "Ad reward piece: one voice question."},
+  "@rewardVoiceOne": {
+    "description": "Ad reward piece: one voice question."
+  },
   "rewardVoiceMany": "{n} أسئلة صوتية",
-  "@rewardVoiceMany": {"description": "Ad reward piece: several voice questions; n in Arabic digits.", "placeholders": {"n": {"type": "String"}}},
+  "@rewardVoiceMany": {
+    "description": "Ad reward piece: several voice questions; n in Arabic digits.",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "rewardImageOne": "صورة",
-  "@rewardImageOne": {"description": "Ad reward piece: one image."},
+  "@rewardImageOne": {
+    "description": "Ad reward piece: one image."
+  },
   "rewardImageMany": "{n} صور",
-  "@rewardImageMany": {"description": "Ad reward piece: several images.", "placeholders": {"n": {"type": "String"}}},
+  "@rewardImageMany": {
+    "description": "Ad reward piece: several images.",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "messagesOne": "رسالة",
-  "@messagesOne": {"description": "Count of chat messages: one."},
+  "@messagesOne": {
+    "description": "Count of chat messages: one."
+  },
   "messagesTwo": "رسالتين",
-  "@messagesTwo": {"description": "Count of chat messages: two."},
+  "@messagesTwo": {
+    "description": "Count of chat messages: two."
+  },
   "messagesFew": "{n} رسايل",
-  "@messagesFew": {"description": "Count of chat messages: 3 to 10.", "placeholders": {"n": {"type": "String"}}},
+  "@messagesFew": {
+    "description": "Count of chat messages: 3 to 10.",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "messagesMany": "{n} رسالة",
-  "@messagesMany": {"description": "Count of chat messages: 11 and up.", "placeholders": {"n": {"type": "String"}}},
+  "@messagesMany": {
+    "description": "Count of chat messages: 11 and up.",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
   "quotaKindMessages": "رسايل",
-  "@quotaKindMessages": {"description": "Quota sheet row: chat messages."},
+  "@quotaKindMessages": {
+    "description": "Quota sheet row: chat messages."
+  },
   "quotaKindVoice": "أسئلة صوتية",
-  "@quotaKindVoice": {"description": "Quota sheet row: voice questions."},
+  "@quotaKindVoice": {
+    "description": "Quota sheet row: voice questions."
+  },
   "quotaKindImages": "صور",
-  "@quotaKindImages": {"description": "Quota sheet row: images."},
+  "@quotaKindImages": {
+    "description": "Quota sheet row: images."
+  },
   "quotaOfTotal": "{left} من {total}",
-  "@quotaOfTotal": {"description": "Quota sheet: what is left of a cycle.", "placeholders": {"left": {"type": "String"}, "total": {"type": "String"}}},
+  "@quotaOfTotal": {
+    "description": "Quota sheet: what is left of a cycle.",
+    "placeholders": {
+      "left": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
   "quotaScanFromImages": "صورة من رصيد الصور",
-  "@quotaScanFromImages": {"description": "Quota sheet: a scan costs one image."},
+  "@quotaScanFromImages": {
+    "description": "Quota sheet: a scan costs one image."
+  },
   "tickerLoading": "جاري جلب الأسعار...",
-  "@tickerLoading": {"description": "Live price strip: loading."},
+  "@tickerLoading": {
+    "description": "Live price strip: loading."
+  },
   "tickerError": "تعذر جلب الأسعار الحية الآن — جرب تاني",
-  "@tickerError": {"description": "Live price strip: fetch failed, tap to retry."},
+  "@tickerError": {
+    "description": "Live price strip: fetch failed, tap to retry."
+  },
   "tickerEmpty": "لسه مفيش أسعار حية لبلدك — اضغط للتحديث",
-  "@tickerEmpty": {"description": "Live price strip: nothing yet, tap to refresh."},
+  "@tickerEmpty": {
+    "description": "Live price strip: nothing yet, tap to refresh."
+  },
   "tickerRefresh": "تحديث الأسعار",
-  "@tickerRefresh": {"description": "Live price strip: refresh icon (screen reader)."},
+  "@tickerRefresh": {
+    "description": "Live price strip: refresh icon (screen reader)."
+  },
   "tickerContribute": "ساهم بسعر",
-  "@tickerContribute": {"description": "Live price strip: button to report a price."},
+  "@tickerContribute": {
+    "description": "Live price strip: button to report a price."
+  },
   "householdTitle": "البيت",
-  "@householdTitle": {"description": "Household screen title."},
+  "@householdTitle": {
+    "description": "Household screen title."
+  },
   "householdPrices": "الأسعار",
-  "@householdPrices": {"description": "Household screen: prices button."},
+  "@householdPrices": {
+    "description": "Household screen: prices button."
+  },
   "householdFamily": "العيلة",
-  "@householdFamily": {"description": "Household screen: family button."},
+  "@householdFamily": {
+    "description": "Household screen: family button."
+  },
   "householdPantry": "المخزن",
-  "@householdPantry": {"description": "Household tab: pantry."},
+  "@householdPantry": {
+    "description": "Household tab: pantry."
+  },
   "householdShopping": "نواقص وتسوق",
-  "@householdShopping": {"description": "Household tab: missing items and shopping."},
+  "@householdShopping": {
+    "description": "Household tab: missing items and shopping."
+  },
   "householdPharmacy": "الصيدلية",
-  "@householdPharmacy": {"description": "Household tab: pharmacy."},
+  "@householdPharmacy": {
+    "description": "Household tab: pharmacy."
+  },
   "householdRecipes": "وصفات",
-  "@householdRecipes": {"description": "Household tab: recipes."},
+  "@householdRecipes": {
+    "description": "Household tab: recipes."
+  },
   "notifTitle": "الإشعارات",
-  "@notifTitle": {"description": "Notification center title."},
+  "@notifTitle": {
+    "description": "Notification center title."
+  },
   "notifUnread": "{count} غير مقروء",
-  "@notifUnread": {"description": "Notification center: unread count.", "placeholders": {"count": {"type": "int"}}},
+  "@notifUnread": {
+    "description": "Notification center: unread count.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "notifReadAloud": "قراءة التنبيهات صوتيًا",
-  "@notifReadAloud": {"description": "Notification center: speak button."},
+  "@notifReadAloud": {
+    "description": "Notification center: speak button."
+  },
   "notifEmptyTitle": "لا توجد إشعارات حالياً.",
-  "@notifEmptyTitle": {"description": "Notification center: empty title."},
+  "@notifEmptyTitle": {
+    "description": "Notification center: empty title."
+  },
   "notifEmptyBody": "هنعلمك أول ما يحصل حاجة تستاهل انتباهك",
-  "@notifEmptyBody": {"description": "Notification center: empty guidance."},
+  "@notifEmptyBody": {
+    "description": "Notification center: empty guidance."
+  },
   "notifBankSection": "عمليات بنكية بانتظارك",
-  "@notifBankSection": {"description": "Notification center section: pending bank transactions."},
+  "@notifBankSection": {
+    "description": "Notification center section: pending bank transactions."
+  },
   "notifInsightsSection": "تنبيهات ذكاء زاد",
-  "@notifInsightsSection": {"description": "Notification center section: local insights."},
+  "@notifInsightsSection": {
+    "description": "Notification center section: local insights."
+  },
   "notifBrainSection": "تنبيهات عقل زاد",
-  "@notifBrainSection": {"description": "Notification center section: brain alerts."},
+  "@notifBrainSection": {
+    "description": "Notification center section: brain alerts."
+  },
   "notifAppSection": "إشعارات التطبيق",
-  "@notifAppSection": {"description": "Notification center section: app notifications."},
+  "@notifAppSection": {
+    "description": "Notification center section: app notifications."
+  },
   "notifNotImportant": "مش مهم",
-  "@notifNotImportant": {"description": "Insight dismiss reason: not important."},
+  "@notifNotImportant": {
+    "description": "Insight dismiss reason: not important."
+  },
   "notifWrongNumber": "الرقم غلط",
-  "@notifWrongNumber": {"description": "Insight dismiss reason: wrong number."},
+  "@notifWrongNumber": {
+    "description": "Insight dismiss reason: wrong number."
+  },
   "notifAlreadyKnew": "عرفت خلاص",
-  "@notifAlreadyKnew": {"description": "Insight dismiss reason: already known."},
+  "@notifAlreadyKnew": {
+    "description": "Insight dismiss reason: already known."
+  },
   "notifOnAmazon": "🛒 {name} على أمازون",
-  "@notifOnAmazon": {"description": "Notification: button to open a product on Amazon.", "placeholders": {"name": {"type": "String"}}},
+  "@notifOnAmazon": {
+    "description": "Notification: button to open a product on Amazon.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "notifBell": "التنبيهات",
-  "@notifBell": {"description": "Home bell tooltip."},
+  "@notifBell": {
+    "description": "Home bell tooltip."
+  },
   "notifBellUnread": "التنبيهات — {count} مش مقروء",
-  "@notifBellUnread": {"description": "Home bell tooltip with unread count.", "placeholders": {"count": {"type": "int"}}},
+  "@notifBellUnread": {
+    "description": "Home bell tooltip with unread count.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "shopNoReach": "مقدرتش أوصل لزاد دلوقتي. جرّب تاني.",
-  "@shopNoReach": {"description": "Shopping: smart fill failed."},
+  "@shopNoReach": {
+    "description": "Shopping: smart fill failed."
+  },
   "shopAddHint": "محتاج تشتري إيه؟",
-  "@shopAddHint": {"description": "Shopping: quick-add field hint."},
+  "@shopAddHint": {
+    "description": "Shopping: quick-add field hint."
+  },
   "shopAddTooltip": "ضيف",
-  "@shopAddTooltip": {"description": "Shopping: quick-add button."},
+  "@shopAddTooltip": {
+    "description": "Shopping: quick-add button."
+  },
   "shopAddProduct": "إضافة منتج للقائمة",
-  "@shopAddProduct": {"description": "Shopping: open the add sheet / its title."},
+  "@shopAddProduct": {
+    "description": "Shopping: open the add sheet / its title."
+  },
   "shopSmartFill": "تعبئة ذكية",
-  "@shopSmartFill": {"description": "Shopping: ask Zad to fill the list."},
+  "@shopSmartFill": {
+    "description": "Shopping: ask Zad to fill the list."
+  },
   "shopWhatsApp": "واتساب",
-  "@shopWhatsApp": {"description": "Shopping: share the list on WhatsApp."},
+  "@shopWhatsApp": {
+    "description": "Shopping: share the list on WhatsApp."
+  },
   "shopPriorityHigh": "حرج",
-  "@shopPriorityHigh": {"description": "Shopping priority: high."},
+  "@shopPriorityHigh": {
+    "description": "Shopping priority: high."
+  },
   "shopPriorityMedium": "متوسط",
-  "@shopPriorityMedium": {"description": "Shopping priority: medium."},
+  "@shopPriorityMedium": {
+    "description": "Shopping priority: medium."
+  },
   "shopPriorityLow": "منخفض",
-  "@shopPriorityLow": {"description": "Shopping priority: low."},
+  "@shopPriorityLow": {
+    "description": "Shopping priority: low."
+  },
   "shopEmptyTitle": "قائمة التسوق فارغة",
-  "@shopEmptyTitle": {"description": "Shopping: empty title."},
+  "@shopEmptyTitle": {
+    "description": "Shopping: empty title."
+  },
   "shopEmptyBody": "زاد سيضيف النواقص تلقائياً!",
-  "@shopEmptyBody": {"description": "Shopping: empty guidance."},
+  "@shopEmptyBody": {
+    "description": "Shopping: empty guidance."
+  },
   "shopFilterEmptyTitle": "لا توجد عناصر بهذا التصنيف",
-  "@shopFilterEmptyTitle": {"description": "Shopping: filter has no rows."},
+  "@shopFilterEmptyTitle": {
+    "description": "Shopping: filter has no rows."
+  },
   "shopFilterEmptyBody": "جرّب أولوية تانية.",
-  "@shopFilterEmptyBody": {"description": "Shopping: filter empty guidance."},
+  "@shopFilterEmptyBody": {
+    "description": "Shopping: filter empty guidance."
+  },
   "shopBought": "اتشترى",
-  "@shopBought": {"description": "Shopping: bought section header."},
+  "@shopBought": {
+    "description": "Shopping: bought section header."
+  },
   "shopBasketTitle": "سلة زاد الذكية",
-  "@shopBasketTitle": {"description": "Shopping budget header title."},
+  "@shopBasketTitle": {
+    "description": "Shopping budget header title."
+  },
   "shopBasketPartial": "تقدير لـ {priced} من {lines} صنف — «تعبئة ذكية» تقدّر الباقي",
-  "@shopBasketPartial": {"description": "Shopping budget header: only some lines priced.", "placeholders": {"priced": {"type": "int"}, "lines": {"type": "int"}}},
+  "@shopBasketPartial": {
+    "description": "Shopping budget header: only some lines priced.",
+    "placeholders": {
+      "priced": {
+        "type": "int"
+      },
+      "lines": {
+        "type": "int"
+      }
+    }
+  },
   "shopBudgetLeftUnknown": "الميزانية المتبقية: —",
-  "@shopBudgetLeftUnknown": {"description": "Shopping budget header: no budget known."},
+  "@shopBudgetLeftUnknown": {
+    "description": "Shopping budget header: no budget known."
+  },
   "shopBudgetLeft": "الميزانية المتبقية: {amount}",
-  "@shopBudgetLeft": {"description": "Shopping budget header: budget left.", "placeholders": {"amount": {"type": "String"}}},
+  "@shopBudgetLeft": {
+    "description": "Shopping budget header: budget left.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
   "shopBudgetPct": "{pct}% من الميزانية",
-  "@shopBudgetPct": {"description": "Shopping budget header: share of budget.", "placeholders": {"pct": {"type": "int"}}},
+  "@shopBudgetPct": {
+    "description": "Shopping budget header: share of budget.",
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
   "shopOverBudget": "هذه القائمة تتجاوز الميزانية المتبقية!",
-  "@shopOverBudget": {"description": "Shopping budget header: over budget."},
+  "@shopOverBudget": {
+    "description": "Shopping budget header: over budget."
+  },
   "shopMayNeed": "قد تحتاج أيضاً",
-  "@shopMayNeed": {"description": "Shopping: suggestions title."},
+  "@shopMayNeed": {
+    "description": "Shopping: suggestions title."
+  },
   "shopAddToList": "إضافة للقائمة",
-  "@shopAddToList": {"description": "Shopping: add a suggestion."},
+  "@shopAddToList": {
+    "description": "Shopping: add a suggestion."
+  },
   "shopStockLow": "في البيت {qty} بس",
-  "@shopStockLow": {"description": "Shopping line: pantry stock is low.", "placeholders": {"qty": {"type": "String"}}},
+  "@shopStockLow": {
+    "description": "Shopping line: pantry stock is low.",
+    "placeholders": {
+      "qty": {
+        "type": "String"
+      }
+    }
+  },
   "shopStockEnough": "في البيت {qty} — مش ناقص",
-  "@shopStockEnough": {"description": "Shopping line: pantry has enough.", "placeholders": {"qty": {"type": "String"}}},
+  "@shopStockEnough": {
+    "description": "Shopping line: pantry has enough.",
+    "placeholders": {
+      "qty": {
+        "type": "String"
+      }
+    }
+  },
   "shopRunsOutIn": "ينفد بعد {days} أيام",
-  "@shopRunsOutIn": {"description": "Shopping line: predicted days left.", "placeholders": {"days": {"type": "int"}}},
+  "@shopRunsOutIn": {
+    "description": "Shopping line: predicted days left.",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
   "shopBoughtItem": "تم شراء {name}",
-  "@shopBoughtItem": {"description": "Shopping: snackbar after ticking a line.", "placeholders": {"name": {"type": "String"}}},
+  "@shopBoughtItem": {
+    "description": "Shopping: snackbar after ticking a line.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "shopRemoveGroupTitle": "تشيل {name} من القائمة؟",
-  "@shopRemoveGroupTitle": {"description": "Shopping: confirm removing a family of lines.", "placeholders": {"name": {"type": "String"}}},
+  "@shopRemoveGroupTitle": {
+    "description": "Shopping: confirm removing a family of lines.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "shopRemoveGroupBody": "هيتشالوا {count} سطور مع بعض.",
-  "@shopRemoveGroupBody": {"description": "Shopping: confirm body.", "placeholders": {"count": {"type": "int"}}},
+  "@shopRemoveGroupBody": {
+    "description": "Shopping: confirm body.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "shopRemoveThem": "شيلهم",
-  "@shopRemoveThem": {"description": "Shopping: confirm removing the group."},
+  "@shopRemoveThem": {
+    "description": "Shopping: confirm removing the group."
+  },
   "shopGroupKinds": "{name} · {count} أنواع",
-  "@shopGroupKinds": {"description": "Shopping: a family of lines.", "placeholders": {"name": {"type": "String"}, "count": {"type": "int"}}},
+  "@shopGroupKinds": {
+    "description": "Shopping: a family of lines.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "shopHideKinds": "اخفي الأنواع",
-  "@shopHideKinds": {"description": "Shopping: collapse a family."},
+  "@shopHideKinds": {
+    "description": "Shopping: collapse a family."
+  },
   "shopShowKinds": "وريني الأنواع",
-  "@shopShowKinds": {"description": "Shopping: expand a family."},
+  "@shopShowKinds": {
+    "description": "Shopping: expand a family."
+  },
   "shopFieldName": "اسم المنتج",
-  "@shopFieldName": {"description": "Shopping add sheet: name field."},
+  "@shopFieldName": {
+    "description": "Shopping add sheet: name field."
+  },
   "shopFieldQty": "الكمية",
-  "@shopFieldQty": {"description": "Shopping add sheet: quantity field."},
+  "@shopFieldQty": {
+    "description": "Shopping add sheet: quantity field."
+  },
   "shopFieldPrice": "السعر التقديري",
-  "@shopFieldPrice": {"description": "Shopping add sheet: price field."},
+  "@shopFieldPrice": {
+    "description": "Shopping add sheet: price field."
+  },
   "shopFieldStore": "المتجر (اختياري)",
-  "@shopFieldStore": {"description": "Shopping add sheet: store field."},
+  "@shopFieldStore": {
+    "description": "Shopping add sheet: store field."
+  },
   "pantryEmptyTitle": "المخزون فارغ",
-  "@pantryEmptyTitle": {"description": "Pantry: empty title."},
+  "@pantryEmptyTitle": {
+    "description": "Pantry: empty title."
+  },
   "pantryEmptyBody": "ابدأ بإضافة منتجات لتنظم مخزون منزلك",
-  "@pantryEmptyBody": {"description": "Pantry: empty guidance."},
+  "@pantryEmptyBody": {
+    "description": "Pantry: empty guidance."
+  },
   "pantryScan": "تصوير",
-  "@pantryScan": {"description": "Pantry: scan button on the empty state."},
+  "@pantryScan": {
+    "description": "Pantry: scan button on the empty state."
+  },
   "pantrySearchEmptyTitle": "لا توجد نتائج",
-  "@pantrySearchEmptyTitle": {"description": "Pantry: search found nothing."},
+  "@pantrySearchEmptyTitle": {
+    "description": "Pantry: search found nothing."
+  },
   "pantrySearchEmptyBody": "جرّب البحث بكلمة مختلفة",
-  "@pantrySearchEmptyBody": {"description": "Pantry: search empty guidance."},
+  "@pantrySearchEmptyBody": {
+    "description": "Pantry: search empty guidance."
+  },
   "pantryScanTooltip": "تصوير المخزون",
-  "@pantryScanTooltip": {"description": "Pantry: scan FAB."},
+  "@pantryScanTooltip": {
+    "description": "Pantry: scan FAB."
+  },
   "pantryAddManual": "إضافة يدوية",
-  "@pantryAddManual": {"description": "Pantry: manual add FAB."},
+  "@pantryAddManual": {
+    "description": "Pantry: manual add FAB."
+  },
   "pantryLowBanner": "نواقص المخزون ({count})",
-  "@pantryLowBanner": {"description": "Pantry: low-stock banner.", "placeholders": {"count": {"type": "int"}}},
+  "@pantryLowBanner": {
+    "description": "Pantry: low-stock banner.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "pantryUnspecified": " (غير محدد)",
-  "@pantryUnspecified": {"description": "Pantry: low-stock banner suffix."},
+  "@pantryUnspecified": {
+    "description": "Pantry: low-stock banner suffix."
+  },
   "pantryToShopping": "نزّلها في التسوق",
-  "@pantryToShopping": {"description": "Pantry: move a low item to the shopping list."},
+  "@pantryToShopping": {
+    "description": "Pantry: move a low item to the shopping list."
+  },
   "pantryExpiringSoon": "ينتهي قريباً",
-  "@pantryExpiringSoon": {"description": "Pantry: expiring section title."},
+  "@pantryExpiringSoon": {
+    "description": "Pantry: expiring section title."
+  },
   "pantrySuggestRecipe": "اقتراح وصفة",
-  "@pantrySuggestRecipe": {"description": "Pantry: ask for a recipe from expiring items."},
+  "@pantrySuggestRecipe": {
+    "description": "Pantry: ask for a recipe from expiring items."
+  },
   "pantryExpired": "منتهي الصلاحية",
-  "@pantryExpired": {"description": "Pantry: item past its date."},
+  "@pantryExpired": {
+    "description": "Pantry: item past its date."
+  },
   "pantryDaysLeft": "باقي {days} يوم",
-  "@pantryDaysLeft": {"description": "Pantry: days until expiry.", "placeholders": {"days": {"type": "String"}}},
+  "@pantryDaysLeft": {
+    "description": "Pantry: days until expiry.",
+    "placeholders": {
+      "days": {
+        "type": "String"
+      }
+    }
+  },
   "pantryLow": "منخفض",
-  "@pantryLow": {"description": "Pantry: low-stock tag."},
+  "@pantryLow": {
+    "description": "Pantry: low-stock tag."
+  },
   "pantryExpiredShort": "منتهي",
-  "@pantryExpiredShort": {"description": "Pantry: short expired tag."},
+  "@pantryExpiredShort": {
+    "description": "Pantry: short expired tag."
+  },
   "pantryDays": "{days} يوم",
-  "@pantryDays": {"description": "Pantry: days tag.", "placeholders": {"days": {"type": "int"}}},
+  "@pantryDays": {
+    "description": "Pantry: days tag.",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
   "pantryUseOne": "استهلاك واحدة",
-  "@pantryUseOne": {"description": "Pantry: decrement."},
+  "@pantryUseOne": {
+    "description": "Pantry: decrement."
+  },
   "pantryAddOne": "زيادة واحدة",
-  "@pantryAddOne": {"description": "Pantry: increment."},
+  "@pantryAddOne": {
+    "description": "Pantry: increment."
+  },
   "pantryEditItem": "تعديل الصنف",
-  "@pantryEditItem": {"description": "Pantry: edit an item."},
+  "@pantryEditItem": {
+    "description": "Pantry: edit an item."
+  },
   "pantryOut": "خلص",
-  "@pantryOut": {"description": "Pantry: out-of-stock tag."},
+  "@pantryOut": {
+    "description": "Pantry: out-of-stock tag."
+  },
   "pantryKinds": "{count} أنواع",
-  "@pantryKinds": {"description": "Pantry: kinds in a family.", "placeholders": {"count": {"type": "int"}}},
+  "@pantryKinds": {
+    "description": "Pantry: kinds in a family.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "pantryShowKinds": "اعرض الأنواع",
-  "@pantryShowKinds": {"description": "Pantry: expand a family."},
+  "@pantryShowKinds": {
+    "description": "Pantry: expand a family."
+  },
   "pantryUsedOne": "استهلكت واحدة",
-  "@pantryUsedOne": {"description": "Pantry family: decrement."},
+  "@pantryUsedOne": {
+    "description": "Pantry family: decrement."
+  },
   "pantryIncreaseOne": "زوّد واحدة",
-  "@pantryIncreaseOne": {"description": "Pantry family: increment."},
+  "@pantryIncreaseOne": {
+    "description": "Pantry family: increment."
+  },
   "pantryQty": "الكمية: {qty}",
-  "@pantryQty": {"description": "Pantry shortage card: quantity.", "placeholders": {"qty": {"type": "String"}}},
+  "@pantryQty": {
+    "description": "Pantry shortage card: quantity.",
+    "placeholders": {
+      "qty": {
+        "type": "String"
+      }
+    }
+  },
   "pantryAdded": "أُضيفت",
-  "@pantryAdded": {"description": "Pantry shortage card: added to shopping."},
+  "@pantryAdded": {
+    "description": "Pantry shortage card: added to shopping."
+  },
   "pantryAddTitle": "إضافة منتج جديد",
-  "@pantryAddTitle": {"description": "Pantry add dialog title."},
+  "@pantryAddTitle": {
+    "description": "Pantry add dialog title."
+  },
   "pantryClose": "إغلاق",
-  "@pantryClose": {"description": "Pantry add dialog: close."},
+  "@pantryClose": {
+    "description": "Pantry add dialog: close."
+  },
   "pantryNameHint": "مثلاً: حليب",
-  "@pantryNameHint": {"description": "Pantry add dialog: name hint."},
+  "@pantryNameHint": {
+    "description": "Pantry add dialog: name hint."
+  },
   "pantryUnit": "الوحدة",
-  "@pantryUnit": {"description": "Pantry dialogs: unit field."},
+  "@pantryUnit": {
+    "description": "Pantry dialogs: unit field."
+  },
   "pantryCategory": "القسم",
-  "@pantryCategory": {"description": "Pantry add dialog: category field."},
+  "@pantryCategory": {
+    "description": "Pantry add dialog: category field."
+  },
   "pantryExpiryField": "تاريخ الصلاحية (اختياري)",
-  "@pantryExpiryField": {"description": "Pantry add dialog: expiry field."},
+  "@pantryExpiryField": {
+    "description": "Pantry add dialog: expiry field."
+  },
   "pantryOccasional": "بشتريها على فترات",
-  "@pantryOccasional": {"description": "Pantry edit: occasional purchase switch."},
+  "@pantryOccasional": {
+    "description": "Pantry edit: occasional purchase switch."
+  },
   "pantryOccasionalBody": "مش هتتحسب ناقصة لما تخلص، ومش هفكّرك بيها",
-  "@pantryOccasionalBody": {"description": "Pantry edit: occasional switch explained."},
+  "@pantryOccasionalBody": {
+    "description": "Pantry edit: occasional switch explained."
+  },
   "pantryExpiryPick": "اختار التاريخ",
-  "@pantryExpiryPick": {"description": "Pantry add/edit: the expiry field when no date is set; tapping opens the calendar."},
+  "@pantryExpiryPick": {
+    "description": "Pantry add/edit: the expiry field when no date is set; tapping opens the calendar."
+  },
   "pantryExpiryEstimate": "تقديري: {date}",
-  "@pantryExpiryEstimate": {"description": "Pantry add: the guessed expiry from the item kind, shown as an estimate, never as a fact.", "placeholders": {"date": {"type": "String"}}},
+  "@pantryExpiryEstimate": {
+    "description": "Pantry add: the guessed expiry from the item kind, shown as an estimate, never as a fact.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
   "pantryExpiryEstimateNote": "لو سبته كده هحفظ التاريخ التقديري، غيّره لو عارف التاريخ الحقيقي",
-  "@pantryExpiryEstimateNote": {"description": "Pantry add: under the estimate — it is saved unless changed."},
+  "@pantryExpiryEstimateNote": {
+    "description": "Pantry add: under the estimate — it is saved unless changed."
+  },
   "pantryExpiryIn3Days": "٣ أيام",
-  "@pantryExpiryIn3Days": {"description": "Pantry add/edit: quick chip, expires in three days."},
+  "@pantryExpiryIn3Days": {
+    "description": "Pantry add/edit: quick chip, expires in three days."
+  },
   "pantryExpiryInWeek": "أسبوع",
-  "@pantryExpiryInWeek": {"description": "Pantry add/edit: quick chip, expires in a week."},
+  "@pantryExpiryInWeek": {
+    "description": "Pantry add/edit: quick chip, expires in a week."
+  },
   "pantryExpiryInMonth": "شهر",
-  "@pantryExpiryInMonth": {"description": "Pantry add/edit: quick chip, expires in a month."},
+  "@pantryExpiryInMonth": {
+    "description": "Pantry add/edit: quick chip, expires in a month."
+  },
   "pantryExpiryClear": "امسح التاريخ",
-  "@pantryExpiryClear": {"description": "Pantry add/edit: tooltip of the × that removes the expiry date."},
+  "@pantryExpiryClear": {
+    "description": "Pantry add/edit: tooltip of the × that removes the expiry date."
+  },
   "notifNoneNew": "مفيش تنبيهات جديدة",
-  "@notifNoneNew": {"description": "Notification center: spoken when there is nothing new."},
+  "@notifNoneNew": {
+    "description": "Notification center: spoken when there is nothing new."
+  },
   "pantryFinish": "خلص",
-  "@pantryFinish": {"description": "Pantry card: one tap sets the item to zero (a use, recorded as such)."},
+  "@pantryFinish": {
+    "description": "Pantry card: one tap sets the item to zero (a use, recorded as such)."
+  },
   "pantryFinishedSnack": "{name} خلص",
-  "@pantryFinishedSnack": {"description": "Pantry: after «خلص».", "placeholders": {"name": {"type": "String"}}},
+  "@pantryFinishedSnack": {
+    "description": "Pantry: after «خلص».",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "pantryUndo": "تراجع",
-  "@pantryUndo": {"description": "Pantry: undo the last «خلص»."},
+  "@pantryUndo": {
+    "description": "Pantry: undo the last «خلص»."
+  },
   "pantryDeleteItem": "حذف الصنف",
-  "@pantryDeleteItem": {"description": "Pantry edit dialog: delete the row."},
+  "@pantryDeleteItem": {
+    "description": "Pantry edit dialog: delete the row."
+  },
   "pantryStarterTitle": "ضيف أساسيات بيتك بلمسة",
-  "@pantryStarterTitle": {"description": "Empty pantry: starter card title."},
+  "@pantryStarterTitle": {
+    "description": "Empty pantry: starter card title."
+  },
   "pantryStarterBody": "علّم على اللي عندك دلوقتي، وزاد يتابعه ويقولك قبل ما يخلص.",
-  "@pantryStarterBody": {"description": "Empty pantry: starter card body."},
+  "@pantryStarterBody": {
+    "description": "Empty pantry: starter card body."
+  },
   "pantryStarterAdd": "ضيف {count}",
-  "@pantryStarterAdd": {"description": "Empty pantry: add the ticked basics.", "placeholders": {"count": {"type": "int"}}},
+  "@pantryStarterAdd": {
+    "description": "Empty pantry: add the ticked basics.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "pantryStarterReceipt": "أو صوّر فاتورة الشرا",
-  "@pantryStarterReceipt": {"description": "Empty pantry: the one camera way in."},
+  "@pantryStarterReceipt": {
+    "description": "Empty pantry: the one camera way in."
+  },
   "introTitle": "عرّفني بيك",
-  "@introTitle": {"description": "Introduce-yourself screen: title."},
+  "@introTitle": {
+    "description": "Introduce-yourself screen: title."
+  },
   "introLead": "خمس أسئلة وسؤال اختياري، عشان أكلمك صح وآخد بالي من اللي في رعايتك.",
-  "@introLead": {"description": "Introduce-yourself: lead line."},
+  "@introLead": {
+    "description": "Introduce-yourself: lead line."
+  },
   "introNameQuestion": "أناديك بإيه؟",
-  "@introNameQuestion": {"description": "Introduce-yourself: name question."},
+  "@introNameQuestion": {
+    "description": "Introduce-yourself: name question."
+  },
   "introNameHint": "اسمك أو اسم الدلع",
-  "@introNameHint": {"description": "Introduce-yourself: name hint."},
+  "@introNameHint": {
+    "description": "Introduce-yourself: name hint."
+  },
   "introGenderQuestion": "أكلمك بصيغة إيه؟",
-  "@introGenderQuestion": {"description": "Introduce-yourself: gender question."},
+  "@introGenderQuestion": {
+    "description": "Introduce-yourself: gender question."
+  },
   "introGenderMale": "راجل",
-  "@introGenderMale": {"description": "Gender chip."},
+  "@introGenderMale": {
+    "description": "Gender chip."
+  },
   "introGenderFemale": "ست",
-  "@introGenderFemale": {"description": "Gender chip."},
+  "@introGenderFemale": {
+    "description": "Gender chip."
+  },
   "introRoleQuestion": "إنت مين في البيت؟",
-  "@introRoleQuestion": {"description": "Introduce-yourself: role question."},
+  "@introRoleQuestion": {
+    "description": "Introduce-yourself: role question."
+  },
   "introRoleFather": "أب",
-  "@introRoleFather": {"description": "Role chip (stored as father)."},
+  "@introRoleFather": {
+    "description": "Role chip (stored as father)."
+  },
   "introRoleMother": "أم",
-  "@introRoleMother": {"description": "Role chip (stored as mother)."},
+  "@introRoleMother": {
+    "description": "Role chip (stored as mother)."
+  },
   "introRoleHusband": "زوج",
-  "@introRoleHusband": {"description": "Role chip."},
+  "@introRoleHusband": {
+    "description": "Role chip."
+  },
   "introRoleWife": "زوجة",
-  "@introRoleWife": {"description": "Role chip."},
+  "@introRoleWife": {
+    "description": "Role chip."
+  },
   "introRoleSon": "ابن",
-  "@introRoleSon": {"description": "Role chip."},
+  "@introRoleSon": {
+    "description": "Role chip."
+  },
   "introRoleDaughter": "بنت",
-  "@introRoleDaughter": {"description": "Role chip."},
+  "@introRoleDaughter": {
+    "description": "Role chip."
+  },
   "introRoleSingle": "عايش لوحدي",
-  "@introRoleSingle": {"description": "Role chip (stored as single)."},
+  "@introRoleSingle": {
+    "description": "Role chip (stored as single)."
+  },
   "introRoleStudent": "طالب",
-  "@introRoleStudent": {"description": "Role chip."},
+  "@introRoleStudent": {
+    "description": "Role chip."
+  },
   "introRoleGrandparent": "جد/جدة",
-  "@introRoleGrandparent": {"description": "Role chip."},
+  "@introRoleGrandparent": {
+    "description": "Role chip."
+  },
   "introRoleOther": "غير كده",
-  "@introRoleOther": {"description": "Role chip (stored as other)."},
+  "@introRoleOther": {
+    "description": "Role chip (stored as other)."
+  },
   "introCaresQuestion": "مين في رعايتك؟",
-  "@introCaresQuestion": {"description": "Introduce-yourself: cares-for question."},
+  "@introCaresQuestion": {
+    "description": "Introduce-yourself: cares-for question."
+  },
   "introCaresHint": "اختار كل اللي ينطبق.",
-  "@introCaresHint": {"description": "Cares-for hint."},
+  "@introCaresHint": {
+    "description": "Cares-for hint."
+  },
   "introCaresChildren": "أولادي",
-  "@introCaresChildren": {"description": "Cares-for chip (stored as children)."},
+  "@introCaresChildren": {
+    "description": "Cares-for chip (stored as children)."
+  },
   "introCaresParents": "أبويا أو أمي",
-  "@introCaresParents": {"description": "Cares-for chip."},
+  "@introCaresParents": {
+    "description": "Cares-for chip."
+  },
   "introCaresSpouse": "زوجي أو زوجتي",
-  "@introCaresSpouse": {"description": "Cares-for chip."},
+  "@introCaresSpouse": {
+    "description": "Cares-for chip."
+  },
   "introCaresSiblings": "إخواتي",
-  "@introCaresSiblings": {"description": "Cares-for chip."},
+  "@introCaresSiblings": {
+    "description": "Cares-for chip."
+  },
   "introCaresGrandparents": "جدي أو جدتي",
-  "@introCaresGrandparents": {"description": "Cares-for chip."},
+  "@introCaresGrandparents": {
+    "description": "Cares-for chip."
+  },
   "introCaresNobody": "محدش — مسؤول عن نفسي بس",
-  "@introCaresNobody": {"description": "Cares-for: the empty answer."},
+  "@introCaresNobody": {
+    "description": "Cares-for: the empty answer."
+  },
   "introHouseholdQuestion": "كام واحد عايش في البيت؟",
-  "@introHouseholdQuestion": {"description": "Introduce-yourself: household size (zad_customer_profile.household_size)."},
+  "@introHouseholdQuestion": {
+    "description": "Introduce-yourself: household size (zad_customer_profile.household_size)."
+  },
   "introHouseholdHint": "معاك إنت. عشان أحسب استهلاك البيت صح.",
-  "@introHouseholdHint": {"description": "Household size hint."},
+  "@introHouseholdHint": {
+    "description": "Household size hint."
+  },
   "introHouseholdMany": "7 أو أكتر",
-  "@introHouseholdMany": {"description": "Household size chip: seven and up (stored as 7)."},
+  "@introHouseholdMany": {
+    "description": "Household size chip: seven and up (stored as 7)."
+  },
   "introPayDayQuestion": "بتقبض يوم كام في الشهر؟",
-  "@introPayDayQuestion": {"description": "Introduce-yourself: pay day."},
+  "@introPayDayQuestion": {
+    "description": "Introduce-yourself: pay day."
+  },
   "introPayDayHint": "اختياري — عشان أحسب شهرك من يوم القبض.",
-  "@introPayDayHint": {"description": "Pay day hint."},
+  "@introPayDayHint": {
+    "description": "Pay day hint."
+  },
   "introPayDayNone": "مش ثابت / مش عايز أقول",
-  "@introPayDayNone": {"description": "Pay day: no answer."},
+  "@introPayDayNone": {
+    "description": "Pay day: no answer."
+  },
   "introPayDay": "يوم {day}",
-  "@introPayDay": {"description": "Pay day option.", "placeholders": {"day": {"type": "int"}}},
+  "@introPayDay": {
+    "description": "Pay day option.",
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
   "introSave": "يلا بينا",
-  "@introSave": {"description": "Introduce-yourself: save button."},
+  "@introSave": {
+    "description": "Introduce-yourself: save button."
+  },
   "introSaveFailed": "مقدرتش أحفظ — اتأكد من النت وجرّب تاني.",
-  "@introSaveFailed": {"description": "Introduce-yourself: save failed."},
+  "@introSaveFailed": {
+    "description": "Introduce-yourself: save failed."
+  },
   "firstStepsTitle": "أول خطوة",
-  "@firstStepsTitle": {"description": "First-steps screen title."},
+  "@firstStepsTitle": {
+    "description": "First-steps screen title."
+  },
   "firstStepsLead": "تلات خطوات في دقيقتين، وزاد يبدأ يشتغل معاك من النهارده.",
-  "@firstStepsLead": {"description": "First steps: lead."},
+  "@firstStepsLead": {
+    "description": "First steps: lead."
+  },
   "firstStepsSpendTitle": "سجّل أول مصروف",
-  "@firstStepsSpendTitle": {"description": "First steps: step 1."},
+  "@firstStepsSpendTitle": {
+    "description": "First steps: step 1."
+  },
   "firstStepsSpendBody": "أي حاجة صرفتها النهارده — قهوة، مواصلات، عيش. من هنا زاد بيبدأ يفهم شهرك.",
-  "@firstStepsSpendBody": {"description": "First steps: step 1 body."},
+  "@firstStepsSpendBody": {
+    "description": "First steps: step 1 body."
+  },
   "firstStepsSpendDone": "اتسجل ✓",
-  "@firstStepsSpendDone": {"description": "First steps: step 1 done."},
+  "@firstStepsSpendDone": {
+    "description": "First steps: step 1 done."
+  },
   "firstStepsSpendAction": "سجّل مصروف",
-  "@firstStepsSpendAction": {"description": "First steps: step 1 button."},
+  "@firstStepsSpendAction": {
+    "description": "First steps: step 1 button."
+  },
   "firstStepsAlertsTitle": "فعّل الإشعارات",
-  "@firstStepsAlertsTitle": {"description": "First steps: step 2."},
+  "@firstStepsAlertsTitle": {
+    "description": "First steps: step 2."
+  },
   "firstStepsAlertsBody": "عشان أقولك لما الميزانية تقرب تخلص، وتوصلك مواعيد الدوا والفواتير في وقتها.",
-  "@firstStepsAlertsBody": {"description": "First steps: step 2 body."},
+  "@firstStepsAlertsBody": {
+    "description": "First steps: step 2 body."
+  },
   "firstStepsAlertsDone": "متفعّلة ✓",
-  "@firstStepsAlertsDone": {"description": "First steps: step 2 done."},
+  "@firstStepsAlertsDone": {
+    "description": "First steps: step 2 done."
+  },
   "firstStepsAlertsAction": "فعّل",
-  "@firstStepsAlertsAction": {"description": "First steps: step 2 button."},
+  "@firstStepsAlertsAction": {
+    "description": "First steps: step 2 button."
+  },
   "firstStepsTelegramTitle": "اربط بوت تليجرام",
-  "@firstStepsTelegramTitle": {"description": "First steps: step 3."},
+  "@firstStepsTelegramTitle": {
+    "description": "First steps: step 3."
+  },
   "firstStepsTelegramBody": "من غيره التذكيرات وسؤال «اقفل يومك» مش هتوصلك وانت برّه التطبيق.",
-  "@firstStepsTelegramBody": {"description": "First steps: step 3 body."},
+  "@firstStepsTelegramBody": {
+    "description": "First steps: step 3 body."
+  },
   "firstStepsGo": "يلا على زاد",
-  "@firstStepsGo": {"description": "First steps: all done."},
+  "@firstStepsGo": {
+    "description": "First steps: all done."
+  },
   "firstStepsLater": "كمّل بعدين — افتح زاد",
-  "@firstStepsLater": {"description": "First steps: skip."},
+  "@firstStepsLater": {
+    "description": "First steps: skip."
+  },
   "petLinesHungry": "بطني بتصوصو… تأكّلني؟ 🍎\nجعان أوي 🥺 حاجة صغيرة بس\nشامم ريحة أكل؟ لأ ده أنا اللي جعان 😅",
-  "@petLinesHungry": {"description": "Companion lines, one per row: hungry."},
+  "@petLinesHungry": {
+    "description": "Companion lines, one per row: hungry."
+  },
   "petLinesThirsty": "عطشان… شوية مية؟ 💧\nريقي ناشف 🥵 اسقيني\nكوباية مية واحدة وأبقى زي الفل 💧",
-  "@petLinesThirsty": {"description": "Companion lines: thirsty."},
+  "@petLinesThirsty": {
+    "description": "Companion lines: thirsty."
+  },
   "petLinesSleepy": "نعسان… 😴 تصبح على خير\nهاااه 🥱 نكمّل بكرة؟\nعيني بتقفل لوحدها… 💤",
-  "@petLinesSleepy": {"description": "Companion lines: sleepy."},
+  "@petLinesSleepy": {
+    "description": "Companion lines: sleepy."
+  },
   "petLinesSad": "وحشتني… ونسيت أكلي وميتي 🥺\n{name} زعلان شوية… تعالى نقعد سوا 💔",
-  "@petLinesSad": {"description": "Companion lines: sad.", "placeholders": {"name": {"type": "String"}}},
+  "@petLinesSad": {
+    "description": "Companion lines: sad.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "petLinesHappy": "أنا مبسوط معاك 💚\nشكراً إنك فاكرني 🥰\nإنت أحلى صاحب 🤗",
-  "@petLinesHappy": {"description": "Companion lines: happy."},
+  "@petLinesHappy": {
+    "description": "Companion lines: happy."
+  },
   "petLinesIdleLogged": "يومك عامل إيه؟ ✨\nأنا هنا لو احتجتني 💚\nسجّلت النهارده — برافو عليك 👏",
-  "@petLinesIdleLogged": {"description": "Companion lines: idle, logged today."},
+  "@petLinesIdleLogged": {
+    "description": "Companion lines: idle, logged today."
+  },
   "petLinesIdleNotLogged": "سجّلت مصروفاتك النهارده؟ 📝\nمصروف واحد بس وأفرح بيك 🌱",
-  "@petLinesIdleNotLogged": {"description": "Companion lines: idle, nothing logged."},
+  "@petLinesIdleNotLogged": {
+    "description": "Companion lines: idle, nothing logged."
+  },
   "petLinesFed": "يمّ يمّ! 😋\nتسلم إيدك 🍎\nأحلى أكلة 🤤",
-  "@petLinesFed": {"description": "Companion lines: after a meal."},
+  "@petLinesFed": {
+    "description": "Companion lines: after a meal."
+  },
   "petLinesFull": "شبعان خلاص 🤭\nمش قادر آكل تاني 😅",
-  "@petLinesFull": {"description": "Companion lines: fed while full."},
+  "@petLinesFull": {
+    "description": "Companion lines: fed while full."
+  },
   "petLinesWatered": "آآه انتعشت! 💧\nكده أحسن بكتير 😌",
-  "@petLinesWatered": {"description": "Companion lines: after a drink."},
+  "@petLinesWatered": {
+    "description": "Companion lines: after a drink."
+  },
   "petLinesNotThirsty": "مش عايز مية دلوقتي 🙈\nشربت كفاية 😄",
-  "@petLinesNotThirsty": {"description": "Companion lines: watered while not thirsty."},
+  "@petLinesNotThirsty": {
+    "description": "Companion lines: watered while not thirsty."
+  },
   "petLinesPetted": "هيهي بتزغزغني 🤭\nكمان! كمان! 🥰\nبحبك 💚",
-  "@petLinesPetted": {"description": "Companion lines: after a pat."},
+  "@petLinesPetted": {
+    "description": "Companion lines: after a pat."
+  },
   "cookDone": "طبختها",
-  "@cookDone": {"description": "Recipe: after cooking, take what it used off the pantry."},
+  "@cookDone": {
+    "description": "Recipe: after cooking, take what it used off the pantry."
+  },
   "cookSheetTitle": "اخصم اللي استخدمته من البيت",
-  "@cookSheetTitle": {"description": "Cooked sheet: title."},
+  "@cookSheetTitle": {
+    "description": "Cooked sheet: title."
+  },
   "cookSheetHint": "دي الكميات اللي أتوقعها — عدّلها لو استخدمت أكتر أو أقل.",
-  "@cookSheetHint": {"description": "Cooked sheet: hint under the title."},
+  "@cookSheetHint": {
+    "description": "Cooked sheet: hint under the title."
+  },
   "cookConfirm": "اخصم {count}",
-  "@cookConfirm": {"description": "Cooked sheet: confirm, with how many rows are ticked.", "placeholders": {"count": {"type": "int"}}},
+  "@cookConfirm": {
+    "description": "Cooked sheet: confirm, with how many rows are ticked.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "cookNothing": "مالقيتش مكونات الوصفة دي في بيتك.",
-  "@cookNothing": {"description": "Cooked sheet: no pantry row matched."},
+  "@cookNothing": {
+    "description": "Cooked sheet: no pantry row matched."
+  },
   "cookDoneSnack": "خصمت {count} من البيت ✅",
-  "@cookDoneSnack": {"description": "After the cooked sheet: snackbar.", "placeholders": {"count": {"type": "int"}}},
+  "@cookDoneSnack": {
+    "description": "After the cooked sheet: snackbar.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "cookLess": "أقل",
-  "@cookLess": {"description": "Cooked sheet: stepper −."},
+  "@cookLess": {
+    "description": "Cooked sheet: stepper −."
+  },
   "cookMore": "أكتر",
-  "@cookMore": {"description": "Cooked sheet: stepper +."},
+  "@cookMore": {
+    "description": "Cooked sheet: stepper +."
+  },
   "profileRegionTitle": "منطقتك",
-  "@profileRegionTitle": {"description": "Profile form: title of the Saudi region chips (ZAD_PLAN 10.16)."},
+  "@profileRegionTitle": {
+    "description": "Profile form: title of the Saudi region chips (ZAD_PLAN 10.16)."
+  },
   "profileRegionHijazi": "حجازي",
-  "@profileRegionHijazi": {"description": "Profile form: region chip, Jeddah/Makkah/Madinah."},
+  "@profileRegionHijazi": {
+    "description": "Profile form: region chip, Jeddah/Makkah/Madinah."
+  },
   "profileRegionNajdi": "نجدي",
-  "@profileRegionNajdi": {"description": "Profile form: region chip, Riyadh/Qassim."},
+  "@profileRegionNajdi": {
+    "description": "Profile form: region chip, Riyadh/Qassim."
+  },
   "profileRegionEast": "شرقي",
-  "@profileRegionEast": {"description": "Profile form: region chip, Eastern Province."},
+  "@profileRegionEast": {
+    "description": "Profile form: region chip, Eastern Province."
+  },
   "profileRegionSouth": "جنوبي",
-  "@profileRegionSouth": {"description": "Profile form: region chip, the south (Abha, Jazan, Najran)."},
+  "@profileRegionSouth": {
+    "description": "Profile form: region chip, the south (Abha, Jazan, Najran)."
+  },
   "profileRegionGeneral": "عام",
-  "@profileRegionGeneral": {"description": "Profile form: region chip, plain Saudi with no region."},
+  "@profileRegionGeneral": {
+    "description": "Profile form: region chip, plain Saudi with no region."
+  },
   "pantryCatAll": "الكل",
-  "@pantryCatAll": {"description": "Pantry category chip: every category."},
+  "@pantryCatAll": {
+    "description": "Pantry category chip: every category."
+  },
   "pantryCatGrocery": "البقالة",
-  "@pantryCatGrocery": {"description": "Pantry category: dry groceries and cans."},
+  "@pantryCatGrocery": {
+    "description": "Pantry category: dry groceries and cans."
+  },
   "pantryCatVegetables": "الخضار",
-  "@pantryCatVegetables": {"description": "Pantry category: vegetables."},
+  "@pantryCatVegetables": {
+    "description": "Pantry category: vegetables."
+  },
   "pantryCatFruit": "الفواكه",
-  "@pantryCatFruit": {"description": "Pantry category: fruit."},
+  "@pantryCatFruit": {
+    "description": "Pantry category: fruit."
+  },
   "pantryCatMeat": "اللحوم",
-  "@pantryCatMeat": {"description": "Pantry category: meat, chicken and fish."},
+  "@pantryCatMeat": {
+    "description": "Pantry category: meat, chicken and fish."
+  },
   "pantryCatDairy": "الألبان",
-  "@pantryCatDairy": {"description": "Pantry category: milk, cheese, yoghurt."},
+  "@pantryCatDairy": {
+    "description": "Pantry category: milk, cheese, yoghurt."
+  },
   "pantryCatDrinks": "المشروبات",
-  "@pantryCatDrinks": {"description": "Pantry category: drinks and water."},
+  "@pantryCatDrinks": {
+    "description": "Pantry category: drinks and water."
+  },
   "pantryCatCare": "العناية",
-  "@pantryCatCare": {"description": "Pantry category: personal care and cleaning."},
+  "@pantryCatCare": {
+    "description": "Pantry category: personal care and cleaning."
+  },
   "pantryCatOther": "أخرى",
-  "@pantryCatOther": {"description": "Pantry category: anything else."},
+  "@pantryCatOther": {
+    "description": "Pantry category: anything else."
+  },
   "pantryUnitPiece": "حبة",
-  "@pantryUnitPiece": {"description": "Pantry unit menu: one piece."},
+  "@pantryUnitPiece": {
+    "description": "Pantry unit menu: one piece."
+  },
   "pantryUnitKilo": "كجم",
-  "@pantryUnitKilo": {"description": "Pantry unit menu: kilogram."},
+  "@pantryUnitKilo": {
+    "description": "Pantry unit menu: kilogram."
+  },
   "pantryUnitGram": "جرام",
-  "@pantryUnitGram": {"description": "Pantry unit menu: gram."},
+  "@pantryUnitGram": {
+    "description": "Pantry unit menu: gram."
+  },
   "pantryUnitLitre": "لتر",
-  "@pantryUnitLitre": {"description": "Pantry unit menu: litre."},
+  "@pantryUnitLitre": {
+    "description": "Pantry unit menu: litre."
+  },
   "pantryUnitCan": "علبة",
-  "@pantryUnitCan": {"description": "Pantry unit menu: a can or small box."},
+  "@pantryUnitCan": {
+    "description": "Pantry unit menu: a can or small box."
+  },
   "pantryUnitBag": "كيس",
-  "@pantryUnitBag": {"description": "Pantry unit menu: a bag."},
+  "@pantryUnitBag": {
+    "description": "Pantry unit menu: a bag."
+  },
   "pantryUnitBottle": "قرشة",
-  "@pantryUnitBottle": {"description": "Pantry unit menu: a bottle."},
+  "@pantryUnitBottle": {
+    "description": "Pantry unit menu: a bottle."
+  },
   "pantryUnitCrate": "صندوق",
-  "@pantryUnitCrate": {"description": "Pantry unit menu: a crate or carton."},
+  "@pantryUnitCrate": {
+    "description": "Pantry unit menu: a crate or carton."
+  },
   "shopShareHeader": "قائمة تسوق زاد:",
-  "@shopShareHeader": {"description": "Shared shopping list (WhatsApp): first line."},
+  "@shopShareHeader": {
+    "description": "Shared shopping list (WhatsApp): first line."
+  },
   "shopShareTotal": "الإجمالي: {total} {currency}",
-  "@shopShareTotal": {"description": "Shared shopping list: the basket total.", "placeholders": {"total": {"type": "String"}, "currency": {"type": "String"}}},
+  "@shopShareTotal": {
+    "description": "Shared shopping list: the basket total.",
+    "placeholders": {
+      "total": {
+        "type": "String"
+      },
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
   "shopShareEstimate": "(تقدير لـ {priced} من {all} صنف)",
-  "@shopShareEstimate": {"description": "Shared shopping list: the total covers only the priced lines.", "placeholders": {"priced": {"type": "int"}, "all": {"type": "int"}}},
+  "@shopShareEstimate": {
+    "description": "Shared shopping list: the total covers only the priced lines.",
+    "placeholders": {
+      "priced": {
+        "type": "int"
+      },
+      "all": {
+        "type": "int"
+      }
+    }
+  },
   "agentToolSetAppSetting": "تغيير إعداد",
-  "@agentToolSetAppSetting": {"description": "Brain action log: what a tool the chat ran did (ZAD_PLAN 10.2a)."},
+  "@agentToolSetAppSetting": {
+    "description": "Brain action log: what a tool the chat ran did (ZAD_PLAN 10.2a)."
+  },
   "agentToolDeleteMemory": "نسيان ملاحظة",
-  "@agentToolDeleteMemory": {"description": "Brain action log: what a tool the chat ran did (ZAD_PLAN 10.2a)."},
+  "@agentToolDeleteMemory": {
+    "description": "Brain action log: what a tool the chat ran did (ZAD_PLAN 10.2a)."
+  },
   "agentToolMarkSubscriptionPaid": "دفع اشتراك",
-  "@agentToolMarkSubscriptionPaid": {"description": "Brain action log: what a tool the chat ran did (ZAD_PLAN 10.2a)."},
+  "@agentToolMarkSubscriptionPaid": {
+    "description": "Brain action log: what a tool the chat ran did (ZAD_PLAN 10.2a)."
+  },
   "agentToolAddShortages": "النواقص للقايمة",
-  "@agentToolAddShortages": {"description": "Brain action log: what a tool the chat ran did (ZAD_PLAN 10.2a)."},
+  "@agentToolAddShortages": {
+    "description": "Brain action log: what a tool the chat ran did (ZAD_PLAN 10.2a)."
+  },
   "agentToolSnoozeDose": "تأجيل جرعة",
-  "@agentToolSnoozeDose": {"description": "Brain action log: what a tool the chat ran did (ZAD_PLAN 10.2a)."},
+  "@agentToolSnoozeDose": {
+    "description": "Brain action log: what a tool the chat ran did (ZAD_PLAN 10.2a)."
+  },
   "agentToolReportPrice": "بلاغ سعر",
-  "@agentToolReportPrice": {"description": "Brain action log: what a tool the chat ran did (ZAD_PLAN 10.2a)."},
+  "@agentToolReportPrice": {
+    "description": "Brain action log: what a tool the chat ran did (ZAD_PLAN 10.2a)."
+  },
   "agentToolClearPlaceVisits": "مسح الأماكن",
-  "@agentToolClearPlaceVisits": {"description": "Brain action log: what a tool the chat ran did (ZAD_PLAN 10.2a)."},
+  "@agentToolClearPlaceVisits": {
+    "description": "Brain action log: what a tool the chat ran did (ZAD_PLAN 10.2a)."
+  },
   "agentToolRateRecipe": "رأيك في وصفة",
-  "@agentToolRateRecipe": {"description": "Brain action log: what a tool the chat ran did (ZAD_PLAN 10.2a)."},
+  "@agentToolRateRecipe": {
+    "description": "Brain action log: what a tool the chat ran did (ZAD_PLAN 10.2a)."
+  },
   "agentToolDismissInsight": "قفل تنبيه",
-  "@agentToolDismissInsight": {"description": "Brain action log: what a tool the chat ran did (ZAD_PLAN 10.2a)."},
+  "@agentToolDismissInsight": {
+    "description": "Brain action log: what a tool the chat ran did (ZAD_PLAN 10.2a)."
+  },
   "rewardsCardTitle": "مكافآت زاد",
   "rewardsCardBody": "شوف إعلان وخد رسايل زيادة، أو اشترك وارتاح من الإعلانات.",
   "rewardsSubscribe": "اشترك في زاد بريميوم",
@@ -2739,5 +3548,130 @@
   "profileExportTitle": "تصدير بياناتي",
   "profileExportSubtitle": "نسخة من كل اللي زاد عارفه عنك",
   "profileExportFailed": "معرفناش نجهز الملف، جرّب تاني",
-  "profileExportSubject": "بياناتي من زاد"
+  "profileExportSubject": "بياناتي من زاد",
+  "introSayPantry": "التلاجة دي بتاعتي!",
+  "@introSayPantry": {
+    "description": "Zado's bubble on the intro's pantry scene."
+  },
+  "introSayFamily": "البيت كله في إيد واحدة",
+  "@introSayFamily": {
+    "description": "Zado's bubble on the intro's family scene."
+  },
+  "introSayAssistant": "بتعلّم منك كل يوم",
+  "@introSayAssistant": {
+    "description": "Zado's bubble on the intro's assistant scene."
+  },
+  "introSayBudget": "ونوفّر سوا",
+  "@introSayBudget": {
+    "description": "Zado's bubble on the intro's budget scene."
+  },
+  "authZadoWatching": "زادو بيبص على اللي بتكتبه… إلا كلمة السر.",
+  "@authZadoWatching": {
+    "description": "Hint under the sign-in form."
+  },
+  "authZadoNotLooking": "مش باصص، والله",
+  "@authZadoNotLooking": {
+    "description": "Hint under the sign-in form while the password field has focus; Zado covers his eyes."
+  },
+  "authZadoHello": "أهلاً يا {name}!",
+  "@authZadoHello": {
+    "description": "Zado's bubble on the sign-up screen while the customer types a name; {name} is the first word of it.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "consentTitle": "قبل ما نبدأ، ده اتفاقنا",
+  "@consentTitle": {
+    "description": "Title of the consent bottom sheet opened from sign-up."
+  },
+  "consentVersionLine": "الشروط {terms} وسياسة الخصوصية ٤٫٠ · {updated}",
+  "@consentVersionLine": {
+    "description": "Version line under the consent sheet's title; {terms} is the terms version, {updated} the terms' last-updated date.",
+    "placeholders": {
+      "terms": {
+        "type": "String"
+      },
+      "updated": {
+        "type": "String"
+      }
+    }
+  },
+  "consentPoint1Lead": "بنحفظ اللي بتدخّله بس.",
+  "@consentPoint1Lead": {
+    "description": "Consent sheet, point 1: the bold lead."
+  },
+  "consentPoint1Body": "حسابك وفلوسك ومخزونك وأدويتك ومواعيدك ورسايل العيلة، عشان زاد يساعدك بيهم.",
+  "@consentPoint1Body": {
+    "description": "Consent sheet, point 1: the text after the lead."
+  },
+  "consentPoint2Lead": "كل إذن بموافقتك.",
+  "@consentPoint2Lead": {
+    "description": "Consent sheet, point 2: the bold lead."
+  },
+  "consentPoint2Body": "إشعارات البنك والموقع والكاميرا والمايك، كل واحد بيتطلب لما تستخدم الميزة، وتقدر تقفله في أي وقت.",
+  "@consentPoint2Body": {
+    "description": "Consent sheet, point 2: the text after the lead."
+  },
+  "consentPoint3Lead": "مابنبيعش بياناتك لحد.",
+  "@consentPoint3Lead": {
+    "description": "Consent sheet, point 3: the bold lead."
+  },
+  "consentPoint3Body": "ومابنقراش كلمات سر البنك ولا أرقام الكروت ولا أكواد OTP.",
+  "@consentPoint3Body": {
+    "description": "Consent sheet, point 3: the text after the lead."
+  },
+  "consentPoint4Lead": "الذكاء الاصطناعي بيساعد، وممكن يغلط.",
+  "@consentPoint4Lead": {
+    "description": "Consent sheet, point 4: the bold lead."
+  },
+  "consentPoint4Body": "راجع الأرقام قبل أي قرار؛ زاد مش بنك ولا مستشار مالي.",
+  "@consentPoint4Body": {
+    "description": "Consent sheet, point 4: the text after the lead."
+  },
+  "consentPoint5Lead": "الخطة المجانية فيها إعلانات",
+  "@consentPoint5Lead": {
+    "description": "Consent sheet, point 5: the bold lead."
+  },
+  "consentPoint5Body": " من Google. حسابات الأطفال مفيهاش إعلانات خالص.",
+  "@consentPoint5Body": {
+    "description": "Consent sheet, point 5: the text after the lead."
+  },
+  "consentPoint6Lead": "بياناتك ملكك.",
+  "@consentPoint6Lead": {
+    "description": "Consent sheet, point 6: the bold lead."
+  },
+  "consentPoint6Body": "تصدّرها في أي وقت، أو تمسح حسابك، والمسح بيتم بعد ١٤ يوم تقدر ترجع فيهم.",
+  "@consentPoint6Body": {
+    "description": "Consent sheet, point 6: the text after the lead."
+  },
+  "consentPoint7Lead": "زاد للكبار من ١٨ سنة.",
+  "@consentPoint7Lead": {
+    "description": "Consent sheet, point 7: the bold lead."
+  },
+  "consentPoint7Body": "الأطفال بيدخلوا كأفراد في عيلة وليّ أمرهم.",
+  "@consentPoint7Body": {
+    "description": "Consent sheet, point 7: the text after the lead."
+  },
+  "consentLegalToggle": "النص القانوني الكامل (بالإنجليزي)",
+  "@consentLegalToggle": {
+    "description": "Collapsed section holding the English terms, on the consent sheet and the privacy policy."
+  },
+  "consentPrivacyLink": "سياسة الخصوصية",
+  "@consentPrivacyLink": {
+    "description": "Link button on the consent sheet that opens the published privacy policy (English web page)."
+  },
+  "consentTermsLink": "شروط الاستخدام",
+  "@consentTermsLink": {
+    "description": "Link button on the consent sheet that opens the published terms of use (English web page)."
+  },
+  "consentTermsVersion": "٢٫٢",
+  "@consentTermsVersion": {
+    "description": "The terms' version on the consent sheet, in the reader's digits; keep it equal to kTermsVersion in terms_content.dart."
+  },
+  "consentTermsUpdated": "نوفمبر ٢٠٢٦",
+  "@consentTermsUpdated": {
+    "description": "The month the terms were last updated, on the consent sheet; keep it equal to kTermsLastUpdated."
+  }
 }

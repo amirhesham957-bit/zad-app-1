@@ -1,30 +1,26 @@
 /// Kotlin's `LoginScreen` and `SignUpScreen` (`ui/screens/auth/`), on the
-/// auth canvas (`ZadAuthBackground`): brand mark, form, «دخول» / «إنشاء
-/// حساب», the forgot-password dialog and the terms dialog — Kotlin's text,
-/// sizes and colours. Submitting goes through the existing auth controller.
+/// auth canvas, redone as the approved design: a dark hero with Zado who
+/// watches the e-mail and covers his eyes at the password, and a white card
+/// over it. Submitting goes through the existing auth controller.
 ///
-/// Kotlin's language toggle beside «تسجيل الدخول» is not here: this client
-/// has no second language to switch to yet.
+/// The sign-up half is `sign_up_view.dart`; the terms are `consent_sheet.dart`.
 library;
 
 import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-import 'package:lottie/lottie.dart';
-import 'package:zad/core/design/components/zad_appear.dart';
 import 'package:zad/core/design/components/zad_auth_surfaces.dart';
-import 'package:zad/core/design/tokens/zad_extended_colors.dart';
+import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/l10n/l10n.dart';
-import 'package:zad/features/auth/presentation/terms_content.dart';
+import 'package:zad/features/auth/presentation/auth_form_parts.dart';
+import 'package:zad/features/auth/presentation/auth_hero.dart';
+import 'package:zad/features/auth/presentation/sign_up_view.dart';
 import 'package:zad/shared/auth/application/auth_controller.dart';
 import 'package:zad/shared/auth/data/auth_gateway.dart';
 import 'package:zad/shared/auth/domain/auth_failure.dart';
-import 'package:zad/shared/market/domain/market.dart';
-import 'package:zad/shared/market/presentation/market_picker_grid.dart';
 
 /// The way in: Kotlin's two screens, one at a time.
 class LoginScreen extends ConsumerWidget {
@@ -36,66 +32,12 @@ class LoginScreen extends ConsumerWidget {
     final mode = ref.watch(authControllerProvider.select((f) => f.mode));
     return Scaffold(
       body: ZadAuthBackground(
-        child: SafeArea(
-          child: mode == AuthMode.signUp
-              ? const _SignUpView()
-              : const _SignInView(),
-        ),
+        child: mode == AuthMode.signUp
+            ? const SignUpView()
+            : const _SignInView(),
       ),
     );
   }
-}
-
-InputDecoration _fieldDecoration(
-  BuildContext context, {
-  required Color fill,
-  String? hint,
-  Widget? suffix,
-}) {
-  final scheme = Theme.of(context).colorScheme;
-  OutlineInputBorder border(Color c) => OutlineInputBorder(
-    borderRadius: BorderRadius.circular(16),
-    borderSide: BorderSide(color: c),
-  );
-  return InputDecoration(
-    filled: true,
-    fillColor: fill,
-    hintText: hint,
-    hintStyle: TextStyle(color: scheme.outline),
-    suffixIcon: suffix,
-    enabledBorder: border(scheme.outline),
-    focusedBorder: border(scheme.primary),
-    border: border(scheme.outline),
-  );
-}
-
-class _BrandMark extends StatelessWidget {
-  const new({required this.wordmarkSize, required this.gap});
-
-  final double wordmarkSize;
-  final double gap;
-
-  @override
-  Widget build(BuildContext context) => Column(
-    children: <Widget>[
-      SvgPicture.asset(
-        'assets/brand/carrot_logo.svg',
-        width: 60,
-        height: 60,
-        semanticsLabel: context.l10n.appTitle,
-      ),
-      SizedBox(height: gap),
-      Text(
-        'ZAD',
-        style: TextStyle(
-          fontSize: wordmarkSize,
-          fontWeight: FontWeight.w800,
-          letterSpacing: -0.5,
-          color: context.zadExt.primaryLight,
-        ),
-      ),
-    ],
-  );
 }
 
 class _SignInView extends ConsumerStatefulWidget {
@@ -108,184 +50,133 @@ class _SignInView extends ConsumerStatefulWidget {
 class _SignInViewState extends ConsumerState<_SignInView> {
   final TextEditingController _email = TextEditingController();
   final TextEditingController _password = TextEditingController();
+  final FocusNode _emailFocus = FocusNode();
+  final FocusNode _passwordFocus = FocusNode();
   bool _visible = false;
+  int _hop = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _emailFocus.addListener(_refresh);
+    _passwordFocus.addListener(_refresh);
+  }
 
   @override
   void dispose() {
     _email.dispose();
     _password.dispose();
+    _emailFocus.dispose();
+    _passwordFocus.dispose();
     super.dispose();
   }
+
+  void _refresh() => setState(() {});
+
+  bool get _canSubmit =>
+      _email.text.trim().isNotEmpty && _password.text.trim().isNotEmpty;
 
   Future<void> _forgot() =>
       showDialog<void>(context: context, builder: (_) => const _ResetDialog());
 
+  void _submit() {
+    if (!_canSubmit || ref.read(authControllerProvider).submitting) return;
+    setState(() => _hop++);
+    unawaited(
+      ref
+          .read(authControllerProvider.notifier)
+          .submit(email: _email.text, password: _password.text, name: ''),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     final scheme = Theme.of(context).colorScheme;
     final form = ref.watch(authControllerProvider);
-    final canSubmit =
-        _email.text.trim().isNotEmpty && _password.text.trim().isNotEmpty;
+    final covering = _passwordFocus.hasFocus;
+    final gaze = _emailFocus.hasFocus
+        ? authGazeFor(_email.text.length)
+        : Offset.zero;
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          const SizedBox(height: 64),
-          ZadAppearOnEntry(
-            child: Column(
-              children: <Widget>[
-                const _BrandMark(wordmarkSize: 32, gap: 20),
-                const SizedBox(height: 10),
-                Text(
-                  context.l10n.authTagline,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: scheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
+    return AutofillGroup(
+      child: AuthHeroShell(
+        zado: AuthZado(gaze: gaze, cover: covering, hop: _hop),
+        card: <Widget>[
+          Text(
+            l.authSignInTitle,
+            style: ZadType.titleLarge.copyWith(
+              color: scheme.onSurface,
+              fontWeight: FontWeight.w800,
             ),
           ),
-          const SizedBox(height: 48),
-          ZadAppearOnEntry(
-            delayMs: 80,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  context.l10n.authSignInTitle,
-                  style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                    color: scheme.onSurface,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  context.l10n.authSignInSubtitle,
-                  style: ZadType.bodyMedium.copyWith(
-                    color: scheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
+          Text(
+            l.authSignInSubtitle,
+            style: ZadType.bodySmall.copyWith(color: scheme.onSurfaceVariant),
+          ),
+          AuthField(
+            label: l.authEmail,
+            controller: _email,
+            focusNode: _emailFocus,
+            onChanged: _refresh,
+            keyboard: TextInputType.emailAddress,
+            hints: const <String>[AutofillHints.email],
+            ltr: true,
+          ),
+          AuthField(
+            label: l.authPassword,
+            controller: _password,
+            focusNode: _passwordFocus,
+            onChanged: _refresh,
+            obscure: !_visible,
+            action: TextInputAction.done,
+            hints: const <String>[AutofillHints.password],
+            onSubmitted: _submit,
+            suffix: PasswordToggle(
+              visible: _visible,
+              onPressed: () => setState(() => _visible = !_visible),
             ),
           ),
-          const SizedBox(height: 40),
-          ZadAppearOnEntry(
-            delayMs: 160,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  context.l10n.authEmail,
-                  style: TextStyle(
-                    color: scheme.onSurfaceVariant,
-                    fontSize: 14,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                TextField(
-                  controller: _email,
-                  keyboardType: TextInputType.emailAddress,
-                  onChanged: (_) => setState(() {}),
-                  decoration: _fieldDecoration(context, fill: Colors.white),
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  context.l10n.authPassword,
-                  style: TextStyle(
-                    color: scheme.onSurfaceVariant,
-                    fontSize: 14,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                TextField(
-                  controller: _password,
-                  obscureText: !_visible,
-                  onChanged: (_) => setState(() {}),
-                  decoration: _fieldDecoration(
-                    context,
-                    fill: Colors.white,
-                    suffix: IconButton(
-                      tooltip: context.l10n.authTogglePassword,
-                      onPressed: () => setState(() => _visible = !_visible),
-                      icon: Icon(
-                        _visible ? Icons.visibility : Icons.visibility_off,
-                        color: scheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Align(
-                  alignment: AlignmentDirectional.centerEnd,
-                  child: TextButton(
-                    onPressed: () => unawaited(_forgot()),
-                    child: Text(
-                      context.l10n.authForgotPassword,
-                      style: TextStyle(color: scheme.onSurface, fontSize: 14),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-          if (form.failure case final failure?)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 16),
+          Align(
+            alignment: AlignmentDirectional.centerEnd,
+            child: TextButton(
+              style: TextButton.styleFrom(minimumSize: const Size(44, 44)),
+              onPressed: () => unawaited(_forgot()),
               child: Text(
-                failure.localized(context.l10n),
-                style: ZadType.bodySmall.copyWith(color: scheme.error),
+                l.authForgotPassword,
+                style: ZadType.labelLarge.copyWith(
+                  color: ZadColors.forestEmerald,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
+          ),
+          if (form.failure case final failure?) AuthErrorText(failure: failure),
+          const SizedBox(height: ZadSpacing.sm),
           ZadPrimaryButton(
-            text: context.l10n.authSignInButton,
-            enabled: canSubmit,
+            text: l.authSignInButton,
+            enabled: _canSubmit,
             loading: form.submitting,
-            onPressed: () => unawaited(
-              ref
-                  .read(authControllerProvider.notifier)
-                  .submit(
-                    email: _email.text,
-                    password: _password.text,
-                    name: '',
-                  ),
-            ),
+            onPressed: _submit,
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 32),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                Text(
-                  context.l10n.authNoAccount,
-                  style: TextStyle(
-                    color: scheme.onSurface,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                TextButton(
-                  style: TextButton.styleFrom(padding: EdgeInsets.zero),
-                  onPressed: () => ref
-                      .read(authControllerProvider.notifier)
-                      .setMode(AuthMode.signUp),
-                  child: Text(
-                    context.l10n.authSignUpNow,
-                    style: TextStyle(
-                      color: scheme.primary,
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
+            padding: const EdgeInsets.only(top: ZadSpacing.sm),
+            child: Text(
+              covering ? l.authZadoNotLooking : l.authZadoWatching,
+              textAlign: TextAlign.center,
+              style: ZadType.labelMedium.copyWith(
+                color: scheme.onSurfaceVariant,
+              ),
             ),
           ),
         ],
+        footer: AuthSwitchRow(
+          question: l.authNoAccount,
+          action: l.authSignUpNow,
+          onPressed: () => ref
+              .read(authControllerProvider.notifier)
+              .setMode(AuthMode.signUp),
+        ),
       ),
     );
   }
@@ -380,408 +271,6 @@ class _ResetDialogState extends ConsumerState<_ResetDialog> {
           child: Text(context.l10n.commonSend),
         ),
       ],
-    );
-  }
-}
-
-class _SignUpView extends ConsumerStatefulWidget {
-  const new();
-
-  @override
-  ConsumerState<_SignUpView> createState() => _SignUpViewState();
-}
-
-class _SignUpViewState extends ConsumerState<_SignUpView> {
-  final TextEditingController _name = TextEditingController();
-  final TextEditingController _email = TextEditingController();
-  final TextEditingController _password = TextEditingController();
-  bool _visible = false;
-  bool _terms = false;
-  bool _success = false;
-
-  /// Asked here, not after the first sign-in: the account is created with it
-  /// (the provisioning trigger reads it from the metadata), so a slow first
-  /// launch can no longer skip the question and leave the account on UTC.
-  Market? _market;
-
-  @override
-  void dispose() {
-    _name.dispose();
-    _email.dispose();
-    _password.dispose();
-    super.dispose();
-  }
-
-  Future<void> _submit() async {
-    final controller = ref.read(authControllerProvider.notifier);
-    await controller.submit(
-      email: _email.text,
-      password: _password.text,
-      name: _name.text,
-      market: _market,
-    );
-    if (!mounted) return;
-    final form = ref.read(authControllerProvider);
-    if (form.failure != null || form.submitting) return;
-    // Kotlin: the success mark, 1.5 s, then back to sign-in.
-    setState(() => _success = true);
-    await Future<void>.delayed(const Duration(milliseconds: 1500));
-    if (mounted) controller.setMode(AuthMode.signIn);
-  }
-
-  Future<void> _showTerms() async {
-    final agreed = await showDialog<bool>(
-      context: context,
-      builder: (c) {
-        final scheme = Theme.of(c).colorScheme;
-        return AlertDialog(
-          title: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Text(
-                kTermsTitle,
-                style: ZadType.titleLarge.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: scheme.onSurface,
-                ),
-              ),
-              Text(
-                'Version $kTermsVersion — $kTermsLastUpdated',
-                style: ZadType.bodySmall.copyWith(
-                  color: scheme.onSurfaceVariant,
-                ),
-              ),
-            ],
-          ),
-          content: ConstrainedBox(
-            constraints: const BoxConstraints(maxHeight: 420),
-            child: SingleChildScrollView(
-              child: Text(
-                kTermsFullText,
-                style: ZadType.bodySmall.copyWith(
-                  color: scheme.onSurfaceVariant,
-                  height: 18 / 13,
-                ),
-              ),
-            ),
-          ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () => Navigator.of(c).pop(false),
-              child: Text(
-                context.l10n.authTermsDecline,
-                style: TextStyle(color: scheme.onSurfaceVariant),
-              ),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(c).pop(true),
-              child: Text(
-                context.l10n.authTermsAccept,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-    if (agreed != null && mounted) setState(() => _terms = agreed);
-  }
-
-  Future<void> _pickMarket() async {
-    // Closing the sheet hands focus back to whatever had it, and a field that
-    // had it brings the keyboard back over the password (emulator, 2026-11-01).
-    // The field itself, not the scope: the scope would restore it on pop.
-    FocusManager.instance.primaryFocus?.unfocus();
-    final picked = await showModalBottomSheet<Market>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      showDragHandle: true,
-      builder: (c) => SafeArea(
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(
-            16,
-            0,
-            16,
-            16 + MediaQuery.viewInsetsOf(c).bottom,
-          ),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxHeight: MediaQuery.sizeOf(c).height * 0.75,
-            ),
-            child: MarketPickerGrid(
-              selected: _market,
-              onSelect: (m) => Navigator.of(c).pop(m),
-            ),
-          ),
-        ),
-      ),
-    );
-    if (picked != null && mounted) setState(() => _market = picked);
-  }
-
-  Widget _marketField() {
-    final scheme = Theme.of(context).colorScheme;
-    final market = _market;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text(
-            context.l10n.authCountry,
-            style: ZadType.labelMedium.copyWith(
-              color: scheme.onSurfaceVariant,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 6),
-          InkWell(
-            key: const ValueKey<String>('sign-up-market'),
-            borderRadius: BorderRadius.circular(16),
-            onTap: () => unawaited(_pickMarket()),
-            child: InputDecorator(
-              decoration: _fieldDecoration(
-                context,
-                fill: Colors.transparent,
-                hint: '',
-                suffix: Icon(Icons.expand_more, color: scheme.onSurfaceVariant),
-              ),
-              child: Text(
-                switch (market) {
-                  null => context.l10n.authPickCountry,
-                  final m => '${m.flag}  ${m.nameAr} · ${m.currencySymbol}',
-                },
-                style: TextStyle(
-                  color: market == null
-                      ? scheme.onSurfaceVariant
-                      : scheme.onSurface,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _field({
-    required String label,
-    required TextEditingController controller,
-    String hint = '',
-    bool password = false,
-    Widget? suffix,
-    TextInputType? keyboard,
-  }) {
-    final scheme = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text(
-            label,
-            style: ZadType.labelMedium.copyWith(
-              color: scheme.onSurfaceVariant,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 6),
-          TextField(
-            controller: controller,
-            obscureText: password,
-            keyboardType: keyboard,
-            onChanged: (_) => setState(() {}),
-            style: TextStyle(color: scheme.onSurface),
-            decoration: _fieldDecoration(
-              context,
-              fill: Colors.transparent,
-              hint: hint,
-              suffix: suffix,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final form = ref.watch(authControllerProvider);
-    final canSubmit =
-        _email.text.trim().isNotEmpty &&
-        _password.text.trim().isNotEmpty &&
-        _market != null &&
-        _terms;
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          // 48 + 48 here pushed «إنشاء حساب» half under the bottom edge of a
-          // 1080×2400 phone (emulator, 2026-11-01); the form is what matters.
-          const SizedBox(height: ZadSpacing.xl),
-          const ZadAppearOnEntry(child: _BrandMark(wordmarkSize: 28, gap: 16)),
-          const SizedBox(height: ZadSpacing.xl),
-          ZadAppearOnEntry(
-            delayMs: 80,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  context.l10n.authSignUpTitle,
-                  style: ZadType.displayMedium.copyWith(
-                    fontSize: 28,
-                    color: scheme.onSurface,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  context.l10n.authSignUpSubtitle,
-                  style: ZadType.bodyMedium.copyWith(
-                    color: scheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 32),
-          ZadAppearOnEntry(
-            delayMs: 150,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <Widget>[
-                _field(
-                  label: context.l10n.authName,
-                  controller: _name,
-                  hint: context.l10n.authNameHint,
-                ),
-                const SizedBox(height: 16),
-                _field(
-                  label: context.l10n.authEmail,
-                  controller: _email,
-                  hint: 'your.email@gmail.com',
-                  keyboard: TextInputType.emailAddress,
-                ),
-                const SizedBox(height: 16),
-                _marketField(),
-                const SizedBox(height: 16),
-                _field(
-                  label: context.l10n.authPassword,
-                  controller: _password,
-                  password: !_visible,
-                  suffix: IconButton(
-                    tooltip: context.l10n.authTogglePassword,
-                    onPressed: () => setState(() => _visible = !_visible),
-                    icon: Icon(
-                      _visible ? Icons.visibility : Icons.visibility_off,
-                      color: scheme.onSurfaceVariant,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                Row(
-                  children: <Widget>[
-                    Checkbox(
-                      value: _terms,
-                      activeColor: scheme.primary,
-                      onChanged: (v) => setState(() => _terms = v ?? false),
-                    ),
-                    Text(
-                      context.l10n.authAgreeTo,
-                      style: TextStyle(
-                        color: scheme.onSurfaceVariant,
-                        fontSize: 13,
-                      ),
-                    ),
-                    TextButton(
-                      style: TextButton.styleFrom(padding: EdgeInsets.zero),
-                      onPressed: () => unawaited(_showTerms()),
-                      child: Text(
-                        context.l10n.authTermsLink,
-                        style: TextStyle(
-                          color: scheme.primary,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          if (_success)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Column(
-                children: <Widget>[
-                  Lottie.asset(
-                    'assets/lottie/lottie_success_check.json',
-                    width: 72,
-                    height: 72,
-                    repeat: false,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    context.l10n.authSignUpDone,
-                    style: ZadType.bodyMedium.copyWith(
-                      color: scheme.primary,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          if (form.failure case final failure?)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 16),
-              child: Text(
-                failure.localized(context.l10n),
-                style: ZadType.bodySmall.copyWith(color: scheme.error),
-              ),
-            ),
-          ZadPrimaryButton(
-            text: context.l10n.authSignUpTitle,
-            enabled: canSubmit,
-            loading: form.submitting,
-            onPressed: () => unawaited(_submit()),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 32),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                Text(
-                  context.l10n.authHaveAccount,
-                  style: TextStyle(color: scheme.onSurface, fontSize: 14),
-                ),
-                TextButton(
-                  style: TextButton.styleFrom(padding: EdgeInsets.zero),
-                  onPressed: () => ref
-                      .read(authControllerProvider.notifier)
-                      .setMode(AuthMode.signIn),
-                  child: Text(
-                    context.l10n.authSignInTitle,
-                    style: TextStyle(
-                      color: scheme.primary,
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

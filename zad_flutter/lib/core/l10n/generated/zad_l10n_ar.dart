@@ -4158,6 +4158,100 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get profileExportSubject => 'بياناتي من زاد';
+
+  @override
+  String get introSayPantry => 'التلاجة دي بتاعتي!';
+
+  @override
+  String get introSayFamily => 'البيت كله في إيد واحدة';
+
+  @override
+  String get introSayAssistant => 'بتعلّم منك كل يوم';
+
+  @override
+  String get introSayBudget => 'ونوفّر سوا';
+
+  @override
+  String get authZadoWatching => 'زادو بيبص على اللي بتكتبه… إلا كلمة السر.';
+
+  @override
+  String get authZadoNotLooking => 'مش باصص، والله';
+
+  @override
+  String authZadoHello(String name) {
+    return 'أهلاً يا $name!';
+  }
+
+  @override
+  String get consentTitle => 'قبل ما نبدأ، ده اتفاقنا';
+
+  @override
+  String consentVersionLine(String terms, String updated) {
+    return 'الشروط $terms وسياسة الخصوصية ٤٫٠ · $updated';
+  }
+
+  @override
+  String get consentPoint1Lead => 'بنحفظ اللي بتدخّله بس.';
+
+  @override
+  String get consentPoint1Body =>
+      'حسابك وفلوسك ومخزونك وأدويتك ومواعيدك ورسايل العيلة، عشان زاد يساعدك بيهم.';
+
+  @override
+  String get consentPoint2Lead => 'كل إذن بموافقتك.';
+
+  @override
+  String get consentPoint2Body =>
+      'إشعارات البنك والموقع والكاميرا والمايك، كل واحد بيتطلب لما تستخدم الميزة، وتقدر تقفله في أي وقت.';
+
+  @override
+  String get consentPoint3Lead => 'مابنبيعش بياناتك لحد.';
+
+  @override
+  String get consentPoint3Body =>
+      'ومابنقراش كلمات سر البنك ولا أرقام الكروت ولا أكواد OTP.';
+
+  @override
+  String get consentPoint4Lead => 'الذكاء الاصطناعي بيساعد، وممكن يغلط.';
+
+  @override
+  String get consentPoint4Body =>
+      'راجع الأرقام قبل أي قرار؛ زاد مش بنك ولا مستشار مالي.';
+
+  @override
+  String get consentPoint5Lead => 'الخطة المجانية فيها إعلانات';
+
+  @override
+  String get consentPoint5Body =>
+      ' من Google. حسابات الأطفال مفيهاش إعلانات خالص.';
+
+  @override
+  String get consentPoint6Lead => 'بياناتك ملكك.';
+
+  @override
+  String get consentPoint6Body =>
+      'تصدّرها في أي وقت، أو تمسح حسابك، والمسح بيتم بعد ١٤ يوم تقدر ترجع فيهم.';
+
+  @override
+  String get consentPoint7Lead => 'زاد للكبار من ١٨ سنة.';
+
+  @override
+  String get consentPoint7Body => 'الأطفال بيدخلوا كأفراد في عيلة وليّ أمرهم.';
+
+  @override
+  String get consentLegalToggle => 'النص القانوني الكامل (بالإنجليزي)';
+
+  @override
+  String get consentPrivacyLink => 'سياسة الخصوصية';
+
+  @override
+  String get consentTermsLink => 'شروط الاستخدام';
+
+  @override
+  String get consentTermsVersion => '٢٫٢';
+
+  @override
+  String get consentTermsUpdated => 'نوفمبر ٢٠٢٦';
 }
 
 /// The translations for Arabic, as used in Saudi Arabia (`ar_SA`).
@@ -5268,4 +5362,20 @@ class ZadL10nArSa extends ZadL10nAr {
 
   @override
   String get profileTelegramSubtitle => 'اربط حسابك وخلّ التذكيرات توصلك';
+
+  @override
+  String get introSayPantry => 'الثلاجة هذي حقتي!';
+
+  @override
+  String get authZadoNotLooking => 'ما أشوف، والله';
+
+  @override
+  String get consentTitle => 'قبل ما نبدأ، هذا اتفاقنا';
+
+  @override
+  String get consentPoint3Lead => 'ما نبيع بياناتك لأحد.';
+
+  @override
+  String get consentPoint4Body =>
+      'راجع الأرقام قبل أي قرار؛ زاد مو بنك ولا مستشار مالي.';
 }

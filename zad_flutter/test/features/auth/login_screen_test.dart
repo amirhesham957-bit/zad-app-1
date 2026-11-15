@@ -1,14 +1,22 @@
 // The way in, through the widgets.
 //
-// No Hive and no boxes here on purpose: this screen owns no cache. Everything
-// it can do goes through the gateway, so a fake one is the whole harness.
+// The screen owns no cache: everything it can do goes through the gateway, so a
+// fake one is the harness. The only store it touches is the companion orb's
+// (Zado's accessory and look), so that one is in-memory boxes. The orb and the
+// hero animate for ever, so nothing here pumps until it settles: `settle`
+// is a bounded pump.
 
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hive_ce_flutter/hive_flutter.dart';
+import 'package:zad/core/data/local/boxes.dart';
+import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/zad_theme.dart';
 import 'package:zad/core/l10n/app_language.dart';
 import 'package:zad/core/l10n/generated/zad_l10n.dart';
@@ -60,12 +68,42 @@ class _FakeGateway implements AuthGateway {
 
 void main() {
   late _FakeGateway gateway;
+  late ZadLocalStore store;
 
-  setUp(() => gateway = _FakeGateway());
+  setUp(() async {
+    gateway = _FakeGateway();
+    Hive.init('unused');
+    Future<Box<String>> box(String name) =>
+        Hive.openBox<String>(name, bytes: Uint8List(0));
+    store = ZadLocalStore(
+      outbox: await box('outbox'),
+      transactions: await box('transactions'),
+      documents: await box('documents'),
+      chat: await box('chat'),
+      inventory: await box('inventory'),
+      shopping: await box('shopping'),
+      pharmacy: await box('pharmacy'),
+      subscriptions: await box('subscriptions'),
+      device: await box('device'),
+    );
+  });
+
+  tearDown(Hive.close);
+
+  List<Override> overrides() => <Override>[
+    authGatewayProvider.overrideWithValue(gateway),
+    localStoreProvider.overrideWithValue(store),
+  ];
+
+  /// Time passes, but no more than that: the hero never stops animating.
+  Future<void> settle(WidgetTester tester) async {
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 600));
+  }
 
   Future<void> pumpLogin(WidgetTester tester) => tester.pumpWidget(
     ProviderScope(
-      overrides: [authGatewayProvider.overrideWithValue(gateway)],
+      overrides: overrides(),
       child: MaterialApp(
         theme: ZadTheme.light(),
         locale: const Locale('ar'),
@@ -73,6 +111,24 @@ void main() {
       ),
     ),
   );
+
+  Future<void> openSignUp(WidgetTester tester) async {
+    await pumpLogin(tester);
+    await settle(tester);
+    await tester.ensureVisible(find.text('سجل الآن'));
+    await tester.tap(find.text('سجل الآن'));
+    await settle(tester);
+  }
+
+  /// The consent row's link opens the sheet; accepting it ticks the box.
+  Future<void> acceptTerms(WidgetTester tester) async {
+    final link = find.text('الشروط وسياسة الخصوصية');
+    await tester.ensureVisible(link);
+    await tester.tap(link);
+    await settle(tester);
+    await tester.tap(find.text('موافق ومتابعة'));
+    await settle(tester);
+  }
 
   // Kotlin's labels sit above the fields, so the fields go by order.
   Finder emailField() => find.byType(TextField).at(0);
@@ -93,7 +149,7 @@ void main() {
 
   testWidgets("opens on Kotlin's sign-in, with no name field", (tester) async {
     await pumpLogin(tester);
-    await tester.pumpAndSettle();
+    await settle(tester);
     expect(find.text('تسجيل الدخول'), findsOneWidget);
     expect(find.text('البريد الإلكتروني'), findsOneWidget);
     expect(find.text('كلمة المرور'), findsOneWidget);
@@ -102,13 +158,13 @@ void main() {
 
   testWidgets('the button waits for an email and a password', (tester) async {
     await pumpLogin(tester);
-    await tester.pumpAndSettle();
+    await settle(tester);
     expect(tester.widget<ElevatedButton>(submit('دخول')).onPressed, isNull);
   });
 
   testWidgets('signs in with exactly what was typed', (tester) async {
     await pumpLogin(tester);
-    await tester.pumpAndSettle();
+    await settle(tester);
     await signIn(tester, 'amir@example.com', 'hunter2000');
     // The button keeps spinning until the session arrives, so no settle.
     await tester.pump(const Duration(milliseconds: 300));
@@ -118,17 +174,17 @@ void main() {
   testWidgets('a rejected password is said in words', (tester) async {
     gateway.failWith = const AuthFailure(AuthFailureKind.invalidCredentials);
     await pumpLogin(tester);
-    await tester.pumpAndSettle();
+    await settle(tester);
     await signIn(tester, 'amir@example.com', 'wrong-one');
-    await tester.pumpAndSettle();
+    await settle(tester);
     expect(find.text('الإيميل أو كلمة السر مش مظبوطة.'), findsOneWidget);
   });
 
   testWidgets('a typo in the address never leaves the device', (tester) async {
     await pumpLogin(tester);
-    await tester.pumpAndSettle();
+    await settle(tester);
     await signIn(tester, 'amir-at-example.com', 'hunter2000');
-    await tester.pumpAndSettle();
+    await settle(tester);
     expect(gateway.calls, isEmpty);
   });
 
@@ -137,7 +193,7 @@ void main() {
   ) async {
     gateway.gate = Completer<void>();
     await pumpLogin(tester);
-    await tester.pumpAndSettle();
+    await settle(tester);
     await signIn(tester, 'amir@example.com', 'hunter2000');
     await tester.pump(const Duration(milliseconds: 100));
     expect(
@@ -154,34 +210,30 @@ void main() {
   testWidgets('«سجل الآن» opens sign-up with the terms to accept', (
     tester,
   ) async {
-    await pumpLogin(tester);
-    await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('سجل الآن'));
-    await tester.tap(find.text('سجل الآن'));
-    await tester.pumpAndSettle();
+    await openSignUp(tester);
     expect(find.text('اسم المستخدم'), findsOneWidget);
     expect(find.text('الشروط وسياسة الخصوصية'), findsOneWidget);
     expect(
       tester.widget<ElevatedButton>(submit('إنشاء حساب')).onPressed,
       isNull,
     );
+    // The terms are asked for through the consent sheet: accepting it ticks
+    // the box (the button stays shut until the rest is filled in).
+    expect(tester.widget<Checkbox>(find.byType(Checkbox)).value, isFalse);
+    await acceptTerms(tester);
+    expect(find.text('موافق ومتابعة'), findsNothing);
+    expect(tester.widget<Checkbox>(find.byType(Checkbox)).value, isTrue);
   });
 
   testWidgets('sign-up asks for the country and sends it with the account', (
     tester,
   ) async {
-    await pumpLogin(tester);
-    await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('سجل الآن'));
-    await tester.tap(find.text('سجل الآن'));
-    await tester.pumpAndSettle();
+    await openSignUp(tester);
 
     await tester.enterText(find.byType(TextField).at(0), 'أمير');
     await tester.enterText(find.byType(TextField).at(1), 'amir@example.com');
     await tester.enterText(find.byType(TextField).at(2), 'secret123');
-    await tester.ensureVisible(find.byType(Checkbox));
-    await tester.tap(find.byType(Checkbox));
-    await tester.pump();
+    await acceptTerms(tester);
     // Everything but the country: still closed.
     expect(
       tester.widget<ElevatedButton>(submit('إنشاء حساب')).onPressed,
@@ -191,9 +243,9 @@ void main() {
     final field = find.byKey(const ValueKey<String>('sign-up-market'));
     await tester.ensureVisible(field);
     await tester.tap(field);
-    await tester.pumpAndSettle();
+    await settle(tester);
     await tester.tap(find.text('مصر'));
-    await tester.pumpAndSettle();
+    await settle(tester);
     expect(find.textContaining('مصر'), findsOneWidget);
 
     await tester.ensureVisible(submit('إنشاء حساب'));
@@ -209,11 +261,7 @@ void main() {
   testWidgets('choosing the country does not bring the keyboard back', (
     tester,
   ) async {
-    await pumpLogin(tester);
-    await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('سجل الآن'));
-    await tester.tap(find.text('سجل الآن'));
-    await tester.pumpAndSettle();
+    await openSignUp(tester);
 
     await tester.tap(find.byType(TextField).at(1));
     await tester.pump();
@@ -222,27 +270,27 @@ void main() {
     final field = find.byKey(const ValueKey<String>('sign-up-market'));
     await tester.ensureVisible(field);
     await tester.tap(field);
-    await tester.pumpAndSettle();
+    await settle(tester);
     await tester.tap(find.text('مصر'));
-    await tester.pumpAndSettle();
+    await settle(tester);
 
     expect(tester.testTextInput.isVisible, isFalse);
   });
 
   testWidgets('«نسيت كلمة المرور؟» sends the reset link', (tester) async {
     await pumpLogin(tester);
-    await tester.pumpAndSettle();
+    await settle(tester);
     await tester.ensureVisible(find.text('نسيت كلمة المرور؟'));
-    await tester.pumpAndSettle();
+    await settle(tester);
     await tester.tap(find.text('نسيت كلمة المرور؟'));
-    await tester.pumpAndSettle();
+    await settle(tester);
     expect(find.text('استعادة كلمة المرور'), findsOneWidget);
     await tester.enterText(
       find.widgetWithText(TextField, 'البريد الإلكتروني').last,
       'amir@example.com',
     );
     await tester.tap(find.text('إرسال'));
-    await tester.pumpAndSettle();
+    await settle(tester);
     expect(gateway.calls, <String>['reset:amir@example.com']);
     expect(find.text('تم إرسال الرابط بنجاح!'), findsOneWidget);
   });
@@ -254,17 +302,17 @@ void main() {
   ) async {
     gateway.failWith = const AuthFailure(AuthFailureKind.rateLimited);
     await pumpLogin(tester);
-    await tester.pumpAndSettle();
+    await settle(tester);
     await tester.ensureVisible(find.text('نسيت كلمة المرور؟'));
-    await tester.pumpAndSettle();
+    await settle(tester);
     await tester.tap(find.text('نسيت كلمة المرور؟'));
-    await tester.pumpAndSettle();
+    await settle(tester);
     await tester.enterText(
       find.widgetWithText(TextField, 'البريد الإلكتروني').last,
       'amir@example.com',
     );
     await tester.tap(find.text('إرسال'));
-    await tester.pumpAndSettle();
+    await settle(tester);
     expect(find.text('تم إرسال الرابط بنجاح!'), findsNothing);
     expect(
       find.text('جرّبت مرات كتير في وقت قصير. استنى شوية وحاول تاني.'),
@@ -274,7 +322,7 @@ void main() {
 
   testWidgets('the password can be revealed', (tester) async {
     await pumpLogin(tester);
-    await tester.pumpAndSettle();
+    await settle(tester);
     TextField password() => tester.widget<TextField>(passwordField());
     expect(password().obscureText, isTrue);
     await tester.tap(find.byTooltip('إظهار/إخفاء كلمة المرور'));
@@ -287,7 +335,7 @@ void main() {
   ) async {
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [authGatewayProvider.overrideWithValue(gateway)],
+        overrides: overrides(),
         child: MaterialApp(
           theme: ZadTheme.light(),
           locale: const Locale('en'),
