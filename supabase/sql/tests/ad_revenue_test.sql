@@ -4,11 +4,12 @@
 \set other '''33333333-3333-3333-3333-333333333333'''
 insert into auth.users values (:me), (:other);
 
--- Two of my runs today on a priced model, one on an unpriced one.
+-- Two of my runs today on a priced model, one on an unpriced one — minutes ago, not hours: hours ago
+-- fell on yesterday for a run in the first hours of the day (CI 00:26 UTC, 15/11).
 insert into public.zad_brain_runs (user_id, started_at, finished_at, input_tokens, output_tokens, prompt_sizes) values
-  (:me, now() - interval '1 hour', now() - interval '1 hour' + interval '3 seconds', 1000000, 0, '{"calls":{"models":["gemini-3.5-flash-lite"]}}'),
-  (:me, now() - interval '2 hours', now() - interval '2 hours' + interval '3 seconds', 0, 1000000, '{"calls":{"models":["gemini-3.5-flash-lite"]}}'),
-  (:me, now() - interval '3 hours', now() - interval '3 hours' + interval '3 seconds', 10, 10, '{"calls":{"models":["no-price"]}}');
+  (:me, now() - interval '1 minute', now() - interval '1 minute' + interval '3 seconds', 1000000, 0, '{"calls":{"models":["gemini-3.5-flash-lite"]}}'),
+  (:me, now() - interval '2 minutes', now() - interval '2 minutes' + interval '3 seconds', 0, 1000000, '{"calls":{"models":["gemini-3.5-flash-lite"]}}'),
+  (:me, now() - interval '3 minutes', now() - interval '3 minutes' + interval '3 seconds', 10, 10, '{"calls":{"models":["no-price"]}}');
 
 set role authenticated;
 select set_config('request.jwt.claims', json_build_object('sub', :me)::text, false);
