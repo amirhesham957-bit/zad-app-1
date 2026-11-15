@@ -29,7 +29,7 @@ const Set<String> _dataFiles = <String>{
   'shared/inventory/domain/food_emoji.dart',
   'shared/inventory/domain/product_family.dart',
   // Alternative spellings matched against a subscription's title.
-  'features/subscriptions/presentation/subscription_brands.dart',
+  'shared/subscriptions/presentation/subscription_brands.dart',
   // Category keys stored in zad_inventory.category / zad_transactions.category,
   // and the words that file a row under one. Their English labels, when they
   // come, are a lookup over these keys — the keys themselves never change.

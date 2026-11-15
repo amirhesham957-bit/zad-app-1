@@ -4274,6 +4274,28 @@ class ZadL10nEn extends ZadL10n {
   String get profileExportSubject => 'My data from Zad';
 
   @override
+  String get homeCareTitle => 'Your subscriptions and medicines';
+
+  @override
+  String get homeCareRenewsToday => 'Renews today';
+
+  @override
+  String get homeCareRenewsTomorrow => 'Renews tomorrow';
+
+  @override
+  String homeCareRenewsInDays(Object days) {
+    return 'Renews in $days days';
+  }
+
+  @override
+  String homeCareDoseAt(Object time) {
+    return 'Dose at $time';
+  }
+
+  @override
+  String get homeCareDoseNow => 'Dose due now';
+
+  @override
   String get introSayPantry => 'This fridge is mine!';
 
   @override

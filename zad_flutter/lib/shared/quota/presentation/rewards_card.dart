@@ -15,6 +15,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:zad/core/design/components/zad_idle_motion.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
@@ -61,25 +62,29 @@ class RewardsCard extends ConsumerWidget {
                 const SizedBox(height: ZadSpacing.xs),
                 Text(
                   l.rewardsCardBody,
-                  style: ZadType.bodySmall.copyWith(
-                    color: ZadColors.inkMuted,
-                  ),
+                  style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
                 ),
                 const SizedBox(height: ZadSpacing.md),
                 const WatchAdButton(),
               ],
               const SizedBox(height: ZadSpacing.sm),
               if (free)
-                FilledButton.icon(
-                  key: const ValueKey<String>('rewards-subscribe'),
-                  style: FilledButton.styleFrom(
-                    minimumSize: const Size.fromHeight(48),
-                    backgroundColor: ZadColors.forestEmerald,
+                ZadShine(
+                  child: FilledButton.icon(
+                    key: const ValueKey<String>('rewards-subscribe'),
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size.fromHeight(48),
+                      backgroundColor: ZadColors.forestEmerald,
+                    ),
+                    onPressed: () =>
+                        unawaited(ZadScreens.showPaywallScreen(context)),
+                    icon: const ZadIdle(
+                      kind: ZadIdleKind.wiggle,
+                      stagger: 2,
+                      child: Icon(Icons.workspace_premium, size: 20),
+                    ),
+                    label: Text(l.rewardsSubscribe),
                   ),
-                  onPressed: () =>
-                      unawaited(ZadScreens.showPaywallScreen(context)),
-                  icon: const Icon(Icons.workspace_premium, size: 20),
-                  label: Text(l.rewardsSubscribe),
                 ),
               const SizedBox(height: ZadSpacing.sm),
               OutlinedButton.icon(

@@ -11,6 +11,7 @@ import 'package:intl/intl.dart' show DateFormat;
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/components/zad_card.dart';
 import 'package:zad/core/design/components/zad_icon_chip.dart';
+import 'package:zad/core/design/components/zad_idle_motion.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
@@ -78,6 +79,8 @@ class _ShortagesTile extends ConsumerWidget {
       isUrgent: left.isNotEmpty,
       onTap: () =>
           ZadScreens.showHouseholdSection(context, HouseholdSection.shopping),
+      motion: ZadIdleKind.wiggle,
+      stagger: 1,
     );
   }
 }
@@ -107,6 +110,8 @@ class _SubscriptionsTile extends ConsumerWidget {
       caption: next?.title,
       isUrgent: days != null && days <= 3,
       onTap: () => ZadScreens.showSubscriptionsScreen(context),
+      motion: ZadIdleKind.turn,
+      stagger: 3,
     );
   }
 }
@@ -137,6 +142,8 @@ class _PantryTile extends ConsumerWidget {
       isUrgent: short.isNotEmpty,
       onTap: () =>
           ZadScreens.showHouseholdSection(context, HouseholdSection.pantry),
+      motion: ZadIdleKind.lift,
+      stagger: 0,
     );
   }
 }
@@ -167,6 +174,8 @@ class _PharmacyTile extends ConsumerWidget {
       isUrgent: false,
       onTap: () =>
           ZadScreens.showHouseholdSection(context, HouseholdSection.pharmacy),
+      motion: ZadIdleKind.bob,
+      stagger: 2,
     );
   }
 }
@@ -180,6 +189,8 @@ class _Tile extends StatelessWidget {
     required this.caption,
     required this.isUrgent,
     required this.onTap,
+    required this.motion,
+    required this.stagger,
   });
 
   final IconData icon;
@@ -190,6 +201,10 @@ class _Tile extends StatelessWidget {
   final bool isUrgent;
   final VoidCallback onTap;
 
+  /// How the icon idles, and its place so the four never move together.
+  final ZadIdleKind motion;
+  final int stagger;
+
   @override
   Widget build(BuildContext context) => ZadCard(
     onTap: onTap,
@@ -199,7 +214,13 @@ class _Tile extends StatelessWidget {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        ZadIconChip(icon: icon, tint: tint, size: 32),
+        ZadIdle(
+          kind: motion,
+          stagger: stagger,
+          urgent: isUrgent,
+          glow: tint,
+          child: ZadIconChip(icon: icon, tint: tint, size: 32),
+        ),
         const SizedBox(height: ZadSpacing.sm),
         Text(
           title,

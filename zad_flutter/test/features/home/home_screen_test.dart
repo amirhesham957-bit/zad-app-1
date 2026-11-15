@@ -22,14 +22,19 @@ import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/data/sync/outbox.dart';
 import 'package:zad/core/design/components/zad_balance_card.dart';
 import 'package:zad/core/design/zad_theme.dart';
+import 'package:zad/features/home/presentation/home_care_bar.dart';
+import 'package:zad/features/home/presentation/home_glance_widgets.dart';
 import 'package:zad/features/home/presentation/home_screen.dart';
 import 'package:zad/features/home/presentation/metrics_duo.dart';
+import 'package:zad/features/home/presentation/tasbiha_home_widget.dart';
 import 'package:zad/features/settings/presentation/monthly_limit_sheet.dart';
 import 'package:zad/features/transactions/presentation/quick_expense_sheet.dart';
+import 'package:zad/shared/ads/presentation/native_ad.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/budget/data/budget_repository.dart';
 import 'package:zad/shared/budget/domain/budget_snapshot.dart';
 import 'package:zad/shared/insights/data/insights_repository.dart';
+import 'package:zad/shared/navigation/zad_slots.dart';
 import 'package:zad/shared/notifications/data/notifications_remote.dart';
 import 'package:zad/shared/notifications/data/notifications_repository.dart';
 import 'package:zad/shared/settings/data/settings_repository.dart';
@@ -358,6 +363,59 @@ void main() {
     // confirmed it — present either way, and never waited for.
     expect(find.text('≈ 3,620.5'), findsOneWidget);
     expect(find.text('المتاح في دورة الراتب'), findsOneWidget);
+  });
+
+  testWidgets('the tasbih follows the glance tiles, rewards follow the chef', (
+    tester,
+  ) async {
+    final chef = ZadSlots.homeChefSection;
+    ZadSlots.homeChefSection = () =>
+        const SizedBox(key: ValueKey<String>('chef'), height: 20);
+    addTearDown(() => ZadSlots.homeChefSection = chef);
+    final container = containerWith();
+    addTearDown(container.dispose);
+
+    await tester.binding.setSurfaceSize(const Size(412, 6000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          theme: ZadTheme.light(),
+          home: const Directionality(
+            textDirection: TextDirection.rtl,
+            child: Scaffold(body: HomeScreen()),
+          ),
+        ),
+      ),
+    );
+    await tester.pump(Duration.zero);
+    // Past every entrance slide, so positions are the settled ones.
+    // (The timers fire in the first pump, the slides run in the second.)
+    await tester.pump(const Duration(milliseconds: 800));
+    await tester.pump(const Duration(milliseconds: 800));
+
+    double top(Finder f) => tester.getTopLeft(f).dy;
+    expect(find.byType(TasbihaHomeSlot), findsOneWidget);
+    expect(
+      top(find.byType(TasbihaHomeSlot)),
+      greaterThan(top(find.byType(HomeGlanceWidgets))),
+    );
+    final rewards = find.byKey(const ValueKey<String>('rewards-card'));
+    expect(rewards, findsOneWidget);
+    expect(top(rewards), greaterThan(top(find.byKey(const ValueKey('chef')))));
+    // The care bar sits between the tiles and the tasbih, and the one
+    // native ad sits right before the chef, away from the reward buttons.
+    expect(find.byType(HomeCareBar), findsOneWidget);
+    expect(
+      top(find.byType(HomeCareBar)),
+      greaterThan(top(find.byType(HomeGlanceWidgets))),
+    );
+    expect(find.byType(ZadNativeAd), findsOneWidget);
+    expect(
+      top(find.byType(ZadNativeAd)),
+      lessThanOrEqualTo(top(find.byKey(const ValueKey('chef')))),
+    );
   });
 
   testWidgets('the two small cards sit under the green one', (tester) async {

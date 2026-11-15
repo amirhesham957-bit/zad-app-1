@@ -25,7 +25,6 @@ import 'package:zad/core/design/tokens/zad_palette.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/l10n/l10n.dart';
-import 'package:zad/features/subscriptions/presentation/subscription_brands.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
@@ -34,6 +33,7 @@ import 'package:zad/shared/subscriptions/application/subscriptions_controller.da
 import 'package:zad/shared/subscriptions/domain/bnpl.dart';
 import 'package:zad/shared/subscriptions/domain/renewal.dart';
 import 'package:zad/shared/subscriptions/domain/subscription.dart';
+import 'package:zad/shared/subscriptions/presentation/subscription_brands.dart';
 
 /// Opens the screen.
 Future<void> showSubscriptionsScreen(BuildContext context) =>
