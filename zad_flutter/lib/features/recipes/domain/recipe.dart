@@ -89,6 +89,7 @@ class Recipe {
     this.deals = const <RecipeDeal>[],
     this.sourceUrl,
     this.sourceHandle,
+    this.chefSecret,
   });
 
   /// Reads one recipe, or null when it has no name to show.
@@ -125,6 +126,10 @@ class Recipe {
       },
       sourceUrl: _url(raw['source_url']),
       sourceHandle: (raw['source_handle'] as Object?)?.toString(),
+      chefSecret: switch ((raw['chef_secret'] as Object?)?.toString().trim()) {
+        final String s when s.isNotEmpty => s,
+        _ => null,
+      },
     );
   }
 
@@ -171,6 +176,10 @@ class Recipe {
   /// Who posted that video.
   final String? sourceHandle;
 
+  /// One chef's secret that changes the taste or the texture (owner 15/11:
+  /// «اسرار الشفات عشان نبهر العميل»); null from an older answer.
+  final String? chefSecret;
+
   /// The recipe as the cache keeps it — the server's field names, so one
   /// reader serves both.
   Map<String, dynamic> toJson() => <String, dynamic>{
@@ -188,6 +197,7 @@ class Recipe {
     'deal_items': deals.map((d) => d.toJson()).toList(),
     'source_url': ?sourceUrl,
     'source_handle': ?sourceHandle,
+    'chef_secret': ?chefSecret,
   };
 }
 

@@ -69,6 +69,8 @@ class CompanionOrb extends ConsumerStatefulWidget {
     this.glowTrigger = 0,
     this.audioLevel,
     this.onTap,
+    this.gaze = Offset.zero,
+    this.coverEyes = false,
     super.key,
   });
 
@@ -105,6 +107,14 @@ class CompanionOrb extends ConsumerStatefulWidget {
 
   /// A tap: squeeze, two blinks and the halo, then this.
   final VoidCallback? onTap;
+
+  /// Where the eyes look, each axis -1..1 (x toward the right, y down); the
+  /// eyes ease there in 350ms. Zero is the orb's own glance.
+  final Offset gaze;
+
+  /// Two hands in the body's colour slide up over the eyes (a spring, about
+  /// 450ms) — «مش باصص» while a password is typed.
+  final bool coverEyes;
 
   @override
   ConsumerState<CompanionOrb> createState() => _CompanionOrbState();
@@ -162,6 +172,28 @@ class _CompanionOrbState extends ConsumerState<CompanionOrb>
   );
   int _shakeRun = 0;
 
+  // ── where the eyes look: 350ms ease toward `widget.gaze` ──
+  late final AnimationController _gazeX = AnimationController.unbounded(
+    vsync: this,
+    value: widget.gaze.dx,
+  );
+  late final AnimationController _gazeY = AnimationController.unbounded(
+    vsync: this,
+    value: widget.gaze.dy,
+  );
+
+  // ── the hands over the eyes: a spring, 0 = down, 1 = covering ──
+  late final AnimationController _cover = AnimationController.unbounded(
+    vsync: this,
+    value: widget.coverEyes ? 1 : 0,
+  );
+  static const SpringDescription _handsSpring = SpringDescription(
+    mass: 1,
+    stiffness: 220,
+    // 2 · 0.72 · √220
+    damping: 21.36,
+  );
+
   int _tapPulse = 0;
 
   @override
@@ -204,6 +236,7 @@ class _CompanionOrbState extends ConsumerState<CompanionOrb>
         _elapsed.value = Duration.zero;
       }
     }
+    _followGazeAndHands(old);
     if (old.blinkTrigger != widget.blinkTrigger && widget.blinkTrigger != 0) {
       unawaited(_doubleBlink());
     }
@@ -212,8 +245,43 @@ class _CompanionOrbState extends ConsumerState<CompanionOrb>
     }
   }
 
+  /// Gaze and hands follow the widget; with motion off they jump.
+  void _followGazeAndHands(CompanionOrb old) {
+    final still = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    if (old.gaze != widget.gaze) {
+      if (still) {
+        _gazeX.value = widget.gaze.dx;
+        _gazeY.value = widget.gaze.dy;
+      } else {
+        for (final (c, v) in <(AnimationController, double)>[
+          (_gazeX, widget.gaze.dx),
+          (_gazeY, widget.gaze.dy),
+        ]) {
+          c.animateTo(
+            v,
+            duration: const Duration(milliseconds: 350),
+            curve: Curves.easeOutCubic,
+          );
+        }
+      }
+    }
+    if (old.coverEyes != widget.coverEyes) {
+      final target = widget.coverEyes ? 1.0 : 0.0;
+      if (still) {
+        _cover.value = target;
+      } else {
+        _cover.animateWith(
+          SpringSimulation(_handsSpring, _cover.value, target, _cover.velocity),
+        );
+      }
+    }
+  }
+
   @override
   void dispose() {
+    _gazeX.dispose();
+    _gazeY.dispose();
+    _cover.dispose();
     _blinkLoop?.cancel();
     for (final t in _waits) {
       t.cancel();
@@ -357,6 +425,9 @@ class _CompanionOrbState extends ConsumerState<CompanionOrb>
         _eye,
         _glow,
         _shake,
+        _gazeX,
+        _gazeY,
+        _cover,
         widget.audioLevel,
       ]),
     );
@@ -419,6 +490,13 @@ class _CompanionOrbState extends ConsumerState<CompanionOrb>
   double get glow => _glow.value;
 
   double get shake => _shake.value;
+
+  /// The eyes' look, each axis -1..1.
+  Offset get gaze =>
+      Offset(_gazeX.value.clamp(-1.0, 1.0), _gazeY.value.clamp(-1.0, 1.0));
+
+  /// 0 hands down .. 1 over the eyes (the spring may overshoot a little).
+  double get cover => _cover.value.clamp(0.0, 1.1);
 
   double get level => (widget.audioLevel?.value ?? 0).clamp(0.0, 1.0);
 
@@ -715,6 +793,9 @@ class _OrbPainter extends CustomPainter {
       );
     }
 
+    // 8-hands. Two hands over the eyes, in the body's colour.
+    if (frame.cover > 0.01) _coverHands(canvas, center, radius, sky, deep);
+
     // 8a. The character's crest, unless a hat covers the head.
     if (persona != null && !look!.outfit.coversHead) {
       _crest(canvas, center, radius, phase, persona.crest);
@@ -790,8 +871,10 @@ class _OrbPainter extends CustomPainter {
       ),
       _ => Offset.zero,
     };
-    final left = Offset(center.dx - spacing, baseY) + look;
-    final right = Offset(center.dx + spacing, baseY) + look;
+    final g = frame.gaze;
+    final aim = look + Offset(g.dx * radius * 0.14, g.dy * radius * 0.10);
+    final left = Offset(center.dx - spacing, baseY) + aim;
+    final right = Offset(center.dx + spacing, baseY) + aim;
 
     switch (state) {
       case CompanionState.happy:
@@ -824,6 +907,46 @@ class _OrbPainter extends CustomPainter {
             open;
         _capsuleEye(canvas, left, width, h);
         _capsuleEye(canvas, right, width, h);
+    }
+  }
+
+  void _coverHands(
+    Canvas canvas,
+    Offset center,
+    double radius,
+    Color sky,
+    Color deep,
+  ) {
+    final t = frame.cover;
+    final w = radius * 0.62;
+    final h = radius * 0.42;
+    for (final side in <double>[-1, 1]) {
+      final up = Offset(
+        center.dx + side * radius * 0.30,
+        center.dy - radius * 0.02,
+      );
+      final down = Offset(
+        center.dx + side * radius * 0.62,
+        center.dy + radius * 1.05,
+      );
+      final c = Offset.lerp(down, up, t)!;
+      final rect = RRect.fromRectAndRadius(
+        Rect.fromCenter(center: c, width: w, height: h),
+        Radius.circular(h / 2),
+      );
+      canvas
+        ..drawRRect(
+          rect.shift(Offset(0, radius * 0.03)),
+          Paint()..color = deep.withValues(alpha: 0.35),
+        )
+        ..drawRRect(rect, Paint()..color = sky)
+        ..drawRRect(
+          rect,
+          Paint()
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = radius * 0.035
+            ..color = deep.withValues(alpha: 0.7),
+        );
     }
   }
 
@@ -1349,7 +1472,11 @@ class _OrbPainter extends CustomPainter {
   }
 
   /// Where the eyes look for the mood — the same glances as the orb's.
-  Offset _glance(double radius, double phase) => switch (state) {
+  Offset _glance(double radius, double phase) =>
+      _baseGlance(radius, phase) +
+      Offset(frame.gaze.dx * radius * 0.12, frame.gaze.dy * radius * 0.09);
+
+  Offset _baseGlance(double radius, double phase) => switch (state) {
     CompanionState.idle => Offset(radius * 0.05 * math.sin(phase * 0.5), 0),
     CompanionState.listening => Offset(0, -radius * 0.04),
     CompanionState.focused => Offset(

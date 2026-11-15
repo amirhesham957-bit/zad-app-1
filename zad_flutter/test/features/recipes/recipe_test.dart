@@ -89,6 +89,20 @@ void main() {
       expect((lineOnly.isUsable, failed.isUsable), (true, false));
     });
 
+    test('the chef secret is read, kept through the cache, blank is none', () {
+      final recipe = Recipe.fromJson(<String, dynamic>{
+        'recipe_name': 'شكشوكة',
+        'chef_secret': '  رشة سكر على الطماطم  ',
+      })!;
+      expect(recipe.chefSecret, 'رشة سكر على الطماطم');
+      expect(Recipe.fromJson(recipe.toJson())!.chefSecret, recipe.chefSecret);
+      final blank = Recipe.fromJson(<String, dynamic>{
+        'recipe_name': 'x',
+        'chef_secret': '  ',
+      })!;
+      expect(blank.chefSecret, isNull);
+    });
+
     test('only https images are shown', () {
       final recipe = Recipe.fromJson(<String, dynamic>{
         'recipe_name': 'x',

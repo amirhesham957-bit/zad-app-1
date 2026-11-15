@@ -2772,6 +2772,9 @@ class ZadL10nEn extends ZadL10n {
   }
 
   @override
+  String get recipesChefSecret => 'Chef\'s secret';
+
+  @override
   String get recipesOnDeal => 'On offer now';
 
   @override
@@ -4291,4 +4294,100 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get homeCareDoseNow => 'Dose due now';
+
+  @override
+  String get introSayPantry => 'This fridge is mine!';
+
+  @override
+  String get introSayFamily => 'The whole house in one hand';
+
+  @override
+  String get introSayAssistant => 'I learn from you every day';
+
+  @override
+  String get introSayBudget => 'And we save together';
+
+  @override
+  String get authZadoWatching =>
+      'Zado watches what you type… except the password.';
+
+  @override
+  String get authZadoNotLooking => 'Not looking, promise';
+
+  @override
+  String authZadoHello(String name) {
+    return 'Hi $name!';
+  }
+
+  @override
+  String get consentTitle => 'Before we start, here is our deal';
+
+  @override
+  String consentVersionLine(String terms, String updated) {
+    return 'Terms $terms and Privacy Policy 4.0 · $updated';
+  }
+
+  @override
+  String get consentPoint1Lead => 'We only keep what you enter.';
+
+  @override
+  String get consentPoint1Body =>
+      'Your account, money, pantry, medicines, appointments and family chat, so Zad can help you with them.';
+
+  @override
+  String get consentPoint2Lead => 'Every permission is yours to give.';
+
+  @override
+  String get consentPoint2Body =>
+      'Bank notifications, location, camera and microphone: each one is asked for when you use the feature, and you can switch it off at any time.';
+
+  @override
+  String get consentPoint3Lead => 'We never sell your data.';
+
+  @override
+  String get consentPoint3Body =>
+      'And we never read bank passwords, card numbers or OTP codes.';
+
+  @override
+  String get consentPoint4Lead => 'The AI helps, and it can be wrong.';
+
+  @override
+  String get consentPoint4Body =>
+      'Check the numbers before any decision; Zad is not a bank or a financial adviser.';
+
+  @override
+  String get consentPoint5Lead => 'The free plan has ads';
+
+  @override
+  String get consentPoint5Body =>
+      ' from Google. Children\'s accounts have no ads at all.';
+
+  @override
+  String get consentPoint6Lead => 'Your data is yours.';
+
+  @override
+  String get consentPoint6Body =>
+      'Export it at any time, or delete your account; deletion completes after 14 days, during which you can come back.';
+
+  @override
+  String get consentPoint7Lead => 'Zad is for adults, 18 and over.';
+
+  @override
+  String get consentPoint7Body =>
+      'Children join as members of their guardian\'s family.';
+
+  @override
+  String get consentLegalToggle => 'Full legal text (in English)';
+
+  @override
+  String get consentPrivacyLink => 'Privacy Policy';
+
+  @override
+  String get consentTermsLink => 'Terms of Use';
+
+  @override
+  String get consentTermsVersion => '2.2';
+
+  @override
+  String get consentTermsUpdated => 'November 2026';
 }

@@ -6,6 +6,8 @@
 // Controllers are recording fakes: a Hive write inside a widget test never
 // completes under the fake clock.
 
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -23,6 +25,8 @@ import 'package:zad/shared/inventory/application/pantry_controller.dart';
 import 'package:zad/shared/inventory/application/shopping_controller.dart';
 import 'package:zad/shared/inventory/domain/inventory_item.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
+
+import '../../support/fonts.dart';
 
 class _Recipes extends RecipesController {
   new(this.initial);
@@ -100,6 +104,7 @@ ChefSuggestions _answer({String? signature}) => ChefSuggestions(
       used: <String>['بيض', 'طماطم'],
       steps: <String>['قطّع الطماطم', 'شوّحها', 'ضيف البيض', 'قدّم'],
       fromInventory: true,
+      chefSecret: 'رشة سكر على الطماطم بتكسر الحموضة',
     ),
     Recipe(
       name: 'مكرونة بالصلصة',
@@ -273,6 +278,39 @@ void main() {
 
     expect(find.textContaining('ضيف الناقص'), findsNothing);
     expect(find.text('من عندك'), findsOneWidget);
+    // Owner 15/11: every recipe carries one chef's secret.
+    expect(find.text('سر الشيف'), findsOneWidget);
+    expect(find.text('رشة سكر على الطماطم بتكسر الحموضة'), findsOneWidget);
+  });
+
+  // For the owner's review only: `flutter test --update-goldens
+  // test/features/recipes/recipes_view_test.dart` with ZAD_SCREENS=1 set
+  // writes build/screens/chef_secret.png. Skipped in a normal run.
+  testWidgets('screenshot: the recipe sheet with its chef secret', (
+    tester,
+  ) async {
+    await loadZadFonts();
+    await pump(tester, pantry: _kitchen, suggestions: _answer());
+    await tester.tap(find.text('شكشوكة'));
+    await tester.pumpAndSettle();
+    await expectLater(
+      find.byType(MaterialApp),
+      matchesGoldenFile('../../../build/screens/chef_secret.png'),
+    );
+  }, skip: Platform.environment['ZAD_SCREENS'] != '1');
+
+  testWidgets('a recipe from an older answer has no secret card', (
+    tester,
+  ) async {
+    await pump(tester, pantry: _kitchen, suggestions: _answer());
+
+    await tester.tap(find.text('مكرونة بالصلصة'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey<String>('recipe-chef-secret')),
+      findsNothing,
+    );
   });
 
   // 2026-09-29: 98 suggestions, not one opinion — the row was only on the

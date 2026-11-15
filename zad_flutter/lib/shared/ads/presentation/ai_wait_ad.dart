@@ -1,11 +1,16 @@
-/// The ad that covers an AI wait (owner 15/11: every AI request carries a
-/// video ad while the AI works).
+/// The ad that covers an AI wait, by how long the wait lasts (owner 15/11,
+/// approved the same night):
 ///
-/// Built once per wait, it reports [InterstitialBreak.aiWait] (the pacer
-/// decides whether a full-screen ad shows) and draws one native ad in
-/// Google's medium template, whose media view plays video, muted. When the
-/// build has no native unit, or the native ad does not load, it falls back to
-/// the inline banner, which can carry video creatives too. Nothing renders or
+/// - a quick answer (under [ZadAiWaitAd.nativeAfter]) shows no ad at all;
+/// - a slow one draws one native ad in Google's medium template, whose media
+///   view plays video, muted. When the build has no native unit, or the
+///   native ad does not load, it falls back to the inline banner;
+/// - a long one (still waiting after [ZadAiWaitAd.fullScreenAfter]: a
+///   receipt, an analysis, a recipe) also reports [InterstitialBreak.aiWait]
+///   once, and the pacer decides whether a full-screen ad shows.
+///
+/// A request that retries keeps the same widget, so it keeps its native ad
+/// and gets no extra full-screen ad on top of the failure. Nothing renders or
 /// is reported when [adsAllowedProvider] says no (kids mode, paid plan).
 library;
 
@@ -25,19 +30,31 @@ class ZadAiWaitAd extends ConsumerStatefulWidget {
   /// Creates it.
   const new({super.key});
 
+  /// A wait shorter than this shows no ad: the answer was quick.
+  static const Duration nativeAfter = Duration(milliseconds: 1500);
+
+  /// A wait longer than this is a long request and may carry a full-screen
+  /// ad, if the pacer allows one.
+  static const Duration fullScreenAfter = Duration(seconds: 6);
+
   @override
   ConsumerState<ZadAiWaitAd> createState() => _ZadAiWaitAdState();
 }
 
 class _ZadAiWaitAdState extends ConsumerState<ZadAiWaitAd> {
-  bool _reported = false;
   bool _nativeFailed = false;
+  bool _slow = false;
+  Timer? _slowTimer;
+  Timer? _longTimer;
 
-  void _report() {
-    if (_reported) return;
-    _reported = true;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
+  @override
+  void initState() {
+    super.initState();
+    _slowTimer = Timer(ZadAiWaitAd.nativeAfter, () {
+      if (mounted) setState(() => _slow = true);
+    });
+    _longTimer = Timer(ZadAiWaitAd.fullScreenAfter, () {
+      if (!mounted || !ref.read(adsAllowedProvider)) return;
       unawaited(
         ref.read(interstitialsProvider).atBreak(InterstitialBreak.aiWait),
       );
@@ -45,9 +62,17 @@ class _ZadAiWaitAdState extends ConsumerState<ZadAiWaitAd> {
   }
 
   @override
+  void dispose() {
+    _slowTimer?.cancel();
+    _longTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    if (!ref.watch(adsAllowedProvider)) return const SizedBox.shrink();
-    _report();
+    if (!ref.watch(adsAllowedProvider) || !_slow) {
+      return const SizedBox.shrink();
+    }
     if (nativeAdUnit.isEmpty || _nativeFailed) return const ZadInlineAd();
     return ZadNativeAd(
       templateType: TemplateType.medium,

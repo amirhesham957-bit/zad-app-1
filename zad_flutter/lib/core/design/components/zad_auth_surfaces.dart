@@ -3,9 +3,11 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:zad/core/design/components/zad_pressable.dart';
 import 'package:zad/core/design/tokens/zad_extended_colors.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 
 /// Kotlin's `ZadAuthBackground`: the canvas with a warm wash top-start and a
 /// cool one bottom-end.
@@ -114,6 +116,44 @@ class ZadPrimaryButton extends StatelessWidget {
                 ),
         ),
       ),
+    );
+  }
+}
+
+/// The brand as the intro, sign-in and sign-up all show it: the carrot beside
+/// «زاد» in the app's language. Sign-in used to say «ZAD» in Latin under a
+/// carrot while the intro said «زاد» beside one (emulator, 2026-11-15).
+class ZadBrandRow extends StatelessWidget {
+  /// Creates the brand row; [compact] is the smaller one above a form.
+  const new({this.compact = false, this.foreground, super.key});
+
+  /// Smaller logo and wordmark, for screens where the form needs the room.
+  final bool compact;
+
+  /// The wordmark's colour; the dark brand green by default, white on the
+  /// sign-in hero.
+  final Color? foreground;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    final logo = compact ? 40.0 : 52.0;
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: <Widget>[
+        SvgPicture.asset(
+          'assets/brand/carrot_logo.svg',
+          width: logo,
+          height: logo,
+          semanticsLabel: l.introLogoLabel,
+        ),
+        const SizedBox(width: 12),
+        Text(
+          l.appTitle,
+          style: (compact ? ZadType.displayMedium : ZadType.displayLarge)
+              .copyWith(color: foreground ?? context.zadExt.primaryDark),
+        ),
+      ],
     );
   }
 }

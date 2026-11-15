@@ -4844,6 +4844,12 @@ abstract class ZadL10n {
   /// **'اليوم {day}'**
   String recipesWeekDay(int day);
 
+  /// No description provided for @recipesChefSecret.
+  ///
+  /// In ar, this message translates to:
+  /// **'سر الشيف'**
+  String get recipesChefSecret;
+
   /// No description provided for @recipesOnDeal.
   ///
   /// In ar, this message translates to:
@@ -7399,6 +7405,174 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'جرعتها دلوقتي'**
   String get homeCareDoseNow;
+
+  /// Zado's bubble on the intro's pantry scene.
+  ///
+  /// In ar, this message translates to:
+  /// **'التلاجة دي بتاعتي!'**
+  String get introSayPantry;
+
+  /// Zado's bubble on the intro's family scene.
+  ///
+  /// In ar, this message translates to:
+  /// **'البيت كله في إيد واحدة'**
+  String get introSayFamily;
+
+  /// Zado's bubble on the intro's assistant scene.
+  ///
+  /// In ar, this message translates to:
+  /// **'بتعلّم منك كل يوم'**
+  String get introSayAssistant;
+
+  /// Zado's bubble on the intro's budget scene.
+  ///
+  /// In ar, this message translates to:
+  /// **'ونوفّر سوا'**
+  String get introSayBudget;
+
+  /// Hint under the sign-in form.
+  ///
+  /// In ar, this message translates to:
+  /// **'زادو بيبص على اللي بتكتبه… إلا كلمة السر.'**
+  String get authZadoWatching;
+
+  /// Hint under the sign-in form while the password field has focus; Zado covers his eyes.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش باصص، والله'**
+  String get authZadoNotLooking;
+
+  /// Zado's bubble on the sign-up screen while the customer types a name; {name} is the first word of it.
+  ///
+  /// In ar, this message translates to:
+  /// **'أهلاً يا {name}!'**
+  String authZadoHello(String name);
+
+  /// Title of the consent bottom sheet opened from sign-up.
+  ///
+  /// In ar, this message translates to:
+  /// **'قبل ما نبدأ، ده اتفاقنا'**
+  String get consentTitle;
+
+  /// Version line under the consent sheet's title; {terms} is the terms version, {updated} the terms' last-updated date.
+  ///
+  /// In ar, this message translates to:
+  /// **'الشروط {terms} وسياسة الخصوصية ٤٫٠ · {updated}'**
+  String consentVersionLine(String terms, String updated);
+
+  /// Consent sheet, point 1: the bold lead.
+  ///
+  /// In ar, this message translates to:
+  /// **'بنحفظ اللي بتدخّله بس.'**
+  String get consentPoint1Lead;
+
+  /// Consent sheet, point 1: the text after the lead.
+  ///
+  /// In ar, this message translates to:
+  /// **'حسابك وفلوسك ومخزونك وأدويتك ومواعيدك ورسايل العيلة، عشان زاد يساعدك بيهم.'**
+  String get consentPoint1Body;
+
+  /// Consent sheet, point 2: the bold lead.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل إذن بموافقتك.'**
+  String get consentPoint2Lead;
+
+  /// Consent sheet, point 2: the text after the lead.
+  ///
+  /// In ar, this message translates to:
+  /// **'إشعارات البنك والموقع والكاميرا والمايك، كل واحد بيتطلب لما تستخدم الميزة، وتقدر تقفله في أي وقت.'**
+  String get consentPoint2Body;
+
+  /// Consent sheet, point 3: the bold lead.
+  ///
+  /// In ar, this message translates to:
+  /// **'مابنبيعش بياناتك لحد.'**
+  String get consentPoint3Lead;
+
+  /// Consent sheet, point 3: the text after the lead.
+  ///
+  /// In ar, this message translates to:
+  /// **'ومابنقراش كلمات سر البنك ولا أرقام الكروت ولا أكواد OTP.'**
+  String get consentPoint3Body;
+
+  /// Consent sheet, point 4: the bold lead.
+  ///
+  /// In ar, this message translates to:
+  /// **'الذكاء الاصطناعي بيساعد، وممكن يغلط.'**
+  String get consentPoint4Lead;
+
+  /// Consent sheet, point 4: the text after the lead.
+  ///
+  /// In ar, this message translates to:
+  /// **'راجع الأرقام قبل أي قرار؛ زاد مش بنك ولا مستشار مالي.'**
+  String get consentPoint4Body;
+
+  /// Consent sheet, point 5: the bold lead.
+  ///
+  /// In ar, this message translates to:
+  /// **'الخطة المجانية فيها إعلانات'**
+  String get consentPoint5Lead;
+
+  /// Consent sheet, point 5: the text after the lead.
+  ///
+  /// In ar, this message translates to:
+  /// **' من Google. حسابات الأطفال مفيهاش إعلانات خالص.'**
+  String get consentPoint5Body;
+
+  /// Consent sheet, point 6: the bold lead.
+  ///
+  /// In ar, this message translates to:
+  /// **'بياناتك ملكك.'**
+  String get consentPoint6Lead;
+
+  /// Consent sheet, point 6: the text after the lead.
+  ///
+  /// In ar, this message translates to:
+  /// **'تصدّرها في أي وقت، أو تمسح حسابك، والمسح بيتم بعد ١٤ يوم تقدر ترجع فيهم.'**
+  String get consentPoint6Body;
+
+  /// Consent sheet, point 7: the bold lead.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد للكبار من ١٨ سنة.'**
+  String get consentPoint7Lead;
+
+  /// Consent sheet, point 7: the text after the lead.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأطفال بيدخلوا كأفراد في عيلة وليّ أمرهم.'**
+  String get consentPoint7Body;
+
+  /// Collapsed section holding the English terms, on the consent sheet and the privacy policy.
+  ///
+  /// In ar, this message translates to:
+  /// **'النص القانوني الكامل (بالإنجليزي)'**
+  String get consentLegalToggle;
+
+  /// Link button on the consent sheet that opens the published privacy policy (English web page).
+  ///
+  /// In ar, this message translates to:
+  /// **'سياسة الخصوصية'**
+  String get consentPrivacyLink;
+
+  /// Link button on the consent sheet that opens the published terms of use (English web page).
+  ///
+  /// In ar, this message translates to:
+  /// **'شروط الاستخدام'**
+  String get consentTermsLink;
+
+  /// The terms' version on the consent sheet, in the reader's digits; keep it equal to kTermsVersion in terms_content.dart.
+  ///
+  /// In ar, this message translates to:
+  /// **'٢٫٢'**
+  String get consentTermsVersion;
+
+  /// The month the terms were last updated, on the consent sheet; keep it equal to kTermsLastUpdated.
+  ///
+  /// In ar, this message translates to:
+  /// **'نوفمبر ٢٠٢٦'**
+  String get consentTermsUpdated;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

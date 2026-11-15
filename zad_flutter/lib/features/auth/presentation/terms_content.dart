@@ -3,10 +3,16 @@
 library;
 
 /// `TermsContent.VERSION`.
-const String kTermsVersion = '2.1';
+const String kTermsVersion = '2.2';
 
 /// `TermsContent.LAST_UPDATED`.
 const String kTermsLastUpdated = 'November 2026';
+
+/// The published privacy policy (English web page).
+const String kPrivacyPolicyUrl = 'https://astralabshq.vercel.app/privacy.html';
+
+/// The published terms of use (English web page).
+const String kTermsUrl = 'https://astralabshq.vercel.app/terms.html';
 
 /// `TermsContent.TITLE`.
 const String kTermsTitle = 'Terms of Service & Privacy Policy';
@@ -14,7 +20,7 @@ const String kTermsTitle = 'Terms of Service & Privacy Policy';
 /// `TermsContent.FULL_TEXT`.
 const String kTermsFullText = '''
 ZAD — TERMS OF SERVICE & PRIVACY POLICY
-Version 2.1 — Last Updated: November 2026
+Version 2.2 — Last Updated: November 2026
 
 PLEASE READ THESE TERMS CAREFULLY BEFORE CREATING AN ACCOUNT. BY REGISTERING, ACCESSING, OR USING THE ZAD APPLICATION ("THE APP"), YOU AGREE TO BE LEGALLY BOUND BY THESE TERMS IN THEIR ENTIRETY. IF YOU DO NOT AGREE, DO NOT USE THE APP.
 
@@ -32,7 +38,7 @@ PLEASE READ THESE TERMS CAREFULLY BEFORE CREATING AN ACCOUNT. BY REGISTERING, AC
 
 2.1 YOU EXPRESSLY ACKNOWLEDGE AND AGREE THAT:
 (a) AI-generated outputs may be inaccurate, incomplete, outdated, or entirely incorrect;
-(b) Automatic transaction detection (including SMS and notification parsing) is a best-effort convenience feature and may misread, miss, duplicate, or misclassify transactions;
+(b) Automatic transaction detection from bank notifications is a best-effort convenience feature and may misread, miss, duplicate, or misclassify transactions;
 (c) All predictions, insights, and suggestions are for GENERAL INFORMATIONAL PURPOSES ONLY and do not constitute financial, legal, tax, medical, or professional advice of any kind;
 (d) You are solely responsible for independently verifying every figure, transaction, balance, and recommendation before relying on it or making any decision based on it.
 
@@ -72,7 +78,7 @@ PLEASE READ THESE TERMS CAREFULLY BEFORE CREATING AN ACCOUNT. BY REGISTERING, AC
 
 5.3 To provide intelligent features, relevant data (such as transaction text or inventory items) may be processed by third-party AI providers under their respective terms and privacy policies. By using the App, you consent to this processing.
 
-5.4 SMS and notification reading happens only with your explicit device-level permission, which you may revoke at any time in your device settings. Revoking permissions may disable automatic tracking features.
+5.4 Zad does not read SMS messages. Bank notifications are read only with your explicit notification-access permission, which you may revoke at any time in your device settings. Revoking it may disable automatic tracking features.
 
 5.5 You may request deletion of your account and associated data at any time through the App's profile settings. Deletion takes effect 14 days after the request; signing in during that period lets you cancel it.
 
