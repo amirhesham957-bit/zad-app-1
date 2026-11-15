@@ -2029,6 +2029,12 @@
       "skillPath": "engineering/skills/secrets-vault-manager/SKILL.md",
       "computedHash": "f3e8756cc9cc77da80114c8556a75b3b15f1f09a4e6a59f0ab01a0a18c911fb8"
     },
+    "security-audit": {
+      "source": "cloudflare/security-audit-skill",
+      "sourceType": "github",
+      "skillPath": "skills/security-audit/SKILL.md",
+      "computedHash": "8513eb3b2c39b8d05ef4f47b32ef4d18280b93a5efb91d8df6272f7435034af5"
+    },
     "security-guidance": {
       "source": "alirezarezvani/claude-skills",
       "sourceType": "github",
