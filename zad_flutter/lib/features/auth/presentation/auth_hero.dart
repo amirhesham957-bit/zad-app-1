@@ -11,6 +11,8 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_motion.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/shared/companion/domain/companion_catalog.dart';
+import 'package:zad/shared/orb/domain/orb_occasion.dart';
 import 'package:zad/shared/orb/presentation/companion_orb.dart';
 
 /// How far the card climbs over the hero.
@@ -212,6 +214,11 @@ class _AuthZadoState extends State<AuthZado>
                     child: child,
                   ),
                   child: CompanionOrb(
+                    // Zado as the intro draws him (crest, hands, feet). Signed
+                    // out there is no companion yet, and without a look the
+                    // orb falls back to the classic ball (emulator, 15/11).
+                    look: const CompanionLook(),
+                    occasion: OrbOccasion.none,
                     size: box,
                     animated:
                         !(MediaQuery.maybeDisableAnimationsOf(context) ??
