@@ -7339,6 +7339,30 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'اربط حسابك وخلّي التذكيرات توصلك'**
   String get profileTelegramSubtitle;
+
+  /// No description provided for @profileExportTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تصدير بياناتي'**
+  String get profileExportTitle;
+
+  /// No description provided for @profileExportSubtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'نسخة من كل اللي زاد عارفه عنك'**
+  String get profileExportSubtitle;
+
+  /// No description provided for @profileExportFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'معرفناش نجهز الملف، جرّب تاني'**
+  String get profileExportFailed;
+
+  /// No description provided for @profileExportSubject.
+  ///
+  /// In ar, this message translates to:
+  /// **'بياناتي من زاد'**
+  String get profileExportSubject;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

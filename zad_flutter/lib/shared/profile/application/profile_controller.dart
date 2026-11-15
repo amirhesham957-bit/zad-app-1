@@ -218,6 +218,11 @@ class ProfileController extends Notifier<ProfileView> {
     if (ref.mounted) state = state.copyWith(behaviorConsent: given);
   }
 
+  /// «تصدير بياناتي» (ZAD_PLAN ٨.٣): everything the server holds about this
+  /// account, as indented JSON. `zad_export_my_data` reads the signed-in
+  /// user only and leaves device and purchase tokens out. Null on failure.
+  Future<String?> exportMyData() => fetchMyDataExport(_client);
+
   /// Asks for the account to be deleted: `delete-account` schedules it 14
   /// days out, then this device signs out. True when the server took it.
   Future<bool> deleteAccount() async {
@@ -233,6 +238,18 @@ class ProfileController extends Notifier<ProfileView> {
       // cleared the device.
     }
     return true;
+  }
+}
+
+/// The body of [ProfileController.exportMyData], apart so a test can hand it
+/// a client.
+Future<String?> fetchMyDataExport(SupabaseClient client) async {
+  try {
+    final data = await client.rpc<Object?>('zad_export_my_data');
+    if (data is! Map) return null;
+    return const JsonEncoder.withIndent('  ').convert(data);
+  } on Object {
+    return null;
   }
 }
 

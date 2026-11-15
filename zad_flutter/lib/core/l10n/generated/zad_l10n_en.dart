@@ -4256,4 +4256,17 @@ class ZadL10nEn extends ZadL10n {
   @override
   String get profileTelegramSubtitle =>
       'Link your account so reminders reach you';
+
+  @override
+  String get profileExportTitle => 'Export my data';
+
+  @override
+  String get profileExportSubtitle =>
+      'A copy of everything Zad knows about you';
+
+  @override
+  String get profileExportFailed => 'Couldn\'t prepare the file, try again';
+
+  @override
+  String get profileExportSubject => 'My data from Zad';
 }

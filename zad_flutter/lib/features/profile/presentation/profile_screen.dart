@@ -5,11 +5,14 @@
 library;
 
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:zad/core/design/components/zad_card.dart';
 import 'package:zad/core/design/components/zad_network_image.dart';
 import 'package:zad/core/design/foundation/squircle.dart';
@@ -265,6 +268,12 @@ class ProfileScreen extends ConsumerWidget {
                 hue: 10,
                 rows: <_MenuRow>[
                   _MenuRow(
+                    icon: ZadIcons.share,
+                    title: context.l10n.profileExportTitle,
+                    subtitle: context.l10n.profileExportSubtitle,
+                    onTap: () => unawaited(_exportMyData(context, ref)),
+                  ),
+                  _MenuRow(
                     icon: ZadIcons.delete,
                     title: 'حذف الحساب',
                     subtitle: 'بيتمسح بعد مهلة ١٤ يوم',
@@ -293,6 +302,47 @@ class ProfileScreen extends ConsumerWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Future<void> _exportMyData(BuildContext context, WidgetRef ref) async {
+    final navigator = Navigator.of(context);
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    final failed = context.l10n.profileExportFailed;
+    final subject = context.l10n.profileExportSubject;
+    unawaited(
+      showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const Center(child: CircularProgressIndicator()),
+      ),
+    );
+    final json = await ref
+        .read(profileControllerProvider.notifier)
+        .exportMyData();
+    String? path;
+    if (json != null) {
+      try {
+        final dir = await getTemporaryDirectory();
+        final day = DateTime.now().toIso8601String().substring(0, 10);
+        final file = File('${dir.path}/zad-data-$day.json');
+        await file.writeAsString(json);
+        path = file.path;
+      } on Object {
+        path = null;
+      }
+    }
+    if (!navigator.mounted) return;
+    navigator.pop();
+    if (path == null) {
+      messenger?.showSnackBar(SnackBar(content: Text(failed)));
+      return;
+    }
+    await SharePlus.instance.share(
+      ShareParams(
+        files: <XFile>[XFile(path, mimeType: 'application/json')],
+        subject: subject,
       ),
     );
   }
