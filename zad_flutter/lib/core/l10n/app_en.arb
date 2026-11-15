@@ -792,12 +792,20 @@
   "recipesAddToPantry": "Add to the pantry",
   "recipesWeekDay": "Day {day}",
   "@recipesWeekDay": {
-    "placeholders": { "day": { "type": "int" } }
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
   },
   "recipesOnDeal": "On offer now",
   "recipesFromCreator": "From @{handle}'s video",
   "@recipesFromCreator": {
-    "placeholders": { "handle": { "type": "String" } }
+    "placeholders": {
+      "handle": {
+        "type": "String"
+      }
+    }
   },
   "recipesTrendingGroup": "Trending now",
   "homeDealsSeeAll": "All deals",
@@ -936,7 +944,13 @@
   "briefWhySeason": "From the Umm al-Qura calendar in your country's time — prices rise before the season.",
   "accountRestoreTitle": "Your account is scheduled for deletion",
   "accountRestoreBody": "You asked to delete your account. It and all its data will be erased in {days} days. Restore it?",
-  "@accountRestoreBody": {"placeholders": {"days": {"type": "int"}}},
+  "@accountRestoreBody": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
   "accountRestoreLeave": "Sign out",
   "accountRestoreYes": "Restore my account",
   "accountRestoreFailed": "Couldn't restore the account right now. Reopen the app and try again.",
@@ -1222,91 +1236,203 @@
   "petLinesNotThirsty": "I don't want water now 🙈\nI've had enough 😄",
   "petLinesPetted": "Hehe, that tickles 🤭\nMore! More! 🥰\nLove you 💚",
   "cookDone": "Cooked it",
-  "@cookDone": {"description": "Recipe: after cooking, take what it used off the pantry."},
+  "@cookDone": {
+    "description": "Recipe: after cooking, take what it used off the pantry."
+  },
   "cookSheetTitle": "Take what you used off the pantry",
-  "@cookSheetTitle": {"description": "Cooked sheet: title."},
+  "@cookSheetTitle": {
+    "description": "Cooked sheet: title."
+  },
   "cookSheetHint": "These are my guesses — change them if you used more or less.",
-  "@cookSheetHint": {"description": "Cooked sheet: hint under the title."},
+  "@cookSheetHint": {
+    "description": "Cooked sheet: hint under the title."
+  },
   "cookConfirm": "Take off {count}",
-  "@cookConfirm": {"description": "Cooked sheet: confirm, with how many rows are ticked.", "placeholders": {"count": {"type": "int"}}},
+  "@cookConfirm": {
+    "description": "Cooked sheet: confirm, with how many rows are ticked.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "cookNothing": "None of this recipe's ingredients are in your pantry.",
-  "@cookNothing": {"description": "Cooked sheet: no pantry row matched."},
+  "@cookNothing": {
+    "description": "Cooked sheet: no pantry row matched."
+  },
   "cookDoneSnack": "Took {count} off the pantry ✅",
-  "@cookDoneSnack": {"description": "After the cooked sheet: snackbar.", "placeholders": {"count": {"type": "int"}}},
+  "@cookDoneSnack": {
+    "description": "After the cooked sheet: snackbar.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "cookLess": "Less",
-  "@cookLess": {"description": "Cooked sheet: stepper −."},
+  "@cookLess": {
+    "description": "Cooked sheet: stepper −."
+  },
   "cookMore": "More",
-  "@cookMore": {"description": "Cooked sheet: stepper +."},
+  "@cookMore": {
+    "description": "Cooked sheet: stepper +."
+  },
   "profileRegionTitle": "Your region",
-  "@profileRegionTitle": {"description": "Profile form: title of the Saudi region chips (ZAD_PLAN 10.16)."},
+  "@profileRegionTitle": {
+    "description": "Profile form: title of the Saudi region chips (ZAD_PLAN 10.16)."
+  },
   "profileRegionHijazi": "Hijazi",
-  "@profileRegionHijazi": {"description": "Profile form: region chip, Jeddah/Makkah/Madinah."},
+  "@profileRegionHijazi": {
+    "description": "Profile form: region chip, Jeddah/Makkah/Madinah."
+  },
   "profileRegionNajdi": "Najdi",
-  "@profileRegionNajdi": {"description": "Profile form: region chip, Riyadh/Qassim."},
+  "@profileRegionNajdi": {
+    "description": "Profile form: region chip, Riyadh/Qassim."
+  },
   "profileRegionEast": "Eastern",
-  "@profileRegionEast": {"description": "Profile form: region chip, Eastern Province."},
+  "@profileRegionEast": {
+    "description": "Profile form: region chip, Eastern Province."
+  },
   "profileRegionSouth": "Southern",
-  "@profileRegionSouth": {"description": "Profile form: region chip, the south (Abha, Jazan, Najran)."},
+  "@profileRegionSouth": {
+    "description": "Profile form: region chip, the south (Abha, Jazan, Najran)."
+  },
   "profileRegionGeneral": "General",
-  "@profileRegionGeneral": {"description": "Profile form: region chip, plain Saudi with no region."},
+  "@profileRegionGeneral": {
+    "description": "Profile form: region chip, plain Saudi with no region."
+  },
   "pantryCatAll": "All",
-  "@pantryCatAll": {"description": "Pantry category chip: every category."},
+  "@pantryCatAll": {
+    "description": "Pantry category chip: every category."
+  },
   "pantryCatGrocery": "Grocery",
-  "@pantryCatGrocery": {"description": "Pantry category: dry groceries and cans."},
+  "@pantryCatGrocery": {
+    "description": "Pantry category: dry groceries and cans."
+  },
   "pantryCatVegetables": "Vegetables",
-  "@pantryCatVegetables": {"description": "Pantry category: vegetables."},
+  "@pantryCatVegetables": {
+    "description": "Pantry category: vegetables."
+  },
   "pantryCatFruit": "Fruit",
-  "@pantryCatFruit": {"description": "Pantry category: fruit."},
+  "@pantryCatFruit": {
+    "description": "Pantry category: fruit."
+  },
   "pantryCatMeat": "Meat",
-  "@pantryCatMeat": {"description": "Pantry category: meat, chicken and fish."},
+  "@pantryCatMeat": {
+    "description": "Pantry category: meat, chicken and fish."
+  },
   "pantryCatDairy": "Dairy",
-  "@pantryCatDairy": {"description": "Pantry category: milk, cheese, yoghurt."},
+  "@pantryCatDairy": {
+    "description": "Pantry category: milk, cheese, yoghurt."
+  },
   "pantryCatDrinks": "Drinks",
-  "@pantryCatDrinks": {"description": "Pantry category: drinks and water."},
+  "@pantryCatDrinks": {
+    "description": "Pantry category: drinks and water."
+  },
   "pantryCatCare": "Personal care",
-  "@pantryCatCare": {"description": "Pantry category: personal care and cleaning."},
+  "@pantryCatCare": {
+    "description": "Pantry category: personal care and cleaning."
+  },
   "pantryCatOther": "Other",
-  "@pantryCatOther": {"description": "Pantry category: anything else."},
+  "@pantryCatOther": {
+    "description": "Pantry category: anything else."
+  },
   "pantryUnitPiece": "Piece",
-  "@pantryUnitPiece": {"description": "Pantry unit menu: one piece."},
+  "@pantryUnitPiece": {
+    "description": "Pantry unit menu: one piece."
+  },
   "pantryUnitKilo": "kg",
-  "@pantryUnitKilo": {"description": "Pantry unit menu: kilogram."},
+  "@pantryUnitKilo": {
+    "description": "Pantry unit menu: kilogram."
+  },
   "pantryUnitGram": "g",
-  "@pantryUnitGram": {"description": "Pantry unit menu: gram."},
+  "@pantryUnitGram": {
+    "description": "Pantry unit menu: gram."
+  },
   "pantryUnitLitre": "Litre",
-  "@pantryUnitLitre": {"description": "Pantry unit menu: litre."},
+  "@pantryUnitLitre": {
+    "description": "Pantry unit menu: litre."
+  },
   "pantryUnitCan": "Can / box",
-  "@pantryUnitCan": {"description": "Pantry unit menu: a can or small box."},
+  "@pantryUnitCan": {
+    "description": "Pantry unit menu: a can or small box."
+  },
   "pantryUnitBag": "Bag",
-  "@pantryUnitBag": {"description": "Pantry unit menu: a bag."},
+  "@pantryUnitBag": {
+    "description": "Pantry unit menu: a bag."
+  },
   "pantryUnitBottle": "Bottle",
-  "@pantryUnitBottle": {"description": "Pantry unit menu: a bottle."},
+  "@pantryUnitBottle": {
+    "description": "Pantry unit menu: a bottle."
+  },
   "pantryUnitCrate": "Crate",
-  "@pantryUnitCrate": {"description": "Pantry unit menu: a crate or carton."},
+  "@pantryUnitCrate": {
+    "description": "Pantry unit menu: a crate or carton."
+  },
   "shopShareHeader": "Zad shopping list:",
-  "@shopShareHeader": {"description": "Shared shopping list (WhatsApp): first line."},
+  "@shopShareHeader": {
+    "description": "Shared shopping list (WhatsApp): first line."
+  },
   "shopShareTotal": "Total: {total} {currency}",
-  "@shopShareTotal": {"description": "Shared shopping list: the basket total.", "placeholders": {"total": {"type": "String"}, "currency": {"type": "String"}}},
+  "@shopShareTotal": {
+    "description": "Shared shopping list: the basket total.",
+    "placeholders": {
+      "total": {
+        "type": "String"
+      },
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
   "shopShareEstimate": "(estimate for {priced} of {all} items)",
-  "@shopShareEstimate": {"description": "Shared shopping list: the total covers only the priced lines.", "placeholders": {"priced": {"type": "int"}, "all": {"type": "int"}}},
+  "@shopShareEstimate": {
+    "description": "Shared shopping list: the total covers only the priced lines.",
+    "placeholders": {
+      "priced": {
+        "type": "int"
+      },
+      "all": {
+        "type": "int"
+      }
+    }
+  },
   "agentToolSetAppSetting": "Changed a setting",
-  "@agentToolSetAppSetting": {"description": "Brain action log: what a tool the chat ran did (ZAD_PLAN 10.2a)."},
+  "@agentToolSetAppSetting": {
+    "description": "Brain action log: what a tool the chat ran did (ZAD_PLAN 10.2a)."
+  },
   "agentToolDeleteMemory": "Forgot a note",
-  "@agentToolDeleteMemory": {"description": "Brain action log: what a tool the chat ran did (ZAD_PLAN 10.2a)."},
+  "@agentToolDeleteMemory": {
+    "description": "Brain action log: what a tool the chat ran did (ZAD_PLAN 10.2a)."
+  },
   "agentToolMarkSubscriptionPaid": "Paid a subscription",
-  "@agentToolMarkSubscriptionPaid": {"description": "Brain action log: what a tool the chat ran did (ZAD_PLAN 10.2a)."},
+  "@agentToolMarkSubscriptionPaid": {
+    "description": "Brain action log: what a tool the chat ran did (ZAD_PLAN 10.2a)."
+  },
   "agentToolAddShortages": "Shortages to the list",
-  "@agentToolAddShortages": {"description": "Brain action log: what a tool the chat ran did (ZAD_PLAN 10.2a)."},
+  "@agentToolAddShortages": {
+    "description": "Brain action log: what a tool the chat ran did (ZAD_PLAN 10.2a)."
+  },
   "agentToolSnoozeDose": "Put a dose off",
-  "@agentToolSnoozeDose": {"description": "Brain action log: what a tool the chat ran did (ZAD_PLAN 10.2a)."},
+  "@agentToolSnoozeDose": {
+    "description": "Brain action log: what a tool the chat ran did (ZAD_PLAN 10.2a)."
+  },
   "agentToolReportPrice": "Reported a price",
-  "@agentToolReportPrice": {"description": "Brain action log: what a tool the chat ran did (ZAD_PLAN 10.2a)."},
+  "@agentToolReportPrice": {
+    "description": "Brain action log: what a tool the chat ran did (ZAD_PLAN 10.2a)."
+  },
   "agentToolClearPlaceVisits": "Cleared places visited",
-  "@agentToolClearPlaceVisits": {"description": "Brain action log: what a tool the chat ran did (ZAD_PLAN 10.2a)."},
+  "@agentToolClearPlaceVisits": {
+    "description": "Brain action log: what a tool the chat ran did (ZAD_PLAN 10.2a)."
+  },
   "agentToolRateRecipe": "Rated a recipe",
-  "@agentToolRateRecipe": {"description": "Brain action log: what a tool the chat ran did (ZAD_PLAN 10.2a)."},
+  "@agentToolRateRecipe": {
+    "description": "Brain action log: what a tool the chat ran did (ZAD_PLAN 10.2a)."
+  },
   "agentToolDismissInsight": "Closed an insight",
-  "@agentToolDismissInsight": {"description": "Brain action log: what a tool the chat ran did (ZAD_PLAN 10.2a)."},
+  "@agentToolDismissInsight": {
+    "description": "Brain action log: what a tool the chat ran did (ZAD_PLAN 10.2a)."
+  },
   "rewardsCardTitle": "Zad rewards",
   "rewardsCardBody": "Watch an ad for extra messages, or subscribe and skip the ads.",
   "rewardsSubscribe": "Go Zad Premium",
@@ -1325,15 +1451,21 @@
   "authZadoHello": "Hi {name}!",
   "@authZadoHello": {
     "placeholders": {
-      "name": {"type": "String"}
+      "name": {
+        "type": "String"
+      }
     }
   },
   "consentTitle": "Before we start, here is our deal",
   "consentVersionLine": "Terms {terms} and Privacy Policy 4.0 · {updated}",
   "@consentVersionLine": {
     "placeholders": {
-      "terms": {"type": "String"},
-      "updated": {"type": "String"}
+      "terms": {
+        "type": "String"
+      },
+      "updated": {
+        "type": "String"
+      }
     }
   },
   "consentPoint1Lead": "We only keep what you enter.",
@@ -1352,5 +1484,7 @@
   "consentPoint7Body": "Children join as members of their guardian's family.",
   "consentLegalToggle": "Full legal text (in English)",
   "consentPrivacyLink": "Privacy Policy",
-  "consentTermsLink": "Terms of Use"
+  "consentTermsLink": "Terms of Use",
+  "consentTermsVersion": "2.2",
+  "consentTermsUpdated": "November 2026"
 }

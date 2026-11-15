@@ -148,7 +148,13 @@ class _ConsentSheet extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      l.consentVersionLine(kTermsVersion, kTermsLastUpdated),
+                      l.consentVersionLine(
+                        // The reader's digits and month («٢٫٢ · نوفمبر ٢٠٢٦»),
+                        // not «2.2 · November 2026» inside Arabic (emulator,
+                        // 2026-11-15).
+                        l.consentTermsVersion,
+                        l.consentTermsUpdated,
+                      ),
                       style: ZadType.labelMedium.copyWith(
                         color: scheme.onSurfaceVariant,
                       ),

@@ -4246,6 +4246,12 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get consentTermsLink => 'شروط الاستخدام';
+
+  @override
+  String get consentTermsVersion => '٢٫٢';
+
+  @override
+  String get consentTermsUpdated => 'نوفمبر ٢٠٢٦';
 }
 
 /// The translations for Arabic, as used in Saudi Arabia (`ar_SA`).

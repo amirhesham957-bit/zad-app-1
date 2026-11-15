@@ -4359,4 +4359,10 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get consentTermsLink => 'Terms of Use';
+
+  @override
+  String get consentTermsVersion => '2.2';
+
+  @override
+  String get consentTermsUpdated => 'November 2026';
 }

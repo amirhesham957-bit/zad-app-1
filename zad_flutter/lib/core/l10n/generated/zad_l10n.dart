@@ -7519,6 +7519,18 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'شروط الاستخدام'**
   String get consentTermsLink;
+
+  /// The terms' version on the consent sheet, in the reader's digits; keep it equal to kTermsVersion in terms_content.dart.
+  ///
+  /// In ar, this message translates to:
+  /// **'٢٫٢'**
+  String get consentTermsVersion;
+
+  /// The month the terms were last updated, on the consent sheet; keep it equal to kTermsLastUpdated.
+  ///
+  /// In ar, this message translates to:
+  /// **'نوفمبر ٢٠٢٦'**
+  String get consentTermsUpdated;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {
