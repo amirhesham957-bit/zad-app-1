@@ -18,11 +18,13 @@ import 'package:zad/core/design/components/zad_network_image.dart';
 import 'package:zad/core/design/components/zad_pressable.dart';
 import 'package:zad/core/design/foundation/compose_shadow.dart';
 import 'package:zad/core/design/tokens/zad_extended_colors.dart';
+import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/recipes/application/recipes_controller.dart';
 import 'package:zad/features/recipes/domain/recipe.dart';
 import 'package:zad/features/recipes/presentation/recipe_detail_screen.dart';
+import 'package:zad/shared/affiliate/presentation/amazon_buy_chip.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart';
 import 'package:zad/shared/modes/application/modes_controller.dart';
@@ -360,6 +362,17 @@ class _ChefRecipeCard extends ConsumerWidget {
                               color: scheme.onSurfaceVariant,
                             ),
                           ),
+                          Wrap(
+                            spacing: ZadSpacing.sm,
+                            children: <Widget>[
+                              for (final name in recipe.missing)
+                                AmazonBuyChip(
+                                  itemName: name,
+                                  sourceScreen: 'chef_missing',
+                                ),
+                            ],
+                          ),
+                          const AmazonChipsNote(),
                           TextButton.icon(
                             style: TextButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 4),

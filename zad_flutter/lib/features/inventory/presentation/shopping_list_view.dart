@@ -27,6 +27,7 @@ import 'package:zad/core/money/money.dart';
 import 'package:zad/features/inventory/data/shopping_ai_remote.dart';
 import 'package:zad/shared/ads/presentation/inline_ad.dart';
 import 'package:zad/shared/affiliate/application/affiliate_match_controller.dart';
+import 'package:zad/shared/affiliate/presentation/amazon_buy_chip.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart';
 import 'package:zad/shared/inventory/application/shopping_controller.dart';
@@ -411,6 +412,7 @@ class _ShoppingListViewState extends ConsumerState<ShoppingListView> {
                     ),
                   const SizedBox(height: ZadSpacing.sm),
                 ],
+                if (outstanding.isNotEmpty) const AmazonChipsNote(),
                 ZadSlots.affiliateSuggestionSection(),
                 // The live deals for what is short, next to the list it is
                 // short on — it used to sit under «الديون».
@@ -603,7 +605,16 @@ String? _stockNote(ZadL10n l, ({double total, bool isLow})? stock) =>
     : l.shopStockEnough(formatQuantity(stock.total));
 
 class _Line extends ConsumerWidget {
-  const new({required this.item, required this.currency, this.stock});
+  const new({
+    required this.item,
+    required this.currency,
+    this.stock,
+    this.showBuy = true,
+  });
+
+  /// Whether an unticked line offers «من أمازون» (off for the brands inside
+  /// a staple's group, which has its own).
+  final bool showBuy;
 
   final ShoppingItem item;
   final String currency;
@@ -709,13 +720,27 @@ class _Line extends ConsumerWidget {
                       ],
                     ],
                   ),
-                  subtitle: details.isEmpty
+                  subtitle: details.isEmpty && (item.isPurchased || !showBuy)
                       ? null
-                      : Text(
-                          details.join(' · '),
-                          style: ZadType.labelSmall.copyWith(
-                            color: ZadColors.inkMuted,
-                          ),
+                      : Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            if (details.isNotEmpty)
+                              Text(
+                                details.join(' · '),
+                                style: ZadType.labelSmall.copyWith(
+                                  color: ZadColors.inkMuted,
+                                ),
+                              ),
+                            if (!item.isPurchased && showBuy)
+                              Align(
+                                alignment: AlignmentDirectional.centerStart,
+                                child: AmazonBuyChip(
+                                  itemName: item.itemName,
+                                  sourceScreen: 'shopping_row',
+                                ),
+                              ),
+                          ],
                         ),
                 ),
               ),
@@ -858,11 +883,24 @@ class _FamilyLineState extends ConsumerState<_FamilyLine> {
                         ],
                       ],
                     ),
-                    subtitle: Text(
-                      <String>['$shown$more', ?note].join(' · '),
-                      style: ZadType.labelSmall.copyWith(
-                        color: ZadColors.inkMuted,
-                      ),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Text(
+                          <String>['$shown$more', ?note].join(' · '),
+                          style: ZadType.labelSmall.copyWith(
+                            color: ZadColors.inkMuted,
+                          ),
+                        ),
+                        if (!group.allPurchased)
+                          Align(
+                            alignment: AlignmentDirectional.centerStart,
+                            child: AmazonBuyChip(
+                              itemName: group.name,
+                              sourceScreen: 'shopping_row',
+                            ),
+                          ),
+                      ],
                     ),
                   ),
                 ),
@@ -893,7 +931,11 @@ class _FamilyLineState extends ConsumerState<_FamilyLine> {
                 child: Column(
                   children: <Widget>[
                     for (final line in group.lines) ...<Widget>[
-                      _Line(item: line, currency: widget.currency),
+                      _Line(
+                        item: line,
+                        currency: widget.currency,
+                        showBuy: false,
+                      ),
                       const SizedBox(height: ZadSpacing.xs),
                     ],
                   ],

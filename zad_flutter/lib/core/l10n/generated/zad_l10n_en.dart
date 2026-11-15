@@ -871,6 +871,17 @@ class ZadL10nEn extends ZadL10n {
   String get amazonOrder => '🛒 Order it';
 
   @override
+  String get amazonBuyChip => 'From Amazon';
+
+  @override
+  String amazonBuyChipLabel(String name) {
+    return 'Order $name from Amazon';
+  }
+
+  @override
+  String get amazonChipsNote => 'Amazon links · Zad may earn a commission';
+
+  @override
   String get homeOffline => 'No internet connection';
 
   @override
