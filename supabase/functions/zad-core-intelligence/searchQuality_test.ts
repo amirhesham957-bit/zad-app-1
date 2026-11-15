@@ -69,3 +69,16 @@ Deno.test("gold is read off Bing's descriptions too (measured 2026-10-01)", () =
   assertEquals(quotes.map((q) => [q.karat, q.price]), [["24", 7022], ["21", 6145]]);
   assertEquals(quotes[0].source, "اليوم السابع");
 });
+
+Deno.test("search operators are not words a result must contain (ZAD_PLAN 10.9, TikTok at zero from 11/11)", () => {
+  assertEquals(keyTerms("site:tiktok.com عروض كارفور الإمارات"), ["عروض", "كارفور", "امارات"]);
+  assertEquals(keyTerms("site:tiktok.com/@qeu.riyadh"), []);
+  assertEquals(keyTerms("-site:pinterest.com طبخ سهل"), ["طبخ", "سهل"]);
+  // A real TikTok hit: it never says «site» or «com».
+  const hit = { title: "عروض كارفور الإمارات لنهاية الأسبوع 🔥 | TikTok", snippet: "carrefouruae" };
+  assert(answersQuery("site:tiktok.com عروض كارفور الإمارات", hit));
+  // An account query keeps what the engine returned for that account.
+  assertEquals(keepAnswering("site:tiktok.com/@qeu.riyadh", [{ title: "كبسة | TikTok", url: "https://www.tiktok.com/@qeu.riyadh/video/1", snippet: "" }]).length, 1);
+  // A plain question still filters.
+  assert(!answersQuery("سعر الذهب اليوم في مصر عيار 21", { title: "حفل زفاف الأمير وليم", snippet: "" }));
+});

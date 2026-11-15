@@ -3404,6 +3404,9 @@ async function handle(req: Request): Promise<Response> {
           const searched = await cachedDealSearch(handle ? recipeAccountQuery(handle) : recipeTopicQuery(topic, marketOf(countryCode).name), 10, countryCode ?? undefined, "recipes");
           found = searched.length;
           hits = socialVideoHits(searched, handle, known, handle ? null : countryCode, 3);
+          // Why TikTok came back empty, per source (statuses and counts only, never the key): «search: none» alone
+          // hid the cause for days (ZAD_PLAN 10.9).
+          if (hits.length === 0) console.log(`[social_recipes_scan] tiktok empty ${handle ? `@${handle}` : `${countryCode}:${topic}`} found=${found} search=${lastWebSearchSource} attempts=${JSON.stringify(lastWebSearchAttempts.slice(0, 14))}`);
         }
         const today = new Date().toISOString().slice(0, 10);
         const videos: SocialVideo[] = [];
@@ -3428,6 +3431,7 @@ async function handle(req: Request): Promise<Response> {
         const { data: seedRow } = await supabase.from("zad_deal_seed_stores").select("kind").eq("country", country).eq("store", store).maybeSingle()
           .then((r) => r, () => ({ data: null }));
         const found = await cachedDealSearch(tiktokQuery(store, market.name, city, (seedRow as { kind?: string } | null)?.kind), 10, country, "deals");
+        if (found.length === 0) console.log(`[store_deals_tiktok] empty ${country}:${store} search=${lastWebSearchSource} attempts=${JSON.stringify(lastWebSearchAttempts.slice(0, 14))}`);
         const videos = tiktokDealHits(found, store, country, 3);
         const today = new Date().toISOString().slice(0, 10);
         const deals: ReturnType<typeof readStoreDeals> = [];
