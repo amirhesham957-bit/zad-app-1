@@ -4844,6 +4844,12 @@ abstract class ZadL10n {
   /// **'اليوم {day}'**
   String recipesWeekDay(int day);
 
+  /// No description provided for @recipesChefSecret.
+  ///
+  /// In ar, this message translates to:
+  /// **'سر الشيف'**
+  String get recipesChefSecret;
+
   /// No description provided for @recipesOnDeal.
   ///
   /// In ar, this message translates to:

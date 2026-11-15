@@ -2707,6 +2707,9 @@ class ZadL10nAr extends ZadL10n {
   }
 
   @override
+  String get recipesChefSecret => 'سر الشيف';
+
+  @override
   String get recipesOnDeal => 'عليه عرض دلوقتي';
 
   @override

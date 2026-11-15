@@ -252,3 +252,41 @@ export function recipeSource(source: unknown, picked: readonly SocialRecipeRow[]
   const row = picked[Number(source) - 1];
   return row ? { source_url: row.source_url, source_handle: row.handle } : null;
 }
+
+/**
+ * Two kitchens or ways of cooking for this request, so two asks on the same pantry
+ * do not bring the same six dishes (owner 15/11: «افكار كتير و متغيرة»). Server-side
+ * randomness, not the model's: at temperature 0.2 the model alone repeats itself.
+ */
+export const CHEF_ANGLES: readonly string[] = [
+  "مطبخ شامي (فتة، مناقيش، شاورما بيتي)",
+  "مطبخ مغربي وتونسي (طاجن، شكشوكة، كسكسي)",
+  "مطبخ خليجي (كبسة، مجبوس، هريس)",
+  "مطبخ مصري بيتي قديم (أكل الجدات)",
+  "أكل شارع (فول وطعمية، كبدة، حواوشي، سندوتشات)",
+  "إيطالي بيتي (باستا، ريزوتو، بيتزا طاسة)",
+  "آسيوي سريع (نودلز، أرز مقلي، صوص صويا)",
+  "تركي (منتي، شكشوكة تركي، كفتة)",
+  "هندي خفيف (كاري، دال، برياني)",
+  "طاسة واحدة: كل حاجة في حلة واحدة وتنضيف أقل",
+  "الفرن: صينية تدخل وتطلع جاهزة",
+  "خفيف وصحي من غير ما يبقى ممل",
+  "أكل أطفال يحبوه وفيه خضار مستخبي",
+  "فطار أو عشا تقيل يتعمل في ١٥ دقيقة",
+  "حلو بيتي من الموجود",
+  "بواقي امبارح تتحول لأكلة جديدة",
+];
+
+export function chefAngles(rng: () => number = Math.random, count = 2): string[] {
+  const pool = [...CHEF_ANGLES];
+  const out: string[] = [];
+  while (out.length < count && pool.length) out.push(pool.splice(Math.floor(rng() * pool.length), 1)[0]);
+  return out;
+}
+
+/** The model's «سر الشيف» for one recipe: one line, no prompt-section markers, at most 220 chars. */
+export function chefSecret(raw: unknown): string | null {
+  if (typeof raw !== "string") return null;
+  const line = raw.replace(/===/g, "").replace(/\s+/g, " ").trim();
+  return line ? line.slice(0, 220) : null;
+}

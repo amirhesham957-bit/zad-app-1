@@ -798,6 +798,7 @@
       }
     }
   },
+  "recipesChefSecret": "Chef's secret",
   "recipesOnDeal": "On offer now",
   "recipesFromCreator": "From @{handle}'s video",
   "@recipesFromCreator": {
