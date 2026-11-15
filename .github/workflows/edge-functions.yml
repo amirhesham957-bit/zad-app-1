@@ -242,7 +242,7 @@ jobs:
           supabase/sql/tests/scratch_scaffold.sql supabase/sql/tests/old_grocery_orphans_scaffold.sql supabase/migrations/20261113120000_old_grocery_orphans.sql supabase/sql/tests/old_grocery_orphans_test.sql
           supabase/sql/tests/scratch_scaffold.sql supabase/sql/tests/asks_after_you_scaffold.sql supabase/migrations/20261113110000_asks_after_you.sql supabase/sql/tests/asks_after_you_test.sql
           supabase/sql/tests/scratch_scaffold.sql supabase/sql/tests/rain_soon_scaffold.sql supabase/migrations/20261115010000_rain_soon.sql supabase/sql/tests/rain_soon_test.sql
-          supabase/sql/tests/scratch_scaffold.sql supabase/sql/tests/export_my_data_scaffold.sql supabase/migrations/20261115020000_export_my_data.sql supabase/sql/tests/export_my_data_test.sql
+          supabase/sql/tests/scratch_scaffold.sql supabase/sql/tests/export_my_data_scaffold.sql supabase/migrations/20261115020000_export_my_data.sql supabase/migrations/20261115140000_export_hides_admin_chat.sql supabase/sql/tests/export_my_data_test.sql
           supabase/sql/tests/silent_accounts_scaffold.sql supabase/migrations/20261113140000_silent_accounts_quiet.sql supabase/sql/tests/silent_accounts_test.sql
           supabase/sql/tests/scratch_scaffold.sql supabase/migrations/20261113100000_cse_daily_share.sql supabase/sql/tests/cse_daily_share_test.sql
           supabase/sql/tests/scratch_scaffold.sql supabase/sql/tests/two_hour_quota_ad_ladder_test.sql

@@ -3,6 +3,7 @@
 --   psql < supabase/sql/tests/scratch_scaffold.sql
 --   psql < supabase/sql/tests/export_my_data_scaffold.sql
 --   psql < supabase/migrations/20261115020000_export_my_data.sql
+--   psql < supabase/migrations/20261115140000_export_hides_admin_chat.sql
 --   psql < supabase/sql/tests/export_my_data_test.sql
 --
 -- Raises on the first failed check; each passing one prints "ok:".
@@ -29,6 +30,7 @@ insert into public.zad_transactions (user_id, amount, title) values (:me, 50, '�
 insert into public.zad_entitlements values (:me, 'plus', 'play-token-a'), (:other, 'free', 'play-token-b');
 insert into public.zad_fcm_tokens (user_id, token) values (:me, 'fcm-a');
 insert into public.zad_rate_gate values (:me, 3);
+insert into public.zad_support_access_log (user_id, admin_chat, action) values (:me, 987654321, 'lookup');
 insert into public.zad_chat_turns (user_id, role, text) select :me::uuid, 'user', 'رسالة ' || g from generate_series(1, 2005) g;
 insert into public.zad_chat_turns (user_id, role, text) values (:other, 'user', 'سر الجار');
 
@@ -43,6 +45,8 @@ select pg_temp.check((select jsonb_array_length(j -> 'data' -> 'zad_transactions
 select pg_temp.check(not (select (j -> 'data')::text like '%مش بتاعي%' or (j -> 'data')::text like '%سر الجار%' from out), 'nothing of the neighbour');
 select pg_temp.check((select (j -> 'data' -> 'zad_users' -> 0 ->> 'currency') from out) = 'EGP', 'my account row');
 select pg_temp.check(not (select (j)::text like '%sekrit%' or j::text like '%play-token%' or j::text like '%fcm-a%' from out), 'no secret column leaks');
+select pg_temp.check(not (select j::text like '%987654321%' from out), 'the admin''s chat id is not exported');
+select pg_temp.check((select j -> 'data' -> 'zad_support_access_log' -> 0 ->> 'action' from out) = 'lookup', 'but the access itself is');
 select pg_temp.check((select j -> 'data' -> 'zad_entitlements' -> 0 ->> 'tier' from out) = 'plus', 'the rest of a row with a secret is kept');
 select pg_temp.check(not (select (j -> 'data') ? 'zad_fcm_tokens' or (j -> 'data') ? 'zad_rate_gate' from out), 'internal tables left out');
 select pg_temp.check(not (select (j -> 'data') ? 'zad_notes_text_owner' from out), 'only uuid user_id tables');
