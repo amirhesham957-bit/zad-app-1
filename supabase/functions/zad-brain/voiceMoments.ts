@@ -66,13 +66,14 @@ export const RAIN_SOON_MOMENT = "rain_soon";
 /** المطر اللي هيتقال، أو سبب إنه مايتقالش. التاريخ والساعة من وقت الإرسال، مش وقت التسجيل. */
 export async function rainSoonFacts(
   sb: SupabaseClient, userId: string, local: { date: string; time: string; time_zone: string }, queuedDate: string,
+  nowMs?: number,
 ): Promise<Record<string, unknown> | string> {
   if (queuedDate && queuedDate !== local.date) return "day changed";
   const { data: sentToday } = await sb.from("zad_voice_moments").select("id")
     .eq("user_id", userId).eq("moment", RAIN_SOON_MOMENT).eq("status", "sent")
     .like("dedupe_key", `${RAIN_SOON_MOMENT}:${local.date}:%`).limit(1);
   if (sentToday && (sentToday as unknown[]).length > 0) return "already warned today";
-  const hit = rainSoon(await morningWeather(sb, userId, local, null), local.date, Number(local.time.slice(0, 2)));
+  const hit = rainSoon(await morningWeather(sb, userId, local, null, nowMs), local.date, Number(local.time.slice(0, 2)));
   return hit ? { rain: { from_hour: hit.from_hour, pct: hit.pct, mm: hit.mm, line: hit.line } } : "no rain ahead";
 }
 
@@ -1248,7 +1249,7 @@ export async function processVoiceMoments(
       }
       if (row.moment === RAIN_SOON_MOMENT && !("rain" in (row.facts ?? {}))) {
         const local = localNowContext(str(row.facts?.time_zone, 60) || "UTC", new Date(now()));
-        const rain = await rainSoonFacts(sb, row.user_id, local, str(row.facts?.local_date, 10));
+        const rain = await rainSoonFacts(sb, row.user_id, local, str(row.facts?.local_date, 10), now());
         if (typeof rain === "string") {
           await sb.from("zad_voice_moments").update({ status: "skipped", error: rain }).eq("id", row.id);
           result.skipped++;
@@ -1779,7 +1780,7 @@ export async function doseTimesAsk(sb: SupabaseClient, userId: string, now = Dat
 
 /** طقس العميل للحظات (بلده ومدينته من «ملفي»). أي فشل = null — التحية بتتقال برضه. */
 async function morningWeather(
-  sb: SupabaseClient, userId: string, local: { time_zone: string }, city: string | null,
+  sb: SupabaseClient, userId: string, local: { time_zone: string }, city: string | null, nowMs?: number,
 ): Promise<WeatherFacts | null> {
   try {
     const [{ data: u }, { data: p }] = await Promise.all([
@@ -1791,6 +1792,8 @@ async function morningWeather(
       city: (p as { city?: string | null } | null)?.city ?? null,
       point: await loadHomePoint(sb, userId),
       timeZone: local.time_zone,
+      // ساعة المعالج (المثبتة في التست): الكاش كان بيتقاس بالساعة الحقيقية فبعد ٣ ساعات التست بيكلم Open-Meteo.
+      now: nowMs,
     });
   } catch {
     return null;
