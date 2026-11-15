@@ -19,15 +19,16 @@ import 'package:intl/intl.dart' show DateFormat;
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/components/zad_kotlin_surfaces.dart';
 import 'package:zad/core/design/components/zad_scroll_away.dart';
-import 'package:zad/core/design/foundation/compose_shadow.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_extended_colors.dart';
+import 'package:zad/core/design/tokens/zad_motion.dart';
 import 'package:zad/core/design/tokens/zad_palette.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/inventory/domain/pantry_categories.dart';
 import 'package:zad/features/inventory/presentation/pantry_starter_card.dart';
+import 'package:zad/features/inventory/presentation/pantry_world_scene.dart';
 import 'package:zad/shared/chat/application/chat_controller.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart'
     hide PantryView;
@@ -43,6 +44,10 @@ import 'package:zad/shared/inventory/presentation/quantity_text.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/navigation/destinations.dart';
 import 'package:zad/shared/navigation/shell_navigation.dart';
+import 'package:zad/shared/orb/domain/companion_state.dart';
+import 'package:zad/shared/worlds/world_card.dart';
+import 'package:zad/shared/worlds/world_scaffold.dart';
+import 'package:zad/shared/worlds/zad_world.dart';
 
 // l10n: data-begin
 /// Kotlin's stored units — **data** written to `zad_inventory.unit`.
@@ -158,9 +163,6 @@ String _categoryLabel(ZadL10n l, String key) => switch (key) {
   // l10n: data-end
   _ => key,
 };
-
-Color _bgOf(_CategoryDef d, ColorScheme s) =>
-    d.key == 'الكل' ? s.primary : d.bg; // l10n: data
 
 Color _fgOf(_CategoryDef d, ColorScheme s) =>
     d.key == 'الكل' ? s.onPrimary : d.fg; // l10n: data
@@ -310,57 +312,126 @@ class _PantryViewState extends ConsumerState<PantryView> {
           (g.members.single, null, false),
     ];
 
-    final header = <Widget>[
-      if (low.isNotEmpty)
-        _LowStockBanner(
-          names: <String>[for (final i in low) i.itemName],
-          // The shortages live on the shopping list — one list, not a tab
-          // here and a list there (the owner, 2026-11-04).
-          onShop: () {
-            unawaited(_replenish(low));
-            const OpenHouseholdSection(HouseholdSection.shopping)
-                .dispatch(context);
-          },
-        ),
-      if (expiring.isNotEmpty)
-        _ExpiringSoonSection(
-          items: expiring,
-          today: today,
-          onSuggest: () => _suggestRecipe(expiring),
-        ),
+    // What is fine: everything not short and not about to spoil.
+    final attention = <String>{
+      for (final i in low) i.id,
+      for (final i in expiring) i.id,
+    };
+    final stock = <Widget>[
+      for (var i = 0; i < rows.length; i++)
+        if (rows[i].$2 case final group?)
+          _FamilyRow(
+            group: group,
+            open: _openFamilies.contains(group.family),
+            onToggle: () => setState(
+              () => _openFamilies.contains(group.family)
+                  ? _openFamilies.remove(group.family)
+                  : _openFamilies.add(group.family!),
+            ),
+            // One bottle drunk comes off the fullest brand; one bought goes
+            // on the one there is most of.
+            onConsume: group.total <= 0
+                ? null
+                : () => unawaited(
+                    controller.adjust(
+                      group.members.firstWhere((m) => m.quantity > 0).id,
+                      -1,
+                    ),
+                  ),
+            onRestock: () =>
+                unawaited(controller.adjust(group.members.first.id, 1)),
+          )
+        else
+          _StockRow(
+            item: rows[i].$1!,
+            today: today,
+            grouped: rows[i].$3,
+            onConsume: () => unawaited(controller.adjust(rows[i].$1!.id, -1)),
+            onRestock: () => unawaited(controller.adjust(rows[i].$1!.id, 1)),
+            onEdit: () => unawaited(showEditPantrySheet(context, rows[i].$1!)),
+            onFinish: () => unawaited(_finish(rows[i].$1!)),
+          ),
     ];
 
-    final Widget body;
-    {
-      body = CustomScrollView(
-        slivers: <Widget>[
-          SliverList.list(
+    final body = ZadWorldScaffold(
+      world: ZadWorld.inv,
+      // The household page owns the back button (its app bar).
+      showBack: false,
+      eyebrow: context.l10n.pantryWorldEyebrow(all.length),
+      title: context.l10n.worldLabelInv,
+      stateLine: context.l10n.pantryWorldState(low.length),
+      scene: (loop) => PantryWorldScene(loop, running: low.isNotEmpty),
+      zado: ZadWorldZado(
+        state: low.isNotEmpty ? CompanionState.alert : CompanionState.happy,
+      ),
+      onRefresh: () => controller.refresh(force: true),
+      // Clear of the add button.
+      bottomInset: 110,
+      // One button, on the right where a right thumb rests (owner,
+      // 2026-11-12; the bar's camera is the one way to scan).
+      overlay: Positioned(
+        right: 16,
+        bottom: 24,
+        child: ZadStepsAside(
+          child: FloatingActionButton(
+            heroTag: 'pantry-add',
+            onPressed: () => unawaited(showAddPantrySheet(context)),
+            tooltip: context.l10n.pantryAddManual,
+            backgroundColor: scheme.primary,
+            foregroundColor: scheme.onPrimary,
+            elevation: 4,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: const Icon(Icons.add),
+          ),
+        ),
+      ),
+      slivers: <Widget>[
+        SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: ZadSpacing.gutter),
+          sliver: SliverList.list(
             children: <Widget>[
-              ...header,
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                child: TextField(
-                  onChanged: (q) => setState(() => _query = q.trim()),
-                  // A filled, rounded search field (iOS style) instead of a
-                  // bare underline (emulator, 2026-11-10).
-                  decoration: InputDecoration(
-                    hintText: context.l10n.shopFieldName,
-                    prefixIcon: const Icon(Icons.search, size: 18),
-                    isDense: true,
-                    filled: true,
-                    fillColor: ZadColors.surface,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(ZadRadii.card),
-                      borderSide: const BorderSide(color: ZadColors.hairline),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(ZadRadii.card),
-                      borderSide: const BorderSide(color: ZadColors.hairline),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(ZadRadii.card),
-                      borderSide: const BorderSide(color: ZadColors.green600),
-                    ),
+              if (low.isNotEmpty) ...<Widget>[
+                _LowStockCard(
+                  names: <String>[for (final i in low) i.itemName],
+                  // The shortages live on the shopping list — one list, not
+                  // a tab here and a list there (the owner, 2026-11-04).
+                  onShop: () {
+                    unawaited(_replenish(low));
+                    const OpenHouseholdSection(HouseholdSection.shopping)
+                        .dispatch(context);
+                  },
+                ),
+                const SizedBox(height: ZadSpacing.md),
+              ],
+              if (expiring.isNotEmpty) ...<Widget>[
+                _ExpiringCard(
+                  items: expiring,
+                  today: today,
+                  onSuggest: () => _suggestRecipe(expiring),
+                ),
+                const SizedBox(height: ZadSpacing.md),
+              ],
+              TextField(
+                onChanged: (q) => setState(() => _query = q.trim()),
+                decoration: InputDecoration(
+                  hintText: context.l10n.shopFieldName,
+                  prefixIcon: const Icon(Icons.search, size: 18),
+                  isDense: true,
+                  filled: true,
+                  fillColor: ZadColors.surface,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(ZadRadii.card),
+                    borderSide: const BorderSide(color: ZadColors.hairline),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(ZadRadii.card),
+                    borderSide: const BorderSide(color: ZadColors.hairline),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(ZadRadii.card),
+                    borderSide: const BorderSide(color: ZadColors.green600),
                   ),
                 ),
               ),
@@ -368,35 +439,29 @@ class _PantryViewState extends ConsumerState<PantryView> {
                 height: 56,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
+                  padding: const EdgeInsets.symmetric(vertical: ZadSpacing.sm),
                   itemCount: kPantryCategories.length,
-                  separatorBuilder: (_, _) => const SizedBox(width: 8),
+                  separatorBuilder: (_, _) =>
+                      const SizedBox(width: ZadSpacing.sm),
                   itemBuilder: (_, i) {
-                    final c = kPantryCategories[i];
-                    final on = _category == c.key;
+                    final key = kPantryCategories[i].key;
+                    final def = _categoryDefs.firstWhere((d) => d.key == key);
+                    final on = _category == key;
                     return FilterChip(
                       selected: on,
-                      onSelected: (_) => setState(() => _category = c.key),
+                      onSelected: (_) => setState(() => _category = key),
                       showCheckmark: false,
-                      avatar: Text(
-                        c.emoji,
-                        style: const TextStyle(fontSize: 14),
-                      ),
+                      avatar: Icon(def.icon, size: 16, color: def.fg),
                       label: Text(
-                        _categoryLabel(context.l10n, c.key),
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          fontWeight: on ? FontWeight.bold : FontWeight.w500,
+                        _categoryLabel(context.l10n, key),
+                        style: ZadType.labelMedium.copyWith(
                           color: on ? scheme.primary : null,
                         ),
                       ),
                       selectedColor: scheme.primaryContainer,
                       backgroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(ZadRadii.chip),
                       ),
                     );
                   },
@@ -404,298 +469,106 @@ class _PantryViewState extends ConsumerState<PantryView> {
               ),
             ],
           ),
-          if (all.isEmpty && _query.isEmpty)
-            // The staples in one tap instead of «المخزون فارغ» and a camera
-            // button (ZAD_PLAN ١٠.١ slice 5); clear of the add button below.
-            const SliverPadding(
-              padding: EdgeInsets.only(bottom: 110),
-              sliver: SliverToBoxAdapter(child: PantryStarterCard()),
-            )
-          else if (filtered.isEmpty)
-            SliverFillRemaining(
-              hasScrollBody: false,
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 110),
-                child: KtEmptyState(
-                  icon: Icons.search_off,
-                  title: context.l10n.pantrySearchEmptyTitle,
-                  subtitle: context.l10n.pantrySearchEmptyBody,
-                  iconTint: scheme.outline,
-                  iconBackground: scheme.outlineVariant,
-                ),
-              ),
-            )
-          else
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 110),
-              sliver: SliverList.separated(
-                itemCount: rows.length,
-                separatorBuilder: (_, i) => SizedBox(
-                  // A family's rows sit close under its header.
-                  height:
-                      rows[i].$2 != null &&
-                          i + 1 < rows.length &&
-                          rows[i + 1].$1 != null &&
-                          rows[i + 1].$3
-                      ? 6
-                      : 12,
-                ),
-                itemBuilder: (_, i) {
-                  final (item, group, grouped) = rows[i];
-                  final Widget child;
-                  if (group != null) {
-                    final open = _openFamilies.contains(group.family);
-                    child = _FamilyCard(
-                      group: group,
-                      open: open,
-                      onToggle: () => setState(
-                        () => open
-                            ? _openFamilies.remove(group.family)
-                            : _openFamilies.add(group.family!),
-                      ),
-                      // One bottle drunk comes off the fullest brand; one
-                      // bought goes on the one there is most of.
-                      onConsume: group.total <= 0
-                          ? null
-                          : () => unawaited(
-                              controller.adjust(
-                                group.members
-                                    .firstWhere((m) => m.quantity > 0)
-                                    .id,
-                                -1,
-                              ),
-                            ),
-                      onRestock: () => unawaited(
-                        controller.adjust(group.members.first.id, 1),
-                      ),
-                    );
-                  } else {
-                    final row = item!;
-                    child = _InventoryItemCard(
-                      item: row,
-                      today: today,
-                      grouped: grouped,
-                      onConsume: () => unawaited(controller.adjust(row.id, -1)),
-                      onRestock: () => unawaited(controller.adjust(row.id, 1)),
-                      onEdit: () =>
-                          unawaited(showEditPantrySheet(context, row)),
-                      onFinish: () => unawaited(_finish(row)),
-                    );
-                  }
-                  return ZadAppearOnEntryDelay(
-                    delayMs: math.min(i * 20, 250),
-                    child: child,
-                  );
-                },
-              ),
-            ),
-        ],
-      );
-    }
-
-    return ZadScrollAwayScope(
-      child: Stack(
-        children: <Widget>[
-          Positioned.fill(
-            child: RefreshIndicator(
-              onRefresh: () => controller.refresh(force: true),
-              child: body,
-            ),
-          ),
-          // One button, on the right where a right thumb rests (it sat on
-          // the left beside a second camera button; the bar's camera is the
-          // one way to scan — owner, 2026-11-12).
-          Positioned(
-            right: 16,
-            bottom: 24,
-            child: ZadStepsAside(
-              child: Row(
-                children: <Widget>[
-                  FloatingActionButton(
-                    heroTag: 'pantry-add',
-                    onPressed: () => unawaited(showAddPantrySheet(context)),
-                    tooltip: context.l10n.pantryAddManual,
-                    backgroundColor: scheme.primary,
-                    foregroundColor: scheme.onPrimary,
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: const Icon(Icons.add),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Kotlin's `AppearOnEntry(delayMs)`, for the list rows.
-class ZadAppearOnEntryDelay extends StatefulWidget {
-  /// Creates the wrapper.
-  const new({required this.delayMs, required this.child, super.key});
-
-  /// When to start.
-  final int delayMs;
-
-  /// The row.
-  final Widget child;
-
-  @override
-  State<ZadAppearOnEntryDelay> createState() => _AppearState();
-}
-
-class _AppearState extends State<ZadAppearOnEntryDelay> {
-  bool _shown = false;
-  Timer? _timer;
-
-  @override
-  void initState() {
-    super.initState();
-    _timer = Timer(Duration(milliseconds: widget.delayMs), () {
-      if (mounted) setState(() => _shown = true);
-    });
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) => AnimatedOpacity(
-    opacity: _shown ? 1 : 0,
-    duration: const Duration(milliseconds: 300),
-    child: AnimatedSlide(
-      offset: _shown ? Offset.zero : const Offset(0, 0.08),
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOutCubic,
-      child: widget.child,
-    ),
-  );
-}
-
-/// Kotlin's `floatingIdle`: a 2200ms bob of [amplitude] pixels.
-class _FloatingIdle extends StatefulWidget {
-  const new({required this.amplitude, required this.child});
-
-  final double amplitude;
-  final Widget child;
-
-  @override
-  State<_FloatingIdle> createState() => _FloatingIdleState();
-}
-
-class _FloatingIdleState extends State<_FloatingIdle>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _t = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 2200),
-  )..repeat(reverse: true);
-
-  @override
-  void dispose() {
-    _t.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final px = widget.amplitude / MediaQuery.devicePixelRatioOf(context);
-    return AnimatedBuilder(
-      animation: _t,
-      builder: (_, child) => Transform.translate(
-        offset: Offset(
-          0,
-          -px + 2 * px * Curves.fastOutSlowIn.transform(_t.value),
         ),
-        child: child,
-      ),
-      child: widget.child,
+        if (all.isEmpty && _query.isEmpty)
+          // The staples in one tap instead of «المخزون فارغ» and a camera
+          // button (ZAD_PLAN ١٠.١ slice 5).
+          const SliverToBoxAdapter(child: PantryStarterCard())
+        else if (filtered.isEmpty)
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: KtEmptyState(
+              icon: Icons.search_off,
+              title: context.l10n.pantrySearchEmptyTitle,
+              subtitle: context.l10n.pantrySearchEmptyBody,
+              iconTint: scheme.outline,
+              iconBackground: scheme.outlineVariant,
+            ),
+          )
+        else
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: ZadSpacing.gutter),
+            sliver: SliverList.list(
+              children: <Widget>[
+                ZadWorldCard(
+                  child: Column(
+                    children: <Widget>[
+                      for (var i = 0; i < stock.length; i++) ...<Widget>[
+                        if (i > 0 &&
+                            !(rows[i].$3 ||
+                                rows[i - 1].$2 != null && rows[i].$3))
+                          const Divider(height: ZadSpacing.lg),
+                        stock[i],
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: ZadSpacing.md),
+                _Legend(
+                  low: low.length,
+                  expiring: expiring.length,
+                  ok: math.max(0, all.length - attention.length),
+                ),
+              ],
+            ),
+          ),
+      ],
     );
+
+    return ZadScrollAwayScope(child: body);
   }
 }
 
-/// Kotlin's `LowStockBanner`.
-class _LowStockBanner extends StatelessWidget {
+/// «نواقص المخزون»: what is short, and the one tap that puts it on the list.
+class _LowStockCard extends StatelessWidget {
   const new({required this.names, required this.onShop});
 
-  /// What is short, so the banner says it — it said «(غير محدد)» instead.
+  /// What is short, so the card says it.
   final List<String> names;
   final VoidCallback onShop;
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      padding: const EdgeInsets.all(6),
-      decoration: BoxDecoration(
-        color: scheme.errorContainer,
-        borderRadius: BorderRadius.circular(8),
-      ),
+    final l = context.l10n;
+    return ZadWorldCard(
       child: Row(
         children: <Widget>[
-          Container(
-            width: 20,
-            height: 20,
-            decoration: BoxDecoration(
-              color: scheme.error.withValues(alpha: 0.12),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.shopping_cart_checkout,
-              size: 11,
-              color: scheme.error,
-            ),
+          _Tile(
+            icon: Icons.shopping_cart_checkout,
+            color: Theme.of(context).colorScheme.error,
           ),
-          const SizedBox(width: 6),
-          // One line of two spans, ellipsized together: the title alone was
-          // a fixed Text, and at large text it pushed the row 44px off screen.
+          const SizedBox(width: ZadSpacing.md),
           Expanded(
-            child: Text.rich(
-              TextSpan(
-                children: <InlineSpan>[
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                // One text of two spans, so a long list ellipsizes with its
+                // title and large type cannot push the row off screen.
+                Text.rich(
                   TextSpan(
-                    text: context.l10n.pantryLowBanner(names.length),
-                    style: ZadType.bodySmall.copyWith(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                      color: scheme.onErrorContainer,
-                    ),
+                    children: <InlineSpan>[
+                      TextSpan(
+                        text: l.pantryLowBanner(names.length),
+                        style: ZadType.titleSmall,
+                      ),
+                      TextSpan(
+                        text: '\n${names.join(l.listSeparator)}',
+                        style: ZadType.bodySmall.copyWith(
+                          color: ZadColors.inkMuted,
+                        ),
+                      ),
+                    ],
                   ),
-                  TextSpan(
-                    text: ' ${names.join(context.l10n.listSeparator)}',
-                    style: ZadType.labelSmall.copyWith(
-                      fontSize: 11,
-                      color: scheme.onErrorContainer.withValues(alpha: 0.75),
-                    ),
-                  ),
-                ],
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
             ),
           ),
-          const SizedBox(width: 4),
-          InkWell(
-            onTap: onShop,
-            borderRadius: BorderRadius.circular(6),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              child: Text(
-                context.l10n.pantryToShopping,
-                style: ZadType.labelSmall.copyWith(
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  color: scheme.error,
-                ),
-              ),
-            ),
+          TextButton(
+            onPressed: onShop,
+            style: TextButton.styleFrom(minimumSize: const Size(44, 44)),
+            child: Text(l.pantryToShopping),
           ),
         ],
       ),
@@ -703,8 +576,8 @@ class _LowStockBanner extends StatelessWidget {
   }
 }
 
-/// Kotlin's `ExpiringSoonSection`.
-class _ExpiringSoonSection extends StatelessWidget {
+/// «ينتهي قريباً» with «اقتراح وصفة».
+class _ExpiringCard extends StatelessWidget {
   const new({
     required this.items,
     required this.today,
@@ -717,131 +590,40 @@ class _ExpiringSoonSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final warning = scheme.secondary;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+    final l = context.l10n;
+    return ZadWorldCard(
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: <Widget>[
-              Row(
-                children: <Widget>[
-                  Container(
-                    width: 18,
-                    height: 18,
-                    decoration: BoxDecoration(
-                      color: warning.withValues(alpha: 0.12),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(Icons.timer, size: 11, color: warning),
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    context.l10n.pantryExpiringSoon,
-                    style: ZadType.bodySmall.copyWith(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: scheme.onSurface,
-                    ),
-                  ),
-                ],
+              _Tile(
+                icon: Icons.timer,
+                color: Theme.of(context).colorScheme.secondary,
               ),
-              InkWell(
-                onTap: onSuggest,
-                borderRadius: BorderRadius.circular(6),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 4,
-                    vertical: 2,
-                  ),
-                  child: Row(
-                    children: <Widget>[
-                      Text(
-                        context.l10n.pantrySuggestRecipe,
-                        style: ZadType.labelSmall.copyWith(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
-                          color: scheme.primary,
-                        ),
-                      ),
-                      const SizedBox(width: 2),
-                      Icon(Icons.auto_awesome, size: 11, color: scheme.primary),
-                    ],
-                  ),
-                ),
+              const SizedBox(width: ZadSpacing.md),
+              Expanded(
+                child: Text(l.pantryExpiringSoon, style: ZadType.titleSmall),
+              ),
+              TextButton.icon(
+                onPressed: onSuggest,
+                style: TextButton.styleFrom(minimumSize: const Size(44, 44)),
+                icon: const Icon(Icons.auto_awesome, size: 16),
+                label: Text(l.pantrySuggestRecipe),
               ),
             ],
           ),
-          SizedBox(
-            height: 44,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(vertical: 2),
-              itemCount: items.length,
-              separatorBuilder: (_, _) => const SizedBox(width: 4),
-              itemBuilder: (_, i) {
-                final item = items[i];
-                final days = item.daysUntilExpiry(today);
-                final color = _expiryColor(context, days);
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 1),
-                  child: ZadListCard(
-                    padding: EdgeInsets.zero,
-                    fillWidth: false,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 3,
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: <Widget>[
-                          Container(
-                            width: 6,
-                            height: 6,
-                            decoration: BoxDecoration(
-                              color: color,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: <Widget>[
-                              Text(
-                                item.itemName,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: ZadType.bodySmall.copyWith(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w500,
-                                  color: scheme.onSurface,
-                                ),
-                              ),
-                              Text(
-                                days != null && days <= 0
-                                    ? context.l10n.pantryExpired
-                                    : context.l10n.pantryDaysLeft(
-                                        days?.toString() ?? '?',
-                                      ),
-                                style: ZadType.labelSmall.copyWith(
-                                  fontSize: 9.5,
-                                  color: color,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
+          const SizedBox(height: ZadSpacing.sm),
+          Wrap(
+            spacing: ZadSpacing.sm,
+            runSpacing: ZadSpacing.sm,
+            children: <Widget>[
+              for (final item in items)
+                _ExpiryPill(
+                  name: item.itemName,
+                  days: item.daysUntilExpiry(today),
+                ),
+            ],
           ),
         ],
       ),
@@ -849,8 +631,121 @@ class _ExpiringSoonSection extends StatelessWidget {
   }
 }
 
-/// Kotlin's `InventoryItemCard`.
-class _InventoryItemCard extends StatelessWidget {
+class _ExpiryPill extends StatelessWidget {
+  const new({required this.name, required this.days});
+
+  final String name;
+  final int? days;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _expiryColor(context, days);
+    final l = context.l10n;
+    final d = days;
+    final when = d != null && d <= 0
+        ? l.pantryExpired
+        : l.pantryDaysLeft(d?.toString() ?? '?');
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(ZadRadii.pill),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: ZadSpacing.md,
+          vertical: ZadSpacing.xs,
+        ),
+        child: Text(
+          '$name · $when',
+          style: ZadType.labelMedium.copyWith(color: color),
+        ),
+      ),
+    );
+  }
+}
+
+/// A tinted rounded square with a glyph.
+class _Tile extends StatelessWidget {
+  const new({required this.icon, required this.color});
+
+  final IconData icon;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: 40,
+    height: 40,
+    decoration: BoxDecoration(
+      color: color.withValues(alpha: 0.12),
+      borderRadius: BorderRadius.circular(ZadRadii.chip),
+    ),
+    child: Icon(icon, size: 22, color: color),
+  );
+}
+
+/// «قربت تخلص / هتبوظ قريب / تمام», each with its state colour.
+class _Legend extends StatelessWidget {
+  const new({required this.low, required this.expiring, required this.ok});
+
+  final int low;
+  final int expiring;
+  final int ok;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    Widget dot(Color c, String text) => Row(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(color: c, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: ZadSpacing.xs),
+        Text(text, style: ZadType.labelMedium.copyWith(color: ZadColors.slate)),
+      ],
+    );
+    return Wrap(
+      spacing: ZadSpacing.lg,
+      runSpacing: ZadSpacing.xs,
+      children: <Widget>[
+        dot(Theme.of(context).colorScheme.error, l.pantryLegendLow(low)),
+        dot(
+          Theme.of(context).colorScheme.secondary,
+          l.pantryLegendExpiring(expiring),
+        ),
+        dot(context.zadExt.success, l.pantryLegendOk(ok)),
+      ],
+    );
+  }
+}
+
+/// «خلص» or the days left, for a row's state line.
+String _daysText(ZadL10n l, int days) =>
+    days <= 0 ? l.pantryExpiredShort : l.pantryDays(days);
+
+/// A stepper button at the 44dp tap target.
+Widget _step(
+  IconData icon,
+  String label,
+  Color tint,
+  VoidCallback? tap, {
+  Key? key,
+}) => SizedBox.square(
+  dimension: 44,
+  child: IconButton(
+    key: key,
+    padding: EdgeInsets.zero,
+    tooltip: label,
+    onPressed: tap,
+    icon: Icon(icon, size: 22, color: tint),
+  ),
+);
+
+/// One item: its picture, name and state line, the «how much is left» bar in
+/// its state colour, the quantity, and −, +, «خلص». A tap opens the edit.
+class _StockRow extends StatelessWidget {
   const new({
     required this.item,
     required this.today,
@@ -871,7 +766,7 @@ class _InventoryItemCard extends StatelessWidget {
   final VoidCallback onConsume;
   final VoidCallback onRestock;
 
-  /// The whole card: edit, and delete from there.
+  /// The whole row: edit, and delete from there.
   final VoidCallback onEdit;
 
   /// «خلص»: down to zero in one tap.
@@ -879,233 +774,126 @@ class _InventoryItemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     final scheme = Theme.of(context).colorScheme;
     final days = item.daysUntilExpiry(today);
     final def = _defFor(item.category, item.itemName);
     // Bought every couple of months (ZAD_PLAN ٣.١٠): at zero it is not low,
     // it is simply not in the house right now.
     final isLow = !grouped && !item.isOccasional && item.isLowStock;
-
-    // 44dp to tap (CLAUDE.md), the glyph as small as it was: they were 26dp
-    // and the steppers were the most-used controls on the screen.
-    Widget small(IconData icon, String label, Color tint, VoidCallback? tap) =>
-        SizedBox.square(
-          dimension: 44,
-          child: IconButton(
-            padding: EdgeInsets.zero,
-            tooltip: label,
-            onPressed: tap,
-            icon: Icon(icon, size: 20, color: tint),
-          ),
-        );
-
+    final state = _stockColor(context, item);
     return Semantics(
       button: true,
-      label: context.l10n.pantryEditItem,
-      child: GestureDetector(
-        key: ValueKey<String>('pantry-card-${item.id}'),
-        behavior: HitTestBehavior.opaque,
-        onTap: onEdit,
-        child: _card(context, scheme, days, def, isLow, small),
-      ),
-    );
-  }
-
-  Widget _card(
-    BuildContext context,
-    ColorScheme scheme,
-    int? days,
-    _CategoryDef def,
-    bool isLow,
-    Widget Function(IconData, String, Color, VoidCallback?) small,
-  ) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: composeShadow(
-          elevation: 2,
-          ambient: Colors.black,
-          spot: Colors.black,
-        ),
-      ),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          color: scheme.surface,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: scheme.outline, width: 0.5),
-        ),
-        child: Row(
+      label: l.pantryEditItem,
+      child: Padding(
+        padding: EdgeInsetsDirectional.only(start: grouped ? ZadSpacing.xl : 0),
+        child: Column(
           children: <Widget>[
-            Container(
-              width: 46,
-              height: 46,
-              clipBehavior: Clip.antiAlias,
-              decoration: BoxDecoration(
-                color: _bgOf(def, scheme),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: ZadItemPhoto(item.itemName, width: 46, height: 46),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            GestureDetector(
+              key: ValueKey<String>('pantry-card-${item.id}'),
+              behavior: HitTestBehavior.opaque,
+              onTap: onEdit,
+              child: Row(
                 children: <Widget>[
-                  Row(
-                    children: <Widget>[
-                      Flexible(
-                        child: Text(
+                  Container(
+                    width: 44,
+                    height: 44,
+                    clipBehavior: Clip.antiAlias,
+                    decoration: BoxDecoration(
+                      color: state.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(ZadRadii.chip),
+                    ),
+                    child: ZadItemPhoto(item.itemName, width: 44, height: 44),
+                  ),
+                  const SizedBox(width: ZadSpacing.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Text(
                           item.itemName,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF0F172A),
+                          style: ZadType.titleSmall,
+                        ),
+                        Text.rich(
+                          TextSpan(
+                            children: <InlineSpan>[
+                              if (isLow)
+                                TextSpan(
+                                  text: '${l.pantryLow} · ',
+                                  style: TextStyle(
+                                    color: scheme.error,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              if (days != null)
+                                TextSpan(
+                                  text: '${_daysText(l, days)} · ',
+                                  style: TextStyle(
+                                    color: _expiryColor(context, days),
+                                  ),
+                                ),
+                              TextSpan(text: _categoryLabel(l, def.key)),
+                            ],
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: ZadType.labelSmall.copyWith(
+                            color: ZadColors.inkMuted,
                           ),
                         ),
-                      ),
-                      if (isLow) ...<Widget>[
-                        const SizedBox(width: 6),
-                        // Flexible and scaled down, not fixed: on a 320dp
-                        // phone the stepper leaves this column narrower than
-                        // the badge, which overflowed by 30px.
-                        Flexible(
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFFEE2E2),
-                                borderRadius: BorderRadius.circular(99),
-                              ),
-                              child: Text(
-                                context.l10n.pantryLow,
-                                style: const TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFFDC2626),
-                                ),
-                              ),
+                        const SizedBox(height: ZadSpacing.xs),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(ZadRadii.pill),
+                          child: TweenAnimationBuilder<double>(
+                            tween: Tween<double>(end: _stockRatio(item)),
+                            duration: ZadDuration.settle,
+                            curve: ZadCurves.standard,
+                            builder: (_, v, _) => LinearProgressIndicator(
+                              value: v,
+                              minHeight: 6,
+                              color: state,
+                              backgroundColor: state.withValues(alpha: 0.14),
                             ),
                           ),
                         ),
                       ],
-                    ],
-                  ),
-                  const SizedBox(height: 3),
-                  Row(
-                    children: <Widget>[
-                      if (days != null) ...<Widget>[
-                        Text(
-                          days <= 0
-                              ? context.l10n.pantryExpiredShort
-                              : context.l10n.pantryDays(days),
-                          style: TextStyle(
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w500,
-                            color: _expiryColor(context, days),
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        const Text(
-                          '•',
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: Color(0xFF94A3B8),
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                      ],
-                      Flexible(
-                        child: Text(
-                          def.key,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 11.5,
-                            color: Color(0xFF64748B),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  FractionallySizedBox(
-                    widthFactor: 0.85,
-                    alignment: AlignmentDirectional.centerStart,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(2),
-                      child: TweenAnimationBuilder<double>(
-                        tween: Tween<double>(end: _stockRatio(item)),
-                        duration: const Duration(milliseconds: 450),
-                        curve: Curves.easeOutCubic,
-                        builder: (_, v, _) => LinearProgressIndicator(
-                          value: v,
-                          minHeight: 3,
-                          color: _stockColor(context, item),
-                          backgroundColor: const Color(0xFFF1F5F9),
-                        ),
-                      ),
                     ),
+                  ),
+                  const SizedBox(width: ZadSpacing.md),
+                  Text(
+                    quantityText(context, item.quantity, item.unit),
+                    style: ZadType.titleSmall.copyWith(color: state),
                   ),
                 ],
               ),
             ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF1F5F9),
-                borderRadius: BorderRadius.circular(99),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  small(
-                    Icons.remove_circle_outline,
-                    context.l10n.pantryUseOne,
-                    item.quantity > 0 ? scheme.error : scheme.outline,
-                    item.quantity > 0 ? onConsume : null,
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    child: Text(
-                      quantityText(context, item.quantity, item.unit),
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF0F172A),
-                      ),
-                    ),
-                  ),
-                  small(
-                    Icons.add_circle_outline,
-                    context.l10n.pantryAddOne,
-                    scheme.primary,
-                    onRestock,
-                  ),
-                ],
-              ),
-            ),
-            if (item.quantity > 0)
-              SizedBox.square(
-                dimension: 44,
-                child: IconButton(
-                  key: ValueKey<String>('pantry-finish-${item.id}'),
-                  padding: EdgeInsets.zero,
-                  tooltip: context.l10n.pantryFinish,
-                  onPressed: onFinish,
-                  icon: Icon(
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: <Widget>[
+                if (item.quantity > 0)
+                  _step(
                     Icons.task_alt_rounded,
-                    size: 20,
-                    color: scheme.error,
+                    l.pantryFinish,
+                    scheme.error,
+                    onFinish,
+                    key: ValueKey<String>('pantry-finish-${item.id}'),
                   ),
+                _step(
+                  Icons.remove_circle_outline,
+                  l.pantryUseOne,
+                  item.quantity > 0 ? scheme.error : scheme.outline,
+                  item.quantity > 0 ? onConsume : null,
                 ),
-              ),
+                _step(
+                  Icons.add_circle_outline,
+                  l.pantryAddOne,
+                  scheme.primary,
+                  onRestock,
+                ),
+              ],
+            ),
           ],
         ),
       ),
@@ -1115,7 +903,7 @@ class _InventoryItemCard extends StatelessWidget {
 
 /// A staple as one stock: the house total across its brands, − and +, and
 /// whether it is low. A tap opens the brands under it.
-class _FamilyCard extends StatelessWidget {
+class _FamilyRow extends StatelessWidget {
   const new({
     required this.group,
     required this.open,
@@ -1132,243 +920,90 @@ class _FamilyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     final scheme = Theme.of(context).colorScheme;
     final units = group.members.map((m) => m.unit).toSet();
     final unit = units.length == 1 ? (units.single ?? '') : '';
-    return Material(
-      color: scheme.surface,
-      borderRadius: BorderRadius.circular(ZadRadii.cardLarge),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onToggle,
-        child: Padding(
-          padding: const EdgeInsets.all(ZadSpacing.lg),
+    final state = group.isShortLow ? scheme.error : context.zadExt.success;
+    return Column(
+      children: <Widget>[
+        InkWell(
+          onTap: onToggle,
           child: Row(
             children: <Widget>[
-              ClipRRect(
-                borderRadius: BorderRadius.circular(ZadRadii.chip),
-                child: ZadItemPhoto(group.name, width: 46, height: 46),
+              Container(
+                width: 44,
+                height: 44,
+                clipBehavior: Clip.antiAlias,
+                decoration: BoxDecoration(
+                  color: state.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(ZadRadii.chip),
+                ),
+                child: ZadItemPhoto(group.name, width: 44, height: 44),
               ),
               const SizedBox(width: ZadSpacing.md),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Row(
-                      children: <Widget>[
-                        Flexible(
-                          child: Text(
-                            group.name,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: ZadType.titleMedium,
-                          ),
-                        ),
-                        if (group.isShortLow) ...<Widget>[
-                          const SizedBox(width: ZadSpacing.sm),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: scheme.errorContainer,
-                              borderRadius: BorderRadius.circular(99),
-                            ),
-                            child: Text(
-                              group.isOut
-                                  ? context.l10n.pantryOut
-                                  : context.l10n.pantryLow,
-                              style: ZadType.labelSmall.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: scheme.error,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
+                    Text(
+                      group.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: ZadType.titleSmall,
                     ),
-                    const SizedBox(height: 2),
                     Text(
                       <String>[
-                        context.l10n.pantryKinds(group.members.length),
-                        if (open)
-                          context.l10n.shopHideKinds
-                        else
-                          context.l10n.pantryShowKinds,
+                        if (group.isOut)
+                          l.pantryOut
+                        else if (group.isShortLow)
+                          l.pantryLow,
+                        l.pantryKinds(group.members.length),
+                        if (open) l.shopHideKinds else l.pantryShowKinds,
                       ].join(' · '),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: ZadType.labelSmall.copyWith(
-                        color: scheme.onSurfaceVariant,
+                        color: group.isShortLow
+                            ? scheme.error
+                            : ZadColors.inkMuted,
                       ),
                     ),
                   ],
                 ),
               ),
-              IconButton(
-                tooltip: context.l10n.pantryUsedOne,
-                onPressed: onConsume,
-                icon: Icon(
-                  Icons.remove_circle_outline,
-                  color: onConsume == null
-                      ? scheme.outlineVariant
-                      : ZadColors.terracottaRust,
-                ),
-              ),
+              const SizedBox(width: ZadSpacing.md),
               Text(
                 quantityText(context, group.total, unit),
-                style: ZadType.titleSmall.copyWith(color: scheme.primary),
-              ),
-              IconButton(
-                tooltip: context.l10n.pantryIncreaseOne,
-                onPressed: onRestock,
-                icon: Icon(Icons.add_circle_outline, color: scheme.primary),
-              ),
-              Icon(
-                open ? Icons.expand_less : Icons.expand_more,
-                color: scheme.onSurfaceVariant,
+                style: ZadType.titleSmall.copyWith(color: state),
               ),
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-/// Kotlin's `ShortageItemCard`.
-class _ShortageItemCard extends StatefulWidget {
-  const new({required this.item, required this.today, required this.onAdd});
-
-  final InventoryItem item;
-  final DateTime today;
-  final VoidCallback onAdd;
-
-  @override
-  State<_ShortageItemCard> createState() => _ShortageItemCardState();
-}
-
-class _ShortageItemCardState extends State<_ShortageItemCard> {
-  bool _added = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final success = context.zadExt.success;
-    final item = widget.item;
-    final days = item.daysUntilExpiry(widget.today);
-    final def = _defFor(item.category, item.itemName);
-    return ZadListCard(
-      padding: EdgeInsets.zero,
-      child: Padding(
-        padding: const EdgeInsets.all(6),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
           children: <Widget>[
-            Row(
-              children: <Widget>[
-                Container(
-                  width: 28,
-                  height: 28,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: _bgOf(def, scheme),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: _FloatingIdle(
-                    amplitude: 1.5,
-                    child: Text(
-                      pantryEmojiOf(item.itemName, item.category),
-                      style: const TextStyle(fontSize: 15),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(
-                        item.itemName,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: ZadType.bodySmall.copyWith(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: scheme.onSurface,
-                        ),
-                      ),
-                      Text(
-                        days != null && days <= 0
-                            ? context.l10n.pantryExpiredShort
-                            : days != null
-                            ? context.l10n.pantryDays(days)
-                            : context.l10n.pantryQty(
-                                formatQuantity(item.quantity),
-                              ),
-                        style: ZadType.labelSmall.copyWith(
-                          fontSize: 9.5,
-                          color: days != null
-                              ? _expiryColor(context, days)
-                              : scheme.error,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+            _step(
+              Icons.remove_circle_outline,
+              l.pantryUsedOne,
+              onConsume == null ? scheme.outlineVariant : scheme.error,
+              onConsume,
             ),
-            const SizedBox(height: 4),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(2),
-              child: LinearProgressIndicator(
-                value: _stockRatio(item),
-                minHeight: 3,
-                color: _stockColor(context, item),
-                backgroundColor: scheme.outlineVariant,
-              ),
+            _step(
+              Icons.add_circle_outline,
+              l.pantryIncreaseOne,
+              scheme.primary,
+              onRestock,
             ),
-            const SizedBox(height: 4),
-            FilledButton(
-              onPressed: _added
-                  ? null
-                  : () {
-                      setState(() => _added = true);
-                      widget.onAdd();
-                    },
-              style: FilledButton.styleFrom(
-                backgroundColor: _added ? success : scheme.primary,
-                foregroundColor: Colors.white,
-                disabledBackgroundColor: success,
-                disabledForegroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                minimumSize: const Size.fromHeight(28),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  Icon(
-                    _added ? Icons.check : Icons.add_shopping_cart,
-                    size: 12,
-                  ),
-                  const SizedBox(width: 3),
-                  Flexible(
-                    child: Text(
-                      _added
-                          ? context.l10n.pantryAdded
-                          : context.l10n.pantryToShopping,
-                      maxLines: 1,
-                      style: const TextStyle(fontSize: 10.5),
-                    ),
-                  ),
-                ],
-              ),
+            _step(
+              open ? Icons.expand_less : Icons.expand_more,
+              open ? l.shopHideKinds : l.pantryShowKinds,
+              scheme.onSurfaceVariant,
+              onToggle,
             ),
           ],
         ),
-      ),
+      ],
     );
   }
 }
@@ -1584,10 +1219,7 @@ class _AddState extends ConsumerState<_AddInventoryDialog> {
                   for (var i = 1; i < _categoryDefs.length; i++)
                     DropdownMenuEntry<int>(
                       value: i - 1,
-                      label: _categoryLabel(
-                        context.l10n,
-                        _categoryDefs[i].key,
-                      ),
+                      label: _categoryLabel(context.l10n, _categoryDefs[i].key),
                       leadingIcon: Icon(
                         _categoryDefs[i].icon,
                         size: 18,

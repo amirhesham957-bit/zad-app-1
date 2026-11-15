@@ -7573,6 +7573,192 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'نوفمبر ٢٠٢٦'**
   String get consentTermsUpdated;
+
+  /// A world's name, in the links strip and its own title.
+  ///
+  /// In ar, this message translates to:
+  /// **'عقل زاد'**
+  String get worldLabelBrain;
+
+  /// A world's name, in the links strip and its own title.
+  ///
+  /// In ar, this message translates to:
+  /// **'شيف زاد'**
+  String get worldLabelChef;
+
+  /// A world's name, in the links strip and its own title.
+  ///
+  /// In ar, this message translates to:
+  /// **'المخزون'**
+  String get worldLabelInv;
+
+  /// A world's name, in the links strip and its own title.
+  ///
+  /// In ar, this message translates to:
+  /// **'التسوق'**
+  String get worldLabelShop;
+
+  /// A world's name, in the links strip and its own title.
+  ///
+  /// In ar, this message translates to:
+  /// **'المعاملات'**
+  String get worldLabelTx;
+
+  /// A world's name, in the links strip and its own title.
+  ///
+  /// In ar, this message translates to:
+  /// **'الميزانية'**
+  String get worldLabelBudget;
+
+  /// A world's name, in the links strip and its own title.
+  ///
+  /// In ar, this message translates to:
+  /// **'كشف الحساب'**
+  String get worldLabelStmt;
+
+  /// A world's name, in the links strip and its own title.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاشتراكات'**
+  String get worldLabelSubs;
+
+  /// A world's name, in the links strip and its own title.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصيدلية'**
+  String get worldLabelPh;
+
+  /// A world's name, in the links strip and its own title.
+  ///
+  /// In ar, this message translates to:
+  /// **'المواعيد'**
+  String get worldLabelAppt;
+
+  /// A world's name, in the links strip and its own title.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصيانة'**
+  String get worldLabelMaint;
+
+  /// A world's name, in the links strip and its own title.
+  ///
+  /// In ar, this message translates to:
+  /// **'المستندات'**
+  String get worldLabelDocs;
+
+  /// A world's name, in the links strip and its own title.
+  ///
+  /// In ar, this message translates to:
+  /// **'أماكني'**
+  String get worldLabelPlaces;
+
+  /// A world's name, in the links strip and its own title.
+  ///
+  /// In ar, this message translates to:
+  /// **'رفيق زاد'**
+  String get worldLabelComp;
+
+  /// A world's name, in the links strip and its own title.
+  ///
+  /// In ar, this message translates to:
+  /// **'الشات'**
+  String get worldLabelChat;
+
+  /// A world's name, in the links strip and its own title.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإشعارات'**
+  String get worldLabelNotif;
+
+  /// A world's name, in the links strip and its own title.
+  ///
+  /// In ar, this message translates to:
+  /// **'حسابي'**
+  String get worldLabelProfile;
+
+  /// A world's name, in the links strip and its own title.
+  ///
+  /// In ar, this message translates to:
+  /// **'بريميوم'**
+  String get worldLabelPrem;
+
+  /// A world's name, in the links strip and its own title.
+  ///
+  /// In ar, this message translates to:
+  /// **'بستان التسبيح'**
+  String get worldLabelTas;
+
+  /// A world's name, in the links strip and its own title.
+  ///
+  /// In ar, this message translates to:
+  /// **'ألعاب زادو'**
+  String get worldLabelGames;
+
+  /// A world's name, in the links strip and its own title.
+  ///
+  /// In ar, this message translates to:
+  /// **'أسعار النهارده'**
+  String get worldLabelPrices;
+
+  /// A world's name, in the links strip and its own title.
+  ///
+  /// In ar, this message translates to:
+  /// **'عروضي'**
+  String get worldLabelOffers;
+
+  /// A world's name, in the links strip and its own title.
+  ///
+  /// In ar, this message translates to:
+  /// **'إنجازاتي'**
+  String get worldLabelAch;
+
+  /// Links strip heading.
+  ///
+  /// In ar, this message translates to:
+  /// **'متصلة بـ'**
+  String get worldLinksTitle;
+
+  /// Links strip hint.
+  ///
+  /// In ar, this message translates to:
+  /// **'اللي بيحصل هنا بيأثر في:'**
+  String get worldLinksHint;
+
+  /// Back button of a world screen.
+  ///
+  /// In ar, this message translates to:
+  /// **'رجوع'**
+  String get worldBack;
+
+  /// Pantry world: the count above the title.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =0{لسه مفيش أصناف} =1{صنف واحد} =2{صنفين} few{{count} أصناف} other{{count} صنف}}'**
+  String pantryWorldEyebrow(int count);
+
+  /// Pantry world: the state line under the title.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =0{مفيش حاجة قربت تخلص} =1{حاجة واحدة قربت تخلص} =2{حاجتين قربوا يخلصوا} few{{count} حاجات قربت تخلص} other{{count} حاجة قربت تخلص}}'**
+  String pantryWorldState(int count);
+
+  /// Pantry legend: items running out.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} قربت تخلص'**
+  String pantryLegendLow(int count);
+
+  /// Pantry legend: items about to expire.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} هتبوظ قريب'**
+  String pantryLegendExpiring(int count);
+
+  /// Pantry legend: items that are fine.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} تمام'**
+  String pantryLegendOk(int count);
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

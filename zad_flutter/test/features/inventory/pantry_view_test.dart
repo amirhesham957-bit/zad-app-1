@@ -46,6 +46,31 @@ final Finder _cards = find.byWidgetPredicate(
 );
 
 void main() {
+  // The world's scene sits above the list, so a screenful holds fewer rows;
+  // a tall surface keeps every row built (a real phone scrolls to them).
+  setUp(() {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    final view =
+        TestWidgetsFlutterBinding.instance.platformDispatcher.implicitView!
+          ..physicalSize = const Size(800, 2800)
+          ..devicePixelRatio = 1;
+    addTearDown(view.reset);
+    // The scene loops for ever, which pumpAndSettle would wait on; a phone
+    // asked for reduced motion holds it still.
+    TestWidgetsFlutterBinding
+        .instance
+        .platformDispatcher
+        .accessibilityFeaturesTestValue = const FakeAccessibilityFeatures(
+      disableAnimations: true,
+    );
+    addTearDown(
+      TestWidgetsFlutterBinding
+          .instance
+          .platformDispatcher
+          .clearAccessibilityFeaturesTestValue,
+    );
+  });
+
   setUpAll(() async {
     tz_data.initializeTimeZones();
     await initializeDateFormatting('ar');
@@ -79,6 +104,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          ...quietOrbOverrides,
           nowProvider.overrideWithValue(() => _now),
           accountTimeZoneProvider.overrideWithValue('Africa/Cairo'),
           pantry.pantryControllerProvider.overrideWith(
@@ -121,6 +147,7 @@ void main() {
     }) => tester.pumpWidget(
       ProviderScope(
         overrides: [
+          ...quietOrbOverrides,
           nowProvider.overrideWithValue(() => _now),
           accountTimeZoneProvider.overrideWithValue('Africa/Cairo'),
           pantry.pantryControllerProvider.overrideWith(
@@ -186,7 +213,7 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('ينتهي قريباً'), findsOneWidget);
-      expect(find.text('باقي 2 يوم'), findsOneWidget);
+      expect(find.textContaining('باقي 2 يوم'), findsOneWidget);
       expect(find.text('اقتراح وصفة'), findsOneWidget);
     });
 
@@ -240,6 +267,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            ...quietOrbOverrides,
             nowProvider.overrideWithValue(() => _now),
             accountTimeZoneProvider.overrideWithValue('Africa/Cairo'),
             pantry.pantryControllerProvider.overrideWith(() => pantryCtl),
@@ -265,7 +293,11 @@ void main() {
         findsOneWidget,
         reason: 'the milk only',
       );
-      expect(find.text('منخفض'), findsOneWidget, reason: 'on the milk only');
+      expect(
+        find.textContaining('منخفض', findRichText: true),
+        findsOneWidget,
+        reason: 'on the milk only',
+      );
     });
 
     testWidgets('the edit dialog says so, and only a change is written', (
@@ -321,6 +353,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          ...quietOrbOverrides,
           nowProvider.overrideWithValue(() => _now),
           accountTimeZoneProvider.overrideWithValue('Africa/Cairo'),
           pantry.pantryControllerProvider.overrideWith(() => pantryCtl),
@@ -353,6 +386,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            ...quietOrbOverrides,
             nowProvider.overrideWithValue(() => late),
             accountTimeZoneProvider.overrideWithValue('Asia/Riyadh'),
             pantry.pantryControllerProvider.overrideWith(() => pantryCtl),
@@ -445,6 +479,7 @@ void main() {
           ProviderScope(
             key: UniqueKey(),
             overrides: [
+              ...quietOrbOverrides,
               nowProvider.overrideWithValue(() => late),
               accountTimeZoneProvider.overrideWithValue('Asia/Riyadh'),
               pantry.pantryControllerProvider.overrideWith(() => pantryCtl),

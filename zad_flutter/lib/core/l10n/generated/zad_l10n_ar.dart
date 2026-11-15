@@ -4277,6 +4277,127 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get consentTermsUpdated => 'نوفمبر ٢٠٢٦';
+
+  @override
+  String get worldLabelBrain => 'عقل زاد';
+
+  @override
+  String get worldLabelChef => 'شيف زاد';
+
+  @override
+  String get worldLabelInv => 'المخزون';
+
+  @override
+  String get worldLabelShop => 'التسوق';
+
+  @override
+  String get worldLabelTx => 'المعاملات';
+
+  @override
+  String get worldLabelBudget => 'الميزانية';
+
+  @override
+  String get worldLabelStmt => 'كشف الحساب';
+
+  @override
+  String get worldLabelSubs => 'الاشتراكات';
+
+  @override
+  String get worldLabelPh => 'الصيدلية';
+
+  @override
+  String get worldLabelAppt => 'المواعيد';
+
+  @override
+  String get worldLabelMaint => 'الصيانة';
+
+  @override
+  String get worldLabelDocs => 'المستندات';
+
+  @override
+  String get worldLabelPlaces => 'أماكني';
+
+  @override
+  String get worldLabelComp => 'رفيق زاد';
+
+  @override
+  String get worldLabelChat => 'الشات';
+
+  @override
+  String get worldLabelNotif => 'الإشعارات';
+
+  @override
+  String get worldLabelProfile => 'حسابي';
+
+  @override
+  String get worldLabelPrem => 'بريميوم';
+
+  @override
+  String get worldLabelTas => 'بستان التسبيح';
+
+  @override
+  String get worldLabelGames => 'ألعاب زادو';
+
+  @override
+  String get worldLabelPrices => 'أسعار النهارده';
+
+  @override
+  String get worldLabelOffers => 'عروضي';
+
+  @override
+  String get worldLabelAch => 'إنجازاتي';
+
+  @override
+  String get worldLinksTitle => 'متصلة بـ';
+
+  @override
+  String get worldLinksHint => 'اللي بيحصل هنا بيأثر في:';
+
+  @override
+  String get worldBack => 'رجوع';
+
+  @override
+  String pantryWorldEyebrow(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count صنف',
+      few: '$count أصناف',
+      two: 'صنفين',
+      one: 'صنف واحد',
+      zero: 'لسه مفيش أصناف',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String pantryWorldState(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count حاجة قربت تخلص',
+      few: '$count حاجات قربت تخلص',
+      two: 'حاجتين قربوا يخلصوا',
+      one: 'حاجة واحدة قربت تخلص',
+      zero: 'مفيش حاجة قربت تخلص',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String pantryLegendLow(int count) {
+    return '$count قربت تخلص';
+  }
+
+  @override
+  String pantryLegendExpiring(int count) {
+    return '$count هتبوظ قريب';
+  }
+
+  @override
+  String pantryLegendOk(int count) {
+    return '$count تمام';
+  }
 }
 
 /// The translations for Arabic, as used in Saudi Arabia (`ar_SA`).
@@ -5417,4 +5538,7 @@ class ZadL10nArSa extends ZadL10nAr {
   @override
   String get consentPoint4Body =>
       'راجع الأرقام قبل أي قرار؛ زاد مو بنك ولا مستشار مالي.';
+
+  @override
+  String get worldLinksHint => 'اللي يصير هنا يأثر في:';
 }

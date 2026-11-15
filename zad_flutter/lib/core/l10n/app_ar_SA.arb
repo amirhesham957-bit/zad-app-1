@@ -324,5 +324,6 @@
   "authZadoNotLooking": "ما أشوف، والله",
   "consentTitle": "قبل ما نبدأ، هذا اتفاقنا",
   "consentPoint3Lead": "ما نبيع بياناتك لأحد.",
-  "consentPoint4Body": "راجع الأرقام قبل أي قرار؛ زاد مو بنك ولا مستشار مالي."
+  "consentPoint4Body": "راجع الأرقام قبل أي قرار؛ زاد مو بنك ولا مستشار مالي.",
+  "worldLinksHint": "اللي يصير هنا يأثر في:"
 }
