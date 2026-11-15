@@ -158,7 +158,7 @@ void main() {
     expect(find.text('اسم المستخدم'), findsNothing);
   });
 
-  testWidgets('signed out, Zado is the intro\'s character, not the ball', (
+  testWidgets("signed out, Zado is the intro's character, not the ball", (
     tester,
   ) async {
     // No account means no saved companion; without a look the orb drew the
