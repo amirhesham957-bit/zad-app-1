@@ -15,6 +15,7 @@ import 'package:zad/features/recipes/domain/recipe.dart';
 import 'package:zad/features/recipes/presentation/recipe_detail_screen.dart';
 import 'package:zad/features/recipes/presentation/recipes_view.dart' as ui;
 import 'package:zad/shared/ads/application/ads_policy.dart';
+import 'package:zad/shared/ads/presentation/ai_wait_ad.dart';
 import 'package:zad/shared/ads/presentation/inline_ad.dart';
 import 'package:zad/shared/ads/presentation/native_ad.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
@@ -157,7 +158,7 @@ void main() {
     await pump(tester, pantry: _kitchen, asking: true);
     await tester.pump();
     expect(find.text('شيف زاد بتفكر…'), findsOneWidget);
-    expect(find.byType(ZadInlineAd), findsOneWidget);
+    expect(find.byType(ZadAiWaitAd), findsOneWidget);
   });
 
   testWidgets('asking again over old suggestions shows only the waiting ad', (
@@ -172,7 +173,7 @@ void main() {
       height: 12000,
     );
     await tester.pump();
-    expect(find.byType(ZadInlineAd, skipOffstage: false), findsOneWidget);
+    expect(find.byType(ZadAiWaitAd, skipOffstage: false), findsOneWidget);
     expect(find.byType(ZadNativeAd, skipOffstage: false), findsNothing);
   });
 

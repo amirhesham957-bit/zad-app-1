@@ -14,6 +14,7 @@ import 'package:zad/core/design/zad_theme.dart';
 import 'package:zad/features/chat/presentation/intelligence_chat_card.dart';
 import 'package:zad/shared/ads/application/ads_policy.dart';
 import 'package:zad/shared/ads/application/interstitials.dart';
+import 'package:zad/shared/ads/presentation/ai_wait_ad.dart';
 import 'package:zad/shared/ads/presentation/inline_ad.dart';
 import 'package:zad/shared/chat/application/chat_controller.dart';
 import 'package:zad/shared/chat/application/voice_input_controller.dart';
@@ -143,7 +144,7 @@ void main() {
 
     chat.push(chat.initial.copyWith(messages: [u1], isAwaitingReply: true));
     await tester.pump();
-    expect(find.byType(ZadInlineAd), findsOneWidget);
+    expect(find.byType(ZadAiWaitAd), findsOneWidget);
 
     chat.push(
       chat.initial.copyWith(

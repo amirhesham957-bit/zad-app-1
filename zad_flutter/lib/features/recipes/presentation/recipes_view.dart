@@ -22,6 +22,7 @@ import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/recipes/application/recipes_controller.dart';
 import 'package:zad/features/recipes/domain/recipe.dart';
 import 'package:zad/features/recipes/presentation/recipe_detail_screen.dart';
+import 'package:zad/shared/ads/presentation/ai_wait_ad.dart';
 import 'package:zad/shared/ads/presentation/inline_ad.dart';
 import 'package:zad/shared/ads/presentation/native_ad.dart';
 import 'package:zad/shared/affiliate/data/affiliate_repository.dart';
@@ -72,7 +73,7 @@ class RecipesView extends ConsumerWidget {
                     ZadSpacing.gutter,
                     0,
                   ),
-                  sliver: SliverToBoxAdapter(child: ZadInlineAd()),
+                  sliver: SliverToBoxAdapter(child: ZadAiWaitAd()),
                 ),
               if (suggestions == null)
                 SliverFillRemaining(

@@ -18,7 +18,7 @@ import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/chat/presentation/reply_report_button.dart';
-import 'package:zad/shared/ads/application/interstitials.dart';
+import 'package:zad/shared/ads/presentation/ai_wait_ad.dart';
 import 'package:zad/shared/ads/presentation/inline_ad.dart';
 import 'package:zad/shared/ads/presentation/watch_ad_button.dart';
 import 'package:zad/shared/chat/application/chat_controller.dart';
@@ -150,9 +150,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       final reply = messages.isEmpty ? null : messages.last;
       if (reply == null || reply.isUser) return;
       setState(() => _adAfter.add(reply.id));
-      unawaited(
-        ref.read(interstitialsProvider).atBreak(InterstitialBreak.aiReply),
-      );
     });
 
     return DecoratedBox(
@@ -201,7 +198,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: <Widget>[
                               bubble,
-                              ZadInlineAd(
+                              ZadAiWaitAd(
                                 key: ValueKey<String>('pending-${message.id}'),
                               ),
                             ],

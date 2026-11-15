@@ -25,10 +25,11 @@ enum InterstitialBreak {
   /// A full screen was closed with back.
   screenClosed,
 
-  /// Zad answered an AI request in the chat. Only every
-  /// [Interstitials.aiRepliesPerAd]th one is a break (owner 11/11), and it
-  /// comes after the reply is on screen, never before it.
-  aiReply,
+  /// An AI request was sent and Zad is working; the full-screen ad covers
+  /// the wait (owner 15/11). Paced by InterstitialPacer like every break —
+  /// 4 min gap, 4 per hour — never every request; AdMob forbids an
+  /// interstitial after every action.
+  aiWait,
 
   /// A scanned receipt was saved (owner 11/11: an ad with every scan).
   scanSaved,
@@ -55,10 +56,6 @@ class Interstitials with WidgetsBindingObserver {
   late PacerState _state;
   DateTime? _closedAt;
   bool _showing = false;
-  int _aiReplies = 0;
-
-  /// Every how many AI replies one is a break.
-  static const int aiRepliesPerAd = 3;
 
   static const String _runKey = 'ads_inter_ran';
   static const String _shownKey = 'ads_inter_shown';
@@ -101,11 +98,6 @@ class Interstitials with WidgetsBindingObserver {
   /// one showed.
   Future<bool> atBreak(InterstitialBreak kind) async {
     if (_showing || !_ref.read(adsAllowedProvider)) return false;
-    if (kind == InterstitialBreak.aiReply &&
-        ++_aiReplies % aiRepliesPerAd != 0) {
-      warmUp();
-      return false;
-    }
     final ads = _ref.read(interstitialAdsProvider);
     if (!ads.configured) return false;
     final now = _now();

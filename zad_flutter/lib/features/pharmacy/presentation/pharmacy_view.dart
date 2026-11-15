@@ -23,7 +23,7 @@ import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/money/money.dart';
 import 'package:zad/features/pharmacy/presentation/pharmacy_family.dart';
-import 'package:zad/shared/ads/presentation/inline_ad.dart';
+import 'package:zad/shared/ads/presentation/ai_wait_ad.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/family/application/family_controller.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
@@ -1216,7 +1216,7 @@ class _AddMedicineSheetState extends ConsumerState<_AddMedicineSheet> {
             // scan button while the AI reads.
             if (_scanning) ...<Widget>[
               const SizedBox(height: ZadSpacing.lg),
-              const ZadInlineAd(),
+              const ZadAiWaitAd(),
             ],
             const SizedBox(height: 12),
             TextField(

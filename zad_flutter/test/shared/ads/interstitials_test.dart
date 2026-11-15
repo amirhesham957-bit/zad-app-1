@@ -1,5 +1,5 @@
-// Owner 11/11: an ad with every AI request. The full-screen one comes on
-// every third reply only, after the reply, and still under the pacer.
+// Owner 11/11: an ad with every AI request. The full-screen one covers the
+// wait, under the pacer like every break.
 
 import 'dart:io';
 
@@ -71,28 +71,21 @@ void main() {
     await Hive.deleteFromDisk();
   });
 
-  test('every third AI reply is a break, and the pacer still rules', () async {
+  test('every AI wait is a break, and the pacer alone decides', () async {
     final i = container.read(interstitialsProvider);
     now = now.add(const Duration(minutes: 3)); // past the run's first minutes
 
-    expect(await i.atBreak(InterstitialBreak.aiReply), isFalse);
-    expect(await i.atBreak(InterstitialBreak.aiReply), isFalse);
-    expect(await i.atBreak(InterstitialBreak.aiReply), isTrue);
+    expect(await i.atBreak(InterstitialBreak.aiWait), isTrue);
     expect(ads.shown, 1);
 
-    // The sixth reply comes a minute later: its turn, but too soon after
-    // the last ad.
+    // The next wait a minute later: too soon after the last ad.
     now = now.add(const Duration(minutes: 1));
-    for (var n = 0; n < 3; n++) {
-      await i.atBreak(InterstitialBreak.aiReply);
-    }
+    expect(await i.atBreak(InterstitialBreak.aiWait), isFalse);
     expect(ads.shown, 1);
 
-    // The ninth, well after: shows.
+    // Well after: shows again.
     now = now.add(const Duration(minutes: 10));
-    for (var n = 0; n < 3; n++) {
-      await i.atBreak(InterstitialBreak.aiReply);
-    }
+    expect(await i.atBreak(InterstitialBreak.aiWait), isTrue);
     expect(ads.shown, 2);
   });
 

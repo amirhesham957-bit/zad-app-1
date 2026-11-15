@@ -13,6 +13,7 @@ import 'package:zad/core/data/local/boxes.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/features/voice/presentation/zad_voice_sheet.dart';
 import 'package:zad/shared/ads/application/ads_policy.dart';
+import 'package:zad/shared/ads/presentation/ai_wait_ad.dart';
 import 'package:zad/shared/ads/presentation/inline_ad.dart';
 import 'package:zad/shared/chat/application/chat_controller.dart';
 import 'package:zad/shared/chat/application/voice_input_controller.dart';
@@ -234,7 +235,7 @@ void main() {
     await tester.tap(find.text('حلل مصاريفي'));
     await tester.pump();
     expect(find.text('بيفكر…'), findsOneWidget);
-    expect(find.byType(ZadInlineAd), findsOneWidget);
+    expect(find.byType(ZadAiWaitAd), findsOneWidget);
 
     chat.answer('r1');
     await tester.pump();

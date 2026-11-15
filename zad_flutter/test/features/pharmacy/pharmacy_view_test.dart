@@ -12,6 +12,7 @@ import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/zad_theme.dart';
 import 'package:zad/features/pharmacy/presentation/pharmacy_view.dart';
 import 'package:zad/shared/ads/application/ads_policy.dart';
+import 'package:zad/shared/ads/presentation/ai_wait_ad.dart';
 import 'package:zad/shared/ads/presentation/inline_ad.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/family/application/family_controller.dart';
@@ -493,10 +494,10 @@ void main() {
     await tester.pump();
     await tester.pump();
     expect(find.textContaining('جاري قراءة علبة الدواء'), findsOneWidget);
-    expect(find.byType(ZadInlineAd), findsOneWidget);
+    expect(find.byType(ZadAiWaitAd), findsOneWidget);
 
     box.gate.complete();
     await tester.pumpAndSettle();
-    expect(find.byType(ZadInlineAd), findsNothing);
+    expect(find.byType(ZadAiWaitAd), findsNothing);
   });
 }

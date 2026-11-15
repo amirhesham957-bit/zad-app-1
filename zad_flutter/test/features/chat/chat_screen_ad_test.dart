@@ -9,6 +9,7 @@ import 'package:zad/core/design/zad_theme.dart';
 import 'package:zad/features/chat/presentation/chat_screen.dart';
 import 'package:zad/shared/ads/application/ads_policy.dart';
 import 'package:zad/shared/ads/application/interstitials.dart';
+import 'package:zad/shared/ads/presentation/ai_wait_ad.dart';
 import 'package:zad/shared/ads/presentation/inline_ad.dart';
 import 'package:zad/shared/chat/application/chat_controller.dart';
 import 'package:zad/shared/chat/application/voice_input_controller.dart';
@@ -79,7 +80,7 @@ void main() {
       ),
     );
     await tester.pump();
-    expect(find.byType(ZadInlineAd), findsOneWidget);
+    expect(find.byType(ZadAiWaitAd), findsOneWidget);
 
     (container.read(chatControllerProvider.notifier) as _Chat).push(
       ChatView(

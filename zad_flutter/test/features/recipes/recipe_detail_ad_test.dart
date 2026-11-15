@@ -17,6 +17,7 @@ import 'package:zad/features/recipes/application/recipes_controller.dart';
 import 'package:zad/features/recipes/domain/recipe.dart';
 import 'package:zad/features/recipes/presentation/recipe_detail_screen.dart';
 import 'package:zad/shared/ads/application/ads_policy.dart';
+import 'package:zad/shared/ads/presentation/ai_wait_ad.dart';
 import 'package:zad/shared/ads/presentation/inline_ad.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart';
 
@@ -94,7 +95,7 @@ void main() {
     await open(tester);
     await settle(tester);
     expect(find.text('شيف زاد يجهز لك الوصفة…'), findsOneWidget);
-    expect(find.byType(ZadInlineAd), findsOneWidget);
+    expect(find.byType(ZadAiWaitAd), findsOneWidget);
 
     gate!.complete();
     await settle(tester);

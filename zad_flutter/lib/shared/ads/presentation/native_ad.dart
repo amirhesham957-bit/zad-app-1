@@ -34,8 +34,20 @@ bool nativeAdAfter(int index) => index >= 2 && (index - 2) % 6 == 0;
 
 /// The ad.
 class ZadNativeAd extends ConsumerStatefulWidget {
-  /// Creates it.
-  const new({super.key});
+  /// Creates it. [templateType] picks Google's template (the medium one
+  /// carries a video MediaView); [onFailed] hears a failed load, and when it
+  /// is given the caller owns the logging.
+  const new({
+    super.key,
+    this.templateType = TemplateType.small,
+    this.onFailed,
+  });
+
+  /// Google's template the ad is drawn with.
+  final TemplateType templateType;
+
+  /// Called when the ad could not load.
+  final void Function(LoadAdError error)? onFailed;
 
   @override
   ConsumerState<ZadNativeAd> createState() => _ZadNativeAdState();
@@ -45,6 +57,8 @@ class _ZadNativeAdState extends ConsumerState<ZadNativeAd> {
   NativeAd? _ad;
   bool _asked = false;
 
+  bool get _medium => widget.templateType == TemplateType.medium;
+
   Future<void> _load() async {
     _asked = true;
     if (nativeAdUnit.isEmpty || !ref.read(adsAllowedProvider)) return;
@@ -52,8 +66,11 @@ class _ZadNativeAdState extends ConsumerState<ZadNativeAd> {
     final ad = NativeAd(
       adUnitId: nativeAdUnit,
       request: const AdRequest(),
+      nativeAdOptions: _medium
+          ? NativeAdOptions(videoOptions: VideoOptions(startMuted: true))
+          : null,
       nativeTemplateStyle: NativeTemplateStyle(
-        templateType: TemplateType.small,
+        templateType: widget.templateType,
         mainBackgroundColor: ZadColors.surface,
         cornerRadius: ZadRadii.card,
         callToActionTextStyle: NativeTemplateTextStyle(
@@ -75,7 +92,12 @@ class _ZadNativeAdState extends ConsumerState<ZadNativeAd> {
           setState(() => _ad = ad as NativeAd);
         },
         onAdFailedToLoad: (ad, e) {
-          logAdLoadFailure('native', e);
+          final onFailed = widget.onFailed;
+          if (onFailed == null) {
+            logAdLoadFailure('native', e);
+          } else if (mounted) {
+            onFailed(e);
+          }
           unawaited(ad.dispose());
         },
       ),
@@ -103,8 +125,10 @@ class _ZadNativeAdState extends ConsumerState<ZadNativeAd> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: ZadSpacing.xs),
       child: ConstrainedBox(
-        // Google's small template: 90–200 high.
-        constraints: const BoxConstraints(minHeight: 90, maxHeight: 120),
+        // Google's small template: 90–200 high; the medium one 320–400.
+        constraints: _medium
+            ? const BoxConstraints(minHeight: 320, maxHeight: 400)
+            : const BoxConstraints(minHeight: 90, maxHeight: 120),
         child: AdWidget(ad: ad),
       ),
     );
