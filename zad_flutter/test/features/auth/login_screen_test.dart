@@ -23,6 +23,8 @@ import 'package:zad/core/l10n/generated/zad_l10n.dart';
 import 'package:zad/features/auth/presentation/login_screen.dart';
 import 'package:zad/shared/auth/data/auth_gateway.dart';
 import 'package:zad/shared/auth/domain/auth_failure.dart';
+import 'package:zad/shared/companion/domain/companion_catalog.dart';
+import 'package:zad/shared/orb/presentation/companion_orb.dart';
 
 class _FakeGateway implements AuthGateway {
   final List<String> calls = <String>[];
@@ -154,6 +156,18 @@ void main() {
     expect(find.text('البريد الإلكتروني'), findsOneWidget);
     expect(find.text('كلمة المرور'), findsOneWidget);
     expect(find.text('اسم المستخدم'), findsNothing);
+  });
+
+  testWidgets("signed out, Zado is the intro's character, not the ball", (
+    tester,
+  ) async {
+    // No account means no saved companion; without a look the orb drew the
+    // classic ball on the emulator (15/11) while the intro drew Zado.
+    await pumpLogin(tester);
+    await settle(tester);
+    final orb = tester.widget<CompanionOrb>(find.byType(CompanionOrb).first);
+    expect(orb.look, const CompanionLook());
+    expect(orb.look!.persona, CompanionPersona.zado);
   });
 
   testWidgets('the button waits for an email and a password', (tester) async {
