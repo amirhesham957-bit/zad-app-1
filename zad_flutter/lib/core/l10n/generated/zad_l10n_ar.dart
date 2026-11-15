@@ -5356,4 +5356,20 @@ class ZadL10nArSa extends ZadL10nAr {
 
   @override
   String get profileTelegramSubtitle => 'اربط حسابك وخلّ التذكيرات توصلك';
+
+  @override
+  String get introSayPantry => 'الثلاجة هذي حقتي!';
+
+  @override
+  String get authZadoNotLooking => 'ما أشوف، والله';
+
+  @override
+  String get consentTitle => 'قبل ما نبدأ، هذا اتفاقنا';
+
+  @override
+  String get consentPoint3Lead => 'ما نبيع بياناتك لأحد.';
+
+  @override
+  String get consentPoint4Body =>
+      'راجع الأرقام قبل أي قرار؛ زاد مو بنك ولا مستشار مالي.';
 }

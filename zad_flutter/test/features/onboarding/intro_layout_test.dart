@@ -70,6 +70,9 @@ void main() {
         expect(signUp.bottom, lessThanOrEqualTo(640));
         if (i < kIntroPageCount - 1) {
           await tester.tap(primary);
+          // The first frame only starts the page animation's ticker; the
+          // second one moves it.
+          await tester.pump();
           await tester.pump(const Duration(milliseconds: 400));
           await tester.pump(const Duration(milliseconds: 100));
         }

@@ -315,5 +315,10 @@
   "rewardsCardBody": "شف إعلان وخذ رسائل زيادة، أو اشترك وارتاح من الإعلانات.",
   "rewardsSubscribe": "اشترك في زاد بريميوم",
   "rewardsTelegram": "بوت زاد على تليجرام",
-  "profileTelegramSubtitle": "اربط حسابك وخلّ التذكيرات توصلك"
+  "profileTelegramSubtitle": "اربط حسابك وخلّ التذكيرات توصلك",
+  "introSayPantry": "الثلاجة هذي حقتي!",
+  "authZadoNotLooking": "ما أشوف، والله",
+  "consentTitle": "قبل ما نبدأ، هذا اتفاقنا",
+  "consentPoint3Lead": "ما نبيع بياناتك لأحد.",
+  "consentPoint4Body": "راجع الأرقام قبل أي قرار؛ زاد مو بنك ولا مستشار مالي."
 }
