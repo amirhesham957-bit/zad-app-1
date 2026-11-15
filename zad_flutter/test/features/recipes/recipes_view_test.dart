@@ -15,6 +15,8 @@ import 'package:zad/features/recipes/domain/recipe.dart';
 import 'package:zad/features/recipes/presentation/recipe_detail_screen.dart';
 import 'package:zad/features/recipes/presentation/recipes_view.dart' as ui;
 import 'package:zad/shared/ads/application/ads_policy.dart';
+import 'package:zad/shared/ads/presentation/inline_ad.dart';
+import 'package:zad/shared/ads/presentation/native_ad.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart';
 import 'package:zad/shared/inventory/application/shopping_controller.dart';
@@ -113,9 +115,11 @@ void main() {
     WidgetTester tester, {
     required List<InventoryItem> pantry,
     ChefSuggestions? suggestions,
+    bool asking = false,
+    double height = 2400,
   }) async {
-    recipes = _Recipes(RecipesView(suggestions: suggestions));
-    tester.view.physicalSize = const Size(1080, 2400);
+    recipes = _Recipes(RecipesView(suggestions: suggestions, isAsking: asking));
+    tester.view.physicalSize = Size(1080, height);
     addTearDown(tester.view.resetPhysicalSize);
     await tester.pumpWidget(
       ProviderScope(
@@ -147,6 +151,41 @@ void main() {
     await tester.tap(find.text('وصفات من مخزني'));
     await tester.pump();
     expect(recipes.calls, <String>['ask']);
+  });
+
+  testWidgets('while the chef thinks there is one ad', (tester) async {
+    await pump(tester, pantry: _kitchen, asking: true);
+    await tester.pump();
+    expect(find.text('شيف زاد بتفكر…'), findsOneWidget);
+    expect(find.byType(ZadInlineAd), findsOneWidget);
+  });
+
+  testWidgets('asking again over old suggestions shows only the waiting ad', (
+    tester,
+  ) async {
+    // Tall enough that every group's end ad is built, not just the top.
+    await pump(
+      tester,
+      pantry: _kitchen,
+      suggestions: _answer(),
+      asking: true,
+      height: 12000,
+    );
+    await tester.pump();
+    expect(find.byType(ZadInlineAd, skipOffstage: false), findsOneWidget);
+    expect(find.byType(ZadNativeAd, skipOffstage: false), findsNothing);
+  });
+
+  testWidgets('a landed answer keeps its own end ad', (tester) async {
+    await pump(tester, pantry: _kitchen, suggestions: _answer(), height: 12000);
+    await tester.pump();
+    // Ads are off in these tests, so the banner is built at zero size.
+    expect(find.byType(ZadInlineAd, skipOffstage: false), findsWidgets);
+  });
+
+  testWidgets('before the first ask there is no ad', (tester) async {
+    await pump(tester, pantry: _kitchen);
+    expect(find.byType(ZadInlineAd), findsNothing);
   });
 
   testWidgets('an empty pantry says so, and there is nothing to ask', (

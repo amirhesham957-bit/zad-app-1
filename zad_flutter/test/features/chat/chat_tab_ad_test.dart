@@ -134,4 +134,26 @@ void main() {
 
     expect(find.byType(ZadInlineAd), findsNothing);
   });
+
+  testWidgets('a pending reply carries one ad, handed over when it lands', (
+    tester,
+  ) async {
+    final u1 = _msg('u1', user: true);
+    final chat = await mount(tester, [u1]);
+
+    chat.push(chat.initial.copyWith(messages: [u1], isAwaitingReply: true));
+    await tester.pump();
+    expect(find.byType(ZadInlineAd), findsOneWidget);
+
+    chat.push(
+      chat.initial.copyWith(
+        messages: [u1, _msg('r1', user: false)],
+        isAwaitingReply: false,
+      ),
+    );
+    await tester.pump();
+    await tester.pump();
+    // The pending one is gone; the answer's own ad is the only one.
+    expect(find.byType(ZadInlineAd), findsOneWidget);
+  });
 }

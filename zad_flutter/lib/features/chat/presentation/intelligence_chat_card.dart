@@ -383,6 +383,9 @@ class _ChatTabState extends ConsumerState<ChatTab> {
                   ),
               if (chat.isAwaitingReply) ...<Widget>[
                 const _TypingIndicator(),
+                // One ad while the reply is pending; the per-answer ad above
+                // takes over when it lands (never two for one request).
+                const ZadInlineAd(),
                 Center(
                   child: NeuralMeshBadge(
                     status: NeuralMeshStatus.thinking,

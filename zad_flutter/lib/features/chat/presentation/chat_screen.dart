@@ -194,6 +194,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                         final message =
                             view.messages[view.messages.length - 1 - i];
                         final bubble = _Bubble(message: message);
+                        // Reply pending: one ad under the thinking indicator;
+                        // the per-answer ad takes over when it lands.
+                        if (message.isStreaming && message.text.isEmpty) {
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: <Widget>[
+                              bubble,
+                              ZadInlineAd(
+                                key: ValueKey<String>('pending-${message.id}'),
+                              ),
+                            ],
+                          );
+                        }
                         // The ad sits under the reply, in its own room —
                         // never inside the bubble or by its buttons.
                         return _adAfter.contains(message.id)

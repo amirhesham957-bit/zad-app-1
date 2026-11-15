@@ -315,8 +315,15 @@ class _ZadVoiceSheetState extends ConsumerState<ZadVoiceSheet> {
                       ),
                     ),
                   ),
+                  // One ad while the AI works (owner 15/11); the answer's own
+                  // ad takes over below when it lands.
+                  if (thinking && error == null) ...<Widget>[
+                    const SizedBox(height: 12),
+                    const ZadInlineAd(),
+                  ],
                   if (_reply.isNotEmpty &&
                       error == null &&
+                      !thinking &&
                       !isActive) ...<Widget>[
                     const SizedBox(height: 12),
                     Container(

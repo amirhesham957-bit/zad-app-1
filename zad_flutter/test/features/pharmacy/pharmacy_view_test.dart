@@ -1,6 +1,7 @@
 // The pharmacy screen's Kotlin parts: the stats, the card's badges and
 // actions, and the rules behind them.
 
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -10,6 +11,8 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/zad_theme.dart';
 import 'package:zad/features/pharmacy/presentation/pharmacy_view.dart';
+import 'package:zad/shared/ads/application/ads_policy.dart';
+import 'package:zad/shared/ads/presentation/inline_ad.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/family/application/family_controller.dart';
 import 'package:zad/shared/family/data/family_repository.dart';
@@ -71,6 +74,20 @@ class _Box implements VisionScanner {
       'suggested_times': <String>['20:00', '8:00', '24:00'],
     },
   });
+}
+
+/// A box that is still being read until [gate] completes.
+class _SlowBox extends _Box {
+  final gate = Completer<void>();
+
+  @override
+  Future<ScannedMedicine?> medicine({
+    required String userId,
+    required Uint8List image,
+  }) async {
+    await gate.future;
+    return await super.medicine(userId: userId, image: image);
+  }
 }
 
 /// Records what the add form saved.
@@ -437,5 +454,49 @@ void main() {
 
     expect(find.text('مالوش مواعيد — مش هفكّرك بيه'), findsNothing);
     expect(find.text('مفيش جرعات فاضلة النهارده.'), findsOneWidget);
+  });
+
+  testWidgets('a box being read carries one ad, and none once it is read', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(420, 2400));
+    final box = _SlowBox();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          nowProvider.overrideWithValue(() => _now),
+          signedInUserIdProvider.overrideWithValue(() => 'u'),
+          receiptCameraProvider.overrideWithValue(_Camera()),
+          visionScannerProvider.overrideWithValue(box),
+          pc.pharmacyControllerProvider.overrideWith(_Adding.new),
+          budgetControllerProvider.overrideWith(_Budget.new),
+          transactionsControllerProvider.overrideWith(_Txns.new),
+          familyControllerProvider.overrideWith(_NoFamily.new),
+          adsAllowedProvider.overrideWithValue(false),
+        ],
+        child: MaterialApp(
+          theme: ZadTheme.light(),
+          home: const Directionality(
+            textDirection: TextDirection.rtl,
+            child: Scaffold(body: PharmacyView()),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.tap(find.byTooltip('إضافة'));
+    await tester.pumpAndSettle();
+    expect(find.byType(ZadInlineAd), findsNothing);
+
+    await tester.ensureVisible(find.text('مسح العبوة بالكاميرا'));
+    await tester.tap(find.text('مسح العبوة بالكاميرا'));
+    await tester.pump();
+    await tester.pump();
+    expect(find.textContaining('جاري قراءة علبة الدواء'), findsOneWidget);
+    expect(find.byType(ZadInlineAd), findsOneWidget);
+
+    box.gate.complete();
+    await tester.pumpAndSettle();
+    expect(find.byType(ZadInlineAd), findsNothing);
   });
 }

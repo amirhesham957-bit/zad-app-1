@@ -227,6 +227,20 @@ void main() {
     );
   });
 
+  testWidgets('the wait carries one ad, and the answer takes it over', (
+    tester,
+  ) async {
+    await pump(tester);
+    await tester.tap(find.text('حلل مصاريفي'));
+    await tester.pump();
+    expect(find.text('بيفكر…'), findsOneWidget);
+    expect(find.byType(ZadInlineAd), findsOneWidget);
+
+    chat.answer('r1');
+    await tester.pump();
+    expect(find.byType(ZadInlineAd), findsOneWidget, reason: 'not two');
+  });
+
   testWidgets('a failed turn shows no ad', (tester) async {
     await pump(tester);
     await tester.tap(find.text('حلل مصاريفي'));

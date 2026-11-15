@@ -62,6 +62,18 @@ class RecipesView extends ConsumerWidget {
                   color: ZadColors.mustardOchre,
                   text: 'مخزنك اتغيّر من آخر اقتراحات — اطلب جديدة لو حابب.',
                 ),
+              // The chef is thinking: one ad while the customer waits (owner
+              // 15/11), above the list so it is on screen either way.
+              if (view.isAsking)
+                const SliverPadding(
+                  padding: EdgeInsets.fromLTRB(
+                    ZadSpacing.gutter,
+                    ZadSpacing.md,
+                    ZadSpacing.gutter,
+                    0,
+                  ),
+                  sliver: SliverToBoxAdapter(child: ZadInlineAd()),
+                ),
               if (suggestions == null)
                 SliverFillRemaining(
                   hasScrollBody: false,
@@ -101,13 +113,26 @@ class RecipesView extends ConsumerWidget {
                     ),
                     sliver: SliverToBoxAdapter(child: _ChefLine(text: text)),
                   ),
-                ..._group(context.l10n.recipesWeekGroup, suggestions.weekPlan),
-                ..._group('من مخزونك', suggestions.fromPantry),
+                ..._group(
+                  context.l10n.recipesWeekGroup,
+                  suggestions.weekPlan,
+                  ads: !view.isAsking,
+                ),
+                ..._group(
+                  'من مخزونك',
+                  suggestions.fromPantry,
+                  ads: !view.isAsking,
+                ),
                 ..._group(
                   context.l10n.recipesTrendingGroup,
                   suggestions.trending,
+                  ads: !view.isAsking,
                 ),
-                ..._group('وجبات تانية', suggestions.needShopping),
+                ..._group(
+                  'وجبات تانية',
+                  suggestions.needShopping,
+                  ads: !view.isAsking,
+                ),
               ],
               const SliverToBoxAdapter(child: SizedBox(height: ZadSpacing.lg)),
             ],
@@ -168,7 +193,13 @@ class RecipesView extends ConsumerWidget {
     );
   }
 
-  static List<Widget> _group(String title, List<Recipe> recipes) {
+  // [ads] is off while the chef works on a new ask: the waiting ad at the
+  // top is the one ad then, never a second from the old list (owner 15/11).
+  static List<Widget> _group(
+    String title,
+    List<Recipe> recipes, {
+    required bool ads,
+  }) {
     if (recipes.isEmpty) return const <Widget>[];
     return <Widget>[
       SliverPadding(
@@ -190,7 +221,7 @@ class RecipesView extends ConsumerWidget {
         sliver: SliverList.separated(
           itemCount: recipes.length,
           // Between cards, never inside one (owner 11/11).
-          separatorBuilder: (_, i) => nativeAdAfter(i)
+          separatorBuilder: (_, i) => ads && nativeAdAfter(i)
               ? const Column(
                   children: <Widget>[
                     SizedBox(height: ZadSpacing.sm),
@@ -203,7 +234,7 @@ class RecipesView extends ConsumerWidget {
         ),
       ),
       // A reading page: one banner at its end, after the last card (10.3 e).
-      if (recipes.isNotEmpty)
+      if (ads && recipes.isNotEmpty)
         const SliverPadding(
           padding: EdgeInsets.symmetric(horizontal: ZadSpacing.gutter),
           sliver: SliverToBoxAdapter(child: ZadInlineAd()),
