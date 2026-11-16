@@ -4398,6 +4398,56 @@ class ZadL10nAr extends ZadL10n {
   String pantryLegendOk(int count) {
     return '$count تمام';
   }
+
+  @override
+  String shopWorldEyebrow(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count حاجة ناقصة',
+      few: '$count حاجات ناقصة',
+      two: 'حاجتين ناقصين',
+      one: 'حاجة واحدة ناقصة',
+      zero: 'مفيش حاجة ناقصة',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String shopWorldStores(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'من $count محل',
+      few: 'من $count محلات',
+      two: 'من محلين',
+      one: 'من محل واحد',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get shopWorldAnyStore => 'من أي محل';
+
+  @override
+  String get shopWorldDone => 'القايمة فاضية';
+
+  @override
+  String get shopGroupAnyStore => 'أي محل';
+
+  @override
+  String shopPantryCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'في المخزن $count صنف',
+      few: 'في المخزن $count أصناف',
+      two: 'في المخزن صنفين',
+      one: 'في المخزن صنف واحد',
+      zero: 'المخزن فاضي',
+    );
+    return '$_temp0';
+  }
 }
 
 /// The translations for Arabic, as used in Saudi Arabia (`ar_SA`).
@@ -5569,6 +5619,56 @@ class ZadL10nArSa extends ZadL10nAr {
       two: 'شيئين قاربوا يخلصون',
       one: 'شي واحد قارب يخلص',
       zero: 'ما فيه شي قارب يخلص',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String shopWorldEyebrow(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count شي ناقص',
+      few: '$count أشياء ناقصة',
+      two: 'شيئين ناقصين',
+      one: 'شي واحد ناقص',
+      zero: 'ما فيه شي ناقص',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String shopWorldStores(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'من $count محل',
+      few: 'من $count محلات',
+      two: 'من محلين',
+      one: 'من محل واحد',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get shopWorldAnyStore => 'من أي محل';
+
+  @override
+  String get shopWorldDone => 'القائمة فاضية';
+
+  @override
+  String get shopGroupAnyStore => 'أي محل';
+
+  @override
+  String shopPantryCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'في المخزن $count صنف',
+      few: 'في المخزن $count أصناف',
+      two: 'في المخزن صنفين',
+      one: 'في المخزن صنف واحد',
+      zero: 'المخزن فاضي',
     );
     return '$_temp0';
   }

@@ -3829,5 +3829,44 @@
         "type": "int"
       }
     }
+  },
+  "shopWorldEyebrow": "{count, plural, =0{مفيش حاجة ناقصة} =1{حاجة واحدة ناقصة} =2{حاجتين ناقصين} few{{count} حاجات ناقصة} other{{count} حاجة ناقصة}}",
+  "@shopWorldEyebrow": {
+    "description": "Shopping world: the count above the title.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "shopWorldStores": "{count, plural, =1{من محل واحد} =2{من محلين} few{من {count} محلات} other{من {count} محل}}",
+  "@shopWorldStores": {
+    "description": "Shopping world: the state line, how many shops the lines are bought at.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "shopWorldAnyStore": "من أي محل",
+  "@shopWorldAnyStore": {
+    "description": "Shopping world: the state line when no line names a shop."
+  },
+  "shopWorldDone": "القايمة فاضية",
+  "@shopWorldDone": {
+    "description": "Shopping world: the state line when nothing is left to buy."
+  },
+  "shopGroupAnyStore": "أي محل",
+  "@shopGroupAnyStore": {
+    "description": "Shopping world: the group of lines with no shop named."
+  },
+  "shopPantryCount": "{count, plural, =0{المخزن فاضي} =1{في المخزن صنف واحد} =2{في المخزن صنفين} few{في المخزن {count} أصناف} other{في المخزن {count} صنف}}",
+  "@shopPantryCount": {
+    "description": "Shopping world: the pantry counter a bought item flies to.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   }
 }

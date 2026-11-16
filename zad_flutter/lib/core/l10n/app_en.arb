@@ -1524,5 +1524,11 @@
   "pantryWorldState": "{count, plural, =0{Nothing is running out} =1{1 thing is running out} other{{count} things are running out}}",
   "pantryLegendLow": "{count} running out",
   "pantryLegendExpiring": "{count} expiring soon",
-  "pantryLegendOk": "{count} fine"
+  "pantryLegendOk": "{count} fine",
+  "shopWorldEyebrow": "{count, plural, =0{Nothing missing} =1{1 thing missing} other{{count} things missing}}",
+  "shopWorldStores": "{count, plural, =1{From 1 shop} other{From {count} shops}}",
+  "shopWorldAnyStore": "From any shop",
+  "shopWorldDone": "The list is empty",
+  "shopGroupAnyStore": "Any shop",
+  "shopPantryCount": "{count, plural, =0{The pantry is empty} =1{1 item in the pantry} other{{count} items in the pantry}}"
 }
