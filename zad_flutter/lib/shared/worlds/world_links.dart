@@ -12,6 +12,7 @@ import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
+import 'package:zad/shared/worlds/art/zad_art.dart';
 import 'package:zad/shared/worlds/zad_world.dart';
 
 /// The strip for [world]; nothing at all when none of its links can open.
@@ -106,7 +107,7 @@ class _Chip extends StatelessWidget {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(world.icon, size: 16, color: world.color),
+              child: Center(child: ZadArt.icon(world.art, size: 18)),
             ),
             const SizedBox(width: ZadSpacing.sm),
             Text(

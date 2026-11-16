@@ -5,88 +5,88 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_world_colors.dart';
 import 'package:zad/core/l10n/l10n.dart';
+import 'package:zad/shared/worlds/art/zad_art_kinds.dart';
 
 /// A world.
 enum ZadWorld {
   /// عقل زاد.
-  brain(ZadWorldColors.brain, ZadIcons.brain),
+  brain(ZadWorldColors.brain, ZadIconArt.brain),
 
   /// شيف زاد.
-  chef(ZadWorldColors.chef, ZadIcons.chef),
+  chef(ZadWorldColors.chef, ZadIconArt.pot),
 
   /// المخزون.
-  inv(ZadWorldColors.inventory, ZadIcons.inventory),
+  inv(ZadWorldColors.inventory, ZadIconArt.pantry),
 
   /// التسوق.
-  shop(ZadWorldColors.shopping, ZadIcons.shopping),
+  shop(ZadWorldColors.shopping, ZadIconArt.cart),
 
   /// المعاملات.
-  tx(ZadWorldColors.transactions, Icons.receipt_long),
+  tx(ZadWorldColors.transactions, ZadIconArt.receipt),
 
   /// الميزانية.
-  budget(ZadWorldColors.budget, ZadIcons.budget),
+  budget(ZadWorldColors.budget, ZadIconArt.coin),
 
   /// كشف الحساب.
-  stmt(ZadWorldColors.statement, Icons.query_stats),
+  stmt(ZadWorldColors.statement, ZadIconArt.chart),
 
   /// الاشتراكات.
-  subs(ZadWorldColors.subscriptions, ZadIcons.recurring),
+  subs(ZadWorldColors.subscriptions, ZadIconArt.repeat),
 
   /// الصيدلية.
-  ph(ZadWorldColors.pharmacy, ZadIcons.pharmacy),
+  ph(ZadWorldColors.pharmacy, ZadIconArt.pill),
 
   /// المواعيد.
-  appt(ZadWorldColors.appointments, Icons.event_note),
+  appt(ZadWorldColors.appointments, ZadIconArt.calendar),
 
   /// الصيانة.
-  maint(ZadWorldColors.maintenance, ZadIcons.maintenance),
+  maint(ZadWorldColors.maintenance, ZadIconArt.wrench),
 
   /// المستندات.
-  docs(ZadWorldColors.documents, Icons.folder),
+  docs(ZadWorldColors.documents, ZadIconArt.folder),
 
   /// أماكني.
-  places(ZadWorldColors.places, Icons.place),
+  places(ZadWorldColors.places, ZadIconArt.pin),
 
   /// رفيق زاد.
-  comp(ZadWorldColors.companion, Icons.spa),
+  comp(ZadWorldColors.companion, ZadIconArt.sprout),
 
   /// الشات.
-  chat(ZadWorldColors.chat, ZadIcons.ask),
+  chat(ZadWorldColors.chat, ZadIconArt.chat),
 
   /// الإشعارات.
-  notif(ZadWorldColors.notifications, ZadIcons.notifications),
+  notif(ZadWorldColors.notifications, ZadIconArt.bell),
 
   /// حسابي.
-  profile(ZadWorldColors.profile, Icons.person),
+  profile(ZadWorldColors.profile, ZadIconArt.person),
 
   /// بريميوم.
-  prem(ZadWorldColors.premium, Icons.workspace_premium),
+  prem(ZadWorldColors.premium, ZadIconArt.crown),
 
   /// بستان التسبيح.
-  tas(ZadWorldColors.tasbih, Icons.park),
+  tas(ZadWorldColors.tasbih, ZadIconArt.beads),
 
   /// ألعاب زادو.
-  games(ZadWorldColors.games, Icons.sports_esports),
+  games(ZadWorldColors.games, ZadIconArt.play),
 
   /// أسعار النهارده.
-  prices(ZadWorldColors.prices, ZadIcons.prices),
+  prices(ZadWorldColors.prices, ZadIconArt.tag),
 
   /// عروضي.
-  offers(ZadWorldColors.offers, Icons.card_giftcard),
+  offers(ZadWorldColors.offers, ZadIconArt.gift),
 
   /// إنجازاتي.
-  ach(ZadWorldColors.achievements, ZadIcons.leaderboard);
+  ach(ZadWorldColors.achievements, ZadIconArt.star);
 
-  new(this.color, this.icon);
+  new(this.color, this.art);
 
   /// The world's one colour.
   final Color color;
 
-  /// Its glyph, on the chip that opens it.
-  final IconData icon;
+  /// Its drawn icon, on the chip that opens it.
+  final ZadIconArt art;
 
   /// The name the customer reads.
   String label(ZadL10n l) => switch (this) {

@@ -30,6 +30,7 @@ import 'package:zad/shared/orb/presentation/companion_orb.dart';
 import 'package:zad/shared/pharmacy/application/pharmacy_controller.dart' as ph;
 import 'package:zad/shared/pharmacy/domain/medicine.dart';
 import 'package:zad/shared/transactions/application/transactions_controller.dart';
+import 'package:zad/shared/worlds/art/art.dart';
 import 'package:zad/shared/worlds/world_scaffold.dart';
 import 'package:zad/shared/worlds/zad_world.dart';
 
@@ -62,6 +63,7 @@ Widget _app(Widget home, {List<Override> overrides = const []}) =>
     ProviderScope(
       overrides: [...quietOrbOverrides, ...overrides],
       child: MaterialApp(
+        debugShowCheckedModeBanner: false,
         theme: ZadTheme.light(),
         locale: const Locale('ar'),
         supportedLocales: ZadL10n.supportedLocales,
@@ -199,9 +201,33 @@ void main() {
         quantity: 5,
         category: 'البقالة',
       ),
+      const InventoryItem(
+        id: '3',
+        userId: 'u',
+        itemName: 'بيض',
+        quantity: 12,
+        category: 'الألبان',
+      ),
+      const InventoryItem(
+        id: '4',
+        userId: 'u',
+        itemName: 'زيت',
+        quantity: 2,
+        category: 'البقالة',
+      ),
+      const InventoryItem(
+        id: '5',
+        userId: 'u',
+        itemName: 'صنف مجهول',
+        quantity: 3,
+        category: 'العناية',
+      ),
     ];
 
-    Future<void> pumpInv(WidgetTester tester) async {
+    Future<void> pumpInv(
+      WidgetTester tester, {
+      List<InventoryItem>? stock,
+    }) async {
       tester.view
         ..physicalSize = const Size(360, 640)
         ..devicePixelRatio = 1;
@@ -214,7 +240,7 @@ void main() {
             nowProvider.overrideWithValue(() => DateTime.utc(2026, 9, 25, 9)),
             accountTimeZoneProvider.overrideWithValue('Africa/Cairo'),
             pantry.pantryControllerProvider.overrideWith(
-              () => QuietPantry(pantry.PantryView(items: items)),
+              () => QuietPantry(pantry.PantryView(items: stock ?? items)),
             ),
             shoppingControllerProvider.overrideWith(QuietShopping.new),
           ],
@@ -229,7 +255,52 @@ void main() {
       await pumpInv(tester);
       expect(tester.takeException(), isNull);
       expect(find.text('المخزون'), findsOneWidget);
-      expect(find.text('صنفين'), findsOneWidget);
+      expect(find.textContaining('أصناف'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('an item with no photo is drawn, never a Material icon', (
+      tester,
+    ) async {
+      await pumpInv(tester);
+      expect(find.byType(ZadArt), findsWidgets);
+      // The chips are drawn: no Material icon sits in them any more.
+      expect(
+        find.descendant(
+          of: find.byType(FilterChip),
+          matching: find.byType(Icon),
+        ),
+        findsNothing,
+      );
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('the add button sits below the list and covers no row', (
+      tester,
+    ) async {
+      final many = <InventoryItem>[
+        for (var i = 0; i < 14; i++)
+          InventoryItem(
+            id: 'm$i',
+            userId: 'u',
+            itemName: 'صنف $i',
+            quantity: 5,
+            category: 'البقالة',
+          ),
+      ];
+      await pumpInv(tester, stock: many);
+      final fab = tester.getRect(find.byType(FloatingActionButton));
+      final scroll = tester.getRect(find.byType(CustomScrollView));
+      expect(scroll.bottom, lessThanOrEqualTo(fab.top));
+      // Scrolled to the end, the last rows are still clear of the button.
+      await tester.drag(find.byType(CustomScrollView), const Offset(0, -3000));
+      await tester.pump(const Duration(milliseconds: 600));
+      for (final e
+          in find.byKey(const ValueKey<String>('pantry-card-m13')).evaluate()) {
+        final r = tester.getRect(find.byWidget(e.widget));
+        expect(r.overlaps(fab), isFalse);
+      }
+      expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox());
     });
 
@@ -297,6 +368,50 @@ void main() {
       await tester.pumpWidget(const SizedBox());
     }, skip: Platform.environment['ZAD_SCREENS'] != '1');
   });
+  testWidgets('screenshot: the art gallery', (tester) async {
+    await loadZadFonts();
+    tester.view
+      ..physicalSize = const Size(860, 2440)
+      ..devicePixelRatio = 2;
+    addTearDown(tester.view.reset);
+    Widget cell(Widget art) => Padding(
+      padding: const EdgeInsets.all(6),
+      child: Container(
+        width: 68,
+        height: 68,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: const Color(0xFFF6F8F7),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: art,
+      ),
+    );
+    await tester.pumpWidget(
+      _app(
+        Scaffold(
+          backgroundColor: Colors.white,
+          body: Wrap(
+            alignment: WrapAlignment.center,
+            children: <Widget>[
+              for (final p in ZadProductArt.values)
+                cell(
+                  p == ZadProductArt.box
+                      ? ZadArt.box(tint: const Color(0xFF1976D2), size: 52)
+                      : ZadArt.product(p, size: 52),
+                ),
+              for (final i in ZadIconArt.values) cell(ZadArt.icon(i, size: 52)),
+            ],
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    await expectLater(
+      find.byType(MaterialApp),
+      matchesGoldenFile('../../../build/screens/art_gallery.png'),
+    );
+  }, skip: Platform.environment['ZAD_SCREENS'] != '1');
 }
 
 late Animation<double> _lastLoop;

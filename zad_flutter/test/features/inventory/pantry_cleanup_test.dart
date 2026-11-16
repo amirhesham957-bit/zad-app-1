@@ -179,6 +179,8 @@ void main() {
     await tester.ensureVisible(
       find.byKey(const ValueKey<String>('starter-add')),
     );
+    // The add button's dock shortens the list, so this scrolls now.
+    await tester.pump();
     await tester.tap(find.byKey(const ValueKey<String>('starter-add')));
     await tester.pumpAndSettle();
     expect(c.added, <String>[
