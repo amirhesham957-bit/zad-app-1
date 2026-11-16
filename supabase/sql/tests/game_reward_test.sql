@@ -7,12 +7,16 @@
 insert into auth.users (id) values
   ('00000000-0000-4000-8000-0000000000a1'), ('00000000-0000-4000-8000-0000000000a2'),
   ('00000000-0000-4000-8000-0000000000a3'), ('00000000-0000-4000-8000-0000000000a4'),
-  ('00000000-0000-4000-8000-0000000000a5');
+  ('00000000-0000-4000-8000-0000000000a5'), ('00000000-0000-4000-8000-0000000000a7'),
+  ('00000000-0000-4000-8000-0000000000a8'), ('00000000-0000-4000-8000-0000000000a9');
 -- Receipts (written by the SSV function with the service role): a1 fresh x2, a1 stale, a2 fresh (someone else's).
 insert into public.zad_ad_ssv_receipts (transaction_id, user_id, created_at) values
   ('tx-a1-fresh-1', '00000000-0000-4000-8000-0000000000a1', now() - interval '1 minute'),
   ('tx-a1-stale',   '00000000-0000-4000-8000-0000000000a3', now() - interval '30 minutes'),
-  ('tx-a2-fresh',   '00000000-0000-4000-8000-0000000000a2', now() - interval '1 minute');
+  ('tx-a2-fresh',   '00000000-0000-4000-8000-0000000000a2', now() - interval '1 minute'),
+  ('tx-a4-fresh',   '00000000-0000-4000-8000-0000000000a4', now() - interval '1 minute'),
+  ('tx-a8-fresh',   '00000000-0000-4000-8000-0000000000a8', now() - interval '1 minute'),
+  ('tx-a9-fresh',   '00000000-0000-4000-8000-0000000000a9', now() - interval '1 minute');
 
 -- ── anon and no-identity are refused ────────────────────────────────────────
 set role anon;
@@ -48,13 +52,26 @@ begin
   r := zad_game_reward('ball', 5, false);  -- 0 seeds: nothing written
   if (r ->> 'granted')::int <> 0 then raise exception 'ball 5 should pay 0: %', r; end if;
 
-  -- doubled with a fresh receipt of mine: 2x, receipt consumed.
-  r := zad_game_reward('zado_sort', 20, true);  -- base 4
-  if (r ->> 'base')::int <> 4 or (r ->> 'granted')::int <> 8 or not (r ->> 'doubled')::boolean then
-    raise exception 'doubled with receipt -> %', r; end if;
-  -- the same receipt again: not doubled.
+  -- doubled is a second call on the same round: a normal round first, then the double.
+  r := zad_game_reward('zado_sort', 20, false);  -- a round: base 4
+  if (r ->> 'granted')::int <> 4 then raise exception 'sort round -> %', r; end if;
+  -- the double: never a new round. Extra = the round's seeds, base 0.
   r := zad_game_reward('zado_sort', 20, true);
-  if (r ->> 'granted')::int <> 4 or (r ->> 'doubled')::boolean then raise exception 'receipt reused -> %', r; end if;
+  if (r ->> 'base')::int <> 0 or (r ->> 'granted')::int <> 4 or not (r ->> 'doubled')::boolean then
+    raise exception 'double of the round -> %', r; end if;
+  -- the same round again (the receipt is spent and no other exists): nothing.
+  r := zad_game_reward('zado_sort', 20, true);
+  if (r ->> 'granted')::int <> 0 or (r ->> 'doubled')::boolean then raise exception 'second double -> %', r; end if;
+end $$;
+
+-- a new receipt does not let the same round be doubled twice.
+reset role;
+insert into public.zad_ad_ssv_receipts (transaction_id, user_id) values ('tx-a1-fresh-2', '00000000-0000-4000-8000-0000000000a1');
+set role authenticated;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-0000000000a1","role":"authenticated"}', false);
+do $$ declare r jsonb; begin
+  r := zad_game_reward('zado_sort', 20, true);
+  if (r ->> 'granted')::int <> 0 or (r ->> 'doubled')::boolean then raise exception 'same round doubled twice with a new receipt -> %', r; end if;
 end $$;
 
 -- the usage is on the ledger, one row, keyed by the receipt.
@@ -62,33 +79,91 @@ reset role;
 do $$ begin
   if (select count(*) from zad_companion_ledger where user_id = '00000000-0000-4000-8000-0000000000a1'
         and source = 'game_double' and ref = 'tx-a1-fresh-1') <> 1 then raise exception 'receipt use not recorded'; end if;
-  if (select seeds from zad_companion where user_id = '00000000-0000-4000-8000-0000000000a1') <> 3 + 8 + 8 + 4 then
+  if exists (select 1 from zad_companion_ledger where ref = 'tx-a1-fresh-2') then raise exception 'second receipt burned'; end if;
+  -- the double never counted as a round: ball x3 (30, 5000; 5 paid nothing) + sort x1.
+  if (select count(*) from zad_companion_ledger where user_id = '00000000-0000-4000-8000-0000000000a1' and source = 'game') <> 3 then
+    raise exception 'double changed the round count'; end if;
+  if (select seeds from zad_companion where user_id = '00000000-0000-4000-8000-0000000000a1') <> 3 + 8 + 4 + 4 then
     raise exception 'a1 seeds wrong: %', (select seeds from zad_companion where user_id = '00000000-0000-4000-8000-0000000000a1'); end if;
 end $$;
 
--- ── a2: someone else's receipt does not double; no receipt does not double ──
+-- ── no round to double / no receipt / stale receipt / someone else's receipt ──
+-- a4 has a fresh receipt but no round: nothing, and the receipt is not spent.
 set role authenticated;
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-0000000000a4","role":"authenticated"}', false);
 do $$
 declare r jsonb;
 begin
-  r := zad_game_reward('ball', 40, true);  -- a4 has no receipt at all
-  if (r ->> 'granted')::int <> 4 or (r ->> 'doubled')::boolean then raise exception 'doubled without receipt -> %', r; end if;
+  r := zad_game_reward('ball', 40, true);
+  if (r ->> 'granted')::int <> 0 or (r ->> 'doubled')::boolean then raise exception 'double with no round -> %', r; end if;
 end $$;
+reset role;
+do $$ begin
+  if exists (select 1 from zad_companion_ledger where ref = 'tx-a4-fresh') then raise exception 'receipt burned with no round'; end if;
+  if exists (select 1 from zad_companion_ledger where user_id = '00000000-0000-4000-8000-0000000000a4' and source = 'game') then
+    raise exception 'a double created a round'; end if;
+end $$;
+set role authenticated;
+-- a round for a different game does not count.
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-0000000000a4","role":"authenticated"}', false);
+do $$ declare r jsonb; begin
+  perform zad_game_reward('zado_sort', 20, false);
+  r := zad_game_reward('ball', 40, true);
+  if (r ->> 'granted')::int <> 0 then raise exception 'doubled another game round -> %', r; end if;
+end $$;
+-- a3: a round, but the only receipt is 30 minutes old.
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-0000000000a3","role":"authenticated"}', false);
 do $$
 declare r jsonb;
 begin
-  r := zad_game_reward('ball', 40, true);  -- a3's only receipt is 30 minutes old
-  if (r ->> 'granted')::int <> 4 or (r ->> 'doubled')::boolean then raise exception 'stale receipt doubled -> %', r; end if;
+  r := zad_game_reward('ball', 40, false);
+  r := zad_game_reward('ball', 40, true);
+  if (r ->> 'granted')::int <> 0 or (r ->> 'doubled')::boolean then raise exception 'stale receipt doubled -> %', r; end if;
 end $$;
--- a4 tries to use a1's/a2's receipts: they are not theirs.
-select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-0000000000a4","role":"authenticated"}', false);
+-- a7 has a round and no receipt of its own; a1/a2 fresh receipts are not theirs.
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-0000000000a7","role":"authenticated"}', false);
 do $$
 declare r jsonb;
 begin
+  r := zad_game_reward('ball', 40, false);
   r := zad_game_reward('ball', 40, true);
-  if (r ->> 'doubled')::boolean then raise exception 'used another account receipt: %', r; end if;
+  if (r ->> 'granted')::int <> 0 or (r ->> 'doubled')::boolean then raise exception 'used another account receipt: %', r; end if;
+end $$;
+
+-- a8: a round older than 10 minutes cannot be doubled, and its receipt is kept.
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-0000000000a8","role":"authenticated"}', false);
+select zad_game_reward('zado_sort', 20, false);
+reset role;
+update zad_companion_ledger set created_at = now() - interval '20 minutes' where user_id = '00000000-0000-4000-8000-0000000000a8' and source = 'game';
+set role authenticated;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-0000000000a8","role":"authenticated"}', false);
+do $$ declare r jsonb; begin
+  r := zad_game_reward('zado_sort', 20, true);
+  if (r ->> 'granted')::int <> 0 or (r ->> 'doubled')::boolean then raise exception 'old round doubled -> %', r; end if;
+end $$;
+reset role;
+do $$ begin
+  if exists (select 1 from zad_companion_ledger where ref = 'tx-a8-fresh') then raise exception 'receipt burned on an old round'; end if;
+end $$;
+
+-- a9: the double is bounded by the daily cap (extra = what is left, not the round's seeds).
+set role authenticated;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-0000000000a9","role":"authenticated"}', false);
+do $$ declare r jsonb; begin
+  perform zad_game_reward('ball', 100000, false);          -- 8
+  perform zad_game_reward('zado_run', 100000, false);      -- 10 (18)
+  perform zad_game_reward('zado_sort', 100000, false);     -- 8 (26)
+  perform zad_game_reward('star_catch', 100000, false);    -- 8 (34)
+  perform zad_game_reward('tasbih_garden', 100000, false); -- 6 (40)
+  perform zad_game_reward('ball', 100000, false);          -- 8 (48)
+  perform zad_game_reward('ball', 100000, false);          -- 8 (56)
+  r := zad_game_reward('ball', 100000, true);              -- round of 8, only 4 left
+  if (r ->> 'granted')::int <> 4 or (r ->> 'remaining_today')::int <> 0 or not (r ->> 'doubled')::boolean then
+    raise exception 'double not bounded by the cap -> %', r; end if;
+end $$;
+reset role;
+do $$ begin
+  if (select seeds from zad_companion where user_id = '00000000-0000-4000-8000-0000000000a9') <> 60 then raise exception 'a9 total <> 60'; end if;
 end $$;
 
 -- ── per-game round cap: 10 rounds of 1 seed, the 11th pays nothing ─────────
