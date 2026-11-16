@@ -3680,5 +3680,154 @@
   "consentTermsUpdated": "نوفمبر ٢٠٢٦",
   "@consentTermsUpdated": {
     "description": "The month the terms were last updated, on the consent sheet; keep it equal to kTermsLastUpdated."
+  },
+  "worldLabelBrain": "عقل زاد",
+  "@worldLabelBrain": {
+    "description": "A world's name, in the links strip and its own title."
+  },
+  "worldLabelChef": "شيف زاد",
+  "@worldLabelChef": {
+    "description": "A world's name, in the links strip and its own title."
+  },
+  "worldLabelInv": "المخزون",
+  "@worldLabelInv": {
+    "description": "A world's name, in the links strip and its own title."
+  },
+  "worldLabelShop": "التسوق",
+  "@worldLabelShop": {
+    "description": "A world's name, in the links strip and its own title."
+  },
+  "worldLabelTx": "المعاملات",
+  "@worldLabelTx": {
+    "description": "A world's name, in the links strip and its own title."
+  },
+  "worldLabelBudget": "الميزانية",
+  "@worldLabelBudget": {
+    "description": "A world's name, in the links strip and its own title."
+  },
+  "worldLabelStmt": "كشف الحساب",
+  "@worldLabelStmt": {
+    "description": "A world's name, in the links strip and its own title."
+  },
+  "worldLabelSubs": "الاشتراكات",
+  "@worldLabelSubs": {
+    "description": "A world's name, in the links strip and its own title."
+  },
+  "worldLabelPh": "الصيدلية",
+  "@worldLabelPh": {
+    "description": "A world's name, in the links strip and its own title."
+  },
+  "worldLabelAppt": "المواعيد",
+  "@worldLabelAppt": {
+    "description": "A world's name, in the links strip and its own title."
+  },
+  "worldLabelMaint": "الصيانة",
+  "@worldLabelMaint": {
+    "description": "A world's name, in the links strip and its own title."
+  },
+  "worldLabelDocs": "المستندات",
+  "@worldLabelDocs": {
+    "description": "A world's name, in the links strip and its own title."
+  },
+  "worldLabelPlaces": "أماكني",
+  "@worldLabelPlaces": {
+    "description": "A world's name, in the links strip and its own title."
+  },
+  "worldLabelComp": "رفيق زاد",
+  "@worldLabelComp": {
+    "description": "A world's name, in the links strip and its own title."
+  },
+  "worldLabelChat": "الشات",
+  "@worldLabelChat": {
+    "description": "A world's name, in the links strip and its own title."
+  },
+  "worldLabelNotif": "الإشعارات",
+  "@worldLabelNotif": {
+    "description": "A world's name, in the links strip and its own title."
+  },
+  "worldLabelProfile": "حسابي",
+  "@worldLabelProfile": {
+    "description": "A world's name, in the links strip and its own title."
+  },
+  "worldLabelPrem": "بريميوم",
+  "@worldLabelPrem": {
+    "description": "A world's name, in the links strip and its own title."
+  },
+  "worldLabelTas": "بستان التسبيح",
+  "@worldLabelTas": {
+    "description": "A world's name, in the links strip and its own title."
+  },
+  "worldLabelGames": "ألعاب زادو",
+  "@worldLabelGames": {
+    "description": "A world's name, in the links strip and its own title."
+  },
+  "worldLabelPrices": "أسعار النهارده",
+  "@worldLabelPrices": {
+    "description": "A world's name, in the links strip and its own title."
+  },
+  "worldLabelOffers": "عروضي",
+  "@worldLabelOffers": {
+    "description": "A world's name, in the links strip and its own title."
+  },
+  "worldLabelAch": "إنجازاتي",
+  "@worldLabelAch": {
+    "description": "A world's name, in the links strip and its own title."
+  },
+  "worldLinksTitle": "متصلة بـ",
+  "@worldLinksTitle": {
+    "description": "Links strip heading."
+  },
+  "worldLinksHint": "اللي بيحصل هنا بيأثر في:",
+  "@worldLinksHint": {
+    "description": "Links strip hint."
+  },
+  "worldBack": "رجوع",
+  "@worldBack": {
+    "description": "Back button of a world screen."
+  },
+  "pantryWorldEyebrow": "{count, plural, =0{لسه مفيش أصناف} =1{صنف واحد} =2{صنفين} few{{count} أصناف} other{{count} صنف}}",
+  "@pantryWorldEyebrow": {
+    "description": "Pantry world: the count above the title.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pantryWorldState": "{count, plural, =0{مفيش حاجة قربت تخلص} =1{حاجة واحدة قربت تخلص} =2{حاجتين قربوا يخلصوا} few{{count} حاجات قربت تخلص} other{{count} حاجة قربت تخلص}}",
+  "@pantryWorldState": {
+    "description": "Pantry world: the state line under the title.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pantryLegendLow": "{count} قربت تخلص",
+  "@pantryLegendLow": {
+    "description": "Pantry legend: items running out.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pantryLegendExpiring": "{count} هتبوظ قريب",
+  "@pantryLegendExpiring": {
+    "description": "Pantry legend: items about to expire.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pantryLegendOk": "{count} تمام",
+  "@pantryLegendOk": {
+    "description": "Pantry legend: items that are fine.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   }
 }

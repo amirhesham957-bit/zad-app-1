@@ -4390,4 +4390,121 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get consentTermsUpdated => 'November 2026';
+
+  @override
+  String get worldLabelBrain => 'Zad\'s brain';
+
+  @override
+  String get worldLabelChef => 'Chef Zad';
+
+  @override
+  String get worldLabelInv => 'Pantry';
+
+  @override
+  String get worldLabelShop => 'Shopping';
+
+  @override
+  String get worldLabelTx => 'Transactions';
+
+  @override
+  String get worldLabelBudget => 'Budget';
+
+  @override
+  String get worldLabelStmt => 'Statement';
+
+  @override
+  String get worldLabelSubs => 'Subscriptions';
+
+  @override
+  String get worldLabelPh => 'Pharmacy';
+
+  @override
+  String get worldLabelAppt => 'Appointments';
+
+  @override
+  String get worldLabelMaint => 'Maintenance';
+
+  @override
+  String get worldLabelDocs => 'Documents';
+
+  @override
+  String get worldLabelPlaces => 'My places';
+
+  @override
+  String get worldLabelComp => 'Zad\'s companion';
+
+  @override
+  String get worldLabelChat => 'Chat';
+
+  @override
+  String get worldLabelNotif => 'Notifications';
+
+  @override
+  String get worldLabelProfile => 'My account';
+
+  @override
+  String get worldLabelPrem => 'Premium';
+
+  @override
+  String get worldLabelTas => 'Tasbih garden';
+
+  @override
+  String get worldLabelGames => 'Zado\'s games';
+
+  @override
+  String get worldLabelPrices => 'Today\'s prices';
+
+  @override
+  String get worldLabelOffers => 'My offers';
+
+  @override
+  String get worldLabelAch => 'Achievements';
+
+  @override
+  String get worldLinksTitle => 'Connected to';
+
+  @override
+  String get worldLinksHint => 'What happens here affects:';
+
+  @override
+  String get worldBack => 'Back';
+
+  @override
+  String pantryWorldEyebrow(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count items',
+      one: '1 item',
+      zero: 'No items yet',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String pantryWorldState(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count things are running out',
+      one: '1 thing is running out',
+      zero: 'Nothing is running out',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String pantryLegendLow(int count) {
+    return '$count running out';
+  }
+
+  @override
+  String pantryLegendExpiring(int count) {
+    return '$count expiring soon';
+  }
+
+  @override
+  String pantryLegendOk(int count) {
+    return '$count fine';
+  }
 }

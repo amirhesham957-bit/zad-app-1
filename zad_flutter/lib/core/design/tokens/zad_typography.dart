@@ -48,6 +48,17 @@ abstract final class ZadType {
     decoration: TextDecoration.none,
   );
 
+  /// 34/39, weight 900 — the title of a «عالم» screen (ZadWorldScaffold).
+  static const TextStyle worldTitle = TextStyle(
+    fontFamily: kZadArabicFont,
+    fontSize: 34,
+    height: 39 / 34,
+    letterSpacing: -0.4,
+    fontWeight: FontWeight.w900,
+    fontVariations: <FontVariation>[FontVariation('wght', 900)],
+    decoration: TextDecoration.none,
+  );
+
   /// 28/34 — a screen title.
   static const TextStyle headlineLarge = TextStyle(
     fontFamily: kZadArabicFont,
