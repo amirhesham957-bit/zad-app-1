@@ -10,6 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/core/money/money.dart';
 import 'package:zad/features/pharmacy/presentation/medicine_draft.dart';
 import 'package:zad/features/pharmacy/presentation/pharmacy_extras.dart';
@@ -139,7 +140,7 @@ class _MedicineFormSheetState extends ConsumerState<MedicineFormSheet> {
         ? suggestDoseTimes(_dailyCount)
         : (_times..sort()).join(', ');
     final perDose = parseMoneyInput(_perDose.text) ?? 1;
-    final message = await widget.onSave(
+    final reason = await widget.onSave(
       MedicineDraft(
         name: _name.text,
         quantity: _quantity,
@@ -158,10 +159,10 @@ class _MedicineFormSheetState extends ConsumerState<MedicineFormSheet> {
       ),
     );
     if (!mounted) return;
-    if (message == null) return Navigator.of(context).pop();
+    if (reason == null) return Navigator.of(context).pop();
     setState(() {
       _saving = false;
-      _error = message;
+      _error = familyPharmacyMessage(context.l10n, reason);
     });
   }
 
@@ -170,6 +171,7 @@ class _MedicineFormSheetState extends ConsumerState<MedicineFormSheet> {
     final currency = ref.watch(
       budgetControllerProvider.select((v) => v.snapshot?.currency ?? ''),
     );
+    final l = context.l10n;
     final suggested = suggestDoseTimes(_dailyCount);
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
@@ -181,13 +183,13 @@ class _MedicineFormSheetState extends ConsumerState<MedicineFormSheet> {
           children: <Widget>[
             Text(
               widget.title ??
-                  (widget.scanned == null ? 'إضافة دواء' : 'راجع الدواء'),
+                  (widget.scanned == null ? l.phAddTitle : l.phReviewTitle),
               style: ZadType.titleMedium,
             ),
             if (widget.scanned != null) ...<Widget>[
               const SizedBox(height: ZadSpacing.xs),
               Text(
-                'قريت ده من العلبة — عدّل أي حاجة غلط قبل ما تحفظ.',
+                l.phReadFromBox,
                 style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
               ),
             ],
@@ -197,7 +199,7 @@ class _MedicineFormSheetState extends ConsumerState<MedicineFormSheet> {
             TextField(
               controller: _name,
               autofocus: widget.scanned == null && widget.initial == null,
-              decoration: const InputDecoration(labelText: 'اسم الدواء'),
+              decoration: InputDecoration(labelText: l.phFieldName),
               onChanged: (_) => setState(() {}),
             ),
             const SizedBox(height: ZadSpacing.md),
@@ -205,9 +207,9 @@ class _MedicineFormSheetState extends ConsumerState<MedicineFormSheet> {
               TextField(
                 controller: _forPerson,
                 maxLength: 40,
-                decoration: const InputDecoration(
-                  labelText: 'لمين؟ (سيبها فاضية لو ليك)',
-                  hintText: 'ماما، بابا، يوسف…',
+                decoration: InputDecoration(
+                  labelText: l.phFieldForWhom,
+                  hintText: l.phHintPeople,
                   counterText: '',
                 ),
               ),
@@ -215,9 +217,7 @@ class _MedicineFormSheetState extends ConsumerState<MedicineFormSheet> {
             ] else ...<Widget>[
               TextField(
                 controller: _dosage,
-                decoration: const InputDecoration(
-                  labelText: 'الجرعة (مثال: بعد الأكل)',
-                ),
+                decoration: InputDecoration(labelText: l.phFieldDosageNote),
               ),
               const SizedBox(height: ZadSpacing.md),
             ],
@@ -230,14 +230,13 @@ class _MedicineFormSheetState extends ConsumerState<MedicineFormSheet> {
               onChanged: () => setState(() {}),
             ),
             const SizedBox(height: ZadSpacing.md),
-            const FormLabel('مواعيد الجرعة (اختياري)'),
+            FormLabel(l.phFieldTimesOptional),
             DoseTimeChips(times: _times, onChanged: () => setState(() {})),
             if (_times.isEmpty)
               Padding(
                 padding: const EdgeInsets.only(top: ZadSpacing.xs),
                 child: Text(
-                  'لسه مفيش مواعيد مضافة — مقترح: '
-                  '${suggested.isEmpty ? '09:00' : suggested}',
+                  l.phTimesSuggested(suggested.isEmpty ? '09:00' : suggested),
                   style: ZadType.labelSmall.copyWith(color: ZadColors.inkMuted),
                 ),
               ),
@@ -255,13 +254,15 @@ class _MedicineFormSheetState extends ConsumerState<MedicineFormSheet> {
                 ),
                 textDirection: TextDirection.ltr,
                 decoration: InputDecoration(
-                  labelText: currency.isEmpty ? 'المبلغ' : 'المبلغ ($currency)',
+                  labelText: currency.isEmpty
+                      ? l.phFieldAmount
+                      : l.phFieldAmountCur(currency),
                 ),
               ),
               const SizedBox(height: ZadSpacing.md),
               TextButton(
                 onPressed: () => setState(() => _extras = !_extras),
-                child: const Text('تفاصيل إضافية (اختياري)'),
+                child: Text(l.phMoreDetails),
               ),
               if (_extras)
                 PharmacyExtras(
@@ -287,7 +288,7 @@ class _MedicineFormSheetState extends ConsumerState<MedicineFormSheet> {
             const SizedBox(height: ZadSpacing.xl),
             FilledButton(
               onPressed: _canSave ? () => unawaited(_save()) : null,
-              child: const Text('حفظ'),
+              child: Text(l.phSave),
             ),
           ],
         ),

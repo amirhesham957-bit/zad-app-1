@@ -9,9 +9,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/ads/presentation/ai_wait_ad.dart';
 import 'package:zad/shared/scan/data/receipt_scanner.dart';
 import 'package:zad/shared/scan/data/vision_scanner.dart';
+import 'package:zad/shared/worlds/art/art.dart';
 
 /// The scan row.
 class PharmacyScanRow extends ConsumerStatefulWidget {
@@ -32,14 +34,13 @@ class _PharmacyScanRowState extends ConsumerState<PharmacyScanRow> {
     final userId = ref.read(signedInUserIdProvider)();
     if (userId == null || _scanning) return;
     final messenger = ScaffoldMessenger.maybeOf(context);
+    final l = context.l10n;
     final image = await ref
         .read(receiptCameraProvider)
         .capture(ReceiptImageSource.camera);
     if (image == null || !mounted) return;
     setState(() => _scanning = true);
-    const unclear = SnackBar(
-      content: Text('تعذر قراءة العلبة بدقة، يرجى المحاولة بزاوية أوضح'),
-    );
+    final unclear = SnackBar(content: Text(l.phScanUnclear));
     try {
       final result = await ref
           .read(visionScannerProvider)
@@ -47,9 +48,7 @@ class _PharmacyScanRowState extends ConsumerState<PharmacyScanRow> {
       if (!mounted) return;
       if (result != null && result.name.trim().isNotEmpty) {
         widget.onRead(result);
-        messenger?.showSnackBar(
-          const SnackBar(content: Text('تم استخراج بيانات الدواء بنجاح')),
-        );
+        messenger?.showSnackBar(SnackBar(content: Text(l.phScanOk)));
       } else {
         messenger?.showSnackBar(unclear);
       }
@@ -81,17 +80,17 @@ class _PharmacyScanRowState extends ConsumerState<PharmacyScanRow> {
                 child: CircularProgressIndicator(strokeWidth: 2),
               ),
               const SizedBox(width: ZadSpacing.sm),
-              const Flexible(
+              Flexible(
                 child: Text(
-                  'جاري قراءة علبة الدواء بالذكاء الاصطناعي...',
+                  context.l10n.phScanReading,
                   style: ZadType.labelMedium,
                 ),
               ),
             ] else ...<Widget>[
-              const Icon(Icons.camera_alt, size: 18),
+              ZadArt.icon(ZadIconArt.camera, size: 22),
               const SizedBox(width: ZadSpacing.sm),
               Text(
-                'مسح العبوة بالكاميرا',
+                context.l10n.phScanBtn,
                 style: ZadType.labelMedium.copyWith(
                   fontWeight: FontWeight.w600,
                 ),

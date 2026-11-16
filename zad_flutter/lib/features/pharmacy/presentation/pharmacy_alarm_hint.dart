@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/alerts/application/local_reminders.dart';
 
 /// Whether Android lets the dose reminders ring on time.
@@ -54,6 +55,7 @@ class _ExactAlarmHintState extends ConsumerState<ExactAlarmHint>
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     final granted = ref.watch(exactAlarmGrantedProvider).value ?? true;
     if (!widget.hasScheduledDoses || granted) return const SizedBox.shrink();
     final warning = Theme.of(context).colorScheme.secondary;
@@ -74,8 +76,7 @@ class _ExactAlarmHintState extends ConsumerState<ExactAlarmHint>
                 const SizedBox(width: ZadSpacing.sm),
                 Expanded(
                   child: Text(
-                    'فعّل "المنبهات الدقيقة" من الإعدادات عشان تنبيهات مواعيد '
-                    'الدواء تشتغل بدقة',
+                    l.phAlarmHint,
                     style: ZadType.bodySmall.copyWith(
                       color: warning,
                       fontWeight: FontWeight.w600,

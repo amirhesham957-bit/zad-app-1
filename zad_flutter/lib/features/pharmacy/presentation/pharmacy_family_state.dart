@@ -4,6 +4,7 @@
 library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show FutureProviderFamily;
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/features/pharmacy/data/family_pharmacy_repository.dart';
 import 'package:zad/features/pharmacy/presentation/medicine_draft.dart';
@@ -59,6 +60,43 @@ final FutureProvider<List<Medicine>> familyPharmacyItemsProvider =
       ];
     });
 
+/// A member's taken doses by medicine, as the instants they were recorded
+/// (`coalesce(taken_at, scheduled_at)`, the server's own reading), from a
+/// plain select on `zad_pharmacy_doses`. The family head's policy on it is
+/// what lets this return anything; where the policy is not live, or the call
+/// fails, it is empty and the screen keeps its fallback (a passed dose is not
+/// called missed).
+final FutureProviderFamily<Map<String, List<DateTime>>, String>
+memberDoseRecordsProvider = FutureProvider.autoDispose
+    .family<Map<String, List<DateTime>>, String>((ref, userId) async {
+      try {
+        final since = ref
+            .read(nowProvider)()
+            .toUtc()
+            .subtract(const Duration(days: 2));
+        final rows = await ref
+            .watch(supabaseClientProvider)
+            .from('zad_pharmacy_doses')
+            .select('item_id, taken_at, scheduled_at, status')
+            .eq('user_id', userId)
+            .eq('status', 'taken')
+            .gte('scheduled_at', since.toIso8601String());
+        final records = <String, List<DateTime>>{};
+        for (final r in rows) {
+          final at = DateTime.tryParse(
+            '${r['taken_at'] ?? r['scheduled_at'] ?? ''}',
+          );
+          final item = r['item_id'];
+          if (at != null && item is String) {
+            (records[item] ??= <DateTime>[]).add(at.toUtc());
+          }
+        }
+        return records;
+      } on Object {
+        return const <String, List<DateTime>>{};
+      }
+    });
+
 /// Doses the head marked in this session, as `itemId:scheduledAt`.
 class FamilyTakenDoses extends Notifier<Set<String>> {
   @override
@@ -76,7 +114,7 @@ class FamilyTakenDoses extends Notifier<Set<String>> {
 final familyTakenDosesProvider =
     NotifierProvider<FamilyTakenDoses, Set<String>>(FamilyTakenDoses.new);
 
-/// The head saves a member's medicine; answers a message or null.
+/// The head saves a member's medicine; answers a failure reason or null.
 Future<String?> saveMemberMedicine(
   WidgetRef ref, {
   required String target,
@@ -98,5 +136,5 @@ Future<String?> saveMemberMedicine(
         expiryDate: draft.expiry,
       );
   if (result.ok) ref.invalidate(familyPharmacyItemsProvider);
-  return result.ok ? null : result.message;
+  return result.ok ? null : result.reason ?? 'rejected';
 }

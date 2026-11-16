@@ -11,6 +11,7 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/pharmacy/data/family_pharmacy_repository.dart';
 import 'package:zad/features/pharmacy/presentation/pharmacy_dose_rows.dart';
 import 'package:zad/features/pharmacy/presentation/pharmacy_family_state.dart';
@@ -32,6 +33,7 @@ class MemberDoseRow extends ConsumerWidget {
     required this.head,
     required this.taken,
     required this.now,
+    required this.knowsPast,
     super.key,
   });
 
@@ -50,31 +52,41 @@ class MemberDoseRow extends ConsumerWidget {
   /// The present moment.
   final DateTime now;
 
+  /// The member's dose records are readable, so a passed dose is known to
+  /// be missed rather than just passed.
+  final bool knowsPast;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = context.l10n;
     final upcoming = slot.scheduledAt.isAfter(now.toUtc());
     final canTake =
         head &&
         !taken &&
         slot.scheduledAt.isBefore(now.toUtc().add(const Duration(hours: 1)));
+    final state = slot.stateAt(now);
     final (accent, status) = taken
-        ? (ZadColors.green600, 'اتاخدت')
+        ? (ZadColors.green600, l.phDoseTaken)
         : upcoming
-        ? (ZadColors.inkMuted, 'جاية')
-        : (ZadColors.inkMuted, 'الميعاد عدّى');
+        ? (ZadColors.inkMuted, l.phDoseUpcoming)
+        : !knowsPast
+        ? (ZadColors.inkMuted, l.phDosePassed)
+        : state == DoseState.due
+        ? (ZadColors.mustardOchre, l.phDoseDue)
+        : (ZadColors.terracottaRust, l.phDoseMissed);
     return DoseTile(
       slot: slot,
       accent: accent,
       status: status,
       trailing: <Widget>[
         if (taken)
-          const Icon(ZadIcons.synced, color: ZadColors.green600)
+          const Icon(ZadIcons.synced, color: Colors.white)
         else if (canTake)
           FilledButton(
             onPressed: () => unawaited(_take(context, ref)),
             // The theme's buttons are full width; in a row that is infinite.
             style: FilledButton.styleFrom(minimumSize: const Size(64, 44)),
-            child: const Text('خدها'),
+            child: Text(l.phTakeFor),
           ),
       ],
     );
@@ -82,6 +94,7 @@ class MemberDoseRow extends ConsumerWidget {
 
   Future<void> _take(BuildContext context, WidgetRef ref) async {
     final messenger = ScaffoldMessenger.maybeOf(context);
+    final l = context.l10n;
     final result = await ref
         .read(familyPharmacyRepositoryProvider)
         .logDose(
@@ -94,7 +107,9 @@ class MemberDoseRow extends ConsumerWidget {
       ref.read(familyTakenDosesProvider.notifier).mark(slot);
       ref.invalidate(familyPharmacyItemsProvider);
     } else {
-      messenger?.showSnackBar(SnackBar(content: Text(result.message ?? '')));
+      messenger?.showSnackBar(
+        SnackBar(content: Text(familyPharmacyMessage(l, result.reason))),
+      );
     }
   }
 }
@@ -109,6 +124,7 @@ class MemberMedicineCard extends ConsumerWidget {
     required this.slots,
     required this.now,
     required this.zone,
+    required this.knowsPast,
     super.key,
   });
 
@@ -130,8 +146,12 @@ class MemberMedicineCard extends ConsumerWidget {
   /// The account's zone.
   final String zone;
 
+  /// Whether a passed dose is known to be missed.
+  final bool knowsPast;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = context.l10n;
     final note = sanitizeDosageNote(medicine.dosage);
     // Kotlin's `isLowStock`: out, or five days or less of supply.
     final low =
@@ -172,14 +192,14 @@ class MemberMedicineCard extends ConsumerWidget {
               ),
               if (head)
                 IconButton(
-                  tooltip: 'تعديل',
+                  tooltip: l.phEdit,
                   style: IconButton.styleFrom(minimumSize: const Size(44, 44)),
                   onPressed: () => unawaited(
                     showMedicineFormSheet(
                       context,
                       own: false,
                       initial: medicine,
-                      title: 'تعديل ${medicine.name}',
+                      title: l.phEditTitle(medicine.name),
                       onSave: (d) => saveMemberMedicine(
                         ref,
                         target: member.userId,
@@ -198,7 +218,7 @@ class MemberMedicineCard extends ConsumerWidget {
               slots: slots,
               now: now,
               zone: zone,
-              knowsPast: false,
+              knowsPast: knowsPast,
             ),
           ],
           const SizedBox(height: ZadSpacing.md),

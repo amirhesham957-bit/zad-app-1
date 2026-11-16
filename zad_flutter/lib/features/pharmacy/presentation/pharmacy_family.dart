@@ -21,6 +21,7 @@ import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/design/tokens/zad_world_colors.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/pharmacy/presentation/pharmacy_family_state.dart';
 import 'package:zad/features/pharmacy/presentation/pharmacy_form_openers.dart';
 import 'package:zad/features/pharmacy/presentation/pharmacy_member_cards.dart';
@@ -28,6 +29,7 @@ import 'package:zad/shared/family/domain/family.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/pharmacy/domain/dose_slot.dart';
 import 'package:zad/shared/pharmacy/domain/medicine.dart';
+import 'package:zad/shared/worlds/art/art.dart';
 import 'package:zad/shared/worlds/world_card.dart';
 
 /// The tab row: «أنا» and each other member.
@@ -37,6 +39,7 @@ class FamilyTabs extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = context.l10n;
     final others = ref.watch(pharmacyOtherMembersProvider);
     if (others.isEmpty) return const SizedBox.shrink();
     final selected = ref.watch(pharmacySelectedMemberProvider);
@@ -47,10 +50,10 @@ class FamilyTabs extends ConsumerWidget {
       child: ListView(
         scrollDirection: Axis.horizontal,
         children: <Widget>[
-          _Tab(label: 'أنا', on: selected == null, onTap: () => pick(null)),
+          _Tab(label: l.phTabMe, on: selected == null, onTap: () => pick(null)),
           for (final m in others)
             _Tab(
-              label: m.alias.isEmpty ? 'عضو' : m.alias,
+              label: m.alias.isEmpty ? l.phTabMember : m.alias,
               on: selected == m.userId,
               onTap: () => pick(m.userId),
             ),
@@ -110,19 +113,28 @@ class FamilyMemberSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = context.l10n;
     final head = ref.watch(isFamilyHeadProvider);
     final items = ref.watch(familyPharmacyItemsProvider);
     final now = ref.read(nowProvider)();
     final zone = ref.watch(accountTimeZoneProvider);
     final taken = ref.watch(familyTakenDosesProvider);
-    final name = member.alias.isEmpty ? 'العضو' : member.alias;
+    final name = member.alias.isEmpty ? l.phMemberFallback : member.alias;
     final meds = <Medicine>[
       for (final i in items.value ?? const <Medicine>[])
         if (i.userId == member.userId) i,
     ]..sort((a, b) => a.name.compareTo(b.name));
+    // The head's policy on the members' dose records, when it is live.
+    final records =
+        ref.watch(memberDoseRecordsProvider(member.userId)).value ??
+        const <String, List<DateTime>>{};
+    final knowsPast = records.isNotEmpty;
     final slots = <DoseSlot>[
       for (final m in meds)
-        ...doseSlotsFor(m, now: now, timeZone: zone, daysBack: 0),
+        ...applyRecords(
+          doseSlotsFor(m, now: now, timeZone: zone, daysBack: 0),
+          records[m.id] ?? const <DateTime>[],
+        ),
     ]..sort((a, b) => a.scheduledAt.compareTo(b.scheduledAt));
 
     return Column(
@@ -131,17 +143,14 @@ class FamilyMemberSection extends ConsumerWidget {
         ZadWorldCard(
           child: Row(
             children: <Widget>[
-              Icon(
-                head ? ZadIcons.family : Icons.visibility_outlined,
-                color: ZadWorldColors.pharmacy,
+              ZadArt.icon(
+                head ? ZadIconArt.family : ZadIconArt.shield,
+                size: 32,
               ),
               const SizedBox(width: ZadSpacing.md),
               Expanded(
                 child: Text(
-                  head
-                      ? 'إنت رب الأسرة — بتشوف جدول $name وتعدّل فيه وتعلّم '
-                            'الجرعة لو ساعدته'
-                      : 'جدول $name للمتابعة بس — رب الأسرة هو اللي يعدّل',
+                  head ? l.phHeadNote(name) : l.phReadOnlyNote(name),
                   style: ZadType.bodySmall,
                 ),
               ),
@@ -157,13 +166,13 @@ class FamilyMemberSection extends ConsumerWidget {
                 showMedicineFormSheet(
                   context,
                   own: false,
-                  title: 'دوا لـ$name',
+                  title: l.phAddFor(name),
                   onSave: (d) =>
                       saveMemberMedicine(ref, target: member.userId, draft: d),
                 ),
               ),
               icon: const Icon(ZadIcons.add, size: 18),
-              label: Text('دوا لـ$name'),
+              label: Text(l.phAddFor(name)),
             ),
           ),
         ],
@@ -177,19 +186,16 @@ class FamilyMemberSection extends ConsumerWidget {
           ZadEmptyState(
             icon: ZadIcons.pharmacy,
             title: items.hasError
-                ? 'مقدرتش أجيب أدوية $name'
-                : 'لسه مفيش أدوية تقدر تشوفها',
+                ? l.phMemberLoadFailed(name)
+                : l.phMemberEmptyTitle,
             // A member's medicines show only after they agreed to it.
-            message: items.hasError
-                ? 'اسحب لتحت نجرب تاني.'
-                : 'أدوية كل فرد بتظهر هنا بعد ما يوافق — اطلب المتابعة من '
-                      'صفحته في «عيلتي»',
+            message: items.hasError ? l.phPullRetry : l.phMemberEmptyGuide,
             tone: items.hasError ? ZadEmptyTone.problem : ZadEmptyTone.calm,
           )
         else ...<Widget>[
           if (slots.isNotEmpty) ...<Widget>[
             Text(
-              'جرعات $name النهارده',
+              l.phMemberDoses(name),
               style: ZadType.labelMedium.copyWith(color: ZadColors.inkMuted),
             ),
             const SizedBox(height: ZadSpacing.sm),
@@ -198,7 +204,8 @@ class FamilyMemberSection extends ConsumerWidget {
                 slot: s,
                 member: member,
                 head: head,
-                taken: taken.contains(FamilyTakenDoses.keyOf(s)),
+                taken: s.isTaken || taken.contains(FamilyTakenDoses.keyOf(s)),
+                knowsPast: knowsPast,
                 now: now,
               ),
               const SizedBox(height: ZadSpacing.sm),
@@ -206,7 +213,7 @@ class FamilyMemberSection extends ConsumerWidget {
             const SizedBox(height: ZadSpacing.md),
           ],
           Text(
-            'الأدوية',
+            l.phMedicines,
             style: ZadType.labelMedium.copyWith(color: ZadColors.inkMuted),
           ),
           const SizedBox(height: ZadSpacing.sm),
@@ -219,11 +226,14 @@ class FamilyMemberSection extends ConsumerWidget {
                 for (final s in slots)
                   if (s.medicine.id == m.id)
                     s.markTaken(
-                      taken.contains(FamilyTakenDoses.keyOf(s)) ? now : null,
+                      taken.contains(FamilyTakenDoses.keyOf(s))
+                          ? now
+                          : s.takenAt,
                     ),
               ],
               now: now,
               zone: zone,
+              knowsPast: knowsPast,
             ),
             const SizedBox(height: ZadSpacing.md),
           ],

@@ -23,31 +23,17 @@ typedef FamilyPharmacyRpc = Future<dynamic> Function(
 /// How a head's write ended.
 class FamilyPharmacyResult {
   /// Creates a result.
-  const new({required this.ok, this.message, this.reason});
+  const new({required this.ok, this.reason});
 
   /// It was written.
   final bool ok;
 
-  /// What to tell the customer when it was not — never technical.
-  final String? message;
-
-  /// The server's own reason (`not_found`, `duplicate_name`), if it gave one.
+  /// Why it was not: the server's own reason (`not_found`,
+  /// `duplicate_name`), `not_family_head` for a 42501 refusal, `offline` when
+  /// the server could not be reached, or another code. The screen says it in
+  /// words from the ARB files.
   final String? reason;
 }
-
-/// What the head's screen says for each refusal.
-const String kNotFamilyHeadMessage =
-    'بس رب الأسرة يقدر يعدّل أدوية حد من العيلة.';
-
-/// Said when the call could not reach the server.
-const String kFamilyPharmacyOfflineMessage =
-    'مفيش نت دلوقتي — ما اتحفظش حاجة. جرّب تاني لما يرجع.';
-
-String _reasonMessage(String? reason) => switch (reason) {
-  'not_found' => 'الدوا ده مش موجود عند العضو دلوقتي — حدّث الصفحة.',
-  'duplicate_name' => 'العضو عنده دوا بنفس الاسم ده.',
-  _ => 'السيرفر رفض الحفظ. جرّب تاني.',
-};
 
 /// The head's writes.
 class FamilyPharmacyRepository {
@@ -101,34 +87,20 @@ class FamilyPharmacyRepository {
     try {
       final answer = await _rpc(function, params);
       if (answer is Map && answer['ok'] == false) {
-        final reason = answer['reason'] as String?;
         return FamilyPharmacyResult(
           ok: false,
-          reason: reason,
-          message: _reasonMessage(reason),
+          reason: answer['reason'] as String? ?? 'rejected',
         );
       }
       return const FamilyPharmacyResult(ok: true);
     } on PostgrestException catch (error) {
       if (error.code == '42501' || error.message.contains('not_family_head')) {
-        return const FamilyPharmacyResult(
-          ok: false,
-          reason: 'not_family_head',
-          message: kNotFamilyHeadMessage,
-        );
+        return const FamilyPharmacyResult(ok: false, reason: 'not_family_head');
       }
-      return FamilyPharmacyResult(
-        ok: false,
-        message: _reasonMessage(null),
-        reason: error.code,
-      );
+      return FamilyPharmacyResult(ok: false, reason: error.code ?? 'rejected');
     } on Object {
       // No route to the server (offline, a timeout, a dropped socket).
-      return const FamilyPharmacyResult(
-        ok: false,
-        reason: 'offline',
-        message: kFamilyPharmacyOfflineMessage,
-      );
+      return const FamilyPharmacyResult(ok: false, reason: 'offline');
     }
   }
 

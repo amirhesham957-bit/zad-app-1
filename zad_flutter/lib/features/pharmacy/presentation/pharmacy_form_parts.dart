@@ -10,6 +10,7 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/pharmacy/presentation/pharmacy_logic.dart';
 
 /// The presets, any custom time as a removable chip, and «إضافة ميعاد».
@@ -28,7 +29,7 @@ class DoseTimeChips extends StatelessWidget {
     final picked = await showTimePicker(
       context: context,
       initialTime: const TimeOfDay(hour: 9, minute: 0),
-      helpText: 'اختر ميعاد الجرعة',
+      helpText: context.l10n.phPickTime,
     );
     if (picked == null) return;
     final t =
@@ -47,7 +48,7 @@ class DoseTimeChips extends StatelessWidget {
     children: <Widget>[
       for (final (t, label) in kDoseTimePresets)
         FilterChip(
-          label: Text(label),
+          label: Text(label(context.l10n)),
           selected: times.contains(t),
           onSelected: (on) {
             if (on) {
@@ -70,7 +71,7 @@ class DoseTimeChips extends StatelessWidget {
         ),
       ActionChip(
         avatar: const Icon(ZadIcons.add, size: 16),
-        label: const Text('إضافة ميعاد'),
+        label: Text(context.l10n.phAddTime),
         onPressed: () => unawaited(_add(context)),
       ),
     ],
@@ -153,7 +154,7 @@ class ExpiryButton extends StatelessWidget {
     icon: const Icon(ZadIcons.duration, size: 16),
     label: Text(
       expiry == null
-          ? 'تاريخ الانتهاء — اضغط لاختيار التاريخ'
+          ? context.l10n.phPickExpiry
           : DateFormat('d MMMM y', 'ar').format(expiry!),
     ),
   );
@@ -199,18 +200,18 @@ class StockFields extends StatelessWidget {
         controller: quantity,
         keyboardType: TextInputType.number,
         textDirection: TextDirection.ltr,
-        decoration: const InputDecoration(labelText: 'الكمية المتبقية'),
+        decoration: InputDecoration(labelText: context.l10n.phFieldQty),
         onChanged: (_) => onChanged(),
       ),
       const SizedBox(height: ZadSpacing.md),
-      const FormLabel('الوحدة'),
+      FormLabel(context.l10n.phFieldUnit),
       UnitChips(unit: unit, onPick: onUnit),
       const SizedBox(height: ZadSpacing.md),
       TextField(
         controller: daily,
         keyboardType: TextInputType.number,
         textDirection: TextDirection.ltr,
-        decoration: const InputDecoration(labelText: 'جرعات اليوم'),
+        decoration: InputDecoration(labelText: context.l10n.phFieldDailyCount),
         onChanged: (_) => onChanged(),
       ),
       if (perDose != null) ...<Widget>[
@@ -219,7 +220,9 @@ class StockFields extends StatelessWidget {
           controller: perDose,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           textDirection: TextDirection.ltr,
-          decoration: InputDecoration(labelText: 'الجرعة الواحدة كام $unit؟'),
+          decoration: InputDecoration(
+            labelText: context.l10n.phFieldPerDose(unit),
+          ),
         ),
       ],
     ],

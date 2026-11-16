@@ -221,14 +221,14 @@ void main() {
       'category': 'الرعاية الصحية',
     });
     expect(
-      pharmacyCostLabel(<Medicine>[_m('a')], <ZadTransaction>[clinic]),
-      'صرف الصحة الشهر ده',
+      pharmacyCostKind(<Medicine>[_m('a')], <ZadTransaction>[clinic]),
+      PharmacyCostKind.spending,
     );
     expect(
-      pharmacyCostLabel(<Medicine>[
+      pharmacyCostKind(<Medicine>[
         _m('a', price: 80),
       ], const <ZadTransaction>[]),
-      'أسعار علب الأدوية',
+      PharmacyCostKind.boxes,
     );
   });
 
@@ -269,7 +269,7 @@ void main() {
     );
     await tester.pump();
 
-    expect(find.text('الكورس خلص ✓'), findsOneWidget);
+    expect(find.text('الكورس خلص'), findsOneWidget);
     final low = find.ancestor(
       of: find.text('مخزون منخفض'),
       matching: find.byType(Row),
@@ -312,8 +312,8 @@ void main() {
     await tester.pump();
 
     expect(find.text('90%'), findsOneWidget);
-    expect(find.text('1 دواء منتهي الصلاحية — تخلص منه بأمان'), findsOneWidget);
-    expect(find.text('منتهي منذ 23 يوم'), findsOneWidget);
+    expect(find.text('دواء منتهي الصلاحية — تخلص منه بأمان'), findsOneWidget);
+    expect(find.text('منتهي من 23 يوم'), findsOneWidget);
     expect(find.text('الكمية محتاجة تأكيد'), findsOneWidget);
     expect(find.text('تجديد الطلب'), findsNWidgets(2));
 

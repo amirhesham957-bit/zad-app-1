@@ -39,12 +39,7 @@ Family _family() => const Family(
   id: 'f',
   inviteCode: 'ABC',
   members: <FamilyMember>[
-    FamilyMember(
-      id: 'm1',
-      userId: 'me',
-      role: FamilyRole.admin,
-      alias: 'أنا',
-    ),
+    FamilyMember(id: 'm1', userId: 'me', role: FamilyRole.admin, alias: 'أنا'),
     FamilyMember(
       id: 'm2',
       userId: 'u2',
@@ -119,6 +114,7 @@ Widget _app({
   pc.PharmacyView own = const pc.PharmacyView(),
   bool still = true,
   QuietPharmacy? pharmacy,
+  Map<String, List<DateTime>> records = const <String, List<DateTime>>{},
 }) => ProviderScope(
   overrides: <Override>[
     ...quietOrbOverrides,
@@ -131,6 +127,7 @@ Widget _app({
     transactionsControllerProvider.overrideWith(_Txns.new),
     familyControllerProvider.overrideWith(() => _Fam(me)),
     familyPharmacyItemsProvider.overrideWith((ref) async => members),
+    memberDoseRecordsProvider('u2').overrideWith((ref) async => records),
     familyPharmacyRepositoryProvider.overrideWithValue(
       FamilyPharmacyRepository(rpc.call),
     ),
@@ -249,6 +246,39 @@ void main() {
     expect(find.text('اتاخدت'), findsWidgets);
   });
 
+  testWidgets('a member dose the server says was taken shows taken', (
+    tester,
+  ) async {
+    await _open(
+      tester,
+      _app(
+        me: 'me',
+        members: <Medicine>[_mama()],
+        rpc: _Rpc(),
+        records: <String, List<DateTime>>{
+          'k1': <DateTime>[DateTime.utc(2026, 9, 25, 7, 5)],
+        },
+      ),
+    );
+    await _mamaTab(tester);
+    expect(find.text('اتاخدت'), findsWidgets);
+    expect(find.text('خدها'), findsNothing, reason: '21:00 is not near');
+    expect(find.text('الميعاد عدّى'), findsNothing);
+  });
+
+  testWidgets('the count in the header is an ICU plural', (tester) async {
+    await _open(
+      tester,
+      _app(
+        me: 'me',
+        members: const <Medicine>[],
+        rpc: _Rpc(),
+        own: pc.PharmacyView(medicines: <Medicine>[_mama()]),
+      ),
+    );
+    expect(find.text('دوا واحد'), findsOneWidget);
+  });
+
   testWidgets('a member who is not the head reads, and cannot write', (
     tester,
   ) async {
@@ -283,7 +313,10 @@ void main() {
     await tester.tap(find.text('حفظ'));
     await tester.pumpAndSettle();
 
-    expect(find.text(kNotFamilyHeadMessage), findsOneWidget);
+    expect(
+      find.text('بس رب الأسرة يقدر يعدّل أدوية حد من العيلة.'),
+      findsOneWidget,
+    );
     expect(find.text('اسم الدواء'), findsOneWidget, reason: 'still open');
   });
 
@@ -298,7 +331,10 @@ void main() {
     await tester.tap(find.text('خدها'));
     await tester.pump();
     await tester.pump();
-    expect(find.text(kFamilyPharmacyOfflineMessage), findsOneWidget);
+    expect(
+      find.text('مفيش نت دلوقتي — ما اتحفظش حاجة. جرّب تاني لما يرجع.'),
+      findsOneWidget,
+    );
     expect(find.text('خدها'), findsOneWidget, reason: 'nothing was marked');
   });
 
@@ -320,7 +356,6 @@ void main() {
     });
     expect(dup.ok, isFalse);
     expect(dup.reason, 'duplicate_name');
-    expect(dup.message, isNotEmpty);
     expect(
       (await save(null, error: const SocketException('x'))).reason,
       'offline',

@@ -9,6 +9,7 @@ import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/design/tokens/zad_world_colors.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/pharmacy/presentation/pharmacy_logic.dart';
 import 'package:zad/shared/pharmacy/domain/dose_slot.dart';
 
@@ -20,12 +21,14 @@ Color doseStateColor(DoseState state) => switch (state) {
   DoseState.upcoming => ZadWorldColors.pharmacy,
 };
 
+const Color _violet2 = Color(0xFF6B5FC7);
+
 /// What a screen reader says for a dose's state.
-String doseStateWords(DoseState state) => switch (state) {
-  DoseState.taken => 'اتاخدت',
-  DoseState.due => 'وقتها دلوقتي',
-  DoseState.missed => 'فاتت',
-  DoseState.upcoming => 'جاية',
+String doseStateWords(ZadL10n l, DoseState state) => switch (state) {
+  DoseState.taken => l.phDoseTaken,
+  DoseState.due => l.phDoseDue,
+  DoseState.missed => l.phDoseMissed,
+  DoseState.upcoming => l.phDoseUpcoming,
 };
 
 /// One pill per dose slot of the medicine today, with its clock beneath.
@@ -61,28 +64,31 @@ class TodayPillStrip extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) => Wrap(
-    spacing: ZadSpacing.md,
-    runSpacing: ZadSpacing.sm,
-    children: <Widget>[
-      for (final s in slots)
-        Semantics(
-          label: '${doseClock(s, zone)} ${doseStateWords(_state(s))}',
-          excludeSemantics: true,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              _Pill(state: _state(s)),
-              const SizedBox(height: ZadSpacing.xs),
-              Text(
-                doseClock(s, zone),
-                style: ZadType.labelSmall.copyWith(color: ZadColors.inkMuted),
-              ),
-            ],
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    return Wrap(
+      spacing: ZadSpacing.md,
+      runSpacing: ZadSpacing.sm,
+      children: <Widget>[
+        for (final s in slots)
+          Semantics(
+            label: '${doseClock(s, zone)} ${doseStateWords(l, _state(s))}',
+            excludeSemantics: true,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                _Pill(state: _state(s)),
+                const SizedBox(height: ZadSpacing.xs),
+                Text(
+                  doseClock(s, zone),
+                  style: ZadType.labelSmall.copyWith(color: ZadColors.inkMuted),
+                ),
+              ],
+            ),
           ),
-        ),
-    ],
-  );
+      ],
+    );
+  }
 }
 
 class _Pill extends StatelessWidget {
@@ -93,12 +99,27 @@ class _Pill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = doseStateColor(state);
-    final filled = state == DoseState.taken || state == DoseState.missed;
+    final taken = state == DoseState.taken;
     return DecoratedBox(
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: filled ? c : c.withValues(alpha: 0.12),
-        border: Border.all(color: c, width: state == DoseState.due ? 3 : 1.5),
+        // Taken is the strong violet of the preview's dose tile.
+        gradient: taken
+            ? const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: <Color>[_violet2, ZadWorldColors.pharmacy],
+              )
+            : null,
+        color: switch (state) {
+          DoseState.missed => c,
+          DoseState.taken => null,
+          _ => Colors.white,
+        },
+        border: Border.all(
+          color: c,
+          width: state == DoseState.upcoming ? 2 : 3,
+        ),
       ),
       child: SizedBox.square(
         dimension: 28,
@@ -138,7 +159,11 @@ class StockStrip extends StatelessWidget {
     return ExcludeSemantics(
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: const Color(0xFFECEDF2),
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: <Color>[Color(0xFFECEDF2), Color(0xFFD6D8E0)],
+          ),
           borderRadius: BorderRadius.circular(ZadRadii.chip),
         ),
         child: Padding(
@@ -154,9 +179,27 @@ class StockStrip extends StatelessWidget {
                       child: DecoratedBox(
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: i < lit
-                              ? ZadWorldColors.pharmacy.withValues(alpha: 0.28)
-                              : const Color(0xFFB3B5BE),
+                          gradient: i < lit
+                              ? const RadialGradient(
+                                  center: Alignment(-0.3, -0.4),
+                                  colors: <Color>[
+                                    Colors.white,
+                                    Color(0xFFC9C6EC),
+                                    Color(0xFFA9A4DB),
+                                  ],
+                                  stops: <double>[0, 0.7, 1],
+                                )
+                              : null,
+                          color: i < lit ? null : const Color(0xFFB3B5BE),
+                          boxShadow: i < lit
+                              ? const <BoxShadow>[
+                                  BoxShadow(
+                                    color: Color(0x404A3F94),
+                                    blurRadius: 3,
+                                    offset: Offset(0, 2),
+                                  ),
+                                ]
+                              : null,
                         ),
                       ),
                     ),

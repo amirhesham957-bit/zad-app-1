@@ -10,6 +10,7 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/core/money/money.dart';
 import 'package:zad/shared/pharmacy/application/pharmacy_controller.dart';
 import 'package:zad/shared/pharmacy/domain/medicine.dart';
@@ -20,22 +21,23 @@ Future<void> confirmDeleteMedicine(
   WidgetRef ref,
   Medicine medicine,
 ) async {
+  final l = context.l10n;
   final ok = await showDialog<bool>(
     context: context,
     builder: (c) => AlertDialog(
-      title: const Text('حذف'),
-      content: Text('حذف «${medicine.name}» من الصيدلية؟'),
+      title: Text(l.phDelete),
+      content: Text(l.phDeleteBody(medicine.name)),
       actions: <Widget>[
         TextButton(
           onPressed: () => Navigator.of(c).pop(false),
-          child: const Text('إلغاء'),
+          child: Text(l.phCancel),
         ),
         TextButton(
           onPressed: () => Navigator.of(c).pop(true),
           style: TextButton.styleFrom(
             foregroundColor: ZadColors.terracottaRust,
           ),
-          child: const Text('حذف'),
+          child: Text(l.phDelete),
         ),
       ],
     ),
@@ -52,7 +54,8 @@ Future<void> showConfirmQuantity(
   WidgetRef ref,
   Medicine medicine,
 ) async {
-  final unit = medicine.unit ?? 'قرص';
+  final l = context.l10n;
+  final unit = medicine.unit ?? 'قرص'; // l10n: data
   final result = await showFieldDialog<(int, double?)>(
     context: context,
     initial: <String>[
@@ -65,14 +68,17 @@ Future<void> showConfirmQuantity(
         '${medicine.unitsPerDose}',
     ],
     builder: (c, fields) => AlertDialog(
-      title: const Text('فاضل قد إيه فعلاً؟'),
+      title: Text(l.phHowMuchLeft),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Text(
-            '${medicine.name} — الكمية الحالية المسجلة: '
-            '${medicine.remainingQuantity ?? 0} $unit',
+            l.phQtyCurrent(
+              medicine.name,
+              medicine.remainingQuantity ?? 0,
+              unit,
+            ),
             style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
           ),
           const SizedBox(height: ZadSpacing.md),
@@ -88,8 +94,8 @@ Future<void> showConfirmQuantity(
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             textDirection: TextDirection.ltr,
             decoration: InputDecoration(
-              labelText: 'الجرعة الواحدة كام $unit؟',
-              helperText: 'من غير الرقم ده مقدرش أحسب المخزون هيكفي كام يوم',
+              labelText: l.phFieldPerDose(unit),
+              helperText: l.phPerDoseHelp,
               helperMaxLines: 2,
             ),
           ),
@@ -98,18 +104,21 @@ Future<void> showConfirmQuantity(
       actions: <Widget>[
         TextButton(
           onPressed: () => Navigator.of(c).pop(),
-          child: const Text('إلغاء'),
+          child: Text(l.phCancel),
         ),
         TextButton(
           onPressed: () {
             final raw = fields[0].text.trim();
-            final n = raw == '0' || raw == '٠'
+            final n =
+                raw == '0' ||
+                    raw ==
+                        '٠' // l10n: data
                 ? 0
                 : parseMoneyInput(raw)?.round();
             if (n == null) return;
             Navigator.of(c).pop((n, parseMoneyInput(fields[1].text)));
           },
-          child: const Text('تأكيد'),
+          child: Text(l.phConfirm),
         ),
       ],
     ),
@@ -128,7 +137,8 @@ Future<void> showRefill(
   Medicine medicine,
 ) async {
   DateTime? expiry;
-  final unit = medicine.unit ?? 'قرص';
+  final l = context.l10n;
+  final unit = medicine.unit ?? 'قرص'; // l10n: data
   final result = await showFieldDialog<(int, double?)>(
     context: context,
     initial: <String>[
@@ -137,7 +147,7 @@ Future<void> showRefill(
     ],
     builder: (c, fields) => StatefulBuilder(
       builder: (c, setState) => AlertDialog(
-        title: Text('تجديد طلب ${medicine.name}'),
+        title: Text(l.phRefillTitle(medicine.name)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
@@ -145,7 +155,7 @@ Future<void> showRefill(
               controller: fields[0],
               keyboardType: TextInputType.number,
               textDirection: TextDirection.ltr,
-              decoration: InputDecoration(labelText: 'الكمية المضافة ($unit)'),
+              decoration: InputDecoration(labelText: l.phAddedQty(unit)),
               onChanged: (_) => setState(() {}),
             ),
             const SizedBox(height: ZadSpacing.md),
@@ -155,7 +165,7 @@ Future<void> showRefill(
                 decimal: true,
               ),
               textDirection: TextDirection.ltr,
-              decoration: const InputDecoration(labelText: 'السعر'),
+              decoration: InputDecoration(labelText: l.phPrice),
             ),
             const SizedBox(height: ZadSpacing.md),
             OutlinedButton.icon(
@@ -180,7 +190,7 @@ Future<void> showRefill(
               icon: const Icon(ZadIcons.duration, size: 16),
               label: Text(
                 expiry == null
-                    ? 'تاريخ الانتهاء'
+                    ? l.phExpiryDate
                     : DateFormat('d MMMM y', 'ar').format(expiry!),
               ),
             ),
@@ -189,7 +199,7 @@ Future<void> showRefill(
         actions: <Widget>[
           TextButton(
             onPressed: () => Navigator.of(c).pop(),
-            child: const Text('إلغاء'),
+            child: Text(l.phCancel),
           ),
           TextButton(
             onPressed: (parseMoneyInput(fields[0].text)?.round() ?? 0) > 0
@@ -198,7 +208,7 @@ Future<void> showRefill(
                     parseMoneyInput(fields[1].text),
                   ))
                 : null,
-            child: const Text('حفظ'),
+            child: Text(l.phSave),
           ),
         ],
       ),

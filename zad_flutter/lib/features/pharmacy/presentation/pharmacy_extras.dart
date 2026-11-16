@@ -5,6 +5,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/pharmacy/presentation/pharmacy_logic.dart';
 import 'package:zad/shared/family/application/family_controller.dart';
 
@@ -49,6 +50,7 @@ class PharmacyExtras extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = context.l10n;
     final members =
         ref.watch(familyControllerProvider).family?.members ?? const [];
     return Column(
@@ -56,28 +58,26 @@ class PharmacyExtras extends ConsumerWidget {
       children: <Widget>[
         TextField(
           controller: ingredient,
-          decoration: const InputDecoration(labelText: 'المادة الفعالة'),
+          decoration: InputDecoration(labelText: l.phFieldIngredient),
         ),
         const SizedBox(height: ZadSpacing.md),
         TextField(
           controller: dosage,
-          decoration: const InputDecoration(
-            labelText: 'الجرعة (مثال: قرص كل 8 ساعات)',
-          ),
+          decoration: InputDecoration(labelText: l.phFieldDosageFreq),
         ),
         CheckboxListTile(
           value: recurring,
           onChanged: (v) => onRecurring(v ?? false),
-          title: const Text('دواء مزمن / روشتة متجددة شهرياً'),
+          title: Text(l.phChronic),
           contentPadding: EdgeInsets.zero,
           controlAffinity: ListTileControlAffinity.leading,
         ),
         if (members.length > 1)
           DropdownButtonFormField<String?>(
             initialValue: member,
-            decoration: const InputDecoration(labelText: 'لمين في العائلة'),
+            decoration: InputDecoration(labelText: l.phForFamilyMember),
             items: <DropdownMenuItem<String?>>[
-              const DropdownMenuItem<String?>(child: Text('بدون')),
+              DropdownMenuItem<String?>(child: Text(l.phNone)),
               for (final m in members)
                 DropdownMenuItem<String?>(value: m.id, child: Text(m.alias)),
             ],

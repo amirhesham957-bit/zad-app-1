@@ -13,6 +13,7 @@ import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/design/tokens/zad_world_colors.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/pharmacy/presentation/pharmacy_dialogs.dart';
 import 'package:zad/features/pharmacy/presentation/pharmacy_strips.dart';
 import 'package:zad/features/pharmacy/presentation/pharmacy_times_sheet.dart';
@@ -21,6 +22,7 @@ import 'package:zad/shared/inventory/application/shopping_controller.dart';
 import 'package:zad/shared/pharmacy/application/pharmacy_controller.dart';
 import 'package:zad/shared/pharmacy/domain/dose_slot.dart';
 import 'package:zad/shared/pharmacy/domain/medicine.dart';
+import 'package:zad/shared/worlds/art/art.dart';
 import 'package:zad/shared/worlds/world_card.dart';
 
 /// One of the customer's own medicines.
@@ -52,6 +54,7 @@ class MedicineCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = context.l10n;
     final controller = ref.read(pharmacyControllerProvider.notifier);
     final d = daysToExpiry;
     final expired = d != null && d < 0;
@@ -75,14 +78,16 @@ class MedicineCard extends ConsumerWidget {
             .where((m) => m.id == medicine.familyMemberId)
             .firstOrNull
             ?.alias ??
-        (medicine.forPerson == null ? null : 'لـ${medicine.forPerson}');
+        (medicine.forPerson == null
+            ? null
+            : l.phForPerson(medicine.forPerson!));
     final badge = finished
-        ? 'الكورس خلص ✓'
+        ? l.phCourseDone
         : expired
-        ? 'منتهي منذ ${-d} يوم'
+        ? l.phExpiredAgo(-d)
         : expiringSoon
-        ? 'تنتهي خلال $d يوم'
-        : 'متبقي $remaining ${medicine.unit ?? ''}'.trim();
+        ? l.phExpiresIn(d)
+        : l.phRemaining(remaining, medicine.unit ?? '').trim();
     final invalid =
         medicine.hasUnreadableDoseTime || medicine.serverSaysInvalidDoseTime;
     final dosage = medicine.dosage;
@@ -98,13 +103,9 @@ class MedicineCard extends ConsumerWidget {
                   color: ZadWorldColors.pharmacy.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
-                child: const SizedBox.square(
+                child: SizedBox.square(
                   dimension: 40,
-                  child: Icon(
-                    ZadIcons.pharmacy,
-                    size: 20,
-                    color: ZadWorldColors.pharmacy,
-                  ),
+                  child: Center(child: ZadArt.icon(ZadIconArt.pill, size: 26)),
                 ),
               ),
               const SizedBox(width: ZadSpacing.md),
@@ -131,13 +132,9 @@ class MedicineCard extends ConsumerWidget {
               IconButton(
                 onPressed: () =>
                     unawaited(confirmDeleteMedicine(context, ref, medicine)),
-                tooltip: 'حذف',
+                tooltip: l.phDelete,
                 style: IconButton.styleFrom(minimumSize: const Size(44, 44)),
-                icon: Icon(
-                  ZadIcons.delete,
-                  size: 18,
-                  color: ZadColors.terracottaRust,
-                ),
+                icon: ZadArt.icon(ZadIconArt.trash, size: 22),
               ),
             ],
           ),
@@ -163,7 +160,7 @@ class MedicineCard extends ConsumerWidget {
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: ZadSpacing.sm),
                 child: Text(
-                  'وقت جرعة مش مفهوم — عدّله',
+                  l.phBadDoseTime,
                   style: ZadType.labelSmall.copyWith(
                     color: ZadColors.terracottaRust,
                   ),
@@ -175,7 +172,7 @@ class MedicineCard extends ConsumerWidget {
               children: <Widget>[
                 Expanded(
                   child: Text(
-                    'مالوش مواعيد — مش هفكّرك بيه',
+                    l.phNoSchedule,
                     style: ZadType.labelSmall.copyWith(
                       color: ZadColors.mustardOchre,
                     ),
@@ -184,7 +181,7 @@ class MedicineCard extends ConsumerWidget {
                 TextButton(
                   onPressed: () =>
                       unawaited(showDoseTimesSheet(context, medicine)),
-                  child: const Text('حدد مواعيده'),
+                  child: Text(l.phSetTimes),
                 ),
               ],
             ),
@@ -200,7 +197,7 @@ class MedicineCard extends ConsumerWidget {
               MedicineBadge(text: badge, color: status),
               if (!expired && supply != null)
                 MedicineBadge(
-                  text: 'يكفي $supply يوم',
+                  text: l.phSupplyDays(supply),
                   color: ZadColors.inkMuted,
                 )
               else if (!expired &&
@@ -210,7 +207,7 @@ class MedicineCard extends ConsumerWidget {
                   onTap: () =>
                       unawaited(showConfirmQuantity(context, ref, medicine)),
                   child: MedicineBadge(
-                    text: 'الكمية محتاجة تأكيد',
+                    text: l.phConfirmQtyBadge,
                     color: ZadColors.mustardOchre,
                   ),
                 ),
@@ -228,23 +225,23 @@ class MedicineCard extends ConsumerWidget {
                     unawaited(HapticFeedback.mediumImpact());
                     unawaited(controller.takeNow(medicine));
                   },
-                  child: const Text('تناول جرعة'),
+                  child: Text(l.phTakeDose),
                 ),
               FilledButton.icon(
                 onPressed: () => unawaited(showRefill(context, ref, medicine)),
-                icon: const Icon(ZadIcons.retry, size: 14),
-                label: const Text('تجديد الطلب'),
+                icon: ZadArt.icon(ZadIconArt.repeat, size: 18),
+                label: Text(l.phRefill),
               ),
               if (lowStock && !finished)
                 OutlinedButton.icon(
                   onPressed: () => unawaited(_toShopping(context, ref)),
                   icon: const Icon(ZadIcons.add, size: 14),
-                  label: const Text('ضيفه للتسوق'),
+                  label: Text(l.phToShopping),
                 ),
               TextButton(
                 onPressed: () =>
                     unawaited(showConfirmQuantity(context, ref, medicine)),
-                child: const Text('فاضل قد إيه فعلاً؟'),
+                child: Text(l.phHowMuchLeft),
               ),
             ],
           ),
@@ -255,9 +252,10 @@ class MedicineCard extends ConsumerWidget {
 
   Future<void> _toShopping(BuildContext context, WidgetRef ref) async {
     final messenger = ScaffoldMessenger.maybeOf(context);
+    final l = context.l10n;
     await ref.read(shoppingControllerProvider.notifier).add(medicine.name);
     messenger?.showSnackBar(
-      SnackBar(content: Text('ضفت ${medicine.name} لقايمة التسوق')),
+      SnackBar(content: Text(l.phAddedToShopping(medicine.name))),
     );
   }
 }

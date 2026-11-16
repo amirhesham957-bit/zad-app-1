@@ -1,7 +1,7 @@
 /// What the medicine form hands back, and how it opens. The one form serves
 /// the customer's own medicines and the head's edits of a member's, so what
 /// it saves into is the caller's: `onSave` gets the draft and answers a
-/// message to show (and keep the form open) or null when it saved.
+/// failure reason (the form says it and stays open) or null when it saved.
 library;
 
 /// A filled-in medicine form.
@@ -67,5 +67,5 @@ class MedicineDraft {
   final String? forPerson;
 }
 
-/// Saves a draft; answers a message to show, or null when saved.
+/// Saves a draft; answers a failure reason, or null when saved.
 typedef MedicineDraftSave = Future<String?> Function(MedicineDraft draft);

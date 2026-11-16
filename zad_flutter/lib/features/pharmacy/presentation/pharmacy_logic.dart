@@ -6,6 +6,7 @@ library;
 
 import 'package:intl/intl.dart' show NumberFormat;
 import 'package:timezone/timezone.dart' as tz;
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/pharmacy/domain/dose_slot.dart';
 import 'package:zad/shared/pharmacy/domain/dose_time.dart';
 import 'package:zad/shared/pharmacy/domain/medicine.dart';
@@ -17,6 +18,7 @@ String? blankToNull(String text) => text.trim().isEmpty ? null : text.trim();
 /// A money figure without trailing zeros.
 String pharmacyMoney(double v) => NumberFormat('#,##0.##', 'en').format(v);
 
+// l10n: data-begin (stored in zad_pharmacy_items, matched by the server)
 /// Kotlin's categories and units — stored values, kept Arabic.
 const List<String> kMedicineCategories = <String>[
   'عام',
@@ -42,6 +44,7 @@ const List<String> kMedicineUnits = <String>[
   'أمبول',
   'علبة',
 ];
+// l10n: data-end
 
 /// Kotlin's `suggestDoseTimes`: the doses spread over 08:00–22:00.
 String suggestDoseTimes(int count) {
@@ -72,12 +75,21 @@ double pharmacyMonthlyCost(
 /// medicines' cost, while the figure was the period's health spending —
 /// clinic visits included — or the boxes' prices (2026-10-10: 1,356.5 over
 /// three medicines priced at zero).
-String pharmacyCostLabel(
+enum PharmacyCostKind {
+  /// The period's health spending.
+  spending,
+
+  /// The boxes' prices added up.
+  boxes,
+}
+
+/// Which figure [pharmacyMonthlyCost] is showing.
+PharmacyCostKind pharmacyCostKind(
   Iterable<Medicine> medicines,
   Iterable<ZadTransaction> periodRows,
 ) => _healthSpending(periodRows) > _boxes(medicines)
-    ? 'صرف الصحة الشهر ده'
-    : 'أسعار علب الأدوية';
+    ? PharmacyCostKind.spending
+    : PharmacyCostKind.boxes;
 
 double _boxes(Iterable<Medicine> medicines) =>
     medicines.fold<double>(0, (s, m) => s + m.price);
@@ -87,9 +99,11 @@ double _healthSpending(Iterable<ZadTransaction> periodRows) {
   for (final t in periodRows) {
     if (t.kind != TxnKind.expense) continue;
     final c = t.category;
+    // l10n: data-begin (matched against the stored transaction category)
     if (c == 'الرعاية الصحية' ||
         c == 'صيدلية' ||
         c == 'أدوية' ||
+        // l10n: data-end
         t.sourceType == 'pharmacy') {
       spent += t.amount;
     }
@@ -106,14 +120,17 @@ List<String> scannedDoseTimes(String? raw) {
   return <String>{for (final t in times) t.wireName}.toList();
 }
 
-/// The four quick choices, shared by the add form and the times sheet.
-const List<(String, String)> kDoseTimePresets = <(String, String)>[
-  ('08:00', 'صباحاً'),
-  ('14:00', 'ظهراً'),
-  ('20:00', 'مساءً'),
-  ('23:00', 'قبل النوم'),
-];
+/// The four quick choices, shared by the add form and the times sheet: the
+/// time as stored and how the screen names it.
+final List<(String, String Function(ZadL10n))> kDoseTimePresets =
+    <(String, String Function(ZadL10n))>[
+      ('08:00', (l) => l.phPresetMorning),
+      ('14:00', (l) => l.phPresetNoon),
+      ('20:00', (l) => l.phPresetEvening),
+      ('23:00', (l) => l.phPresetBed),
+    ];
 
+// l10n: data-begin (match data, compared against the customer's own words)
 /// Kotlin's `PharmacyDoseText` frequency patterns — **match data**, compared
 /// against the customer's and the model's words (CLAUDE.md i18n rule).
 final List<RegExp> _frequencyPatterns = <RegExp>[
@@ -129,6 +146,7 @@ final List<RegExp> _frequencyPatterns = <RegExp>[
     caseSensitive: false,
   ),
 ];
+// l10n: data-end
 
 /// Kotlin's `PharmacyDoseText.sanitizeDosageNote`: the note without any
 /// frequency written into it, or null when only the frequency was there.
@@ -142,13 +160,13 @@ String? sanitizeDosageNote(String? text) {
   final cleaned = stripped
       .replaceAll(RegExp(r'\s+'), ' ')
       .trim()
-      .replaceAll(RegExp(r'^[،,\-–—./ ]+|[،,\-–—./ ]+$'), '')
+      .replaceAll(RegExp(r'^[،,\-–—./ ]+|[،,\-–—./ ]+$'), '') // l10n: data
       .trim();
   return cleaned.isEmpty ? null : cleaned;
 }
 
 /// «٩ الصبح» / «٢ الضهر» / «٩ بالليل» — a dose's time the way it is said.
-String doseClockWords(DoseSlot slot, String zone) {
+String doseClockWords(ZadL10n l, DoseSlot slot, String zone) {
   final local = tz.TZDateTime.from(
     slot.scheduledAt.toUtc(),
     tz.getLocation(zone),
@@ -156,15 +174,15 @@ String doseClockWords(DoseSlot slot, String zone) {
   final h = local.hour;
   final h12 = h % 12 == 0 ? 12 : h % 12;
   final period = switch (h) {
-    >= 4 && < 12 => 'الصبح',
-    >= 12 && < 16 => 'الضهر',
-    >= 16 && < 19 => 'العصر',
-    _ => 'بالليل',
+    >= 4 && < 12 => l.phPeriodMorning,
+    >= 12 && < 16 => l.phPeriodNoon,
+    >= 16 && < 19 => l.phPeriodAfternoon,
+    _ => l.phPeriodNight,
   };
   final minutes = local.minute == 0
       ? ''
       : ':${local.minute.toString().padLeft(2, '0')}';
-  return '$h12$minutes $period';
+  return l.phClockWords('$h12', minutes, period);
 }
 
 /// The "HH:mm" of a slot in the account's zone.
@@ -197,12 +215,13 @@ enum DayDoseState {
 
 /// The header's one line, from the real slots, and the state behind it.
 ({String line, DayDoseState state}) nextDoseLine(
+  ZadL10n l,
   List<DoseSlot> today,
   DateTime now,
   String zone,
 ) {
   if (today.isEmpty) {
-    return (line: 'مفيش جرعات النهارده', state: DayDoseState.unscheduled);
+    return (line: l.phNoDosesToday, state: DayDoseState.unscheduled);
   }
   DoseSlot? first(DoseState s) {
     for (final slot in today) {
@@ -213,24 +232,30 @@ enum DayDoseState {
 
   final due = first(DoseState.due);
   if (due != null) {
-    return (
-      line: 'جرعة ${due.medicine.name} وقتها دلوقتي',
-      state: DayDoseState.due,
-    );
+    return (line: l.phDoseDueNow(due.medicine.name), state: DayDoseState.due);
   }
   final next = first(DoseState.upcoming);
   if (next != null) {
     return (
-      line: 'الجرعة الجاية ${doseClockWords(next, zone)}',
+      line: l.phNextDose(doseClockWords(l, next, zone)),
       state: DayDoseState.upcoming,
     );
   }
   final missed = first(DoseState.missed);
   if (missed != null) {
     return (
-      line: 'فاتتك جرعة ${missed.medicine.name}',
+      line: l.phDoseMissedLine(missed.medicine.name),
       state: DayDoseState.missed,
     );
   }
-  return (line: 'خلصت جرعات النهارده', state: DayDoseState.done);
+  return (line: l.phDosesDone, state: DayDoseState.done);
 }
+
+/// What the screen says for a refused or failed head write.
+String familyPharmacyMessage(ZadL10n l, String? reason) => switch (reason) {
+  'not_family_head' => l.phErrNotHead,
+  'offline' => l.phErrOffline,
+  'not_found' => l.phErrNotFound,
+  'duplicate_name' => l.phErrDuplicate,
+  _ => l.phErrRejected,
+};

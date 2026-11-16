@@ -25,6 +25,7 @@ import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
 import 'package:zad/shared/orb/domain/companion_state.dart';
 import 'package:zad/shared/pharmacy/application/pharmacy_controller.dart' as pc;
+import 'package:zad/shared/worlds/art/art.dart';
 import 'package:zad/shared/worlds/world_scaffold.dart';
 import 'package:zad/shared/worlds/zad_world.dart';
 
@@ -80,7 +81,7 @@ class _PharmacyViewState extends ConsumerState<PharmacyView>
       if (!still && before != null && after > before) _pop.forward(from: 0);
     });
 
-    final next = nextDoseLine(view.today, now, zone);
+    final next = nextDoseLine(l, view.today, now, zone);
     final name = member?.alias ?? '';
     final controller = ref.read(pc.pharmacyControllerProvider.notifier);
 
@@ -90,12 +91,12 @@ class _PharmacyViewState extends ConsumerState<PharmacyView>
         world: ZadWorld.ph,
         showBack: false,
         eyebrow: member != null
-            ? 'صيدلية العيلة'
+            ? l.phFamilyEyebrow
             : view.medicines.isEmpty
             ? null
-            : '${view.medicines.length} أدوية',
+            : l.phEyebrowCount(view.medicines.length),
         title: l.worldLabelPh,
-        stateLine: member != null ? 'جدول $name' : next.line,
+        stateLine: member != null ? l.phMemberState(name) : next.line,
         scene: (loop) => PharmacyWorldScene(
           loop,
           popped: _taken(view).clamp(0, kPharmacyPackCells),
@@ -114,13 +115,14 @@ class _PharmacyViewState extends ConsumerState<PharmacyView>
             await controller.refresh();
           }
         },
-        // Clear of the buttons.
-        bottomInset: 110,
+        // The buttons dock in their own strip under the list, so they never
+        // cover a medicine.
+        dockHeight: 80,
         overlay: member != null
             ? null
             : Positioned(
                 right: ZadSpacing.lg,
-                bottom: ZadSpacing.xl,
+                bottom: ZadSpacing.md,
                 child: ZadStepsAside(
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -128,8 +130,8 @@ class _PharmacyViewState extends ConsumerState<PharmacyView>
                       FloatingActionButton.extended(
                         heroTag: 'pharmacy-photo',
                         onPressed: () => unawaited(_photo()),
-                        icon: const Icon(Icons.camera_alt, size: 20),
-                        label: const Text('صوّر الدوا'),
+                        icon: ZadArt.icon(ZadIconArt.camera, size: 24),
+                        label: Text(l.phPhoto),
                         backgroundColor: Theme.of(context).colorScheme.surface,
                         foregroundColor: Theme.of(context).colorScheme.primary,
                         elevation: 2,
@@ -139,7 +141,7 @@ class _PharmacyViewState extends ConsumerState<PharmacyView>
                         heroTag: 'pharmacy-add',
                         onPressed: () =>
                             unawaited(showAddMedicineSheet(context)),
-                        tooltip: 'إضافة',
+                        tooltip: l.phAdd,
                         backgroundColor: Theme.of(context).colorScheme.primary,
                         foregroundColor: Colors.white,
                         child: const Icon(Icons.add),

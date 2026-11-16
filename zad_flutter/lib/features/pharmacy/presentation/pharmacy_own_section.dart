@@ -10,6 +10,7 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/pharmacy/presentation/pharmacy_alarm_hint.dart';
 import 'package:zad/features/pharmacy/presentation/pharmacy_dose_rows.dart';
 import 'package:zad/features/pharmacy/presentation/pharmacy_logic.dart';
@@ -29,6 +30,7 @@ class PharmacyOwnSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = context.l10n;
     final view = ref.watch(pharmacyControllerProvider);
     final now = ref.read(nowProvider)();
     final zone = ref.watch(accountTimeZoneProvider);
@@ -76,7 +78,10 @@ class PharmacyOwnSection extends ConsumerWidget {
         ),
         PharmacyOverview(
           adherence: view.adherence,
-          costLabel: pharmacyCostLabel(medicines, periodRows),
+          costLabel: switch (pharmacyCostKind(medicines, periodRows)) {
+            PharmacyCostKind.spending => l.phCostSpending,
+            PharmacyCostKind.boxes => l.phCostBoxes,
+          },
           costValue: '${pharmacyMoney(cost)} $currency'.trim(),
           total: medicines.length,
           low: low,
@@ -87,7 +92,7 @@ class PharmacyOwnSection extends ConsumerWidget {
         if (view.today.isNotEmpty || medicines.isNotEmpty) ...<Widget>[
           const SizedBox(height: ZadSpacing.lg),
           Text(
-            'جرعات النهارده',
+            l.phDosesToday,
             style: ZadType.labelMedium.copyWith(color: ZadColors.inkMuted),
           ),
           const SizedBox(height: ZadSpacing.sm),
@@ -100,9 +105,8 @@ class PharmacyOwnSection extends ConsumerWidget {
           if (view.today.isEmpty)
             Text(
               medicines.any((m) => m.doseTimes.isNotEmpty)
-                  ? 'مفيش جرعات فاضلة النهارده.'
-                  : 'ولا دوا ليه مواعيد لسه — حدد مواعيد أي دوا تحت '
-                        'عشان أفكّرك بيه.',
+                  ? l.phNoDosesLeft
+                  : l.phNoTimesYet,
               style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
             ),
         ],
@@ -110,18 +114,13 @@ class PharmacyOwnSection extends ConsumerWidget {
         if (medicines.isEmpty)
           ZadEmptyState(
             icon: ZadIcons.pharmacy,
-            title: view.error != null
-                ? 'مقدرتش أجيب الأدوية'
-                : 'لا توجد أدوية مسجلة بعد',
-            message: view.error != null
-                ? 'اسحب لتحت نجرب تاني.'
-                : 'ضيفه بالزرار، أو صوّر العلبة، أو قول لزاد: "باخد كونكور '
-                      'قرص الصبح وبالليل" وهو يسجّله بمواعيده.',
+            title: view.error != null ? l.phLoadFailed : l.phEmptyTitle,
+            message: view.error != null ? l.phPullRetry : l.phEmptyGuide,
             tone: view.error != null ? ZadEmptyTone.problem : ZadEmptyTone.calm,
           )
         else ...<Widget>[
           Text(
-            'الأدوية',
+            l.phMedicines,
             style: ZadType.labelMedium.copyWith(color: ZadColors.inkMuted),
           ),
           const SizedBox(height: ZadSpacing.sm),
