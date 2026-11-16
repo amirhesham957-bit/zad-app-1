@@ -62,18 +62,44 @@ void main() {
       final w = GamesWorld();
       final c = await w.container();
       final round = GameRound(c.read, ZadGame.ball)..end(10);
+      // The server's double call returns only the extra (base 0).
       w.client.answer = (p) => <String, Object?>{
-        'granted': p['p_doubled'] == true ? 10 : 5,
-        'remaining': 15,
+        'granted': 5,
+        'doubled': p['p_doubled'] == true,
+        'remaining': p['p_doubled'] == true ? 10 : 15,
       };
       await round.doubleSeeds();
       expect(w.ads.watched, 1);
       expect(w.client.calls.map((e) => e['p_doubled']), <bool>[false, true]);
       expect(round.doubled, isTrue);
       expect(round.grant!.granted, 10);
+      expect(round.grant!.remaining, 10);
+      expect(w.client.calls, hasLength(2));
       // Only once.
       await round.doubleSeeds();
       expect(w.ads.watched, 1);
+    });
+
+    test('doubling is not offered when the round paid nothing', () async {
+      final w = GamesWorld();
+      w.client.answer = (_) => <String, Object?>{'granted': 0, 'remaining': 20};
+      final c = await w.container();
+      final round = GameRound(c.read, ZadGame.ball)..end(1);
+      await round.doubleSeeds();
+      expect(w.ads.watched, 0);
+      expect(w.client.calls, hasLength(1));
+      expect(round.doubled, isFalse);
+    });
+
+    test('doubling offline does nothing', () async {
+      final w = GamesWorld();
+      w.client.answer = null;
+      final c = await w.container();
+      final round = GameRound(c.read, ZadGame.ball)..end(10);
+      await round.doubleSeeds();
+      expect(w.ads.watched, 0);
+      expect(round.doubled, isFalse);
+      expect(round.grant, isNull);
     });
 
     test('doubling without the reward changes nothing', () async {

@@ -76,6 +76,9 @@ class GameRound extends ChangeNotifier {
     final user = _ref(sessionControllerProvider);
     if (doubled || busy || user == null) return;
     await claim();
+    final base = grant;
+    // Nothing granted for the round (offline, capped, zero): nothing to double.
+    if (_disposed || base == null || base.granted <= 0) return;
     busy = true;
     adUnavailable = false;
     notifyListeners();
@@ -95,8 +98,14 @@ class GameRound extends ChangeNotifier {
       debugPrint('[games] no reward repository: $e');
     }
     if (_disposed) return;
-    doubled = g != null;
-    grant = g ?? grant;
+    if (g != null) {
+      doubled = g.doubled;
+      grant = GameGrant(
+        granted: base.granted + g.granted,
+        remaining: g.remaining,
+        doubled: g.doubled,
+      );
+    }
     busy = false;
     notifyListeners();
   }

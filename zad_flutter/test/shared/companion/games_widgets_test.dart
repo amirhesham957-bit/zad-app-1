@@ -74,6 +74,21 @@ void main() {
       expect(w.client.calls.last['p_doubled'], isTrue);
     });
 
+    testWidgets('no double button when the round paid nothing', (tester) async {
+      final w = GamesWorld();
+      w.client.answer = (_) => <String, Object?>{'granted': 0, 'remaining': 20};
+      final c = await w.containerIn(tester);
+      await pumpGame(
+        tester,
+        c,
+        StarCatchGame(name: 'زادو', rng: math.Random(3)),
+        size: _phone,
+      );
+      await _playStarsOut(tester);
+      expect(find.byKey(_card), findsOneWidget);
+      expect(find.byKey(const ValueKey<String>('game-double')), findsNothing);
+    });
+
     testWidgets('kids mode: no continue and no double button', (tester) async {
       final w = GamesWorld(kids: true);
       final c = await w.containerIn(tester);

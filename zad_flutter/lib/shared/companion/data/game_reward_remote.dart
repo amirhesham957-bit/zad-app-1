@@ -13,7 +13,11 @@ import 'package:zad/core/data/providers.dart';
 @immutable
 class GameGrant {
   /// Creates one.
-  const new({required this.granted, required this.remaining});
+  const new({
+    required this.granted,
+    required this.remaining,
+    this.doubled = false,
+  });
 
   /// Reads the RPC's json; null when it is not what was promised.
   static GameGrant? fromJson(Object? json) {
@@ -24,6 +28,7 @@ class GameGrant {
     return GameGrant(
       granted: g.toInt() < 0 ? 0 : g.toInt(),
       remaining: r is num ? (r.toInt() < 0 ? 0 : r.toInt()) : 0,
+      doubled: json['doubled'] == true,
     );
   }
 
@@ -32,6 +37,9 @@ class GameGrant {
 
   /// Seeds still allowed today.
   final int remaining;
+
+  /// The server doubled the round on this call.
+  final bool doubled;
 
   /// Nothing was granted and nothing is left today.
   bool get capped => granted == 0 && remaining == 0;
