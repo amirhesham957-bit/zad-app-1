@@ -14,9 +14,9 @@ import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/design/tokens/zad_world_colors.dart';
 import 'package:zad/core/l10n/l10n.dart';
-import 'package:zad/features/transactions/presentation/edit_transaction_sheet.dart';
-import 'package:zad/features/transactions/presentation/transaction_source.dart';
+import 'package:zad/shared/navigation/zad_screens.dart';
 import 'package:zad/shared/transactions/domain/transaction.dart';
+import 'package:zad/shared/transactions/presentation/tx_source.dart';
 import 'package:zad/shared/worlds/art/art.dart';
 
 // l10n: data-begin
@@ -48,10 +48,13 @@ String transactionMoney(double amount) =>
 /// The row. A tap shows its edit and delete buttons, a second hides them.
 class TransactionRow extends ConsumerStatefulWidget {
   /// Creates the row.
-  const new({required this.txn, super.key});
+  const new({required this.txn, this.time, super.key});
 
   /// The transaction.
   final ZadTransaction txn;
+
+  /// The time of day, when the list is of one day's rows and wants it shown.
+  final String? time;
 
   @override
   ConsumerState<TransactionRow> createState() => _TransactionRowState();
@@ -118,7 +121,10 @@ class _TransactionRowState extends ConsumerState<TransactionRow> {
                           const SizedBox(width: ZadSpacing.xs),
                           Flexible(
                             child: Text(
-                              source.label(l, bank: txn.bankName),
+                              widget.time == null
+                                  ? source.label(l, bank: txn.bankName)
+                                  : '${source.label(l, bank: txn.bankName)}'
+                                        ' · ${widget.time}',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: ZadType.labelSmall.copyWith(
@@ -179,7 +185,9 @@ class _TransactionRowState extends ConsumerState<TransactionRow> {
                   IconButton(
                     onPressed: () {
                       setState(() => _actions = false);
-                      unawaited(showEditTransactionSheet(context, txn));
+                      unawaited(
+                        ZadScreens.showEditTransactionSheet(context, txn),
+                      );
                     },
                     tooltip: l.commonEdit,
                     constraints: const BoxConstraints(
@@ -191,7 +199,9 @@ class _TransactionRowState extends ConsumerState<TransactionRow> {
                   IconButton(
                     onPressed: () {
                       setState(() => _actions = false);
-                      unawaited(confirmDeleteTransaction(context, ref, txn));
+                      unawaited(
+                        ZadScreens.confirmDeleteTransaction(context, ref, txn),
+                      );
                     },
                     tooltip: l.commonDelete,
                     constraints: const BoxConstraints(

@@ -337,5 +337,9 @@
   "txSourceManual": "كتبتها بيدك",
   "worldLabelPrices": "أسعار اليوم",
   "pantryWorldEyebrow": "{count, plural, =0{للحين ما فيه أصناف} =1{صنف واحد} =2{صنفين} few{{count} أصناف} other{{count} صنف}}",
-  "pantryWorldState": "{count, plural, =0{ما فيه شي قرّب يخلص} =1{شي واحد قرّب يخلص} =2{شيئين قرّبوا يخلصون} few{{count} أشياء قرّبت تخلص} other{{count} شي قرّب يخلص}}"
+  "pantryWorldState": "{count, plural, =0{ما فيه شي قرّب يخلص} =1{شي واحد قرّب يخلص} =2{شيئين قرّبوا يخلصون} few{{count} أشياء قرّبت تخلص} other{{count} شي قرّب يخلص}}",
+  "budgetWorldUntil": "لين يوم {day}",
+  "budgetWorldDaysLeft": "{count, plural, =0{آخر يوم} =1{باقي يوم واحد} =2{باقي يومين} few{باقي {count} أيام} other{باقي {count} يوم}}",
+  "budgetWorldState": "متاح {amount} · {perDay} في اليوم",
+  "budgetWorldAvailable": "متاح {amount}"
 }

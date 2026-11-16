@@ -4449,6 +4449,35 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get txSourceManual => 'كتبتها بإيدك';
+
+  @override
+  String budgetWorldUntil(int day) {
+    return 'لحد يوم $day';
+  }
+
+  @override
+  String budgetWorldDaysLeft(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'فاضل $count يوم',
+      few: 'فاضل $count أيام',
+      two: 'فاضل يومين',
+      one: 'فاضل يوم واحد',
+      zero: 'آخر يوم',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String budgetWorldState(String amount, String perDay) {
+    return 'متاح $amount · $perDay في اليوم';
+  }
+
+  @override
+  String budgetWorldAvailable(String amount) {
+    return 'متاح $amount';
+  }
 }
 
 /// The translations for Arabic, as used in Saudi Arabia (`ar_SA`).
@@ -5674,4 +5703,33 @@ class ZadL10nArSa extends ZadL10nAr {
 
   @override
   String get txSourceManual => 'كتبتها بيدك';
+
+  @override
+  String budgetWorldUntil(int day) {
+    return 'لين يوم $day';
+  }
+
+  @override
+  String budgetWorldDaysLeft(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'باقي $count يوم',
+      few: 'باقي $count أيام',
+      two: 'باقي يومين',
+      one: 'باقي يوم واحد',
+      zero: 'آخر يوم',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String budgetWorldState(String amount, String perDay) {
+    return 'متاح $amount · $perDay في اليوم';
+  }
+
+  @override
+  String budgetWorldAvailable(String amount) {
+    return 'متاح $amount';
+  }
 }

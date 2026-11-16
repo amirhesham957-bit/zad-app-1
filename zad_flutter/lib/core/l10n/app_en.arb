@@ -1533,5 +1533,9 @@
   "txSourceVoice": "You said it",
   "txSourceStatement": "From a statement",
   "txSourcePharmacy": "Pharmacy refill",
-  "txSourceManual": "Typed by you"
+  "txSourceManual": "Typed by you",
+  "budgetWorldUntil": "Until day {day}",
+  "budgetWorldDaysLeft": "{count, plural, =0{Last day} =1{1 day left} other{{count} days left}}",
+  "budgetWorldState": "{amount} available · {perDay} a day",
+  "budgetWorldAvailable": "{amount} available"
 }

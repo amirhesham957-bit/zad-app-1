@@ -4554,4 +4554,31 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get txSourceManual => 'Typed by you';
+
+  @override
+  String budgetWorldUntil(int day) {
+    return 'Until day $day';
+  }
+
+  @override
+  String budgetWorldDaysLeft(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count days left',
+      one: '1 day left',
+      zero: 'Last day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String budgetWorldState(String amount, String perDay) {
+    return '$amount available · $perDay a day';
+  }
+
+  @override
+  String budgetWorldAvailable(String amount) {
+    return '$amount available';
+  }
 }

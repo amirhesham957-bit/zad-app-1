@@ -7813,6 +7813,30 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'كتبتها بإيدك'**
   String get txSourceManual;
+
+  /// Budget world: the eyebrow — the day the cycle ends (payday).
+  ///
+  /// In ar, this message translates to:
+  /// **'لحد يوم {day}'**
+  String budgetWorldUntil(int day);
+
+  /// Budget world: the eyebrow when the cycle end date is unknown.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =0{آخر يوم} =1{فاضل يوم واحد} =2{فاضل يومين} few{فاضل {count} أيام} other{فاضل {count} يوم}}'**
+  String budgetWorldDaysLeft(int count);
+
+  /// Budget world: the state line — the real available amount and what it allows per day until payday.
+  ///
+  /// In ar, this message translates to:
+  /// **'متاح {amount} · {perDay} في اليوم'**
+  String budgetWorldState(String amount, String perDay);
+
+  /// Budget world: the state line when nothing is left per day.
+  ///
+  /// In ar, this message translates to:
+  /// **'متاح {amount}'**
+  String budgetWorldAvailable(String amount);
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {
