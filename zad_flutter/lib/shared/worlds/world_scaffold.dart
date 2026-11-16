@@ -77,6 +77,7 @@ class ZadWorldScaffold extends ConsumerStatefulWidget {
     this.overlay,
     this.onRefresh,
     this.bottomInset = ZadSpacing.xl,
+    this.dockHeight = 0,
     super.key,
   });
 
@@ -112,6 +113,10 @@ class ZadWorldScaffold extends ConsumerStatefulWidget {
 
   /// Space after the links strip.
   final double bottomInset;
+
+  /// A strip at the bottom the scroll never enters: an [overlay] button
+  /// docked there (the thumb zone) cannot cover a row.
+  final double dockHeight;
 
   @override
   ConsumerState<ZadWorldScaffold> createState() => _ZadWorldScaffoldState();
@@ -176,7 +181,7 @@ class _ZadWorldScaffoldState extends ConsumerState<ZadWorldScaffold>
       ),
       child: Stack(
         children: <Widget>[
-          Positioned.fill(child: scroll),
+          Positioned.fill(bottom: widget.dockHeight, child: scroll),
           ?widget.overlay,
         ],
       ),

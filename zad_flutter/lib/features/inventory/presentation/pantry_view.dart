@@ -45,6 +45,7 @@ import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/navigation/destinations.dart';
 import 'package:zad/shared/navigation/shell_navigation.dart';
 import 'package:zad/shared/orb/domain/companion_state.dart';
+import 'package:zad/shared/worlds/art/art.dart';
 import 'package:zad/shared/worlds/world_card.dart';
 import 'package:zad/shared/worlds/world_scaffold.dart';
 import 'package:zad/shared/worlds/zad_world.dart';
@@ -136,6 +137,21 @@ const List<_CategoryDef> _categoryDefs = <_CategoryDef>[
     fg: Color(0xFF757575),
   ),
 ];
+// l10n: data-end
+
+// l10n: data-begin
+/// The drawn picture of a category chip (no Material icons in a world).
+Widget _categoryArt(String key, double size) => switch (key) {
+  'الكل' => ZadArt.icon(ZadIconArt.house, size: size),
+  'البقالة' => ZadArt.icon(ZadIconArt.jar, size: size),
+  'الخضار' => ZadArt.icon(ZadIconArt.sprout, size: size),
+  'الفواكه' => ZadArt.product(ZadProductArt.tomato, size: size),
+  'اللحوم' => ZadArt.product(ZadProductArt.chicken, size: size),
+  'الألبان' => ZadArt.product(ZadProductArt.milk, size: size),
+  'المشروبات' => ZadArt.product(ZadProductArt.coffee, size: size),
+  'العناية' => ZadArt.product(ZadProductArt.shampoo, size: size),
+  _ => ZadArt.box(tint: zadCategoryTint(key), size: size),
+};
 // l10n: data-end
 
 _CategoryDef _defFor(String? category, String itemName) {
@@ -365,13 +381,14 @@ class _PantryViewState extends ConsumerState<PantryView> {
         state: low.isNotEmpty ? CompanionState.alert : CompanionState.happy,
       ),
       onRefresh: () => controller.refresh(force: true),
-      // Clear of the add button.
-      bottomInset: 110,
+      // The add button docks in its own strip under the list, so it never
+      // covers a row.
+      dockHeight: 80,
       // One button, on the right where a right thumb rests (owner,
       // 2026-11-12; the bar's camera is the one way to scan).
       overlay: Positioned(
         right: 16,
-        bottom: 24,
+        bottom: 12,
         child: ZadStepsAside(
           child: FloatingActionButton(
             heroTag: 'pantry-add',
@@ -445,13 +462,12 @@ class _PantryViewState extends ConsumerState<PantryView> {
                       const SizedBox(width: ZadSpacing.sm),
                   itemBuilder: (_, i) {
                     final key = kPantryCategories[i].key;
-                    final def = _categoryDefs.firstWhere((d) => d.key == key);
                     final on = _category == key;
                     return FilterChip(
                       selected: on,
                       onSelected: (_) => setState(() => _category = key),
                       showCheckmark: false,
-                      avatar: Icon(def.icon, size: 16, color: def.fg),
+                      avatar: _categoryArt(key, 20),
                       label: Text(
                         _categoryLabel(context.l10n, key),
                         style: ZadType.labelMedium.copyWith(
@@ -803,7 +819,18 @@ class _StockRow extends StatelessWidget {
                       color: state.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(ZadRadii.chip),
                     ),
-                    child: ZadItemPhoto(item.itemName, width: 44, height: 44),
+                    child: ZadItemPhoto(
+                      item.itemName,
+                      width: 44,
+                      height: 44,
+                      placeholder: Center(
+                        child: zadItemArt(
+                          item.itemName,
+                          size: 36,
+                          category: item.category,
+                        ),
+                      ),
+                    ),
                   ),
                   const SizedBox(width: ZadSpacing.md),
                   Expanded(
@@ -939,7 +966,12 @@ class _FamilyRow extends StatelessWidget {
                   color: state.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(ZadRadii.chip),
                 ),
-                child: ZadItemPhoto(group.name, width: 44, height: 44),
+                child: ZadItemPhoto(
+                  group.name,
+                  width: 44,
+                  height: 44,
+                  placeholder: Center(child: zadItemArt(group.name, size: 36)),
+                ),
               ),
               const SizedBox(width: ZadSpacing.md),
               Expanded(
