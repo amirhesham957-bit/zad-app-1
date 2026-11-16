@@ -34,6 +34,13 @@ const Set<String> _dataFiles = <String>{
   // and the words that file a row under one. Their English labels, when they
   // come, are a lookup over these keys — the keys themselves never change.
   'features/inventory/domain/pantry_categories.dart',
+  // The art kit: words matched against item names, and the lettering drawn
+  // inside the pictures themselves (the milk carton's «حليب», the calendar's
+  // day number) — part of the artwork, not screen text.
+  'shared/worlds/art/art_item_match.dart',
+  'shared/worlds/art/art_data_products.dart',
+  'shared/worlds/art/art_data_icons_1.dart',
+  'shared/worlds/art/art_data_icons_3.dart',
   'shared/transactions/domain/expense_categories.dart',
   // Text for the Arabic voice (TTS): punctuation the speech is split on, and
   // the openers spoken while the brain thinks. The voice follows the

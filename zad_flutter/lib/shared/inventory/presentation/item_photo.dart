@@ -13,7 +13,13 @@ import 'package:zad/shared/inventory/data/item_images.dart';
 /// The photo, filling [width] by [height].
 class ZadItemPhoto extends ConsumerWidget {
   /// Creates the photo of the item called [name].
-  const new(this.name, {required this.height, this.width, super.key});
+  const new(
+    this.name, {
+    required this.height,
+    this.width,
+    this.placeholder,
+    super.key,
+  });
 
   /// Whether the animation loops. Widget tests turn it off: a loop never
   /// settles.
@@ -28,6 +34,9 @@ class ZadItemPhoto extends ConsumerWidget {
   /// The width; null takes what the parent gives.
   final double? width;
 
+  /// Drawn in place of the animation while there is no photo.
+  final Widget? placeholder;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final images = ref.watch(itemImagesProvider);
@@ -35,7 +44,7 @@ class ZadItemPhoto extends ConsumerWidget {
       ref.read(itemImagesProvider.notifier).want(name);
     }
     final url = images[name];
-    final art = _NoPhoto(height: height);
+    final art = placeholder ?? _NoPhoto(height: height);
     return SizedBox(
       width: width,
       height: height,
