@@ -7537,6 +7537,354 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'نوفمبر ٢٠٢٦'**
   String get consentTermsUpdated;
+
+  /// Care sheet: opens the games hub.
+  ///
+  /// In ar, this message translates to:
+  /// **'ألعاب زادو'**
+  String get gamesHubButton;
+
+  /// Games hub: app bar title.
+  ///
+  /// In ar, this message translates to:
+  /// **'ألعاب زادو'**
+  String get gamesHubTitle;
+
+  /// Games: back button.
+  ///
+  /// In ar, this message translates to:
+  /// **'رجوع'**
+  String get gamesBackTooltip;
+
+  /// Games hub: header line.
+  ///
+  /// In ar, this message translates to:
+  /// **'العب، كمّل السلسلة، اكسب بذور'**
+  String get gamesHubIntro;
+
+  /// Games hub: the daily challenge line.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحدي النهارده: {target} نقطة في «{game}»'**
+  String gamesHubToday(int target, String game);
+
+  /// Games hub: weekly box progress.
+  ///
+  /// In ar, this message translates to:
+  /// **'صندوق الأسبوع: {days} من {goal} أيام ورا بعض'**
+  String gamesHubWeekly(int days, int goal);
+
+  /// Games: the day streak.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =0{ابدأ سلسلتك النهارده} =1{يوم واحد} other{{count} أيام ورا بعض}}'**
+  String gamesHubStreak(int count);
+
+  /// Games: best score.
+  ///
+  /// In ar, this message translates to:
+  /// **'أحسن نتيجة: {score}'**
+  String gamesHubBest(int score);
+
+  /// Games hub: a game with no score yet.
+  ///
+  /// In ar, this message translates to:
+  /// **'لسه ما لعبتش'**
+  String get gamesHubNotPlayed;
+
+  /// Games hub: play button on a game card.
+  ///
+  /// In ar, this message translates to:
+  /// **'العب'**
+  String get gamesHubPlay;
+
+  /// Games hub: challenge met.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحدي النهارده خلص'**
+  String get gamesHubChallengeDone;
+
+  /// Game name.
+  ///
+  /// In ar, this message translates to:
+  /// **'اصطاد الكورة'**
+  String get gameNameBall;
+
+  /// Game name.
+  ///
+  /// In ar, this message translates to:
+  /// **'نطّة زادو'**
+  String get gameNameRun;
+
+  /// Game name.
+  ///
+  /// In ar, this message translates to:
+  /// **'زادو بيرتّب'**
+  String get gameNameSort;
+
+  /// Game name.
+  ///
+  /// In ar, this message translates to:
+  /// **'اصطاد النجوم'**
+  String get gameNameStar;
+
+  /// Game card text.
+  ///
+  /// In ar, this message translates to:
+  /// **'كورة بتهرب، اصطادها بسرعة وكوّن كومبو'**
+  String get gameBlurbBall;
+
+  /// Game card text.
+  ///
+  /// In ar, this message translates to:
+  /// **'انط فوق الصناديق وخد البذور والسرعة بتزيد'**
+  String get gameBlurbRun;
+
+  /// Game card text.
+  ///
+  /// In ar, this message translates to:
+  /// **'ادمج البذور المتشابهة، ولغز جديد كل يوم'**
+  String get gameBlurbSort;
+
+  /// Game card text.
+  ///
+  /// In ar, this message translates to:
+  /// **'حرّك زادو وامسك النجوم قبل ما تقع'**
+  String get gameBlurbStar;
+
+  /// Game end card: best score.
+  ///
+  /// In ar, this message translates to:
+  /// **'أحسن نتيجة: {score}'**
+  String gameBest(int score);
+
+  /// Game end card: best beaten.
+  ///
+  /// In ar, this message translates to:
+  /// **'رقم قياسي جديد!'**
+  String get gameNewBest;
+
+  /// Game end card title.
+  ///
+  /// In ar, this message translates to:
+  /// **'خلصت الجولة'**
+  String get gameEndTitle;
+
+  /// Game end card score.
+  ///
+  /// In ar, this message translates to:
+  /// **'{score} نقطة'**
+  String gameEndScore(int score);
+
+  /// Game end card: challenge.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحدي النهارده: اوصل {target} نقطة'**
+  String gameChallenge(int target);
+
+  /// Game end card: challenge progress.
+  ///
+  /// In ar, this message translates to:
+  /// **'{done} من {target}'**
+  String gameChallengeProgress(int done, int target);
+
+  /// Game end card: challenge met.
+  ///
+  /// In ar, this message translates to:
+  /// **'خلصت التحدي النهارده، برافو!'**
+  String get gameChallengeDone;
+
+  /// Game end card: seeds granted.
+  ///
+  /// In ar, this message translates to:
+  /// **'+{count} بذور'**
+  String gameSeedsGranted(int count);
+
+  /// Game end card: daily allowance left.
+  ///
+  /// In ar, this message translates to:
+  /// **'باقي {count} بذور النهارده'**
+  String gameSeedsLeft(int count);
+
+  /// Game end card: allowance used up.
+  ///
+  /// In ar, this message translates to:
+  /// **'وصلت للحد اليومي للبذور'**
+  String get gameSeedsCapped;
+
+  /// Game end card: rewarded ad to double.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضاعف البذور'**
+  String get gameDouble;
+
+  /// Game end card: under the double button.
+  ///
+  /// In ar, this message translates to:
+  /// **'بإعلان قصير'**
+  String get gameDoubleHint;
+
+  /// Game end card: resume after an ad.
+  ///
+  /// In ar, this message translates to:
+  /// **'كمّل من مكانك'**
+  String get gameContinue;
+
+  /// Game end card: under continue.
+  ///
+  /// In ar, this message translates to:
+  /// **'بإعلان قصير، مرة واحدة في الجولة'**
+  String get gameContinueHint;
+
+  /// Game end card: the ad did not play.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش إعلان متاح دلوقتي'**
+  String get gameAdUnavailable;
+
+  /// Game end card: restart.
+  ///
+  /// In ar, this message translates to:
+  /// **'جولة تانية'**
+  String get gameAgain;
+
+  /// Game end card: leave.
+  ///
+  /// In ar, this message translates to:
+  /// **'خلصت'**
+  String get gameDone;
+
+  /// Game: shown after the app was left.
+  ///
+  /// In ar, this message translates to:
+  /// **'اللعبة واقفة'**
+  String get gamePaused;
+
+  /// Game: resume after a pause.
+  ///
+  /// In ar, this message translates to:
+  /// **'كمّل'**
+  String get gameResume;
+
+  /// Game: score for TalkBack.
+  ///
+  /// In ar, this message translates to:
+  /// **'النقط {score}'**
+  String gameScoreSemantics(int score);
+
+  /// Game: combo multiplier.
+  ///
+  /// In ar, this message translates to:
+  /// **'كومبو ×{n}'**
+  String gameCombo(int n);
+
+  /// Game: level.
+  ///
+  /// In ar, this message translates to:
+  /// **'مستوى {n}'**
+  String gameLevel(int n);
+
+  /// Game: lives for TalkBack.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =0{مفيش محاولات} =1{محاولة واحدة} other{{count} محاولات}}'**
+  String gameLives(int count);
+
+  /// Runner: title.
+  ///
+  /// In ar, this message translates to:
+  /// **'نطّة {name}'**
+  String runGameTitle(String name);
+
+  /// Runner: before the first tap.
+  ///
+  /// In ar, this message translates to:
+  /// **'المس الشاشة عشان {name} ينط'**
+  String runGameHint(String name);
+
+  /// Runner: end card title.
+  ///
+  /// In ar, this message translates to:
+  /// **'{name} خبط!'**
+  String runGameHit(String name);
+
+  /// Runner: seeds for TalkBack.
+  ///
+  /// In ar, this message translates to:
+  /// **'بذور {count}'**
+  String runGameSeedsSemantics(int count);
+
+  /// Sort game: title.
+  ///
+  /// In ar, this message translates to:
+  /// **'زادو بيرتّب'**
+  String get sortGameTitle;
+
+  /// Sort game: hint.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسحب في أي اتجاه أو استخدم الأسهم، وادمج البذور المتشابهة'**
+  String get sortGameHint;
+
+  /// Sort game: the daily puzzle tag.
+  ///
+  /// In ar, this message translates to:
+  /// **'لغز النهارده'**
+  String get sortGameDaily;
+
+  /// Sort game: end card title.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش حركات تانية'**
+  String get sortGameStuck;
+
+  /// Sort game: arrow label.
+  ///
+  /// In ar, this message translates to:
+  /// **'يسار'**
+  String get sortGameLeft;
+
+  /// Sort game: arrow label.
+  ///
+  /// In ar, this message translates to:
+  /// **'يمين'**
+  String get sortGameRight;
+
+  /// Sort game: arrow label.
+  ///
+  /// In ar, this message translates to:
+  /// **'فوق'**
+  String get sortGameUp;
+
+  /// Sort game: arrow label.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحت'**
+  String get sortGameDown;
+
+  /// Sort game: tile for TalkBack.
+  ///
+  /// In ar, this message translates to:
+  /// **'بذرة بمستوى {value}'**
+  String sortGameTile(int value);
+
+  /// Star game: title.
+  ///
+  /// In ar, this message translates to:
+  /// **'اصطاد النجوم'**
+  String get starGameTitle;
+
+  /// Star game: hint.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسحب {name} يمين وشمال عشان يمسك النجوم'**
+  String starGameHint(String name);
+
+  /// Star game: end card title.
+  ///
+  /// In ar, this message translates to:
+  /// **'النجوم خلصت منك'**
+  String get starGameOver;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

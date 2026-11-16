@@ -3674,5 +3674,346 @@
   "consentTermsUpdated": "نوفمبر ٢٠٢٦",
   "@consentTermsUpdated": {
     "description": "The month the terms were last updated, on the consent sheet; keep it equal to kTermsLastUpdated."
+  },
+  "gamesHubButton": "ألعاب زادو",
+  "@gamesHubButton": {
+    "description": "Care sheet: opens the games hub."
+  },
+  "gamesHubTitle": "ألعاب زادو",
+  "@gamesHubTitle": {
+    "description": "Games hub: app bar title."
+  },
+  "gamesBackTooltip": "رجوع",
+  "@gamesBackTooltip": {
+    "description": "Games: back button."
+  },
+  "gamesHubIntro": "العب، كمّل السلسلة، اكسب بذور",
+  "@gamesHubIntro": {
+    "description": "Games hub: header line."
+  },
+  "gamesHubToday": "تحدي النهارده: {target} نقطة في «{game}»",
+  "@gamesHubToday": {
+    "description": "Games hub: the daily challenge line.",
+    "placeholders": {
+      "target": {
+        "type": "int"
+      },
+      "game": {
+        "type": "String"
+      }
+    }
+  },
+  "gamesHubWeekly": "صندوق الأسبوع: {days} من {goal} أيام ورا بعض",
+  "@gamesHubWeekly": {
+    "description": "Games hub: weekly box progress.",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      },
+      "goal": {
+        "type": "int"
+      }
+    }
+  },
+  "gamesHubStreak": "{count, plural, =0{ابدأ سلسلتك النهارده} =1{يوم واحد} other{{count} أيام ورا بعض}}",
+  "@gamesHubStreak": {
+    "description": "Games: the day streak.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "gamesHubBest": "أحسن نتيجة: {score}",
+  "@gamesHubBest": {
+    "description": "Games: best score.",
+    "placeholders": {
+      "score": {
+        "type": "int"
+      }
+    }
+  },
+  "gamesHubNotPlayed": "لسه ما لعبتش",
+  "@gamesHubNotPlayed": {
+    "description": "Games hub: a game with no score yet."
+  },
+  "gamesHubPlay": "العب",
+  "@gamesHubPlay": {
+    "description": "Games hub: play button on a game card."
+  },
+  "gamesHubChallengeDone": "تحدي النهارده خلص",
+  "@gamesHubChallengeDone": {
+    "description": "Games hub: challenge met."
+  },
+  "gameNameBall": "اصطاد الكورة",
+  "@gameNameBall": {
+    "description": "Game name."
+  },
+  "gameNameRun": "نطّة زادو",
+  "@gameNameRun": {
+    "description": "Game name."
+  },
+  "gameNameSort": "زادو بيرتّب",
+  "@gameNameSort": {
+    "description": "Game name."
+  },
+  "gameNameStar": "اصطاد النجوم",
+  "@gameNameStar": {
+    "description": "Game name."
+  },
+  "gameBlurbBall": "كورة بتهرب، اصطادها بسرعة وكوّن كومبو",
+  "@gameBlurbBall": {
+    "description": "Game card text."
+  },
+  "gameBlurbRun": "انط فوق الصناديق وخد البذور والسرعة بتزيد",
+  "@gameBlurbRun": {
+    "description": "Game card text."
+  },
+  "gameBlurbSort": "ادمج البذور المتشابهة، ولغز جديد كل يوم",
+  "@gameBlurbSort": {
+    "description": "Game card text."
+  },
+  "gameBlurbStar": "حرّك زادو وامسك النجوم قبل ما تقع",
+  "@gameBlurbStar": {
+    "description": "Game card text."
+  },
+  "gameBest": "أحسن نتيجة: {score}",
+  "@gameBest": {
+    "description": "Game end card: best score.",
+    "placeholders": {
+      "score": {
+        "type": "int"
+      }
+    }
+  },
+  "gameNewBest": "رقم قياسي جديد!",
+  "@gameNewBest": {
+    "description": "Game end card: best beaten."
+  },
+  "gameEndTitle": "خلصت الجولة",
+  "@gameEndTitle": {
+    "description": "Game end card title."
+  },
+  "gameEndScore": "{score} نقطة",
+  "@gameEndScore": {
+    "description": "Game end card score.",
+    "placeholders": {
+      "score": {
+        "type": "int"
+      }
+    }
+  },
+  "gameChallenge": "تحدي النهارده: اوصل {target} نقطة",
+  "@gameChallenge": {
+    "description": "Game end card: challenge.",
+    "placeholders": {
+      "target": {
+        "type": "int"
+      }
+    }
+  },
+  "gameChallengeProgress": "{done} من {target}",
+  "@gameChallengeProgress": {
+    "description": "Game end card: challenge progress.",
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "target": {
+        "type": "int"
+      }
+    }
+  },
+  "gameChallengeDone": "خلصت التحدي النهارده، برافو!",
+  "@gameChallengeDone": {
+    "description": "Game end card: challenge met."
+  },
+  "gameSeedsGranted": "+{count} بذور",
+  "@gameSeedsGranted": {
+    "description": "Game end card: seeds granted.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "gameSeedsLeft": "باقي {count} بذور النهارده",
+  "@gameSeedsLeft": {
+    "description": "Game end card: daily allowance left.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "gameSeedsCapped": "وصلت للحد اليومي للبذور",
+  "@gameSeedsCapped": {
+    "description": "Game end card: allowance used up."
+  },
+  "gameDouble": "ضاعف البذور",
+  "@gameDouble": {
+    "description": "Game end card: rewarded ad to double."
+  },
+  "gameDoubleHint": "بإعلان قصير",
+  "@gameDoubleHint": {
+    "description": "Game end card: under the double button."
+  },
+  "gameContinue": "كمّل من مكانك",
+  "@gameContinue": {
+    "description": "Game end card: resume after an ad."
+  },
+  "gameContinueHint": "بإعلان قصير، مرة واحدة في الجولة",
+  "@gameContinueHint": {
+    "description": "Game end card: under continue."
+  },
+  "gameAdUnavailable": "مفيش إعلان متاح دلوقتي",
+  "@gameAdUnavailable": {
+    "description": "Game end card: the ad did not play."
+  },
+  "gameAgain": "جولة تانية",
+  "@gameAgain": {
+    "description": "Game end card: restart."
+  },
+  "gameDone": "خلصت",
+  "@gameDone": {
+    "description": "Game end card: leave."
+  },
+  "gamePaused": "اللعبة واقفة",
+  "@gamePaused": {
+    "description": "Game: shown after the app was left."
+  },
+  "gameResume": "كمّل",
+  "@gameResume": {
+    "description": "Game: resume after a pause."
+  },
+  "gameScoreSemantics": "النقط {score}",
+  "@gameScoreSemantics": {
+    "description": "Game: score for TalkBack.",
+    "placeholders": {
+      "score": {
+        "type": "int"
+      }
+    }
+  },
+  "gameCombo": "كومبو ×{n}",
+  "@gameCombo": {
+    "description": "Game: combo multiplier.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "gameLevel": "مستوى {n}",
+  "@gameLevel": {
+    "description": "Game: level.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "gameLives": "{count, plural, =0{مفيش محاولات} =1{محاولة واحدة} other{{count} محاولات}}",
+  "@gameLives": {
+    "description": "Game: lives for TalkBack.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "runGameTitle": "نطّة {name}",
+  "@runGameTitle": {
+    "description": "Runner: title.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "runGameHint": "المس الشاشة عشان {name} ينط",
+  "@runGameHint": {
+    "description": "Runner: before the first tap.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "runGameHit": "{name} خبط!",
+  "@runGameHit": {
+    "description": "Runner: end card title.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "runGameSeedsSemantics": "بذور {count}",
+  "@runGameSeedsSemantics": {
+    "description": "Runner: seeds for TalkBack.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sortGameTitle": "زادو بيرتّب",
+  "@sortGameTitle": {
+    "description": "Sort game: title."
+  },
+  "sortGameHint": "اسحب في أي اتجاه أو استخدم الأسهم، وادمج البذور المتشابهة",
+  "@sortGameHint": {
+    "description": "Sort game: hint."
+  },
+  "sortGameDaily": "لغز النهارده",
+  "@sortGameDaily": {
+    "description": "Sort game: the daily puzzle tag."
+  },
+  "sortGameStuck": "مفيش حركات تانية",
+  "@sortGameStuck": {
+    "description": "Sort game: end card title."
+  },
+  "sortGameLeft": "يسار",
+  "@sortGameLeft": {
+    "description": "Sort game: arrow label."
+  },
+  "sortGameRight": "يمين",
+  "@sortGameRight": {
+    "description": "Sort game: arrow label."
+  },
+  "sortGameUp": "فوق",
+  "@sortGameUp": {
+    "description": "Sort game: arrow label."
+  },
+  "sortGameDown": "تحت",
+  "@sortGameDown": {
+    "description": "Sort game: arrow label."
+  },
+  "sortGameTile": "بذرة بمستوى {value}",
+  "@sortGameTile": {
+    "description": "Sort game: tile for TalkBack.",
+    "placeholders": {
+      "value": {
+        "type": "int"
+      }
+    }
+  },
+  "starGameTitle": "اصطاد النجوم",
+  "@starGameTitle": {
+    "description": "Star game: title."
+  },
+  "starGameHint": "اسحب {name} يمين وشمال عشان يمسك النجوم",
+  "@starGameHint": {
+    "description": "Star game: hint.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "starGameOver": "النجوم خلصت منك",
+  "@starGameOver": {
+    "description": "Star game: end card title."
   }
 }

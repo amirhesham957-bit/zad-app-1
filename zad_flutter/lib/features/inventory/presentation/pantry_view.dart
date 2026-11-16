@@ -1584,10 +1584,7 @@ class _AddState extends ConsumerState<_AddInventoryDialog> {
                   for (var i = 1; i < _categoryDefs.length; i++)
                     DropdownMenuEntry<int>(
                       value: i - 1,
-                      label: _categoryLabel(
-                        context.l10n,
-                        _categoryDefs[i].key,
-                      ),
+                      label: _categoryLabel(context.l10n, _categoryDefs[i].key),
                       leadingIcon: Icon(
                         _categoryDefs[i].icon,
                         size: 18,

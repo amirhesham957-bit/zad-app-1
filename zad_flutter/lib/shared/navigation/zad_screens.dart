@@ -159,6 +159,9 @@ abstract final class ZadScreens {
   /// «استوديو الرفيق».
   static late OpenScreen showCompanionStudio;
 
+  /// «ألعاب زادو»: the games hub.
+  static late OpenScreen showGamesHub;
+
   // ── paywall
   /// The subscription paywall.
   static late OpenScreen showPaywallScreen;

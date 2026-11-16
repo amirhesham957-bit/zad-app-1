@@ -4255,6 +4255,235 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get consentTermsUpdated => 'نوفمبر ٢٠٢٦';
+
+  @override
+  String get gamesHubButton => 'ألعاب زادو';
+
+  @override
+  String get gamesHubTitle => 'ألعاب زادو';
+
+  @override
+  String get gamesBackTooltip => 'رجوع';
+
+  @override
+  String get gamesHubIntro => 'العب، كمّل السلسلة، اكسب بذور';
+
+  @override
+  String gamesHubToday(int target, String game) {
+    return 'تحدي النهارده: $target نقطة في «$game»';
+  }
+
+  @override
+  String gamesHubWeekly(int days, int goal) {
+    return 'صندوق الأسبوع: $days من $goal أيام ورا بعض';
+  }
+
+  @override
+  String gamesHubStreak(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count أيام ورا بعض',
+      one: 'يوم واحد',
+      zero: 'ابدأ سلسلتك النهارده',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String gamesHubBest(int score) {
+    return 'أحسن نتيجة: $score';
+  }
+
+  @override
+  String get gamesHubNotPlayed => 'لسه ما لعبتش';
+
+  @override
+  String get gamesHubPlay => 'العب';
+
+  @override
+  String get gamesHubChallengeDone => 'تحدي النهارده خلص';
+
+  @override
+  String get gameNameBall => 'اصطاد الكورة';
+
+  @override
+  String get gameNameRun => 'نطّة زادو';
+
+  @override
+  String get gameNameSort => 'زادو بيرتّب';
+
+  @override
+  String get gameNameStar => 'اصطاد النجوم';
+
+  @override
+  String get gameBlurbBall => 'كورة بتهرب، اصطادها بسرعة وكوّن كومبو';
+
+  @override
+  String get gameBlurbRun => 'انط فوق الصناديق وخد البذور والسرعة بتزيد';
+
+  @override
+  String get gameBlurbSort => 'ادمج البذور المتشابهة، ولغز جديد كل يوم';
+
+  @override
+  String get gameBlurbStar => 'حرّك زادو وامسك النجوم قبل ما تقع';
+
+  @override
+  String gameBest(int score) {
+    return 'أحسن نتيجة: $score';
+  }
+
+  @override
+  String get gameNewBest => 'رقم قياسي جديد!';
+
+  @override
+  String get gameEndTitle => 'خلصت الجولة';
+
+  @override
+  String gameEndScore(int score) {
+    return '$score نقطة';
+  }
+
+  @override
+  String gameChallenge(int target) {
+    return 'تحدي النهارده: اوصل $target نقطة';
+  }
+
+  @override
+  String gameChallengeProgress(int done, int target) {
+    return '$done من $target';
+  }
+
+  @override
+  String get gameChallengeDone => 'خلصت التحدي النهارده، برافو!';
+
+  @override
+  String gameSeedsGranted(int count) {
+    return '+$count بذور';
+  }
+
+  @override
+  String gameSeedsLeft(int count) {
+    return 'باقي $count بذور النهارده';
+  }
+
+  @override
+  String get gameSeedsCapped => 'وصلت للحد اليومي للبذور';
+
+  @override
+  String get gameDouble => 'ضاعف البذور';
+
+  @override
+  String get gameDoubleHint => 'بإعلان قصير';
+
+  @override
+  String get gameContinue => 'كمّل من مكانك';
+
+  @override
+  String get gameContinueHint => 'بإعلان قصير، مرة واحدة في الجولة';
+
+  @override
+  String get gameAdUnavailable => 'مفيش إعلان متاح دلوقتي';
+
+  @override
+  String get gameAgain => 'جولة تانية';
+
+  @override
+  String get gameDone => 'خلصت';
+
+  @override
+  String get gamePaused => 'اللعبة واقفة';
+
+  @override
+  String get gameResume => 'كمّل';
+
+  @override
+  String gameScoreSemantics(int score) {
+    return 'النقط $score';
+  }
+
+  @override
+  String gameCombo(int n) {
+    return 'كومبو ×$n';
+  }
+
+  @override
+  String gameLevel(int n) {
+    return 'مستوى $n';
+  }
+
+  @override
+  String gameLives(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count محاولات',
+      one: 'محاولة واحدة',
+      zero: 'مفيش محاولات',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String runGameTitle(String name) {
+    return 'نطّة $name';
+  }
+
+  @override
+  String runGameHint(String name) {
+    return 'المس الشاشة عشان $name ينط';
+  }
+
+  @override
+  String runGameHit(String name) {
+    return '$name خبط!';
+  }
+
+  @override
+  String runGameSeedsSemantics(int count) {
+    return 'بذور $count';
+  }
+
+  @override
+  String get sortGameTitle => 'زادو بيرتّب';
+
+  @override
+  String get sortGameHint =>
+      'اسحب في أي اتجاه أو استخدم الأسهم، وادمج البذور المتشابهة';
+
+  @override
+  String get sortGameDaily => 'لغز النهارده';
+
+  @override
+  String get sortGameStuck => 'مفيش حركات تانية';
+
+  @override
+  String get sortGameLeft => 'يسار';
+
+  @override
+  String get sortGameRight => 'يمين';
+
+  @override
+  String get sortGameUp => 'فوق';
+
+  @override
+  String get sortGameDown => 'تحت';
+
+  @override
+  String sortGameTile(int value) {
+    return 'بذرة بمستوى $value';
+  }
+
+  @override
+  String get starGameTitle => 'اصطاد النجوم';
+
+  @override
+  String starGameHint(String name) {
+    return 'اسحب $name يمين وشمال عشان يمسك النجوم';
+  }
+
+  @override
+  String get starGameOver => 'النجوم خلصت منك';
 }
 
 /// The translations for Arabic, as used in Saudi Arabia (`ar_SA`).
@@ -5381,4 +5610,69 @@ class ZadL10nArSa extends ZadL10nAr {
   @override
   String get consentPoint4Body =>
       'راجع الأرقام قبل أي قرار؛ زاد مو بنك ولا مستشار مالي.';
+
+  @override
+  String get gamesHubIntro => 'العب، كمّل السلسلة، واكسب بذور';
+
+  @override
+  String gamesHubToday(int target, String game) {
+    return 'تحدي اليوم: $target نقطة في «$game»';
+  }
+
+  @override
+  String gamesHubStreak(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count أيام ورا بعض',
+      one: 'يوم واحد',
+      zero: 'ابدأ سلسلتك اليوم',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get gamesHubNotPlayed => 'ما لعبت للحين';
+
+  @override
+  String get gamesHubChallengeDone => 'تحدي اليوم خلص';
+
+  @override
+  String gameChallenge(int target) {
+    return 'تحدي اليوم: وصّل $target نقطة';
+  }
+
+  @override
+  String get gameChallengeDone => 'خلصت التحدي اليوم، برافو!';
+
+  @override
+  String gameSeedsLeft(int count) {
+    return 'باقي $count بذور اليوم';
+  }
+
+  @override
+  String get gameAdUnavailable => 'ما فيه إعلان متاح الحين';
+
+  @override
+  String gameLives(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count محاولات',
+      one: 'محاولة واحدة',
+      zero: 'ما فيه محاولات',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String runGameHint(String name) {
+    return 'المس الشاشة عشان $name يقفز';
+  }
+
+  @override
+  String get sortGameDaily => 'لغز اليوم';
+
+  @override
+  String get sortGameStuck => 'ما فيه حركات ثانية';
 }

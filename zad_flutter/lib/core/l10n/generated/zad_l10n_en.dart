@@ -4368,4 +4368,235 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get consentTermsUpdated => 'November 2026';
+
+  @override
+  String get gamesHubButton => 'Zado\'s games';
+
+  @override
+  String get gamesHubTitle => 'Zado\'s games';
+
+  @override
+  String get gamesBackTooltip => 'Back';
+
+  @override
+  String get gamesHubIntro => 'Play, keep the streak, earn seeds';
+
+  @override
+  String gamesHubToday(int target, String game) {
+    return 'Today\'s challenge: $target points in \"$game\"';
+  }
+
+  @override
+  String gamesHubWeekly(int days, int goal) {
+    return 'Weekly box: $days of $goal days in a row';
+  }
+
+  @override
+  String gamesHubStreak(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count days in a row',
+      one: '1 day',
+      zero: 'Start your streak today',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String gamesHubBest(int score) {
+    return 'Best: $score';
+  }
+
+  @override
+  String get gamesHubNotPlayed => 'Not played yet';
+
+  @override
+  String get gamesHubPlay => 'Play';
+
+  @override
+  String get gamesHubChallengeDone => 'Today\'s challenge done';
+
+  @override
+  String get gameNameBall => 'Catch the ball';
+
+  @override
+  String get gameNameRun => 'Zado\'s Hop';
+
+  @override
+  String get gameNameSort => 'Zado Sorts';
+
+  @override
+  String get gameNameStar => 'Catch the Stars';
+
+  @override
+  String get gameBlurbBall =>
+      'A ball keeps dodging: catch it fast and build a combo';
+
+  @override
+  String get gameBlurbRun =>
+      'Jump the crates, grab seeds, the pace keeps rising';
+
+  @override
+  String get gameBlurbSort => 'Merge matching seeds, a new puzzle every day';
+
+  @override
+  String get gameBlurbStar => 'Move Zado and catch the stars before they land';
+
+  @override
+  String gameBest(int score) {
+    return 'Best: $score';
+  }
+
+  @override
+  String get gameNewBest => 'New best!';
+
+  @override
+  String get gameEndTitle => 'Round over';
+
+  @override
+  String gameEndScore(int score) {
+    return '$score points';
+  }
+
+  @override
+  String gameChallenge(int target) {
+    return 'Today\'s challenge: reach $target points';
+  }
+
+  @override
+  String gameChallengeProgress(int done, int target) {
+    return '$done of $target';
+  }
+
+  @override
+  String get gameChallengeDone => 'Challenge done today, well played!';
+
+  @override
+  String gameSeedsGranted(int count) {
+    return '+$count seeds';
+  }
+
+  @override
+  String gameSeedsLeft(int count) {
+    return '$count seeds left today';
+  }
+
+  @override
+  String get gameSeedsCapped => 'Daily seed limit reached';
+
+  @override
+  String get gameDouble => 'Double the seeds';
+
+  @override
+  String get gameDoubleHint => 'With a short ad';
+
+  @override
+  String get gameContinue => 'Continue from here';
+
+  @override
+  String get gameContinueHint => 'With a short ad, once per round';
+
+  @override
+  String get gameAdUnavailable => 'No ad available right now';
+
+  @override
+  String get gameAgain => 'Play again';
+
+  @override
+  String get gameDone => 'Done';
+
+  @override
+  String get gamePaused => 'Game paused';
+
+  @override
+  String get gameResume => 'Resume';
+
+  @override
+  String gameScoreSemantics(int score) {
+    return 'Score $score';
+  }
+
+  @override
+  String gameCombo(int n) {
+    return 'Combo ×$n';
+  }
+
+  @override
+  String gameLevel(int n) {
+    return 'Level $n';
+  }
+
+  @override
+  String gameLives(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count lives',
+      one: '1 life',
+      zero: 'No lives left',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String runGameTitle(String name) {
+    return '$name\'s Hop';
+  }
+
+  @override
+  String runGameHint(String name) {
+    return 'Tap the screen to make $name jump';
+  }
+
+  @override
+  String runGameHit(String name) {
+    return '$name bumped!';
+  }
+
+  @override
+  String runGameSeedsSemantics(int count) {
+    return 'Seeds $count';
+  }
+
+  @override
+  String get sortGameTitle => 'Zado Sorts';
+
+  @override
+  String get sortGameHint =>
+      'Swipe any way or use the arrows, and merge matching seeds';
+
+  @override
+  String get sortGameDaily => 'Today\'s puzzle';
+
+  @override
+  String get sortGameStuck => 'No moves left';
+
+  @override
+  String get sortGameLeft => 'Left';
+
+  @override
+  String get sortGameRight => 'Right';
+
+  @override
+  String get sortGameUp => 'Up';
+
+  @override
+  String get sortGameDown => 'Down';
+
+  @override
+  String sortGameTile(int value) {
+    return 'Seed of level $value';
+  }
+
+  @override
+  String get starGameTitle => 'Catch the Stars';
+
+  @override
+  String starGameHint(String name) {
+    return 'Drag $name left and right to catch the stars';
+  }
+
+  @override
+  String get starGameOver => 'The stars got away';
 }

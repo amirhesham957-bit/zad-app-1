@@ -90,9 +90,7 @@ void main() {
     expect(bot, 1);
   });
 
-  testWidgets('a subscriber keeps the bot, no ad and no plans', (
-    tester,
-  ) async {
+  testWidgets('a subscriber keeps the bot, no ad and no plans', (tester) async {
     await _pump(tester, _balance(tier: 'premium'), ads: false);
     expect(find.byKey(const ValueKey<String>('watch-ad')), findsNothing);
     expect(

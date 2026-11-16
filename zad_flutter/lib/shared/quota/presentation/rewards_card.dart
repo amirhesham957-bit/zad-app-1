@@ -61,9 +61,7 @@ class RewardsCard extends ConsumerWidget {
                 const SizedBox(height: ZadSpacing.xs),
                 Text(
                   l.rewardsCardBody,
-                  style: ZadType.bodySmall.copyWith(
-                    color: ZadColors.inkMuted,
-                  ),
+                  style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
                 ),
                 const SizedBox(height: ZadSpacing.md),
                 const WatchAdButton(),
