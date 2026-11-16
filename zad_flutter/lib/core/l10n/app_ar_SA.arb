@@ -325,5 +325,8 @@
   "consentTitle": "قبل ما نبدأ، هذا اتفاقنا",
   "consentPoint3Lead": "ما نبيع بياناتك لأحد.",
   "consentPoint4Body": "راجع الأرقام قبل أي قرار؛ زاد مو بنك ولا مستشار مالي.",
-  "worldLinksHint": "اللي يصير هنا يأثر في:"
+  "worldLinksHint": "اللي يصير هنا يأثر في:",
+  "worldLabelPrices": "أسعار اليوم",
+  "pantryWorldEyebrow": "{count, plural, =0{للحين ما فيه أصناف} =1{صنف واحد} =2{صنفين} few{{count} أصناف} other{{count} صنف}}",
+  "pantryWorldState": "{count, plural, =0{ما فيه شي قرب يخلص} =1{شي واحد قرب يخلص} =2{شيين قربوا يخلصون} few{{count} أشياء قربت تخلص} other{{count} شي قرب يخلص}}"
 }

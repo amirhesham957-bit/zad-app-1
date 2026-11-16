@@ -184,6 +184,11 @@ abstract final class ZadScreens {
   })
   showAddMedicineSheet;
 
+  /// Photographs a medicine box and returns the reading (null when the
+  /// sheet was closed first); the pharmacy then opens its add form from it.
+  static late Future<ScannedMedicine?> Function(BuildContext context)
+  showMedicinePhotoSheet;
+
   // ── prices
   /// أسعار الناس.
   static late OpenScreen showPricesScreen;

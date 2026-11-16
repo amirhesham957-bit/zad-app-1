@@ -14,8 +14,12 @@ import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/zad_theme.dart';
 import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/inventory/presentation/pantry_view.dart';
+import 'package:zad/features/pharmacy/presentation/pharmacy_view.dart';
+import 'package:zad/shared/alerts/application/local_reminders.dart';
+import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/companion/application/companion_controller.dart';
 import 'package:zad/shared/companion/domain/companion_catalog.dart';
+import 'package:zad/shared/family/application/family_controller.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart'
     as pantry;
 import 'package:zad/shared/inventory/application/shopping_controller.dart';
@@ -23,11 +27,27 @@ import 'package:zad/shared/inventory/domain/inventory_item.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
 import 'package:zad/shared/orb/presentation/companion_orb.dart';
+import 'package:zad/shared/pharmacy/application/pharmacy_controller.dart' as ph;
+import 'package:zad/shared/pharmacy/domain/medicine.dart';
+import 'package:zad/shared/transactions/application/transactions_controller.dart';
 import 'package:zad/shared/worlds/world_scaffold.dart';
 import 'package:zad/shared/worlds/zad_world.dart';
 
 import '../../support/fonts.dart';
 import '../../support/quiet_household.dart';
+
+class _QuietBudget extends BudgetController {
+  @override
+  BudgetView build() => const BudgetView();
+}
+
+class _QuietTxns extends TransactionsController {
+  @override
+  TransactionsView build() => const TransactionsView();
+
+  @override
+  Future<void> refresh({bool force = false}) async {}
+}
 
 class _Quiet extends CustomPainter {
   new(this.loop) : super(repaint: loop);
@@ -219,6 +239,60 @@ void main() {
       await expectLater(
         find.byType(MaterialApp),
         matchesGoldenFile('../../../build/screens/world_inventory.png'),
+      );
+      await tester.pumpWidget(const SizedBox());
+    }, skip: Platform.environment['ZAD_SCREENS'] != '1');
+  });
+
+  group('the pharmacy world', () {
+    final med = Medicine.fromJson(<String, dynamic>{
+      'id': 'a',
+      'user_id': 'u',
+      'name': 'كونكور',
+      'daily_dose_count': 2,
+      'dose_times': '08:00,21:00',
+      'remaining_quantity': 12,
+      'unit': 'قرص',
+    });
+
+    Future<void> pumpPh(WidgetTester tester) async {
+      tester.view
+        ..physicalSize = const Size(360, 640)
+        ..devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      ZadScreens.worldScreen = (w) => (_) async {};
+      await tester.pumpWidget(
+        _app(
+          const Scaffold(body: PharmacyView()),
+          overrides: [
+            familyControllerProvider.overrideWith(QuietFamily.new),
+            localRemindersProvider.overrideWith(QuietReminders.new),
+            budgetControllerProvider.overrideWith(_QuietBudget.new),
+            transactionsControllerProvider.overrideWith(_QuietTxns.new),
+            nowProvider.overrideWithValue(() => DateTime.utc(2026, 9, 25, 9)),
+            accountTimeZoneProvider.overrideWithValue('Africa/Cairo'),
+            ph.pharmacyControllerProvider.overrideWith(
+              () => QuietPharmacy(ph.PharmacyView(medicines: [med])),
+            ),
+          ],
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 600));
+    }
+
+    testWidgets('has no overflow at 360x640', (tester) async {
+      await pumpPh(tester);
+      expect(tester.takeException(), isNull);
+      expect(find.text('الصيدلية'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('screenshot: the pharmacy world', (tester) async {
+      await loadZadFonts();
+      await pumpPh(tester);
+      await expectLater(
+        find.byType(MaterialApp),
+        matchesGoldenFile('../../../build/screens/world_pharmacy_own.png'),
       );
       await tester.pumpWidget(const SizedBox());
     }, skip: Platform.environment['ZAD_SCREENS'] != '1');
