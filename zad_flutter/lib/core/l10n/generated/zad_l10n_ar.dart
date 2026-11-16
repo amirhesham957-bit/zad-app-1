@@ -5540,5 +5540,36 @@ class ZadL10nArSa extends ZadL10nAr {
       'راجع الأرقام قبل أي قرار؛ زاد مو بنك ولا مستشار مالي.';
 
   @override
+  String get worldLabelPrices => 'أسعار اليوم';
+
+  @override
   String get worldLinksHint => 'اللي يصير هنا يأثر في:';
+
+  @override
+  String pantryWorldEyebrow(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count صنف',
+      few: '$count أصناف',
+      two: 'صنفين',
+      one: 'صنف واحد',
+      zero: 'للحين ما فيه أصناف',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String pantryWorldState(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count شي قرّب يخلص',
+      few: '$count أشياء قرّبت تخلص',
+      two: 'شيئين قرّبوا يخلصون',
+      one: 'شي واحد قرّب يخلص',
+      zero: 'ما فيه شي قرّب يخلص',
+    );
+    return '$_temp0';
+  }
 }
