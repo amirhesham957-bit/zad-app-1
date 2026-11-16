@@ -4507,4 +4507,51 @@ class ZadL10nEn extends ZadL10n {
   String pantryLegendOk(int count) {
     return '$count fine';
   }
+
+  @override
+  String txWorldEyebrow(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count transactions',
+      one: '1 transaction',
+      zero: 'No transactions yet',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String txWorldState(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count logged themselves today',
+      one: '1 logged itself today',
+      zero: 'Nothing logged itself today',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get txSourceBank => 'A bank message';
+
+  @override
+  String txSourceBankNamed(String bank) {
+    return '$bank · message';
+  }
+
+  @override
+  String get txSourceReceipt => 'A photographed receipt';
+
+  @override
+  String get txSourceVoice => 'You said it';
+
+  @override
+  String get txSourceStatement => 'From a statement';
+
+  @override
+  String get txSourcePharmacy => 'Pharmacy refill';
+
+  @override
+  String get txSourceManual => 'Typed by you';
 }

@@ -3829,5 +3829,56 @@
         "type": "int"
       }
     }
+  },
+  "txWorldEyebrow": "{count, plural, =0{لسه مفيش معاملات} =1{معاملة واحدة} =2{معاملتين} few{{count} معاملات} other{{count} معاملة}}",
+  "@txWorldEyebrow": {
+    "description": "Transactions world: the count above the title.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "txWorldState": "{count, plural, =0{لسه مفيش حاجة اتسجلت لوحدها النهارده} =1{واحدة اتسجلت لوحدها النهارده} =2{اتنين اتسجلوا لوحدهم النهارده} few{{count} اتسجلوا لوحدهم النهارده} other{{count} اتسجلوا لوحدهم النهارده}}",
+  "@txWorldState": {
+    "description": "Transactions world: the state line — how many rows the app wrote by itself today (bank message, receipt, voice, statement).",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "txSourceBank": "رسالة من البنك",
+  "@txSourceBank": {
+    "description": "Transaction source: a bank message, bank unknown."
+  },
+  "txSourceBankNamed": "{bank} · رسالة",
+  "@txSourceBankNamed": {
+    "description": "Transaction source: a message from a named bank.",
+    "placeholders": {
+      "bank": {
+        "type": "String"
+      }
+    }
+  },
+  "txSourceReceipt": "فاتورة اتصورت",
+  "@txSourceReceipt": {
+    "description": "Transaction source: a receipt photo."
+  },
+  "txSourceVoice": "قولتها بصوتك",
+  "@txSourceVoice": {
+    "description": "Transaction source: voice."
+  },
+  "txSourceStatement": "من كشف الحساب",
+  "@txSourceStatement": {
+    "description": "Transaction source: an imported statement."
+  },
+  "txSourcePharmacy": "تعبئة الصيدلية",
+  "@txSourcePharmacy": {
+    "description": "Transaction source: a pharmacy restock the app logged."
+  },
+  "txSourceManual": "كتبتها بإيدك",
+  "@txSourceManual": {
+    "description": "Transaction source: entered by hand."
   }
 }

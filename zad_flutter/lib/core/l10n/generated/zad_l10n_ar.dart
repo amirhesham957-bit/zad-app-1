@@ -4398,6 +4398,57 @@ class ZadL10nAr extends ZadL10n {
   String pantryLegendOk(int count) {
     return '$count تمام';
   }
+
+  @override
+  String txWorldEyebrow(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count معاملة',
+      few: '$count معاملات',
+      two: 'معاملتين',
+      one: 'معاملة واحدة',
+      zero: 'لسه مفيش معاملات',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String txWorldState(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count اتسجلوا لوحدهم النهارده',
+      few: '$count اتسجلوا لوحدهم النهارده',
+      two: 'اتنين اتسجلوا لوحدهم النهارده',
+      one: 'واحدة اتسجلت لوحدها النهارده',
+      zero: 'لسه مفيش حاجة اتسجلت لوحدها النهارده',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get txSourceBank => 'رسالة من البنك';
+
+  @override
+  String txSourceBankNamed(String bank) {
+    return '$bank · رسالة';
+  }
+
+  @override
+  String get txSourceReceipt => 'فاتورة اتصورت';
+
+  @override
+  String get txSourceVoice => 'قولتها بصوتك';
+
+  @override
+  String get txSourceStatement => 'من كشف الحساب';
+
+  @override
+  String get txSourcePharmacy => 'تعبئة الصيدلية';
+
+  @override
+  String get txSourceManual => 'كتبتها بإيدك';
 }
 
 /// The translations for Arabic, as used in Saudi Arabia (`ar_SA`).
@@ -5540,5 +5591,87 @@ class ZadL10nArSa extends ZadL10nAr {
       'راجع الأرقام قبل أي قرار؛ زاد مو بنك ولا مستشار مالي.';
 
   @override
+  String get worldLabelPrices => 'أسعار اليوم';
+
+  @override
   String get worldLinksHint => 'اللي يصير هنا يأثر في:';
+
+  @override
+  String pantryWorldEyebrow(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count صنف',
+      few: '$count أصناف',
+      two: 'صنفين',
+      one: 'صنف واحد',
+      zero: 'للحين ما فيه أصناف',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String pantryWorldState(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count شي قرّب يخلص',
+      few: '$count أشياء قرّبت تخلص',
+      two: 'شيئين قرّبوا يخلصون',
+      one: 'شي واحد قرّب يخلص',
+      zero: 'ما فيه شي قرّب يخلص',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String txWorldEyebrow(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count معاملة',
+      few: '$count معاملات',
+      two: 'معاملتين',
+      one: 'معاملة وحدة',
+      zero: 'للحين ما فيه معاملات',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String txWorldState(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count تسجّلوا بنفسهم اليوم',
+      few: '$count تسجّلوا بنفسهم اليوم',
+      two: 'ثنتين تسجّلوا بنفسهم اليوم',
+      one: 'وحدة تسجّلت بنفسها اليوم',
+      zero: 'للحين ما فيه شي تسجّل بنفسه اليوم',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get txSourceBank => 'رسالة من البنك';
+
+  @override
+  String txSourceBankNamed(String bank) {
+    return '$bank · رسالة';
+  }
+
+  @override
+  String get txSourceReceipt => 'فاتورة مصوّرة';
+
+  @override
+  String get txSourceVoice => 'قلتها بصوتك';
+
+  @override
+  String get txSourceStatement => 'من كشف الحساب';
+
+  @override
+  String get txSourcePharmacy => 'تعبئة الصيدلية';
+
+  @override
+  String get txSourceManual => 'كتبتها بيدك';
 }

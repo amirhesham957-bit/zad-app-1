@@ -7759,6 +7759,60 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'{count} تمام'**
   String pantryLegendOk(int count);
+
+  /// Transactions world: the count above the title.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =0{لسه مفيش معاملات} =1{معاملة واحدة} =2{معاملتين} few{{count} معاملات} other{{count} معاملة}}'**
+  String txWorldEyebrow(int count);
+
+  /// Transactions world: the state line — how many rows the app wrote by itself today (bank message, receipt, voice, statement).
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =0{لسه مفيش حاجة اتسجلت لوحدها النهارده} =1{واحدة اتسجلت لوحدها النهارده} =2{اتنين اتسجلوا لوحدهم النهارده} few{{count} اتسجلوا لوحدهم النهارده} other{{count} اتسجلوا لوحدهم النهارده}}'**
+  String txWorldState(int count);
+
+  /// Transaction source: a bank message, bank unknown.
+  ///
+  /// In ar, this message translates to:
+  /// **'رسالة من البنك'**
+  String get txSourceBank;
+
+  /// Transaction source: a message from a named bank.
+  ///
+  /// In ar, this message translates to:
+  /// **'{bank} · رسالة'**
+  String txSourceBankNamed(String bank);
+
+  /// Transaction source: a receipt photo.
+  ///
+  /// In ar, this message translates to:
+  /// **'فاتورة اتصورت'**
+  String get txSourceReceipt;
+
+  /// Transaction source: voice.
+  ///
+  /// In ar, this message translates to:
+  /// **'قولتها بصوتك'**
+  String get txSourceVoice;
+
+  /// Transaction source: an imported statement.
+  ///
+  /// In ar, this message translates to:
+  /// **'من كشف الحساب'**
+  String get txSourceStatement;
+
+  /// Transaction source: a pharmacy restock the app logged.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعبئة الصيدلية'**
+  String get txSourcePharmacy;
+
+  /// Transaction source: entered by hand.
+  ///
+  /// In ar, this message translates to:
+  /// **'كتبتها بإيدك'**
+  String get txSourceManual;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {
