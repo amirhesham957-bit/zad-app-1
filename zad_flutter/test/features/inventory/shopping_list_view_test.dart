@@ -26,6 +26,7 @@ ShoppingItem _s(
   double price = 0,
   ShoppingPriority priority = ShoppingPriority.medium,
   int qty = 1,
+  String? store,
 }) => ShoppingItem(
   id: id,
   userId: 'u',
@@ -33,6 +34,7 @@ ShoppingItem _s(
   quantity: qty,
   estimatedPrice: price,
   priority: priority,
+  store: store,
 );
 
 class _List extends QuietShopping {
@@ -40,12 +42,17 @@ class _List extends QuietShopping {
 
   final List<ShoppingItem> items;
   int refreshes = 0;
+  final List<(String, bool)> toggled = <(String, bool)>[];
 
   @override
   ShoppingView build() => ShoppingView(items: items);
 
   @override
   Future<void> refresh() async => refreshes++;
+
+  @override
+  Future<void> toggle(String id, {required bool purchased}) async =>
+      toggled.add((id, purchased));
 }
 
 class _Budget extends BudgetController {
@@ -141,7 +148,12 @@ void main() {
     bool failAi = false,
     List<ShoppingItem>? items,
     List<InventoryItem> pantry = const <InventoryItem>[],
+    bool still = true,
   }) async {
+    tester.view
+      ..physicalSize = const Size(430, 1600)
+      ..devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
     final ai = _Ai()..fail = failAi;
     list = _List(
       items ??
@@ -153,6 +165,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          ...quietOrbOverrides,
           adsAllowedProvider.overrideWithValue(false),
           shoppingControllerProvider.overrideWith(() => list),
           pantryControllerProvider.overrideWith(
@@ -164,6 +177,15 @@ void main() {
         ],
         child: MaterialApp(
           theme: ZadTheme.light(),
+          locale: const Locale('ar'),
+          supportedLocales: ZadL10n.supportedLocales,
+          localizationsDelegates: ZadL10n.localizationsDelegates,
+          // The world's scene loops for ever; a still phone lets the test
+          // settle.
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(disableAnimations: still),
+            child: child!,
+          ),
           home: const Directionality(
             textDirection: TextDirection.rtl,
             child: Scaffold(body: ShoppingListView()),
@@ -256,5 +278,92 @@ void main() {
     await tester.pump();
     expect(find.text('ماء إيلان × 4'), findsOneWidget);
     expect(find.text('كرتونة ماية × 4'), findsOneWidget);
+  });
+
+  testWidgets('has no overflow at 360x640', (tester) async {
+    await pump(tester);
+    tester.view
+      ..physicalSize = const Size(360, 640)
+      ..devicePixelRatio = 1;
+    await tester.pump();
+    expect(tester.takeException(), isNull);
+    expect(find.text('التسوق'), findsOneWidget);
+  });
+
+  testWidgets('with disableAnimations the scene is still', (tester) async {
+    await pump(tester);
+    await tester.pump(const Duration(seconds: 1));
+    expect(tester.binding.hasScheduledFrame, isFalse);
+  });
+
+  testWidgets('lines are grouped under the shop they are bought at', (
+    tester,
+  ) async {
+    await pump(
+      tester,
+      items: <ShoppingItem>[
+        _s('1', 'حمص', store: 'بنده'),
+        _s('2', 'حليب', store: 'بنده'),
+        _s('3', 'خل', store: 'الدانوب'),
+        _s('4', 'عيش'),
+      ],
+    );
+    expect(find.text('بنده'), findsOneWidget);
+    expect(find.text('الدانوب'), findsOneWidget);
+    expect(find.text('أي محل'), findsOneWidget);
+    expect(find.text('من محلين'), findsOneWidget, reason: 'the state line');
+    expect(find.textContaining('4 حاجات'), findsOneWidget, reason: 'eyebrow');
+  });
+
+  testWidgets('tapping a line buys it, and its drawing flies to the pantry '
+      'counter', (tester) async {
+    await pump(tester, still: false);
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.tap(find.text('لبن'));
+    await tester.pump();
+    expect(list.toggled, <(String, bool)>[('1', true)]);
+    // The flight is on the overlay for 600 ms, then gone.
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.byKey(const ValueKey<String>('art-flight')), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.byKey(const ValueKey<String>('art-flight')), findsNothing);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('with disableAnimations a bought line flies nowhere', (
+    tester,
+  ) async {
+    await pump(tester);
+    await tester.tap(find.text('لبن'));
+    await tester.pump();
+    expect(list.toggled, hasLength(1));
+    expect(find.byKey(const ValueKey<String>('art-flight')), findsNothing);
+  });
+
+  testWidgets('the pantry counter reads the real pantry', (tester) async {
+    await pump(
+      tester,
+      pantry: const <InventoryItem>[
+        InventoryItem(id: 'p1', userId: 'u', itemName: 'أرز', quantity: 2),
+        InventoryItem(id: 'p2', userId: 'u', itemName: 'سكر', quantity: 1),
+      ],
+    );
+    expect(find.text('في المخزن صنفين'), findsOneWidget);
+  });
+
+  testWidgets('the add bar docks under the list and adds a typed name', (
+    tester,
+  ) async {
+    await pump(tester);
+    await tester.enterText(find.byType(TextField), 'خيار');
+    await tester.pump();
+    await tester.tap(find.byTooltip('ضيف'));
+    await tester.pump();
+    expect((list as QuietShopping).added, <String>['خيار']);
+    final bar = tester.getRect(find.byType(TextField));
+    final scroll = tester.getRect(find.byType(CustomScrollView));
+    expect(scroll.bottom, lessThanOrEqualTo(bar.top));
   });
 }

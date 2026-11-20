@@ -85,14 +85,16 @@ abstract final class ZadEnv {
     'ADMOB_APP_OPEN_UNIT',
   );
 
-  /// Children's school zones (docs/agent/ZAD_LIVING_BRAIN.md slice 2). On by
-  /// default — the sideloaded APK. A Google Play build can pass
-  /// `--dart-define=ENABLE_KIDS_GEOFENCING=false` if review asks for it
-  /// (owner, 2026-10-03): the app then offers no zones and watches none, and
-  /// android/app/build.gradle.kts drops the isMonitoringTool declaration.
+  /// Children's school zones (docs/agent/ZAD_LIVING_BRAIN.md slice 2). Off by
+  /// default since 2026-11-20: Play rejected version code 11 for declaring the
+  /// isMonitoringTool flag, which is reserved for monitoring apps, so the
+  /// manifest no longer declares it, and a build that watched children's
+  /// locations without that declaration would break the same policy. With it
+  /// off the app offers no zones and watches none.
+  /// `--dart-define=ENABLE_KIDS_GEOFENCING=true` turns it back on for a
+  /// sideloaded build only.
   static const bool kidsGeofencing = bool.fromEnvironment(
     'ENABLE_KIDS_GEOFENCING',
-    defaultValue: true,
   );
 
   /// Whether both values were supplied at build time.
