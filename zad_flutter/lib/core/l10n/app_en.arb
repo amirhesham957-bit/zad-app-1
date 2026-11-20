@@ -1784,5 +1784,19 @@
   "apptInNow": "now",
   "apptInMinutes": "{count, plural, =1{in 1 minute} other{in {count} minutes}}",
   "apptInHours": "{count, plural, =1{in 1 hour} other{in {count} hours}}",
-  "apptInDays": "{count, plural, =1{in 1 day} other{in {count} days}}"
+  "apptInDays": "{count, plural, =1{in 1 day} other{in {count} days}}",
+  "notifMarkAllRead": "Mark all read",
+  "notifAllRead": "All read",
+  "achWorldState": "{done} of {total} achievements",
+  "achLevel": "Level {level}",
+  "achLevelPoints": "{points} of {next} points",
+  "achOnTrack": "You are on the right track!",
+  "achContributions": "Contributions",
+  "achStreak": "Streak",
+  "achShelf": "Achievements",
+  "achNext": "Next achievement",
+  "achLocked": "Locked",
+  "achLoadFailed": "Could not load the achievements",
+  "achLoadFailedHint": "Check your connection and try again",
+  "achRetry": "Try again"
 }

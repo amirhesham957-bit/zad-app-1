@@ -9319,6 +9319,90 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'{count, plural, =1{بعد يوم} =2{بعد يومين} few{بعد {count} أيام} other{بعد {count} يوم}}'**
   String apptInDays(int count);
+
+  /// Notifications / achievements world.
+  ///
+  /// In ar, this message translates to:
+  /// **'علّم الكل مقروء'**
+  String get notifMarkAllRead;
+
+  /// Notifications / achievements world.
+  ///
+  /// In ar, this message translates to:
+  /// **'كله مقروء'**
+  String get notifAllRead;
+
+  /// Notifications / achievements world.
+  ///
+  /// In ar, this message translates to:
+  /// **'{done} من {total} إنجاز'**
+  String achWorldState(int done, int total);
+
+  /// Notifications / achievements world.
+  ///
+  /// In ar, this message translates to:
+  /// **'المستوى {level}'**
+  String achLevel(int level);
+
+  /// Notifications / achievements world.
+  ///
+  /// In ar, this message translates to:
+  /// **'{points} من {next} نقطة'**
+  String achLevelPoints(int points, int next);
+
+  /// Notifications / achievements world.
+  ///
+  /// In ar, this message translates to:
+  /// **'أنت على الطريق الصحيح!'**
+  String get achOnTrack;
+
+  /// Notifications / achievements world.
+  ///
+  /// In ar, this message translates to:
+  /// **'المساهمات'**
+  String get achContributions;
+
+  /// Notifications / achievements world.
+  ///
+  /// In ar, this message translates to:
+  /// **'التسلسل'**
+  String get achStreak;
+
+  /// Notifications / achievements world.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإنجازات'**
+  String get achShelf;
+
+  /// Notifications / achievements world.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإنجاز التالي'**
+  String get achNext;
+
+  /// Notifications / achievements world.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقفول'**
+  String get achLocked;
+
+  /// Notifications / achievements world.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش قادرين نجيب الإنجازات دلوقتي'**
+  String get achLoadFailed;
+
+  /// Notifications / achievements world.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتأكد من النت وجرّب تاني'**
+  String get achLoadFailedHint;
+
+  /// Notifications / achievements world.
+  ///
+  /// In ar, this message translates to:
+  /// **'جرّب تاني'**
+  String get achRetry;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

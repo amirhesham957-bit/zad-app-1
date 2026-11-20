@@ -5473,6 +5473,54 @@ class ZadL10nAr extends ZadL10n {
     );
     return '$_temp0';
   }
+
+  @override
+  String get notifMarkAllRead => 'علّم الكل مقروء';
+
+  @override
+  String get notifAllRead => 'كله مقروء';
+
+  @override
+  String achWorldState(int done, int total) {
+    return '$done من $total إنجاز';
+  }
+
+  @override
+  String achLevel(int level) {
+    return 'المستوى $level';
+  }
+
+  @override
+  String achLevelPoints(int points, int next) {
+    return '$points من $next نقطة';
+  }
+
+  @override
+  String get achOnTrack => 'أنت على الطريق الصحيح!';
+
+  @override
+  String get achContributions => 'المساهمات';
+
+  @override
+  String get achStreak => 'التسلسل';
+
+  @override
+  String get achShelf => 'الإنجازات';
+
+  @override
+  String get achNext => 'الإنجاز التالي';
+
+  @override
+  String get achLocked => 'مقفول';
+
+  @override
+  String get achLoadFailed => 'مش قادرين نجيب الإنجازات دلوقتي';
+
+  @override
+  String get achLoadFailedHint => 'اتأكد من النت وجرّب تاني';
+
+  @override
+  String get achRetry => 'جرّب تاني';
 }
 
 /// The translations for Arabic, as used in Saudi Arabia (`ar_SA`).
@@ -7562,4 +7610,52 @@ class ZadL10nArSa extends ZadL10nAr {
     );
     return '$_temp0';
   }
+
+  @override
+  String get notifMarkAllRead => 'علّم الكل كمقروء';
+
+  @override
+  String get notifAllRead => 'الكل مقروء';
+
+  @override
+  String achWorldState(int done, int total) {
+    return '$done من $total إنجاز';
+  }
+
+  @override
+  String achLevel(int level) {
+    return 'المستوى $level';
+  }
+
+  @override
+  String achLevelPoints(int points, int next) {
+    return '$points من $next نقطة';
+  }
+
+  @override
+  String get achOnTrack => 'أنت على الطريق الصحيح!';
+
+  @override
+  String get achContributions => 'المساهمات';
+
+  @override
+  String get achStreak => 'التسلسل';
+
+  @override
+  String get achShelf => 'الإنجازات';
+
+  @override
+  String get achNext => 'الإنجاز التالي';
+
+  @override
+  String get achLocked => 'مقفول';
+
+  @override
+  String get achLoadFailed => 'ما قدرنا نجيب الإنجازات الحين';
+
+  @override
+  String get achLoadFailedHint => 'تأكد من الاتصال وحاول مرة ثانية';
+
+  @override
+  String get achRetry => 'حاول مرة ثانية';
 }

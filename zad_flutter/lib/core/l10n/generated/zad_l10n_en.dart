@@ -5567,4 +5567,52 @@ class ZadL10nEn extends ZadL10n {
     );
     return '$_temp0';
   }
+
+  @override
+  String get notifMarkAllRead => 'Mark all read';
+
+  @override
+  String get notifAllRead => 'All read';
+
+  @override
+  String achWorldState(int done, int total) {
+    return '$done of $total achievements';
+  }
+
+  @override
+  String achLevel(int level) {
+    return 'Level $level';
+  }
+
+  @override
+  String achLevelPoints(int points, int next) {
+    return '$points of $next points';
+  }
+
+  @override
+  String get achOnTrack => 'You are on the right track!';
+
+  @override
+  String get achContributions => 'Contributions';
+
+  @override
+  String get achStreak => 'Streak';
+
+  @override
+  String get achShelf => 'Achievements';
+
+  @override
+  String get achNext => 'Next achievement';
+
+  @override
+  String get achLocked => 'Locked';
+
+  @override
+  String get achLoadFailed => 'Could not load the achievements';
+
+  @override
+  String get achLoadFailedHint => 'Check your connection and try again';
+
+  @override
+  String get achRetry => 'Try again';
 }

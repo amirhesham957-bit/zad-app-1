@@ -544,5 +544,19 @@
   "apptInNow": "الحين",
   "apptInMinutes": "{count, plural, =1{بعد دقيقة} =2{بعد دقيقتين} few{بعد {count} دقائق} other{بعد {count} دقيقة}}",
   "apptInHours": "{count, plural, =1{بعد ساعة} =2{بعد ساعتين} few{بعد {count} ساعات} other{بعد {count} ساعة}}",
-  "apptInDays": "{count, plural, =1{بعد يوم} =2{بعد يومين} few{بعد {count} أيام} other{بعد {count} يوم}}"
+  "apptInDays": "{count, plural, =1{بعد يوم} =2{بعد يومين} few{بعد {count} أيام} other{بعد {count} يوم}}",
+  "notifMarkAllRead": "علّم الكل كمقروء",
+  "notifAllRead": "الكل مقروء",
+  "achWorldState": "{done} من {total} إنجاز",
+  "achLevel": "المستوى {level}",
+  "achLevelPoints": "{points} من {next} نقطة",
+  "achOnTrack": "أنت على الطريق الصحيح!",
+  "achContributions": "المساهمات",
+  "achStreak": "التسلسل",
+  "achShelf": "الإنجازات",
+  "achNext": "الإنجاز التالي",
+  "achLocked": "مقفول",
+  "achLoadFailed": "ما قدرنا نجيب الإنجازات الحين",
+  "achLoadFailedHint": "تأكد من الاتصال وحاول مرة ثانية",
+  "achRetry": "حاول مرة ثانية"
 }
