@@ -2161,9 +2161,42 @@
       }
     }
   },
-  "homeBankOffBanner": "⚠️ قراءة رسائل البنك متوقفة.. اضغط هنا لإعادة تفعيلها لتحديث رصيدك ومصاريفك تلقائياً",
-  "homeBankStalledHint": "لو هي مفعّلة: اطفيها وشغّلها تاني من الصفحة اللي هتفتح.",
-  "homeLocationOffBanner": "📍 موقعك غير مفعّل.. فعّل اللوكيشن عشان زاد يربط عروض السوبرماركت والمحلات القريبة منك ويقوم بمهامه صح",
+  "zadStatusTitle": "حالة زاد",
+  "zadStatusAllGood": "زاد شغال وبيتابع",
+  "zadStatusNeedsFix": "في حاجة واقفة ومحتاجة منك خطوة",
+  "zadStatusAllButOne": "كله شغال ما عدا: {what}",
+  "@zadStatusAllButOne": {
+    "placeholders": {
+      "what": {
+        "type": "String"
+      }
+    }
+  },
+  "zadStatusWorking": "شغال",
+  "zadStatusStopped": "واقف",
+  "zadStatusMaybe": "ممكن يقف",
+  "zadStatusBank": "قراءة رسائل البنك",
+  "zadStatusBankOk": "زاد بيقرا رسائل البنك ويسجّلها.",
+  "zadStatusBankOff": "قراءة رسائل البنك متوقفة. شغّلها عشان رصيدك ومصاريفك تتحدّث لوحدها.",
+  "zadStatusBankStalled": "الخدمة مابقتش بتشوف إشعارات من فترة. لو هي مفعّلة: اطفيها وشغّلها تاني من الصفحة اللي هتفتح.",
+  "zadStatusBankSilent": "مفعّلة، بس لسه ماجاتش ولا رسالة. لو مستني رسالة من البنك ومجتش: اطفيها وشغّلها تاني.",
+  "zadStatusNotifications": "الإشعارات",
+  "zadStatusNotificationsOk": "تنبيهات الجرعات والفواتير والميزانية بتوصلك.",
+  "zadStatusNotificationsOff": "الإشعارات مقفولة، فتنبيهات الجرعات والفواتير مش هتوصلك.",
+  "zadStatusLocation": "الموقع",
+  "zadStatusLocationOk": "الموقع شغال، والعروض والمحلات القريبة بتتحسب من مكانك.",
+  "zadStatusLocationServiceOff": "الموقع مقفول في الموبايل، فالقراءات مش هتبقى من مكانك الحقيقي.",
+  "zadStatusLocationDenied": "زاد مش مسموحله يعرف مكانك، فالعروض والمحلات القريبة مش هتشتغل.",
+  "zadStatusBackground": "الموقع طول الوقت",
+  "zadStatusBackgroundOk": "تنبيهات الطريق شغالة حتى والتطبيق مقفول.",
+  "zadStatusBackgroundOff": "من غير «طول الوقت» تنبيهات الطريق مش هتشتغل والتطبيق مقفول.",
+  "zadStatusBattery": "توفير البطارية",
+  "zadStatusBatteryOk": "الموبايل مش بيقيّد زاد في الخلفية.",
+  "zadStatusBatteryWarn": "الموبايل ممكن يوقف زاد في الخلفية. اختار «بدون قيود» عشان القراءة ماتقطعش.",
+  "zadStatusFixOpenSettings": "افتح الإعدادات",
+  "zadStatusFixAllow": "اسمح",
+  "zadStatusFixLocationOn": "شغّل الموقع",
+  "zadStatusFixBattery": "فكّ القيود",
   "homeLocationLater": "مش دلوقتي",
   "channelCardTitle": "مفيش طريقة أوصلك بيها",
   "channelCardBody": "الإشعارات مقفولة وتليجرام مش مربوط، فمواعيد الدوا والفواتير وتنبيه الميزانية مش هتوصلك. واحدة منهم كفاية.",
