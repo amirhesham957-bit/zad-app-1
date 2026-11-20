@@ -337,5 +337,6 @@
   "brainCardMapBody": "كيف ميزانيتك واشتراكاتك وبيتك مرتبطين ببعض — بملء الشاشة",
   "brainCardLogBody": "كل شي سجّله زاد أو عدّله لك، وتتراجع عنه لو غلط",
   "brainCardHealthBody": "زاد شغال في الخلفية ولا واقف — ولو واقف، ليش",
-  "brainNetworkEmptyTitle": "زاد للحين يتعلم عنك"
+  "brainNetworkEmptyTitle": "زاد للحين يتعلم عنك",
+  "brainTelemetryDecisions": "قرارات اليوم"
 }

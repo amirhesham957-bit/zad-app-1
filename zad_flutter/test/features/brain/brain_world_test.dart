@@ -3,6 +3,8 @@
 // hub still there, and a chip narrowing the map to an area and what it
 // touches.
 
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -12,6 +14,7 @@ import 'package:zad/features/brain/application/knowledge_map_controller.dart';
 import 'package:zad/features/brain/domain/knowledge_map.dart';
 import 'package:zad/features/brain/presentation/brain_hub_screen.dart';
 
+import '../../support/fonts.dart';
 import '../../support/quiet_household.dart';
 
 class _Map extends KnowledgeMapController {
@@ -28,11 +31,17 @@ class _Map extends KnowledgeMapController {
 }
 
 void main() {
-  Future<void> pump(WidgetTester tester, MapInputs inputs) async {
-    tester.view
-      ..physicalSize = const Size(1080, 2400)
-      ..devicePixelRatio = 2.5;
-    addTearDown(tester.view.reset);
+  Future<void> pump(
+    WidgetTester tester,
+    MapInputs inputs, {
+    bool keepSize = false,
+  }) async {
+    if (!keepSize) {
+      tester.view
+        ..physicalSize = const Size(1080, 2400)
+        ..devicePixelRatio = 2.5;
+      addTearDown(tester.view.reset);
+    }
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -69,7 +78,7 @@ void main() {
     await pump(tester, inputs);
 
     expect(find.text('عقل زاد'), findsOneWidget);
-    expect(find.text('● متصل ويتعلم'), findsOneWidget);
+    expect(find.text('متصل ويتعلم'), findsOneWidget);
     expect(find.text('الكل'), findsOneWidget);
     // A chip and a node each: the area is on the map and in the filters.
     expect(find.text('المخزون'), findsNWidgets(2));
@@ -133,4 +142,20 @@ void main() {
       expect(find.text(title), findsOneWidget);
     }
   });
+
+  // For the owner's review only: `ZAD_SCREENS=1 flutter test --update-goldens
+  // test/features/brain/brain_world_test.dart` writes
+  // build/screens/world_brain.png. Skipped in a normal run.
+  testWidgets('screenshot: the dark brain world', (tester) async {
+    await loadZadFonts();
+    tester.view
+      ..physicalSize = const Size(860, 1864)
+      ..devicePixelRatio = 2;
+    addTearDown(tester.view.reset);
+    await pump(tester, inputs, keepSize: true);
+    await expectLater(
+      find.byType(MaterialApp),
+      matchesGoldenFile('../../../build/screens/world_brain.png'),
+    );
+  }, skip: Platform.environment['ZAD_SCREENS'] != '1');
 }

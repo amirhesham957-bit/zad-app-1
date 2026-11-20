@@ -4400,7 +4400,7 @@ class ZadL10nAr extends ZadL10n {
   }
 
   @override
-  String get brainWorldState => '● متصل ويتعلم';
+  String get brainWorldState => 'متصل ويتعلم';
 
   @override
   String brainWorldEyebrow(int count) {
@@ -4470,6 +4470,29 @@ class ZadL10nAr extends ZadL10n {
   @override
   String get brainCardHealthBody =>
       'زاد شغال في الخلفية ولا واقف — ولو واقف، ليه';
+
+  @override
+  String get brainTelemetryOnline => 'النظام متصل';
+
+  @override
+  String brainTelemetryLinks(int active, int total) {
+    return 'الروابط: $active/$total';
+  }
+
+  @override
+  String get brainTelemetryOps => 'عمليات تلقائية';
+
+  @override
+  String get brainTelemetryDecisions => 'قرارات النهارده';
+
+  @override
+  String get brainTelemetryGauge => 'مؤشر الثبات';
+
+  @override
+  String get brainTelemetryStable => 'مستقر';
+
+  @override
+  String get brainTelemetryAlert => 'تنبيه';
 }
 
 /// The translations for Arabic, as used in Saudi Arabia (`ar_SA`).
@@ -5685,4 +5708,7 @@ class ZadL10nArSa extends ZadL10nAr {
   @override
   String get brainCardHealthBody =>
       'زاد شغال في الخلفية ولا واقف — ولو واقف، ليش';
+
+  @override
+  String get brainTelemetryDecisions => 'قرارات اليوم';
 }

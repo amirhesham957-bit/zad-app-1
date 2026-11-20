@@ -1525,7 +1525,7 @@
   "pantryLegendLow": "{count} running out",
   "pantryLegendExpiring": "{count} expiring soon",
   "pantryLegendOk": "{count} fine",
-  "brainWorldState": "● Connected and learning",
+  "brainWorldState": "Connected and learning",
   "brainWorldEyebrow": "{count, plural, =0{Nothing connected yet} =1{1 item connected} other{{count} items connected}}",
   "@brainWorldEyebrow": {"placeholders": {"count": {"type": "int"}}},
   "brainFilterAll": "All",
@@ -1544,5 +1544,13 @@
   "brainCardLogTitle": "Zad's change log",
   "brainCardLogBody": "Everything Zad recorded or changed for you, with undo if it got it wrong",
   "brainCardHealthTitle": "Zad's brain health",
-  "brainCardHealthBody": "Whether Zad is working in the background or stopped, and why"
+  "brainCardHealthBody": "Whether Zad is working in the background or stopped, and why",
+  "brainTelemetryOnline": "System online",
+  "brainTelemetryLinks": "Links: {active}/{total}",
+  "@brainTelemetryLinks": {"placeholders": {"active": {"type": "int"}, "total": {"type": "int"}}},
+  "brainTelemetryOps": "Automatic actions",
+  "brainTelemetryDecisions": "Decisions today",
+  "brainTelemetryGauge": "Stability",
+  "brainTelemetryStable": "Stable",
+  "brainTelemetryAlert": "Alert"
 }

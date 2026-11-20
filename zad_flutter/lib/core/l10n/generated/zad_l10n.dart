@@ -7763,7 +7763,7 @@ abstract class ZadL10n {
   /// No description provided for @brainWorldState.
   ///
   /// In ar, this message translates to:
-  /// **'● متصل ويتعلم'**
+  /// **'متصل ويتعلم'**
   String get brainWorldState;
 
   /// No description provided for @brainWorldEyebrow.
@@ -7873,6 +7873,48 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'زاد شغال في الخلفية ولا واقف — ولو واقف، ليه'**
   String get brainCardHealthBody;
+
+  /// No description provided for @brainTelemetryOnline.
+  ///
+  /// In ar, this message translates to:
+  /// **'النظام متصل'**
+  String get brainTelemetryOnline;
+
+  /// No description provided for @brainTelemetryLinks.
+  ///
+  /// In ar, this message translates to:
+  /// **'الروابط: {active}/{total}'**
+  String brainTelemetryLinks(int active, int total);
+
+  /// No description provided for @brainTelemetryOps.
+  ///
+  /// In ar, this message translates to:
+  /// **'عمليات تلقائية'**
+  String get brainTelemetryOps;
+
+  /// No description provided for @brainTelemetryDecisions.
+  ///
+  /// In ar, this message translates to:
+  /// **'قرارات النهارده'**
+  String get brainTelemetryDecisions;
+
+  /// No description provided for @brainTelemetryGauge.
+  ///
+  /// In ar, this message translates to:
+  /// **'مؤشر الثبات'**
+  String get brainTelemetryGauge;
+
+  /// No description provided for @brainTelemetryStable.
+  ///
+  /// In ar, this message translates to:
+  /// **'مستقر'**
+  String get brainTelemetryStable;
+
+  /// No description provided for @brainTelemetryAlert.
+  ///
+  /// In ar, this message translates to:
+  /// **'تنبيه'**
+  String get brainTelemetryAlert;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

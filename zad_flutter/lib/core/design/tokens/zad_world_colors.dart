@@ -78,4 +78,25 @@ abstract final class ZadWorldColors {
   /// A world's backdrop top: its colour at a tenth over white.
   static Color tint(Color world) =>
       Color.lerp(const Color(0xFFFFFFFF), world, 0.10)!;
+
+  /// The dark worlds' backdrop, top.
+  static const Color darkTop = Color(0xFF0B2420);
+
+  /// The dark worlds' backdrop, bottom.
+  static const Color darkBottom = Color(0xFF06100F);
+
+  /// A card on a dark world.
+  static const Color darkSurface = Color(0xFF112A25);
+
+  /// A hairline on a dark world.
+  static const Color darkOutline = Color(0x29FFFFFF);
+
+  /// Text on a dark world.
+  static const Color darkInk = Color(0xFFEAF7F0);
+
+  /// Quieter text on a dark world.
+  static const Color darkInkMuted = Color(0xB3EAF7F0);
+
+  /// The glow that carries a dark world's accent text and icons.
+  static const Color darkGlow = Color(0xFF6EE7B7);
 }

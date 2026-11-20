@@ -3830,7 +3830,7 @@
       }
     }
   },
-  "brainWorldState": "● متصل ويتعلم",
+  "brainWorldState": "متصل ويتعلم",
   "brainWorldEyebrow": "{count, plural, =0{لسه مفيش عناصر} other{{count} عنصر متصل}}",
   "@brainWorldEyebrow": {"placeholders": {"count": {"type": "int"}}},
   "brainFilterAll": "الكل",
@@ -3849,5 +3849,13 @@
   "brainCardLogTitle": "سجل تعديلات زاد",
   "brainCardLogBody": "كل حاجة زاد سجّلها أو عدّلها لك، وترجع فيها لو غلط",
   "brainCardHealthTitle": "صحة عقل زاد",
-  "brainCardHealthBody": "زاد شغال في الخلفية ولا واقف — ولو واقف، ليه"
+  "brainCardHealthBody": "زاد شغال في الخلفية ولا واقف — ولو واقف، ليه",
+  "brainTelemetryOnline": "النظام متصل",
+  "brainTelemetryLinks": "الروابط: {active}/{total}",
+  "@brainTelemetryLinks": {"placeholders": {"active": {"type": "int"}, "total": {"type": "int"}}},
+  "brainTelemetryOps": "عمليات تلقائية",
+  "brainTelemetryDecisions": "قرارات النهارده",
+  "brainTelemetryGauge": "مؤشر الثبات",
+  "brainTelemetryStable": "مستقر",
+  "brainTelemetryAlert": "تنبيه"
 }

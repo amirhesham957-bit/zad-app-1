@@ -28,6 +28,7 @@ import 'package:zad/shared/orb/domain/orb_occasion.dart';
 import 'package:zad/shared/orb/presentation/companion_orb.dart';
 import 'package:zad/shared/worlds/world_links.dart';
 import 'package:zad/shared/worlds/world_scene.dart';
+import 'package:zad/shared/worlds/world_tone.dart';
 import 'package:zad/shared/worlds/zad_world.dart';
 
 /// Paints a scene in the 430×230 design space; repaints from [loop].
@@ -78,6 +79,7 @@ class ZadWorldScaffold extends ConsumerStatefulWidget {
     this.onRefresh,
     this.bottomInset = ZadSpacing.xl,
     this.dockHeight = 0,
+    this.tone = ZadWorldTone.light,
     super.key,
   });
 
@@ -113,6 +115,9 @@ class ZadWorldScaffold extends ConsumerStatefulWidget {
 
   /// Space after the links strip.
   final double bottomInset;
+
+  /// Light (default) or the dark night variant.
+  final ZadWorldTone tone;
 
   /// A strip at the bottom the scroll never enters: an [overlay] button
   /// docked there (the thumb zone) cannot cover a row.
@@ -176,14 +181,19 @@ class _ZadWorldScaffoldState extends ConsumerState<ZadWorldScaffold>
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: <Color>[ZadWorldColors.tint(w.color), ZadColors.canvasMid],
+          colors: widget.tone.isDark
+              ? const <Color>[ZadWorldColors.darkTop, ZadWorldColors.darkBottom]
+              : <Color>[ZadWorldColors.tint(w.color), ZadColors.canvasMid],
         ),
       ),
-      child: Stack(
-        children: <Widget>[
-          Positioned.fill(bottom: widget.dockHeight, child: scroll),
-          ?widget.overlay,
-        ],
+      child: ZadWorldToneScope(
+        tone: widget.tone,
+        child: Stack(
+          children: <Widget>[
+            Positioned.fill(bottom: widget.dockHeight, child: scroll),
+            ?widget.overlay,
+          ],
+        ),
       ),
     );
   }
@@ -211,27 +221,27 @@ class _ZadWorldScaffoldState extends ConsumerState<ZadWorldScaffold>
                   icon: const Icon(Icons.arrow_back_ios_new_rounded),
                   style: IconButton.styleFrom(
                     minimumSize: const Size(44, 44),
-                    foregroundColor: ZadColors.ink,
+                    foregroundColor: widget.tone.ink,
                   ),
                 ),
               if (widget.eyebrow != null)
                 Text(
                   widget.eyebrow!,
                   style: ZadType.labelMedium.copyWith(
-                    color: w.color,
+                    color: widget.tone.accent(w.color),
                     fontWeight: FontWeight.w800,
                   ),
                 ),
               Text(
                 widget.title,
-                style: ZadType.worldTitle.copyWith(color: ZadColors.ink),
+                style: ZadType.worldTitle.copyWith(color: widget.tone.ink),
               ),
               if (widget.stateLine != null) ...<Widget>[
                 const SizedBox(height: ZadSpacing.xs),
                 Text(
                   widget.stateLine!,
                   style: ZadType.titleMedium.copyWith(
-                    color: w.color,
+                    color: widget.tone.accent(w.color),
                     fontWeight: FontWeight.w800,
                   ),
                 ),

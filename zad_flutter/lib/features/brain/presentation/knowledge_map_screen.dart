@@ -8,7 +8,7 @@
 /// The sci-fi look is this screen's own (the same exception CLAUDE.md makes
 /// for Kids Mode), so its colours are the `ZadPalette.sciFi*` constants.
 ///
-/// One number differs from Kotlin: its «DECISIONS TODAY» adds 12 to the
+/// One number differs from Kotlin: its «decisions today» adds 12 to the
 /// insight count. Here it is the insight count itself.
 library;
 
@@ -30,6 +30,7 @@ import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_motion.dart';
 import 'package:zad/core/design/tokens/zad_palette.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/design/tokens/zad_world_colors.dart';
 import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/brain/application/knowledge_map_controller.dart';
 import 'package:zad/features/brain/domain/knowledge_map.dart';
@@ -45,7 +46,6 @@ const Color _cyan = ZadPalette.sciFiCyanElectric;
 const Color _amber = ZadPalette.sciFiAmber;
 const Color _text = ZadPalette.sciFiTextPrimary;
 const Color _textDim = ZadPalette.sciFiTextSecondary;
-const String _mono = 'monospace';
 
 /// Kotlin's `catBankingIcon`, the budget panel's colour.
 const Color _banking = Color(0xFF3B82F6);
@@ -98,39 +98,47 @@ class KnowledgeMapScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    backgroundColor: _bg,
-    body: CustomPaint(
-      painter: _GridPainter(),
-      child: SafeArea(
-        child: Column(
-          children: <Widget>[
-            Padding(
-              padding: const EdgeInsets.all(8),
-              child: Row(
-                children: <Widget>[
-                  IconButton(
-                    onPressed: () => Navigator.of(context).maybePop(),
-                    icon: const Icon(Icons.arrow_back, color: _textDim),
-                  ),
-                  // Flexible: a long name at large text ran 28px off a 360dp
-                  // screen.
-                  Flexible(
-                    child: Text(
-                      'خريطة زاد',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: ZadType.titleMedium.copyWith(
-                        fontFamily: _mono,
-                        fontWeight: FontWeight.bold,
-                        color: _text,
+    backgroundColor: ZadWorldColors.darkBottom,
+    body: DecoratedBox(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: <Color>[ZadWorldColors.darkTop, ZadWorldColors.darkBottom],
+        ),
+      ),
+      child: CustomPaint(
+        painter: _GridPainter(),
+        child: SafeArea(
+          child: Column(
+            children: <Widget>[
+              Padding(
+                padding: const EdgeInsets.all(8),
+                child: Row(
+                  children: <Widget>[
+                    IconButton(
+                      onPressed: () => Navigator.of(context).maybePop(),
+                      icon: const Icon(Icons.arrow_back, color: _textDim),
+                    ),
+                    // Flexible: a long name at large text ran 28px off a 360dp
+                    // screen.
+                    Flexible(
+                      child: Text(
+                        'خريطة زاد',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: ZadType.titleMedium.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: _text,
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            const Expanded(child: KnowledgeMapBody()),
-          ],
+              const Expanded(child: KnowledgeMapBody()),
+            ],
+          ),
         ),
       ),
     ),
@@ -325,12 +333,8 @@ class _KnowledgeMapBodyState extends ConsumerState<KnowledgeMapBody>
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: selected == null
-                          ? ZadType.labelSmall.copyWith(
-                              fontFamily: _mono,
-                              color: _textDim,
-                            )
+                          ? ZadType.labelSmall.copyWith(color: _textDim)
                           : ZadType.titleSmall.copyWith(
-                              fontFamily: _mono,
                               fontWeight: FontWeight.bold,
                               color: _color(selected),
                             ),
@@ -349,7 +353,6 @@ class _KnowledgeMapBodyState extends ConsumerState<KnowledgeMapBody>
                           child: Text(
                             '×',
                             style: ZadType.titleMedium.copyWith(
-                              fontFamily: _mono,
                               color: _color(selected),
                             ),
                           ),
@@ -586,13 +589,7 @@ class _LegendDot extends StatelessWidget {
       // Flexible, so a label wider than the legend wraps instead of running
       // off the screen (39px over on a 360dp phone at 1.3× text).
       Flexible(
-        child: Text(
-          label,
-          style: ZadType.labelSmall.copyWith(
-            fontFamily: _mono,
-            color: _textDim,
-          ),
-        ),
+        child: Text(label, style: ZadType.labelSmall.copyWith(color: _textDim)),
       ),
     ],
   );
@@ -618,11 +615,11 @@ class _Telemetry extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     final stability = (budgetRatio * 100).toInt().clamp(10, 100);
     final stable = stability >= 75;
     TextStyle mono(double size, Color color, {bool bold = false}) =>
         ZadType.labelSmall.copyWith(
-          fontFamily: _mono,
           fontSize: size,
           color: color,
           fontWeight: bold ? FontWeight.bold : null,
@@ -665,7 +662,7 @@ class _Telemetry extends StatelessWidget {
                       ),
                       const SizedBox(width: 5),
                       Text(
-                        'SYS.ONLINE // 14ms',
+                        l.brainTelemetryOnline,
                         style: mono(10, _emerald, bold: true),
                       ),
                     ],
@@ -681,7 +678,7 @@ class _Telemetry extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    'NEURAL LINKS: $activeLinks/$totalLinks',
+                    l.brainTelemetryLinks(activeLinks, totalLinks),
                     style: mono(9, _textDim),
                   ),
                 ],
@@ -694,17 +691,16 @@ class _Telemetry extends StatelessWidget {
               fit: BoxFit.scaleDown,
               child: Column(
                 children: <Widget>[
-                  Text('AUTOMATED OPS', style: mono(9, _textDim)),
+                  Text(l.brainTelemetryOps, style: mono(9, _textDim)),
                   Text(
                     '+$insights',
                     style: ZadType.titleMedium.copyWith(
-                      fontFamily: _mono,
                       fontSize: 16,
                       fontWeight: FontWeight.w900,
                       color: _cyan,
                     ),
                   ),
-                  Text('DECISIONS TODAY', style: mono(9, _emerald)),
+                  Text(l.brainTelemetryDecisions, style: mono(9, _emerald)),
                 ],
               ),
             ),
@@ -730,9 +726,9 @@ class _Telemetry extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  Text('HUD GAUGE', style: mono(9, _textDim)),
+                  Text(l.brainTelemetryGauge, style: mono(9, _textDim)),
                   Text(
-                    stable ? 'STABLE' : 'ALERT',
+                    stable ? l.brainTelemetryStable : l.brainTelemetryAlert,
                     style: mono(10, stable ? _emerald : _amber, bold: true),
                   ),
                 ],
@@ -1083,7 +1079,6 @@ class _DomainRingState extends State<_DomainRing>
                   Text(
                     'زاد',
                     style: ZadType.titleSmall.copyWith(
-                      fontFamily: _mono,
                       fontWeight: FontWeight.w900,
                       color: _bg,
                     ),
@@ -1091,7 +1086,6 @@ class _DomainRingState extends State<_DomainRing>
                   Text(
                     'CORE.3D',
                     style: ZadType.labelSmall.copyWith(
-                      fontFamily: _mono,
                       fontSize: 7.5,
                       fontWeight: FontWeight.bold,
                       color: _bg.withValues(alpha: 0.85),
@@ -1370,7 +1364,6 @@ class _NodeCard extends StatelessWidget {
                             '${d.count}',
                             style: const TextStyle(
                               fontSize: 9,
-                              fontFamily: _mono,
                               fontWeight: FontWeight.bold,
                               color: _bg,
                             ),
@@ -1395,7 +1388,6 @@ class _NodeCard extends StatelessWidget {
                     maxLines: 1,
                     textAlign: TextAlign.center,
                     style: ZadType.labelSmall.copyWith(
-                      fontFamily: _mono,
                       fontWeight: FontWeight.bold,
                       fontSize: 9.5,
                       color: c,
@@ -1468,10 +1460,7 @@ class _ActionButton extends StatelessWidget {
         children: <Widget>[
           Icon(icon, size: 16, color: color),
           const SizedBox(width: 6),
-          Text(
-            label,
-            style: ZadType.labelSmall.copyWith(fontFamily: _mono, color: color),
-          ),
+          Text(label),
         ],
       ),
     ),
@@ -1498,17 +1487,10 @@ class _BudgetPanel extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: <Widget>[
-          Text(
-            label,
-            style: ZadType.bodyMedium.copyWith(
-              fontFamily: _mono,
-              color: _textDim,
-            ),
-          ),
+          Text(label, style: ZadType.bodyMedium.copyWith(color: _textDim)),
           Text(
             value,
             style: ZadType.bodyMedium.copyWith(
-              fontFamily: _mono,
               fontWeight: FontWeight.bold,
               color: _text,
             ),
@@ -1663,7 +1645,6 @@ class _ItemRing extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.center,
                       style: ZadType.labelSmall.copyWith(
-                        fontFamily: _mono,
                         fontWeight: FontWeight.w600,
                         color: _text,
                       ),
@@ -1673,10 +1654,7 @@ class _ItemRing extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.center,
-                      style: ZadType.labelSmall.copyWith(
-                        fontFamily: _mono,
-                        color: _textDim,
-                      ),
+                      style: ZadType.labelSmall.copyWith(color: _textDim),
                     ),
                   ],
                 ),

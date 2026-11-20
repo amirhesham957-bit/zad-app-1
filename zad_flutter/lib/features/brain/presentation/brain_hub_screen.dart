@@ -9,11 +9,11 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_palette.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/design/tokens/zad_world_colors.dart';
 import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/brain/application/knowledge_map_controller.dart';
 import 'package:zad/features/brain/presentation/agent_action_log_screen.dart';
@@ -26,6 +26,7 @@ import 'package:zad/features/brain/presentation/staff_screen.dart';
 import 'package:zad/shared/orb/domain/companion_state.dart';
 import 'package:zad/shared/worlds/world_card.dart';
 import 'package:zad/shared/worlds/world_scaffold.dart';
+import 'package:zad/shared/worlds/world_tone.dart';
 import 'package:zad/shared/worlds/zad_world.dart';
 
 /// Opens the hub.
@@ -87,6 +88,7 @@ class BrainHubScreen extends ConsumerWidget {
       backgroundColor: Colors.transparent,
       body: ZadWorldScaffold(
         world: ZadWorld.brain,
+        tone: ZadWorldTone.dark,
         eyebrow: l.brainWorldEyebrow(nodes),
         title: l.worldLabelBrain,
         stateLine: l.brainWorldState,
@@ -128,7 +130,9 @@ class BrainHubScreen extends ConsumerWidget {
             sliver: SliverToBoxAdapter(
               child: Text(
                 l.brainCardsTitle,
-                style: ZadType.titleMedium.copyWith(color: ZadColors.ink),
+                style: ZadType.titleMedium.copyWith(
+                  color: ZadWorldTone.dark.ink,
+                ),
               ),
             ),
           ),
@@ -172,12 +176,12 @@ class _EntryCard extends StatelessWidget {
       children: <Widget>[
         DecoratedBox(
           decoration: BoxDecoration(
-            color: ZadWorld.brain.color.withValues(alpha: 0.10),
+            color: ZadWorldColors.darkGlow.withValues(alpha: 0.12),
             shape: BoxShape.circle,
           ),
           child: Padding(
             padding: const EdgeInsets.all(ZadSpacing.md),
-            child: Icon(entry.icon, color: ZadWorld.brain.color, size: 22),
+            child: Icon(entry.icon, color: ZadWorldColors.darkGlow, size: 22),
           ),
         ),
         const SizedBox(width: ZadSpacing.lg),
@@ -185,17 +189,24 @@ class _EntryCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Text(entry.title, style: ZadType.titleSmall),
+              Text(
+                entry.title,
+                style: ZadType.titleSmall.copyWith(
+                  color: ZadWorldTone.dark.ink,
+                ),
+              ),
               const SizedBox(height: ZadSpacing.xs),
               Text(
                 entry.subtitle,
-                style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
+                style: ZadType.bodySmall.copyWith(
+                  color: ZadWorldTone.dark.inkMuted,
+                ),
               ),
             ],
           ),
         ),
         const SizedBox(width: ZadSpacing.sm),
-        Icon(ZadIcons.forward, size: 18, color: ZadColors.inkMuted),
+        Icon(ZadIcons.forward, size: 18, color: ZadWorldTone.dark.inkMuted),
       ],
     ),
   );

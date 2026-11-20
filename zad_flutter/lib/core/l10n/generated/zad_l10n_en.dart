@@ -4509,7 +4509,7 @@ class ZadL10nEn extends ZadL10n {
   }
 
   @override
-  String get brainWorldState => '● Connected and learning';
+  String get brainWorldState => 'Connected and learning';
 
   @override
   String brainWorldEyebrow(int count) {
@@ -4580,4 +4580,27 @@ class ZadL10nEn extends ZadL10n {
   @override
   String get brainCardHealthBody =>
       'Whether Zad is working in the background or stopped, and why';
+
+  @override
+  String get brainTelemetryOnline => 'System online';
+
+  @override
+  String brainTelemetryLinks(int active, int total) {
+    return 'Links: $active/$total';
+  }
+
+  @override
+  String get brainTelemetryOps => 'Automatic actions';
+
+  @override
+  String get brainTelemetryDecisions => 'Decisions today';
+
+  @override
+  String get brainTelemetryGauge => 'Stability';
+
+  @override
+  String get brainTelemetryStable => 'Stable';
+
+  @override
+  String get brainTelemetryAlert => 'Alert';
 }
