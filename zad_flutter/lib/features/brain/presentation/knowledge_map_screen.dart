@@ -693,7 +693,8 @@ class _Telemetry extends StatelessWidget {
                 children: <Widget>[
                   Text(l.brainTelemetryOps, style: mono(9, _textDim)),
                   Text(
-                    '+$insights',
+                    // LRM first: in an RTL run a bare «+0» reads «0+».
+                    '\u200e+$insights',
                     style: ZadType.titleMedium.copyWith(
                       fontSize: 16,
                       fontWeight: FontWeight.w900,
