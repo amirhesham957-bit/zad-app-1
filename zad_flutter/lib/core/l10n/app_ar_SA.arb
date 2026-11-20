@@ -689,5 +689,13 @@
   "homeTodayTitle": "اليوم في بيتك",
   "homeTodayEmpty": "ما فيه نواقص ولا جرعات ولا تجديدات قريبة",
   "homeTodayEmptyHint": "اليوم هادي. أي شي يحتاج انتباهك بيظهر هنا.",
-  "homeTodayShortTitle": "نواقص تنشرى"
+  "homeTodayShortTitle": "نواقص تنشرى",
+  "homeGreetDawnAnon": "صباح الخير",
+  "homeGreetMorningAnon": "أهلاً فيك",
+  "homeGreetNoonAnon": "نهارك سعيد",
+  "homeGreetEveningAnon": "مساء الخير",
+  "homeGreetNightAnon": "ليلة هادية",
+  "tasbihaHomeStart": "ابدأ بستانك بأول تسبيحة",
+  "tasbihaHomeMature": "الشجرة كبرت · {score} تسبيحة",
+  "@tasbihaHomeMature": {"placeholders": {"score": {"type": "int"}}}
 }

@@ -3711,7 +3711,6 @@
   "profileExportSubtitle": "نسخة من كل اللي زاد عارفه عنك",
   "profileExportFailed": "معرفناش نجهز الملف، جرّب تاني",
   "profileExportSubject": "بياناتي من زاد",
-  "homeCareTitle": "اشتراكاتك وأدويتك",
   "homeCareRenewsToday": "بيتجدد النهارده",
   "homeCareRenewsTomorrow": "بيتجدد بكرة",
   "homeCareRenewsInDays": "بيتجدد بعد {days} يوم",
@@ -6018,5 +6017,13 @@
   "homeTodayEmptyHint": "اليوم هادي. أي حاجة تحتاج انتباهك هتظهر هنا.",
   "homeTodayShortTitle": "نواقص بتتجاب",
   "homeTodayShortSub": "{count} صنف · أولهم {name}",
-  "@homeTodayShortSub": {"placeholders": {"name": {"type": "String"}, "count": {"type": "int"}}}
+  "@homeTodayShortSub": {"placeholders": {"name": {"type": "String"}, "count": {"type": "int"}}},
+  "homeGreetDawnAnon": "صباح الخير",
+  "homeGreetMorningAnon": "أهلاً بيك",
+  "homeGreetNoonAnon": "نهارك سعيد",
+  "homeGreetEveningAnon": "مساء الخير",
+  "homeGreetNightAnon": "ليلة هادية",
+  "tasbihaHomeStart": "ابدأ بستانك بأول تسبيحة",
+  "tasbihaHomeMature": "الشجرة كبرت · {score} تسبيحة",
+  "@tasbihaHomeMature": {"placeholders": {"score": {"type": "int"}}}
 }

@@ -24,7 +24,6 @@ import 'package:zad/core/data/sync/outbox.dart';
 import 'package:zad/core/design/components/zad_balance_card.dart';
 import 'package:zad/core/design/zad_theme.dart';
 import 'package:zad/core/l10n/l10n.dart';
-import 'package:zad/features/home/presentation/home_care_bar.dart';
 import 'package:zad/features/home/presentation/home_screen.dart';
 import 'package:zad/features/home/presentation/home_today_card.dart';
 import 'package:zad/features/home/presentation/home_world_scene.dart';
@@ -439,13 +438,8 @@ void main() {
         top(rewards),
         greaterThan(top(find.byKey(const ValueKey('chef')))),
       );
-      // The care bar sits under the money, above the day's card, and the one
-      // native ad sits right before the chef, away from the reward buttons.
-      expect(find.byType(HomeCareBar), findsOneWidget);
-      expect(
-        top(find.byType(HomeCareBar)),
-        lessThan(top(find.byType(HomeTodayCard))),
-      );
+      // The one native ad sits right before the chef, away from the reward
+      // buttons.
       expect(find.byType(ZadNativeAd), findsOneWidget);
       expect(
         top(find.byType(ZadNativeAd)),
@@ -474,7 +468,9 @@ void main() {
 
     // 12:00 UTC is 15:00 in the account's zone (Cairo): the noon sky.
     expect(scenePhase(tester), HomeDayPhase.noon);
-    expect(find.textContaining('نهارك سعيد يا'), findsOneWidget);
+    // No name yet: the greeting drops «يا ...» altogether.
+    expect(find.text('نهارك سعيد'), findsOneWidget);
+    expect(find.textContaining('يا ...'), findsNothing);
     expect(find.textContaining('متاح'), findsWidgets);
     // Nothing short, no dose, no renewal: the card says so.
     expect(find.text('النهارده في بيتك'), findsOneWidget);
@@ -491,7 +487,7 @@ void main() {
     await pumpHome(tester, container);
 
     expect(scenePhase(tester), HomeDayPhase.night);
-    expect(find.textContaining('ليلة هادية يا'), findsOneWidget);
+    expect(find.text('ليلة هادية'), findsOneWidget);
   });
 
   test('the hours fall into the five skies', () {

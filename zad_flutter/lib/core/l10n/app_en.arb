@@ -1555,7 +1555,6 @@
   "profileExportSubtitle": "A copy of everything Zad knows about you",
   "profileExportFailed": "Couldn't prepare the file, try again",
   "profileExportSubject": "My data from Zad",
-  "homeCareTitle": "Your subscriptions and medicines",
   "homeCareRenewsToday": "Renews today",
   "homeCareRenewsTomorrow": "Renews tomorrow",
   "homeCareRenewsInDays": "Renews in {days} days",
@@ -2202,5 +2201,13 @@
   "homeTodayEmptyHint": "A calm day. Anything that needs you will show here.",
   "homeTodayShortTitle": "Running short",
   "homeTodayShortSub": "{count} items · first {name}",
-  "@homeTodayShortSub": {"placeholders": {"name": {"type": "String"}, "count": {"type": "int"}}}
+  "@homeTodayShortSub": {"placeholders": {"name": {"type": "String"}, "count": {"type": "int"}}},
+  "homeGreetDawnAnon": "Good morning",
+  "homeGreetMorningAnon": "Hello",
+  "homeGreetNoonAnon": "Good day",
+  "homeGreetEveningAnon": "Good evening",
+  "homeGreetNightAnon": "A quiet night",
+  "tasbihaHomeStart": "Plant your garden with a first tasbih",
+  "tasbihaHomeMature": "Fully grown · {score} tasbihs",
+  "@tasbihaHomeMature": {"placeholders": {"score": {"type": "int"}}}
 }

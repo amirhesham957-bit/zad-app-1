@@ -1,6 +1,7 @@
-/// «النهارده في بيتك»: what asks for the customer today, as one calm card —
-/// what the home is short of, the doses still open, the subscriptions about
-/// to renew. Each row opens its own world; with nothing due the card says so.
+/// «النهارده في بيتك»: what asks for the customer today, as one card:
+/// what the home is short of, each medicine's next dose, every subscription
+/// by its next renewal (with its amount). Each row opens its own world; with
+/// nothing due the card says so.
 /// It reads the controllers those worlds read and fetches nothing itself.
 library;
 
@@ -8,7 +9,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart' show DateFormat;
+import 'package:intl/intl.dart' show DateFormat, NumberFormat;
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/components/zad_empty_state.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
@@ -16,7 +17,8 @@ import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/home/presentation/glance_cards.dart'
-    show canTakeAt;
+    show canTakeAt, nextDoseOf;
+import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart';
 import 'package:zad/shared/inventory/application/shopping_controller.dart';
 import 'package:zad/shared/navigation/destinations.dart';
@@ -24,14 +26,12 @@ import 'package:zad/shared/navigation/zad_screens.dart';
 import 'package:zad/shared/pharmacy/application/pharmacy_controller.dart';
 import 'package:zad/shared/pharmacy/domain/dose_slot.dart';
 import 'package:zad/shared/subscriptions/application/subscriptions_controller.dart';
+import 'package:zad/shared/subscriptions/domain/subscription.dart';
 import 'package:zad/shared/worlds/art/zad_art.dart';
 import 'package:zad/shared/worlds/art/zad_art_kinds.dart';
 import 'package:zad/shared/worlds/world_card.dart';
 import 'package:zad/shared/worlds/world_row.dart';
 import 'package:zad/shared/worlds/zad_world.dart';
-
-/// How many dose and renewal rows the card shows before the world itself.
-const int kHomeTodayRows = 3;
 
 /// The card.
 class HomeTodayCard extends ConsumerWidget {
@@ -53,19 +53,36 @@ class HomeTodayCard extends ConsumerWidget {
     );
     final subs = ref.watch(subscriptionsControllerProvider);
 
-    final doses = <DoseSlot>[
-      for (final s in doseSlots)
-        if (!s.isTaken && s.stateAt(now) != DoseState.missed) s,
-    ]..sort((a, b) => a.scheduledAt.compareTo(b.scheduledAt));
-
-    final renewals = <(String, int)>[];
-    for (final s in subs.active) {
-      final next = s.nextRenewalFrom(subs.today);
-      if (next == null) continue;
-      final days = next.difference(subs.today).inDays;
-      if (days >= 0 && days <= 7) renewals.add((s.title, days));
+    // One row per medicine: its next dose still open today, soonest first.
+    final slots = <DoseSlot>[...doseSlots]
+      ..sort((a, b) => a.scheduledAt.compareTo(b.scheduledAt));
+    final doses = <DoseSlot>[];
+    final seen = <String>{};
+    for (final slot in slots) {
+      if (!seen.add(slot.medicine.id)) continue;
+      final next = nextDoseOf(
+        slots.where((s) => s.medicine.id == slot.medicine.id).toList(),
+        now,
+      );
+      if (next != null) doses.add(next);
     }
-    renewals.sort((a, b) => a.$2.compareTo(b.$2));
+    doses.sort((a, b) => a.scheduledAt.compareTo(b.scheduledAt));
+
+    // Every active subscription by its next renewal; rows with no readable
+    // date go last.
+    final renewals =
+        <(Subscription, int?)>[
+          for (final s in subs.active)
+            (s, s.nextRenewalFrom(subs.today)?.difference(subs.today).inDays),
+        ]..sort((a, b) {
+          if (a.$2 == null || b.$2 == null) {
+            return a.$2 == null ? (b.$2 == null ? 0 : 1) : -1;
+          }
+          return a.$2!.compareTo(b.$2!);
+        });
+    final currency = ref.watch(
+      budgetControllerProvider.select((v) => v.snapshot?.currency ?? ''),
+    );
 
     final rows = <Widget>[
       if (short.isNotEmpty)
@@ -89,7 +106,7 @@ class HomeTodayCard extends ConsumerWidget {
             HouseholdSection.shopping,
           ),
         ),
-      for (final d in doses.take(kHomeTodayRows))
+      for (final d in doses)
         _row(
           world: ZadWorld.ph,
           art: ZadIconArt.pill,
@@ -106,17 +123,21 @@ class HomeTodayCard extends ConsumerWidget {
             HouseholdSection.pharmacy,
           ),
         ),
-      for (final (title, days) in renewals.take(kHomeTodayRows))
+      for (final (sub, days) in renewals)
         _row(
           world: ZadWorld.subs,
           art: ZadIconArt.repeat,
-          title: title,
+          title: sub.title,
           line: switch (days) {
-            0 => l10n.homeCareRenewsToday,
+            null => '',
+            <= 0 => l10n.homeCareRenewsToday,
             1 => l10n.homeCareRenewsTomorrow,
             final d => l10n.homeCareRenewsInDays(d),
           },
-          urgent: days <= 1,
+          urgent: days != null && days <= 1,
+          amount:
+              '${NumberFormat('#,##0.##', 'en').format(sub.amount)} $currency'
+                  .trim(),
           onTap: () => ZadScreens.showSubscriptionsScreen(context),
         ),
     ];
@@ -153,13 +174,20 @@ class HomeTodayCard extends ConsumerWidget {
     required String line,
     required VoidCallback onTap,
     bool urgent = false,
+    String? amount,
   }) => ZadWorldRow(
     leading: ZadWorldTile(
       color: world.color,
       child: ZadArt.icon(art, size: 28),
     ),
     title: title,
-    subtitle: line,
+    subtitle: line.isEmpty ? null : line,
+    trailing: amount == null
+        ? null
+        : Text(
+            amount,
+            style: ZadType.labelMedium.copyWith(color: ZadColors.inkMuted),
+          ),
     stateColor: urgent ? ZadColors.terracottaRust : world.color,
     onTap: () => unawaited(Future<void>.sync(onTap)),
   );

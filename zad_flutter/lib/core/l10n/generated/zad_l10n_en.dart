@@ -4495,9 +4495,6 @@ class ZadL10nEn extends ZadL10n {
   String get profileExportSubject => 'My data from Zad';
 
   @override
-  String get homeCareTitle => 'Your subscriptions and medicines';
-
-  @override
   String get homeCareRenewsToday => 'Renews today';
 
   @override
@@ -6546,5 +6543,28 @@ class ZadL10nEn extends ZadL10n {
   @override
   String homeTodayShortSub(String name, int count) {
     return '$count items · first $name';
+  }
+
+  @override
+  String get homeGreetDawnAnon => 'Good morning';
+
+  @override
+  String get homeGreetMorningAnon => 'Hello';
+
+  @override
+  String get homeGreetNoonAnon => 'Good day';
+
+  @override
+  String get homeGreetEveningAnon => 'Good evening';
+
+  @override
+  String get homeGreetNightAnon => 'A quiet night';
+
+  @override
+  String get tasbihaHomeStart => 'Plant your garden with a first tasbih';
+
+  @override
+  String tasbihaHomeMature(int score) {
+    return 'Fully grown · $score tasbihs';
   }
 }

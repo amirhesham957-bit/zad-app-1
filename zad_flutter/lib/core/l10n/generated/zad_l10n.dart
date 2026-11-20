@@ -7724,12 +7724,6 @@ abstract class ZadL10n {
   /// **'بياناتي من زاد'**
   String get profileExportSubject;
 
-  /// No description provided for @homeCareTitle.
-  ///
-  /// In ar, this message translates to:
-  /// **'اشتراكاتك وأدويتك'**
-  String get homeCareTitle;
-
   /// No description provided for @homeCareRenewsToday.
   ///
   /// In ar, this message translates to:
@@ -10903,6 +10897,48 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'{count} صنف · أولهم {name}'**
   String homeTodayShortSub(String name, int count);
+
+  /// No description provided for @homeGreetDawnAnon.
+  ///
+  /// In ar, this message translates to:
+  /// **'صباح الخير'**
+  String get homeGreetDawnAnon;
+
+  /// No description provided for @homeGreetMorningAnon.
+  ///
+  /// In ar, this message translates to:
+  /// **'أهلاً بيك'**
+  String get homeGreetMorningAnon;
+
+  /// No description provided for @homeGreetNoonAnon.
+  ///
+  /// In ar, this message translates to:
+  /// **'نهارك سعيد'**
+  String get homeGreetNoonAnon;
+
+  /// No description provided for @homeGreetEveningAnon.
+  ///
+  /// In ar, this message translates to:
+  /// **'مساء الخير'**
+  String get homeGreetEveningAnon;
+
+  /// No description provided for @homeGreetNightAnon.
+  ///
+  /// In ar, this message translates to:
+  /// **'ليلة هادية'**
+  String get homeGreetNightAnon;
+
+  /// No description provided for @tasbihaHomeStart.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابدأ بستانك بأول تسبيحة'**
+  String get tasbihaHomeStart;
+
+  /// No description provided for @tasbihaHomeMature.
+  ///
+  /// In ar, this message translates to:
+  /// **'الشجرة كبرت · {score} تسبيحة'**
+  String tasbihaHomeMature(int score);
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

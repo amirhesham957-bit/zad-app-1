@@ -39,7 +39,6 @@ import 'package:zad/features/home/presentation/grocery_purchase_prompt.dart';
 import 'package:zad/features/home/presentation/home_activation_card.dart';
 import 'package:zad/features/home/presentation/home_amazon_strip.dart';
 import 'package:zad/features/home/presentation/home_blocks.dart';
-import 'package:zad/features/home/presentation/home_care_bar.dart';
 import 'package:zad/features/home/presentation/home_today_card.dart';
 import 'package:zad/features/home/presentation/home_world_scene.dart';
 import 'package:zad/features/home/presentation/inventory_check_in_card.dart';
@@ -93,7 +92,8 @@ class HomeScreen extends ConsumerWidget {
     final l10n = context.l10n;
     final view = ref.watch(budgetControllerProvider);
     final phase = homeDayPhaseNow(ref);
-    final name = ref.watch(customerCallNameProvider) ?? '...';
+    final name = ref.watch(customerCallNameProvider)?.trim() ?? '';
+    final named = name.isNotEmpty;
 
     return ZadWorldScaffold(
       world: ZadWorld.home,
@@ -102,11 +102,16 @@ class HomeScreen extends ConsumerWidget {
       scrollKey: const PageStorageKey<String>('home'),
       showBack: false,
       title: switch (phase) {
-        HomeDayPhase.dawn => l10n.homeGreetDawn(name),
-        HomeDayPhase.morning => l10n.homeGreetMorning(name),
-        HomeDayPhase.noon => l10n.homeGreetNoon(name),
-        HomeDayPhase.evening => l10n.homeGreetEvening(name),
-        HomeDayPhase.night => l10n.homeGreetNight(name),
+        HomeDayPhase.dawn =>
+          named ? l10n.homeGreetDawn(name) : l10n.homeGreetDawnAnon,
+        HomeDayPhase.morning =>
+          named ? l10n.homeGreetMorning(name) : l10n.homeGreetMorningAnon,
+        HomeDayPhase.noon =>
+          named ? l10n.homeGreetNoon(name) : l10n.homeGreetNoonAnon,
+        HomeDayPhase.evening =>
+          named ? l10n.homeGreetEvening(name) : l10n.homeGreetEveningAnon,
+        HomeDayPhase.night =>
+          named ? l10n.homeGreetNight(name) : l10n.homeGreetNightAnon,
       },
       stateLine: _stateLine(context, ref, view),
       scene: (loop) => HomeWorldScene(loop, phase: phase),
@@ -155,7 +160,7 @@ class HomeScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: ZadSpacing.lg),
-              // 2. The money, then the care bar: the next dose and renewals.
+              // 2. The money.
               _Budget(view: view),
               // The occasion's banner (app_campaigns), when one runs; the
               // balance card already wears the occasion's colours.
@@ -163,7 +168,6 @@ class HomeScreen extends ConsumerWidget {
               // «حكايات زاد», the occasion's story, when it has one.
               const ZadAppearOnEntry(child: CampaignStoriesStrip()),
               const FxExcludedNotice(),
-              const ZadAppearOnEntry(delayMs: 25, child: HomeCareBar()),
               // 3. «عوالمك»: every section, drawn in its world's colour.
               const ZadAppearOnEntry(delayMs: 25, child: _WorldsCard()),
               const SizedBox(height: ZadSpacing.lg),

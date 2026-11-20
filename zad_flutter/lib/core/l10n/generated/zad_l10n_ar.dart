@@ -4384,9 +4384,6 @@ class ZadL10nAr extends ZadL10n {
   String get profileExportSubject => 'بياناتي من زاد';
 
   @override
-  String get homeCareTitle => 'اشتراكاتك وأدويتك';
-
-  @override
   String get homeCareRenewsToday => 'بيتجدد النهارده';
 
   @override
@@ -6451,6 +6448,29 @@ class ZadL10nAr extends ZadL10n {
   @override
   String homeTodayShortSub(String name, int count) {
     return '$count صنف · أولهم $name';
+  }
+
+  @override
+  String get homeGreetDawnAnon => 'صباح الخير';
+
+  @override
+  String get homeGreetMorningAnon => 'أهلاً بيك';
+
+  @override
+  String get homeGreetNoonAnon => 'نهارك سعيد';
+
+  @override
+  String get homeGreetEveningAnon => 'مساء الخير';
+
+  @override
+  String get homeGreetNightAnon => 'ليلة هادية';
+
+  @override
+  String get tasbihaHomeStart => 'ابدأ بستانك بأول تسبيحة';
+
+  @override
+  String tasbihaHomeMature(int score) {
+    return 'الشجرة كبرت · $score تسبيحة';
   }
 }
 
@@ -9019,4 +9039,27 @@ class ZadL10nArSa extends ZadL10nAr {
 
   @override
   String get homeTodayShortTitle => 'نواقص تنشرى';
+
+  @override
+  String get homeGreetDawnAnon => 'صباح الخير';
+
+  @override
+  String get homeGreetMorningAnon => 'أهلاً فيك';
+
+  @override
+  String get homeGreetNoonAnon => 'نهارك سعيد';
+
+  @override
+  String get homeGreetEveningAnon => 'مساء الخير';
+
+  @override
+  String get homeGreetNightAnon => 'ليلة هادية';
+
+  @override
+  String get tasbihaHomeStart => 'ابدأ بستانك بأول تسبيحة';
+
+  @override
+  String tasbihaHomeMature(int score) {
+    return 'الشجرة كبرت · $score تسبيحة';
+  }
 }
