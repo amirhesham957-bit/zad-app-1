@@ -1919,13 +1919,13 @@ abstract class ZadL10n {
   /// No description provided for @chatWelcome.
   ///
   /// In ar, this message translates to:
-  /// **'أهلاً بيك! أنا زاد 🤖، مساعدك العائلي الذكي. أقدر أساعدك إزاي النهاردة؟\nاسألني عن الوصفات، أو راجع ثلاجتك، أو ضيف النواقص لقائمة التسوق!'**
+  /// **'أهلاً بيك! أنا زاد، مساعدك العائلي الذكي. أقدر أساعدك إزاي النهاردة؟\nاسألني عن الوصفات، أو راجع ثلاجتك، أو ضيف النواقص لقائمة التسوق!'**
   String get chatWelcome;
 
   /// No description provided for @chatBusy.
   ///
   /// In ar, this message translates to:
-  /// **'الذكاء الاصطناعي مشغول شوية دلوقتي 🙏 جرب تاني بعد لحظات.'**
+  /// **'الذكاء الاصطناعي مشغول شوية دلوقتي جرب تاني بعد لحظات.'**
   String get chatBusy;
 
   /// No description provided for @chatUnexpected.
@@ -1999,6 +1999,42 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'البلاغ ماوصلش — جرّب تاني'**
   String get chatReportFailed;
+
+  /// No description provided for @chatWorldEyebrow.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسأل أي حاجة'**
+  String get chatWorldEyebrow;
+
+  /// No description provided for @chatStateThinking.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيفكّر…'**
+  String get chatStateThinking;
+
+  /// No description provided for @chatStateListening.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيسمعك…'**
+  String get chatStateListening;
+
+  /// No description provided for @chatStateSpeaking.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيتكلم…'**
+  String get chatStateSpeaking;
+
+  /// No description provided for @chatStateEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'أنا سامعك'**
+  String get chatStateEmpty;
+
+  /// Chat world: state line, how many messages are in the conversation.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{رسالة واحدة} =2{رسالتين} few{{count} رسايل} other{{count} رسالة}}'**
+  String chatStateCount(int count);
 
   /// No description provided for @chatThinking.
   ///

@@ -1083,11 +1083,11 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get chatWelcome =>
-      'أهلاً بيك! أنا زاد 🤖، مساعدك العائلي الذكي. أقدر أساعدك إزاي النهاردة؟\nاسألني عن الوصفات، أو راجع ثلاجتك، أو ضيف النواقص لقائمة التسوق!';
+      'أهلاً بيك! أنا زاد، مساعدك العائلي الذكي. أقدر أساعدك إزاي النهاردة؟\nاسألني عن الوصفات، أو راجع ثلاجتك، أو ضيف النواقص لقائمة التسوق!';
 
   @override
   String get chatBusy =>
-      'الذكاء الاصطناعي مشغول شوية دلوقتي 🙏 جرب تاني بعد لحظات.';
+      'الذكاء الاصطناعي مشغول شوية دلوقتي جرب تاني بعد لحظات.';
 
   @override
   String get chatUnexpected => 'حصل خطأ غير متوقع.';
@@ -1124,6 +1124,34 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get chatReportFailed => 'البلاغ ماوصلش — جرّب تاني';
+
+  @override
+  String get chatWorldEyebrow => 'اسأل أي حاجة';
+
+  @override
+  String get chatStateThinking => 'بيفكّر…';
+
+  @override
+  String get chatStateListening => 'بيسمعك…';
+
+  @override
+  String get chatStateSpeaking => 'بيتكلم…';
+
+  @override
+  String get chatStateEmpty => 'أنا سامعك';
+
+  @override
+  String chatStateCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count رسالة',
+      few: '$count رسايل',
+      two: 'رسالتين',
+      one: 'رسالة واحدة',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get chatThinking => 'بفكر…';
@@ -6694,11 +6722,11 @@ class ZadL10nArSa extends ZadL10nAr {
 
   @override
   String get chatWelcome =>
-      'هلا والله! أنا زاد 🤖، مساعدك العائلي الذكي. كيف أقدر أساعدك اليوم؟\nاسألني عن الوصفات، أو راجع ثلاجتك، أو أضف النواقص لقائمة التسوق!';
+      'هلا والله! أنا زاد، مساعدك العائلي الذكي. كيف أقدر أساعدك اليوم؟\nاسألني عن الوصفات، أو راجع ثلاجتك، أو أضف النواقص لقائمة التسوق!';
 
   @override
   String get chatBusy =>
-      'الذكاء الاصطناعي مشغول شوي الحين 🙏 جرّب مرة ثانية بعد لحظات.';
+      'الذكاء الاصطناعي مشغول شوي الحين جرّب مرة ثانية بعد لحظات.';
 
   @override
   String get chatResend => 'ما وصلت — أرسلها مرة ثانية';
@@ -6717,6 +6745,34 @@ class ZadL10nArSa extends ZadL10nAr {
 
   @override
   String get chatReportFailed => 'ما وصل البلاغ — حاول مرة ثانية';
+
+  @override
+  String get chatWorldEyebrow => 'اسألني أي شيء';
+
+  @override
+  String get chatStateThinking => 'يفكّر…';
+
+  @override
+  String get chatStateListening => 'يسمعك…';
+
+  @override
+  String get chatStateSpeaking => 'يتكلم…';
+
+  @override
+  String get chatStateEmpty => 'أنا أسمعك';
+
+  @override
+  String chatStateCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count رسالة',
+      few: '$count رسائل',
+      two: 'رسالتان',
+      one: 'رسالة واحدة',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get chatThinking => 'أفكّر…';

@@ -9,6 +9,8 @@ import 'package:zad/features/chat/presentation/chat_screen.dart';
 import 'package:zad/shared/chat/application/chat_controller.dart';
 import 'package:zad/shared/chat/application/voice_input_controller.dart';
 
+import '../../support/quiet_household.dart';
+
 class _Chat extends ChatController {
   final List<String> sent = <String>[];
 
@@ -32,6 +34,7 @@ void main() {
     final chat = _Chat();
     final container = ProviderContainer(
       overrides: [
+        ...quietOrbOverrides,
         chatControllerProvider.overrideWith(() => chat),
         voiceInputControllerProvider.overrideWith(_Voice.new),
       ],

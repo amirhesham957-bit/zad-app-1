@@ -1121,11 +1121,11 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get chatWelcome =>
-      'Welcome! I\'m Zad 🤖, your smart family assistant. How can I help you today?\nAsk me about recipes, check your fridge, or add what\'s missing to the shopping list!';
+      'Welcome! I\'m Zad, your smart family assistant. How can I help you today?\nAsk me about recipes, check your fridge, or add what\'s missing to the shopping list!';
 
   @override
   String get chatBusy =>
-      'The AI is a bit busy right now 🙏 Try again in a moment.';
+      'The AI is a bit busy right now Try again in a moment.';
 
   @override
   String get chatUnexpected => 'Something unexpected went wrong.';
@@ -1163,6 +1163,32 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get chatReportFailed => 'The report didn\'t go through — try again';
+
+  @override
+  String get chatWorldEyebrow => 'Ask anything';
+
+  @override
+  String get chatStateThinking => 'Thinking…';
+
+  @override
+  String get chatStateListening => 'Listening…';
+
+  @override
+  String get chatStateSpeaking => 'Speaking…';
+
+  @override
+  String get chatStateEmpty => 'I\'m listening';
+
+  @override
+  String chatStateCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count messages',
+      one: '1 message',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get chatThinking => 'Thinking…';

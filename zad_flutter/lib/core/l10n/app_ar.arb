@@ -756,8 +756,8 @@
   "chatNewTitle": "تبدأ محادثة جديدة؟",
   "chatNewBody": "الكلام اللي فات هيتمسح من التليفون ده. اللي زاد اتعلمه عنك هيفضل زي ما هو.",
   "chatClear": "امسح",
-  "chatWelcome": "أهلاً بيك! أنا زاد 🤖، مساعدك العائلي الذكي. أقدر أساعدك إزاي النهاردة؟\nاسألني عن الوصفات، أو راجع ثلاجتك، أو ضيف النواقص لقائمة التسوق!",
-  "chatBusy": "الذكاء الاصطناعي مشغول شوية دلوقتي 🙏 جرب تاني بعد لحظات.",
+  "chatWelcome": "أهلاً بيك! أنا زاد، مساعدك العائلي الذكي. أقدر أساعدك إزاي النهاردة؟\nاسألني عن الوصفات، أو راجع ثلاجتك، أو ضيف النواقص لقائمة التسوق!",
+  "chatBusy": "الذكاء الاصطناعي مشغول شوية دلوقتي جرب تاني بعد لحظات.",
   "chatUnexpected": "حصل خطأ غير متوقع.",
   "chatResend": "ماوصلتش — ابعتها تاني",
   "chatStopVoice": "وقّف الصوت",
@@ -770,6 +770,20 @@
   "chatReportOther": "حاجة تانية",
   "chatReportSent": "وصل بلاغك، شكراً. هنراجع الرد ده.",
   "chatReportFailed": "البلاغ ماوصلش — جرّب تاني",
+  "chatWorldEyebrow": "اسأل أي حاجة",
+  "chatStateThinking": "بيفكّر…",
+  "chatStateListening": "بيسمعك…",
+  "chatStateSpeaking": "بيتكلم…",
+  "chatStateEmpty": "أنا سامعك",
+  "chatStateCount": "{count, plural, =1{رسالة واحدة} =2{رسالتين} few{{count} رسايل} other{{count} رسالة}}",
+  "@chatStateCount": {
+    "description": "Chat world: state line, how many messages are in the conversation.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "chatThinking": "بفكر…",
   "refillBack": "رصيدك رجع — ابعت رسالتك تاني",
   "refillDays": "رصيدك بيتجدد بعد {days} أيام",
