@@ -60,8 +60,6 @@
   "features/nearby/presentation/nearby_view.dart": 22,
   "features/onboarding/presentation/first_steps_screen.dart": 17,
   "features/onboarding/presentation/introduce_yourself_screen.dart": 18,
-  "features/pharmacy/presentation/pharmacy_family.dart": 11,
-  "features/pharmacy/presentation/pharmacy_view.dart": 115,
   "features/places/domain/my_places.dart": 11,
   "features/places/presentation/keep_alive_guide.dart": 27,
   "features/places/presentation/my_places_screen.dart": 28,

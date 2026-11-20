@@ -131,6 +131,7 @@ void wireScreens() {
   ZadScreens.openZadCamera = openZadCamera;
   ZadScreens.showCameraScreen = showCameraScreen;
   ZadScreens.showPantryPhotoSheet = showPantryPhotoSheet;
+  ZadScreens.showMedicinePhotoSheet = showMedicinePhotoSheet;
   ZadScreens.showReceiptScanSheet = showReceiptScanSheet;
   ZadScreens.showMonthlyLimitSheet = showMonthlyLimitSheet;
   ZadScreens.showSettingsScreen = showSettingsScreen;
