@@ -1118,6 +1118,34 @@ class ZadL10nAr extends ZadL10n {
   String get chatReportFailed => 'البلاغ ماوصلش — جرّب تاني';
 
   @override
+  String get chatWorldEyebrow => 'اسأل أي حاجة';
+
+  @override
+  String get chatStateThinking => 'بيفكّر…';
+
+  @override
+  String get chatStateListening => 'بيسمعك…';
+
+  @override
+  String get chatStateSpeaking => 'بيتكلم…';
+
+  @override
+  String get chatStateEmpty => 'أنا سامعك';
+
+  @override
+  String chatStateCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count رسالة',
+      few: '$count رسايل',
+      two: 'رسالتين',
+      one: 'رسالة واحدة',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get chatThinking => 'بفكر…';
 
   @override
@@ -6513,6 +6541,34 @@ class ZadL10nArSa extends ZadL10nAr {
 
   @override
   String get chatReportFailed => 'ما وصل البلاغ — حاول مرة ثانية';
+
+  @override
+  String get chatWorldEyebrow => 'اسألني أي شيء';
+
+  @override
+  String get chatStateThinking => 'يفكّر…';
+
+  @override
+  String get chatStateListening => 'يسمعك…';
+
+  @override
+  String get chatStateSpeaking => 'يتكلم…';
+
+  @override
+  String get chatStateEmpty => 'أنا أسمعك';
+
+  @override
+  String chatStateCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count رسالة',
+      few: '$count رسائل',
+      two: 'رسالتان',
+      one: 'رسالة واحدة',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get chatThinking => 'أفكّر…';

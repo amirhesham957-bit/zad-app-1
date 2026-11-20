@@ -1157,6 +1157,32 @@ class ZadL10nEn extends ZadL10n {
   String get chatReportFailed => 'The report didn\'t go through — try again';
 
   @override
+  String get chatWorldEyebrow => 'Ask anything';
+
+  @override
+  String get chatStateThinking => 'Thinking…';
+
+  @override
+  String get chatStateListening => 'Listening…';
+
+  @override
+  String get chatStateSpeaking => 'Speaking…';
+
+  @override
+  String get chatStateEmpty => 'I\'m listening';
+
+  @override
+  String chatStateCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count messages',
+      one: '1 message',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get chatThinking => 'Thinking…';
 
   @override

@@ -1988,6 +1988,42 @@ abstract class ZadL10n {
   /// **'البلاغ ماوصلش — جرّب تاني'**
   String get chatReportFailed;
 
+  /// No description provided for @chatWorldEyebrow.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسأل أي حاجة'**
+  String get chatWorldEyebrow;
+
+  /// No description provided for @chatStateThinking.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيفكّر…'**
+  String get chatStateThinking;
+
+  /// No description provided for @chatStateListening.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيسمعك…'**
+  String get chatStateListening;
+
+  /// No description provided for @chatStateSpeaking.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيتكلم…'**
+  String get chatStateSpeaking;
+
+  /// No description provided for @chatStateEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'أنا سامعك'**
+  String get chatStateEmpty;
+
+  /// Chat world: state line, how many messages are in the conversation.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{رسالة واحدة} =2{رسالتين} few{{count} رسايل} other{{count} رسالة}}'**
+  String chatStateCount(int count);
+
   /// No description provided for @chatThinking.
   ///
   /// In ar, this message translates to:
