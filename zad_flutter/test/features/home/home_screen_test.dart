@@ -14,6 +14,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
@@ -22,11 +23,11 @@ import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/data/sync/outbox.dart';
 import 'package:zad/core/design/components/zad_balance_card.dart';
 import 'package:zad/core/design/zad_theme.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/home/presentation/home_care_bar.dart';
 import 'package:zad/features/home/presentation/home_screen.dart';
 import 'package:zad/features/home/presentation/home_today_card.dart';
 import 'package:zad/features/home/presentation/home_world_scene.dart';
-import 'package:zad/shared/worlds/world_scene.dart' show ScaledScene;
 import 'package:zad/features/home/presentation/metrics_duo.dart';
 import 'package:zad/features/home/presentation/tasbiha_home_widget.dart';
 import 'package:zad/features/settings/presentation/monthly_limit_sheet.dart';
@@ -36,15 +37,26 @@ import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/budget/data/budget_repository.dart';
 import 'package:zad/shared/budget/domain/budget_snapshot.dart';
 import 'package:zad/shared/insights/data/insights_repository.dart';
+import 'package:zad/shared/inventory/application/pantry_controller.dart';
+import 'package:zad/shared/inventory/domain/inventory_item.dart';
+import 'package:zad/shared/inventory/domain/shortage.dart';
 import 'package:zad/shared/navigation/zad_slots.dart';
 import 'package:zad/shared/notifications/data/notifications_remote.dart';
 import 'package:zad/shared/notifications/data/notifications_repository.dart';
+import 'package:zad/shared/pharmacy/application/pharmacy_controller.dart';
+import 'package:zad/shared/pharmacy/domain/dose_slot.dart';
+import 'package:zad/shared/pharmacy/domain/dose_time.dart';
+import 'package:zad/shared/pharmacy/domain/medicine.dart';
 import 'package:zad/shared/settings/data/settings_repository.dart';
+import 'package:zad/shared/subscriptions/application/subscriptions_controller.dart';
 import 'package:zad/shared/subscriptions/data/subscriptions_remote.dart';
 import 'package:zad/shared/subscriptions/data/subscriptions_repository.dart';
+import 'package:zad/shared/subscriptions/domain/subscription.dart';
 import 'package:zad/shared/transactions/data/transactions_remote.dart';
 import 'package:zad/shared/transactions/data/transactions_repository.dart';
+import 'package:zad/shared/worlds/world_scene.dart' show ScaledScene;
 
+import '../../support/fonts.dart';
 import '../../support/quiet_household.dart';
 
 /// Refuses at once, so the screen's background refresh never writes to disk
@@ -207,6 +219,19 @@ class _OfflineNotifications implements NotificationsRemote {
       Future<int>.error(const SocketException('offline'));
 }
 
+class _Subs extends SubscriptionsController {
+  new(this.items);
+
+  final List<Subscription> items;
+
+  @override
+  SubscriptionsView build() =>
+      SubscriptionsView(items: items, today: DateTime.utc(2026, 9, 19));
+
+  @override
+  Future<void> refresh({bool force = false}) async {}
+}
+
 void main() {
   late Directory dir;
   late Box<String> documents;
@@ -241,7 +266,11 @@ void main() {
     await dir.delete(recursive: true);
   });
 
-  ProviderContainer containerWith({DateTime? at}) {
+  ProviderContainer containerWith({
+    DateTime? at,
+    List<Override>? household,
+    List<Override> extra = const <Override>[],
+  }) {
     late TransactionsRepository txns;
     final outbox = Outbox(
       box: outboxBox,
@@ -258,7 +287,7 @@ void main() {
 
     return ProviderContainer(
       overrides: [
-        ...quietHouseholdOverrides,
+        ...(household ?? quietHouseholdOverrides),
         // The home screen now carries the bank-access card, which reads the
         // documents box. A screen test that leaves it out is not testing the
         // app — localStoreProvider throws by design rather than opening boxes
@@ -319,6 +348,7 @@ void main() {
             signedInUserId: () => 'user-1',
           ),
         ),
+        ...extra,
       ],
     );
   }
@@ -472,6 +502,96 @@ void main() {
     expect(homeDayPhaseOf(23), HomeDayPhase.night);
     expect(homeDayPhaseOf(3), HomeDayPhase.night);
   });
+
+  testWidgets('screenshot: the home world', (tester) async {
+    await loadZadFonts();
+    const milk = InventoryItem(
+      id: '1',
+      userId: 'u',
+      itemName: 'لبن',
+      quantity: 0,
+    );
+    const rice = InventoryItem(
+      id: '2',
+      userId: 'u',
+      itemName: 'رز',
+      quantity: 1,
+    );
+    const pills = Medicine(id: 'm', userId: 'u', name: 'فيتامين د');
+    final container = containerWith(
+      household: [
+        pantryControllerProvider.overrideWith(
+          () => QuietPantry(
+            const PantryView(
+              items: <InventoryItem>[milk, rice],
+              shortages: <Shortage>[
+                Shortage(item: milk, reason: ShortageReason.outOfStock),
+                Shortage(item: rice, reason: ShortageReason.runningLow),
+              ],
+            ),
+          ),
+        ),
+        pharmacyControllerProvider.overrideWith(
+          () => QuietPharmacy(
+            PharmacyView(
+              medicines: const <Medicine>[pills],
+              today: <DoseSlot>[
+                DoseSlot(
+                  medicine: pills,
+                  time: const DoseTime(18, 0),
+                  scheduledAt: DateTime.utc(2026, 9, 19, 15),
+                ),
+              ],
+            ),
+          ),
+        ),
+        ...quietHouseholdOverrides.skip(2),
+      ],
+      extra: [
+        subscriptionsControllerProvider.overrideWith(
+          () => _Subs(const <Subscription>[
+            Subscription(
+              id: 'n',
+              userId: 'u',
+              title: 'Netflix',
+              amount: 199,
+              dueDay: 22,
+            ),
+          ]),
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+    tester.view
+      ..physicalSize = const Size(860, 4400)
+      ..devicePixelRatio = 2;
+    addTearDown(tester.view.reset);
+    tester.platformDispatcher.accessibilityFeaturesTestValue =
+        const FakeAccessibilityFeatures(disableAnimations: true);
+    addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          debugShowCheckedModeBanner: false,
+          theme: ZadTheme.light(),
+          locale: const Locale('ar'),
+          localizationsDelegates: ZadL10n.localizationsDelegates,
+          supportedLocales: ZadL10n.supportedLocales,
+          home: const Scaffold(body: HomeScreen()),
+        ),
+      ),
+    );
+    await tester.pump(Duration.zero);
+    await tester.pump(const Duration(milliseconds: 800));
+    await tester.pump(const Duration(milliseconds: 800));
+    await expectLater(
+      find.byType(MaterialApp),
+      matchesGoldenFile('../../../build/screens/world_home.png'),
+    );
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump(const Duration(seconds: 2));
+  }, skip: Platform.environment['ZAD_SCREENS'] != '1');
 
   testWidgets('the two small cards sit under the green one', (tester) async {
     final container = containerWith();
