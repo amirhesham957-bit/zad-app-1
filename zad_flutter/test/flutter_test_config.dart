@@ -5,7 +5,9 @@
 import 'dart:async';
 
 import 'package:zad/app/wiring/zad_wiring.dart';
+import 'package:zad/core/design/components/zad_idle_motion.dart';
 import 'package:zad/core/design/components/zad_network_image.dart';
+import 'package:zad/features/home/presentation/home_care_bar.dart';
 import 'package:zad/shared/inventory/presentation/item_photo.dart';
 
 Future<void> testExecutable(FutureOr<void> Function() testMain) async {
@@ -14,5 +16,8 @@ Future<void> testExecutable(FutureOr<void> Function() testMain) async {
   ZadNetworkImage.diskCache = false;
   // A looping animation never lets pumpAndSettle finish.
   ZadItemPhoto.loops = false;
+  HomeCareBar.loops = false;
+  // Home's idle icon motion re-arms a timer after every play.
+  ZadIdleMotion.loops = false;
   await testMain();
 }

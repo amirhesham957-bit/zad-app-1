@@ -12,7 +12,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zad/core/design/components/zad_pulses.dart';
+import 'package:zad/core/design/components/zad_idle_motion.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_motion.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
@@ -77,11 +77,16 @@ class _Card extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
-    final still = MediaQuery.disableAnimationsOf(context);
-    final star = Icon(
-      Icons.workspace_premium_rounded,
-      size: 28,
-      color: ZadColors.mustardOchre,
+    // The crown wiggles now and then and a light sweeps the card; both stop
+    // with the system's «no animations» and in tests ([ZadIdleMotion.loops]).
+    final star = ZadIdle(
+      kind: ZadIdleKind.wiggle,
+      stagger: 1,
+      child: Icon(
+        Icons.workspace_premium_rounded,
+        size: 28,
+        color: ZadColors.mustardOchre,
+      ),
     );
 
     void open() {
@@ -89,51 +94,54 @@ class _Card extends ConsumerWidget {
       unawaited(ZadScreens.showPaywallScreen(context));
     }
 
-    return Material(
-      color: ZadColors.mint50,
-      borderRadius: BorderRadius.circular(ZadRadii.card),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: open,
-        child: Padding(
-          padding: const EdgeInsetsDirectional.fromSTEB(
-            ZadSpacing.lg,
-            ZadSpacing.md,
-            ZadSpacing.xs,
-            ZadSpacing.md,
-          ),
-          child: Row(
-            children: <Widget>[
-              if (still) star else ZadDotPulse(child: star),
-              const SizedBox(width: ZadSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      l10n.subscribePulseTitle,
-                      style: ZadType.titleMedium.copyWith(
-                        fontWeight: FontWeight.w800,
+    return ZadShine(
+      radius: ZadRadii.card,
+      child: Material(
+        color: ZadColors.mint50,
+        borderRadius: BorderRadius.circular(ZadRadii.card),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: open,
+          child: Padding(
+            padding: const EdgeInsetsDirectional.fromSTEB(
+              ZadSpacing.lg,
+              ZadSpacing.md,
+              ZadSpacing.xs,
+              ZadSpacing.md,
+            ),
+            child: Row(
+              children: <Widget>[
+                star,
+                const SizedBox(width: ZadSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        l10n.subscribePulseTitle,
+                        style: ZadType.titleMedium.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: ZadSpacing.xs),
-                    Text(
-                      l10n.subscribePulseBody,
-                      style: ZadType.bodyMedium.copyWith(
-                        color: ZadColors.slate,
+                      const SizedBox(height: ZadSpacing.xs),
+                      Text(
+                        l10n.subscribePulseBody,
+                        style: ZadType.bodyMedium.copyWith(
+                          color: ZadColors.slate,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              IconButton(
-                onPressed: () =>
-                    ref.read(subscribePulseDoneProvider.notifier).done(),
-                icon: const Icon(Icons.close_rounded, size: 20),
-                color: ZadColors.inkMuted,
-                tooltip: l10n.subscribePulseClose,
-              ),
-            ],
+                IconButton(
+                  onPressed: () =>
+                      ref.read(subscribePulseDoneProvider.notifier).done(),
+                  icon: const Icon(Icons.close_rounded, size: 20),
+                  color: ZadColors.inkMuted,
+                  tooltip: l10n.subscribePulseClose,
+                ),
+              ],
+            ),
           ),
         ),
       ),

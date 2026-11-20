@@ -5,6 +5,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:zad/core/design/components/zad_idle_motion.dart';
 import 'package:zad/features/home/presentation/subscribe_pulse_card.dart';
 import 'package:zad/shared/auth/application/session_controller.dart';
 import 'package:zad/shared/kids/application/kids_mode_controller.dart';
@@ -79,6 +80,7 @@ void main() {
   ) async {
     await pump(tester);
     expect(find.text(_title), findsOneWidget);
+    expect(find.byType(ZadShine), findsOneWidget);
 
     await tester.tap(find.text(_title));
     await tester.pump(const Duration(milliseconds: 400));

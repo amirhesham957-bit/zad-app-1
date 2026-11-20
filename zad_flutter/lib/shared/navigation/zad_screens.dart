@@ -18,12 +18,21 @@ import 'package:zad/shared/navigation/destinations.dart';
 import 'package:zad/shared/scan/data/vision_scanner.dart';
 import 'package:zad/shared/subscriptions/domain/subscription.dart';
 import 'package:zad/shared/transactions/domain/transaction.dart';
+import 'package:zad/shared/worlds/zad_world.dart';
 
 /// Opens a screen with nothing but the context.
 typedef OpenScreen = Future<void> Function(BuildContext context);
 
 /// Screens and sheets, by the feature that owns them.
 abstract final class ZadScreens {
+  // ── worlds
+  /// How to open `world`'s screen, or null while it has none — the «متصلة
+  /// بـ» strip hides a chip with no screen. Bound in
+  /// `app/wiring/screens_wiring.dart`; nothing opens before it is.
+  static OpenScreen? Function(ZadWorld world) worldScreen = _noWorldScreen;
+
+  static OpenScreen? _noWorldScreen(ZadWorld world) => null;
+
   // ── achievements
   /// الإنجازات والرتب.
   static late OpenScreen showAchievementsScreen;
@@ -177,6 +186,11 @@ abstract final class ZadScreens {
     ScannedMedicine? scanned,
   })
   showAddMedicineSheet;
+
+  /// Photographs a medicine box and returns the reading (null when the
+  /// sheet was closed first); the pharmacy then opens its add form from it.
+  static late Future<ScannedMedicine?> Function(BuildContext context)
+  showMedicinePhotoSheet;
 
   // ── prices
   /// أسعار الناس.

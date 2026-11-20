@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
+import 'package:zad/core/design/components/zad_idle_motion.dart';
 import 'package:zad/shared/ads/application/ads_policy.dart';
 import 'package:zad/shared/ads/data/ad_reward_preview.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
@@ -84,10 +85,43 @@ void main() {
       findsOneWidget,
     );
 
+    // The reward is a pill on the ad button, and the calls to action shine.
+    expect(find.byKey(const ValueKey<String>('watch-ad-pill')), findsOneWidget);
+    expect(find.byType(ZadShine), findsNWidgets(2));
+    expect(find.byIcon(Icons.card_giftcard_rounded), findsOneWidget);
+
     await tester.tap(find.byKey(const ValueKey<String>('rewards-subscribe')));
     await tester.tap(find.byKey(const ValueKey<String>('rewards-telegram')));
     expect(plans, 1);
     expect(bot, 1);
+  });
+
+  testWidgets('with animations off the card settles', (tester) async {
+    ZadIdleMotion.loops = true;
+    addTearDown(() => ZadIdleMotion.loops = false);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          attemptsRemoteProvider.overrideWithValue(_Remote(_balance())),
+          accountTimeZoneProvider.overrideWithValue('Africa/Cairo'),
+          adsAllowedProvider.overrideWithValue(true),
+          adRewardPreviewRemoteProvider.overrideWithValue(_Preview()),
+        ],
+        child: const MaterialApp(
+          home: MediaQuery(
+            data: MediaQueryData(disableAnimations: true),
+            child: Directionality(
+              textDirection: TextDirection.rtl,
+              child: Scaffold(
+                body: SingleChildScrollView(child: RewardsCard()),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey<String>('watch-ad')), findsOneWidget);
   });
 
   testWidgets('a subscriber keeps the bot, no ad and no plans', (tester) async {

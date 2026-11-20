@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 /// A service's icon and colour.
 typedef SubscriptionBrand = ({IconData icon, Color color});
 
+// l10n: data-begin
 const List<(List<String>, SubscriptionBrand)> _brands =
     <(List<String>, SubscriptionBrand)>[
       (
@@ -105,6 +106,7 @@ const List<(List<String>, SubscriptionBrand)> _brands =
         (icon: Icons.bolt, color: Color(0xFFF59E0B)),
       ),
     ];
+// l10n: data-end
 
 /// Kotlin's `subscriptionBrandFor`: searches the title and the provider
 /// together, since "Netflix" may arrive in either.

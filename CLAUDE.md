@@ -227,8 +227,12 @@ production** — see FLUTTER_MIGRATION.md "Where the commits live". **Status 202
 every Kotlin screen has a Flutter counterpart and the phone raises push plus the
 on-phone reminders (doses, tasbih, seasons). What is deliberately or not yet
 ported is listed in FLUTTER_MIGRATION.md §6 "Known gaps" — read it before
-calling anything "100%". **Next:** put the APK on the owner's phone. **Finish line:** a debug-signed
-release APK on the owner's phone — no keystore, no Play work; the live voice
+calling anything "100%". ⚠️ **Superseded 2026-11-15 — the app is on Google Play.** Closed testing
+finished, Play accepted the app, and the privacy policy is updated (owner). `build-debug-apk.yml`
+already builds `app-release-aab`, signed with the Play upload key (`ZAD_UPLOAD_KEYSTORE_B64` +
+`ZAD_UPLOAD_KEY_PASSWORD`), beside the APKs. Before each upload, `versionCode` (the `+N` in
+`pubspec.yaml`) must exceed the last one on Play. Never again tell the owner "no keystore,
+no Play work" — that was the old finish line: a debug-signed APK on the owner's phone. The live voice
 call (`zad-voice-live`) is cancelled for good.
 
 Rules that apply to every Flutter change, in short:

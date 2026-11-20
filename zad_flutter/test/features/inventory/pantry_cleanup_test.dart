@@ -53,6 +53,31 @@ class _Recording extends pantry.PantryController {
 }
 
 void main() {
+  // The world's scene sits above the list, so a screenful holds fewer rows;
+  // a tall surface keeps every row built (a real phone scrolls to them).
+  setUp(() {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    final view =
+        TestWidgetsFlutterBinding.instance.platformDispatcher.implicitView!
+          ..physicalSize = const Size(800, 2800)
+          ..devicePixelRatio = 1;
+    addTearDown(view.reset);
+    // The scene loops for ever, which pumpAndSettle would wait on; a phone
+    // asked for reduced motion holds it still.
+    TestWidgetsFlutterBinding
+        .instance
+        .platformDispatcher
+        .accessibilityFeaturesTestValue = const FakeAccessibilityFeatures(
+      disableAnimations: true,
+    );
+    addTearDown(
+      TestWidgetsFlutterBinding
+          .instance
+          .platformDispatcher
+          .clearAccessibilityFeaturesTestValue,
+    );
+  });
+
   setUpAll(() async {
     tz_data.initializeTimeZones();
     await initializeDateFormatting('ar');
@@ -71,6 +96,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          ...quietOrbOverrides,
           nowProvider.overrideWithValue(() => _now),
           accountTimeZoneProvider.overrideWithValue('Africa/Cairo'),
           accountCountryProvider.overrideWithValue(country),
@@ -153,6 +179,8 @@ void main() {
     await tester.ensureVisible(
       find.byKey(const ValueKey<String>('starter-add')),
     );
+    // The add button's dock shortens the list, so this scrolls now.
+    await tester.pump();
     await tester.tap(find.byKey(const ValueKey<String>('starter-add')));
     await tester.pumpAndSettle();
     expect(c.added, <String>[

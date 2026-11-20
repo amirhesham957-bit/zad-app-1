@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/design/components/zad_idle_motion.dart';
 import 'package:zad/core/design/zad_theme.dart';
 import 'package:zad/core/l10n/generated/zad_l10n.dart';
 import 'package:zad/features/home/presentation/home_glance_widgets.dart';
@@ -97,5 +98,50 @@ void main() {
 
     expect(find.text('كله تمام'), findsOneWidget);
     expect(find.text('1 صنف'), findsOneWidget);
+  });
+
+  testWidgets('every tile idles on its own schedule, and rests when asked', (
+    tester,
+  ) async {
+    ZadIdleMotion.loops = true;
+    addTearDown(() => ZadIdleMotion.loops = false);
+    await pump(tester, const PantryView());
+    expect(find.byType(ZadIdle), findsNWidgets(4));
+
+    // Four different kinds, so the icons do not move alike.
+    final kinds = tester
+        .widgetList<ZadIdle>(find.byType(ZadIdle))
+        .map((w) => w.kind)
+        .toSet();
+    expect(kinds, ZadIdleKind.values.toSet());
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('with animations disabled the tiles settle', (tester) async {
+    ZadIdleMotion.loops = true;
+    addTearDown(() => ZadIdleMotion.loops = false);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          nowProvider.overrideWithValue(() => DateTime.utc(2026, 11, 9, 9)),
+          pantryControllerProvider.overrideWith(QuietPantry.new),
+          pharmacyControllerProvider.overrideWith(QuietPharmacy.new),
+          subscriptionsControllerProvider.overrideWith(_Subs.new),
+          shoppingControllerProvider.overrideWith(QuietShopping.new),
+        ],
+        child: MaterialApp(
+          theme: ZadTheme.light(),
+          locale: const Locale('ar'),
+          localizationsDelegates: ZadL10n.localizationsDelegates,
+          supportedLocales: ZadL10n.supportedLocales,
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(disableAnimations: true),
+            child: child!,
+          ),
+          home: const Scaffold(body: HomeGlanceWidgets()),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
   });
 }
