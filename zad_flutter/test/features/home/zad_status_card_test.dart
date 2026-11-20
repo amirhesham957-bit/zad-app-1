@@ -75,8 +75,10 @@ Widget _app({
   required BankAccessState bank,
   required _Phone phone,
   required bool battery,
+  DateTime? snoozedAt,
 }) => ProviderScope(
   overrides: [
+    zadStatusSnoozedAtProvider.overrideWithValue(() => snoozedAt),
     nowProvider.overrideWithValue(() => _now),
     bankAccessControllerProvider.overrideWith(() => _Bank(bank)),
     locationSourceProvider.overrideWithValue(phone),
@@ -182,6 +184,41 @@ void main() {
     expect(find.text('مش دلوقتي'), findsOneWidget);
     // Without a store the snooze cannot be saved (a test host): it stays.
   });
+
+  testWidgets('snoozed: amber, honest line, not green, opens on a tap', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _app(
+        bank: _flowing,
+        phone: _Phone(LocationAccess.serviceOff),
+        battery: true,
+        snoozedAt: _now.subtract(const Duration(days: 1)),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('زاد شغال وبيتابع'), findsNothing);
+    expect(find.text('كله شغال ما عدا: الموقع'), findsOneWidget);
+    expect(find.byType(FilledButton), findsNothing, reason: 'not auto-open');
+
+    await tester.tap(find.text('كله شغال ما عدا: الموقع'));
+    await tester.pumpAndSettle();
+    expect(find.text('شغّل الموقع'), findsOneWidget);
+  });
+
+  testWidgets('screenshot: snoozed, collapsed amber', (tester) async {
+    await prepare(tester);
+    await tester.pumpWidget(
+      _app(
+        bank: _flowing,
+        phone: _Phone(LocationAccess.serviceOff),
+        battery: true,
+        snoozedAt: _now.subtract(const Duration(days: 1)),
+      ),
+    );
+    await shoot(tester, 'snoozed');
+  }, skip: Platform.environment['ZAD_SCREENS'] != '1');
 
   testWidgets('screenshot: all working, collapsed', (tester) async {
     await prepare(tester);

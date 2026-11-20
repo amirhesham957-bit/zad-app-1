@@ -5198,6 +5198,12 @@ abstract class ZadL10n {
   /// **'في حاجة واقفة ومحتاجة منك خطوة'**
   String get zadStatusNeedsFix;
 
+  /// No description provided for @zadStatusAllButOne.
+  ///
+  /// In ar, this message translates to:
+  /// **'كله شغال ما عدا: {what}'**
+  String zadStatusAllButOne(String what);
+
   /// No description provided for @zadStatusWorking.
   ///
   /// In ar, this message translates to:

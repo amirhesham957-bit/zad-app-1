@@ -27,6 +27,23 @@ import 'package:zad/shared/nearby/data/location_source.dart';
 import 'package:zad/shared/places/application/place_engine.dart';
 import 'package:zad/shared/places/data/background_location.dart';
 
+/// Where «مش دلوقتي» was last tapped on this device, or null. A provider so
+/// tests say the answer.
+final Provider<DateTime? Function()> zadStatusSnoozedAtProvider =
+    Provider<DateTime? Function()>(
+      (ref) => () {
+        try {
+          final raw = ref
+              .read(localStoreProvider)
+              .device
+              .get(kLocationBannerSnoozedKey);
+          return raw == null ? null : DateTime.tryParse(raw);
+        } on Object {
+          return null;
+        }
+      },
+    );
+
 /// The card, or nothing while there is nothing to say.
 class ZadStatusCard extends ConsumerStatefulWidget {
   /// Creates the card.
@@ -97,17 +114,7 @@ class _ZadStatusCardState extends ConsumerState<ZadStatusCard> {
     });
   }
 
-  DateTime? _snoozedAt() {
-    try {
-      final raw = ref
-          .read(localStoreProvider)
-          .device
-          .get(kLocationBannerSnoozedKey);
-      return raw == null ? null : DateTime.tryParse(raw);
-    } on Object {
-      return null;
-    }
-  }
+  DateTime? _snoozedAt() => ref.read(zadStatusSnoozedAtProvider)();
 
   Future<void> _snooze() async {
     try {
@@ -174,6 +181,12 @@ class _ZadStatusCardState extends ConsumerState<ZadStatusCard> {
     final broken = rows.where((r) => r.needsAttention).length;
     final expanded = broken > 0 || _open;
     final l10n = context.l10n;
+    // Put away is not fixed: a snoozed row only stops the card opening by
+    // itself. The line stays amber and names what is not working.
+    final putAway = rows
+        .where((r) => !r.needsAttention && r.level != ZadStatusLevel.ok)
+        .firstOrNull;
+    final calm = broken == 0 && putAway == null;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: ZadSpacing.md),
@@ -182,7 +195,7 @@ class _ZadStatusCardState extends ConsumerState<ZadStatusCard> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(ZadRadii.card),
           side: BorderSide(
-            color: broken > 0
+            color: !calm
                 ? ZadColors.mustardOchre.withValues(alpha: 0.5)
                 : ZadColors.outlineVariant,
           ),
@@ -199,8 +212,12 @@ class _ZadStatusCardState extends ConsumerState<ZadStatusCard> {
               _Header(
                 title: broken > 0
                     ? l10n.zadStatusNeedsFix
+                    : putAway != null
+                    ? l10n.zadStatusAllButOne(
+                        _RowTile.titleOf(l10n, putAway.kind),
+                      )
                     : l10n.zadStatusAllGood,
-                ok: broken == 0,
+                ok: calm,
                 expanded: expanded,
                 onTap: broken > 0 ? null : () => setState(() => _open = !_open),
               ),
@@ -365,7 +382,7 @@ class _RowTile extends StatelessWidget {
                   children: <Widget>[
                     Expanded(
                       child: Text(
-                        _title(l10n, row.kind),
+                        titleOf(l10n, row.kind),
                         style: ZadType.titleSmall.copyWith(
                           color: ZadColors.ink,
                         ),
@@ -426,7 +443,7 @@ class _RowTile extends StatelessWidget {
     ZadStatusKind.battery => Icons.battery_charging_full_outlined,
   };
 
-  static String _title(ZadL10n l10n, ZadStatusKind kind) => switch (kind) {
+  static String titleOf(ZadL10n l10n, ZadStatusKind kind) => switch (kind) {
     ZadStatusKind.bank => l10n.zadStatusBank,
     ZadStatusKind.notifications => l10n.zadStatusNotifications,
     ZadStatusKind.location => l10n.zadStatusLocation,

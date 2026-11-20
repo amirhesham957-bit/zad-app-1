@@ -113,7 +113,17 @@ class StreetAlertsController extends Notifier<StreetAlertsView> {
     if (!await always.granted() && !await always.request()) {
       return _settle(StreetAlertsStatus.needsAlways);
     }
-    final fix = await source.current() ?? await source.lastKnown();
+    var fix = await source.current();
+    if (fix == null) {
+      // Only a recent last fix stands in; an old one would put the fences
+      // round the wrong place.
+      final last = await source.lastKnown();
+      if (last != null &&
+          ref.read(nowProvider)().toUtc().difference(last.takenAt) <=
+              kLastKnownFor) {
+        fix = last;
+      }
+    }
     if (fix == null) return _settle(StreetAlertsStatus.noFix);
     try {
       await engine.enable(at: fix.at, zone: ref.read(accountTimeZoneProvider));

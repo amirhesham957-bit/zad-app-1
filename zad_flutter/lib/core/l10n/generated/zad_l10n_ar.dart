@@ -2909,6 +2909,11 @@ class ZadL10nAr extends ZadL10n {
   String get zadStatusNeedsFix => 'في حاجة واقفة ومحتاجة منك خطوة';
 
   @override
+  String zadStatusAllButOne(String what) {
+    return 'كله شغال ما عدا: $what';
+  }
+
+  @override
   String get zadStatusWorking => 'شغال';
 
   @override
@@ -5181,6 +5186,11 @@ class ZadL10nArSa extends ZadL10nAr {
 
   @override
   String get zadStatusNeedsFix => 'فيه شي واقف ويحتاج منك خطوة';
+
+  @override
+  String zadStatusAllButOne(String what) {
+    return 'كله شغّال ما عدا: $what';
+  }
 
   @override
   String get zadStatusWorking => 'شغال';

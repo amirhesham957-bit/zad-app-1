@@ -102,7 +102,7 @@ class NearbyView {
 /// Holds the tab.
 class NearbyController extends Notifier<NearbyView> {
   /// How old the phone's last position may be and still count as "here".
-  static const Duration lastKnownFor = Duration(minutes: 30);
+  static const Duration lastKnownFor = kLastKnownFor;
 
   /// The customer went to the phone's settings from here, so coming back
   /// with location on is the answer to «حدّد مكاني», not a new visit.

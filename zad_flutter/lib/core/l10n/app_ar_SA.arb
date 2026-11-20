@@ -116,6 +116,7 @@
   "zadStatusTitle": "حالة زاد",
   "zadStatusAllGood": "زاد شغّال ويتابع",
   "zadStatusNeedsFix": "فيه شي واقف ويحتاج منك خطوة",
+  "zadStatusAllButOne": "كله شغّال ما عدا: {what}",
   "zadStatusWorking": "شغال",
   "zadStatusStopped": "واقف",
   "zadStatusMaybe": "ممكن يقف",

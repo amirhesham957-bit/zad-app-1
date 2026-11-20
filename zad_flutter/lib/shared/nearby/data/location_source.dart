@@ -37,6 +37,10 @@ enum LocationAccess {
   serviceOff,
 }
 
+/// How old the OS's last fix may be and still stand in for a new one. Older
+/// is "far from the customer", not a position.
+const Duration kLastKnownFor = Duration(minutes: 30);
+
 /// A position and when the phone took it.
 typedef Fix = ({GeoPoint at, DateTime takenAt});
 

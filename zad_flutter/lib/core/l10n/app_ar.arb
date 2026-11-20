@@ -2164,6 +2164,14 @@
   "zadStatusTitle": "حالة زاد",
   "zadStatusAllGood": "زاد شغال وبيتابع",
   "zadStatusNeedsFix": "في حاجة واقفة ومحتاجة منك خطوة",
+  "zadStatusAllButOne": "كله شغال ما عدا: {what}",
+  "@zadStatusAllButOne": {
+    "placeholders": {
+      "what": {
+        "type": "String"
+      }
+    }
+  },
   "zadStatusWorking": "شغال",
   "zadStatusStopped": "واقف",
   "zadStatusMaybe": "ممكن يقف",

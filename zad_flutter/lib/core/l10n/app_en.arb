@@ -919,6 +919,7 @@
   "zadStatusTitle": "Zad status",
   "zadStatusAllGood": "Zad is working and watching",
   "zadStatusNeedsFix": "Something has stopped and needs one step from you",
+  "zadStatusAllButOne": "All working except: {what}",
   "zadStatusWorking": "Working",
   "zadStatusStopped": "Stopped",
   "zadStatusMaybe": "May stop",

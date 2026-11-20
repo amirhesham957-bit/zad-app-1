@@ -2977,6 +2977,11 @@ class ZadL10nEn extends ZadL10n {
       'Something has stopped and needs one step from you';
 
   @override
+  String zadStatusAllButOne(String what) {
+    return 'All working except: $what';
+  }
+
+  @override
   String get zadStatusWorking => 'Working';
 
   @override
