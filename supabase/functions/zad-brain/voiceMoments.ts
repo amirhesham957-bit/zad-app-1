@@ -187,7 +187,7 @@ export const DOSE_MOMENTS: ReadonlySet<string> = new Set([
  * DOSE_MOMENTS: تنبيه ولي الأمر (family_dose_missed، 20261001140000) بيسمّي دوا الفرد، بس
  * مالوش زرار «خدتها» — الجرعة مش بتاعته.
  */
-export const MEDICINE_NAMED_MOMENTS: ReadonlySet<string> = new Set([...DOSE_MOMENTS, "family_dose_missed"]);
+export const MEDICINE_NAMED_MOMENTS: ReadonlySet<string> = new Set([...DOSE_MOMENTS, "family_dose_missed", "family_med_low"]);
 
 /** نطاقات الأولاد (20261003110000): خرج من نطاق جوه مواعيده، ورجع بعدها. */
 export const FAMILY_ZONE_MOMENTS: ReadonlySet<string> = new Set(["family_zone_exit", "family_zone_back"]);
@@ -234,9 +234,12 @@ export const WEEKLY_MONEY_MOMENT = "weekly_money_story";
 /** حكاية البيت الشهرية (ZAD_PLAN ٥.٢) — الأرقام بتتحسب في SQL وقت الإدخال (zad_monthly_story_facts). */
 export const MONTHLY_STORY_MOMENT = "monthly_story";
 
+/** تقرير المتابع الأسبوعي (20261121100000) — الأرقام من SQL (zad_family_weekly_report_facts)، سطر لكل فرد. */
+export const FAMILY_WEEKLY_MOMENT = "family_weekly_report";
+
 /** سقف طول الكلام لكل لحظة. الحكاية الأسبوعية أطول من تنبيه؛ الباقي زي ما هو. */
 export function momentLimits(moment: string): { text: number; speech: number } {
-  return moment.startsWith("weekly_money") || moment === MONTHLY_STORY_MOMENT ? { text: 900, speech: 600 } : { text: 500, speech: 400 };
+  return moment.startsWith("weekly_money") || moment === MONTHLY_STORY_MOMENT || moment === FAMILY_WEEKLY_MOMENT ? { text: 900, speech: 600 } : { text: 500, speech: 400 };
 }
 
 /** توجيه إضافي للموديل لكل لحظة محتاجة شكل خاص (مش مجرد جملتين). */
@@ -291,6 +294,16 @@ const MOMENT_GUIDANCE: Record<string, string> = {
     "تنبيه لولي أمر: فرد من عيلته (member_alias) وافق إنه يتابع أدويته، وفاتته جرعة (item_name) ميعادها scheduled_at. " +
     "text: سطر واحد هادي فيه مين، واسم الدوا زي ما هو، والميعاد — واقتراح يكلّمه أو يطمّن عليه. " +
     "speech: جملتين بلهجته، من غير تخويف ولا لوم للفرد. لو again = true قولي إنها تاني جرعة تفوته النهارده.",
+  family_med_low:
+    "تنبيه لولي أمر: دوا فرد من عيلته (member_alias) اللي وافق إنه يتابع أدويته قرّب يخلص — item_name، والباقي remaining (unit لو موجودة). " +
+    "text: سطر واحد هادي فيه مين، واسم الدوا زي ما هو مكتوب، والباقي من facts بس — واقتراح خفيف يشتريه أو يجدده أو يكلّمه. " +
+    "speech: جملتين بلهجته، من غير تخويف ولا لوم، وماتخترعيش اسم دوا ولا رقم مش في الحقايق.",
+  family_weekly_report:
+    "تقرير أسبوعي لمتابع العيلة: members = أفراد وافقوا إنه يتابعهم، ولكل فرد member_alias وأقسام بيانات (medicines: التزام آخر ٧ أيام " +
+    "adherence_pct، taken من scheduled، missed، low_count أدوية قربت تخلص — spending: spent_7d وأعلى فئات top — tasks: chores_open، " +
+    "chores_overdue، appointments_7d، appointments_overdue). مفيش قسم = مش مشارَك، ماتقوليش عنه حاجة. " +
+    "text: سطر واحد قصير لكل فرد باسمه، بأرقام من الحقايق بس، وماتزوّديش رقم مش موجود. هادي، من غير لوم ولا حكم على حد. " +
+    "speech: جملتين بلهجته عن الأسبوع بشكل عام، من غير أرقام كتير.",
   travel_arrived:
     "العميل لسه واصل بلد تانية (country = كود البلد، وبلده home_country) — قولي اسم البلد بالعربي. text: سطر ترحيب قصير بالبلد واسمها، وعرض واحد: " +
     "يرشحله سوبرماركت أو أماكن قريبة فيها اللي بيحبه لو عايز. speech: جملتين مبسوطين بلهجته. " +
@@ -557,6 +570,53 @@ export function momentFallback(moment: string, facts: Record<string, unknown>): 
         title: `💊 ${who} فاتته جرعة ${item}`,
         text: `${again ? "تاني جرعة تفوت النهارده: " : ""}${who} ماسجلش إنه خد ${item}${at ? ` بتاعة ${at}` : ""}. اطمن عليه.`,
         speech: `${who} لسه ماخدش ${item}${at ? ` بتاعة ${at}` : ""}. ممكن تكلمه تطمن عليه؟`,
+      };
+    }
+    case "family_med_low": {
+      const who = str(facts.member_alias, 40) || "فرد من العيلة";
+      const rem = Number(facts.remaining);
+      const unit = str(facts.unit, 20);
+      const left = Number.isFinite(rem) && facts.remaining !== null && facts.remaining !== ""
+        ? ` فاضل ${rem}${unit ? ` ${unit}` : ""}` : " قرّب يخلص";
+      return {
+        title: `${item} عند ${who} قرّب يخلص`,
+        text: `${item} بتاع ${who}${left}. ممكن تجيبله غيره أو تكلّمه يجدده.`,
+        speech: `${item} بتاع ${who}${left}. ممكن تجيبله غيره أو تكلمه يجدده.`,
+      };
+    }
+    case FAMILY_WEEKLY_MOMENT: {
+      const members = Array.isArray(facts.members) ? (facts.members as Array<Record<string, unknown>>) : [];
+      const num = (v: unknown) => Math.round(Number(v) || 0);
+      const lines = members.slice(0, 8).map((m) => {
+        const who = str(m.member_alias, 40) || "فرد من العيلة";
+        const parts: string[] = [];
+        const med = m.medicines as Record<string, unknown> | undefined;
+        if (med) {
+          if (med.adherence_pct !== null && med.adherence_pct !== undefined) {
+            parts.push(`أخد ${num(med.taken)} من ${num(med.scheduled)} جرعة${num(med.missed) > 0 ? ` (فاتته ${num(med.missed)})` : ""}`);
+          }
+          if (num(med.low_count) > 0) parts.push(`${num(med.low_count)} دوا قرّب يخلص`);
+        }
+        const sp = m.spending as Record<string, unknown> | undefined;
+        if (sp) {
+          const top = Array.isArray(sp.top) ? (sp.top as Array<{ category?: string }>)[0] : undefined;
+          const cur = str(sp.currency, 10);
+          parts.push(`صرف ${num(sp.spent_7d)}${cur ? ` ${cur}` : ""}${top?.category ? `، أكتر على ${str(top.category, 40)}` : ""}`);
+        }
+        const tk = m.tasks as Record<string, unknown> | undefined;
+        if (tk) {
+          const bits: string[] = [];
+          if (num(tk.chores_open) > 0) bits.push(`${num(tk.chores_open)} مهمة مفتوحة${num(tk.chores_overdue) > 0 ? ` (${num(tk.chores_overdue)} متأخرة)` : ""}`);
+          if (num(tk.appointments_7d) > 0) bits.push(`${num(tk.appointments_7d)} ميعاد الأسبوع الجاي`);
+          if (num(tk.appointments_overdue) > 0) bits.push(`${num(tk.appointments_overdue)} ميعاد فات`);
+          if (bits.length) parts.push(bits.join("، "));
+        }
+        return `${who}: ${parts.join(" — ")}.`;
+      });
+      return {
+        title: "تقرير العيلة الأسبوعي",
+        text: lines.join("\n"),
+        speech: "ده تقرير العيلة بتاع الأسبوع. فتح التطبيق وشوف التفاصيل لكل فرد.",
       };
     }
     case "travel_arrived": {
@@ -1080,6 +1140,20 @@ export async function isStillRelevant(sb: SupabaseClient, row: VoiceMomentRow): 
       .eq("owner_id", memberId).eq("viewer_id", row.user_id).eq("scope", "medicines").eq("status", "granted").limit(1);
     if (!share || (share as unknown[]).length === 0) return false;
     return await isStillRelevant(sb, { ...row, user_id: memberId, moment: "dose_missed" });
+  }
+  // دوا الفرد قرّب يخلص: المتابعة اتلغت، أو الدوا اتجدد (بقى فوق الحد) قبل ما التنبيه يطلع = مفيش تنبيه.
+  if (row.moment === "family_med_low") {
+    const memberId = str(row.facts?.member_id, 60);
+    const itemId = str(row.facts?.item_id, 60);
+    if (!memberId || !itemId) return false;
+    const { data: share } = await sb.from("zad_family_shares").select("id")
+      .eq("owner_id", memberId).eq("viewer_id", row.user_id).eq("scope", "medicines").eq("status", "granted").limit(1);
+    if (!share || (share as unknown[]).length === 0) return false;
+    const { data: item } = await sb.from("zad_pharmacy_items").select("remaining_quantity,daily_dose_count")
+      .eq("id", itemId).maybeSingle();
+    const it = item as { remaining_quantity?: number | null; daily_dose_count?: number | null } | null;
+    if (!it || it.remaining_quantity === null || it.remaining_quantity === undefined) return false;
+    return Number(it.remaining_quantity) <= (Number(it.daily_dose_count) || 1) * 3;
   }
   // رجع بلده (أو راح بلد تالتة) قبل ما الترحيب يتبعت = مفيش ترحيب.
   if (row.moment === "travel_arrived") {
@@ -1994,6 +2068,8 @@ export const NEVER_HELD_MOMENTS: ReadonlySet<string> = new Set([
   // فرد في البيت فاتته جرعة: ولي الأمر يعرف دلوقتي، مش الصبح (ZAD_PLAN ١.٣، الحارة الحرجة).
   // كان بيتمسك بالهدوء والسقف زي أي دردشة.
   "family_dose_missed",
+  // دوا فرد قرّب يخلص (20261121100000): نفس الحارة، ولي الأمر يعرف دلوقتي.
+  "family_med_low",
 ]);
 
 /** مابتتعدّش في السقف ولا في المسافة: اللي مابيتمسكش، وردود شات تليجرام بالصوت (رد مش تنبيه). */
@@ -2015,7 +2091,7 @@ export type MomentHold = "quiet_hours" | "daily_cap" | "busy_day" | "circumstanc
  */
 export const BUSY_DAY_OPTIONAL_MOMENTS: ReadonlySet<string> = new Set([
   "tasbiha_reminder", "ignored_days", "back_home_spent", "challenge_streak_broken", NEWCOMER_MOMENT,
-  WEEKLY_MONEY_MOMENT, "weekly_money_proud", "weekly_money_reproach", MONTHLY_STORY_MOMENT,
+  WEEKLY_MONEY_MOMENT, "weekly_money_proud", "weekly_money_reproach", MONTHLY_STORY_MOMENT, FAMILY_WEEKLY_MOMENT,
 ]);
 export const BUSY_DAY_APPOINTMENTS = 3;
 

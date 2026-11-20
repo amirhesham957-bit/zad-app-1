@@ -8,7 +8,7 @@ import {
   DOSE_MOMENTS, FAMILY_ZONE_MOMENTS, momentGate, NEVER_HELD_MOMENTS, tooSoonAfterLast, UNCOUNTED_MOMENTS,
 } from "./voiceMoments.ts";
 
-const CRITICAL_MOMENTS = [...DOSE_MOMENTS, "appointment_soon", ...FAMILY_ZONE_MOMENTS, "family_dose_missed"];
+const CRITICAL_MOMENTS = [...DOSE_MOMENTS, "appointment_soon", ...FAMILY_ZONE_MOMENTS, "family_dose_missed", "family_med_low"];
 /** مهام: تذكير طلبه العميل («فكّرني») ومتابعة الدوا. */
 const CRITICAL_TASKS = ["reminder", "med_followup"];
 

@@ -15,6 +15,7 @@ Deno.test("doses, appointments, family alerts and the Telegram welcome still rea
   }
   assertEquals(NEVER_HELD_MOMENTS.has("appointment_soon"), true);
   assertEquals(NEVER_HELD_MOMENTS.has("family_dose_missed"), true);
+  assertEquals(NEVER_HELD_MOMENTS.has("family_med_low"), true);
 });
 
 Deno.test("an account that talked or has data is not held by this gate", () => {

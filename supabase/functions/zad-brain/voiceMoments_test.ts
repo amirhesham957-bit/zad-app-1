@@ -332,7 +332,7 @@ Deno.test("the prompt carries what was said last time, to be avoided", () => {
   assert(!none.user.includes("ماتكرريش"));
 });
 
-import { isStillRelevant, MEDICINE_NAMED_MOMENTS } from "./voiceMoments.ts";
+import { isStillRelevant, MEDICINE_NAMED_MOMENTS, momentLimits } from "./voiceMoments.ts";
 
 Deno.test("a guardian's missed-dose alert: only with consent, and only while the dose is still missing (2026-10-01)", async () => {
   const row = {
@@ -508,4 +508,48 @@ Deno.test("a moment's push carries the offer's own link, https only (ZAD_PLAN 4.
   assertEquals(momentSourceUrl({ deal_code: { url: "javascript:alert(1)" } }), null);
   assertEquals(momentSourceUrl({ taste_deal: { source: { url: null } } }), null);
   assertEquals(momentSourceUrl(null), null);
+});
+
+Deno.test("family_med_low: names the member and the medicine as written, guarded, still relevant only while low and consented (2026-11-21)", async () => {
+  const f = momentFallback("family_med_low", { member_alias: "يوسف", item_name: "كونكور 5", remaining: 4, unit: "قرص" });
+  assertStringIncludes(f.title, "يوسف");
+  assertStringIncludes(f.title, "كونكور 5");
+  assertStringIncludes(f.text, "فاضل 4 قرص");
+  assertEquals(MEDICINE_NAMED_MOMENTS.has("family_med_low"), true);
+  assertEquals(/\p{Extended_Pictographic}/u.test(`${f.title}${f.text}${f.speech}`), false, "no emoji");
+  const row = {
+    id: "m1", user_id: "dad", moment: "family_med_low", status: "pending", attempts: 0,
+    created_at: new Date().toISOString(),
+    facts: { member_id: "son", item_id: "p1", item_name: "كونكور 5", remaining: 4 },
+  };
+  const tables = (shared: boolean, remaining: number) => ({
+    zad_family_shares: shared ? [{ id: "s1", owner_id: "son", viewer_id: "dad", scope: "medicines", status: "granted" }] : [],
+    zad_pharmacy_items: [{ id: "p1", remaining_quantity: remaining, daily_dose_count: 1 }],
+  });
+  // deno-lint-ignore no-explicit-any
+  const relevant = (shared: boolean, remaining: number) => isStillRelevant(fakeSb(tables(shared, remaining)).sb, row as any);
+  assertEquals(await relevant(true, 3), true);
+  assertEquals(await relevant(false, 3), false, "consent revoked");
+  assertEquals(await relevant(true, 30), false, "restocked before it went out");
+});
+
+Deno.test("family_weekly_report: one line per member, only numbers from the facts (2026-11-21)", () => {
+  const f = momentFallback("family_weekly_report", {
+    members: [
+      { member_alias: "يوسف", medicines: { scheduled: 14, taken: 12, missed: 2, adherence_pct: 86, low_count: 1 },
+        spending: { spent_7d: 350, currency: "EGP", top: [{ category: "طعام", amount: 200 }] } },
+      { member_alias: "سارة", tasks: { chores_open: 2, chores_overdue: 1, appointments_7d: 1, appointments_overdue: 0 } },
+    ],
+  });
+  const lines = f.text.split("\n");
+  assertEquals(lines.length, 2);
+  assertStringIncludes(lines[0], "يوسف");
+  assertStringIncludes(lines[0], "أخد 12 من 14");
+  assertStringIncludes(lines[0], "فاتته 2");
+  assertStringIncludes(lines[0], "صرف 350 EGP");
+  assertStringIncludes(lines[1], "سارة");
+  assertStringIncludes(lines[1], "2 مهمة مفتوحة (1 متأخرة)");
+  assertEquals(lines[1].includes("صرف"), false, "an unshared scope is never mentioned");
+  assertEquals(/\p{Extended_Pictographic}/u.test(`${f.title}${f.text}${f.speech}`), false, "no emoji");
+  assertEquals(momentLimits("family_weekly_report").text, 900);
 });
