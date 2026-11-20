@@ -6168,6 +6168,131 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get achRetry => 'جرّب تاني';
+
+  @override
+  String get pricesEyebrow => 'لوحة الأسعار';
+
+  @override
+  String get pricesWorldNeutral => 'أسعار السوق من بلاغات الناس';
+
+  @override
+  String get pricesWorldFlat => 'الأسعار ثابتة النهارده';
+
+  @override
+  String pricesWorldUp(String name) {
+    return '$name طالع';
+  }
+
+  @override
+  String pricesWorldDown(String name) {
+    return '$name نازل';
+  }
+
+  @override
+  String pricesWorldUpDown(String up, String down) {
+    return '$up طالع، $down نازل';
+  }
+
+  @override
+  String get pricesMine => 'مساهماتك';
+
+  @override
+  String get pricesReportNew => 'سجّل سعر جديد';
+
+  @override
+  String get pricesCheapestTitle => 'أرخص سعر حواليك';
+
+  @override
+  String get pricesCheapestNote =>
+      'من بلاغات مجتمع زاد آخر ١٤ يوم — مش أسعار رسمية';
+
+  @override
+  String get pricesCityLabel => 'المدينة أو المنطقة (اختياري)';
+
+  @override
+  String get pricesSearch => 'دوّر';
+
+  @override
+  String get pricesFetchFailed => 'مقدرناش نجيب الأسعار دلوقتي';
+
+  @override
+  String get pricesFetchFailedHint => 'اتأكد من النت وجرّب تاني';
+
+  @override
+  String get pricesRetry => 'جرّب تاني';
+
+  @override
+  String get pricesNoReportsTitle => 'لسه مفيش بلاغات هنا';
+
+  @override
+  String get pricesNoReportsHint => 'كن أول واحد يبلّغ عن سعر — جيرانك هيشكروك';
+
+  @override
+  String get pricesFirstReport => 'سجّل أول سعر';
+
+  @override
+  String pricesRowMeta(String where, int count) {
+    return '$where · $count بلاغ';
+  }
+
+  @override
+  String get pricesTrendsTitle => 'ترندات سوقك';
+
+  @override
+  String pricesTrendsNote(int days) {
+    return 'اللي بيوت كتير في بلدك اشترته أو حطّته في قايمة التسوق آخر $days يوم — من غير أسماء ولا محلات';
+  }
+
+  @override
+  String get pricesTrendsNoMarket => 'اختار بلدك الأول';
+
+  @override
+  String get pricesTrendsNoMarketHint => 'الترندات بتتحسب لكل بلد لوحده.';
+
+  @override
+  String get pricesTrendsEmpty => 'لسه مفيش ترند في سوقك';
+
+  @override
+  String pricesTrendsEmptyHint(int homes) {
+    return 'الصنف بيظهر هنا لما $homes بيوت مختلفة على الأقل يشتروه أو يحطّوه في قايمتهم — عشان محدش يتعرف من مشترياته. كل فاتورة بتصوّرها بتقرّب اليوم ده.';
+  }
+
+  @override
+  String get pricesTrendUp => 'بيزيد';
+
+  @override
+  String get pricesTrendDown => 'بيقل';
+
+  @override
+  String get pricesTrendFlat => 'ثابت';
+
+  @override
+  String get pricesTrendFresh => 'جديد';
+
+  @override
+  String pricesHomes(int n) {
+    return '$n بيوت';
+  }
+
+  @override
+  String get pricesTopTitle => 'أكثر المشاركين';
+
+  @override
+  String get pricesTopNone => 'لسه مفيش مساهمات';
+
+  @override
+  String get pricesTopNoneHint =>
+      'سجّل أول سعر شفته في السوق — مساهمتك بتظهر هنا وبتساعد جيرانك يلاقوا أرخص مكان.';
+
+  @override
+  String pricesContributor(int rank) {
+    return 'المساهم $rank';
+  }
+
+  @override
+  String pricesContribCount(int n) {
+    return '$n مساهمات';
+  }
 }
 
 /// The translations for Arabic, as used in Saudi Arabia (`ar_SA`).
@@ -8559,4 +8684,129 @@ class ZadL10nArSa extends ZadL10nAr {
 
   @override
   String get achRetry => 'حاول مرة ثانية';
+
+  @override
+  String get pricesEyebrow => 'لوحة الأسعار';
+
+  @override
+  String get pricesWorldNeutral => 'أسعار السوق من بلاغات الناس';
+
+  @override
+  String get pricesWorldFlat => 'الأسعار ثابتة اليوم';
+
+  @override
+  String pricesWorldUp(String name) {
+    return '$name طالع';
+  }
+
+  @override
+  String pricesWorldDown(String name) {
+    return '$name نازل';
+  }
+
+  @override
+  String pricesWorldUpDown(String up, String down) {
+    return '$up طالع، $down نازل';
+  }
+
+  @override
+  String get pricesMine => 'مساهماتك';
+
+  @override
+  String get pricesReportNew => 'سجّل سعراً جديداً';
+
+  @override
+  String get pricesCheapestTitle => 'أرخص سعر حولك';
+
+  @override
+  String get pricesCheapestNote =>
+      'من بلاغات مجتمع زاد آخر ١٤ يوماً — وليست أسعاراً رسمية';
+
+  @override
+  String get pricesCityLabel => 'المدينة أو المنطقة (اختياري)';
+
+  @override
+  String get pricesSearch => 'ابحث';
+
+  @override
+  String get pricesFetchFailed => 'ما قدرنا نجيب الأسعار الحين';
+
+  @override
+  String get pricesFetchFailedHint => 'تأكد من الإنترنت وحاول مرة ثانية';
+
+  @override
+  String get pricesRetry => 'حاول مرة ثانية';
+
+  @override
+  String get pricesNoReportsTitle => 'ما فيه بلاغات هنا للحين';
+
+  @override
+  String get pricesNoReportsHint => 'كن أول من يبلّغ عن سعر — جيرانك بيشكرونك';
+
+  @override
+  String get pricesFirstReport => 'سجّل أول سعر';
+
+  @override
+  String pricesRowMeta(String where, int count) {
+    return '$where · $count بلاغ';
+  }
+
+  @override
+  String get pricesTrendsTitle => 'ترندات سوقك';
+
+  @override
+  String pricesTrendsNote(int days) {
+    return 'ما اشترته أو أضافته بيوت كثيرة في بلدك لقائمة التسوق آخر $days يوم — بدون أسماء ولا محلات';
+  }
+
+  @override
+  String get pricesTrendsNoMarket => 'اختر بلدك أولاً';
+
+  @override
+  String get pricesTrendsNoMarketHint => 'الترندات تُحسب لكل بلد على حدة.';
+
+  @override
+  String get pricesTrendsEmpty => 'ما فيه ترند في سوقك للحين';
+
+  @override
+  String pricesTrendsEmptyHint(int homes) {
+    return 'يظهر الصنف هنا لما يشتريه أو يضيفه $homes بيوت مختلفة على الأقل — حتى لا يُعرف أحد من مشترياته. كل فاتورة تصوّرها تقرّب هذا اليوم.';
+  }
+
+  @override
+  String get pricesTrendUp => 'يزيد';
+
+  @override
+  String get pricesTrendDown => 'يقل';
+
+  @override
+  String get pricesTrendFlat => 'ثابت';
+
+  @override
+  String get pricesTrendFresh => 'جديد';
+
+  @override
+  String pricesHomes(int n) {
+    return '$n بيوت';
+  }
+
+  @override
+  String get pricesTopTitle => 'أكثر المشاركين';
+
+  @override
+  String get pricesTopNone => 'ما فيه مساهمات للحين';
+
+  @override
+  String get pricesTopNoneHint =>
+      'سجّل أول سعر رأيته في السوق — تظهر مساهمتك هنا وتساعد جيرانك يلقون أرخص مكان.';
+
+  @override
+  String pricesContributor(int rank) {
+    return 'المساهم $rank';
+  }
+
+  @override
+  String pricesContribCount(int n) {
+    return '$n مساهمات';
+  }
 }
