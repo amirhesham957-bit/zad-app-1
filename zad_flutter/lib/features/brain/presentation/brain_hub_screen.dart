@@ -1,100 +1,158 @@
-/// عقل زاد: the windows onto what the assistant knows and does — its staff's
-/// notes first.
+/// عقل زاد: ONE dark world. The painted night scene with the companion on
+/// top, the living map of what Zad knows under it (drag it, pick an area with
+/// the chips), then calm cards into the staff's notes, memory, the network,
+/// the full-screen map, the action log (undo) and the brain's health.
 ///
-/// Kotlin puts the same four behind icons over its intelligence tab. Here they
-/// hang off the chat, since that is where the customer talks to the thing they
-/// describe.
+/// The map used to be its own screen and the hub a list of six cards; they
+/// are one page now. The full-screen map stays one tap away.
 library;
 
 import 'package:flutter/material.dart';
-import 'package:zad/core/design/components/zad_card.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
+import 'package:zad/core/design/tokens/zad_palette.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
+import 'package:zad/features/brain/application/knowledge_map_controller.dart';
 import 'package:zad/features/brain/presentation/agent_action_log_screen.dart';
 import 'package:zad/features/brain/presentation/brain_health_screen.dart';
+import 'package:zad/features/brain/presentation/brain_world_scene.dart';
 import 'package:zad/features/brain/presentation/knowledge_map_screen.dart';
 import 'package:zad/features/brain/presentation/memory_graph_screen.dart';
 import 'package:zad/features/brain/presentation/memory_screen.dart';
 import 'package:zad/features/brain/presentation/staff_screen.dart';
+import 'package:zad/shared/orb/domain/companion_state.dart';
+import 'package:zad/shared/worlds/world_card.dart';
+import 'package:zad/shared/worlds/world_scaffold.dart';
+import 'package:zad/shared/worlds/zad_world.dart';
 
 /// Opens the hub.
 Future<void> showBrainHub(BuildContext context) => Navigator.of(
   context,
 ).push<void>(MaterialPageRoute<void>(builder: (_) => const BrainHubScreen()));
 
-/// The hub.
-class BrainHubScreen extends StatelessWidget {
+/// The brain world.
+class BrainHubScreen extends ConsumerWidget {
   /// Creates the hub.
   const new({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    const entries = <_Entry>[
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = context.l10n;
+    final nodes = ref.watch(knowledgeMapControllerProvider).map.nodeCount;
+    final entries = <_Entry>[
       _Entry(
-        icon: ZadIcons.assistant,
-        title: 'فريق زاد',
-        subtitle: 'اللي الموظفين لاحظوه في جولة الصبح على بيتك وفلوسك وعيلتك',
-        open: showStaffScreen,
+        ZadIcons.assistant,
+        l.brainCardStaffTitle,
+        l.brainCardStaffBody,
+        showStaffScreen,
       ),
       _Entry(
-        icon: ZadIcons.memory,
-        title: 'زاد عارف عني إيه',
-        subtitle: 'اللي زاد فاكره عنك وبيكلمك على أساسه — صحّحه أو خلّيه ينساه',
-        open: showMemoryScreen,
+        ZadIcons.memory,
+        l.brainCardMemoryTitle,
+        l.brainCardMemoryBody,
+        showMemoryScreen,
       ),
       _Entry(
-        icon: ZadIcons.memoryGraph,
-        title: 'شبكة زاد',
-        subtitle:
-            'الناس والأماكن والحاجات اللي زاد عارفها ومترابطة إزاي '
-            '— وصدّرها لأوبسيديان',
-        open: showMemoryGraph,
+        ZadIcons.memoryGraph,
+        l.brainCardGraphTitle,
+        l.brainCardGraphBody,
+        showMemoryGraph,
       ),
       _Entry(
-        icon: ZadIcons.knowledgeMap,
-        title: 'خريطة زاد',
-        subtitle: 'إزاي ميزانيتك واشتراكاتك وبيتك متصلين ببعض',
-        open: showKnowledgeMap,
+        ZadIcons.knowledgeMap,
+        l.brainCardMapTitle,
+        l.brainCardMapBody,
+        showKnowledgeMap,
       ),
       _Entry(
-        icon: ZadIcons.actionLog,
-        title: 'سجل تعديلات زاد',
-        subtitle: 'كل حاجة زاد سجّلها أو عدّلها لك، وترجع فيها لو غلط',
-        open: showAgentActionLog,
+        ZadIcons.actionLog,
+        l.brainCardLogTitle,
+        l.brainCardLogBody,
+        showAgentActionLog,
       ),
       _Entry(
-        icon: ZadIcons.brainHealth,
-        title: 'صحة عقل زاد',
-        subtitle: 'زاد شغال في الخلفية ولا واقف — ولو واقف، ليه',
-        open: showBrainHealth,
+        ZadIcons.brainHealth,
+        l.brainCardHealthTitle,
+        l.brainCardHealthBody,
+        showBrainHealth,
       ),
     ];
 
-    return DecoratedBox(
-      decoration: BoxDecoration(gradient: ZadColors.canvas),
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        appBar: AppBar(title: const Text('عقل زاد')),
-        body: ListView.separated(
-          padding: const EdgeInsets.all(ZadSpacing.gutter),
-          itemCount: entries.length,
-          separatorBuilder: (_, _) => const SizedBox(height: ZadSpacing.md),
-          itemBuilder: (context, i) => _EntryCard(entry: entries[i]),
+    // The route is a world with no app bar; the Scaffold is the Material the
+    // chips and cards splash on.
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: ZadWorldScaffold(
+        world: ZadWorld.brain,
+        eyebrow: l.brainWorldEyebrow(nodes),
+        title: l.worldLabelBrain,
+        stateLine: l.brainWorldState,
+        scene: BrainWorldScene.new,
+        zado: const ZadWorldZado(
+          left: 150,
+          top: 52,
+          size: 130,
+          state: CompanionState.focused,
         ),
+        slivers: <Widget>[
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(
+              ZadSpacing.gutter,
+              ZadSpacing.md,
+              ZadSpacing.gutter,
+              0,
+            ),
+            sliver: SliverToBoxAdapter(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(ZadRadii.cardLarge),
+                child: const ColoredBox(
+                  color: ZadPalette.sciFiBg,
+                  child: SizedBox(
+                    height: 520,
+                    child: KnowledgeMapBody(embedded: true),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(
+              ZadSpacing.gutter,
+              ZadSpacing.lg,
+              ZadSpacing.gutter,
+              0,
+            ),
+            sliver: SliverToBoxAdapter(
+              child: Text(
+                l.brainCardsTitle,
+                style: ZadType.titleMedium.copyWith(color: ZadColors.ink),
+              ),
+            ),
+          ),
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(
+              ZadSpacing.gutter,
+              ZadSpacing.sm,
+              ZadSpacing.gutter,
+              0,
+            ),
+            sliver: SliverList.separated(
+              itemCount: entries.length,
+              separatorBuilder: (_, _) => const SizedBox(height: ZadSpacing.md),
+              itemBuilder: (context, i) => _EntryCard(entry: entries[i]),
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
 class _Entry {
-  const new({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.open,
-  });
+  const new(this.icon, this.title, this.subtitle, this.open);
 
   final IconData icon;
   final String title;
@@ -108,18 +166,18 @@ class _EntryCard extends StatelessWidget {
   final _Entry entry;
 
   @override
-  Widget build(BuildContext context) => ZadCard(
+  Widget build(BuildContext context) => ZadWorldCard(
     onTap: () => entry.open(context),
     child: Row(
       children: <Widget>[
         DecoratedBox(
           decoration: BoxDecoration(
-            color: ZadColors.green600.withValues(alpha: 0.10),
+            color: ZadWorld.brain.color.withValues(alpha: 0.10),
             shape: BoxShape.circle,
           ),
           child: Padding(
             padding: const EdgeInsets.all(ZadSpacing.md),
-            child: Icon(entry.icon, color: ZadColors.green700, size: 22),
+            child: Icon(entry.icon, color: ZadWorld.brain.color, size: 22),
           ),
         ),
         const SizedBox(width: ZadSpacing.lg),

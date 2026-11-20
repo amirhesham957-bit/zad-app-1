@@ -4398,6 +4398,78 @@ class ZadL10nAr extends ZadL10n {
   String pantryLegendOk(int count) {
     return '$count تمام';
   }
+
+  @override
+  String get brainWorldState => '● متصل ويتعلم';
+
+  @override
+  String brainWorldEyebrow(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count عنصر متصل',
+      zero: 'لسه مفيش عناصر',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get brainFilterAll => 'الكل';
+
+  @override
+  String get brainFilterLabel => 'فلتر المجالات';
+
+  @override
+  String get brainNetworkEmptyTitle => 'زاد لسه بيتعلم عنك';
+
+  @override
+  String get brainNetworkEmptyMessage =>
+      'سجّل مصاريفك أو ضيف مخزون وأدوية، وهتلاقي الشبكة بتكبر هنا.';
+
+  @override
+  String get brainCardsTitle => 'جوه عقل زاد';
+
+  @override
+  String get brainCardStaffTitle => 'فريق زاد';
+
+  @override
+  String get brainCardStaffBody =>
+      'اللي الموظفين لاحظوه في جولة الصبح على بيتك وفلوسك وعيلتك';
+
+  @override
+  String get brainCardMemoryTitle => 'زاد عارف عني إيه';
+
+  @override
+  String get brainCardMemoryBody =>
+      'اللي زاد فاكره عنك وبيكلمك على أساسه — صحّحه أو خلّيه ينساه';
+
+  @override
+  String get brainCardGraphTitle => 'شبكة زاد';
+
+  @override
+  String get brainCardGraphBody =>
+      'الناس والأماكن والحاجات اللي زاد عارفها ومترابطة إزاي — وصدّرها لأوبسيديان';
+
+  @override
+  String get brainCardMapTitle => 'خريطة زاد';
+
+  @override
+  String get brainCardMapBody =>
+      'إزاي ميزانيتك واشتراكاتك وبيتك متصلين ببعض — بملء الشاشة';
+
+  @override
+  String get brainCardLogTitle => 'سجل تعديلات زاد';
+
+  @override
+  String get brainCardLogBody =>
+      'كل حاجة زاد سجّلها أو عدّلها لك، وترجع فيها لو غلط';
+
+  @override
+  String get brainCardHealthTitle => 'صحة عقل زاد';
+
+  @override
+  String get brainCardHealthBody =>
+      'زاد شغال في الخلفية ولا واقف — ولو واقف، ليه';
 }
 
 /// The translations for Arabic, as used in Saudi Arabia (`ar_SA`).
@@ -5572,4 +5644,45 @@ class ZadL10nArSa extends ZadL10nAr {
     );
     return '$_temp0';
   }
+
+  @override
+  String brainWorldEyebrow(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count عنصر متصل',
+      zero: 'للحين ما فيه عناصر',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get brainNetworkEmptyTitle => 'زاد للحين يتعلم عنك';
+
+  @override
+  String get brainNetworkEmptyMessage =>
+      'سجّل مصاريفك أو أضف مخزون وأدوية، وبتلقى الشبكة تكبر هنا.';
+
+  @override
+  String get brainCardStaffBody =>
+      'اللي لاحظه الموظفين في جولة الصباح على بيتك وفلوسك وعيلتك';
+
+  @override
+  String get brainCardMemoryTitle => 'وش يعرف زاد عني';
+
+  @override
+  String get brainCardMemoryBody =>
+      'اللي يتذكره زاد عنك ويكلمك على أساسه — صحّحه أو خله ينساه';
+
+  @override
+  String get brainCardMapBody =>
+      'كيف ميزانيتك واشتراكاتك وبيتك مرتبطين ببعض — بملء الشاشة';
+
+  @override
+  String get brainCardLogBody =>
+      'كل شي سجّله زاد أو عدّله لك، وتتراجع عنه لو غلط';
+
+  @override
+  String get brainCardHealthBody =>
+      'زاد شغال في الخلفية ولا واقف — ولو واقف، ليش';
 }

@@ -3829,5 +3829,25 @@
         "type": "int"
       }
     }
-  }
+  },
+  "brainWorldState": "● متصل ويتعلم",
+  "brainWorldEyebrow": "{count, plural, =0{لسه مفيش عناصر} other{{count} عنصر متصل}}",
+  "@brainWorldEyebrow": {"placeholders": {"count": {"type": "int"}}},
+  "brainFilterAll": "الكل",
+  "brainFilterLabel": "فلتر المجالات",
+  "brainNetworkEmptyTitle": "زاد لسه بيتعلم عنك",
+  "brainNetworkEmptyMessage": "سجّل مصاريفك أو ضيف مخزون وأدوية، وهتلاقي الشبكة بتكبر هنا.",
+  "brainCardsTitle": "جوه عقل زاد",
+  "brainCardStaffTitle": "فريق زاد",
+  "brainCardStaffBody": "اللي الموظفين لاحظوه في جولة الصبح على بيتك وفلوسك وعيلتك",
+  "brainCardMemoryTitle": "زاد عارف عني إيه",
+  "brainCardMemoryBody": "اللي زاد فاكره عنك وبيكلمك على أساسه — صحّحه أو خلّيه ينساه",
+  "brainCardGraphTitle": "شبكة زاد",
+  "brainCardGraphBody": "الناس والأماكن والحاجات اللي زاد عارفها ومترابطة إزاي — وصدّرها لأوبسيديان",
+  "brainCardMapTitle": "خريطة زاد",
+  "brainCardMapBody": "إزاي ميزانيتك واشتراكاتك وبيتك متصلين ببعض — بملء الشاشة",
+  "brainCardLogTitle": "سجل تعديلات زاد",
+  "brainCardLogBody": "كل حاجة زاد سجّلها أو عدّلها لك، وترجع فيها لو غلط",
+  "brainCardHealthTitle": "صحة عقل زاد",
+  "brainCardHealthBody": "زاد شغال في الخلفية ولا واقف — ولو واقف، ليه"
 }

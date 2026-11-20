@@ -22,12 +22,15 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' show NumberFormat;
+import 'package:zad/core/design/components/zad_empty_state.dart';
 import 'package:zad/core/design/components/zad_kotlin_surfaces.dart';
 import 'package:zad/core/design/components/zad_pressable.dart';
 import 'package:zad/core/design/tokens/zad_extended_colors.dart';
+import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_motion.dart';
 import 'package:zad/core/design/tokens/zad_palette.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/brain/application/knowledge_map_controller.dart';
 import 'package:zad/features/brain/domain/knowledge_map.dart';
 import 'package:zad/shared/chat/application/chat_controller.dart';
@@ -88,16 +91,68 @@ Color _color(MapDomain d) => switch (d.key) {
   _ => _emerald,
 };
 
-/// The map.
-class KnowledgeMapScreen extends ConsumerStatefulWidget {
+/// The map, full screen. The hub embeds the same [KnowledgeMapBody].
+class KnowledgeMapScreen extends StatelessWidget {
   /// Creates the screen.
   const new({super.key});
 
   @override
-  ConsumerState<KnowledgeMapScreen> createState() => _KnowledgeMapScreenState();
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: _bg,
+    body: CustomPaint(
+      painter: _GridPainter(),
+      child: SafeArea(
+        child: Column(
+          children: <Widget>[
+            Padding(
+              padding: const EdgeInsets.all(8),
+              child: Row(
+                children: <Widget>[
+                  IconButton(
+                    onPressed: () => Navigator.of(context).maybePop(),
+                    icon: const Icon(Icons.arrow_back, color: _textDim),
+                  ),
+                  // Flexible: a long name at large text ran 28px off a 360dp
+                  // screen.
+                  Flexible(
+                    child: Text(
+                      'خريطة زاد',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: ZadType.titleMedium.copyWith(
+                        fontFamily: _mono,
+                        fontWeight: FontWeight.bold,
+                        color: _text,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Expanded(child: KnowledgeMapBody()),
+          ],
+        ),
+      ),
+    ),
+  );
 }
 
-class _KnowledgeMapScreenState extends ConsumerState<KnowledgeMapScreen>
+/// The living map itself — telemetry, the sphere of areas, an area's panel and
+/// the legend — in whatever height it is given. [embedded] is the brain
+/// world's card: it adds the filter chips (one area and what it touches) and
+/// says so when there is nothing to draw yet.
+class KnowledgeMapBody extends ConsumerStatefulWidget {
+  /// Creates the body.
+  const new({this.embedded = false, super.key});
+
+  /// In the brain world rather than on its own screen.
+  final bool embedded;
+
+  @override
+  ConsumerState<KnowledgeMapBody> createState() => _KnowledgeMapBodyState();
+}
+
+class _KnowledgeMapBodyState extends ConsumerState<KnowledgeMapBody>
     with TickerProviderStateMixin {
   // Kotlin's infinite transitions: the live pulse (900ms, reversing), the
   // particle run (2400ms), the cosmic orbit (28s) and the telemetry (1800ms
@@ -124,6 +179,9 @@ class _KnowledgeMapScreenState extends ConsumerState<KnowledgeMapScreen>
   )..repeat(reverse: true);
 
   MapDomainKey? _selected;
+
+  /// The chip the customer picked; null is «الكل».
+  MapDomainKey? _focus;
 
   @override
   void initState() {
@@ -200,111 +258,126 @@ class _KnowledgeMapScreenState extends ConsumerState<KnowledgeMapScreen>
     _ => null,
   };
 
+  /// [map] cut down to the picked area and the areas it touches.
+  KnowledgeMap _filtered(KnowledgeMap map) {
+    final focus = _focus;
+    if (focus == null || map.domain(focus) == null) return map;
+    final keep = <MapDomainKey>{focus};
+    for (final e in map.edges) {
+      if (e.from == focus) keep.add(e.to);
+      if (e.to == focus) keep.add(e.from);
+    }
+    bool both(MapEdge e) => keep.contains(e.from) && keep.contains(e.to);
+    return KnowledgeMap(
+      domains: <MapDomain>[
+        for (final d in map.domains)
+          if (keep.contains(d.key)) d,
+      ],
+      edges: map.edges.where(both).toList(),
+      liveDomains: map.liveDomains,
+      liveEdges: map.liveEdges.where(both).toSet(),
+      inputs: map.inputs,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     final view = ref.watch(knowledgeMapControllerProvider);
     final map = view.map;
+    final shown = _filtered(map);
     final selected = _selected == null ? null : map.domain(_selected!);
     final inputs = map.inputs;
     final limit = inputs.limit ?? 0;
+    final nothingYet =
+        widget.embedded &&
+        (inputs.limit ?? 0) <= 0 &&
+        map.domains.every((d) => d.count == 0);
 
     return PopScope(
       canPop: _selected == null,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) setState(() => _selected = null);
       },
-      child: Scaffold(
-        backgroundColor: _bg,
-        body: CustomPaint(
-          painter: _GridPainter(),
-          child: SafeArea(
-            child: Column(
-              children: <Widget>[
-                Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Row(
-                        children: <Widget>[
-                          IconButton(
-                            onPressed: () => _selected != null
-                                ? setState(() => _selected = null)
-                                : Navigator.of(context).maybePop(),
-                            icon: const Icon(Icons.arrow_back, color: _textDim),
-                          ),
-                          // Flexible: a long domain name at large text ran
-                          // 28px off a 360dp screen.
-                          Flexible(
-                            child: Text(
-                              selected == null
-                                  ? 'خريطة زاد'
-                                  : mapDomainLabel(selected.key),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: ZadType.titleMedium.copyWith(
-                                fontFamily: _mono,
-                                fontWeight: FontWeight.bold,
-                                color: selected == null
-                                    ? _text
-                                    : _color(selected),
-                              ),
+      child: Column(
+        children: <Widget>[
+          if (widget.embedded && !nothingYet)
+            _DomainChips(
+              domains: map.domains,
+              focus: _focus != null && map.domain(_focus!) != null
+                  ? _focus
+                  : null,
+              onPick: (k) => setState(() {
+                _focus = k;
+                _selected = null;
+              }),
+            ),
+          if (!widget.embedded || selected != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: Row(
+                children: <Widget>[
+                  Expanded(
+                    child: Text(
+                      selected == null
+                          ? '${map.nodeCount} عنصر متصل'
+                          : mapDomainLabel(selected.key),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: selected == null
+                          ? ZadType.labelSmall.copyWith(
+                              fontFamily: _mono,
+                              color: _textDim,
+                            )
+                          : ZadType.titleSmall.copyWith(
+                              fontFamily: _mono,
+                              fontWeight: FontWeight.bold,
+                              color: _color(selected),
                             ),
-                          ),
-                          if (selected != null) ...<Widget>[
-                            const SizedBox(width: 8),
-                            InkWell(
-                              onTap: () => setState(() => _selected = null),
-                              borderRadius: BorderRadius.circular(4),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 6,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(4),
-                                  border: Border.all(
-                                    color: _color(selected)
-                                        .withValues(alpha: 0.6),
-                                  ),
-                                ),
-                                child: Text(
-                                  '×',
-                                  style: ZadType.labelSmall.copyWith(
-                                    fontFamily: _mono,
-                                    color: _color(selected),
-                                  ),
-                                ),
-                              ),
+                    ),
+                  ),
+                  if (selected != null)
+                    InkWell(
+                      onTap: () => setState(() => _selected = null),
+                      borderRadius: BorderRadius.circular(8),
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(
+                          minWidth: 44,
+                          minHeight: 44,
+                        ),
+                        child: Center(
+                          child: Text(
+                            '×',
+                            style: ZadType.titleMedium.copyWith(
+                              fontFamily: _mono,
+                              color: _color(selected),
                             ),
-                          ],
-                        ],
-                      ),
-                      Padding(
-                        padding: const EdgeInsetsDirectional.only(start: 48),
-                        child: Text(
-                          '${map.nodeCount} عنصر متصل',
-                          style: ZadType.labelSmall.copyWith(
-                            fontFamily: _mono,
-                            color: _textDim,
                           ),
                         ),
                       ),
-                    ],
-                  ),
-                ),
-                _Telemetry(
-                  wave: _wave,
-                  blink: _blink,
-                  activeLinks: map.edges.where((e) => e.solid).length,
-                  totalLinks: map.edges.length,
-                  insights: inputs.insights.length,
-                  budgetRatio: limit > 0
-                      ? ((limit - inputs.committed) / limit).clamp(0.1, 1.0)
-                      : 0.85,
-                ),
-                Expanded(
-                  child: AnimatedSwitcher(
+                    ),
+                ],
+              ),
+            ),
+          if (!nothingYet)
+            _Telemetry(
+              wave: _wave,
+              blink: _blink,
+              activeLinks: map.edges.where((e) => e.solid).length,
+              totalLinks: map.edges.length,
+              insights: inputs.insights.length,
+              budgetRatio: limit > 0
+                  ? ((limit - inputs.committed) / limit).clamp(0.1, 1.0)
+                  : 0.85,
+            ),
+          Expanded(
+            child: nothingYet
+                ? ZadEmptyState(
+                    icon: ZadIcons.knowledgeMap,
+                    title: l.brainNetworkEmptyTitle,
+                    message: l.brainNetworkEmptyMessage,
+                  )
+                : AnimatedSwitcher(
                     duration: MediaQuery.disableAnimationsOf(context)
                         ? Duration.zero
                         : ZadDuration.enter,
@@ -323,7 +396,7 @@ class _KnowledgeMapScreenState extends ConsumerState<KnowledgeMapScreen>
                     child: switch (selected) {
                       null => _DomainRing(
                         key: const ValueKey<String>('ring'),
-                        map: map,
+                        map: shown,
                         live: _live,
                         particles: _particles,
                         orbit: _orbit,
@@ -344,38 +417,134 @@ class _KnowledgeMapScreenState extends ConsumerState<KnowledgeMapScreen>
                       ),
                     },
                   ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Wrap(
+              spacing: 16,
+              runSpacing: 6,
+              children: <Widget>[
+                const _LegendDot(
+                  color: _textDim,
+                  dashed: false,
+                  label: 'علاقة محسوبة فعليًا',
                 ),
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Wrap(
-                    spacing: 16,
-                    runSpacing: 6,
-                    children: <Widget>[
-                      const _LegendDot(
-                        color: _textDim,
-                        dashed: false,
-                        label: 'علاقة محسوبة فعليًا',
-                      ),
-                      const _LegendDot(
-                        color: _textDim,
-                        dashed: true,
-                        label: 'لسه برا الحساب',
-                      ),
-                      _LegendDot(
-                        color: context.zadExt.primaryLight,
-                        dashed: false,
-                        label: 'فيه رؤية حية من زاد الآن',
-                      ),
-                    ],
-                  ),
+                const _LegendDot(
+                  color: _textDim,
+                  dashed: true,
+                  label: 'لسه برا الحساب',
+                ),
+                _LegendDot(
+                  color: context.zadExt.primaryLight,
+                  dashed: false,
+                  label: 'فيه رؤية حية من زاد الآن',
                 ),
               ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// One chip per area, plus «الكل»: a picked area shows only itself and the
+/// areas it touches.
+class _DomainChips extends StatelessWidget {
+  const new({required this.domains, required this.focus, required this.onPick});
+
+  final List<MapDomain> domains;
+  final MapDomainKey? focus;
+  final ValueChanged<MapDomainKey?> onPick;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    return Semantics(
+      container: true,
+      label: l.brainFilterLabel,
+      child: SizedBox(
+        height: 52,
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          // A handful of chips at most: all built, so none hides.
+          child: Row(
+            children: <Widget>[
+              _Chip(
+                label: l.brainFilterAll,
+                color: _cyan,
+                selected: focus == null,
+                onTap: () => onPick(null),
+              ),
+              for (final d in domains)
+                _Chip(
+                  label: mapDomainLabel(d.key),
+                  color: _color(d),
+                  selected: focus == d.key,
+                  onTap: () => onPick(d.key),
+                ),
+            ],
           ),
         ),
       ),
     );
   }
+}
+
+class _Chip extends StatelessWidget {
+  const new({
+    required this.label,
+    required this.color,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final Color color;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsetsDirectional.only(end: 8),
+    child: Semantics(
+      button: true,
+      selected: selected,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(22),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 44, minWidth: 44),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: selected
+                  ? color.withValues(alpha: 0.18)
+                  : ZadPalette.sciFiCardBg,
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(
+                color: selected
+                    ? color.withValues(alpha: 0.8)
+                    : ZadPalette.sciFiBorder,
+              ),
+            ),
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                child: Text(
+                  label,
+                  style: ZadType.labelMedium.copyWith(
+                    color: selected ? color : _textDim,
+                    fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
 }
 
 /// Kotlin's `drawKmGrid`: a 24dp grid at 35%.

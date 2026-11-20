@@ -7759,6 +7759,120 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'{count} تمام'**
   String pantryLegendOk(int count);
+
+  /// No description provided for @brainWorldState.
+  ///
+  /// In ar, this message translates to:
+  /// **'● متصل ويتعلم'**
+  String get brainWorldState;
+
+  /// No description provided for @brainWorldEyebrow.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =0{لسه مفيش عناصر} other{{count} عنصر متصل}}'**
+  String brainWorldEyebrow(int count);
+
+  /// No description provided for @brainFilterAll.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكل'**
+  String get brainFilterAll;
+
+  /// No description provided for @brainFilterLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'فلتر المجالات'**
+  String get brainFilterLabel;
+
+  /// No description provided for @brainNetworkEmptyTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد لسه بيتعلم عنك'**
+  String get brainNetworkEmptyTitle;
+
+  /// No description provided for @brainNetworkEmptyMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجّل مصاريفك أو ضيف مخزون وأدوية، وهتلاقي الشبكة بتكبر هنا.'**
+  String get brainNetworkEmptyMessage;
+
+  /// No description provided for @brainCardsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'جوه عقل زاد'**
+  String get brainCardsTitle;
+
+  /// No description provided for @brainCardStaffTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'فريق زاد'**
+  String get brainCardStaffTitle;
+
+  /// No description provided for @brainCardStaffBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'اللي الموظفين لاحظوه في جولة الصبح على بيتك وفلوسك وعيلتك'**
+  String get brainCardStaffBody;
+
+  /// No description provided for @brainCardMemoryTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد عارف عني إيه'**
+  String get brainCardMemoryTitle;
+
+  /// No description provided for @brainCardMemoryBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'اللي زاد فاكره عنك وبيكلمك على أساسه — صحّحه أو خلّيه ينساه'**
+  String get brainCardMemoryBody;
+
+  /// No description provided for @brainCardGraphTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'شبكة زاد'**
+  String get brainCardGraphTitle;
+
+  /// No description provided for @brainCardGraphBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'الناس والأماكن والحاجات اللي زاد عارفها ومترابطة إزاي — وصدّرها لأوبسيديان'**
+  String get brainCardGraphBody;
+
+  /// No description provided for @brainCardMapTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'خريطة زاد'**
+  String get brainCardMapTitle;
+
+  /// No description provided for @brainCardMapBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'إزاي ميزانيتك واشتراكاتك وبيتك متصلين ببعض — بملء الشاشة'**
+  String get brainCardMapBody;
+
+  /// No description provided for @brainCardLogTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجل تعديلات زاد'**
+  String get brainCardLogTitle;
+
+  /// No description provided for @brainCardLogBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل حاجة زاد سجّلها أو عدّلها لك، وترجع فيها لو غلط'**
+  String get brainCardLogBody;
+
+  /// No description provided for @brainCardHealthTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'صحة عقل زاد'**
+  String get brainCardHealthTitle;
+
+  /// No description provided for @brainCardHealthBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد شغال في الخلفية ولا واقف — ولو واقف، ليه'**
+  String get brainCardHealthBody;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

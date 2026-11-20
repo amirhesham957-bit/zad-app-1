@@ -4507,4 +4507,77 @@ class ZadL10nEn extends ZadL10n {
   String pantryLegendOk(int count) {
     return '$count fine';
   }
+
+  @override
+  String get brainWorldState => '● Connected and learning';
+
+  @override
+  String brainWorldEyebrow(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count items connected',
+      one: '1 item connected',
+      zero: 'Nothing connected yet',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get brainFilterAll => 'All';
+
+  @override
+  String get brainFilterLabel => 'Area filters';
+
+  @override
+  String get brainNetworkEmptyTitle => 'Zad is still learning about you';
+
+  @override
+  String get brainNetworkEmptyMessage =>
+      'Log your spending or add pantry items and medicines, and this network grows.';
+
+  @override
+  String get brainCardsTitle => 'Inside Zad\'s brain';
+
+  @override
+  String get brainCardStaffTitle => 'Zad\'s team';
+
+  @override
+  String get brainCardStaffBody =>
+      'What the staff noticed on the morning round of your home, money and family';
+
+  @override
+  String get brainCardMemoryTitle => 'What Zad knows about me';
+
+  @override
+  String get brainCardMemoryBody =>
+      'What Zad remembers about you and talks to you from — correct it or let it forget';
+
+  @override
+  String get brainCardGraphTitle => 'Zad\'s network';
+
+  @override
+  String get brainCardGraphBody =>
+      'The people, places and things Zad knows and how they connect — export to Obsidian';
+
+  @override
+  String get brainCardMapTitle => 'Zad\'s map';
+
+  @override
+  String get brainCardMapBody =>
+      'How your budget, subscriptions and home connect — full screen';
+
+  @override
+  String get brainCardLogTitle => 'Zad\'s change log';
+
+  @override
+  String get brainCardLogBody =>
+      'Everything Zad recorded or changed for you, with undo if it got it wrong';
+
+  @override
+  String get brainCardHealthTitle => 'Zad\'s brain health';
+
+  @override
+  String get brainCardHealthBody =>
+      'Whether Zad is working in the background or stopped, and why';
 }
