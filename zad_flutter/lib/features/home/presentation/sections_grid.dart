@@ -20,6 +20,9 @@ import 'package:zad/shared/navigation/shell_navigation.dart';
 import 'package:zad/shared/navigation/touched_sections.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
 import 'package:zad/shared/subscriptions/application/subscriptions_controller.dart';
+import 'package:zad/shared/worlds/art/zad_art.dart';
+import 'package:zad/shared/worlds/art/zad_art_kinds.dart';
+import 'package:zad/shared/worlds/zad_world.dart';
 
 /// Kotlin's `ZadSectionAccent`, light values: a tile's icon colour, with its
 /// container at 12%.
@@ -286,6 +289,30 @@ Future<void> _openFamily(BuildContext context) async =>
       listen: false,
     ).read(shellNavigationProvider.notifier).open(ShellTab.family);
 
+/// Each section's drawn picture and its world (the world's colour tints the
+/// tile). A section with no world of its own keeps its accent.
+const Map<String, (ZadIconArt, ZadWorld?)> _sectionArt =
+    <String, (ZadIconArt, ZadWorld?)>{
+      'inventory': (ZadIconArt.pantry, ZadWorld.inv),
+      'shopping': (ZadIconArt.cart, ZadWorld.shop),
+      'appointments': (ZadIconArt.calendar, ZadWorld.appt),
+      'places': (ZadIconArt.pin, ZadWorld.places),
+      'family': (ZadIconArt.family, null),
+      'budget': (ZadIconArt.coin, ZadWorld.budget),
+      'subscriptions': (ZadIconArt.repeat, ZadWorld.subs),
+      'pharmacy': (ZadIconArt.pill, ZadWorld.ph),
+      'tasbiha': (ZadIconArt.beads, ZadWorld.tas),
+      'maintenance': (ZadIconArt.wrench, ZadWorld.maint),
+      'documents': (ZadIconArt.folder, ZadWorld.docs),
+      'companion': (ZadIconArt.sprout, ZadWorld.comp),
+      'assistant': (ZadIconArt.brain, ZadWorld.brain),
+      'knowledge_map': (ZadIconArt.tree, ZadWorld.brain),
+      'notifications': (ZadIconArt.bell, ZadWorld.notif),
+      'statement': (ZadIconArt.chart, ZadWorld.stmt),
+      'premium': (ZadIconArt.crown, ZadWorld.prem),
+      'profile': (ZadIconArt.person, ZadWorld.profile),
+    };
+
 /// How many columns the grid has.
 const int kSectionColumns = 4;
 
@@ -448,72 +475,79 @@ class SectionTile extends ConsumerWidget {
   final int badge;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) => ZadPressable(
-    onPressed: () {
-      // Opened from here counts the same as from the drawer.
-      ref.read(touchedSectionsProvider.notifier).touch(section.id);
-      unawaited(section.open(context));
-    },
-    semanticLabel: badge > 0
-        ? context.l10n.sectionWithBadge(section.label(context.l10n), badge)
-        : section.label(context.l10n),
-    child: Padding(
-      padding: const EdgeInsets.symmetric(vertical: ZadSpacing.xs),
-      child: Column(
-        children: <Widget>[
-          Stack(
-            clipBehavior: Clip.none,
-            children: <Widget>[
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: section.accent.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(ZadRadii.card),
-                  border: Border.all(
-                    color: section.accent.withValues(alpha: 0.2),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final drawn = _sectionArt[section.id];
+    final tint = drawn?.$2?.color ?? section.accent;
+    return ZadPressable(
+      onPressed: () {
+        // Opened from here counts the same as from the drawer.
+        ref.read(touchedSectionsProvider.notifier).touch(section.id);
+        unawaited(section.open(context));
+      },
+      semanticLabel: badge > 0
+          ? context.l10n.sectionWithBadge(section.label(context.l10n), badge)
+          : section.label(context.l10n),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: ZadSpacing.xs),
+        child: Column(
+          children: <Widget>[
+            Stack(
+              clipBehavior: Clip.none,
+              children: <Widget>[
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: tint.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(ZadRadii.card),
+                    border: Border.all(color: tint.withValues(alpha: 0.2)),
                   ),
+                  child: drawn == null
+                      ? Icon(section.icon, size: 24, color: section.accent)
+                      : ZadArt.icon(drawn.$1, size: 34),
                 ),
-                child: Icon(section.icon, size: 24, color: section.accent),
-              ),
-              if (badge > 0)
-                PositionedDirectional(
-                  top: -4,
-                  end: -4,
-                  child: Container(
-                    constraints: const BoxConstraints(minWidth: 18),
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    decoration: BoxDecoration(
-                      color: ZadColors.terracottaRust,
-                      borderRadius: BorderRadius.circular(ZadRadii.pill),
-                      border: Border.all(color: ZadColors.surface, width: 1.5),
-                    ),
-                    child: Text(
-                      badge > 99 ? '99+' : '$badge',
-                      textAlign: TextAlign.center,
-                      style: ZadType.labelSmall.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
+                if (badge > 0)
+                  PositionedDirectional(
+                    top: -4,
+                    end: -4,
+                    child: Container(
+                      constraints: const BoxConstraints(minWidth: 18),
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      decoration: BoxDecoration(
+                        color: ZadColors.terracottaRust,
+                        borderRadius: BorderRadius.circular(ZadRadii.pill),
+                        border: Border.all(
+                          color: ZadColors.surface,
+                          width: 1.5,
+                        ),
+                      ),
+                      child: Text(
+                        badge > 99 ? '99+' : '$badge',
+                        textAlign: TextAlign.center,
+                        style: ZadType.labelSmall.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                   ),
-                ),
-            ],
-          ),
-          const SizedBox(height: ZadSpacing.sm),
-          Text(
-            section.label(context.l10n),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-            style: ZadType.labelMedium.copyWith(
-              fontWeight: FontWeight.w600,
-              // Kotlin's textPrimary: onSurface, ZadNeutralDark.
-              color: const Color(0xFF1F1F14),
+              ],
             ),
-          ),
-        ],
+            const SizedBox(height: ZadSpacing.sm),
+            Text(
+              section.label(context.l10n),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: ZadType.labelMedium.copyWith(
+                fontWeight: FontWeight.w600,
+                // Kotlin's textPrimary: onSurface, ZadNeutralDark.
+                color: const Color(0xFF1F1F14),
+              ),
+            ),
+          ],
+        ),
       ),
-    ),
-  );
+    );
+  }
 }

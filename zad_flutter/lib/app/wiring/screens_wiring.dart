@@ -203,7 +203,8 @@ OpenScreen? _worldScreen(ZadWorld world) => switch (world) {
   ZadWorld.tas => ZadScreens.showTasbihaScreen,
   ZadWorld.prices => ZadScreens.showPricesScreen,
   ZadWorld.ach => ZadScreens.showAchievementsScreen,
-  ZadWorld.games || ZadWorld.offers => null,
+  // Home is where the shell already is: no chip opens it.
+  ZadWorld.home || ZadWorld.games || ZadWorld.offers => null,
 };
 
 /// Binds the slots.

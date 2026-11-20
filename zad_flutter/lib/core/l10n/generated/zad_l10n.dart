@@ -10813,6 +10813,96 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'سياسة الاستخدام والخصوصية'**
   String get settingsTermsBody;
+
+  /// No description provided for @worldLabelHome.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرئيسية'**
+  String get worldLabelHome;
+
+  /// No description provided for @homeGreetDawn.
+  ///
+  /// In ar, this message translates to:
+  /// **'صباح الخير يا {name}'**
+  String homeGreetDawn(String name);
+
+  /// No description provided for @homeGreetMorning.
+  ///
+  /// In ar, this message translates to:
+  /// **'أهلاً يا {name}'**
+  String homeGreetMorning(String name);
+
+  /// No description provided for @homeGreetNoon.
+  ///
+  /// In ar, this message translates to:
+  /// **'نهارك سعيد يا {name}'**
+  String homeGreetNoon(String name);
+
+  /// No description provided for @homeGreetEvening.
+  ///
+  /// In ar, this message translates to:
+  /// **'مساء الخير يا {name}'**
+  String homeGreetEvening(String name);
+
+  /// No description provided for @homeGreetNight.
+  ///
+  /// In ar, this message translates to:
+  /// **'ليلة هادية يا {name}'**
+  String homeGreetNight(String name);
+
+  /// No description provided for @homeStateMoney.
+  ///
+  /// In ar, this message translates to:
+  /// **'متاح {amount} {currency} · {days}'**
+  String homeStateMoney(String amount, String currency, String days);
+
+  /// No description provided for @homeStateIdle.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيتك كله قدامك'**
+  String get homeStateIdle;
+
+  /// No description provided for @homeWorldsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'عوالمك'**
+  String get homeWorldsTitle;
+
+  /// No description provided for @homeWorldsHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل جزء من بيتك في مكانه'**
+  String get homeWorldsHint;
+
+  /// No description provided for @homeTodayTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'النهارده في بيتك'**
+  String get homeTodayTitle;
+
+  /// No description provided for @homeTodayEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش نواقص ولا جرعات ولا تجديدات قريبة'**
+  String get homeTodayEmpty;
+
+  /// No description provided for @homeTodayEmptyHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'اليوم هادي. أي حاجة تحتاج انتباهك هتظهر هنا.'**
+  String get homeTodayEmptyHint;
+
+  /// No description provided for @homeTodayShortTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'نواقص بتتجاب'**
+  String get homeTodayShortTitle;
+
+  /// No description provided for @homeTodayShortSub.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} صنف · أولهم {name}'**
+  String homeTodayShortSub(String name, int count);
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

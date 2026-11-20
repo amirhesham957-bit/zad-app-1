@@ -11,6 +11,9 @@ import 'package:zad/shared/worlds/art/zad_art_kinds.dart';
 
 /// A world.
 enum ZadWorld {
+  /// الرئيسية.
+  home(ZadWorldColors.home, ZadIconArt.house),
+
   /// عقل زاد.
   brain(ZadWorldColors.brain, ZadIconArt.brain),
 
@@ -90,6 +93,7 @@ enum ZadWorld {
 
   /// The name the customer reads.
   String label(ZadL10n l) => switch (this) {
+    home => l.worldLabelHome,
     brain => l.worldLabelBrain,
     chef => l.worldLabelChef,
     inv => l.worldLabelInv,
@@ -118,6 +122,7 @@ enum ZadWorld {
   /// The worlds this one feeds — what happens here changes what they show
   /// (the preview's FEEDS table).
   List<ZadWorld> get feeds => switch (this) {
+    home => const <ZadWorld>[brain, chef, ph, subs, tas],
     brain => const <ZadWorld>[tx, inv, places, chat, comp],
     chef => const <ZadWorld>[inv, shop, budget],
     inv => const <ZadWorld>[chef, shop, tx],

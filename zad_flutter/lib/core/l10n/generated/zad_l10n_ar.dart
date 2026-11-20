@@ -6392,6 +6392,66 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get settingsTermsBody => 'سياسة الاستخدام والخصوصية';
+
+  @override
+  String get worldLabelHome => 'الرئيسية';
+
+  @override
+  String homeGreetDawn(String name) {
+    return 'صباح الخير يا $name';
+  }
+
+  @override
+  String homeGreetMorning(String name) {
+    return 'أهلاً يا $name';
+  }
+
+  @override
+  String homeGreetNoon(String name) {
+    return 'نهارك سعيد يا $name';
+  }
+
+  @override
+  String homeGreetEvening(String name) {
+    return 'مساء الخير يا $name';
+  }
+
+  @override
+  String homeGreetNight(String name) {
+    return 'ليلة هادية يا $name';
+  }
+
+  @override
+  String homeStateMoney(String amount, String currency, String days) {
+    return 'متاح $amount $currency · $days';
+  }
+
+  @override
+  String get homeStateIdle => 'بيتك كله قدامك';
+
+  @override
+  String get homeWorldsTitle => 'عوالمك';
+
+  @override
+  String get homeWorldsHint => 'كل جزء من بيتك في مكانه';
+
+  @override
+  String get homeTodayTitle => 'النهارده في بيتك';
+
+  @override
+  String get homeTodayEmpty => 'مفيش نواقص ولا جرعات ولا تجديدات قريبة';
+
+  @override
+  String get homeTodayEmptyHint =>
+      'اليوم هادي. أي حاجة تحتاج انتباهك هتظهر هنا.';
+
+  @override
+  String get homeTodayShortTitle => 'نواقص بتتجاب';
+
+  @override
+  String homeTodayShortSub(String name, int count) {
+    return '$count صنف · أولهم $name';
+  }
 }
 
 /// The translations for Arabic, as used in Saudi Arabia (`ar_SA`).
@@ -8947,4 +9007,16 @@ class ZadL10nArSa extends ZadL10nAr {
 
   @override
   String get settingsAdsUnavailable => 'ما فيه اختيارات خصوصية متاحة الحين';
+
+  @override
+  String get homeTodayTitle => 'اليوم في بيتك';
+
+  @override
+  String get homeTodayEmpty => 'ما فيه نواقص ولا جرعات ولا تجديدات قريبة';
+
+  @override
+  String get homeTodayEmptyHint => 'اليوم هادي. أي شي يحتاج انتباهك بيظهر هنا.';
+
+  @override
+  String get homeTodayShortTitle => 'نواقص تنشرى';
 }

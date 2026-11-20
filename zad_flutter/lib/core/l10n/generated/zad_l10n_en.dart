@@ -6487,4 +6487,64 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get settingsTermsBody => 'Usage and privacy policy';
+
+  @override
+  String get worldLabelHome => 'Home';
+
+  @override
+  String homeGreetDawn(String name) {
+    return 'Good morning, $name';
+  }
+
+  @override
+  String homeGreetMorning(String name) {
+    return 'Hello, $name';
+  }
+
+  @override
+  String homeGreetNoon(String name) {
+    return 'Good day, $name';
+  }
+
+  @override
+  String homeGreetEvening(String name) {
+    return 'Good evening, $name';
+  }
+
+  @override
+  String homeGreetNight(String name) {
+    return 'A quiet night, $name';
+  }
+
+  @override
+  String homeStateMoney(String amount, String currency, String days) {
+    return '$amount $currency available · $days';
+  }
+
+  @override
+  String get homeStateIdle => 'Your whole home, in one place';
+
+  @override
+  String get homeWorldsTitle => 'Your worlds';
+
+  @override
+  String get homeWorldsHint => 'Every part of your home, in its place';
+
+  @override
+  String get homeTodayTitle => 'Today in your home';
+
+  @override
+  String get homeTodayEmpty => 'No shortages, doses or renewals coming up';
+
+  @override
+  String get homeTodayEmptyHint =>
+      'A calm day. Anything that needs you will show here.';
+
+  @override
+  String get homeTodayShortTitle => 'Running short';
+
+  @override
+  String homeTodayShortSub(String name, int count) {
+    return '$count items · first $name';
+  }
 }

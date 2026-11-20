@@ -685,5 +685,9 @@
   "pricesContribCount": "{n} مساهمات",
   "settingsAdsUnavailable": "ما فيه اختيارات خصوصية متاحة الحين",
   "paywallStatePlan": "خطتك الحين: {plan}",
-  "paywallStateInvite": "اختر الباقة اللي تناسب بيتك"
+  "paywallStateInvite": "اختر الباقة اللي تناسب بيتك",
+  "homeTodayTitle": "اليوم في بيتك",
+  "homeTodayEmpty": "ما فيه نواقص ولا جرعات ولا تجديدات قريبة",
+  "homeTodayEmptyHint": "اليوم هادي. أي شي يحتاج انتباهك بيظهر هنا.",
+  "homeTodayShortTitle": "نواقص تنشرى"
 }
