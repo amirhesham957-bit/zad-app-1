@@ -1907,13 +1907,13 @@ abstract class ZadL10n {
   /// No description provided for @chatWelcome.
   ///
   /// In ar, this message translates to:
-  /// **'أهلاً بيك! أنا زاد 🤖، مساعدك العائلي الذكي. أقدر أساعدك إزاي النهاردة؟\nاسألني عن الوصفات، أو راجع ثلاجتك، أو ضيف النواقص لقائمة التسوق!'**
+  /// **'أهلاً بيك! أنا زاد، مساعدك العائلي الذكي. أقدر أساعدك إزاي النهاردة؟\nاسألني عن الوصفات، أو راجع ثلاجتك، أو ضيف النواقص لقائمة التسوق!'**
   String get chatWelcome;
 
   /// No description provided for @chatBusy.
   ///
   /// In ar, this message translates to:
-  /// **'الذكاء الاصطناعي مشغول شوية دلوقتي 🙏 جرب تاني بعد لحظات.'**
+  /// **'الذكاء الاصطناعي مشغول شوية دلوقتي جرب تاني بعد لحظات.'**
   String get chatBusy;
 
   /// No description provided for @chatUnexpected.

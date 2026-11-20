@@ -1113,11 +1113,11 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get chatWelcome =>
-      'Welcome! I\'m Zad 🤖, your smart family assistant. How can I help you today?\nAsk me about recipes, check your fridge, or add what\'s missing to the shopping list!';
+      'Welcome! I\'m Zad, your smart family assistant. How can I help you today?\nAsk me about recipes, check your fridge, or add what\'s missing to the shopping list!';
 
   @override
   String get chatBusy =>
-      'The AI is a bit busy right now 🙏 Try again in a moment.';
+      'The AI is a bit busy right now Try again in a moment.';
 
   @override
   String get chatUnexpected => 'Something unexpected went wrong.';
