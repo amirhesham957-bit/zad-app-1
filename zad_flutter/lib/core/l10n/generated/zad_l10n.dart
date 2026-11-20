@@ -8011,6 +8011,726 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'{text}. وفي {n} صف ماقدرتش أقراه.'**
   String statementDropped(String text, int n);
+
+  /// Pharmacy world: the count above the title.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{دوا واحد} =2{دواءين} few{{count} أدوية} other{{count} دواء}}'**
+  String phEyebrowCount(int count);
+
+  /// Pharmacy world: the eyebrow on a family member tab.
+  ///
+  /// In ar, this message translates to:
+  /// **'صيدلية العيلة'**
+  String get phFamilyEyebrow;
+
+  /// Pharmacy world: state line on a member tab.
+  ///
+  /// In ar, this message translates to:
+  /// **'جدول {name}'**
+  String phMemberState(String name);
+
+  /// Pharmacy state line: nothing is scheduled.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش جرعات النهارده'**
+  String get phNoDosesToday;
+
+  /// Pharmacy state line: a dose is due.
+  ///
+  /// In ar, this message translates to:
+  /// **'جرعة {name} وقتها دلوقتي'**
+  String phDoseDueNow(String name);
+
+  /// Pharmacy state line: the next dose and when.
+  ///
+  /// In ar, this message translates to:
+  /// **'الجرعة الجاية {when}'**
+  String phNextDose(String when);
+
+  /// Pharmacy state line: a dose was missed.
+  ///
+  /// In ar, this message translates to:
+  /// **'فاتتك جرعة {name}'**
+  String phDoseMissedLine(String name);
+
+  /// Pharmacy state line: all taken.
+  ///
+  /// In ar, this message translates to:
+  /// **'خلصت جرعات النهارده'**
+  String get phDosesDone;
+
+  /// Part of day, after the hour.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصبح'**
+  String get phPeriodMorning;
+
+  /// Part of day, after the hour.
+  ///
+  /// In ar, this message translates to:
+  /// **'الضهر'**
+  String get phPeriodNoon;
+
+  /// Part of day, after the hour.
+  ///
+  /// In ar, this message translates to:
+  /// **'العصر'**
+  String get phPeriodAfternoon;
+
+  /// Part of day, after the hour.
+  ///
+  /// In ar, this message translates to:
+  /// **'بالليل'**
+  String get phPeriodNight;
+
+  /// A dose time said in words.
+  ///
+  /// In ar, this message translates to:
+  /// **'{hour}{minutes} {period}'**
+  String phClockWords(String hour, String minutes, String period);
+
+  /// A dose state.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتاخدت'**
+  String get phDoseTaken;
+
+  /// A dose state.
+  ///
+  /// In ar, this message translates to:
+  /// **'وقتها دلوقتي'**
+  String get phDoseDue;
+
+  /// A dose state.
+  ///
+  /// In ar, this message translates to:
+  /// **'فاتت'**
+  String get phDoseMissed;
+
+  /// A dose state.
+  ///
+  /// In ar, this message translates to:
+  /// **'جاية'**
+  String get phDoseUpcoming;
+
+  /// A dose state.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتأجلت شوية'**
+  String get phDoseSnoozed;
+
+  /// A member dose whose record is not readable.
+  ///
+  /// In ar, this message translates to:
+  /// **'الميعاد عدّى'**
+  String get phDosePassed;
+
+  /// Dose button.
+  ///
+  /// In ar, this message translates to:
+  /// **'بعدين'**
+  String get phSnooze;
+
+  /// Dose button.
+  ///
+  /// In ar, this message translates to:
+  /// **'خدته'**
+  String get phTake;
+
+  /// Head marks a member dose taken.
+  ///
+  /// In ar, this message translates to:
+  /// **'خدها'**
+  String get phTakeFor;
+
+  /// Whose medicine.
+  ///
+  /// In ar, this message translates to:
+  /// **'لـ{name}'**
+  String phForPerson(String name);
+
+  /// Badge.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكورس خلص'**
+  String get phCourseDone;
+
+  /// Badge.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{منتهي من يوم} =2{منتهي من يومين} few{منتهي من {count} أيام} other{منتهي من {count} يوم}}'**
+  String phExpiredAgo(int count);
+
+  /// Badge.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{تنتهي خلال يوم} =2{تنتهي خلال يومين} few{تنتهي خلال {count} أيام} other{تنتهي خلال {count} يوم}}'**
+  String phExpiresIn(int count);
+
+  /// Badge.
+  ///
+  /// In ar, this message translates to:
+  /// **'متبقي {count} {unit}'**
+  String phRemaining(int count, String unit);
+
+  /// Badge.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =0{يكفي أقل من يوم} =1{يكفي يوم} =2{يكفي يومين} few{يكفي {count} أيام} other{يكفي {count} يوم}}'**
+  String phSupplyDays(int count);
+
+  /// Delete button and dialog title.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف'**
+  String get phDelete;
+
+  /// Prompt.
+  ///
+  /// In ar, this message translates to:
+  /// **'وقت جرعة مش مفهوم — عدّله'**
+  String get phBadDoseTime;
+
+  /// Prompt.
+  ///
+  /// In ar, this message translates to:
+  /// **'مالوش مواعيد — مش هفكّرك بيه'**
+  String get phNoSchedule;
+
+  /// Button.
+  ///
+  /// In ar, this message translates to:
+  /// **'حدد مواعيده'**
+  String get phSetTimes;
+
+  /// Badge.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكمية محتاجة تأكيد'**
+  String get phConfirmQtyBadge;
+
+  /// Button.
+  ///
+  /// In ar, this message translates to:
+  /// **'تناول جرعة'**
+  String get phTakeDose;
+
+  /// Button.
+  ///
+  /// In ar, this message translates to:
+  /// **'تجديد الطلب'**
+  String get phRefill;
+
+  /// Button.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضيفه للتسوق'**
+  String get phToShopping;
+
+  /// Button and dialog title.
+  ///
+  /// In ar, this message translates to:
+  /// **'فاضل قد إيه فعلاً؟'**
+  String get phHowMuchLeft;
+
+  /// Snack bar.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضفت {name} لقايمة التسوق'**
+  String phAddedToShopping(String name);
+
+  /// Section heading.
+  ///
+  /// In ar, this message translates to:
+  /// **'جرعات النهارده'**
+  String get phDosesToday;
+
+  /// Note.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش جرعات فاضلة النهارده.'**
+  String get phNoDosesLeft;
+
+  /// Note.
+  ///
+  /// In ar, this message translates to:
+  /// **'ولا دوا ليه مواعيد لسه — حدد مواعيد أي دوا تحت عشان أفكّرك بيه.'**
+  String get phNoTimesYet;
+
+  /// Error state.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقدرتش أجيب الأدوية'**
+  String get phLoadFailed;
+
+  /// Empty state.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد أدوية مسجلة بعد'**
+  String get phEmptyTitle;
+
+  /// Error guidance.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسحب لتحت نجرب تاني.'**
+  String get phPullRetry;
+
+  /// Empty guidance.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضيفه بالزرار، أو صوّر العلبة، أو قول لزاد: \"باخد كونكور قرص الصبح وبالليل\" وهو يسجّله بمواعيده.'**
+  String get phEmptyGuide;
+
+  /// Section heading.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأدوية'**
+  String get phMedicines;
+
+  /// Sheet title.
+  ///
+  /// In ar, this message translates to:
+  /// **'مواعيد {name}'**
+  String phTimesTitle(String name);
+
+  /// Sheet hint.
+  ///
+  /// In ar, this message translates to:
+  /// **'هفكّرك في كل ميعاد، وتقدر تسجّل الجرعة بضغطة.'**
+  String get phTimesHint;
+
+  /// Button.
+  ///
+  /// In ar, this message translates to:
+  /// **'احفظ المواعيد'**
+  String get phSaveTimes;
+
+  /// Stat label.
+  ///
+  /// In ar, this message translates to:
+  /// **'الالتزام بالجرعات'**
+  String get phAdherence;
+
+  /// Stat value.
+  ///
+  /// In ar, this message translates to:
+  /// **'في انتظار أول جرعة'**
+  String get phAdherenceWaiting;
+
+  /// Count label.
+  ///
+  /// In ar, this message translates to:
+  /// **'إجمالي الأدوية'**
+  String get phCountTotal;
+
+  /// Count label.
+  ///
+  /// In ar, this message translates to:
+  /// **'قرب الانتهاء'**
+  String get phCountExpiring;
+
+  /// Count label.
+  ///
+  /// In ar, this message translates to:
+  /// **'مخزون منخفض'**
+  String get phCountLow;
+
+  /// Banner.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{دواء منتهي الصلاحية — تخلص منه بأمان} =2{دواءين منتهيين الصلاحية — تخلص منهم بأمان} few{{count} أدوية منتهية الصلاحية — تخلص منها بأمان} other{{count} دواء منتهي الصلاحية — تخلص منه بأمان}}'**
+  String phExpiredBanner(int count);
+
+  /// Heading.
+  ///
+  /// In ar, this message translates to:
+  /// **'قرب الانتهاء — تخلص منها بأمان'**
+  String get phExpiringHeading;
+
+  /// Cost label.
+  ///
+  /// In ar, this message translates to:
+  /// **'صرف الصحة الشهر ده'**
+  String get phCostSpending;
+
+  /// Cost label.
+  ///
+  /// In ar, this message translates to:
+  /// **'أسعار علب الأدوية'**
+  String get phCostBoxes;
+
+  /// Family tab.
+  ///
+  /// In ar, this message translates to:
+  /// **'أنا'**
+  String get phTabMe;
+
+  /// Family tab with no name.
+  ///
+  /// In ar, this message translates to:
+  /// **'عضو'**
+  String get phTabMember;
+
+  /// A member with no name.
+  ///
+  /// In ar, this message translates to:
+  /// **'العضو'**
+  String get phMemberFallback;
+
+  /// Head card.
+  ///
+  /// In ar, this message translates to:
+  /// **'إنت رب الأسرة — بتشوف جدول {name} وتعدّل فيه وتعلّم الجرعة لو ساعدته'**
+  String phHeadNote(String name);
+
+  /// Non-head card.
+  ///
+  /// In ar, this message translates to:
+  /// **'جدول {name} للمتابعة بس — رب الأسرة هو اللي يعدّل'**
+  String phReadOnlyNote(String name);
+
+  /// Head button and form title.
+  ///
+  /// In ar, this message translates to:
+  /// **'دوا لـ{name}'**
+  String phAddFor(String name);
+
+  /// Error state.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقدرتش أجيب أدوية {name}'**
+  String phMemberLoadFailed(String name);
+
+  /// Empty state.
+  ///
+  /// In ar, this message translates to:
+  /// **'لسه مفيش أدوية تقدر تشوفها'**
+  String get phMemberEmptyTitle;
+
+  /// Empty guidance.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدوية كل فرد بتظهر هنا بعد ما يوافق — اطلب المتابعة من صفحته في «عيلتي»'**
+  String get phMemberEmptyGuide;
+
+  /// Section heading.
+  ///
+  /// In ar, this message translates to:
+  /// **'جرعات {name} النهارده'**
+  String phMemberDoses(String name);
+
+  /// Button.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل'**
+  String get phEdit;
+
+  /// Form title.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل {name}'**
+  String phEditTitle(String name);
+
+  /// Dock button.
+  ///
+  /// In ar, this message translates to:
+  /// **'صوّر الدوا'**
+  String get phPhoto;
+
+  /// Dock button tooltip.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة'**
+  String get phAdd;
+
+  /// Snack bar.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذر قراءة العلبة بدقة، يرجى المحاولة بزاوية أوضح'**
+  String get phScanUnclear;
+
+  /// Snack bar.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم استخراج بيانات الدواء بنجاح'**
+  String get phScanOk;
+
+  /// Progress.
+  ///
+  /// In ar, this message translates to:
+  /// **'جاري قراءة علبة الدواء بالذكاء الاصطناعي...'**
+  String get phScanReading;
+
+  /// Button.
+  ///
+  /// In ar, this message translates to:
+  /// **'مسح العبوة بالكاميرا'**
+  String get phScanBtn;
+
+  /// Form title.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة دواء'**
+  String get phAddTitle;
+
+  /// Form title after a scan.
+  ///
+  /// In ar, this message translates to:
+  /// **'راجع الدواء'**
+  String get phReviewTitle;
+
+  /// Form note.
+  ///
+  /// In ar, this message translates to:
+  /// **'قريت ده من العلبة — عدّل أي حاجة غلط قبل ما تحفظ.'**
+  String get phReadFromBox;
+
+  /// Field.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم الدواء'**
+  String get phFieldName;
+
+  /// Field.
+  ///
+  /// In ar, this message translates to:
+  /// **'لمين؟ (سيبها فاضية لو ليك)'**
+  String get phFieldForWhom;
+
+  /// Field hint.
+  ///
+  /// In ar, this message translates to:
+  /// **'ماما، بابا، يوسف…'**
+  String get phHintPeople;
+
+  /// Field.
+  ///
+  /// In ar, this message translates to:
+  /// **'الجرعة (مثال: بعد الأكل)'**
+  String get phFieldDosageNote;
+
+  /// Label.
+  ///
+  /// In ar, this message translates to:
+  /// **'مواعيد الجرعة (اختياري)'**
+  String get phFieldTimesOptional;
+
+  /// Hint.
+  ///
+  /// In ar, this message translates to:
+  /// **'لسه مفيش مواعيد مضافة — مقترح: {times}'**
+  String phTimesSuggested(String times);
+
+  /// Field.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ'**
+  String get phFieldAmount;
+
+  /// Field.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ ({currency})'**
+  String phFieldAmountCur(String currency);
+
+  /// Toggle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تفاصيل إضافية (اختياري)'**
+  String get phMoreDetails;
+
+  /// Button.
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ'**
+  String get phSave;
+
+  /// Button.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلغاء'**
+  String get phCancel;
+
+  /// Button.
+  ///
+  /// In ar, this message translates to:
+  /// **'تأكيد'**
+  String get phConfirm;
+
+  /// Time picker help.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر ميعاد الجرعة'**
+  String get phPickTime;
+
+  /// Chip.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة ميعاد'**
+  String get phAddTime;
+
+  /// Button.
+  ///
+  /// In ar, this message translates to:
+  /// **'تاريخ الانتهاء — اضغط لاختيار التاريخ'**
+  String get phPickExpiry;
+
+  /// Field.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكمية المتبقية'**
+  String get phFieldQty;
+
+  /// Label.
+  ///
+  /// In ar, this message translates to:
+  /// **'الوحدة'**
+  String get phFieldUnit;
+
+  /// Field.
+  ///
+  /// In ar, this message translates to:
+  /// **'جرعات اليوم'**
+  String get phFieldDailyCount;
+
+  /// Field.
+  ///
+  /// In ar, this message translates to:
+  /// **'الجرعة الواحدة كام {unit}؟'**
+  String phFieldPerDose(String unit);
+
+  /// Dose time preset.
+  ///
+  /// In ar, this message translates to:
+  /// **'صباحاً'**
+  String get phPresetMorning;
+
+  /// Dose time preset.
+  ///
+  /// In ar, this message translates to:
+  /// **'ظهراً'**
+  String get phPresetNoon;
+
+  /// Dose time preset.
+  ///
+  /// In ar, this message translates to:
+  /// **'مساءً'**
+  String get phPresetEvening;
+
+  /// Dose time preset.
+  ///
+  /// In ar, this message translates to:
+  /// **'قبل النوم'**
+  String get phPresetBed;
+
+  /// Field.
+  ///
+  /// In ar, this message translates to:
+  /// **'المادة الفعالة'**
+  String get phFieldIngredient;
+
+  /// Field.
+  ///
+  /// In ar, this message translates to:
+  /// **'الجرعة (مثال: قرص كل 8 ساعات)'**
+  String get phFieldDosageFreq;
+
+  /// Checkbox.
+  ///
+  /// In ar, this message translates to:
+  /// **'دواء مزمن / روشتة متجددة شهرياً'**
+  String get phChronic;
+
+  /// Field.
+  ///
+  /// In ar, this message translates to:
+  /// **'لمين في العائلة'**
+  String get phForFamilyMember;
+
+  /// Dropdown item.
+  ///
+  /// In ar, this message translates to:
+  /// **'بدون'**
+  String get phNone;
+
+  /// Dialog.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف «{name}» من الصيدلية؟'**
+  String phDeleteBody(String name);
+
+  /// Dialog.
+  ///
+  /// In ar, this message translates to:
+  /// **'{name} — الكمية الحالية المسجلة: {count} {unit}'**
+  String phQtyCurrent(String name, int count, String unit);
+
+  /// Dialog helper.
+  ///
+  /// In ar, this message translates to:
+  /// **'من غير الرقم ده مقدرش أحسب المخزون هيكفي كام يوم'**
+  String get phPerDoseHelp;
+
+  /// Dialog.
+  ///
+  /// In ar, this message translates to:
+  /// **'تجديد طلب {name}'**
+  String phRefillTitle(String name);
+
+  /// Field.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكمية المضافة ({unit})'**
+  String phAddedQty(String unit);
+
+  /// Field.
+  ///
+  /// In ar, this message translates to:
+  /// **'السعر'**
+  String get phPrice;
+
+  /// Button.
+  ///
+  /// In ar, this message translates to:
+  /// **'تاريخ الانتهاء'**
+  String get phExpiryDate;
+
+  /// Hint.
+  ///
+  /// In ar, this message translates to:
+  /// **'فعّل \"المنبهات الدقيقة\" من الإعدادات عشان تنبيهات مواعيد الدواء تشتغل بدقة'**
+  String get phAlarmHint;
+
+  /// Refusal.
+  ///
+  /// In ar, this message translates to:
+  /// **'بس رب الأسرة يقدر يعدّل أدوية حد من العيلة.'**
+  String get phErrNotHead;
+
+  /// Offline.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش نت دلوقتي — ما اتحفظش حاجة. جرّب تاني لما يرجع.'**
+  String get phErrOffline;
+
+  /// Server reason.
+  ///
+  /// In ar, this message translates to:
+  /// **'الدوا ده مش موجود عند العضو دلوقتي — حدّث الصفحة.'**
+  String get phErrNotFound;
+
+  /// Server reason.
+  ///
+  /// In ar, this message translates to:
+  /// **'العضو عنده دوا بنفس الاسم ده.'**
+  String get phErrDuplicate;
+
+  /// Server reason.
+  ///
+  /// In ar, this message translates to:
+  /// **'السيرفر رفض الحفظ. جرّب تاني.'**
+  String get phErrRejected;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

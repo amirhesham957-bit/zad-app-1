@@ -4066,5 +4066,635 @@
         "type": "int"
       }
     }
+  },
+  "phEyebrowCount": "{count, plural, =1{دوا واحد} =2{دواءين} few{{count} أدوية} other{{count} دواء}}",
+  "@phEyebrowCount": {
+    "description": "Pharmacy world: the count above the title.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "phFamilyEyebrow": "صيدلية العيلة",
+  "@phFamilyEyebrow": {
+    "description": "Pharmacy world: the eyebrow on a family member tab."
+  },
+  "phMemberState": "جدول {name}",
+  "@phMemberState": {
+    "description": "Pharmacy world: state line on a member tab.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "phNoDosesToday": "مفيش جرعات النهارده",
+  "@phNoDosesToday": {
+    "description": "Pharmacy state line: nothing is scheduled."
+  },
+  "phDoseDueNow": "جرعة {name} وقتها دلوقتي",
+  "@phDoseDueNow": {
+    "description": "Pharmacy state line: a dose is due.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "phNextDose": "الجرعة الجاية {when}",
+  "@phNextDose": {
+    "description": "Pharmacy state line: the next dose and when.",
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "phDoseMissedLine": "فاتتك جرعة {name}",
+  "@phDoseMissedLine": {
+    "description": "Pharmacy state line: a dose was missed.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "phDosesDone": "خلصت جرعات النهارده",
+  "@phDosesDone": {
+    "description": "Pharmacy state line: all taken."
+  },
+  "phPeriodMorning": "الصبح",
+  "@phPeriodMorning": {
+    "description": "Part of day, after the hour."
+  },
+  "phPeriodNoon": "الضهر",
+  "@phPeriodNoon": {
+    "description": "Part of day, after the hour."
+  },
+  "phPeriodAfternoon": "العصر",
+  "@phPeriodAfternoon": {
+    "description": "Part of day, after the hour."
+  },
+  "phPeriodNight": "بالليل",
+  "@phPeriodNight": {
+    "description": "Part of day, after the hour."
+  },
+  "phClockWords": "{hour}{minutes} {period}",
+  "@phClockWords": {
+    "description": "A dose time said in words.",
+    "placeholders": {
+      "hour": {
+        "type": "String"
+      },
+      "minutes": {
+        "type": "String"
+      },
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "phDoseTaken": "اتاخدت",
+  "@phDoseTaken": {
+    "description": "A dose state."
+  },
+  "phDoseDue": "وقتها دلوقتي",
+  "@phDoseDue": {
+    "description": "A dose state."
+  },
+  "phDoseMissed": "فاتت",
+  "@phDoseMissed": {
+    "description": "A dose state."
+  },
+  "phDoseUpcoming": "جاية",
+  "@phDoseUpcoming": {
+    "description": "A dose state."
+  },
+  "phDoseSnoozed": "اتأجلت شوية",
+  "@phDoseSnoozed": {
+    "description": "A dose state."
+  },
+  "phDosePassed": "الميعاد عدّى",
+  "@phDosePassed": {
+    "description": "A member dose whose record is not readable."
+  },
+  "phSnooze": "بعدين",
+  "@phSnooze": {
+    "description": "Dose button."
+  },
+  "phTake": "خدته",
+  "@phTake": {
+    "description": "Dose button."
+  },
+  "phTakeFor": "خدها",
+  "@phTakeFor": {
+    "description": "Head marks a member dose taken."
+  },
+  "phForPerson": "لـ{name}",
+  "@phForPerson": {
+    "description": "Whose medicine.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "phCourseDone": "الكورس خلص",
+  "@phCourseDone": {
+    "description": "Badge."
+  },
+  "phExpiredAgo": "{count, plural, =1{منتهي من يوم} =2{منتهي من يومين} few{منتهي من {count} أيام} other{منتهي من {count} يوم}}",
+  "@phExpiredAgo": {
+    "description": "Badge.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "phExpiresIn": "{count, plural, =1{تنتهي خلال يوم} =2{تنتهي خلال يومين} few{تنتهي خلال {count} أيام} other{تنتهي خلال {count} يوم}}",
+  "@phExpiresIn": {
+    "description": "Badge.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "phRemaining": "متبقي {count} {unit}",
+  "@phRemaining": {
+    "description": "Badge.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "phSupplyDays": "{count, plural, =0{يكفي أقل من يوم} =1{يكفي يوم} =2{يكفي يومين} few{يكفي {count} أيام} other{يكفي {count} يوم}}",
+  "@phSupplyDays": {
+    "description": "Badge.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "phDelete": "حذف",
+  "@phDelete": {
+    "description": "Delete button and dialog title."
+  },
+  "phBadDoseTime": "وقت جرعة مش مفهوم — عدّله",
+  "@phBadDoseTime": {
+    "description": "Prompt."
+  },
+  "phNoSchedule": "مالوش مواعيد — مش هفكّرك بيه",
+  "@phNoSchedule": {
+    "description": "Prompt."
+  },
+  "phSetTimes": "حدد مواعيده",
+  "@phSetTimes": {
+    "description": "Button."
+  },
+  "phConfirmQtyBadge": "الكمية محتاجة تأكيد",
+  "@phConfirmQtyBadge": {
+    "description": "Badge."
+  },
+  "phTakeDose": "تناول جرعة",
+  "@phTakeDose": {
+    "description": "Button."
+  },
+  "phRefill": "تجديد الطلب",
+  "@phRefill": {
+    "description": "Button."
+  },
+  "phToShopping": "ضيفه للتسوق",
+  "@phToShopping": {
+    "description": "Button."
+  },
+  "phHowMuchLeft": "فاضل قد إيه فعلاً؟",
+  "@phHowMuchLeft": {
+    "description": "Button and dialog title."
+  },
+  "phAddedToShopping": "ضفت {name} لقايمة التسوق",
+  "@phAddedToShopping": {
+    "description": "Snack bar.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "phDosesToday": "جرعات النهارده",
+  "@phDosesToday": {
+    "description": "Section heading."
+  },
+  "phNoDosesLeft": "مفيش جرعات فاضلة النهارده.",
+  "@phNoDosesLeft": {
+    "description": "Note."
+  },
+  "phNoTimesYet": "ولا دوا ليه مواعيد لسه — حدد مواعيد أي دوا تحت عشان أفكّرك بيه.",
+  "@phNoTimesYet": {
+    "description": "Note."
+  },
+  "phLoadFailed": "مقدرتش أجيب الأدوية",
+  "@phLoadFailed": {
+    "description": "Error state."
+  },
+  "phEmptyTitle": "لا توجد أدوية مسجلة بعد",
+  "@phEmptyTitle": {
+    "description": "Empty state."
+  },
+  "phPullRetry": "اسحب لتحت نجرب تاني.",
+  "@phPullRetry": {
+    "description": "Error guidance."
+  },
+  "phEmptyGuide": "ضيفه بالزرار، أو صوّر العلبة، أو قول لزاد: \"باخد كونكور قرص الصبح وبالليل\" وهو يسجّله بمواعيده.",
+  "@phEmptyGuide": {
+    "description": "Empty guidance."
+  },
+  "phMedicines": "الأدوية",
+  "@phMedicines": {
+    "description": "Section heading."
+  },
+  "phTimesTitle": "مواعيد {name}",
+  "@phTimesTitle": {
+    "description": "Sheet title.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "phTimesHint": "هفكّرك في كل ميعاد، وتقدر تسجّل الجرعة بضغطة.",
+  "@phTimesHint": {
+    "description": "Sheet hint."
+  },
+  "phSaveTimes": "احفظ المواعيد",
+  "@phSaveTimes": {
+    "description": "Button."
+  },
+  "phAdherence": "الالتزام بالجرعات",
+  "@phAdherence": {
+    "description": "Stat label."
+  },
+  "phAdherenceWaiting": "في انتظار أول جرعة",
+  "@phAdherenceWaiting": {
+    "description": "Stat value."
+  },
+  "phCountTotal": "إجمالي الأدوية",
+  "@phCountTotal": {
+    "description": "Count label."
+  },
+  "phCountExpiring": "قرب الانتهاء",
+  "@phCountExpiring": {
+    "description": "Count label."
+  },
+  "phCountLow": "مخزون منخفض",
+  "@phCountLow": {
+    "description": "Count label."
+  },
+  "phExpiredBanner": "{count, plural, =1{دواء منتهي الصلاحية — تخلص منه بأمان} =2{دواءين منتهيين الصلاحية — تخلص منهم بأمان} few{{count} أدوية منتهية الصلاحية — تخلص منها بأمان} other{{count} دواء منتهي الصلاحية — تخلص منه بأمان}}",
+  "@phExpiredBanner": {
+    "description": "Banner.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "phExpiringHeading": "قرب الانتهاء — تخلص منها بأمان",
+  "@phExpiringHeading": {
+    "description": "Heading."
+  },
+  "phCostSpending": "صرف الصحة الشهر ده",
+  "@phCostSpending": {
+    "description": "Cost label."
+  },
+  "phCostBoxes": "أسعار علب الأدوية",
+  "@phCostBoxes": {
+    "description": "Cost label."
+  },
+  "phTabMe": "أنا",
+  "@phTabMe": {
+    "description": "Family tab."
+  },
+  "phTabMember": "عضو",
+  "@phTabMember": {
+    "description": "Family tab with no name."
+  },
+  "phMemberFallback": "العضو",
+  "@phMemberFallback": {
+    "description": "A member with no name."
+  },
+  "phHeadNote": "إنت رب الأسرة — بتشوف جدول {name} وتعدّل فيه وتعلّم الجرعة لو ساعدته",
+  "@phHeadNote": {
+    "description": "Head card.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "phReadOnlyNote": "جدول {name} للمتابعة بس — رب الأسرة هو اللي يعدّل",
+  "@phReadOnlyNote": {
+    "description": "Non-head card.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "phAddFor": "دوا لـ{name}",
+  "@phAddFor": {
+    "description": "Head button and form title.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "phMemberLoadFailed": "مقدرتش أجيب أدوية {name}",
+  "@phMemberLoadFailed": {
+    "description": "Error state.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "phMemberEmptyTitle": "لسه مفيش أدوية تقدر تشوفها",
+  "@phMemberEmptyTitle": {
+    "description": "Empty state."
+  },
+  "phMemberEmptyGuide": "أدوية كل فرد بتظهر هنا بعد ما يوافق — اطلب المتابعة من صفحته في «عيلتي»",
+  "@phMemberEmptyGuide": {
+    "description": "Empty guidance."
+  },
+  "phMemberDoses": "جرعات {name} النهارده",
+  "@phMemberDoses": {
+    "description": "Section heading.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "phEdit": "تعديل",
+  "@phEdit": {
+    "description": "Button."
+  },
+  "phEditTitle": "تعديل {name}",
+  "@phEditTitle": {
+    "description": "Form title.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "phPhoto": "صوّر الدوا",
+  "@phPhoto": {
+    "description": "Dock button."
+  },
+  "phAdd": "إضافة",
+  "@phAdd": {
+    "description": "Dock button tooltip."
+  },
+  "phScanUnclear": "تعذر قراءة العلبة بدقة، يرجى المحاولة بزاوية أوضح",
+  "@phScanUnclear": {
+    "description": "Snack bar."
+  },
+  "phScanOk": "تم استخراج بيانات الدواء بنجاح",
+  "@phScanOk": {
+    "description": "Snack bar."
+  },
+  "phScanReading": "جاري قراءة علبة الدواء بالذكاء الاصطناعي...",
+  "@phScanReading": {
+    "description": "Progress."
+  },
+  "phScanBtn": "مسح العبوة بالكاميرا",
+  "@phScanBtn": {
+    "description": "Button."
+  },
+  "phAddTitle": "إضافة دواء",
+  "@phAddTitle": {
+    "description": "Form title."
+  },
+  "phReviewTitle": "راجع الدواء",
+  "@phReviewTitle": {
+    "description": "Form title after a scan."
+  },
+  "phReadFromBox": "قريت ده من العلبة — عدّل أي حاجة غلط قبل ما تحفظ.",
+  "@phReadFromBox": {
+    "description": "Form note."
+  },
+  "phFieldName": "اسم الدواء",
+  "@phFieldName": {
+    "description": "Field."
+  },
+  "phFieldForWhom": "لمين؟ (سيبها فاضية لو ليك)",
+  "@phFieldForWhom": {
+    "description": "Field."
+  },
+  "phHintPeople": "ماما، بابا، يوسف…",
+  "@phHintPeople": {
+    "description": "Field hint."
+  },
+  "phFieldDosageNote": "الجرعة (مثال: بعد الأكل)",
+  "@phFieldDosageNote": {
+    "description": "Field."
+  },
+  "phFieldTimesOptional": "مواعيد الجرعة (اختياري)",
+  "@phFieldTimesOptional": {
+    "description": "Label."
+  },
+  "phTimesSuggested": "لسه مفيش مواعيد مضافة — مقترح: {times}",
+  "@phTimesSuggested": {
+    "description": "Hint.",
+    "placeholders": {
+      "times": {
+        "type": "String"
+      }
+    }
+  },
+  "phFieldAmount": "المبلغ",
+  "@phFieldAmount": {
+    "description": "Field."
+  },
+  "phFieldAmountCur": "المبلغ ({currency})",
+  "@phFieldAmountCur": {
+    "description": "Field.",
+    "placeholders": {
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
+  "phMoreDetails": "تفاصيل إضافية (اختياري)",
+  "@phMoreDetails": {
+    "description": "Toggle."
+  },
+  "phSave": "حفظ",
+  "@phSave": {
+    "description": "Button."
+  },
+  "phCancel": "إلغاء",
+  "@phCancel": {
+    "description": "Button."
+  },
+  "phConfirm": "تأكيد",
+  "@phConfirm": {
+    "description": "Button."
+  },
+  "phPickTime": "اختر ميعاد الجرعة",
+  "@phPickTime": {
+    "description": "Time picker help."
+  },
+  "phAddTime": "إضافة ميعاد",
+  "@phAddTime": {
+    "description": "Chip."
+  },
+  "phPickExpiry": "تاريخ الانتهاء — اضغط لاختيار التاريخ",
+  "@phPickExpiry": {
+    "description": "Button."
+  },
+  "phFieldQty": "الكمية المتبقية",
+  "@phFieldQty": {
+    "description": "Field."
+  },
+  "phFieldUnit": "الوحدة",
+  "@phFieldUnit": {
+    "description": "Label."
+  },
+  "phFieldDailyCount": "جرعات اليوم",
+  "@phFieldDailyCount": {
+    "description": "Field."
+  },
+  "phFieldPerDose": "الجرعة الواحدة كام {unit}؟",
+  "@phFieldPerDose": {
+    "description": "Field.",
+    "placeholders": {
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "phPresetMorning": "صباحاً",
+  "@phPresetMorning": {
+    "description": "Dose time preset."
+  },
+  "phPresetNoon": "ظهراً",
+  "@phPresetNoon": {
+    "description": "Dose time preset."
+  },
+  "phPresetEvening": "مساءً",
+  "@phPresetEvening": {
+    "description": "Dose time preset."
+  },
+  "phPresetBed": "قبل النوم",
+  "@phPresetBed": {
+    "description": "Dose time preset."
+  },
+  "phFieldIngredient": "المادة الفعالة",
+  "@phFieldIngredient": {
+    "description": "Field."
+  },
+  "phFieldDosageFreq": "الجرعة (مثال: قرص كل 8 ساعات)",
+  "@phFieldDosageFreq": {
+    "description": "Field."
+  },
+  "phChronic": "دواء مزمن / روشتة متجددة شهرياً",
+  "@phChronic": {
+    "description": "Checkbox."
+  },
+  "phForFamilyMember": "لمين في العائلة",
+  "@phForFamilyMember": {
+    "description": "Field."
+  },
+  "phNone": "بدون",
+  "@phNone": {
+    "description": "Dropdown item."
+  },
+  "phDeleteBody": "حذف «{name}» من الصيدلية؟",
+  "@phDeleteBody": {
+    "description": "Dialog.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "phQtyCurrent": "{name} — الكمية الحالية المسجلة: {count} {unit}",
+  "@phQtyCurrent": {
+    "description": "Dialog.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "phPerDoseHelp": "من غير الرقم ده مقدرش أحسب المخزون هيكفي كام يوم",
+  "@phPerDoseHelp": {
+    "description": "Dialog helper."
+  },
+  "phRefillTitle": "تجديد طلب {name}",
+  "@phRefillTitle": {
+    "description": "Dialog.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "phAddedQty": "الكمية المضافة ({unit})",
+  "@phAddedQty": {
+    "description": "Field.",
+    "placeholders": {
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "phPrice": "السعر",
+  "@phPrice": {
+    "description": "Field."
+  },
+  "phExpiryDate": "تاريخ الانتهاء",
+  "@phExpiryDate": {
+    "description": "Button."
+  },
+  "phAlarmHint": "فعّل \"المنبهات الدقيقة\" من الإعدادات عشان تنبيهات مواعيد الدواء تشتغل بدقة",
+  "@phAlarmHint": {
+    "description": "Hint."
+  },
+  "phErrNotHead": "بس رب الأسرة يقدر يعدّل أدوية حد من العيلة.",
+  "@phErrNotHead": {
+    "description": "Refusal."
+  },
+  "phErrOffline": "مفيش نت دلوقتي — ما اتحفظش حاجة. جرّب تاني لما يرجع.",
+  "@phErrOffline": {
+    "description": "Offline."
+  },
+  "phErrNotFound": "الدوا ده مش موجود عند العضو دلوقتي — حدّث الصفحة.",
+  "@phErrNotFound": {
+    "description": "Server reason."
+  },
+  "phErrDuplicate": "العضو عنده دوا بنفس الاسم ده.",
+  "@phErrDuplicate": {
+    "description": "Server reason."
+  },
+  "phErrRejected": "السيرفر رفض الحفظ. جرّب تاني.",
+  "@phErrRejected": {
+    "description": "Server reason."
   }
 }

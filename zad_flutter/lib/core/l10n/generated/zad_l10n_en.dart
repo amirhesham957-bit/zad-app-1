@@ -4692,4 +4692,461 @@ class ZadL10nEn extends ZadL10n {
   String statementDropped(String text, int n) {
     return '$text. $n rows could not be read.';
   }
+
+  @override
+  String phEyebrowCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count medicines',
+      one: '1 medicine',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get phFamilyEyebrow => 'Family pharmacy';
+
+  @override
+  String phMemberState(String name) {
+    return '$name\'s schedule';
+  }
+
+  @override
+  String get phNoDosesToday => 'No doses today';
+
+  @override
+  String phDoseDueNow(String name) {
+    return '$name is due now';
+  }
+
+  @override
+  String phNextDose(String when) {
+    return 'Next dose $when';
+  }
+
+  @override
+  String phDoseMissedLine(String name) {
+    return 'You missed $name';
+  }
+
+  @override
+  String get phDosesDone => 'Today\'s doses are done';
+
+  @override
+  String get phPeriodMorning => 'in the morning';
+
+  @override
+  String get phPeriodNoon => 'at noon';
+
+  @override
+  String get phPeriodAfternoon => 'in the afternoon';
+
+  @override
+  String get phPeriodNight => 'at night';
+
+  @override
+  String phClockWords(String hour, String minutes, String period) {
+    return '$hour$minutes $period';
+  }
+
+  @override
+  String get phDoseTaken => 'Taken';
+
+  @override
+  String get phDoseDue => 'Due now';
+
+  @override
+  String get phDoseMissed => 'Missed';
+
+  @override
+  String get phDoseUpcoming => 'Coming up';
+
+  @override
+  String get phDoseSnoozed => 'Snoozed';
+
+  @override
+  String get phDosePassed => 'Time passed';
+
+  @override
+  String get phSnooze => 'Later';
+
+  @override
+  String get phTake => 'Take';
+
+  @override
+  String get phTakeFor => 'Mark taken';
+
+  @override
+  String phForPerson(String name) {
+    return 'For $name';
+  }
+
+  @override
+  String get phCourseDone => 'Course finished';
+
+  @override
+  String phExpiredAgo(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Expired $count days ago',
+      one: 'Expired 1 day ago',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String phExpiresIn(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Expires in $count days',
+      one: 'Expires in 1 day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String phRemaining(int count, String unit) {
+    return '$count $unit left';
+  }
+
+  @override
+  String phSupplyDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Lasts $count days',
+      one: 'Lasts 1 day',
+      zero: 'Lasts under a day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get phDelete => 'Delete';
+
+  @override
+  String get phBadDoseTime => 'A dose time is not understood — fix it';
+
+  @override
+  String get phNoSchedule => 'No times — I won\'t remind you';
+
+  @override
+  String get phSetTimes => 'Set times';
+
+  @override
+  String get phConfirmQtyBadge => 'Quantity needs confirming';
+
+  @override
+  String get phTakeDose => 'Take a dose';
+
+  @override
+  String get phRefill => 'Reorder';
+
+  @override
+  String get phToShopping => 'Add to shopping';
+
+  @override
+  String get phHowMuchLeft => 'How much is really left?';
+
+  @override
+  String phAddedToShopping(String name) {
+    return 'Added $name to the shopping list';
+  }
+
+  @override
+  String get phDosesToday => 'Today\'s doses';
+
+  @override
+  String get phNoDosesLeft => 'No doses left today.';
+
+  @override
+  String get phNoTimesYet =>
+      'No medicine has times yet — set times on one below and I will remind you.';
+
+  @override
+  String get phLoadFailed => 'Couldn\'t load the medicines';
+
+  @override
+  String get phEmptyTitle => 'No medicines yet';
+
+  @override
+  String get phPullRetry => 'Pull down to try again.';
+
+  @override
+  String get phEmptyGuide =>
+      'Add it with the button, photograph the box, or tell Zad: \"I take Concor one tablet morning and night\" and it will log it with its times.';
+
+  @override
+  String get phMedicines => 'Medicines';
+
+  @override
+  String phTimesTitle(String name) {
+    return '$name times';
+  }
+
+  @override
+  String get phTimesHint =>
+      'I will remind you at each time, and you can log the dose in one tap.';
+
+  @override
+  String get phSaveTimes => 'Save times';
+
+  @override
+  String get phAdherence => 'Dose adherence';
+
+  @override
+  String get phAdherenceWaiting => 'Waiting for the first dose';
+
+  @override
+  String get phCountTotal => 'Medicines';
+
+  @override
+  String get phCountExpiring => 'Expiring soon';
+
+  @override
+  String get phCountLow => 'Low stock';
+
+  @override
+  String phExpiredBanner(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count expired medicines — dispose of them safely',
+      one: '1 expired medicine — dispose of it safely',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get phExpiringHeading => 'Expiring soon — dispose of them safely';
+
+  @override
+  String get phCostSpending => 'Health spending this month';
+
+  @override
+  String get phCostBoxes => 'Medicine box prices';
+
+  @override
+  String get phTabMe => 'Me';
+
+  @override
+  String get phTabMember => 'Member';
+
+  @override
+  String get phMemberFallback => 'the member';
+
+  @override
+  String phHeadNote(String name) {
+    return 'You are the family head — you see $name\'s schedule, edit it and mark a dose if you helped';
+  }
+
+  @override
+  String phReadOnlyNote(String name) {
+    return '$name\'s schedule is for following only — the family head edits';
+  }
+
+  @override
+  String phAddFor(String name) {
+    return 'Medicine for $name';
+  }
+
+  @override
+  String phMemberLoadFailed(String name) {
+    return 'Couldn\'t load $name\'s medicines';
+  }
+
+  @override
+  String get phMemberEmptyTitle => 'No medicines you can see yet';
+
+  @override
+  String get phMemberEmptyGuide =>
+      'Each person\'s medicines show here once they agree — ask to follow from their page in My Family';
+
+  @override
+  String phMemberDoses(String name) {
+    return '$name\'s doses today';
+  }
+
+  @override
+  String get phEdit => 'Edit';
+
+  @override
+  String phEditTitle(String name) {
+    return 'Edit $name';
+  }
+
+  @override
+  String get phPhoto => 'Photograph a medicine';
+
+  @override
+  String get phAdd => 'Add';
+
+  @override
+  String get phScanUnclear =>
+      'Couldn\'t read the box clearly — try a better angle';
+
+  @override
+  String get phScanOk => 'Medicine details read';
+
+  @override
+  String get phScanReading => 'Reading the medicine box with AI...';
+
+  @override
+  String get phScanBtn => 'Scan the box with the camera';
+
+  @override
+  String get phAddTitle => 'Add a medicine';
+
+  @override
+  String get phReviewTitle => 'Review the medicine';
+
+  @override
+  String get phReadFromBox =>
+      'Read from the box — fix anything wrong before you save.';
+
+  @override
+  String get phFieldName => 'Medicine name';
+
+  @override
+  String get phFieldForWhom => 'For whom? (leave empty if it is yours)';
+
+  @override
+  String get phHintPeople => 'Mum, Dad, Youssef…';
+
+  @override
+  String get phFieldDosageNote => 'Dosage (e.g. after food)';
+
+  @override
+  String get phFieldTimesOptional => 'Dose times (optional)';
+
+  @override
+  String phTimesSuggested(String times) {
+    return 'No times yet — suggested: $times';
+  }
+
+  @override
+  String get phFieldAmount => 'Amount';
+
+  @override
+  String phFieldAmountCur(String currency) {
+    return 'Amount ($currency)';
+  }
+
+  @override
+  String get phMoreDetails => 'More details (optional)';
+
+  @override
+  String get phSave => 'Save';
+
+  @override
+  String get phCancel => 'Cancel';
+
+  @override
+  String get phConfirm => 'Confirm';
+
+  @override
+  String get phPickTime => 'Pick a dose time';
+
+  @override
+  String get phAddTime => 'Add a time';
+
+  @override
+  String get phPickExpiry => 'Expiry date — tap to pick';
+
+  @override
+  String get phFieldQty => 'Quantity left';
+
+  @override
+  String get phFieldUnit => 'Unit';
+
+  @override
+  String get phFieldDailyCount => 'Doses a day';
+
+  @override
+  String phFieldPerDose(String unit) {
+    return 'How many $unit per dose?';
+  }
+
+  @override
+  String get phPresetMorning => 'Morning';
+
+  @override
+  String get phPresetNoon => 'Noon';
+
+  @override
+  String get phPresetEvening => 'Evening';
+
+  @override
+  String get phPresetBed => 'Bedtime';
+
+  @override
+  String get phFieldIngredient => 'Active ingredient';
+
+  @override
+  String get phFieldDosageFreq => 'Dosage (e.g. a tablet every 8 hours)';
+
+  @override
+  String get phChronic => 'Chronic medicine / monthly repeat prescription';
+
+  @override
+  String get phForFamilyMember => 'For which family member';
+
+  @override
+  String get phNone => 'None';
+
+  @override
+  String phDeleteBody(String name) {
+    return 'Delete \"$name\" from the pharmacy?';
+  }
+
+  @override
+  String phQtyCurrent(String name, int count, String unit) {
+    return '$name — recorded quantity: $count $unit';
+  }
+
+  @override
+  String get phPerDoseHelp =>
+      'Without this I can\'t work out how many days the stock lasts';
+
+  @override
+  String phRefillTitle(String name) {
+    return 'Reorder $name';
+  }
+
+  @override
+  String phAddedQty(String unit) {
+    return 'Quantity added ($unit)';
+  }
+
+  @override
+  String get phPrice => 'Price';
+
+  @override
+  String get phExpiryDate => 'Expiry date';
+
+  @override
+  String get phAlarmHint =>
+      'Turn on \"Exact alarms\" in Settings so dose reminders ring on time';
+
+  @override
+  String get phErrNotHead =>
+      'Only the family head can edit a family member\'s medicines.';
+
+  @override
+  String get phErrOffline =>
+      'No internet right now — nothing was saved. Try again when it is back.';
+
+  @override
+  String get phErrNotFound =>
+      'That medicine is no longer there — refresh the page.';
+
+  @override
+  String get phErrDuplicate =>
+      'This member already has a medicine with that name.';
+
+  @override
+  String get phErrRejected => 'The server refused to save. Try again.';
 }
