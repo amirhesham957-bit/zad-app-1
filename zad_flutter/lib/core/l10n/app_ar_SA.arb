@@ -554,5 +554,15 @@
   "maintEmptyMessage": "سجّل المكيف أو السخان أو السيارة، وزاد يذكّرك بموعد صيانتها وضمانها.",
   "maintTechnicians": "فنيين أثق فيهم",
   "maintTechniciansHint": "اتصل أو أرسل واتساب لفني جرّبته",
-  "maintAddFailed": "ما انسجّل الجهاز — تأكد من النت."
+  "maintAddFailed": "ما انسجّل الجهاز — تأكد من النت.",
+  "tasStateEmpty": "ابدأ أول تسبيحة والورد بيتفتح",
+  "tasTabFamily": "أشجار العائلة",
+  "tasStatSession": "في هذي الجلسة",
+  "tasStreakDays": "{days} يوم متتالي",
+  "tasBloom": "تفتّحت وردة جديدة!",
+  "tasNoTreesMsg": "أول ما أحد من العائلة يسبّح تظهر شجرته هنا.",
+  "tasChallengesTitle": "التحديات العائلية",
+  "tasNoChallengesAdmin": "اضغط + وابدأ أول تحدي للعائلة.",
+  "tasNoChallengesMember": "اطلب من المدير ينشئ تحدي جديد!",
+  "tasNoTreeTitle": "للحين ما فيه شجرة"
 }
