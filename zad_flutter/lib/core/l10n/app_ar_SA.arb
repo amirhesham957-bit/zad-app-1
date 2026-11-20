@@ -558,5 +558,15 @@
   "achLocked": "مقفول",
   "achLoadFailed": "ما قدرنا نجيب الإنجازات الحين",
   "achLoadFailedHint": "تأكد من الاتصال وحاول مرة ثانية",
-  "achRetry": "حاول مرة ثانية"
+  "achRetry": "حاول مرة ثانية",
+  "tasStateEmpty": "ابدأ أول تسبيحة والورد بيتفتح",
+  "tasTabFamily": "أشجار العائلة",
+  "tasStatSession": "في هذي الجلسة",
+  "tasStreakDays": "{days} يوم متتالي",
+  "tasBloom": "تفتّحت وردة جديدة!",
+  "tasNoTreesMsg": "أول ما أحد من العائلة يسبّح تظهر شجرته هنا.",
+  "tasChallengesTitle": "التحديات العائلية",
+  "tasNoChallengesAdmin": "اضغط + وابدأ أول تحدي للعائلة.",
+  "tasNoChallengesMember": "اطلب من المدير ينشئ تحدي جديد!",
+  "tasNoTreeTitle": "للحين ما فيه شجرة"
 }

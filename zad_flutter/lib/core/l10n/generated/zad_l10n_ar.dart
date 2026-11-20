@@ -4717,189 +4717,111 @@ class ZadL10nAr extends ZadL10n {
   }
 
   @override
-  String txWorldEyebrow(int count) {
+  String shopWorldEyebrow(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count معاملة',
-      few: '$count معاملات',
-      two: 'معاملتين',
-      one: 'معاملة واحدة',
-      zero: 'لسه مفيش معاملات',
+      other: '$count حاجة ناقصة',
+      few: '$count حاجات ناقصة',
+      two: 'حاجتين ناقصين',
+      one: 'حاجة واحدة ناقصة',
+      zero: 'مفيش حاجة ناقصة',
     );
     return '$_temp0';
   }
 
   @override
-  String txWorldState(int count) {
+  String shopWorldStores(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count اتسجلوا لوحدهم النهارده',
-      few: '$count اتسجلوا لوحدهم النهارده',
-      two: 'اتنين اتسجلوا لوحدهم النهارده',
-      one: 'واحدة اتسجلت لوحدها النهارده',
-      zero: 'لسه مفيش حاجة اتسجلت لوحدها النهارده',
+      other: 'من $count محل',
+      few: 'من $count محلات',
+      two: 'من محلين',
+      one: 'من محل واحد',
     );
     return '$_temp0';
   }
 
   @override
-  String get txSourceBank => 'رسالة من البنك';
+  String get shopWorldAnyStore => 'من أي محل';
 
   @override
-  String txSourceBankNamed(String bank) {
-    return '$bank · رسالة';
-  }
+  String get shopWorldDone => 'القايمة فاضية';
 
   @override
-  String get txSourceReceipt => 'فاتورة اتصورت';
+  String get shopGroupAnyStore => 'أي محل';
 
   @override
-  String get txSourceVoice => 'قولتها بصوتك';
-
-  @override
-  String get txSourceStatement => 'من كشف الحساب';
-
-  @override
-  String get txSourcePharmacy => 'تعبئة الصيدلية';
-
-  @override
-  String get txSourceManual => 'كتبتها بإيدك';
-
-  @override
-  String budgetWorldUntil(int day) {
-    return 'لحد يوم $day';
-  }
-
-  @override
-  String budgetWorldDaysLeft(int count) {
+  String shopPantryCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'فاضل $count يوم',
-      few: 'فاضل $count أيام',
-      two: 'فاضل يومين',
-      one: 'فاضل يوم واحد',
-      zero: 'آخر يوم',
+      other: 'في المخزن $count صنف',
+      few: 'في المخزن $count أصناف',
+      two: 'في المخزن صنفين',
+      one: 'في المخزن صنف واحد',
+      zero: 'المخزن فاضي',
     );
     return '$_temp0';
   }
 
   @override
-  String budgetWorldState(String amount, String perDay) {
-    return 'متاح $amount · $perDay في اليوم';
+  String apptWorldToday(String weekday) {
+    return 'النهارده $weekday';
   }
 
   @override
-  String budgetWorldAvailable(String amount) {
-    return 'متاح $amount';
+  String apptWorldNext(String title, String when) {
+    return '$title $when';
   }
 
   @override
-  String statementWorldStateLess(int pct) {
-    return 'صرفت $pct٪ أقل من نفس الفترة الشهر اللي فات';
+  String get apptWorldNone => 'مفيش مواعيد جاية';
+
+  @override
+  String get apptNextLabel => 'الميعاد الجاي';
+
+  @override
+  String get apptInNow => 'دلوقتي';
+
+  @override
+  String apptInMinutes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'بعد $count دقيقة',
+      few: 'بعد $count دقايق',
+      two: 'بعد دقيقتين',
+      one: 'بعد دقيقة',
+    );
+    return '$_temp0';
   }
 
   @override
-  String statementWorldStateMore(int pct) {
-    return 'صرفت $pct٪ أكتر من نفس الفترة الشهر اللي فات';
+  String apptInHours(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'بعد $count ساعة',
+      few: 'بعد $count ساعات',
+      two: 'بعد ساعتين',
+      one: 'بعد ساعة',
+    );
+    return '$_temp0';
   }
 
   @override
-  String get statementWorldStateSame => 'صرفك زي الشهر اللي فات';
-
-  @override
-  String get statementWorldStateNone => 'استورد كشفك وشوف فلوسك رايحة فين';
-
-  @override
-  String get statementWorldBreakdownTitle => 'فلوسك داخلة منين وخارجة فين';
-
-  @override
-  String get statementWorldIn => 'الدخل';
-
-  @override
-  String get statementWorldEmptyTitle => 'مفيش حركات الشهر ده لسه';
-
-  @override
-  String get statementWorldEmptyBody =>
-      'استورد كشفك أو سجّل معاملة، وهتلاقي هنا الدخل والمصروف حسب الفئة.';
-
-  @override
-  String get statementPickBody =>
-      'اختار كشف حسابك: PDF من تطبيق البنك، أو صورة، أو ملف CSV. زاد بيقرا الحركات ويراجعها على رصيد الكشف، ومفيش حاجة بتتسجل غير بعد ما تراجعها.';
-
-  @override
-  String get statementReading => 'بقرا الكشف… الكشف الطويل بياخد دقيقة';
-
-  @override
-  String get statementPickButton => 'اختيار الكشف';
-
-  @override
-  String get statementMapIntro =>
-      'حدد أي عمود من الملف يمثل كل بيانة — الملف مختلف من بنك لبنك';
-
-  @override
-  String get statementMapDate => 'عمود التاريخ';
-
-  @override
-  String get statementMapTitle => 'عمود الوصف/العنوان';
-
-  @override
-  String get statementMapAmount => 'عمود المبلغ';
-
-  @override
-  String get statementMapCategory => 'عمود التصنيف (اختياري)';
-
-  @override
-  String get statementMapInvert =>
-      'اعكس إشارة المبلغ (لو السالب هنا معناه دخل مش مصروف)';
-
-  @override
-  String get statementMapContinue => 'متابعة للمراجعة';
-
-  @override
-  String get statementMapNone => 'بدون';
-
-  @override
-  String statementMapColumnN(int n) {
-    return 'عمود $n';
-  }
-
-  @override
-  String statementPreviewCount(int rows, int checked) {
-    return '$rows صف — $checked محدد للاستيراد';
-  }
-
-  @override
-  String get statementPreviewEmptyTitle => 'ما لقيتش أي معاملة في الملف';
-
-  @override
-  String get statementPreviewEmptyBody =>
-      'الملف اتقرا لكن مفيهوش صفوف أقدر أستوردها — اتأكد إنه كشف حساب وإن صيغته CSV أو PDF مقروء.';
-
-  @override
-  String get statementRowUnreadable =>
-      'تعذّرت قراءة التاريخ أو المبلغ في هذا الصف';
-
-  @override
-  String get statementRowBalance =>
-      'الرصيد في الكشف مش متطابق مع الصف ده — راجع المبلغ';
-
-  @override
-  String get statementCheckBalanced => 'الأرقام متطابقة مع رصيد الكشف';
-
-  @override
-  String get statementCheckMismatch =>
-      'في أرقام مش متطابقة مع رصيد الكشف — الصفوف دي مش متعلّمة، راجعها';
-
-  @override
-  String get statementCheckUnknown =>
-      'الكشف مفيهوش رصيد أراجع عليه — راجع كل صف قبل الاستيراد';
-
-  @override
-  String statementDropped(String text, int n) {
-    return '$text. وفي $n صف ماقدرتش أقراه.';
+  String apptInDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'بعد $count يوم',
+      few: 'بعد $count أيام',
+      two: 'بعد يومين',
+      one: 'بعد يوم',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -5367,111 +5289,368 @@ class ZadL10nAr extends ZadL10n {
   String get phErrRejected => 'السيرفر رفض الحفظ. جرّب تاني.';
 
   @override
-  String shopWorldEyebrow(int count) {
+  String get tasEyebrow => 'ورد كل ٣٣ · شجرة كل ٩٩';
+
+  @override
+  String tasStateLine(int count, int flowers) {
+    return '$count تسبيحة · $flowers وردة';
+  }
+
+  @override
+  String get tasStateEmpty => 'ابدأ أول تسبيحة والورد هيفتّح';
+
+  @override
+  String get tasTabMine => 'بستاني';
+
+  @override
+  String get tasTabFamily => 'أشجار العيلة';
+
+  @override
+  String get tasTabChallenges => 'التحديات';
+
+  @override
+  String get tasStage1 => 'بذرة';
+
+  @override
+  String get tasStage2 => 'بذرة نبتت';
+
+  @override
+  String get tasStage3 => 'شتلة';
+
+  @override
+  String get tasStage4 => 'شجرة';
+
+  @override
+  String get tasStage5 => 'شجرة مثمرة';
+
+  @override
+  String get tasStatLevel => 'المرحلة';
+
+  @override
+  String tasStatLevelValue(int level) {
+    return '$level/5';
+  }
+
+  @override
+  String get tasStatTotal => 'إجمالي التسبيح';
+
+  @override
+  String get tasStatStreak => 'السلسلة';
+
+  @override
+  String get tasStatFlowers => 'الورد';
+
+  @override
+  String get tasStatSession => 'في الجلسة دي';
+
+  @override
+  String tasNext(int score, int next) {
+    return '$score / $next للمرحلة التالية';
+  }
+
+  @override
+  String get tasComplete => 'اكتملت!';
+
+  @override
+  String tasStreakDays(int days) {
+    return '$days يوم ورا بعض';
+  }
+
+  @override
+  String get tasTapLabel => 'سبّح';
+
+  @override
+  String get tasReset => 'تصفير';
+
+  @override
+  String get tasCycle => 'الدورة';
+
+  @override
+  String get tasLevelUp => 'مبروك! شجرتك كبرت!';
+
+  @override
+  String get tasBloom => 'وردة جديدة فتّحت!';
+
+  @override
+  String tasSeedsGranted(int seeds) {
+    return '+$seeds بذور';
+  }
+
+  @override
+  String tasMyTrees(int count) {
+    return 'أشجاري ($count)';
+  }
+
+  @override
+  String get tasNewTree => 'شجرة جديدة';
+
+  @override
+  String get tasNoTreeTitle => 'لسه مفيش شجرة';
+
+  @override
+  String get tasNoTreeMsg => 'ازرع أول شجرة وابدأ التسبيح.';
+
+  @override
+  String get tasTreeNameLabel => 'اسم الشجرة';
+
+  @override
+  String get tasRenameTitle => 'تسمية الشجرة';
+
+  @override
+  String get tasNewTreeHint => 'أضف شجرة جديدة لبستانك!';
+
+  @override
+  String get tasTreeNameExample => 'مثال: شجرة التفاح';
+
+  @override
+  String get tasCancel => 'إلغاء';
+
+  @override
+  String get tasSave => 'حفظ';
+
+  @override
+  String get tasAdd => 'إضافة';
+
+  @override
+  String get tasLeaderboard => 'لوحة المتصدرين';
+
+  @override
+  String get tasShare => 'شارك الترتيب';
+
+  @override
+  String get tasNoTreesTitle => 'لا توجد أشجار بعد';
+
+  @override
+  String get tasNoTreesMsg => 'أول ما حد من العيلة يسبّح، شجرته هتظهر هنا.';
+
+  @override
+  String tasMemberTrees(int trees, int mature) {
+    return '$trees أشجار | $mature مثمرة';
+  }
+
+  @override
+  String get tasUnit => 'تسبيحة';
+
+  @override
+  String get tasChallengesTitle => 'التحديات العائلية';
+
+  @override
+  String get tasChallengesTagline => 'تحدَ أفراد عائلتك في التسبيحة!';
+
+  @override
+  String get tasNewChallenge => 'تحدي جديد';
+
+  @override
+  String get tasNoChallengesTitle => 'لا توجد تحديات حالياً';
+
+  @override
+  String get tasNoChallengesAdmin => 'اضغط + وابدأ أول تحدي للعيلة.';
+
+  @override
+  String get tasNoChallengesMember => 'اطلب من المدير إنشاء تحدي جديد!';
+
+  @override
+  String get tasOngoing => 'مستمر';
+
+  @override
+  String get tasChallengeTitleLabel => 'عنوان التحدي';
+
+  @override
+  String get tasChallengeDescLabel => 'الوصف (اختياري)';
+
+  @override
+  String get tasChallengeTargetLabel => 'الهدف (عدد التسبيحات)';
+
+  @override
+  String get tasNightSky => 'ليل البستان';
+
+  @override
+  String get tasDaySky => 'نهار البستان';
+
+  @override
+  String txWorldEyebrow(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count حاجة ناقصة',
-      few: '$count حاجات ناقصة',
-      two: 'حاجتين ناقصين',
-      one: 'حاجة واحدة ناقصة',
-      zero: 'مفيش حاجة ناقصة',
+      other: '$count معاملة',
+      few: '$count معاملات',
+      two: 'معاملتين',
+      one: 'معاملة واحدة',
+      zero: 'لسه مفيش معاملات',
     );
     return '$_temp0';
   }
 
   @override
-  String shopWorldStores(int count) {
+  String txWorldState(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'من $count محل',
-      few: 'من $count محلات',
-      two: 'من محلين',
-      one: 'من محل واحد',
+      other: '$count اتسجلوا لوحدهم النهارده',
+      few: '$count اتسجلوا لوحدهم النهارده',
+      two: 'اتنين اتسجلوا لوحدهم النهارده',
+      one: 'واحدة اتسجلت لوحدها النهارده',
+      zero: 'لسه مفيش حاجة اتسجلت لوحدها النهارده',
     );
     return '$_temp0';
   }
 
   @override
-  String get shopWorldAnyStore => 'من أي محل';
+  String get txSourceBank => 'رسالة من البنك';
 
   @override
-  String get shopWorldDone => 'القايمة فاضية';
+  String txSourceBankNamed(String bank) {
+    return '$bank · رسالة';
+  }
 
   @override
-  String get shopGroupAnyStore => 'أي محل';
+  String get txSourceReceipt => 'فاتورة اتصورت';
 
   @override
-  String shopPantryCount(int count) {
+  String get txSourceVoice => 'قولتها بصوتك';
+
+  @override
+  String get txSourceStatement => 'من كشف الحساب';
+
+  @override
+  String get txSourcePharmacy => 'تعبئة الصيدلية';
+
+  @override
+  String get txSourceManual => 'كتبتها بإيدك';
+
+  @override
+  String budgetWorldUntil(int day) {
+    return 'لحد يوم $day';
+  }
+
+  @override
+  String budgetWorldDaysLeft(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'في المخزن $count صنف',
-      few: 'في المخزن $count أصناف',
-      two: 'في المخزن صنفين',
-      one: 'في المخزن صنف واحد',
-      zero: 'المخزن فاضي',
+      other: 'فاضل $count يوم',
+      few: 'فاضل $count أيام',
+      two: 'فاضل يومين',
+      one: 'فاضل يوم واحد',
+      zero: 'آخر يوم',
     );
     return '$_temp0';
   }
 
   @override
-  String apptWorldToday(String weekday) {
-    return 'النهارده $weekday';
+  String budgetWorldState(String amount, String perDay) {
+    return 'متاح $amount · $perDay في اليوم';
   }
 
   @override
-  String apptWorldNext(String title, String when) {
-    return '$title $when';
+  String budgetWorldAvailable(String amount) {
+    return 'متاح $amount';
   }
 
   @override
-  String get apptWorldNone => 'مفيش مواعيد جاية';
-
-  @override
-  String get apptNextLabel => 'الميعاد الجاي';
-
-  @override
-  String get apptInNow => 'دلوقتي';
-
-  @override
-  String apptInMinutes(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'بعد $count دقيقة',
-      few: 'بعد $count دقايق',
-      two: 'بعد دقيقتين',
-      one: 'بعد دقيقة',
-    );
-    return '$_temp0';
+  String statementWorldStateLess(int pct) {
+    return 'صرفت $pct٪ أقل من نفس الفترة الشهر اللي فات';
   }
 
   @override
-  String apptInHours(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'بعد $count ساعة',
-      few: 'بعد $count ساعات',
-      two: 'بعد ساعتين',
-      one: 'بعد ساعة',
-    );
-    return '$_temp0';
+  String statementWorldStateMore(int pct) {
+    return 'صرفت $pct٪ أكتر من نفس الفترة الشهر اللي فات';
   }
 
   @override
-  String apptInDays(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'بعد $count يوم',
-      few: 'بعد $count أيام',
-      two: 'بعد يومين',
-      one: 'بعد يوم',
-    );
-    return '$_temp0';
+  String get statementWorldStateSame => 'صرفك زي الشهر اللي فات';
+
+  @override
+  String get statementWorldStateNone => 'استورد كشفك وشوف فلوسك رايحة فين';
+
+  @override
+  String get statementWorldBreakdownTitle => 'فلوسك داخلة منين وخارجة فين';
+
+  @override
+  String get statementWorldIn => 'الدخل';
+
+  @override
+  String get statementWorldEmptyTitle => 'مفيش حركات الشهر ده لسه';
+
+  @override
+  String get statementWorldEmptyBody =>
+      'استورد كشفك أو سجّل معاملة، وهتلاقي هنا الدخل والمصروف حسب الفئة.';
+
+  @override
+  String get statementPickBody =>
+      'اختار كشف حسابك: PDF من تطبيق البنك، أو صورة، أو ملف CSV. زاد بيقرا الحركات ويراجعها على رصيد الكشف، ومفيش حاجة بتتسجل غير بعد ما تراجعها.';
+
+  @override
+  String get statementReading => 'بقرا الكشف… الكشف الطويل بياخد دقيقة';
+
+  @override
+  String get statementPickButton => 'اختيار الكشف';
+
+  @override
+  String get statementMapIntro =>
+      'حدد أي عمود من الملف يمثل كل بيانة — الملف مختلف من بنك لبنك';
+
+  @override
+  String get statementMapDate => 'عمود التاريخ';
+
+  @override
+  String get statementMapTitle => 'عمود الوصف/العنوان';
+
+  @override
+  String get statementMapAmount => 'عمود المبلغ';
+
+  @override
+  String get statementMapCategory => 'عمود التصنيف (اختياري)';
+
+  @override
+  String get statementMapInvert =>
+      'اعكس إشارة المبلغ (لو السالب هنا معناه دخل مش مصروف)';
+
+  @override
+  String get statementMapContinue => 'متابعة للمراجعة';
+
+  @override
+  String get statementMapNone => 'بدون';
+
+  @override
+  String statementMapColumnN(int n) {
+    return 'عمود $n';
+  }
+
+  @override
+  String statementPreviewCount(int rows, int checked) {
+    return '$rows صف — $checked محدد للاستيراد';
+  }
+
+  @override
+  String get statementPreviewEmptyTitle => 'ما لقيتش أي معاملة في الملف';
+
+  @override
+  String get statementPreviewEmptyBody =>
+      'الملف اتقرا لكن مفيهوش صفوف أقدر أستوردها — اتأكد إنه كشف حساب وإن صيغته CSV أو PDF مقروء.';
+
+  @override
+  String get statementRowUnreadable =>
+      'تعذّرت قراءة التاريخ أو المبلغ في هذا الصف';
+
+  @override
+  String get statementRowBalance =>
+      'الرصيد في الكشف مش متطابق مع الصف ده — راجع المبلغ';
+
+  @override
+  String get statementCheckBalanced => 'الأرقام متطابقة مع رصيد الكشف';
+
+  @override
+  String get statementCheckMismatch =>
+      'في أرقام مش متطابقة مع رصيد الكشف — الصفوف دي مش متعلّمة، راجعها';
+
+  @override
+  String get statementCheckUnknown =>
+      'الكشف مفيهوش رصيد أراجع عليه — راجع كل صف قبل الاستيراد';
+
+  @override
+  String statementDropped(String text, int n) {
+    return '$text. وفي $n صف ماقدرتش أقراه.';
   }
 
   @override
@@ -6854,189 +7033,111 @@ class ZadL10nArSa extends ZadL10nAr {
   }
 
   @override
-  String txWorldEyebrow(int count) {
+  String shopWorldEyebrow(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count معاملة',
-      few: '$count معاملات',
-      two: 'معاملتين',
-      one: 'معاملة وحدة',
-      zero: 'للحين ما فيه معاملات',
+      other: '$count شي ناقص',
+      few: '$count أشياء ناقصة',
+      two: 'شيئين ناقصين',
+      one: 'شي واحد ناقص',
+      zero: 'ما فيه شي ناقص',
     );
     return '$_temp0';
   }
 
   @override
-  String txWorldState(int count) {
+  String shopWorldStores(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count تسجّلوا بنفسهم اليوم',
-      few: '$count تسجّلوا بنفسهم اليوم',
-      two: 'ثنتين تسجّلوا بنفسهم اليوم',
-      one: 'وحدة تسجّلت بنفسها اليوم',
-      zero: 'للحين ما فيه شي تسجّل بنفسه اليوم',
+      other: 'من $count محل',
+      few: 'من $count محلات',
+      two: 'من محلين',
+      one: 'من محل واحد',
     );
     return '$_temp0';
   }
 
   @override
-  String get txSourceBank => 'رسالة من البنك';
+  String get shopWorldAnyStore => 'من أي محل';
 
   @override
-  String txSourceBankNamed(String bank) {
-    return '$bank · رسالة';
-  }
+  String get shopWorldDone => 'القائمة فاضية';
 
   @override
-  String get txSourceReceipt => 'فاتورة مصوّرة';
+  String get shopGroupAnyStore => 'أي محل';
 
   @override
-  String get txSourceVoice => 'قلتها بصوتك';
-
-  @override
-  String get txSourceStatement => 'من كشف الحساب';
-
-  @override
-  String get txSourcePharmacy => 'تعبئة الصيدلية';
-
-  @override
-  String get txSourceManual => 'كتبتها بيدك';
-
-  @override
-  String budgetWorldUntil(int day) {
-    return 'لين يوم $day';
-  }
-
-  @override
-  String budgetWorldDaysLeft(int count) {
+  String shopPantryCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'باقي $count يوم',
-      few: 'باقي $count أيام',
-      two: 'باقي يومين',
-      one: 'باقي يوم واحد',
-      zero: 'آخر يوم',
+      other: 'في المخزن $count صنف',
+      few: 'في المخزن $count أصناف',
+      two: 'في المخزن صنفين',
+      one: 'في المخزن صنف واحد',
+      zero: 'المخزن فاضي',
     );
     return '$_temp0';
   }
 
   @override
-  String budgetWorldState(String amount, String perDay) {
-    return 'متاح $amount · $perDay في اليوم';
+  String apptWorldToday(String weekday) {
+    return 'اليوم $weekday';
   }
 
   @override
-  String budgetWorldAvailable(String amount) {
-    return 'متاح $amount';
+  String apptWorldNext(String title, String when) {
+    return '$title $when';
   }
 
   @override
-  String statementWorldStateLess(int pct) {
-    return 'صرفت $pct٪ أقل من نفس الفترة الشهر اللي فات';
+  String get apptWorldNone => 'ما فيه مواعيد جاية';
+
+  @override
+  String get apptNextLabel => 'الموعد القادم';
+
+  @override
+  String get apptInNow => 'الحين';
+
+  @override
+  String apptInMinutes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'بعد $count دقيقة',
+      few: 'بعد $count دقائق',
+      two: 'بعد دقيقتين',
+      one: 'بعد دقيقة',
+    );
+    return '$_temp0';
   }
 
   @override
-  String statementWorldStateMore(int pct) {
-    return 'صرفت $pct٪ أكثر من نفس الفترة الشهر اللي فات';
+  String apptInHours(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'بعد $count ساعة',
+      few: 'بعد $count ساعات',
+      two: 'بعد ساعتين',
+      one: 'بعد ساعة',
+    );
+    return '$_temp0';
   }
 
   @override
-  String get statementWorldStateSame => 'صرفك مثل الشهر اللي فات';
-
-  @override
-  String get statementWorldStateNone => 'استورد كشفك وشف فلوسك وين راحت';
-
-  @override
-  String get statementWorldBreakdownTitle => 'فلوسك من وين تدخل وين تطلع';
-
-  @override
-  String get statementWorldIn => 'الدخل';
-
-  @override
-  String get statementWorldEmptyTitle => 'ما فيه حركات هذا الشهر للحين';
-
-  @override
-  String get statementWorldEmptyBody =>
-      'استورد كشفك أو سجّل معاملة، وتلقى هنا الدخل والمصروف حسب الفئة.';
-
-  @override
-  String get statementPickBody =>
-      'اختر كشف حسابك: PDF من تطبيق البنك، أو صورة، أو ملف CSV. زاد يقرا الحركات ويراجعها على رصيد الكشف، وما يتسجل شي إلا بعد ما تراجعها.';
-
-  @override
-  String get statementReading => 'أقرا الكشف… الكشف الطويل ياخذ دقيقة';
-
-  @override
-  String get statementPickButton => 'اختيار الكشف';
-
-  @override
-  String get statementMapIntro =>
-      'حدد أي عمود من الملف يمثل كل بيان — الملف يختلف من بنك لبنك';
-
-  @override
-  String get statementMapDate => 'عمود التاريخ';
-
-  @override
-  String get statementMapTitle => 'عمود الوصف/العنوان';
-
-  @override
-  String get statementMapAmount => 'عمود المبلغ';
-
-  @override
-  String get statementMapCategory => 'عمود التصنيف (اختياري)';
-
-  @override
-  String get statementMapInvert =>
-      'اعكس إشارة المبلغ (لو السالب هنا يعني دخل مو مصروف)';
-
-  @override
-  String get statementMapContinue => 'متابعة للمراجعة';
-
-  @override
-  String get statementMapNone => 'بدون';
-
-  @override
-  String statementMapColumnN(int n) {
-    return 'عمود $n';
-  }
-
-  @override
-  String statementPreviewCount(int rows, int checked) {
-    return '$rows صف — $checked محدد للاستيراد';
-  }
-
-  @override
-  String get statementPreviewEmptyTitle => 'ما لقيت أي معاملة في الملف';
-
-  @override
-  String get statementPreviewEmptyBody =>
-      'الملف انقرا بس ما فيه صفوف أقدر أستوردها — تأكد إنه كشف حساب وإن صيغته CSV أو PDF مقروء.';
-
-  @override
-  String get statementRowUnreadable =>
-      'تعذّرت قراءة التاريخ أو المبلغ في هذا الصف';
-
-  @override
-  String get statementRowBalance =>
-      'الرصيد في الكشف مو متطابق مع هذا الصف — راجع المبلغ';
-
-  @override
-  String get statementCheckBalanced => 'الأرقام متطابقة مع رصيد الكشف';
-
-  @override
-  String get statementCheckMismatch =>
-      'فيه أرقام مو متطابقة مع رصيد الكشف — الصفوف هذي غير معلّمة، راجعها';
-
-  @override
-  String get statementCheckUnknown =>
-      'الكشف ما فيه رصيد أراجع عليه — راجع كل صف قبل الاستيراد';
-
-  @override
-  String statementDropped(String text, int n) {
-    return '$text. وفيه $n صف ما قدرت أقراه.';
+  String apptInDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'بعد $count يوم',
+      few: 'بعد $count أيام',
+      two: 'بعد يومين',
+      one: 'بعد يوم',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -7504,111 +7605,221 @@ class ZadL10nArSa extends ZadL10nAr {
   String get phErrRejected => 'السيرفر رفض الحفظ. جرّب مرة ثانية.';
 
   @override
-  String shopWorldEyebrow(int count) {
+  String get tasStateEmpty => 'ابدأ أول تسبيحة والورد بيتفتح';
+
+  @override
+  String get tasTabFamily => 'أشجار العائلة';
+
+  @override
+  String get tasStatSession => 'في هذي الجلسة';
+
+  @override
+  String tasStreakDays(int days) {
+    return '$days يوم متتالي';
+  }
+
+  @override
+  String get tasBloom => 'تفتّحت وردة جديدة!';
+
+  @override
+  String get tasNoTreeTitle => 'للحين ما فيه شجرة';
+
+  @override
+  String get tasNoTreesMsg => 'أول ما أحد من العائلة يسبّح تظهر شجرته هنا.';
+
+  @override
+  String get tasChallengesTitle => 'التحديات العائلية';
+
+  @override
+  String get tasNoChallengesAdmin => 'اضغط + وابدأ أول تحدي للعائلة.';
+
+  @override
+  String get tasNoChallengesMember => 'اطلب من المدير ينشئ تحدي جديد!';
+
+  @override
+  String txWorldEyebrow(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count شي ناقص',
-      few: '$count أشياء ناقصة',
-      two: 'شيئين ناقصين',
-      one: 'شي واحد ناقص',
-      zero: 'ما فيه شي ناقص',
+      other: '$count معاملة',
+      few: '$count معاملات',
+      two: 'معاملتين',
+      one: 'معاملة وحدة',
+      zero: 'للحين ما فيه معاملات',
     );
     return '$_temp0';
   }
 
   @override
-  String shopWorldStores(int count) {
+  String txWorldState(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'من $count محل',
-      few: 'من $count محلات',
-      two: 'من محلين',
-      one: 'من محل واحد',
+      other: '$count تسجّلوا بنفسهم اليوم',
+      few: '$count تسجّلوا بنفسهم اليوم',
+      two: 'ثنتين تسجّلوا بنفسهم اليوم',
+      one: 'وحدة تسجّلت بنفسها اليوم',
+      zero: 'للحين ما فيه شي تسجّل بنفسه اليوم',
     );
     return '$_temp0';
   }
 
   @override
-  String get shopWorldAnyStore => 'من أي محل';
+  String get txSourceBank => 'رسالة من البنك';
 
   @override
-  String get shopWorldDone => 'القائمة فاضية';
+  String txSourceBankNamed(String bank) {
+    return '$bank · رسالة';
+  }
 
   @override
-  String get shopGroupAnyStore => 'أي محل';
+  String get txSourceReceipt => 'فاتورة مصوّرة';
 
   @override
-  String shopPantryCount(int count) {
+  String get txSourceVoice => 'قلتها بصوتك';
+
+  @override
+  String get txSourceStatement => 'من كشف الحساب';
+
+  @override
+  String get txSourcePharmacy => 'تعبئة الصيدلية';
+
+  @override
+  String get txSourceManual => 'كتبتها بيدك';
+
+  @override
+  String budgetWorldUntil(int day) {
+    return 'لين يوم $day';
+  }
+
+  @override
+  String budgetWorldDaysLeft(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'في المخزن $count صنف',
-      few: 'في المخزن $count أصناف',
-      two: 'في المخزن صنفين',
-      one: 'في المخزن صنف واحد',
-      zero: 'المخزن فاضي',
+      other: 'باقي $count يوم',
+      few: 'باقي $count أيام',
+      two: 'باقي يومين',
+      one: 'باقي يوم واحد',
+      zero: 'آخر يوم',
     );
     return '$_temp0';
   }
 
   @override
-  String apptWorldToday(String weekday) {
-    return 'اليوم $weekday';
+  String budgetWorldState(String amount, String perDay) {
+    return 'متاح $amount · $perDay في اليوم';
   }
 
   @override
-  String apptWorldNext(String title, String when) {
-    return '$title $when';
+  String budgetWorldAvailable(String amount) {
+    return 'متاح $amount';
   }
 
   @override
-  String get apptWorldNone => 'ما فيه مواعيد جاية';
-
-  @override
-  String get apptNextLabel => 'الموعد القادم';
-
-  @override
-  String get apptInNow => 'الحين';
-
-  @override
-  String apptInMinutes(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'بعد $count دقيقة',
-      few: 'بعد $count دقائق',
-      two: 'بعد دقيقتين',
-      one: 'بعد دقيقة',
-    );
-    return '$_temp0';
+  String statementWorldStateLess(int pct) {
+    return 'صرفت $pct٪ أقل من نفس الفترة الشهر اللي فات';
   }
 
   @override
-  String apptInHours(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'بعد $count ساعة',
-      few: 'بعد $count ساعات',
-      two: 'بعد ساعتين',
-      one: 'بعد ساعة',
-    );
-    return '$_temp0';
+  String statementWorldStateMore(int pct) {
+    return 'صرفت $pct٪ أكثر من نفس الفترة الشهر اللي فات';
   }
 
   @override
-  String apptInDays(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'بعد $count يوم',
-      few: 'بعد $count أيام',
-      two: 'بعد يومين',
-      one: 'بعد يوم',
-    );
-    return '$_temp0';
+  String get statementWorldStateSame => 'صرفك مثل الشهر اللي فات';
+
+  @override
+  String get statementWorldStateNone => 'استورد كشفك وشف فلوسك وين راحت';
+
+  @override
+  String get statementWorldBreakdownTitle => 'فلوسك من وين تدخل وين تطلع';
+
+  @override
+  String get statementWorldIn => 'الدخل';
+
+  @override
+  String get statementWorldEmptyTitle => 'ما فيه حركات هذا الشهر للحين';
+
+  @override
+  String get statementWorldEmptyBody =>
+      'استورد كشفك أو سجّل معاملة، وتلقى هنا الدخل والمصروف حسب الفئة.';
+
+  @override
+  String get statementPickBody =>
+      'اختر كشف حسابك: PDF من تطبيق البنك، أو صورة، أو ملف CSV. زاد يقرا الحركات ويراجعها على رصيد الكشف، وما يتسجل شي إلا بعد ما تراجعها.';
+
+  @override
+  String get statementReading => 'أقرا الكشف… الكشف الطويل ياخذ دقيقة';
+
+  @override
+  String get statementPickButton => 'اختيار الكشف';
+
+  @override
+  String get statementMapIntro =>
+      'حدد أي عمود من الملف يمثل كل بيان — الملف يختلف من بنك لبنك';
+
+  @override
+  String get statementMapDate => 'عمود التاريخ';
+
+  @override
+  String get statementMapTitle => 'عمود الوصف/العنوان';
+
+  @override
+  String get statementMapAmount => 'عمود المبلغ';
+
+  @override
+  String get statementMapCategory => 'عمود التصنيف (اختياري)';
+
+  @override
+  String get statementMapInvert =>
+      'اعكس إشارة المبلغ (لو السالب هنا يعني دخل مو مصروف)';
+
+  @override
+  String get statementMapContinue => 'متابعة للمراجعة';
+
+  @override
+  String get statementMapNone => 'بدون';
+
+  @override
+  String statementMapColumnN(int n) {
+    return 'عمود $n';
+  }
+
+  @override
+  String statementPreviewCount(int rows, int checked) {
+    return '$rows صف — $checked محدد للاستيراد';
+  }
+
+  @override
+  String get statementPreviewEmptyTitle => 'ما لقيت أي معاملة في الملف';
+
+  @override
+  String get statementPreviewEmptyBody =>
+      'الملف انقرا بس ما فيه صفوف أقدر أستوردها — تأكد إنه كشف حساب وإن صيغته CSV أو PDF مقروء.';
+
+  @override
+  String get statementRowUnreadable =>
+      'تعذّرت قراءة التاريخ أو المبلغ في هذا الصف';
+
+  @override
+  String get statementRowBalance =>
+      'الرصيد في الكشف مو متطابق مع هذا الصف — راجع المبلغ';
+
+  @override
+  String get statementCheckBalanced => 'الأرقام متطابقة مع رصيد الكشف';
+
+  @override
+  String get statementCheckMismatch =>
+      'فيه أرقام مو متطابقة مع رصيد الكشف — الصفوف هذي غير معلّمة، راجعها';
+
+  @override
+  String get statementCheckUnknown =>
+      'الكشف ما فيه رصيد أراجع عليه — راجع كل صف قبل الاستيراد';
+
+  @override
+  String statementDropped(String text, int n) {
+    return '$text. وفيه $n صف ما قدرت أقراه.';
   }
 
   @override
