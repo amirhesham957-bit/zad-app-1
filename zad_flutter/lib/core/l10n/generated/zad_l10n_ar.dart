@@ -4862,6 +4862,185 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get phErrRejected => 'السيرفر رفض الحفظ. جرّب تاني.';
+
+  @override
+  String get tasEyebrow => 'ورد كل ٣٣ · شجرة كل ٩٩';
+
+  @override
+  String tasStateLine(int count, int flowers) {
+    return '$count تسبيحة · $flowers وردة';
+  }
+
+  @override
+  String get tasStateEmpty => 'ابدأ أول تسبيحة والورد هيفتّح';
+
+  @override
+  String get tasTabMine => 'بستاني';
+
+  @override
+  String get tasTabFamily => 'أشجار العيلة';
+
+  @override
+  String get tasTabChallenges => 'التحديات';
+
+  @override
+  String get tasStage1 => 'بذرة';
+
+  @override
+  String get tasStage2 => 'بذرة نبتت';
+
+  @override
+  String get tasStage3 => 'شتلة';
+
+  @override
+  String get tasStage4 => 'شجرة';
+
+  @override
+  String get tasStage5 => 'شجرة مثمرة';
+
+  @override
+  String get tasStatLevel => 'المرحلة';
+
+  @override
+  String tasStatLevelValue(int level) {
+    return '$level/5';
+  }
+
+  @override
+  String get tasStatTotal => 'إجمالي التسبيح';
+
+  @override
+  String get tasStatStreak => 'السلسلة';
+
+  @override
+  String get tasStatFlowers => 'الورد';
+
+  @override
+  String get tasStatSession => 'في الجلسة دي';
+
+  @override
+  String tasNext(int score, int next) {
+    return '$score / $next للمرحلة التالية';
+  }
+
+  @override
+  String get tasComplete => 'اكتملت!';
+
+  @override
+  String tasStreakDays(int days) {
+    return '$days يوم ورا بعض';
+  }
+
+  @override
+  String get tasTapLabel => 'سبّح';
+
+  @override
+  String get tasReset => 'تصفير';
+
+  @override
+  String get tasCycle => 'الدورة';
+
+  @override
+  String get tasLevelUp => 'مبروك! شجرتك كبرت!';
+
+  @override
+  String get tasBloom => 'وردة جديدة فتّحت!';
+
+  @override
+  String tasSeedsGranted(int seeds) {
+    return '+$seeds بذور';
+  }
+
+  @override
+  String tasMyTrees(int count) {
+    return 'أشجاري ($count)';
+  }
+
+  @override
+  String get tasNewTree => 'شجرة جديدة';
+
+  @override
+  String get tasNoTreeTitle => 'لسه مفيش شجرة';
+
+  @override
+  String get tasNoTreeMsg => 'ازرع أول شجرة وابدأ التسبيح.';
+
+  @override
+  String get tasTreeNameLabel => 'اسم الشجرة';
+
+  @override
+  String get tasRenameTitle => 'تسمية الشجرة';
+
+  @override
+  String get tasNewTreeHint => 'أضف شجرة جديدة لبستانك!';
+
+  @override
+  String get tasTreeNameExample => 'مثال: شجرة التفاح';
+
+  @override
+  String get tasCancel => 'إلغاء';
+
+  @override
+  String get tasSave => 'حفظ';
+
+  @override
+  String get tasAdd => 'إضافة';
+
+  @override
+  String get tasLeaderboard => 'لوحة المتصدرين';
+
+  @override
+  String get tasShare => 'شارك الترتيب';
+
+  @override
+  String get tasNoTreesTitle => 'لا توجد أشجار بعد';
+
+  @override
+  String get tasNoTreesMsg => 'أول ما حد من العيلة يسبّح، شجرته هتظهر هنا.';
+
+  @override
+  String tasMemberTrees(int trees, int mature) {
+    return '$trees أشجار | $mature مثمرة';
+  }
+
+  @override
+  String get tasUnit => 'تسبيحة';
+
+  @override
+  String get tasChallengesTitle => 'التحديات العائلية';
+
+  @override
+  String get tasChallengesTagline => 'تحدَ أفراد عائلتك في التسبيحة!';
+
+  @override
+  String get tasNewChallenge => 'تحدي جديد';
+
+  @override
+  String get tasNoChallengesTitle => 'لا توجد تحديات حالياً';
+
+  @override
+  String get tasNoChallengesAdmin => 'اضغط + وابدأ أول تحدي للعيلة.';
+
+  @override
+  String get tasNoChallengesMember => 'اطلب من المدير إنشاء تحدي جديد!';
+
+  @override
+  String get tasOngoing => 'مستمر';
+
+  @override
+  String get tasChallengeTitleLabel => 'عنوان التحدي';
+
+  @override
+  String get tasChallengeDescLabel => 'الوصف (اختياري)';
+
+  @override
+  String get tasChallengeTargetLabel => 'الهدف (عدد التسبيحات)';
+
+  @override
+  String get tasNightSky => 'ليل البستان';
+
+  @override
+  String get tasDaySky => 'نهار البستان';
 }
 
 /// The translations for Arabic, as used in Saudi Arabia (`ar_SA`).
@@ -6500,4 +6679,33 @@ class ZadL10nArSa extends ZadL10nAr {
 
   @override
   String get phErrRejected => 'السيرفر رفض الحفظ. جرّب مرة ثانية.';
+
+  @override
+  String get tasStateEmpty => 'ابدأ أول تسبيحة والورد بيتفتح';
+
+  @override
+  String get tasTabFamily => 'أشجار العائلة';
+
+  @override
+  String get tasStatSession => 'في هذي الجلسة';
+
+  @override
+  String tasStreakDays(int days) {
+    return '$days يوم متتالي';
+  }
+
+  @override
+  String get tasBloom => 'تفتّحت وردة جديدة!';
+
+  @override
+  String get tasNoTreesMsg => 'أول ما أحد من العائلة يسبّح تظهر شجرته هنا.';
+
+  @override
+  String get tasChallengesTitle => 'التحديات العائلية';
+
+  @override
+  String get tasNoChallengesAdmin => 'اضغط + وابدأ أول تحدي للعائلة.';
+
+  @override
+  String get tasNoChallengesMember => 'اطلب من المدير ينشئ تحدي جديد!';
 }

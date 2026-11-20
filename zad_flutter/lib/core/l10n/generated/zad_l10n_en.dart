@@ -4964,4 +4964,185 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get phErrRejected => 'The server refused to save. Try again.';
+
+  @override
+  String get tasEyebrow => 'A flower every 33 · a new tree stage every 99';
+
+  @override
+  String tasStateLine(int count, int flowers) {
+    return '$count tasbih · $flowers flowers';
+  }
+
+  @override
+  String get tasStateEmpty => 'Say your first tasbih and flowers will bloom';
+
+  @override
+  String get tasTabMine => 'My garden';
+
+  @override
+  String get tasTabFamily => 'Family trees';
+
+  @override
+  String get tasTabChallenges => 'Challenges';
+
+  @override
+  String get tasStage1 => 'Seed';
+
+  @override
+  String get tasStage2 => 'Sprout';
+
+  @override
+  String get tasStage3 => 'Sapling';
+
+  @override
+  String get tasStage4 => 'Tree';
+
+  @override
+  String get tasStage5 => 'Fruiting tree';
+
+  @override
+  String get tasStatLevel => 'Stage';
+
+  @override
+  String tasStatLevelValue(int level) {
+    return '$level/5';
+  }
+
+  @override
+  String get tasStatTotal => 'All-time';
+
+  @override
+  String get tasStatStreak => 'Streak';
+
+  @override
+  String get tasStatFlowers => 'Flowers';
+
+  @override
+  String get tasStatSession => 'This session';
+
+  @override
+  String tasNext(int score, int next) {
+    return '$score / $next to the next stage';
+  }
+
+  @override
+  String get tasComplete => 'Complete!';
+
+  @override
+  String tasStreakDays(int days) {
+    return '$days days in a row';
+  }
+
+  @override
+  String get tasTapLabel => 'Count';
+
+  @override
+  String get tasReset => 'Reset';
+
+  @override
+  String get tasCycle => 'Cycle';
+
+  @override
+  String get tasLevelUp => 'Your tree grew!';
+
+  @override
+  String get tasBloom => 'A new flower bloomed!';
+
+  @override
+  String tasSeedsGranted(int seeds) {
+    return '+$seeds seeds';
+  }
+
+  @override
+  String tasMyTrees(int count) {
+    return 'My trees ($count)';
+  }
+
+  @override
+  String get tasNewTree => 'New tree';
+
+  @override
+  String get tasNoTreeTitle => 'No tree yet';
+
+  @override
+  String get tasNoTreeMsg => 'Plant your first tree and start counting.';
+
+  @override
+  String get tasTreeNameLabel => 'Tree name';
+
+  @override
+  String get tasRenameTitle => 'Name the tree';
+
+  @override
+  String get tasNewTreeHint => 'Add a new tree to your garden!';
+
+  @override
+  String get tasTreeNameExample => 'e.g. the apple tree';
+
+  @override
+  String get tasCancel => 'Cancel';
+
+  @override
+  String get tasSave => 'Save';
+
+  @override
+  String get tasAdd => 'Add';
+
+  @override
+  String get tasLeaderboard => 'Leaderboard';
+
+  @override
+  String get tasShare => 'Share the ranking';
+
+  @override
+  String get tasNoTreesTitle => 'No trees yet';
+
+  @override
+  String get tasNoTreesMsg =>
+      'As soon as someone in the family counts, their tree shows up here.';
+
+  @override
+  String tasMemberTrees(int trees, int mature) {
+    return '$trees trees | $mature fruiting';
+  }
+
+  @override
+  String get tasUnit => 'tasbih';
+
+  @override
+  String get tasChallengesTitle => 'Family challenges';
+
+  @override
+  String get tasChallengesTagline => 'Challenge your family to count!';
+
+  @override
+  String get tasNewChallenge => 'New challenge';
+
+  @override
+  String get tasNoChallengesTitle => 'No challenges right now';
+
+  @override
+  String get tasNoChallengesAdmin =>
+      'Tap + to start the family\'s first challenge.';
+
+  @override
+  String get tasNoChallengesMember => 'Ask the admin to start a new challenge!';
+
+  @override
+  String get tasOngoing => 'Ongoing';
+
+  @override
+  String get tasChallengeTitleLabel => 'Challenge title';
+
+  @override
+  String get tasChallengeDescLabel => 'Description (optional)';
+
+  @override
+  String get tasChallengeTargetLabel => 'Goal (number of tasbih)';
+
+  @override
+  String get tasNightSky => 'The garden at night';
+
+  @override
+  String get tasDaySky => 'The garden by day';
 }

@@ -448,5 +448,14 @@
   "phErrOffline": "ما فيه نت الحين — ما انحفظ شي. جرّب مرة ثانية لما يرجع.",
   "phErrNotFound": "هذا الدواء مو موجود عند العضو الحين — حدّث الصفحة.",
   "phErrDuplicate": "العضو عنده دواء بنفس هذا الاسم.",
-  "phErrRejected": "السيرفر رفض الحفظ. جرّب مرة ثانية."
+  "phErrRejected": "السيرفر رفض الحفظ. جرّب مرة ثانية.",
+  "tasStateEmpty": "ابدأ أول تسبيحة والورد بيتفتح",
+  "tasTabFamily": "أشجار العائلة",
+  "tasStatSession": "في هذي الجلسة",
+  "tasStreakDays": "{days} يوم متتالي",
+  "tasBloom": "تفتّحت وردة جديدة!",
+  "tasNoTreesMsg": "أول ما أحد من العائلة يسبّح تظهر شجرته هنا.",
+  "tasChallengesTitle": "التحديات العائلية",
+  "tasNoChallengesAdmin": "اضغط + وابدأ أول تحدي للعائلة.",
+  "tasNoChallengesMember": "اطلب من المدير ينشئ تحدي جديد!"
 }

@@ -8479,6 +8479,336 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'السيرفر رفض الحفظ. جرّب تاني.'**
   String get phErrRejected;
+
+  /// No description provided for @tasEyebrow.
+  ///
+  /// In ar, this message translates to:
+  /// **'ورد كل ٣٣ · شجرة كل ٩٩'**
+  String get tasEyebrow;
+
+  /// No description provided for @tasStateLine.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} تسبيحة · {flowers} وردة'**
+  String tasStateLine(int count, int flowers);
+
+  /// No description provided for @tasStateEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابدأ أول تسبيحة والورد هيفتّح'**
+  String get tasStateEmpty;
+
+  /// No description provided for @tasTabMine.
+  ///
+  /// In ar, this message translates to:
+  /// **'بستاني'**
+  String get tasTabMine;
+
+  /// No description provided for @tasTabFamily.
+  ///
+  /// In ar, this message translates to:
+  /// **'أشجار العيلة'**
+  String get tasTabFamily;
+
+  /// No description provided for @tasTabChallenges.
+  ///
+  /// In ar, this message translates to:
+  /// **'التحديات'**
+  String get tasTabChallenges;
+
+  /// No description provided for @tasStage1.
+  ///
+  /// In ar, this message translates to:
+  /// **'بذرة'**
+  String get tasStage1;
+
+  /// No description provided for @tasStage2.
+  ///
+  /// In ar, this message translates to:
+  /// **'بذرة نبتت'**
+  String get tasStage2;
+
+  /// No description provided for @tasStage3.
+  ///
+  /// In ar, this message translates to:
+  /// **'شتلة'**
+  String get tasStage3;
+
+  /// No description provided for @tasStage4.
+  ///
+  /// In ar, this message translates to:
+  /// **'شجرة'**
+  String get tasStage4;
+
+  /// No description provided for @tasStage5.
+  ///
+  /// In ar, this message translates to:
+  /// **'شجرة مثمرة'**
+  String get tasStage5;
+
+  /// No description provided for @tasStatLevel.
+  ///
+  /// In ar, this message translates to:
+  /// **'المرحلة'**
+  String get tasStatLevel;
+
+  /// No description provided for @tasStatLevelValue.
+  ///
+  /// In ar, this message translates to:
+  /// **'{level}/5'**
+  String tasStatLevelValue(int level);
+
+  /// No description provided for @tasStatTotal.
+  ///
+  /// In ar, this message translates to:
+  /// **'إجمالي التسبيح'**
+  String get tasStatTotal;
+
+  /// No description provided for @tasStatStreak.
+  ///
+  /// In ar, this message translates to:
+  /// **'السلسلة'**
+  String get tasStatStreak;
+
+  /// No description provided for @tasStatFlowers.
+  ///
+  /// In ar, this message translates to:
+  /// **'الورد'**
+  String get tasStatFlowers;
+
+  /// No description provided for @tasStatSession.
+  ///
+  /// In ar, this message translates to:
+  /// **'في الجلسة دي'**
+  String get tasStatSession;
+
+  /// No description provided for @tasNext.
+  ///
+  /// In ar, this message translates to:
+  /// **'{score} / {next} للمرحلة التالية'**
+  String tasNext(int score, int next);
+
+  /// No description provided for @tasComplete.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتملت!'**
+  String get tasComplete;
+
+  /// No description provided for @tasStreakDays.
+  ///
+  /// In ar, this message translates to:
+  /// **'{days} يوم ورا بعض'**
+  String tasStreakDays(int days);
+
+  /// No description provided for @tasTapLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'سبّح'**
+  String get tasTapLabel;
+
+  /// No description provided for @tasReset.
+  ///
+  /// In ar, this message translates to:
+  /// **'تصفير'**
+  String get tasReset;
+
+  /// No description provided for @tasCycle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الدورة'**
+  String get tasCycle;
+
+  /// No description provided for @tasLevelUp.
+  ///
+  /// In ar, this message translates to:
+  /// **'مبروك! شجرتك كبرت!'**
+  String get tasLevelUp;
+
+  /// No description provided for @tasBloom.
+  ///
+  /// In ar, this message translates to:
+  /// **'وردة جديدة فتّحت!'**
+  String get tasBloom;
+
+  /// No description provided for @tasSeedsGranted.
+  ///
+  /// In ar, this message translates to:
+  /// **'+{seeds} بذور'**
+  String tasSeedsGranted(int seeds);
+
+  /// No description provided for @tasMyTrees.
+  ///
+  /// In ar, this message translates to:
+  /// **'أشجاري ({count})'**
+  String tasMyTrees(int count);
+
+  /// No description provided for @tasNewTree.
+  ///
+  /// In ar, this message translates to:
+  /// **'شجرة جديدة'**
+  String get tasNewTree;
+
+  /// No description provided for @tasNoTreeTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'لسه مفيش شجرة'**
+  String get tasNoTreeTitle;
+
+  /// No description provided for @tasNoTreeMsg.
+  ///
+  /// In ar, this message translates to:
+  /// **'ازرع أول شجرة وابدأ التسبيح.'**
+  String get tasNoTreeMsg;
+
+  /// No description provided for @tasTreeNameLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم الشجرة'**
+  String get tasTreeNameLabel;
+
+  /// No description provided for @tasRenameTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تسمية الشجرة'**
+  String get tasRenameTitle;
+
+  /// No description provided for @tasNewTreeHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'أضف شجرة جديدة لبستانك!'**
+  String get tasNewTreeHint;
+
+  /// No description provided for @tasTreeNameExample.
+  ///
+  /// In ar, this message translates to:
+  /// **'مثال: شجرة التفاح'**
+  String get tasTreeNameExample;
+
+  /// No description provided for @tasCancel.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلغاء'**
+  String get tasCancel;
+
+  /// No description provided for @tasSave.
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ'**
+  String get tasSave;
+
+  /// No description provided for @tasAdd.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة'**
+  String get tasAdd;
+
+  /// No description provided for @tasLeaderboard.
+  ///
+  /// In ar, this message translates to:
+  /// **'لوحة المتصدرين'**
+  String get tasLeaderboard;
+
+  /// No description provided for @tasShare.
+  ///
+  /// In ar, this message translates to:
+  /// **'شارك الترتيب'**
+  String get tasShare;
+
+  /// No description provided for @tasNoTreesTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد أشجار بعد'**
+  String get tasNoTreesTitle;
+
+  /// No description provided for @tasNoTreesMsg.
+  ///
+  /// In ar, this message translates to:
+  /// **'أول ما حد من العيلة يسبّح، شجرته هتظهر هنا.'**
+  String get tasNoTreesMsg;
+
+  /// No description provided for @tasMemberTrees.
+  ///
+  /// In ar, this message translates to:
+  /// **'{trees} أشجار | {mature} مثمرة'**
+  String tasMemberTrees(int trees, int mature);
+
+  /// No description provided for @tasUnit.
+  ///
+  /// In ar, this message translates to:
+  /// **'تسبيحة'**
+  String get tasUnit;
+
+  /// No description provided for @tasChallengesTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'التحديات العائلية'**
+  String get tasChallengesTitle;
+
+  /// No description provided for @tasChallengesTagline.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحدَ أفراد عائلتك في التسبيحة!'**
+  String get tasChallengesTagline;
+
+  /// No description provided for @tasNewChallenge.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحدي جديد'**
+  String get tasNewChallenge;
+
+  /// No description provided for @tasNoChallengesTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد تحديات حالياً'**
+  String get tasNoChallengesTitle;
+
+  /// No description provided for @tasNoChallengesAdmin.
+  ///
+  /// In ar, this message translates to:
+  /// **'اضغط + وابدأ أول تحدي للعيلة.'**
+  String get tasNoChallengesAdmin;
+
+  /// No description provided for @tasNoChallengesMember.
+  ///
+  /// In ar, this message translates to:
+  /// **'اطلب من المدير إنشاء تحدي جديد!'**
+  String get tasNoChallengesMember;
+
+  /// No description provided for @tasOngoing.
+  ///
+  /// In ar, this message translates to:
+  /// **'مستمر'**
+  String get tasOngoing;
+
+  /// No description provided for @tasChallengeTitleLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'عنوان التحدي'**
+  String get tasChallengeTitleLabel;
+
+  /// No description provided for @tasChallengeDescLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'الوصف (اختياري)'**
+  String get tasChallengeDescLabel;
+
+  /// No description provided for @tasChallengeTargetLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'الهدف (عدد التسبيحات)'**
+  String get tasChallengeTargetLabel;
+
+  /// No description provided for @tasNightSky.
+  ///
+  /// In ar, this message translates to:
+  /// **'ليل البستان'**
+  String get tasNightSky;
+
+  /// No description provided for @tasDaySky.
+  ///
+  /// In ar, this message translates to:
+  /// **'نهار البستان'**
+  String get tasDaySky;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {
