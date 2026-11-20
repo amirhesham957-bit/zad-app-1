@@ -4597,4 +4597,1257 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get brainTelemetryAlert => 'Alert';
+
+  @override
+  String get zadStatusTitle => 'Zad status';
+
+  @override
+  String get zadStatusAllGood => 'Zad is working and watching';
+
+  @override
+  String get zadStatusNeedsFix =>
+      'Something has stopped and needs one step from you';
+
+  @override
+  String zadStatusAllButOne(String what) {
+    return 'All working except: $what';
+  }
+
+  @override
+  String get zadStatusWorking => 'Working';
+
+  @override
+  String get zadStatusStopped => 'Stopped';
+
+  @override
+  String get zadStatusMaybe => 'May stop';
+
+  @override
+  String get zadStatusBank => 'Bank message reading';
+
+  @override
+  String get zadStatusBankOk =>
+      'Zad is reading your bank messages and logging them.';
+
+  @override
+  String get zadStatusBankOff =>
+      'Bank message reading is off. Turn it on so your balance and spending update by themselves.';
+
+  @override
+  String get zadStatusBankStalled =>
+      'The service has not seen a notification for a while. If it is on: switch it off and on again on the screen that opens.';
+
+  @override
+  String get zadStatusBankSilent =>
+      'On, but no message has arrived yet. If you expect a bank message and it did not come: switch it off and on again.';
+
+  @override
+  String get zadStatusNotifications => 'Notifications';
+
+  @override
+  String get zadStatusNotificationsOk =>
+      'Dose, bill and budget alerts reach you.';
+
+  @override
+  String get zadStatusNotificationsOff =>
+      'Notifications are off, so dose and bill alerts will not reach you.';
+
+  @override
+  String get zadStatusLocation => 'Location';
+
+  @override
+  String get zadStatusLocationOk =>
+      'Location is on; deals and nearby shops are worked out from where you are.';
+
+  @override
+  String get zadStatusLocationServiceOff =>
+      'Location is switched off on the phone, so readings will not be from where you really are.';
+
+  @override
+  String get zadStatusLocationDenied =>
+      'Zad is not allowed to know where you are, so deals and nearby shops will not work.';
+
+  @override
+  String get zadStatusBackground => 'Location all the time';
+
+  @override
+  String get zadStatusBackgroundOk =>
+      'Street alerts work even with the app closed.';
+
+  @override
+  String get zadStatusBackgroundOff =>
+      'Without \"all the time\", street alerts will not work while the app is closed.';
+
+  @override
+  String get zadStatusBattery => 'Battery saver';
+
+  @override
+  String get zadStatusBatteryOk =>
+      'The phone is not restricting Zad in the background.';
+
+  @override
+  String get zadStatusBatteryWarn =>
+      'The phone may stop Zad in the background. Choose \"Unrestricted\" so reading does not cut out.';
+
+  @override
+  String get zadStatusFixOpenSettings => 'Open settings';
+
+  @override
+  String get zadStatusFixAllow => 'Allow';
+
+  @override
+  String get zadStatusFixLocationOn => 'Turn location on';
+
+  @override
+  String get zadStatusFixBattery => 'Remove limits';
+
+  @override
+  String get gamesHubButton => 'Zado\'s games';
+
+  @override
+  String get gamesHubTitle => 'Zado\'s games';
+
+  @override
+  String get gamesBackTooltip => 'Back';
+
+  @override
+  String get gamesHubIntro => 'Play, keep the streak, earn seeds';
+
+  @override
+  String gamesHubToday(int target, String game) {
+    return 'Today\'s challenge: $target points in \"$game\"';
+  }
+
+  @override
+  String gamesHubWeekly(int days, int goal) {
+    return 'Weekly box: $days of $goal days in a row';
+  }
+
+  @override
+  String gamesHubStreak(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count days in a row',
+      one: '1 day',
+      zero: 'Start your streak today',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String gamesHubBest(int score) {
+    return 'Best: $score';
+  }
+
+  @override
+  String get gamesHubNotPlayed => 'Not played yet';
+
+  @override
+  String get gamesHubPlay => 'Play';
+
+  @override
+  String get gamesHubChallengeDone => 'Today\'s challenge done';
+
+  @override
+  String get gameNameBall => 'Catch the ball';
+
+  @override
+  String get gameNameRun => 'Zado\'s Hop';
+
+  @override
+  String get gameNameSort => 'Zado Sorts';
+
+  @override
+  String get gameNameStar => 'Catch the Stars';
+
+  @override
+  String get gameBlurbBall =>
+      'A ball keeps dodging: catch it fast and build a combo';
+
+  @override
+  String get gameBlurbRun =>
+      'Jump the crates, grab seeds, the pace keeps rising';
+
+  @override
+  String get gameBlurbSort => 'Merge matching seeds, a new puzzle every day';
+
+  @override
+  String get gameBlurbStar => 'Move Zado and catch the stars before they land';
+
+  @override
+  String gameBest(int score) {
+    return 'Best: $score';
+  }
+
+  @override
+  String get gameNewBest => 'New best!';
+
+  @override
+  String get gameEndTitle => 'Round over';
+
+  @override
+  String gameEndScore(int score) {
+    return '$score points';
+  }
+
+  @override
+  String gameChallenge(int target) {
+    return 'Today\'s challenge: reach $target points';
+  }
+
+  @override
+  String gameChallengeProgress(int done, int target) {
+    return '$done of $target';
+  }
+
+  @override
+  String get gameChallengeDone => 'Challenge done today, well played!';
+
+  @override
+  String gameSeedsGranted(int count) {
+    return '+$count seeds';
+  }
+
+  @override
+  String gameSeedsLeft(int count) {
+    return '$count seeds left today';
+  }
+
+  @override
+  String get gameSeedsCapped => 'Daily seed limit reached';
+
+  @override
+  String get gameDouble => 'Double the seeds';
+
+  @override
+  String get gameDoubleHint => 'With a short ad';
+
+  @override
+  String get gameContinue => 'Continue from here';
+
+  @override
+  String get gameContinueHint => 'With a short ad, once per round';
+
+  @override
+  String get gameAdUnavailable => 'No ad available right now';
+
+  @override
+  String get gameAgain => 'Play again';
+
+  @override
+  String get gameDone => 'Done';
+
+  @override
+  String get gamePaused => 'Game paused';
+
+  @override
+  String get gameResume => 'Resume';
+
+  @override
+  String gameScoreSemantics(int score) {
+    return 'Score $score';
+  }
+
+  @override
+  String gameCombo(int n) {
+    return 'Combo ×$n';
+  }
+
+  @override
+  String gameLevel(int n) {
+    return 'Level $n';
+  }
+
+  @override
+  String gameLives(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count lives',
+      one: '1 life',
+      zero: 'No lives left',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String runGameTitle(String name) {
+    return '$name\'s Hop';
+  }
+
+  @override
+  String runGameHint(String name) {
+    return 'Tap the screen to make $name jump';
+  }
+
+  @override
+  String runGameHit(String name) {
+    return '$name bumped!';
+  }
+
+  @override
+  String runGameSeedsSemantics(int count) {
+    return 'Seeds $count';
+  }
+
+  @override
+  String get sortGameTitle => 'Zado Sorts';
+
+  @override
+  String get sortGameHint =>
+      'Swipe any way or use the arrows, and merge matching seeds';
+
+  @override
+  String get sortGameDaily => 'Today\'s puzzle';
+
+  @override
+  String get sortGameStuck => 'No moves left';
+
+  @override
+  String get sortGameLeft => 'Left';
+
+  @override
+  String get sortGameRight => 'Right';
+
+  @override
+  String get sortGameUp => 'Up';
+
+  @override
+  String get sortGameDown => 'Down';
+
+  @override
+  String sortGameTile(int value) {
+    return 'Seed of level $value';
+  }
+
+  @override
+  String get starGameTitle => 'Catch the Stars';
+
+  @override
+  String starGameHint(String name) {
+    return 'Drag $name left and right to catch the stars';
+  }
+
+  @override
+  String get starGameOver => 'The stars got away';
+
+  @override
+  String shopWorldEyebrow(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count things missing',
+      one: '1 thing missing',
+      zero: 'Nothing missing',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String shopWorldStores(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'From $count shops',
+      one: 'From 1 shop',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get shopWorldAnyStore => 'From any shop';
+
+  @override
+  String get shopWorldDone => 'The list is empty';
+
+  @override
+  String get shopGroupAnyStore => 'Any shop';
+
+  @override
+  String shopPantryCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count items in the pantry',
+      one: '1 item in the pantry',
+      zero: 'The pantry is empty',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String apptWorldToday(String weekday) {
+    return 'Today is $weekday';
+  }
+
+  @override
+  String apptWorldNext(String title, String when) {
+    return '$title $when';
+  }
+
+  @override
+  String get apptWorldNone => 'Nothing coming up';
+
+  @override
+  String get apptNextLabel => 'Next up';
+
+  @override
+  String get apptInNow => 'now';
+
+  @override
+  String apptInMinutes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'in $count minutes',
+      one: 'in 1 minute',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String apptInHours(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'in $count hours',
+      one: 'in 1 hour',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String apptInDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'in $count days',
+      one: 'in 1 day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String phEyebrowCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count medicines',
+      one: '1 medicine',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get phFamilyEyebrow => 'Family pharmacy';
+
+  @override
+  String phMemberState(String name) {
+    return '$name\'s schedule';
+  }
+
+  @override
+  String get phNoDosesToday => 'No doses today';
+
+  @override
+  String phDoseDueNow(String name) {
+    return '$name is due now';
+  }
+
+  @override
+  String phNextDose(String when) {
+    return 'Next dose $when';
+  }
+
+  @override
+  String phDoseMissedLine(String name) {
+    return 'You missed $name';
+  }
+
+  @override
+  String get phDosesDone => 'Today\'s doses are done';
+
+  @override
+  String get phPeriodMorning => 'in the morning';
+
+  @override
+  String get phPeriodNoon => 'at noon';
+
+  @override
+  String get phPeriodAfternoon => 'in the afternoon';
+
+  @override
+  String get phPeriodNight => 'at night';
+
+  @override
+  String phClockWords(String hour, String minutes, String period) {
+    return '$hour$minutes $period';
+  }
+
+  @override
+  String get phDoseTaken => 'Taken';
+
+  @override
+  String get phDoseDue => 'Due now';
+
+  @override
+  String get phDoseMissed => 'Missed';
+
+  @override
+  String get phDoseUpcoming => 'Coming up';
+
+  @override
+  String get phDoseSnoozed => 'Snoozed';
+
+  @override
+  String get phDosePassed => 'Time passed';
+
+  @override
+  String get phSnooze => 'Later';
+
+  @override
+  String get phTake => 'Take';
+
+  @override
+  String get phTakeFor => 'Mark taken';
+
+  @override
+  String phForPerson(String name) {
+    return 'For $name';
+  }
+
+  @override
+  String get phCourseDone => 'Course finished';
+
+  @override
+  String phExpiredAgo(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Expired $count days ago',
+      one: 'Expired 1 day ago',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String phExpiresIn(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Expires in $count days',
+      one: 'Expires in 1 day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String phRemaining(int count, String unit) {
+    return '$count $unit left';
+  }
+
+  @override
+  String phSupplyDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Lasts $count days',
+      one: 'Lasts 1 day',
+      zero: 'Lasts under a day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get phDelete => 'Delete';
+
+  @override
+  String get phBadDoseTime => 'A dose time is not understood — fix it';
+
+  @override
+  String get phNoSchedule => 'No times — I won\'t remind you';
+
+  @override
+  String get phSetTimes => 'Set times';
+
+  @override
+  String get phConfirmQtyBadge => 'Quantity needs confirming';
+
+  @override
+  String get phTakeDose => 'Take a dose';
+
+  @override
+  String get phRefill => 'Reorder';
+
+  @override
+  String get phToShopping => 'Add to shopping';
+
+  @override
+  String get phHowMuchLeft => 'How much is really left?';
+
+  @override
+  String phAddedToShopping(String name) {
+    return 'Added $name to the shopping list';
+  }
+
+  @override
+  String get phDosesToday => 'Today\'s doses';
+
+  @override
+  String get phNoDosesLeft => 'No doses left today.';
+
+  @override
+  String get phNoTimesYet =>
+      'No medicine has times yet — set times on one below and I will remind you.';
+
+  @override
+  String get phLoadFailed => 'Couldn\'t load the medicines';
+
+  @override
+  String get phEmptyTitle => 'No medicines yet';
+
+  @override
+  String get phPullRetry => 'Pull down to try again.';
+
+  @override
+  String get phEmptyGuide =>
+      'Add it with the button, photograph the box, or tell Zad: \"I take Concor one tablet morning and night\" and it will log it with its times.';
+
+  @override
+  String get phMedicines => 'Medicines';
+
+  @override
+  String phTimesTitle(String name) {
+    return '$name times';
+  }
+
+  @override
+  String get phTimesHint =>
+      'I will remind you at each time, and you can log the dose in one tap.';
+
+  @override
+  String get phSaveTimes => 'Save times';
+
+  @override
+  String get phAdherence => 'Dose adherence';
+
+  @override
+  String get phAdherenceWaiting => 'Waiting for the first dose';
+
+  @override
+  String get phCountTotal => 'Medicines';
+
+  @override
+  String get phCountExpiring => 'Expiring soon';
+
+  @override
+  String get phCountLow => 'Low stock';
+
+  @override
+  String phExpiredBanner(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count expired medicines — dispose of them safely',
+      one: '1 expired medicine — dispose of it safely',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get phExpiringHeading => 'Expiring soon — dispose of them safely';
+
+  @override
+  String get phCostSpending => 'Health spending this month';
+
+  @override
+  String get phCostBoxes => 'Medicine box prices';
+
+  @override
+  String get phTabMe => 'Me';
+
+  @override
+  String get phTabMember => 'Member';
+
+  @override
+  String get phMemberFallback => 'the member';
+
+  @override
+  String phHeadNote(String name) {
+    return 'You are the family head — you see $name\'s schedule, edit it and mark a dose if you helped';
+  }
+
+  @override
+  String phReadOnlyNote(String name) {
+    return '$name\'s schedule is for following only — the family head edits';
+  }
+
+  @override
+  String phAddFor(String name) {
+    return 'Medicine for $name';
+  }
+
+  @override
+  String phMemberLoadFailed(String name) {
+    return 'Couldn\'t load $name\'s medicines';
+  }
+
+  @override
+  String get phMemberEmptyTitle => 'No medicines you can see yet';
+
+  @override
+  String get phMemberEmptyGuide =>
+      'Each person\'s medicines show here once they agree — ask to follow from their page in My Family';
+
+  @override
+  String phMemberDoses(String name) {
+    return '$name\'s doses today';
+  }
+
+  @override
+  String get phEdit => 'Edit';
+
+  @override
+  String phEditTitle(String name) {
+    return 'Edit $name';
+  }
+
+  @override
+  String get phPhoto => 'Photograph a medicine';
+
+  @override
+  String get phAdd => 'Add';
+
+  @override
+  String get phScanUnclear =>
+      'Couldn\'t read the box clearly — try a better angle';
+
+  @override
+  String get phScanOk => 'Medicine details read';
+
+  @override
+  String get phScanReading => 'Reading the medicine box with AI...';
+
+  @override
+  String get phScanBtn => 'Scan the box with the camera';
+
+  @override
+  String get phAddTitle => 'Add a medicine';
+
+  @override
+  String get phReviewTitle => 'Review the medicine';
+
+  @override
+  String get phReadFromBox =>
+      'Read from the box — fix anything wrong before you save.';
+
+  @override
+  String get phFieldName => 'Medicine name';
+
+  @override
+  String get phFieldForWhom => 'For whom? (leave empty if it is yours)';
+
+  @override
+  String get phHintPeople => 'Mum, Dad, Youssef…';
+
+  @override
+  String get phFieldDosageNote => 'Dosage (e.g. after food)';
+
+  @override
+  String get phFieldTimesOptional => 'Dose times (optional)';
+
+  @override
+  String phTimesSuggested(String times) {
+    return 'No times yet — suggested: $times';
+  }
+
+  @override
+  String get phFieldAmount => 'Amount';
+
+  @override
+  String phFieldAmountCur(String currency) {
+    return 'Amount ($currency)';
+  }
+
+  @override
+  String get phMoreDetails => 'More details (optional)';
+
+  @override
+  String get phSave => 'Save';
+
+  @override
+  String get phCancel => 'Cancel';
+
+  @override
+  String get phConfirm => 'Confirm';
+
+  @override
+  String get phPickTime => 'Pick a dose time';
+
+  @override
+  String get phAddTime => 'Add a time';
+
+  @override
+  String get phPickExpiry => 'Expiry date — tap to pick';
+
+  @override
+  String get phFieldQty => 'Quantity left';
+
+  @override
+  String get phFieldUnit => 'Unit';
+
+  @override
+  String get phFieldDailyCount => 'Doses a day';
+
+  @override
+  String phFieldPerDose(String unit) {
+    return 'How many $unit per dose?';
+  }
+
+  @override
+  String get phPresetMorning => 'Morning';
+
+  @override
+  String get phPresetNoon => 'Noon';
+
+  @override
+  String get phPresetEvening => 'Evening';
+
+  @override
+  String get phPresetBed => 'Bedtime';
+
+  @override
+  String get phFieldIngredient => 'Active ingredient';
+
+  @override
+  String get phFieldDosageFreq => 'Dosage (e.g. a tablet every 8 hours)';
+
+  @override
+  String get phChronic => 'Chronic medicine / monthly repeat prescription';
+
+  @override
+  String get phForFamilyMember => 'For which family member';
+
+  @override
+  String get phNone => 'None';
+
+  @override
+  String phDeleteBody(String name) {
+    return 'Delete \"$name\" from the pharmacy?';
+  }
+
+  @override
+  String phQtyCurrent(String name, int count, String unit) {
+    return '$name — recorded quantity: $count $unit';
+  }
+
+  @override
+  String get phPerDoseHelp =>
+      'Without this I can\'t work out how many days the stock lasts';
+
+  @override
+  String phRefillTitle(String name) {
+    return 'Reorder $name';
+  }
+
+  @override
+  String phAddedQty(String unit) {
+    return 'Quantity added ($unit)';
+  }
+
+  @override
+  String get phPrice => 'Price';
+
+  @override
+  String get phExpiryDate => 'Expiry date';
+
+  @override
+  String get phAlarmHint =>
+      'Turn on \"Exact alarms\" in Settings so dose reminders ring on time';
+
+  @override
+  String get phErrNotHead =>
+      'Only the family head can edit a family member\'s medicines.';
+
+  @override
+  String get phErrOffline =>
+      'No internet right now — nothing was saved. Try again when it is back.';
+
+  @override
+  String get phErrNotFound =>
+      'That medicine is no longer there — refresh the page.';
+
+  @override
+  String get phErrDuplicate =>
+      'This member already has a medicine with that name.';
+
+  @override
+  String get phErrRejected => 'The server refused to save. Try again.';
+
+  @override
+  String get tasEyebrow => 'A flower every 33 · a new tree stage every 99';
+
+  @override
+  String tasStateLine(int count, int flowers) {
+    return '$count tasbih · $flowers flowers';
+  }
+
+  @override
+  String get tasStateEmpty => 'Say your first tasbih and flowers will bloom';
+
+  @override
+  String get tasTabMine => 'My garden';
+
+  @override
+  String get tasTabFamily => 'Family trees';
+
+  @override
+  String get tasTabChallenges => 'Challenges';
+
+  @override
+  String get tasStage1 => 'Seed';
+
+  @override
+  String get tasStage2 => 'Sprout';
+
+  @override
+  String get tasStage3 => 'Sapling';
+
+  @override
+  String get tasStage4 => 'Tree';
+
+  @override
+  String get tasStage5 => 'Fruiting tree';
+
+  @override
+  String get tasStatLevel => 'Stage';
+
+  @override
+  String tasStatLevelValue(int level) {
+    return '$level/5';
+  }
+
+  @override
+  String get tasStatTotal => 'All-time';
+
+  @override
+  String get tasStatStreak => 'Streak';
+
+  @override
+  String get tasStatFlowers => 'Flowers';
+
+  @override
+  String get tasStatSession => 'This session';
+
+  @override
+  String tasNext(int score, int next) {
+    return '$score / $next to the next stage';
+  }
+
+  @override
+  String get tasComplete => 'Complete!';
+
+  @override
+  String tasStreakDays(int days) {
+    return '$days days in a row';
+  }
+
+  @override
+  String get tasTapLabel => 'Count';
+
+  @override
+  String get tasReset => 'Reset';
+
+  @override
+  String get tasCycle => 'Cycle';
+
+  @override
+  String get tasLevelUp => 'Your tree grew!';
+
+  @override
+  String get tasBloom => 'A new flower bloomed!';
+
+  @override
+  String tasSeedsGranted(int seeds) {
+    return '+$seeds seeds';
+  }
+
+  @override
+  String tasMyTrees(int count) {
+    return 'My trees ($count)';
+  }
+
+  @override
+  String get tasNewTree => 'New tree';
+
+  @override
+  String get tasNoTreeTitle => 'No tree yet';
+
+  @override
+  String get tasNoTreeMsg => 'Plant your first tree and start counting.';
+
+  @override
+  String get tasTreeNameLabel => 'Tree name';
+
+  @override
+  String get tasRenameTitle => 'Name the tree';
+
+  @override
+  String get tasNewTreeHint => 'Add a new tree to your garden!';
+
+  @override
+  String get tasTreeNameExample => 'e.g. the apple tree';
+
+  @override
+  String get tasCancel => 'Cancel';
+
+  @override
+  String get tasSave => 'Save';
+
+  @override
+  String get tasAdd => 'Add';
+
+  @override
+  String get tasLeaderboard => 'Leaderboard';
+
+  @override
+  String get tasShare => 'Share the ranking';
+
+  @override
+  String get tasNoTreesTitle => 'No trees yet';
+
+  @override
+  String get tasNoTreesMsg =>
+      'As soon as someone in the family counts, their tree shows up here.';
+
+  @override
+  String tasMemberTrees(int trees, int mature) {
+    return '$trees trees | $mature fruiting';
+  }
+
+  @override
+  String get tasUnit => 'tasbih';
+
+  @override
+  String get tasChallengesTitle => 'Family challenges';
+
+  @override
+  String get tasChallengesTagline => 'Challenge your family to count!';
+
+  @override
+  String get tasNewChallenge => 'New challenge';
+
+  @override
+  String get tasNoChallengesTitle => 'No challenges right now';
+
+  @override
+  String get tasNoChallengesAdmin =>
+      'Tap + to start the family\'s first challenge.';
+
+  @override
+  String get tasNoChallengesMember => 'Ask the admin to start a new challenge!';
+
+  @override
+  String get tasOngoing => 'Ongoing';
+
+  @override
+  String get tasChallengeTitleLabel => 'Challenge title';
+
+  @override
+  String get tasChallengeDescLabel => 'Description (optional)';
+
+  @override
+  String get tasChallengeTargetLabel => 'Goal (number of tasbih)';
+
+  @override
+  String get tasNightSky => 'The garden at night';
+
+  @override
+  String get tasDaySky => 'The garden by day';
+
+  @override
+  String txWorldEyebrow(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count transactions',
+      one: '1 transaction',
+      zero: 'No transactions yet',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String txWorldState(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count logged themselves today',
+      one: '1 logged itself today',
+      zero: 'Nothing logged itself today',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get txSourceBank => 'A bank message';
+
+  @override
+  String txSourceBankNamed(String bank) {
+    return '$bank · message';
+  }
+
+  @override
+  String get txSourceReceipt => 'A photographed receipt';
+
+  @override
+  String get txSourceVoice => 'You said it';
+
+  @override
+  String get txSourceStatement => 'From a statement';
+
+  @override
+  String get txSourcePharmacy => 'Pharmacy refill';
+
+  @override
+  String get txSourceManual => 'Typed by you';
+
+  @override
+  String budgetWorldUntil(int day) {
+    return 'Until day $day';
+  }
+
+  @override
+  String budgetWorldDaysLeft(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count days left',
+      one: '1 day left',
+      zero: 'Last day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String budgetWorldState(String amount, String perDay) {
+    return '$amount available · $perDay a day';
+  }
+
+  @override
+  String budgetWorldAvailable(String amount) {
+    return '$amount available';
+  }
+
+  @override
+  String statementWorldStateLess(int pct) {
+    return 'You spent $pct% less than the same days last month';
+  }
+
+  @override
+  String statementWorldStateMore(int pct) {
+    return 'You spent $pct% more than the same days last month';
+  }
+
+  @override
+  String get statementWorldStateSame =>
+      'Your spending is level with last month';
+
+  @override
+  String get statementWorldStateNone =>
+      'Import a statement to see where your money goes';
+
+  @override
+  String get statementWorldBreakdownTitle =>
+      'Where your money comes from and goes';
+
+  @override
+  String get statementWorldIn => 'Income';
+
+  @override
+  String get statementWorldEmptyTitle => 'Nothing this month yet';
+
+  @override
+  String get statementWorldEmptyBody =>
+      'Import a statement or log a transaction and your income and spending by category show up here.';
+
+  @override
+  String get statementPickBody =>
+      'Choose your statement: a PDF from your bank app, a photo, or a CSV file. Zad reads the entries and checks them against the statement balance, and nothing is saved until you review it.';
+
+  @override
+  String get statementReading =>
+      'Reading the statement… a long one takes a minute';
+
+  @override
+  String get statementPickButton => 'Choose statement';
+
+  @override
+  String get statementMapIntro =>
+      'Say which column of the file is which — files differ from bank to bank';
+
+  @override
+  String get statementMapDate => 'Date column';
+
+  @override
+  String get statementMapTitle => 'Description column';
+
+  @override
+  String get statementMapAmount => 'Amount column';
+
+  @override
+  String get statementMapCategory => 'Category column (optional)';
+
+  @override
+  String get statementMapInvert =>
+      'Flip the amount sign (if negative means money in here)';
+
+  @override
+  String get statementMapContinue => 'Continue to review';
+
+  @override
+  String get statementMapNone => 'None';
+
+  @override
+  String statementMapColumnN(int n) {
+    return 'Column $n';
+  }
+
+  @override
+  String statementPreviewCount(int rows, int checked) {
+    return '$rows rows — $checked selected to import';
+  }
+
+  @override
+  String get statementPreviewEmptyTitle => 'No transactions found in the file';
+
+  @override
+  String get statementPreviewEmptyBody =>
+      'The file was read but has no rows I can import — make sure it is a statement in CSV or readable PDF form.';
+
+  @override
+  String get statementRowUnreadable =>
+      'The date or amount of this row could not be read';
+
+  @override
+  String get statementRowBalance =>
+      'The statement balance does not match this row — check the amount';
+
+  @override
+  String get statementCheckBalanced =>
+      'The numbers match the statement balance';
+
+  @override
+  String get statementCheckMismatch =>
+      'Some numbers do not match the statement balance — those rows are left unticked, review them';
+
+  @override
+  String get statementCheckUnknown =>
+      'The statement has no balance to check against — review every row before importing';
+
+  @override
+  String statementDropped(String text, int n) {
+    return '$text. $n rows could not be read.';
+  }
 }

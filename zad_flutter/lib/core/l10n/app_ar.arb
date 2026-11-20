@@ -3832,7 +3832,13 @@
   },
   "brainWorldState": "متصل ويتعلم",
   "brainWorldEyebrow": "{count, plural, =0{لسه مفيش عناصر} other{{count} عنصر متصل}}",
-  "@brainWorldEyebrow": {"placeholders": {"count": {"type": "int"}}},
+  "@brainWorldEyebrow": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "brainFilterAll": "الكل",
   "brainFilterLabel": "فلتر المجالات",
   "brainNetworkEmptyTitle": "زاد لسه بيتعلم عنك",
@@ -3851,9 +3857,1474 @@
   "brainCardHealthTitle": "صحة عقل زاد",
   "brainCardHealthBody": "زاد شغال في الخلفية ولا واقف — ولو واقف، ليه",
   "brainTelemetryLinks": "الروابط: {active}/{total}",
-  "@brainTelemetryLinks": {"placeholders": {"active": {"type": "int"}, "total": {"type": "int"}}},
+  "@brainTelemetryLinks": {
+    "placeholders": {
+      "active": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
   "brainTelemetryDecisions": "قرارات النهارده",
   "brainTelemetryGauge": "مؤشر الثبات",
   "brainTelemetryStable": "مستقر",
-  "brainTelemetryAlert": "تنبيه"
+  "brainTelemetryAlert": "تنبيه",
+  "zadStatusTitle": "حالة زاد",
+  "zadStatusAllGood": "زاد شغال وبيتابع",
+  "zadStatusNeedsFix": "في حاجة واقفة ومحتاجة منك خطوة",
+  "zadStatusAllButOne": "كله شغال ما عدا: {what}",
+  "@zadStatusAllButOne": {
+    "placeholders": {
+      "what": {
+        "type": "String"
+      }
+    }
+  },
+  "zadStatusWorking": "شغال",
+  "zadStatusStopped": "واقف",
+  "zadStatusMaybe": "ممكن يقف",
+  "zadStatusBank": "قراءة رسائل البنك",
+  "zadStatusBankOk": "زاد بيقرا رسائل البنك ويسجّلها.",
+  "zadStatusBankOff": "قراءة رسائل البنك متوقفة. شغّلها عشان رصيدك ومصاريفك تتحدّث لوحدها.",
+  "zadStatusBankStalled": "الخدمة مابقتش بتشوف إشعارات من فترة. لو هي مفعّلة: اطفيها وشغّلها تاني من الصفحة اللي هتفتح.",
+  "zadStatusBankSilent": "مفعّلة، بس لسه ماجاتش ولا رسالة. لو مستني رسالة من البنك ومجتش: اطفيها وشغّلها تاني.",
+  "zadStatusNotifications": "الإشعارات",
+  "zadStatusNotificationsOk": "تنبيهات الجرعات والفواتير والميزانية بتوصلك.",
+  "zadStatusNotificationsOff": "الإشعارات مقفولة، فتنبيهات الجرعات والفواتير مش هتوصلك.",
+  "zadStatusLocation": "الموقع",
+  "zadStatusLocationOk": "الموقع شغال، والعروض والمحلات القريبة بتتحسب من مكانك.",
+  "zadStatusLocationServiceOff": "الموقع مقفول في الموبايل، فالقراءات مش هتبقى من مكانك الحقيقي.",
+  "zadStatusLocationDenied": "زاد مش مسموحله يعرف مكانك، فالعروض والمحلات القريبة مش هتشتغل.",
+  "zadStatusBackground": "الموقع طول الوقت",
+  "zadStatusBackgroundOk": "تنبيهات الطريق شغالة حتى والتطبيق مقفول.",
+  "zadStatusBackgroundOff": "من غير «طول الوقت» تنبيهات الطريق مش هتشتغل والتطبيق مقفول.",
+  "zadStatusBattery": "توفير البطارية",
+  "zadStatusBatteryOk": "الموبايل مش بيقيّد زاد في الخلفية.",
+  "zadStatusBatteryWarn": "الموبايل ممكن يوقف زاد في الخلفية. اختار «بدون قيود» عشان القراءة ماتقطعش.",
+  "zadStatusFixOpenSettings": "افتح الإعدادات",
+  "zadStatusFixAllow": "اسمح",
+  "zadStatusFixLocationOn": "شغّل الموقع",
+  "zadStatusFixBattery": "فكّ القيود",
+  "gamesHubButton": "ألعاب زادو",
+  "@gamesHubButton": {
+    "description": "Care sheet: opens the games hub."
+  },
+  "gamesHubTitle": "ألعاب زادو",
+  "@gamesHubTitle": {
+    "description": "Games hub: app bar title."
+  },
+  "gamesBackTooltip": "رجوع",
+  "@gamesBackTooltip": {
+    "description": "Games: back button."
+  },
+  "gamesHubIntro": "العب، كمّل السلسلة، اكسب بذور",
+  "@gamesHubIntro": {
+    "description": "Games hub: header line."
+  },
+  "gamesHubToday": "تحدي النهارده: {target} نقطة في «{game}»",
+  "@gamesHubToday": {
+    "description": "Games hub: the daily challenge line.",
+    "placeholders": {
+      "target": {
+        "type": "int"
+      },
+      "game": {
+        "type": "String"
+      }
+    }
+  },
+  "gamesHubWeekly": "صندوق الأسبوع: {days} من {goal} أيام ورا بعض",
+  "@gamesHubWeekly": {
+    "description": "Games hub: weekly box progress.",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      },
+      "goal": {
+        "type": "int"
+      }
+    }
+  },
+  "gamesHubStreak": "{count, plural, =0{ابدأ سلسلتك النهارده} =1{يوم واحد} other{{count} أيام ورا بعض}}",
+  "@gamesHubStreak": {
+    "description": "Games: the day streak.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "gamesHubBest": "أحسن نتيجة: {score}",
+  "@gamesHubBest": {
+    "description": "Games: best score.",
+    "placeholders": {
+      "score": {
+        "type": "int"
+      }
+    }
+  },
+  "gamesHubNotPlayed": "لسه ما لعبتش",
+  "@gamesHubNotPlayed": {
+    "description": "Games hub: a game with no score yet."
+  },
+  "gamesHubPlay": "العب",
+  "@gamesHubPlay": {
+    "description": "Games hub: play button on a game card."
+  },
+  "gamesHubChallengeDone": "تحدي النهارده خلص",
+  "@gamesHubChallengeDone": {
+    "description": "Games hub: challenge met."
+  },
+  "gameNameBall": "اصطاد الكورة",
+  "@gameNameBall": {
+    "description": "Game name."
+  },
+  "gameNameRun": "نطّة زادو",
+  "@gameNameRun": {
+    "description": "Game name."
+  },
+  "gameNameSort": "زادو بيرتّب",
+  "@gameNameSort": {
+    "description": "Game name."
+  },
+  "gameNameStar": "اصطاد النجوم",
+  "@gameNameStar": {
+    "description": "Game name."
+  },
+  "gameBlurbBall": "كورة بتهرب، اصطادها بسرعة وكوّن كومبو",
+  "@gameBlurbBall": {
+    "description": "Game card text."
+  },
+  "gameBlurbRun": "انط فوق الصناديق وخد البذور والسرعة بتزيد",
+  "@gameBlurbRun": {
+    "description": "Game card text."
+  },
+  "gameBlurbSort": "ادمج البذور المتشابهة، ولغز جديد كل يوم",
+  "@gameBlurbSort": {
+    "description": "Game card text."
+  },
+  "gameBlurbStar": "حرّك زادو وامسك النجوم قبل ما تقع",
+  "@gameBlurbStar": {
+    "description": "Game card text."
+  },
+  "gameBest": "أحسن نتيجة: {score}",
+  "@gameBest": {
+    "description": "Game end card: best score.",
+    "placeholders": {
+      "score": {
+        "type": "int"
+      }
+    }
+  },
+  "gameNewBest": "رقم قياسي جديد!",
+  "@gameNewBest": {
+    "description": "Game end card: best beaten."
+  },
+  "gameEndTitle": "خلصت الجولة",
+  "@gameEndTitle": {
+    "description": "Game end card title."
+  },
+  "gameEndScore": "{score} نقطة",
+  "@gameEndScore": {
+    "description": "Game end card score.",
+    "placeholders": {
+      "score": {
+        "type": "int"
+      }
+    }
+  },
+  "gameChallenge": "تحدي النهارده: اوصل {target} نقطة",
+  "@gameChallenge": {
+    "description": "Game end card: challenge.",
+    "placeholders": {
+      "target": {
+        "type": "int"
+      }
+    }
+  },
+  "gameChallengeProgress": "{done} من {target}",
+  "@gameChallengeProgress": {
+    "description": "Game end card: challenge progress.",
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "target": {
+        "type": "int"
+      }
+    }
+  },
+  "gameChallengeDone": "خلصت التحدي النهارده، برافو!",
+  "@gameChallengeDone": {
+    "description": "Game end card: challenge met."
+  },
+  "gameSeedsGranted": "+{count} بذور",
+  "@gameSeedsGranted": {
+    "description": "Game end card: seeds granted.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "gameSeedsLeft": "باقي {count} بذور النهارده",
+  "@gameSeedsLeft": {
+    "description": "Game end card: daily allowance left.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "gameSeedsCapped": "وصلت للحد اليومي للبذور",
+  "@gameSeedsCapped": {
+    "description": "Game end card: allowance used up."
+  },
+  "gameDouble": "ضاعف البذور",
+  "@gameDouble": {
+    "description": "Game end card: rewarded ad to double."
+  },
+  "gameDoubleHint": "بإعلان قصير",
+  "@gameDoubleHint": {
+    "description": "Game end card: under the double button."
+  },
+  "gameContinue": "كمّل من مكانك",
+  "@gameContinue": {
+    "description": "Game end card: resume after an ad."
+  },
+  "gameContinueHint": "بإعلان قصير، مرة واحدة في الجولة",
+  "@gameContinueHint": {
+    "description": "Game end card: under continue."
+  },
+  "gameAdUnavailable": "مفيش إعلان متاح دلوقتي",
+  "@gameAdUnavailable": {
+    "description": "Game end card: the ad did not play."
+  },
+  "gameAgain": "جولة تانية",
+  "@gameAgain": {
+    "description": "Game end card: restart."
+  },
+  "gameDone": "خلصت",
+  "@gameDone": {
+    "description": "Game end card: leave."
+  },
+  "gamePaused": "اللعبة واقفة",
+  "@gamePaused": {
+    "description": "Game: shown after the app was left."
+  },
+  "gameResume": "كمّل",
+  "@gameResume": {
+    "description": "Game: resume after a pause."
+  },
+  "gameScoreSemantics": "النقط {score}",
+  "@gameScoreSemantics": {
+    "description": "Game: score for TalkBack.",
+    "placeholders": {
+      "score": {
+        "type": "int"
+      }
+    }
+  },
+  "gameCombo": "كومبو ×{n}",
+  "@gameCombo": {
+    "description": "Game: combo multiplier.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "gameLevel": "مستوى {n}",
+  "@gameLevel": {
+    "description": "Game: level.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "gameLives": "{count, plural, =0{مفيش محاولات} =1{محاولة واحدة} other{{count} محاولات}}",
+  "@gameLives": {
+    "description": "Game: lives for TalkBack.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "runGameTitle": "نطّة {name}",
+  "@runGameTitle": {
+    "description": "Runner: title.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "runGameHint": "المس الشاشة عشان {name} ينط",
+  "@runGameHint": {
+    "description": "Runner: before the first tap.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "runGameHit": "{name} خبط!",
+  "@runGameHit": {
+    "description": "Runner: end card title.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "runGameSeedsSemantics": "بذور {count}",
+  "@runGameSeedsSemantics": {
+    "description": "Runner: seeds for TalkBack.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sortGameTitle": "زادو بيرتّب",
+  "@sortGameTitle": {
+    "description": "Sort game: title."
+  },
+  "sortGameHint": "اسحب في أي اتجاه أو استخدم الأسهم، وادمج البذور المتشابهة",
+  "@sortGameHint": {
+    "description": "Sort game: hint."
+  },
+  "sortGameDaily": "لغز النهارده",
+  "@sortGameDaily": {
+    "description": "Sort game: the daily puzzle tag."
+  },
+  "sortGameStuck": "مفيش حركات تانية",
+  "@sortGameStuck": {
+    "description": "Sort game: end card title."
+  },
+  "sortGameLeft": "يسار",
+  "@sortGameLeft": {
+    "description": "Sort game: arrow label."
+  },
+  "sortGameRight": "يمين",
+  "@sortGameRight": {
+    "description": "Sort game: arrow label."
+  },
+  "sortGameUp": "فوق",
+  "@sortGameUp": {
+    "description": "Sort game: arrow label."
+  },
+  "sortGameDown": "تحت",
+  "@sortGameDown": {
+    "description": "Sort game: arrow label."
+  },
+  "sortGameTile": "بذرة بمستوى {value}",
+  "@sortGameTile": {
+    "description": "Sort game: tile for TalkBack.",
+    "placeholders": {
+      "value": {
+        "type": "int"
+      }
+    }
+  },
+  "starGameTitle": "اصطاد النجوم",
+  "@starGameTitle": {
+    "description": "Star game: title."
+  },
+  "starGameHint": "اسحب {name} يمين وشمال عشان يمسك النجوم",
+  "@starGameHint": {
+    "description": "Star game: hint.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "starGameOver": "النجوم خلصت منك",
+  "@starGameOver": {
+    "description": "Star game: end card title."
+  },
+  "shopWorldEyebrow": "{count, plural, =0{مفيش حاجة ناقصة} =1{حاجة واحدة ناقصة} =2{حاجتين ناقصين} few{{count} حاجات ناقصة} other{{count} حاجة ناقصة}}",
+  "@shopWorldEyebrow": {
+    "description": "Shopping world: the count above the title.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "shopWorldStores": "{count, plural, =1{من محل واحد} =2{من محلين} few{من {count} محلات} other{من {count} محل}}",
+  "@shopWorldStores": {
+    "description": "Shopping world: the state line, how many shops the lines are bought at.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "shopWorldAnyStore": "من أي محل",
+  "@shopWorldAnyStore": {
+    "description": "Shopping world: the state line when no line names a shop."
+  },
+  "shopWorldDone": "القايمة فاضية",
+  "@shopWorldDone": {
+    "description": "Shopping world: the state line when nothing is left to buy."
+  },
+  "shopGroupAnyStore": "أي محل",
+  "@shopGroupAnyStore": {
+    "description": "Shopping world: the group of lines with no shop named."
+  },
+  "shopPantryCount": "{count, plural, =0{المخزن فاضي} =1{في المخزن صنف واحد} =2{في المخزن صنفين} few{في المخزن {count} أصناف} other{في المخزن {count} صنف}}",
+  "@shopPantryCount": {
+    "description": "Shopping world: the pantry counter a bought item flies to.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "apptWorldToday": "النهارده {weekday}",
+  "@apptWorldToday": {
+    "description": "Appointments world: the line above the title, today's weekday.",
+    "placeholders": {
+      "weekday": {
+        "type": "String"
+      }
+    }
+  },
+  "apptWorldNext": "{title} {when}",
+  "@apptWorldNext": {
+    "description": "Appointments world: the state line, the next appointment and how far it is.",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "apptWorldNone": "مفيش مواعيد جاية",
+  "@apptWorldNone": {
+    "description": "Appointments world: the state line when nothing is coming."
+  },
+  "apptNextLabel": "الميعاد الجاي",
+  "@apptNextLabel": {
+    "description": "Appointments world: the label of the next appointment's card."
+  },
+  "apptInNow": "دلوقتي",
+  "@apptInNow": {
+    "description": "Appointments world: the next appointment is due this minute."
+  },
+  "apptInMinutes": "{count, plural, =1{بعد دقيقة} =2{بعد دقيقتين} few{بعد {count} دقايق} other{بعد {count} دقيقة}}",
+  "@apptInMinutes": {
+    "description": "Appointments world: minutes left.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "apptInHours": "{count, plural, =1{بعد ساعة} =2{بعد ساعتين} few{بعد {count} ساعات} other{بعد {count} ساعة}}",
+  "@apptInHours": {
+    "description": "Appointments world: hours left.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "apptInDays": "{count, plural, =1{بعد يوم} =2{بعد يومين} few{بعد {count} أيام} other{بعد {count} يوم}}",
+  "@apptInDays": {
+    "description": "Appointments world: days left.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "phEyebrowCount": "{count, plural, =1{دوا واحد} =2{دواءين} few{{count} أدوية} other{{count} دواء}}",
+  "@phEyebrowCount": {
+    "description": "Pharmacy world: the count above the title.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "phFamilyEyebrow": "صيدلية العيلة",
+  "@phFamilyEyebrow": {
+    "description": "Pharmacy world: the eyebrow on a family member tab."
+  },
+  "phMemberState": "جدول {name}",
+  "@phMemberState": {
+    "description": "Pharmacy world: state line on a member tab.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "phNoDosesToday": "مفيش جرعات النهارده",
+  "@phNoDosesToday": {
+    "description": "Pharmacy state line: nothing is scheduled."
+  },
+  "phDoseDueNow": "جرعة {name} وقتها دلوقتي",
+  "@phDoseDueNow": {
+    "description": "Pharmacy state line: a dose is due.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "phNextDose": "الجرعة الجاية {when}",
+  "@phNextDose": {
+    "description": "Pharmacy state line: the next dose and when.",
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "phDoseMissedLine": "فاتتك جرعة {name}",
+  "@phDoseMissedLine": {
+    "description": "Pharmacy state line: a dose was missed.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "phDosesDone": "خلصت جرعات النهارده",
+  "@phDosesDone": {
+    "description": "Pharmacy state line: all taken."
+  },
+  "phPeriodMorning": "الصبح",
+  "@phPeriodMorning": {
+    "description": "Part of day, after the hour."
+  },
+  "phPeriodNoon": "الضهر",
+  "@phPeriodNoon": {
+    "description": "Part of day, after the hour."
+  },
+  "phPeriodAfternoon": "العصر",
+  "@phPeriodAfternoon": {
+    "description": "Part of day, after the hour."
+  },
+  "phPeriodNight": "بالليل",
+  "@phPeriodNight": {
+    "description": "Part of day, after the hour."
+  },
+  "phClockWords": "{hour}{minutes} {period}",
+  "@phClockWords": {
+    "description": "A dose time said in words.",
+    "placeholders": {
+      "hour": {
+        "type": "String"
+      },
+      "minutes": {
+        "type": "String"
+      },
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "phDoseTaken": "اتاخدت",
+  "@phDoseTaken": {
+    "description": "A dose state."
+  },
+  "phDoseDue": "وقتها دلوقتي",
+  "@phDoseDue": {
+    "description": "A dose state."
+  },
+  "phDoseMissed": "فاتت",
+  "@phDoseMissed": {
+    "description": "A dose state."
+  },
+  "phDoseUpcoming": "جاية",
+  "@phDoseUpcoming": {
+    "description": "A dose state."
+  },
+  "phDoseSnoozed": "اتأجلت شوية",
+  "@phDoseSnoozed": {
+    "description": "A dose state."
+  },
+  "phDosePassed": "الميعاد عدّى",
+  "@phDosePassed": {
+    "description": "A member dose whose record is not readable."
+  },
+  "phSnooze": "بعدين",
+  "@phSnooze": {
+    "description": "Dose button."
+  },
+  "phTake": "خدته",
+  "@phTake": {
+    "description": "Dose button."
+  },
+  "phTakeFor": "خدها",
+  "@phTakeFor": {
+    "description": "Head marks a member dose taken."
+  },
+  "phForPerson": "لـ{name}",
+  "@phForPerson": {
+    "description": "Whose medicine.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "phCourseDone": "الكورس خلص",
+  "@phCourseDone": {
+    "description": "Badge."
+  },
+  "phExpiredAgo": "{count, plural, =1{منتهي من يوم} =2{منتهي من يومين} few{منتهي من {count} أيام} other{منتهي من {count} يوم}}",
+  "@phExpiredAgo": {
+    "description": "Badge.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "phExpiresIn": "{count, plural, =1{تنتهي خلال يوم} =2{تنتهي خلال يومين} few{تنتهي خلال {count} أيام} other{تنتهي خلال {count} يوم}}",
+  "@phExpiresIn": {
+    "description": "Badge.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "phRemaining": "متبقي {count} {unit}",
+  "@phRemaining": {
+    "description": "Badge.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "phSupplyDays": "{count, plural, =0{يكفي أقل من يوم} =1{يكفي يوم} =2{يكفي يومين} few{يكفي {count} أيام} other{يكفي {count} يوم}}",
+  "@phSupplyDays": {
+    "description": "Badge.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "phDelete": "حذف",
+  "@phDelete": {
+    "description": "Delete button and dialog title."
+  },
+  "phBadDoseTime": "وقت جرعة مش مفهوم — عدّله",
+  "@phBadDoseTime": {
+    "description": "Prompt."
+  },
+  "phNoSchedule": "مالوش مواعيد — مش هفكّرك بيه",
+  "@phNoSchedule": {
+    "description": "Prompt."
+  },
+  "phSetTimes": "حدد مواعيده",
+  "@phSetTimes": {
+    "description": "Button."
+  },
+  "phConfirmQtyBadge": "الكمية محتاجة تأكيد",
+  "@phConfirmQtyBadge": {
+    "description": "Badge."
+  },
+  "phTakeDose": "تناول جرعة",
+  "@phTakeDose": {
+    "description": "Button."
+  },
+  "phRefill": "تجديد الطلب",
+  "@phRefill": {
+    "description": "Button."
+  },
+  "phToShopping": "ضيفه للتسوق",
+  "@phToShopping": {
+    "description": "Button."
+  },
+  "phHowMuchLeft": "فاضل قد إيه فعلاً؟",
+  "@phHowMuchLeft": {
+    "description": "Button and dialog title."
+  },
+  "phAddedToShopping": "ضفت {name} لقايمة التسوق",
+  "@phAddedToShopping": {
+    "description": "Snack bar.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "phDosesToday": "جرعات النهارده",
+  "@phDosesToday": {
+    "description": "Section heading."
+  },
+  "phNoDosesLeft": "مفيش جرعات فاضلة النهارده.",
+  "@phNoDosesLeft": {
+    "description": "Note."
+  },
+  "phNoTimesYet": "ولا دوا ليه مواعيد لسه — حدد مواعيد أي دوا تحت عشان أفكّرك بيه.",
+  "@phNoTimesYet": {
+    "description": "Note."
+  },
+  "phLoadFailed": "مقدرتش أجيب الأدوية",
+  "@phLoadFailed": {
+    "description": "Error state."
+  },
+  "phEmptyTitle": "لا توجد أدوية مسجلة بعد",
+  "@phEmptyTitle": {
+    "description": "Empty state."
+  },
+  "phPullRetry": "اسحب لتحت نجرب تاني.",
+  "@phPullRetry": {
+    "description": "Error guidance."
+  },
+  "phEmptyGuide": "ضيفه بالزرار، أو صوّر العلبة، أو قول لزاد: \"باخد كونكور قرص الصبح وبالليل\" وهو يسجّله بمواعيده.",
+  "@phEmptyGuide": {
+    "description": "Empty guidance."
+  },
+  "phMedicines": "الأدوية",
+  "@phMedicines": {
+    "description": "Section heading."
+  },
+  "phTimesTitle": "مواعيد {name}",
+  "@phTimesTitle": {
+    "description": "Sheet title.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "phTimesHint": "هفكّرك في كل ميعاد، وتقدر تسجّل الجرعة بضغطة.",
+  "@phTimesHint": {
+    "description": "Sheet hint."
+  },
+  "phSaveTimes": "احفظ المواعيد",
+  "@phSaveTimes": {
+    "description": "Button."
+  },
+  "phAdherence": "الالتزام بالجرعات",
+  "@phAdherence": {
+    "description": "Stat label."
+  },
+  "phAdherenceWaiting": "في انتظار أول جرعة",
+  "@phAdherenceWaiting": {
+    "description": "Stat value."
+  },
+  "phCountTotal": "إجمالي الأدوية",
+  "@phCountTotal": {
+    "description": "Count label."
+  },
+  "phCountExpiring": "قرب الانتهاء",
+  "@phCountExpiring": {
+    "description": "Count label."
+  },
+  "phCountLow": "مخزون منخفض",
+  "@phCountLow": {
+    "description": "Count label."
+  },
+  "phExpiredBanner": "{count, plural, =1{دواء منتهي الصلاحية — تخلص منه بأمان} =2{دواءين منتهيين الصلاحية — تخلص منهم بأمان} few{{count} أدوية منتهية الصلاحية — تخلص منها بأمان} other{{count} دواء منتهي الصلاحية — تخلص منه بأمان}}",
+  "@phExpiredBanner": {
+    "description": "Banner.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "phExpiringHeading": "قرب الانتهاء — تخلص منها بأمان",
+  "@phExpiringHeading": {
+    "description": "Heading."
+  },
+  "phCostSpending": "صرف الصحة الشهر ده",
+  "@phCostSpending": {
+    "description": "Cost label."
+  },
+  "phCostBoxes": "أسعار علب الأدوية",
+  "@phCostBoxes": {
+    "description": "Cost label."
+  },
+  "phTabMe": "أنا",
+  "@phTabMe": {
+    "description": "Family tab."
+  },
+  "phTabMember": "عضو",
+  "@phTabMember": {
+    "description": "Family tab with no name."
+  },
+  "phMemberFallback": "العضو",
+  "@phMemberFallback": {
+    "description": "A member with no name."
+  },
+  "phHeadNote": "إنت رب الأسرة — بتشوف جدول {name} وتعدّل فيه وتعلّم الجرعة لو ساعدته",
+  "@phHeadNote": {
+    "description": "Head card.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "phReadOnlyNote": "جدول {name} للمتابعة بس — رب الأسرة هو اللي يعدّل",
+  "@phReadOnlyNote": {
+    "description": "Non-head card.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "phAddFor": "دوا لـ{name}",
+  "@phAddFor": {
+    "description": "Head button and form title.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "phMemberLoadFailed": "مقدرتش أجيب أدوية {name}",
+  "@phMemberLoadFailed": {
+    "description": "Error state.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "phMemberEmptyTitle": "لسه مفيش أدوية تقدر تشوفها",
+  "@phMemberEmptyTitle": {
+    "description": "Empty state."
+  },
+  "phMemberEmptyGuide": "أدوية كل فرد بتظهر هنا بعد ما يوافق — اطلب المتابعة من صفحته في «عيلتي»",
+  "@phMemberEmptyGuide": {
+    "description": "Empty guidance."
+  },
+  "phMemberDoses": "جرعات {name} النهارده",
+  "@phMemberDoses": {
+    "description": "Section heading.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "phEdit": "تعديل",
+  "@phEdit": {
+    "description": "Button."
+  },
+  "phEditTitle": "تعديل {name}",
+  "@phEditTitle": {
+    "description": "Form title.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "phPhoto": "صوّر الدوا",
+  "@phPhoto": {
+    "description": "Dock button."
+  },
+  "phAdd": "إضافة",
+  "@phAdd": {
+    "description": "Dock button tooltip."
+  },
+  "phScanUnclear": "تعذر قراءة العلبة بدقة، يرجى المحاولة بزاوية أوضح",
+  "@phScanUnclear": {
+    "description": "Snack bar."
+  },
+  "phScanOk": "تم استخراج بيانات الدواء بنجاح",
+  "@phScanOk": {
+    "description": "Snack bar."
+  },
+  "phScanReading": "جاري قراءة علبة الدواء بالذكاء الاصطناعي...",
+  "@phScanReading": {
+    "description": "Progress."
+  },
+  "phScanBtn": "مسح العبوة بالكاميرا",
+  "@phScanBtn": {
+    "description": "Button."
+  },
+  "phAddTitle": "إضافة دواء",
+  "@phAddTitle": {
+    "description": "Form title."
+  },
+  "phReviewTitle": "راجع الدواء",
+  "@phReviewTitle": {
+    "description": "Form title after a scan."
+  },
+  "phReadFromBox": "قريت ده من العلبة — عدّل أي حاجة غلط قبل ما تحفظ.",
+  "@phReadFromBox": {
+    "description": "Form note."
+  },
+  "phFieldName": "اسم الدواء",
+  "@phFieldName": {
+    "description": "Field."
+  },
+  "phFieldForWhom": "لمين؟ (سيبها فاضية لو ليك)",
+  "@phFieldForWhom": {
+    "description": "Field."
+  },
+  "phHintPeople": "ماما، بابا، يوسف…",
+  "@phHintPeople": {
+    "description": "Field hint."
+  },
+  "phFieldDosageNote": "الجرعة (مثال: بعد الأكل)",
+  "@phFieldDosageNote": {
+    "description": "Field."
+  },
+  "phFieldTimesOptional": "مواعيد الجرعة (اختياري)",
+  "@phFieldTimesOptional": {
+    "description": "Label."
+  },
+  "phTimesSuggested": "لسه مفيش مواعيد مضافة — مقترح: {times}",
+  "@phTimesSuggested": {
+    "description": "Hint.",
+    "placeholders": {
+      "times": {
+        "type": "String"
+      }
+    }
+  },
+  "phFieldAmount": "المبلغ",
+  "@phFieldAmount": {
+    "description": "Field."
+  },
+  "phFieldAmountCur": "المبلغ ({currency})",
+  "@phFieldAmountCur": {
+    "description": "Field.",
+    "placeholders": {
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
+  "phMoreDetails": "تفاصيل إضافية (اختياري)",
+  "@phMoreDetails": {
+    "description": "Toggle."
+  },
+  "phSave": "حفظ",
+  "@phSave": {
+    "description": "Button."
+  },
+  "phCancel": "إلغاء",
+  "@phCancel": {
+    "description": "Button."
+  },
+  "phConfirm": "تأكيد",
+  "@phConfirm": {
+    "description": "Button."
+  },
+  "phPickTime": "اختر ميعاد الجرعة",
+  "@phPickTime": {
+    "description": "Time picker help."
+  },
+  "phAddTime": "إضافة ميعاد",
+  "@phAddTime": {
+    "description": "Chip."
+  },
+  "phPickExpiry": "تاريخ الانتهاء — اضغط لاختيار التاريخ",
+  "@phPickExpiry": {
+    "description": "Button."
+  },
+  "phFieldQty": "الكمية المتبقية",
+  "@phFieldQty": {
+    "description": "Field."
+  },
+  "phFieldUnit": "الوحدة",
+  "@phFieldUnit": {
+    "description": "Label."
+  },
+  "phFieldDailyCount": "جرعات اليوم",
+  "@phFieldDailyCount": {
+    "description": "Field."
+  },
+  "phFieldPerDose": "الجرعة الواحدة كام {unit}؟",
+  "@phFieldPerDose": {
+    "description": "Field.",
+    "placeholders": {
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "phPresetMorning": "صباحاً",
+  "@phPresetMorning": {
+    "description": "Dose time preset."
+  },
+  "phPresetNoon": "ظهراً",
+  "@phPresetNoon": {
+    "description": "Dose time preset."
+  },
+  "phPresetEvening": "مساءً",
+  "@phPresetEvening": {
+    "description": "Dose time preset."
+  },
+  "phPresetBed": "قبل النوم",
+  "@phPresetBed": {
+    "description": "Dose time preset."
+  },
+  "phFieldIngredient": "المادة الفعالة",
+  "@phFieldIngredient": {
+    "description": "Field."
+  },
+  "phFieldDosageFreq": "الجرعة (مثال: قرص كل 8 ساعات)",
+  "@phFieldDosageFreq": {
+    "description": "Field."
+  },
+  "phChronic": "دواء مزمن / روشتة متجددة شهرياً",
+  "@phChronic": {
+    "description": "Checkbox."
+  },
+  "phForFamilyMember": "لمين في العائلة",
+  "@phForFamilyMember": {
+    "description": "Field."
+  },
+  "phNone": "بدون",
+  "@phNone": {
+    "description": "Dropdown item."
+  },
+  "phDeleteBody": "حذف «{name}» من الصيدلية؟",
+  "@phDeleteBody": {
+    "description": "Dialog.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "phQtyCurrent": "{name} — الكمية الحالية المسجلة: {count} {unit}",
+  "@phQtyCurrent": {
+    "description": "Dialog.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "phPerDoseHelp": "من غير الرقم ده مقدرش أحسب المخزون هيكفي كام يوم",
+  "@phPerDoseHelp": {
+    "description": "Dialog helper."
+  },
+  "phRefillTitle": "تجديد طلب {name}",
+  "@phRefillTitle": {
+    "description": "Dialog.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "phAddedQty": "الكمية المضافة ({unit})",
+  "@phAddedQty": {
+    "description": "Field.",
+    "placeholders": {
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "phPrice": "السعر",
+  "@phPrice": {
+    "description": "Field."
+  },
+  "phExpiryDate": "تاريخ الانتهاء",
+  "@phExpiryDate": {
+    "description": "Button."
+  },
+  "phAlarmHint": "فعّل \"المنبهات الدقيقة\" من الإعدادات عشان تنبيهات مواعيد الدواء تشتغل بدقة",
+  "@phAlarmHint": {
+    "description": "Hint."
+  },
+  "phErrNotHead": "بس رب الأسرة يقدر يعدّل أدوية حد من العيلة.",
+  "@phErrNotHead": {
+    "description": "Refusal."
+  },
+  "phErrOffline": "مفيش نت دلوقتي — ما اتحفظش حاجة. جرّب تاني لما يرجع.",
+  "@phErrOffline": {
+    "description": "Offline."
+  },
+  "phErrNotFound": "الدوا ده مش موجود عند العضو دلوقتي — حدّث الصفحة.",
+  "@phErrNotFound": {
+    "description": "Server reason."
+  },
+  "phErrDuplicate": "العضو عنده دوا بنفس الاسم ده.",
+  "@phErrDuplicate": {
+    "description": "Server reason."
+  },
+  "phErrRejected": "السيرفر رفض الحفظ. جرّب تاني.",
+  "@phErrRejected": {
+    "description": "Server reason."
+  },
+  "tasEyebrow": "ورد كل ٣٣ · شجرة كل ٩٩",
+  "tasStateLine": "{count} تسبيحة · {flowers} وردة",
+  "@tasStateLine": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "flowers": {
+        "type": "int"
+      }
+    }
+  },
+  "tasStateEmpty": "ابدأ أول تسبيحة والورد هيفتّح",
+  "tasTabMine": "بستاني",
+  "tasTabFamily": "أشجار العيلة",
+  "tasTabChallenges": "التحديات",
+  "tasStage1": "بذرة",
+  "tasStage2": "بذرة نبتت",
+  "tasStage3": "شتلة",
+  "tasStage4": "شجرة",
+  "tasStage5": "شجرة مثمرة",
+  "tasStatLevel": "المرحلة",
+  "tasStatLevelValue": "{level}/5",
+  "@tasStatLevelValue": {
+    "placeholders": {
+      "level": {
+        "type": "int"
+      }
+    }
+  },
+  "tasStatTotal": "إجمالي التسبيح",
+  "tasStatStreak": "السلسلة",
+  "tasStatFlowers": "الورد",
+  "tasStatSession": "في الجلسة دي",
+  "tasNext": "{score} / {next} للمرحلة التالية",
+  "@tasNext": {
+    "placeholders": {
+      "score": {
+        "type": "int"
+      },
+      "next": {
+        "type": "int"
+      }
+    }
+  },
+  "tasComplete": "اكتملت!",
+  "tasStreakDays": "{days} يوم ورا بعض",
+  "@tasStreakDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "tasTapLabel": "سبّح",
+  "tasReset": "تصفير",
+  "tasCycle": "الدورة",
+  "tasLevelUp": "مبروك! شجرتك كبرت!",
+  "tasBloom": "وردة جديدة فتّحت!",
+  "tasSeedsGranted": "+{seeds} بذور",
+  "@tasSeedsGranted": {
+    "placeholders": {
+      "seeds": {
+        "type": "int"
+      }
+    }
+  },
+  "tasMyTrees": "أشجاري ({count})",
+  "@tasMyTrees": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tasNewTree": "شجرة جديدة",
+  "tasNoTreeTitle": "لسه مفيش شجرة",
+  "tasNoTreeMsg": "ازرع أول شجرة وابدأ التسبيح.",
+  "tasTreeNameLabel": "اسم الشجرة",
+  "tasRenameTitle": "تسمية الشجرة",
+  "tasNewTreeHint": "أضف شجرة جديدة لبستانك!",
+  "tasTreeNameExample": "مثال: شجرة التفاح",
+  "tasCancel": "إلغاء",
+  "tasSave": "حفظ",
+  "tasAdd": "إضافة",
+  "tasLeaderboard": "لوحة المتصدرين",
+  "tasShare": "شارك الترتيب",
+  "tasNoTreesTitle": "لا توجد أشجار بعد",
+  "tasNoTreesMsg": "أول ما حد من العيلة يسبّح، شجرته هتظهر هنا.",
+  "tasMemberTrees": "{trees} أشجار | {mature} مثمرة",
+  "@tasMemberTrees": {
+    "placeholders": {
+      "trees": {
+        "type": "int"
+      },
+      "mature": {
+        "type": "int"
+      }
+    }
+  },
+  "tasUnit": "تسبيحة",
+  "tasChallengesTitle": "التحديات العائلية",
+  "tasChallengesTagline": "تحدَ أفراد عائلتك في التسبيحة!",
+  "tasNewChallenge": "تحدي جديد",
+  "tasNoChallengesTitle": "لا توجد تحديات حالياً",
+  "tasNoChallengesAdmin": "اضغط + وابدأ أول تحدي للعيلة.",
+  "tasNoChallengesMember": "اطلب من المدير إنشاء تحدي جديد!",
+  "tasOngoing": "مستمر",
+  "tasChallengeTitleLabel": "عنوان التحدي",
+  "tasChallengeDescLabel": "الوصف (اختياري)",
+  "tasChallengeTargetLabel": "الهدف (عدد التسبيحات)",
+  "tasNightSky": "ليل البستان",
+  "tasDaySky": "نهار البستان",
+  "txWorldEyebrow": "{count, plural, =0{لسه مفيش معاملات} =1{معاملة واحدة} =2{معاملتين} few{{count} معاملات} other{{count} معاملة}}",
+  "@txWorldEyebrow": {
+    "description": "Transactions world: the count above the title.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "txWorldState": "{count, plural, =0{لسه مفيش حاجة اتسجلت لوحدها النهارده} =1{واحدة اتسجلت لوحدها النهارده} =2{اتنين اتسجلوا لوحدهم النهارده} few{{count} اتسجلوا لوحدهم النهارده} other{{count} اتسجلوا لوحدهم النهارده}}",
+  "@txWorldState": {
+    "description": "Transactions world: the state line — how many rows the app wrote by itself today (bank message, receipt, voice, statement).",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "txSourceBank": "رسالة من البنك",
+  "@txSourceBank": {
+    "description": "Transaction source: a bank message, bank unknown."
+  },
+  "txSourceBankNamed": "{bank} · رسالة",
+  "@txSourceBankNamed": {
+    "description": "Transaction source: a message from a named bank.",
+    "placeholders": {
+      "bank": {
+        "type": "String"
+      }
+    }
+  },
+  "txSourceReceipt": "فاتورة اتصورت",
+  "@txSourceReceipt": {
+    "description": "Transaction source: a receipt photo."
+  },
+  "txSourceVoice": "قولتها بصوتك",
+  "@txSourceVoice": {
+    "description": "Transaction source: voice."
+  },
+  "txSourceStatement": "من كشف الحساب",
+  "@txSourceStatement": {
+    "description": "Transaction source: an imported statement."
+  },
+  "txSourcePharmacy": "تعبئة الصيدلية",
+  "@txSourcePharmacy": {
+    "description": "Transaction source: a pharmacy restock the app logged."
+  },
+  "txSourceManual": "كتبتها بإيدك",
+  "@txSourceManual": {
+    "description": "Transaction source: entered by hand."
+  },
+  "budgetWorldUntil": "لحد يوم {day}",
+  "@budgetWorldUntil": {
+    "description": "Budget world: the eyebrow — the day the cycle ends (payday).",
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "budgetWorldDaysLeft": "{count, plural, =0{آخر يوم} =1{فاضل يوم واحد} =2{فاضل يومين} few{فاضل {count} أيام} other{فاضل {count} يوم}}",
+  "@budgetWorldDaysLeft": {
+    "description": "Budget world: the eyebrow when the cycle end date is unknown.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "budgetWorldState": "متاح {amount} · {perDay} في اليوم",
+  "@budgetWorldState": {
+    "description": "Budget world: the state line — the real available amount and what it allows per day until payday.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "perDay": {
+        "type": "String"
+      }
+    }
+  },
+  "budgetWorldAvailable": "متاح {amount}",
+  "@budgetWorldAvailable": {
+    "description": "Budget world: the state line when nothing is left per day.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "statementWorldStateLess": "صرفت {pct}٪ أقل من نفس الفترة الشهر اللي فات",
+  "@statementWorldStateLess": {
+    "description": "Statement world: the state line when this month is running under last month at the same day.",
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
+  "statementWorldStateMore": "صرفت {pct}٪ أكتر من نفس الفترة الشهر اللي فات",
+  "@statementWorldStateMore": {
+    "description": "Statement world: the state line when this month is running over last month at the same day.",
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
+  "statementWorldStateSame": "صرفك زي الشهر اللي فات",
+  "@statementWorldStateSame": {
+    "description": "Statement world: the state line when the two months are level."
+  },
+  "statementWorldStateNone": "استورد كشفك وشوف فلوسك رايحة فين",
+  "@statementWorldStateNone": {
+    "description": "Statement world: the state line when there is no earlier month to compare with."
+  },
+  "statementWorldBreakdownTitle": "فلوسك داخلة منين وخارجة فين",
+  "@statementWorldBreakdownTitle": {
+    "description": "Statement world: the title of the money in/out card."
+  },
+  "statementWorldIn": "الدخل",
+  "@statementWorldIn": {
+    "description": "Statement world: the income bar."
+  },
+  "statementWorldEmptyTitle": "مفيش حركات الشهر ده لسه",
+  "@statementWorldEmptyTitle": {
+    "description": "Statement world: empty breakdown title."
+  },
+  "statementWorldEmptyBody": "استورد كشفك أو سجّل معاملة، وهتلاقي هنا الدخل والمصروف حسب الفئة.",
+  "@statementWorldEmptyBody": {
+    "description": "Statement world: empty breakdown guidance."
+  },
+  "statementPickBody": "اختار كشف حسابك: PDF من تطبيق البنك، أو صورة، أو ملف CSV. زاد بيقرا الحركات ويراجعها على رصيد الكشف، ومفيش حاجة بتتسجل غير بعد ما تراجعها.",
+  "@statementPickBody": {
+    "description": "Statement import: pick step guidance."
+  },
+  "statementReading": "بقرا الكشف… الكشف الطويل بياخد دقيقة",
+  "@statementReading": {
+    "description": "Statement import: shown while the server reads."
+  },
+  "statementPickButton": "اختيار الكشف",
+  "@statementPickButton": {
+    "description": "Statement import: pick button."
+  },
+  "statementMapIntro": "حدد أي عمود من الملف يمثل كل بيانة — الملف مختلف من بنك لبنك",
+  "@statementMapIntro": {
+    "description": "Statement import: column mapping intro."
+  },
+  "statementMapDate": "عمود التاريخ",
+  "@statementMapDate": {
+    "description": "Statement import: date column picker."
+  },
+  "statementMapTitle": "عمود الوصف/العنوان",
+  "@statementMapTitle": {
+    "description": "Statement import: description column picker."
+  },
+  "statementMapAmount": "عمود المبلغ",
+  "@statementMapAmount": {
+    "description": "Statement import: amount column picker."
+  },
+  "statementMapCategory": "عمود التصنيف (اختياري)",
+  "@statementMapCategory": {
+    "description": "Statement import: category column picker."
+  },
+  "statementMapInvert": "اعكس إشارة المبلغ (لو السالب هنا معناه دخل مش مصروف)",
+  "@statementMapInvert": {
+    "description": "Statement import: sign switch."
+  },
+  "statementMapContinue": "متابعة للمراجعة",
+  "@statementMapContinue": {
+    "description": "Statement import: go to review."
+  },
+  "statementMapNone": "بدون",
+  "@statementMapNone": {
+    "description": "Statement import: optional column left empty."
+  },
+  "statementMapColumnN": "عمود {n}",
+  "@statementMapColumnN": {
+    "description": "Statement import: a header-less column.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "statementPreviewCount": "{rows} صف — {checked} محدد للاستيراد",
+  "@statementPreviewCount": {
+    "description": "Statement import: review count.",
+    "placeholders": {
+      "rows": {
+        "type": "int"
+      },
+      "checked": {
+        "type": "int"
+      }
+    }
+  },
+  "statementPreviewEmptyTitle": "ما لقيتش أي معاملة في الملف",
+  "@statementPreviewEmptyTitle": {
+    "description": "Statement import: empty review title."
+  },
+  "statementPreviewEmptyBody": "الملف اتقرا لكن مفيهوش صفوف أقدر أستوردها — اتأكد إنه كشف حساب وإن صيغته CSV أو PDF مقروء.",
+  "@statementPreviewEmptyBody": {
+    "description": "Statement import: empty review guidance."
+  },
+  "statementRowUnreadable": "تعذّرت قراءة التاريخ أو المبلغ في هذا الصف",
+  "@statementRowUnreadable": {
+    "description": "Statement import: row error."
+  },
+  "statementRowBalance": "الرصيد في الكشف مش متطابق مع الصف ده — راجع المبلغ",
+  "@statementRowBalance": {
+    "description": "Statement import: row balance mismatch."
+  },
+  "statementCheckBalanced": "الأرقام متطابقة مع رصيد الكشف",
+  "@statementCheckBalanced": {
+    "description": "Statement import: balance check ok."
+  },
+  "statementCheckMismatch": "في أرقام مش متطابقة مع رصيد الكشف — الصفوف دي مش متعلّمة، راجعها",
+  "@statementCheckMismatch": {
+    "description": "Statement import: balance check mismatch."
+  },
+  "statementCheckUnknown": "الكشف مفيهوش رصيد أراجع عليه — راجع كل صف قبل الاستيراد",
+  "@statementCheckUnknown": {
+    "description": "Statement import: no balance to check."
+  },
+  "statementDropped": "{text}. وفي {n} صف ماقدرتش أقراه.",
+  "@statementDropped": {
+    "description": "Statement import: banner with unread rows.",
+    "placeholders": {
+      "text": {
+        "type": "String"
+      },
+      "n": {
+        "type": "int"
+      }
+    }
+  }
 }

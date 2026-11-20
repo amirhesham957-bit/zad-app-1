@@ -8,8 +8,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/zad_theme.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/pharmacy/presentation/pharmacy_view.dart';
 import 'package:zad/shared/ads/application/ads_policy.dart';
 import 'package:zad/shared/ads/presentation/ai_wait_ad.dart';
@@ -17,6 +19,8 @@ import 'package:zad/shared/ads/presentation/inline_ad.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/family/application/family_controller.dart';
 import 'package:zad/shared/family/data/family_repository.dart';
+import 'package:zad/shared/market/application/account_time_zone.dart';
+import 'package:zad/shared/navigation/zad_screens.dart';
 import 'package:zad/shared/pharmacy/application/pharmacy_controller.dart' as pc;
 import 'package:zad/shared/pharmacy/domain/medicine.dart';
 import 'package:zad/shared/scan/data/receipt_scanner.dart';
@@ -27,6 +31,19 @@ import 'package:zad/shared/transactions/domain/transaction.dart';
 import '../../support/quiet_household.dart';
 
 final DateTime _now = DateTime.utc(2026, 9, 25, 9);
+
+Widget _shell() => MaterialApp(
+  theme: ZadTheme.light(),
+  locale: const Locale('ar'),
+  supportedLocales: ZadL10n.supportedLocales,
+  localizationsDelegates: ZadL10n.localizationsDelegates,
+  // The world's scene loops forever; a still screen lets pumpAndSettle end.
+  builder: (context, child) => MediaQuery(
+    data: MediaQuery.of(context).copyWith(disableAnimations: true),
+    child: child!,
+  ),
+  home: const Scaffold(body: PharmacyView()),
+);
 
 class _Budget extends BudgetController {
   @override
@@ -157,7 +174,11 @@ Medicine _m(
 });
 
 void main() {
-  setUpAll(() => initializeDateFormatting('ar'));
+  setUpAll(() async {
+    tz_data.initializeTimeZones();
+    await initializeDateFormatting('ar');
+  });
+  setUp(() => ZadScreens.worldScreen = (_) => null);
 
   test('the doses spread over the waking day', () {
     expect(suggestDoseTimes(1), '09:00');
@@ -200,14 +221,14 @@ void main() {
       'category': 'الرعاية الصحية',
     });
     expect(
-      pharmacyCostLabel(<Medicine>[_m('a')], <ZadTransaction>[clinic]),
-      'صرف الصحة الشهر ده',
+      pharmacyCostKind(<Medicine>[_m('a')], <ZadTransaction>[clinic]),
+      PharmacyCostKind.spending,
     );
     expect(
-      pharmacyCostLabel(<Medicine>[
+      pharmacyCostKind(<Medicine>[
         _m('a', price: 80),
       ], const <ZadTransaction>[]),
-      'أسعار علب الأدوية',
+      PharmacyCostKind.boxes,
     );
   });
 
@@ -226,6 +247,8 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          ...quietOrbOverrides,
+          accountTimeZoneProvider.overrideWithValue('Africa/Cairo'),
           nowProvider.overrideWithValue(() => _now),
           pc.pharmacyControllerProvider.overrideWith(
             () => QuietPharmacy(
@@ -241,18 +264,12 @@ void main() {
           transactionsControllerProvider.overrideWith(_Txns.new),
           familyControllerProvider.overrideWith(_NoFamily.new),
         ],
-        child: MaterialApp(
-          theme: ZadTheme.light(),
-          home: const Directionality(
-            textDirection: TextDirection.rtl,
-            child: Scaffold(body: PharmacyView()),
-          ),
-        ),
+        child: _shell(),
       ),
     );
     await tester.pump();
 
-    expect(find.text('الكورس خلص ✓'), findsOneWidget);
+    expect(find.text('الكورس خلص'), findsOneWidget);
     final low = find.ancestor(
       of: find.text('مخزون منخفض'),
       matching: find.byType(Row),
@@ -271,6 +288,8 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          ...quietOrbOverrides,
+          accountTimeZoneProvider.overrideWithValue('Africa/Cairo'),
           nowProvider.overrideWithValue(() => _now),
           pc.pharmacyControllerProvider.overrideWith(
             () => QuietPharmacy(
@@ -287,20 +306,14 @@ void main() {
           transactionsControllerProvider.overrideWith(_Txns.new),
           familyControllerProvider.overrideWith(_NoFamily.new),
         ],
-        child: MaterialApp(
-          theme: ZadTheme.light(),
-          home: const Directionality(
-            textDirection: TextDirection.rtl,
-            child: Scaffold(body: PharmacyView()),
-          ),
-        ),
+        child: _shell(),
       ),
     );
     await tester.pump();
 
     expect(find.text('90%'), findsOneWidget);
-    expect(find.text('1 دواء منتهي الصلاحية — تخلص منه بأمان'), findsOneWidget);
-    expect(find.text('منتهي منذ 23 يوم'), findsOneWidget);
+    expect(find.text('دواء منتهي الصلاحية — تخلص منه بأمان'), findsOneWidget);
+    expect(find.text('منتهي من 23 يوم'), findsOneWidget);
     expect(find.text('الكمية محتاجة تأكيد'), findsOneWidget);
     expect(find.text('تجديد الطلب'), findsNWidgets(2));
 
@@ -317,6 +330,8 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          ...quietOrbOverrides,
+          accountTimeZoneProvider.overrideWithValue('Africa/Cairo'),
           nowProvider.overrideWithValue(() => _now),
           signedInUserIdProvider.overrideWithValue(() => 'u'),
           receiptCameraProvider.overrideWithValue(_Camera()),
@@ -326,13 +341,7 @@ void main() {
           transactionsControllerProvider.overrideWith(_Txns.new),
           familyControllerProvider.overrideWith(_NoFamily.new),
         ],
-        child: MaterialApp(
-          theme: ZadTheme.light(),
-          home: const Directionality(
-            textDirection: TextDirection.rtl,
-            child: Scaffold(body: PharmacyView()),
-          ),
-        ),
+        child: _shell(),
       ),
     );
     await tester.pump();
@@ -394,19 +403,15 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          ...quietOrbOverrides,
+          accountTimeZoneProvider.overrideWithValue('Africa/Cairo'),
           nowProvider.overrideWithValue(() => _now),
           pc.pharmacyControllerProvider.overrideWith(() => pharmacy),
           budgetControllerProvider.overrideWith(_Budget.new),
           transactionsControllerProvider.overrideWith(_Txns.new),
           familyControllerProvider.overrideWith(_NoFamily.new),
         ],
-        child: MaterialApp(
-          theme: ZadTheme.light(),
-          home: const Directionality(
-            textDirection: TextDirection.rtl,
-            child: Scaffold(body: PharmacyView()),
-          ),
-        ),
+        child: _shell(),
       ),
     );
     await tester.pump();
@@ -430,8 +435,8 @@ void main() {
     final save = find.widgetWithText(FilledButton, 'احفظ المواعيد');
     expect(tester.widget<FilledButton>(save).onPressed, isNull);
 
-    await tester.tap(find.text('🌅 صباحاً'));
-    await tester.tap(find.text('🌙 مساءً'));
+    await tester.tap(find.text('صباحاً'));
+    await tester.tap(find.text('مساءً'));
     await tester.pump();
     await tester.tap(save);
     await tester.pumpAndSettle();
@@ -465,6 +470,8 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          ...quietOrbOverrides,
+          accountTimeZoneProvider.overrideWithValue('Africa/Cairo'),
           nowProvider.overrideWithValue(() => _now),
           signedInUserIdProvider.overrideWithValue(() => 'u'),
           receiptCameraProvider.overrideWithValue(_Camera()),
@@ -475,13 +482,7 @@ void main() {
           familyControllerProvider.overrideWith(_NoFamily.new),
           adsAllowedProvider.overrideWithValue(false),
         ],
-        child: MaterialApp(
-          theme: ZadTheme.light(),
-          home: const Directionality(
-            textDirection: TextDirection.rtl,
-            child: Scaffold(body: PharmacyView()),
-          ),
-        ),
+        child: _shell(),
       ),
     );
     await tester.pump();

@@ -168,6 +168,9 @@ abstract final class ZadScreens {
   /// «استوديو الرفيق».
   static late OpenScreen showCompanionStudio;
 
+  /// «ألعاب زادو»: the games hub.
+  static late OpenScreen showGamesHub;
+
   // ── paywall
   /// The subscription paywall.
   static late OpenScreen showPaywallScreen;
@@ -183,6 +186,11 @@ abstract final class ZadScreens {
     ScannedMedicine? scanned,
   })
   showAddMedicineSheet;
+
+  /// Photographs a medicine box and returns the reading (null when the
+  /// sheet was closed first); the pharmacy then opens its add form from it.
+  static late Future<ScannedMedicine?> Function(BuildContext context)
+  showMedicinePhotoSheet;
 
   // ── prices
   /// أسعار الناس.

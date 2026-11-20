@@ -54,7 +54,12 @@ void main() {
         watchers: const <String>['بابا'],
       );
     final notice = _Notice();
-    await ChildZonesSync(remote: remote, engine: null, notice: notice).sync();
+    await ChildZonesSync(
+      remote: remote,
+      engine: null,
+      notice: notice,
+      enabled: true,
+    ).sync();
     expect(notice.shown, 'بابا: المدرسة');
   });
 
@@ -115,7 +120,6 @@ void main() {
       remote: remote,
       engine: null,
       notice: notice,
-      enabled: false,
     ).sync();
     expect(mine.zones, isEmpty);
     expect(notice.cleared, isTrue);
