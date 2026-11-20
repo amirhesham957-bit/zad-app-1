@@ -9,7 +9,7 @@ Read this first when resuming the "worlds" redesign. It records what is merged, 
 - **The rules for every world** are in `docs/agent/WORLD_BRIEF.md`, outside the repo. A copy of the essentials is below in case that file is gone.
 - **The owner replies and reads in Egyptian Arabic.** Every message to them is in Arabic, including short status lines.
 
-## Status: 16 of 23 worlds are built
+## Status: 18 of 23 worlds are built
 
 | World | State | Where |
 |---|---|---|
@@ -24,7 +24,7 @@ Read this first when resuming the "worlds" redesign. It records what is merged, 
 | Places (pin with pulsing rings; tabs moved to the bottom) | **open** | #621 |
 | Brain, fully dark; old sphere replaced by the living `BrainMapStage` | **open** | #622 |
 | Documents, Maintenance | **open** | #623 |
-| Notifications, Achievements | WIP | branch `feat/worlds-notif` (not pushed) |
+| Notifications, Achievements | **open** | #625 |
 | Chat, Profile, Premium, Prices, Offers, Companion | not started | — |
 
 Other work that landed the same day:
@@ -93,8 +93,10 @@ Testing:
 
 ## What is left, in order
 
-1. Finish notifications/achievements in `/workspaces/zad-wnotif` (a builder was on it; check `git status` and `git log`), then push it as a PR.
-2. Merge #616, #619, #621, #622 and #623 once green (run `merge_main.sh` again after each merge).
+1. Follow-ups from #625:
+   - **Server achievements have no client entry.** The six ids granted by migration 20261116010000 are missing from `kAchievementCatalog`: first_receipt, first_transaction, streak_7, tasbih_tree, saved_1000 and zado_run_300. Each needs a Lottie file and a catalogue entry.
+   - **Notification source is a guess.** The notification's source world is guessed from keywords. To make it exact, add a `source` column to `app_notifications`.
+2. Merge #616, #619, #621, #622, #623 and #625 once green (run `merge_main.sh` again after each merge).
 3. Port #605 (Amazon) onto the worlds.
 4. Build the remaining worlds: chat, profile/settings (4 groups + 5 groups, including «الإعلانات والخصوصية»), premium, prices, offers, companion.
 5. Wire the launch moment with Zado into the app. The Flutter code is in `docs/agent/previews/launch_moment/launch_moment.dart.txt` (copy into lib/ when wiring), which is not wired and untested. The approved preview is at the bottom of the board.
