@@ -4935,7 +4935,16 @@
   },
   "tasEyebrow": "ورد كل ٣٣ · شجرة كل ٩٩",
   "tasStateLine": "{count} تسبيحة · {flowers} وردة",
-  "@tasStateLine": {"placeholders": {"count": {"type": "int"}, "flowers": {"type": "int"}}},
+  "@tasStateLine": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "flowers": {
+        "type": "int"
+      }
+    }
+  },
   "tasStateEmpty": "ابدأ أول تسبيحة والورد هيفتّح",
   "tasTabMine": "بستاني",
   "tasTabFamily": "أشجار العيلة",
@@ -4947,25 +4956,58 @@
   "tasStage5": "شجرة مثمرة",
   "tasStatLevel": "المرحلة",
   "tasStatLevelValue": "{level}/5",
-  "@tasStatLevelValue": {"placeholders": {"level": {"type": "int"}}},
+  "@tasStatLevelValue": {
+    "placeholders": {
+      "level": {
+        "type": "int"
+      }
+    }
+  },
   "tasStatTotal": "إجمالي التسبيح",
   "tasStatStreak": "السلسلة",
   "tasStatFlowers": "الورد",
   "tasStatSession": "في الجلسة دي",
   "tasNext": "{score} / {next} للمرحلة التالية",
-  "@tasNext": {"placeholders": {"score": {"type": "int"}, "next": {"type": "int"}}},
+  "@tasNext": {
+    "placeholders": {
+      "score": {
+        "type": "int"
+      },
+      "next": {
+        "type": "int"
+      }
+    }
+  },
   "tasComplete": "اكتملت!",
   "tasStreakDays": "{days} يوم ورا بعض",
-  "@tasStreakDays": {"placeholders": {"days": {"type": "int"}}},
+  "@tasStreakDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
   "tasTapLabel": "سبّح",
   "tasReset": "تصفير",
   "tasCycle": "الدورة",
   "tasLevelUp": "مبروك! شجرتك كبرت!",
   "tasBloom": "وردة جديدة فتّحت!",
   "tasSeedsGranted": "+{seeds} بذور",
-  "@tasSeedsGranted": {"placeholders": {"seeds": {"type": "int"}}},
+  "@tasSeedsGranted": {
+    "placeholders": {
+      "seeds": {
+        "type": "int"
+      }
+    }
+  },
   "tasMyTrees": "أشجاري ({count})",
-  "@tasMyTrees": {"placeholders": {"count": {"type": "int"}}},
+  "@tasMyTrees": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "tasNewTree": "شجرة جديدة",
   "tasNoTreeTitle": "لسه مفيش شجرة",
   "tasNoTreeMsg": "ازرع أول شجرة وابدأ التسبيح.",
@@ -4981,7 +5023,16 @@
   "tasNoTreesTitle": "لا توجد أشجار بعد",
   "tasNoTreesMsg": "أول ما حد من العيلة يسبّح، شجرته هتظهر هنا.",
   "tasMemberTrees": "{trees} أشجار | {mature} مثمرة",
-  "@tasMemberTrees": {"placeholders": {"trees": {"type": "int"}, "mature": {"type": "int"}}},
+  "@tasMemberTrees": {
+    "placeholders": {
+      "trees": {
+        "type": "int"
+      },
+      "mature": {
+        "type": "int"
+      }
+    }
+  },
   "tasUnit": "تسبيحة",
   "tasChallengesTitle": "التحديات العائلية",
   "tasChallengesTagline": "تحدَ أفراد عائلتك في التسبيحة!",
@@ -4994,5 +5045,242 @@
   "tasChallengeDescLabel": "الوصف (اختياري)",
   "tasChallengeTargetLabel": "الهدف (عدد التسبيحات)",
   "tasNightSky": "ليل البستان",
-  "tasDaySky": "نهار البستان"
+  "tasDaySky": "نهار البستان",
+  "txWorldEyebrow": "{count, plural, =0{لسه مفيش معاملات} =1{معاملة واحدة} =2{معاملتين} few{{count} معاملات} other{{count} معاملة}}",
+  "@txWorldEyebrow": {
+    "description": "Transactions world: the count above the title.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "txWorldState": "{count, plural, =0{لسه مفيش حاجة اتسجلت لوحدها النهارده} =1{واحدة اتسجلت لوحدها النهارده} =2{اتنين اتسجلوا لوحدهم النهارده} few{{count} اتسجلوا لوحدهم النهارده} other{{count} اتسجلوا لوحدهم النهارده}}",
+  "@txWorldState": {
+    "description": "Transactions world: the state line — how many rows the app wrote by itself today (bank message, receipt, voice, statement).",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "txSourceBank": "رسالة من البنك",
+  "@txSourceBank": {
+    "description": "Transaction source: a bank message, bank unknown."
+  },
+  "txSourceBankNamed": "{bank} · رسالة",
+  "@txSourceBankNamed": {
+    "description": "Transaction source: a message from a named bank.",
+    "placeholders": {
+      "bank": {
+        "type": "String"
+      }
+    }
+  },
+  "txSourceReceipt": "فاتورة اتصورت",
+  "@txSourceReceipt": {
+    "description": "Transaction source: a receipt photo."
+  },
+  "txSourceVoice": "قولتها بصوتك",
+  "@txSourceVoice": {
+    "description": "Transaction source: voice."
+  },
+  "txSourceStatement": "من كشف الحساب",
+  "@txSourceStatement": {
+    "description": "Transaction source: an imported statement."
+  },
+  "txSourcePharmacy": "تعبئة الصيدلية",
+  "@txSourcePharmacy": {
+    "description": "Transaction source: a pharmacy restock the app logged."
+  },
+  "txSourceManual": "كتبتها بإيدك",
+  "@txSourceManual": {
+    "description": "Transaction source: entered by hand."
+  },
+  "budgetWorldUntil": "لحد يوم {day}",
+  "@budgetWorldUntil": {
+    "description": "Budget world: the eyebrow — the day the cycle ends (payday).",
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "budgetWorldDaysLeft": "{count, plural, =0{آخر يوم} =1{فاضل يوم واحد} =2{فاضل يومين} few{فاضل {count} أيام} other{فاضل {count} يوم}}",
+  "@budgetWorldDaysLeft": {
+    "description": "Budget world: the eyebrow when the cycle end date is unknown.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "budgetWorldState": "متاح {amount} · {perDay} في اليوم",
+  "@budgetWorldState": {
+    "description": "Budget world: the state line — the real available amount and what it allows per day until payday.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "perDay": {
+        "type": "String"
+      }
+    }
+  },
+  "budgetWorldAvailable": "متاح {amount}",
+  "@budgetWorldAvailable": {
+    "description": "Budget world: the state line when nothing is left per day.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "statementWorldStateLess": "صرفت {pct}٪ أقل من نفس الفترة الشهر اللي فات",
+  "@statementWorldStateLess": {
+    "description": "Statement world: the state line when this month is running under last month at the same day.",
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
+  "statementWorldStateMore": "صرفت {pct}٪ أكتر من نفس الفترة الشهر اللي فات",
+  "@statementWorldStateMore": {
+    "description": "Statement world: the state line when this month is running over last month at the same day.",
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
+  "statementWorldStateSame": "صرفك زي الشهر اللي فات",
+  "@statementWorldStateSame": {
+    "description": "Statement world: the state line when the two months are level."
+  },
+  "statementWorldStateNone": "استورد كشفك وشوف فلوسك رايحة فين",
+  "@statementWorldStateNone": {
+    "description": "Statement world: the state line when there is no earlier month to compare with."
+  },
+  "statementWorldBreakdownTitle": "فلوسك داخلة منين وخارجة فين",
+  "@statementWorldBreakdownTitle": {
+    "description": "Statement world: the title of the money in/out card."
+  },
+  "statementWorldIn": "الدخل",
+  "@statementWorldIn": {
+    "description": "Statement world: the income bar."
+  },
+  "statementWorldEmptyTitle": "مفيش حركات الشهر ده لسه",
+  "@statementWorldEmptyTitle": {
+    "description": "Statement world: empty breakdown title."
+  },
+  "statementWorldEmptyBody": "استورد كشفك أو سجّل معاملة، وهتلاقي هنا الدخل والمصروف حسب الفئة.",
+  "@statementWorldEmptyBody": {
+    "description": "Statement world: empty breakdown guidance."
+  },
+  "statementPickBody": "اختار كشف حسابك: PDF من تطبيق البنك، أو صورة، أو ملف CSV. زاد بيقرا الحركات ويراجعها على رصيد الكشف، ومفيش حاجة بتتسجل غير بعد ما تراجعها.",
+  "@statementPickBody": {
+    "description": "Statement import: pick step guidance."
+  },
+  "statementReading": "بقرا الكشف… الكشف الطويل بياخد دقيقة",
+  "@statementReading": {
+    "description": "Statement import: shown while the server reads."
+  },
+  "statementPickButton": "اختيار الكشف",
+  "@statementPickButton": {
+    "description": "Statement import: pick button."
+  },
+  "statementMapIntro": "حدد أي عمود من الملف يمثل كل بيانة — الملف مختلف من بنك لبنك",
+  "@statementMapIntro": {
+    "description": "Statement import: column mapping intro."
+  },
+  "statementMapDate": "عمود التاريخ",
+  "@statementMapDate": {
+    "description": "Statement import: date column picker."
+  },
+  "statementMapTitle": "عمود الوصف/العنوان",
+  "@statementMapTitle": {
+    "description": "Statement import: description column picker."
+  },
+  "statementMapAmount": "عمود المبلغ",
+  "@statementMapAmount": {
+    "description": "Statement import: amount column picker."
+  },
+  "statementMapCategory": "عمود التصنيف (اختياري)",
+  "@statementMapCategory": {
+    "description": "Statement import: category column picker."
+  },
+  "statementMapInvert": "اعكس إشارة المبلغ (لو السالب هنا معناه دخل مش مصروف)",
+  "@statementMapInvert": {
+    "description": "Statement import: sign switch."
+  },
+  "statementMapContinue": "متابعة للمراجعة",
+  "@statementMapContinue": {
+    "description": "Statement import: go to review."
+  },
+  "statementMapNone": "بدون",
+  "@statementMapNone": {
+    "description": "Statement import: optional column left empty."
+  },
+  "statementMapColumnN": "عمود {n}",
+  "@statementMapColumnN": {
+    "description": "Statement import: a header-less column.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "statementPreviewCount": "{rows} صف — {checked} محدد للاستيراد",
+  "@statementPreviewCount": {
+    "description": "Statement import: review count.",
+    "placeholders": {
+      "rows": {
+        "type": "int"
+      },
+      "checked": {
+        "type": "int"
+      }
+    }
+  },
+  "statementPreviewEmptyTitle": "ما لقيتش أي معاملة في الملف",
+  "@statementPreviewEmptyTitle": {
+    "description": "Statement import: empty review title."
+  },
+  "statementPreviewEmptyBody": "الملف اتقرا لكن مفيهوش صفوف أقدر أستوردها — اتأكد إنه كشف حساب وإن صيغته CSV أو PDF مقروء.",
+  "@statementPreviewEmptyBody": {
+    "description": "Statement import: empty review guidance."
+  },
+  "statementRowUnreadable": "تعذّرت قراءة التاريخ أو المبلغ في هذا الصف",
+  "@statementRowUnreadable": {
+    "description": "Statement import: row error."
+  },
+  "statementRowBalance": "الرصيد في الكشف مش متطابق مع الصف ده — راجع المبلغ",
+  "@statementRowBalance": {
+    "description": "Statement import: row balance mismatch."
+  },
+  "statementCheckBalanced": "الأرقام متطابقة مع رصيد الكشف",
+  "@statementCheckBalanced": {
+    "description": "Statement import: balance check ok."
+  },
+  "statementCheckMismatch": "في أرقام مش متطابقة مع رصيد الكشف — الصفوف دي مش متعلّمة، راجعها",
+  "@statementCheckMismatch": {
+    "description": "Statement import: balance check mismatch."
+  },
+  "statementCheckUnknown": "الكشف مفيهوش رصيد أراجع عليه — راجع كل صف قبل الاستيراد",
+  "@statementCheckUnknown": {
+    "description": "Statement import: no balance to check."
+  },
+  "statementDropped": "{text}. وفي {n} صف ماقدرتش أقراه.",
+  "@statementDropped": {
+    "description": "Statement import: banner with unread rows.",
+    "placeholders": {
+      "text": {
+        "type": "String"
+      },
+      "n": {
+        "type": "int"
+      }
+    }
+  }
 }
