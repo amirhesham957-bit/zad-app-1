@@ -81,6 +81,7 @@ class ZadWorldScaffold extends ConsumerStatefulWidget {
     this.bottomInset = ZadSpacing.xl,
     this.dockHeight = 0,
     this.tone = ZadWorldTone.light,
+    this.scrollKey,
     super.key,
   }) : assert(
          (scene == null) != (stage == null),
@@ -128,6 +129,9 @@ class ZadWorldScaffold extends ConsumerStatefulWidget {
   /// Light (default) or the dark night variant.
   final ZadWorldTone tone;
 
+  /// Keeps the scroll offset when the shell rebuilds the page (a tab).
+  final Key? scrollKey;
+
   /// A strip at the bottom the scroll never enters: an [overlay] button
   /// docked there (the thumb zone) cannot cover a row.
   final double dockHeight;
@@ -168,6 +172,7 @@ class _ZadWorldScaffoldState extends ConsumerState<ZadWorldScaffold>
     final back = widget.showBack ?? (ModalRoute.of(context)?.canPop ?? false);
     final look = ref.watch(companionLookProvider) ?? const CompanionLook();
     Widget scroll = CustomScrollView(
+      key: widget.scrollKey,
       slivers: <Widget>[
         SliverToBoxAdapter(child: _header(context, back, look)),
         ...widget.slivers,

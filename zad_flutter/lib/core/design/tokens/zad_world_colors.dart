@@ -6,6 +6,9 @@ import 'package:flutter/painting.dart';
 
 /// The world colours.
 abstract final class ZadWorldColors {
+  /// الرئيسية.
+  static const Color home = Color(0xFF1B4332);
+
   /// عقل زاد.
   static const Color brain = Color(0xFF0F9B76);
 
@@ -74,6 +77,9 @@ abstract final class ZadWorldColors {
 
   /// إنجازاتي.
   static const Color achievements = Color(0xFFF5B93A);
+
+  /// العيلة.
+  static const Color family = Color(0xFFB2358F);
 
   /// A world's backdrop top: its colour at a tenth over white.
   static Color tint(Color world) =>

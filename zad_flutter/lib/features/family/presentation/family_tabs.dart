@@ -15,6 +15,7 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/design/tokens/zad_world_colors.dart';
 import 'package:zad/core/money/money.dart';
 import 'package:zad/features/family/presentation/family_dialogs.dart';
 import 'package:zad/features/family/presentation/family_follow.dart';
@@ -28,12 +29,12 @@ const EdgeInsets _listPadding = EdgeInsets.fromLTRB(
   ZadSpacing.gutter,
   ZadSpacing.lg,
   ZadSpacing.gutter,
-  96,
+  ZadSpacing.lg,
 );
 
 Widget _heading(IconData icon, String title, {Widget? trailing}) => Row(
   children: <Widget>[
-    Icon(icon, size: 20, color: ZadColors.green700),
+    Icon(icon, size: 20, color: ZadWorldColors.family),
     const SizedBox(width: ZadSpacing.sm),
     Expanded(child: Text(title, style: ZadType.titleLarge)),
     ?trailing,
@@ -58,7 +59,7 @@ Widget _avatar(FamilyMember m, {double size = 56}) => Container(
       begin: Alignment.topCenter,
       end: Alignment.bottomCenter,
       colors: m.role == FamilyRole.admin
-          ? const <Color>[ZadColors.green700, ZadColors.green600]
+          ? const <Color>[ZadWorldColors.family, Color(0xFFD46AB3)]
           : <Color>[ZadColors.mustardOchre, ZadColors.mustardLight],
     ),
   ),
@@ -118,17 +119,20 @@ class _FamilyTasksTabState extends ConsumerState<FamilyTasksTab> {
     };
     final anyVisible = byMember.values.any((list) => list.any(_keep));
 
-    return RefreshIndicator(
-      onRefresh: controller.refresh,
-      child: ListView(
-        padding: _listPadding,
-        physics: const AlwaysScrollableScrollPhysics(),
+    return SliverPadding(
+      padding: _listPadding,
+      sliver: SliverList.list(
         children: <Widget>[
           _heading(
             ZadIcons.chore,
             'المهام العائلية',
             trailing: widget.isAdmin && widget.showFinancials
                 ? FilledButton.tonalIcon(
+                    // The theme's buttons are full width; in a row that is
+                    // an unbounded width.
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size(0, 44),
+                    ),
                     onPressed: () => unawaited(
                       showAddChoreDialog(context, ref, widget.family.members),
                     ),
@@ -174,14 +178,14 @@ class _FamilyTasksTabState extends ConsumerState<FamilyTasksTab> {
                   children: <Widget>[
                     CircleAvatar(
                       radius: 16,
-                      backgroundColor: ZadColors.green700.withValues(
+                      backgroundColor: ZadWorldColors.family.withValues(
                         alpha: 0.15,
                       ),
                       child: Text(
                         (member.alias.characters.firstOrNull ?? '?')
                             .toUpperCase(),
                         style: ZadType.labelLarge.copyWith(
-                          color: ZadColors.green700,
+                          color: ZadWorldColors.family,
                         ),
                       ),
                     ),
@@ -203,7 +207,7 @@ class _FamilyTasksTabState extends ConsumerState<FamilyTasksTab> {
                   padding: const EdgeInsets.symmetric(vertical: 4),
                   child: ZadCard(
                     color: chore.isCompleted
-                        ? ZadColors.green700.withValues(alpha: 0.08)
+                        ? ZadWorldColors.family.withValues(alpha: 0.08)
                         : ZadColors.surface,
                     padding: const EdgeInsets.all(14),
                     onTap: () => unawaited(controller.toggleChore(chore)),
@@ -213,7 +217,7 @@ class _FamilyTasksTabState extends ConsumerState<FamilyTasksTab> {
                           chore.isCompleted ? ZadIcons.selected : ZadIcons.open,
                           size: 24,
                           color: chore.isCompleted
-                              ? ZadColors.green700
+                              ? ZadWorldColors.family
                               : ZadColors.outline,
                         ),
                         const SizedBox(width: 14),
@@ -249,7 +253,7 @@ class _FamilyTasksTabState extends ConsumerState<FamilyTasksTab> {
                                       decoration: BoxDecoration(
                                         color:
                                             (chore.isCompleted
-                                                    ? ZadColors.green700
+                                                    ? ZadWorldColors.family
                                                     : ZadColors.mustardOchre)
                                                 .withValues(alpha: 0.12),
                                         borderRadius: BorderRadius.circular(6),
@@ -262,7 +266,7 @@ class _FamilyTasksTabState extends ConsumerState<FamilyTasksTab> {
                                         style: ZadType.labelSmall.copyWith(
                                           fontWeight: FontWeight.w700,
                                           color: chore.isCompleted
-                                              ? ZadColors.green700
+                                              ? ZadWorldColors.family
                                               : ZadColors.mustardOchre,
                                         ),
                                       ),
@@ -320,11 +324,9 @@ class FamilyMembersTab extends ConsumerWidget {
     final life = ref.watch(familyLifeControllerProvider);
     final currency = familyCurrency(ref);
     final sole = family.members.length <= 1;
-    return RefreshIndicator(
-      onRefresh: ref.read(familyControllerProvider.notifier).refresh,
-      child: ListView(
-        padding: _listPadding,
-        physics: const AlwaysScrollableScrollPhysics(),
+    return SliverPadding(
+      padding: _listPadding,
+      sliver: SliverList.list(
         children: <Widget>[
           const Text('أفراد العائلة', style: ZadType.titleLarge),
           _subtitle('اضغط على أي عضو لتفاصيل إنجازاته'),
@@ -516,7 +518,7 @@ class _MemberCard extends StatelessWidget {
                       child: LinearProgressIndicator(
                         value: v,
                         minHeight: 6,
-                        color: ZadColors.green700,
+                        color: ZadWorldColors.family,
                         backgroundColor: ZadColors.ink.withValues(alpha: 0.1),
                       ),
                     ),
@@ -526,7 +528,7 @@ class _MemberCard extends StatelessWidget {
                 Text(
                   '${(progress * 100).round()}%',
                   style: ZadType.labelSmall.copyWith(
-                    color: ZadColors.green700,
+                    color: ZadWorldColors.family,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -547,7 +549,7 @@ class _RoleBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final admin = role == FamilyRole.admin;
-    final color = admin ? ZadColors.green700 : ZadColors.mustardOchre;
+    final color = admin ? ZadWorldColors.family : ZadColors.mustardOchre;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: ShapeDecoration(
@@ -616,6 +618,7 @@ Future<void> showMemberSheet(
   builder: (_) => _MemberSheet(
     memberId: member.id,
     viewerIsAdmin: view.isAdmin,
+    viewerIsAdult: view.family?.me(view.userId)?.role != FamilyRole.child,
     viewerUserId: view.userId,
     showFinancials: showFinancials,
   ),
@@ -625,12 +628,16 @@ class _MemberSheet extends ConsumerWidget {
   const new({
     required this.memberId,
     required this.viewerIsAdmin,
+    required this.viewerIsAdult,
     required this.viewerUserId,
     required this.showFinancials,
   });
 
   final String memberId;
   final bool viewerIsAdmin;
+
+  /// Any adult member (not a child) may ask to follow someone.
+  final bool viewerIsAdult;
   final String viewerUserId;
   final bool showFinancials;
 
@@ -699,14 +706,19 @@ class _MemberSheet extends ConsumerWidget {
               _StatItem(label: 'الأشجار', value: '${trees.length}'),
             ],
           ),
-          if (viewerIsAdmin && !isMe) ...<Widget>[
+          if (viewerIsAdult && !isMe) ...<Widget>[
             const SizedBox(height: ZadSpacing.xl),
-            MemberFollowSection(ownerId: member.userId, currency: currency),
+            MemberFollowSection(
+              ownerId: member.userId,
+              currency: currency,
+              followsAutomatically:
+                  viewerIsAdmin && member.role == FamilyRole.child,
+            ),
           ],
           const SizedBox(height: ZadSpacing.xl),
           _SheetSection(
             icon: ZadIcons.selected,
-            color: ZadColors.green700,
+            color: ZadWorldColors.family,
             title: 'المهام المنجزة (${done.length})',
             empty: 'لا توجد مهام منجزة بعد',
             chores: done,
@@ -759,7 +771,7 @@ class _MemberSheet extends ConsumerWidget {
                       Text(
                         '${trees[i].score}',
                         style: ZadType.labelLarge.copyWith(
-                          color: ZadColors.green700,
+                          color: ZadWorldColors.family,
                         ),
                       ),
                     ],
@@ -1004,7 +1016,7 @@ class SpendLimitBar extends StatelessWidget {
         ? ZadColors.terracottaRust
         : ratio >= 0.8
         ? ZadColors.mustardOchre
-        : ZadColors.green700;
+        : ZadWorldColors.family;
     return Row(
       children: <Widget>[
         Text(label, style: muted),
@@ -1044,11 +1056,9 @@ class FamilyGroceriesTab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final view = ref.watch(familyLifeControllerProvider);
     final controller = ref.read(familyLifeControllerProvider.notifier);
-    return RefreshIndicator(
-      onRefresh: controller.refresh,
-      child: ListView(
-        padding: _listPadding,
-        physics: const AlwaysScrollableScrollPhysics(),
+    return SliverPadding(
+      padding: _listPadding,
+      sliver: SliverList.list(
         children: <Widget>[
           _heading(
             ZadIcons.shopping,
@@ -1056,7 +1066,7 @@ class FamilyGroceriesTab extends ConsumerWidget {
             trailing: IconButton(
               tooltip: 'نزّلها في التسوق',
               onPressed: () => unawaited(showQuickGroceryDialog(context, ref)),
-              icon: const Icon(ZadIcons.add, color: ZadColors.green700),
+              icon: const Icon(ZadIcons.add, color: ZadWorldColors.family),
             ),
           ),
           _subtitle(
@@ -1124,17 +1134,14 @@ class FamilyKidsTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final view = ref.watch(familyLifeControllerProvider);
-    final controller = ref.read(familyLifeControllerProvider.notifier);
     final currency = familyCurrency(ref);
     final now = ref.read(nowProvider)();
     final children = family.members
         .where((m) => m.role == FamilyRole.child)
         .toList();
-    return RefreshIndicator(
-      onRefresh: controller.refresh,
-      child: ListView(
-        padding: _listPadding,
-        physics: const AlwaysScrollableScrollPhysics(),
+    return SliverPadding(
+      padding: _listPadding,
+      sliver: SliverList.list(
         children: <Widget>[
           _heading(ZadIcons.wallet, 'مصاريف الأبناء'),
           _subtitle('نظرة عامة على أرصدة وطلبات الأبناء'),
@@ -1323,12 +1330,14 @@ class _KidCard extends ConsumerWidget {
                   vertical: ZadSpacing.xs,
                 ),
                 decoration: BoxDecoration(
-                  color: ZadColors.green700.withValues(alpha: 0.1),
+                  color: ZadWorldColors.family.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
                   '$done/${chores.length} مهام',
-                  style: ZadType.labelSmall.copyWith(color: ZadColors.green700),
+                  style: ZadType.labelSmall.copyWith(
+                    color: ZadWorldColors.family,
+                  ),
                 ),
               ),
             ],
@@ -1460,11 +1469,9 @@ class FamilyGoalsTab extends ConsumerWidget {
       },
     );
 
-    return RefreshIndicator(
-      onRefresh: controller.refresh,
-      child: ListView(
-        padding: _listPadding,
-        physics: const AlwaysScrollableScrollPhysics(),
+    return SliverPadding(
+      padding: _listPadding,
+      sliver: SliverList.list(
         children: <Widget>[
           _heading(ZadIcons.coins, 'الميزانية والمكافآت'),
           const SizedBox(height: ZadSpacing.lg),
@@ -1474,7 +1481,11 @@ class FamilyGoalsTab extends ConsumerWidget {
               children: <Widget>[
                 const Row(
                   children: <Widget>[
-                    Icon(ZadIcons.savings, size: 20, color: ZadColors.green700),
+                    Icon(
+                      ZadIcons.savings,
+                      size: 20,
+                      color: ZadWorldColors.family,
+                    ),
                     SizedBox(width: 6),
                     Text('هدف الادخار العائلي', style: ZadType.titleSmall),
                   ],
@@ -1485,7 +1496,7 @@ class FamilyGoalsTab extends ConsumerWidget {
                     '${familyMoney(goal.currentAmount, currency)} / '
                     '${familyMoney(goal.targetAmount, currency)}',
                     style: ZadType.titleSmall.copyWith(
-                      color: ZadColors.green700,
+                      color: ZadWorldColors.family,
                     ),
                   ),
                   const SizedBox(height: 6),
@@ -1498,7 +1509,7 @@ class FamilyGoalsTab extends ConsumerWidget {
                       child: LinearProgressIndicator(
                         value: v,
                         minHeight: 10,
-                        color: ZadColors.green700,
+                        color: ZadWorldColors.family,
                         backgroundColor: ZadColors.ink.withValues(alpha: 0.1),
                       ),
                     ),
@@ -1584,7 +1595,7 @@ class FamilyGoalsTab extends ConsumerWidget {
                                 familyMoney(kid.balance, currency),
                                 style: ZadType.bodyMedium.copyWith(
                                   fontWeight: FontWeight.w700,
-                                  color: ZadColors.green700,
+                                  color: ZadWorldColors.family,
                                 ),
                               ),
                             ],
@@ -1613,7 +1624,7 @@ class FamilyGoalsTab extends ConsumerWidget {
                                     gradient: const LinearGradient(
                                       colors: <Color>[
                                         ZadColors.green600,
-                                        ZadColors.green700,
+                                        ZadWorldColors.family,
                                       ],
                                     ),
                                   ),
@@ -1634,7 +1645,7 @@ class FamilyGoalsTab extends ConsumerWidget {
                   const Icon(
                     ZadIcons.coins,
                     size: 32,
-                    color: ZadColors.green700,
+                    color: ZadWorldColors.family,
                   ),
                   const SizedBox(width: ZadSpacing.lg),
                   Column(
@@ -1649,7 +1660,7 @@ class FamilyGoalsTab extends ConsumerWidget {
                       Text(
                         familyMoney(paid, currency),
                         style: ZadType.titleLarge.copyWith(
-                          color: ZadColors.green700,
+                          color: ZadWorldColors.family,
                         ),
                       ),
                     ],

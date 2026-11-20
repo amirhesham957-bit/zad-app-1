@@ -1,7 +1,8 @@
-/// «استوديو الرفيق»: the companion big on its background, its level and
-/// stage, the day's three missions, the road to its next stage, the
-/// wardrobe (characters, outfits, backgrounds — wear, or buy with seeds), and
-/// the invite code.
+/// «رفيق زاد» as a world: the garden scene with the posed companion, its
+/// level, seeds and streak, the day's three tasks, the weekly challenge, the
+/// road to its next stage, the wardrobe (characters, outfits, backgrounds —
+/// wear, or buy with seeds or on Google Play), the seed shop and the invite
+/// code. «ربّت على زادو» is docked in the thumb zone.
 ///
 /// The server owns every number and every unlock; the screen re-reads it on
 /// open and after each action. In kids mode nothing is for sale: a child can
@@ -20,6 +21,8 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_motion.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
+import 'package:zad/features/companion/presentation/companion_world_scene.dart';
 import 'package:zad/shared/billing/data/play_billing.dart';
 import 'package:zad/shared/companion/application/companion_controller.dart';
 import 'package:zad/shared/companion/domain/companion_catalog.dart';
@@ -29,6 +32,11 @@ import 'package:zad/shared/kids/application/kids_mode_controller.dart';
 import 'package:zad/shared/orb/application/pet_sound.dart';
 import 'package:zad/shared/orb/domain/companion_state.dart';
 import 'package:zad/shared/orb/presentation/companion_orb.dart';
+import 'package:zad/shared/worlds/art/art.dart';
+import 'package:zad/shared/worlds/world_card.dart';
+import 'package:zad/shared/worlds/world_row.dart';
+import 'package:zad/shared/worlds/world_scaffold.dart';
+import 'package:zad/shared/worlds/zad_world.dart';
 
 /// Opens the studio.
 Future<void> showCompanionStudio(BuildContext context) => Navigator.of(context)
@@ -38,7 +46,7 @@ Future<void> showCompanionStudio(BuildContext context) => Navigator.of(context)
 
 /// The invite message.
 String companionInviteText(String code) =>
-    '🌱 جرّب زاد — بيرتب لك فلوس البيت ومعاك رفيق بيكبر معاك.\n\n'
+    'جرّب زاد — بيرتب لك فلوس البيت ومعاك رفيق بيكبر معاك.\n\n'
     'لما تسجّل اكتب كود صاحبك: $code\n'
     'وهتاخد ١٠٠ بذرة هدية أول ما تسجل أول مصروف.';
 
@@ -55,7 +63,6 @@ class CompanionStudioScreen extends ConsumerStatefulWidget {
 class _CompanionStudioScreenState extends ConsumerState<CompanionStudioScreen> {
   OfferKind _tab = OfferKind.persona;
   CompanionState _mood = CompanionState.happy;
-  int _glow = 0;
   String? _busy;
   Timer? _moodReset;
   StreamSubscription<BillingResult>? _billed;
@@ -76,6 +83,7 @@ class _CompanionStudioScreenState extends ConsumerState<CompanionStudioScreen> {
   /// Google Play: a character, an outfit, a background, a seed pack, or every
   /// character at once. The server grants it once Google confirms.
   Future<void> _pay(String product) async {
+    final l = context.l10n;
     final billing = ref.read(playBillingProvider);
     // Purchases finished from an earlier session are the shell's to announce.
     _billed ??= billing.results.where((r) => !r.earlier).listen((r) {
@@ -92,21 +100,18 @@ class _CompanionStudioScreenState extends ConsumerState<CompanionStudioScreen> {
       case BillingOutcome.started:
         return;
       case BillingOutcome.unavailable:
-        _say('Google Play مش متاح على الموبايل ده.');
+        _say(l.compPlayUnavailable);
       case BillingOutcome.notOnPlay:
-        _say('ده لسه مش متاح على Google Play — جرّب بالبذور.');
+        _say(l.compPlayNotOnPlay);
       case BillingOutcome.failed:
-        _say('الشراء ماتمّش — جرّب تاني.');
+        _say(l.compPlayFailed);
     }
   }
 
-  void _pet(CompanionStatus s) {
+  void _pet() {
     playPetSound(PetSound.cuteSqueak);
     ref.read(companionProvider.notifier).wakeUp();
-    setState(() {
-      _mood = CompanionState.celebrating;
-      _glow++;
-    });
+    setState(() => _mood = CompanionState.celebrating);
     _moodReset?.cancel();
     _moodReset = Timer(const Duration(milliseconds: 1600), () {
       if (mounted) setState(() => _mood = CompanionState.happy);
@@ -126,7 +131,6 @@ class _CompanionStudioScreenState extends ConsumerState<CompanionStudioScreen> {
     setState(() => _busy = null);
     if (r.ok) {
       playPetSound(PetSound.happyChirp);
-      setState(() => _glow++);
     } else {
       _say(_reason(r.reason));
     }
@@ -138,19 +142,20 @@ class _CompanionStudioScreenState extends ConsumerState<CompanionStudioScreen> {
   }
 
   Future<void> _buy(CompanionOffer o) async {
+    final l = context.l10n;
     final ok = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('تاخد ${o.name}؟'),
-        content: Text('هيتخصم ${o.seedPrice} 🌱 من بذورك، ويفضل معاك على طول.'),
+        title: Text(l.compBuyTitle(o.name)),
+        content: Text(l.compBuyBody(o.seedPrice ?? 0)),
         actions: <Widget>[
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('مش دلوقتي'),
+            child: Text(l.compBuyNo),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('خده'),
+            child: Text(l.compBuyYes),
           ),
         ],
       ),
@@ -162,23 +167,24 @@ class _CompanionStudioScreenState extends ConsumerState<CompanionStudioScreen> {
     setState(() => _busy = null);
     if (r.ok) {
       playPetSound(PetSound.celebrationTrill);
-      _say('مبروك! ${o.name} بقى بتاعك 🎉');
+      _say(l.compBought(o.name));
       await _wear(o);
     } else {
       _say(
         r.reason == 'not_enough'
-            ? 'ناقصك ${r.missing ?? ''} 🌱 — كمّل مهام اليوم وهتوصل.'
+            ? l.compMissing('${r.missing ?? ''}')
             : _reason(r.reason),
       );
     }
   }
 
   Future<void> _enterCode() async {
+    final l = context.l10n;
     final code = await showFieldDialog<String>(
       context: context,
       initial: const <String>[''],
       builder: (context, fields) => AlertDialog(
-        title: const Text('كود صاحبك'),
+        title: Text(l.compCodeTitle),
         content: TextField(
           controller: fields.first,
           autofocus: true,
@@ -188,11 +194,11 @@ class _CompanionStudioScreenState extends ConsumerState<CompanionStudioScreen> {
         actions: <Widget>[
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('إلغاء'),
+            child: Text(l.compCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, fields.first.text),
-            child: const Text('تأكيد'),
+            child: Text(l.compConfirm),
           ),
         ],
       ),
@@ -200,322 +206,293 @@ class _CompanionStudioScreenState extends ConsumerState<CompanionStudioScreen> {
     if (code == null || code.trim().isEmpty || !mounted) return;
     final r = await ref.read(companionProvider.notifier).claimInvite(code);
     if (!mounted) return;
-    _say(
-      r.ok
-          ? 'تمام! سجّل أول مصروف وانت وصاحبك هتاخدوا بذور 🌱'
-          : _reason(r.reason),
-    );
+    _say(r.ok ? l.compCodeOk : _reason(r.reason));
   }
 
-  static String _reason(String? r) => switch (r) {
-    'not_owned' => 'لسه مش معاك — افتحه الأول.',
-    'owned' => 'ده معاك بالفعل.',
-    'out_of_season' => 'ده بيظهر في موسمه بس.',
-    'not_for_seeds' => 'ده مش للبيع بالبذور.',
-    'wrong_code' => 'الكود ده مش مظبوط، راجعه تاني.',
-    'already_claimed' => 'انت كتبت كود صاحب قبل كده.',
-    'too_late' => 'كود الصاحب بيتكتب في أول ١٤ يوم بس.',
-    'too_many' => 'محاولات كتير — جرّب بعد ساعة.',
-    _ => 'مفيش اتصال دلوقتي — جرّب تاني.',
-  };
+  String _reason(String? r) {
+    final l = context.l10n;
+    return switch (r) {
+      'not_owned' => l.compReasonNotOwned,
+      'owned' => l.compReasonOwned,
+      'out_of_season' => l.compReasonSeason,
+      'not_for_seeds' => l.compReasonNotForSeeds,
+      'wrong_code' => l.compReasonWrongCode,
+      'already_claimed' => l.compReasonClaimed,
+      'too_late' => l.compReasonTooLate,
+      'too_many' => l.compReasonTooMany,
+      _ => l.compReasonOffline,
+    };
+  }
+
+  String _stateLine(CompanionStatus s, CompanionLook look) {
+    final l = context.l10n;
+    if (look.asleep) return l.compStateAsleep(look.persona.name);
+    final left = 3 - s.missions.done;
+    return left > 0
+        ? l.compStateMissions(left)
+        : l.compStateAllDone(look.persona.name);
+  }
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     final async = ref.watch(companionProvider);
     final s = async.value;
-    final look = ref.watch(companionLookProvider);
+    final look = ref.watch(companionLookProvider) ?? s?.look;
     final kids = ref.watch(kidsModeActiveProvider);
-    return Scaffold(
-      backgroundColor: ZadColors.surfaceVariant,
-      appBar: AppBar(title: const Text('استوديو الرفيق')),
-      body: s == null
-          ? (async.isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : ZadEmptyState(
-                    icon: Icons.pets_rounded,
-                    title: 'الرفيق مش قادر يوصل',
-                    message: 'اتأكد إنك مسجل دخول وفيه نت، وبعدين ارجع هنا.',
-                    action: TextButton(
-                      onPressed: () => ref.invalidate(companionProvider),
-                      child: const Text('جرّب تاني'),
-                    ),
-                  ))
-          : RefreshIndicator(
-              onRefresh: () => ref.read(companionProvider.notifier).refresh(),
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(
-                  ZadSpacing.lg,
-                  ZadSpacing.md,
-                  ZadSpacing.lg,
-                  ZadSpacing.xxl,
+    final awake = look != null && !look.asleep;
+
+    final Widget body;
+    if (s == null) {
+      body = async.isLoading
+          ? const Padding(
+              padding: EdgeInsets.all(ZadSpacing.xl),
+              child: Center(child: CircularProgressIndicator()),
+            )
+          : ZadEmptyState(
+              icon: Icons.pets_rounded,
+              title: l.compUnreachableTitle,
+              message: l.compUnreachableMsg,
+              action: TextButton(
+                onPressed: () => ref.invalidate(companionProvider),
+                child: Text(l.compRetry),
+              ),
+            );
+    } else {
+      body = _Body(
+        status: s,
+        look: look ?? s.look,
+        tab: _tab,
+        busy: _busy,
+        kids: kids,
+        season: ref.watch(companionSeasonProvider),
+        onTab: (k) => setState(() => _tab = k),
+        onWear: _wear,
+        onBuy: _buy,
+        onPay: _pay,
+        onTakeOff: _takeOff,
+        onEnterCode: _enterCode,
+      );
+    }
+
+    final name = look?.persona.name ?? CompanionPersona.zado.name;
+    final dock = s == null
+        ? null
+        : PositionedDirectional(
+            start: ZadSpacing.lg,
+            end: ZadSpacing.lg,
+            bottom: ZadSpacing.md,
+            child: SafeArea(
+              child: FilledButton.icon(
+                key: const ValueKey<String>('comp-pet'),
+                onPressed: _pet,
+                style: FilledButton.styleFrom(
+                  backgroundColor: ZadWorld.comp.color,
+                  foregroundColor: ZadColors.ink,
+                  minimumSize: const Size.fromHeight(52),
+                  elevation: 4,
                 ),
-                children: <Widget>[
-                  _Hero(
-                    status: s,
-                    look: look ?? s.look,
-                    mood: _mood,
-                    glow: _glow,
-                    onPet: () => _pet(s),
+                icon: ZadArt.icon(ZadIconArt.sprout, size: 24),
+                label: Text(
+                  l.compPet(name),
+                  style: ZadType.labelLarge.copyWith(
+                    fontWeight: FontWeight.w900,
                   ),
-                  const SizedBox(height: ZadSpacing.md),
-                  _LevelCard(status: s),
-                  const SizedBox(height: ZadSpacing.md),
-                  _Missions(status: s),
-                  if (s.week case final week?) ...<Widget>[
-                    const SizedBox(height: ZadSpacing.md),
-                    _WeekChallenge(week: week),
-                  ],
-                  const SizedBox(height: ZadSpacing.md),
-                  _Evolution(status: s),
-                  const SizedBox(height: ZadSpacing.xl),
-                  Text(
-                    'الدولاب',
-                    style: ZadType.titleMedium.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: ZadSpacing.sm),
-                  SegmentedButton<OfferKind>(
-                    segments: const <ButtonSegment<OfferKind>>[
-                      ButtonSegment<OfferKind>(
-                        value: OfferKind.persona,
-                        label: Text('الشخصيات'),
-                      ),
-                      ButtonSegment<OfferKind>(
-                        value: OfferKind.outfit,
-                        label: Text('اللبس'),
-                      ),
-                      ButtonSegment<OfferKind>(
-                        value: OfferKind.background,
-                        label: Text('الخلفيات'),
-                      ),
-                    ],
-                    selected: <OfferKind>{_tab},
-                    showSelectedIcon: false,
-                    onSelectionChanged: (v) => setState(() => _tab = v.first),
-                  ),
-                  const SizedBox(height: ZadSpacing.md),
-                  if (_tab == OfferKind.outfit &&
-                      s.outfit != CompanionOutfit.none)
-                    Align(
-                      alignment: AlignmentDirectional.centerStart,
-                      child: TextButton.icon(
-                        onPressed: _takeOff,
-                        icon: const Icon(Icons.close_rounded),
-                        label: Text('اقلع ${s.outfit.label}'),
-                      ),
-                    ),
-                  _Wardrobe(
-                    status: s,
-                    kind: _tab,
-                    busy: _busy,
-                    canBuy: !kids,
-                    season: ref.watch(companionSeasonProvider),
-                    onWear: _wear,
-                    onBuy: _buy,
-                    onPay: (o) => _pay(ZadPlayProducts.companionItem(o.id)),
-                  ),
-                  if (!kids) ...<Widget>[
-                    const SizedBox(height: ZadSpacing.xl),
-                    _SeedShop(onPay: _pay),
-                    const SizedBox(height: ZadSpacing.md),
-                    _Invite(status: s, onEnterCode: _enterCode),
-                  ],
-                  const SizedBox(height: ZadSpacing.xl),
-                  const _HowToEarn(),
-                ],
+                ),
               ),
             ),
+          );
+
+    return Scaffold(
+      backgroundColor: ZadColors.canvasMid,
+      body: SafeArea(
+        bottom: false,
+        child: ZadWorldScaffold(
+          world: ZadWorld.comp,
+          showBack: true,
+          eyebrow: s == null ? null : l.compEyebrow(s.level),
+          title: l.worldLabelComp,
+          stateLine: s == null || look == null ? null : _stateLine(s, look),
+          scene: (loop) => CompanionWorldScene(
+            loop,
+            background: s?.background ?? CompanionBackground.morning,
+            awake: awake,
+          ),
+          zado: ZadWorldZado(
+            left: 140,
+            top: 36,
+            state: awake ? _mood : CompanionState.idle,
+          ),
+          onRefresh: () => ref.read(companionProvider.notifier).refresh(),
+          dockHeight: dock == null ? 0 : 80,
+          overlay: dock,
+          slivers: <Widget>[
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: ZadSpacing.gutter,
+              ),
+              sliver: SliverToBoxAdapter(child: body),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
 
-class _Hero extends StatelessWidget {
+class _Body extends StatelessWidget {
   const new({
     required this.status,
     required this.look,
-    required this.mood,
-    required this.glow,
-    required this.onPet,
+    required this.tab,
+    required this.busy,
+    required this.kids,
+    required this.season,
+    required this.onTab,
+    required this.onWear,
+    required this.onBuy,
+    required this.onPay,
+    required this.onTakeOff,
+    required this.onEnterCode,
   });
 
   final CompanionStatus status;
   final CompanionLook look;
-  final CompanionState mood;
-  final int glow;
-  final VoidCallback onPet;
+  final OfferKind tab;
+  final String? busy;
+  final bool kids;
+  final String? season;
+  final ValueChanged<OfferKind> onTab;
+  final ValueChanged<CompanionOffer> onWear;
+  final ValueChanged<CompanionOffer> onBuy;
+  final Future<void> Function(String product) onPay;
+  final VoidCallback onTakeOff;
+  final VoidCallback onEnterCode;
 
   @override
   Widget build(BuildContext context) {
-    final bg = status.background;
-    final onBg = bg.dark ? Colors.white : ZadColors.ink;
-    return Container(
-      height: 300,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(ZadRadii.hero),
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: bg.colors,
-        ),
-      ),
-      child: Stack(
-        children: <Widget>[
-          if (bg == CompanionBackground.stars ||
-              bg == CompanionBackground.night)
-            const Positioned.fill(
-              child: IgnorePointer(
-                child: CustomPaint(painter: _StarsPainter()),
-              ),
-            ),
-          Align(
-            child: CompanionOrb(
-              state: look.asleep ? CompanionState.idle : mood,
-              look: look,
-              size: 190,
-              glowTrigger: glow,
-              onTap: onPet,
-            ),
-          ),
-          PositionedDirectional(
-            top: ZadSpacing.md,
-            start: ZadSpacing.md,
-            end: ZadSpacing.md,
-            child: AnimatedSwitcher(
-              duration: ZadDuration.quick,
-              child: Container(
-                key: ValueKey<String>('${look.persona.id}${look.asleep}'),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: ZadSpacing.md,
-                  vertical: ZadSpacing.sm,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.88),
-                  borderRadius: BorderRadius.circular(ZadRadii.card),
-                ),
-                child: Text(
-                  look.asleep ? 'زززز… دوس عليّ أصحى.' : look.persona.line,
-                  style: ZadType.bodyMedium.copyWith(color: ZadColors.ink),
-                ),
-              ),
-            ),
-          ),
-          PositionedDirectional(
-            bottom: ZadSpacing.md,
-            start: 0,
-            end: 0,
-            child: Center(
-              child: Text(
-                '${look.persona.name} · ${look.persona.latin}',
-                style: ZadType.titleMedium.copyWith(
-                  color: onBg,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ),
-          ),
+    final l = context.l10n;
+    final s = status;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        _LevelCard(status: s, look: look),
+        const SizedBox(height: ZadSpacing.md),
+        _Missions(status: s),
+        if (s.week case final week?) ...<Widget>[
+          const SizedBox(height: ZadSpacing.md),
+          _WeekChallenge(week: week),
         ],
-      ),
+        const SizedBox(height: ZadSpacing.md),
+        _Evolution(status: s),
+        const SizedBox(height: ZadSpacing.xl),
+        Text(
+          l.compWardrobe,
+          style: ZadType.titleMedium.copyWith(fontWeight: FontWeight.w800),
+        ),
+        const SizedBox(height: ZadSpacing.sm),
+        SegmentedButton<OfferKind>(
+          segments: <ButtonSegment<OfferKind>>[
+            ButtonSegment<OfferKind>(
+              value: OfferKind.persona,
+              label: Text(l.compTabPersona),
+            ),
+            ButtonSegment<OfferKind>(
+              value: OfferKind.outfit,
+              label: Text(l.compTabOutfit),
+            ),
+            ButtonSegment<OfferKind>(
+              value: OfferKind.background,
+              label: Text(l.compTabBackground),
+            ),
+          ],
+          selected: <OfferKind>{tab},
+          showSelectedIcon: false,
+          onSelectionChanged: (v) => onTab(v.first),
+        ),
+        const SizedBox(height: ZadSpacing.md),
+        if (tab == OfferKind.outfit && s.outfit != CompanionOutfit.none)
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: TextButton.icon(
+              onPressed: onTakeOff,
+              icon: const Icon(Icons.close_rounded),
+              label: Text(l.compTakeOff(s.outfit.label)),
+            ),
+          ),
+        _Wardrobe(
+          status: s,
+          kind: tab,
+          busy: busy,
+          canBuy: !kids,
+          season: season,
+          onWear: onWear,
+          onBuy: onBuy,
+          onPay: (o) => onPay(ZadPlayProducts.companionItem(o.id)),
+        ),
+        if (!kids) ...<Widget>[
+          const SizedBox(height: ZadSpacing.xl),
+          _SeedShop(onPay: onPay),
+          const SizedBox(height: ZadSpacing.md),
+          _Invite(status: s, onEnterCode: onEnterCode),
+        ],
+        const SizedBox(height: ZadSpacing.xl),
+        const _HowToEarn(),
+      ],
     );
   }
 }
 
-class _StarsPainter extends CustomPainter {
-  const new();
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final p = Paint()..color = Colors.white.withValues(alpha: 0.7);
-    const spots = <Offset>[
-      Offset(0.08, 0.2),
-      Offset(0.22, 0.42),
-      Offset(0.85, 0.15),
-      Offset(0.92, 0.5),
-      Offset(0.7, 0.3),
-      Offset(0.15, 0.75),
-      Offset(0.88, 0.8),
-      Offset(0.4, 0.12),
-    ];
-    for (var i = 0; i < spots.length; i++) {
-      canvas.drawCircle(
-        Offset(spots[i].dx * size.width, spots[i].dy * size.height),
-        i.isEven ? 1.6 : 1.1,
-        p,
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(_StarsPainter old) => false;
-}
-
-class _Card extends StatelessWidget {
-  const new({required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) => Material(
-    color: ZadColors.surface,
-    borderRadius: BorderRadius.circular(ZadRadii.card),
-    child: Padding(padding: const EdgeInsets.all(ZadSpacing.lg), child: child),
-  );
-}
-
 class _LevelCard extends StatelessWidget {
-  const new({required this.status});
+  const new({required this.status, required this.look});
 
   final CompanionStatus status;
+  final CompanionLook look;
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     final s = status;
-    return _Card(
+    const green = ZadColors.green700;
+    return ZadWorldCard(
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Row(
-            children: <Widget>[
-              Text(
-                'لفل ${s.level}',
-                style: ZadType.titleLarge.copyWith(fontWeight: FontWeight.w800),
-              ),
-              const SizedBox(width: ZadSpacing.sm),
-              Text(
-                '· ${s.stage.label}',
-                style: ZadType.titleMedium.copyWith(color: ZadColors.slate),
-              ),
-              const Spacer(),
-              Text(
-                '${s.levelXp} / ${s.levelNeed} ⭐',
-                style: ZadType.labelLarge.copyWith(color: ZadColors.slate),
-              ),
-            ],
-          ),
-          const SizedBox(height: ZadSpacing.sm),
-          TweenAnimationBuilder<double>(
-            tween: Tween<double>(begin: 0, end: s.levelProgress),
-            duration: ZadDuration.settle,
-            curve: ZadCurves.standard,
-            builder: (context, v, _) => ClipRRect(
-              borderRadius: BorderRadius.circular(ZadRadii.pill),
-              child: LinearProgressIndicator(
-                value: v,
-                minHeight: 10,
-                backgroundColor: ZadColors.mint50,
-                color: ZadColors.mustardOchre,
+          ZadWorldRow(
+            leading: ZadWorldTile(
+              color: ZadWorld.comp.color,
+              child: ZadArt.icon(ZadIconArt.sprout, size: 28),
+            ),
+            title: '${l.compLevel(s.level)} · ${s.stage.label}',
+            subtitle: look.asleep ? l.compAsleepLine : look.persona.line,
+            stateColor: green,
+            progress: s.levelProgress,
+            trailing: Padding(
+              padding: const EdgeInsetsDirectional.only(start: ZadSpacing.sm),
+              child: Text(
+                l.compXpOf(s.levelXp, s.levelNeed),
+                textDirection: TextDirection.ltr,
+                style: ZadType.labelLarge.copyWith(color: ZadColors.inkMuted),
               ),
             ),
           ),
           const SizedBox(height: ZadSpacing.md),
           Row(
             children: <Widget>[
-              _Stat(emoji: '🔥', value: '${s.streak}', label: 'يوم ورا بعض'),
-              _Stat(emoji: '🌱', value: '${s.seeds}', label: 'بذرة'),
               _Stat(
-                emoji: '⭐',
+                art: ZadIconArt.flame,
+                value: '${s.streak}',
+                label: l.compStatStreak,
+              ),
+              _Stat(
+                art: ZadIconArt.seed,
+                value: '${s.seeds}',
+                label: l.compStatSeeds,
+              ),
+              _Stat(
+                art: ZadIconArt.star,
                 value: '${s.missions.xpToday}',
-                label: 'النهارده',
+                label: l.compStatToday,
               ),
             ],
           ),
@@ -526,9 +503,9 @@ class _LevelCard extends StatelessWidget {
 }
 
 class _Stat extends StatelessWidget {
-  const new({required this.emoji, required this.value, required this.label});
+  const new({required this.art, required this.value, required this.label});
 
-  final String emoji;
+  final ZadIconArt art;
   final String value;
   final String label;
 
@@ -536,11 +513,19 @@ class _Stat extends StatelessWidget {
   Widget build(BuildContext context) => Expanded(
     child: Column(
       children: <Widget>[
-        Text(
-          '$emoji $value',
-          style: ZadType.titleMedium.copyWith(fontWeight: FontWeight.w800),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            ZadArt.icon(art, size: 22),
+            const SizedBox(width: ZadSpacing.xs),
+            Text(value, style: ZadType.titleMedium),
+          ],
         ),
-        Text(label, style: ZadType.bodySmall.copyWith(color: ZadColors.slate)),
+        Text(
+          label,
+          textAlign: TextAlign.center,
+          style: ZadType.labelSmall.copyWith(color: ZadColors.inkMuted),
+        ),
       ],
     ),
   );
@@ -553,52 +538,56 @@ class _Missions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     final m = status.missions;
-    Widget row({
-      required bool done,
-      required String text,
-      required String xp,
-    }) => Padding(
-      padding: const EdgeInsets.symmetric(vertical: ZadSpacing.xs),
-      child: Row(
-        children: <Widget>[
-          AnimatedSwitcher(
-            duration: ZadDuration.quick,
-            child: Icon(
-              done
-                  ? Icons.check_circle_rounded
-                  : Icons.radio_button_unchecked_rounded,
-              key: ValueKey<bool>(done),
-              color: done ? ZadColors.green600 : ZadColors.textTertiary,
-            ),
-          ),
-          const SizedBox(width: ZadSpacing.sm),
-          Expanded(
-            child: Text(
-              text,
-              style: ZadType.bodyMedium.copyWith(
-                decoration: done ? TextDecoration.lineThrough : null,
-                color: done ? ZadColors.slate : ZadColors.ink,
+    Widget row({required bool done, required String text, required int xp}) =>
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: ZadSpacing.xs),
+          child: Row(
+            children: <Widget>[
+              AnimatedSwitcher(
+                duration: ZadDuration.quick,
+                child: Icon(
+                  done
+                      ? Icons.check_circle_rounded
+                      : Icons.radio_button_unchecked_rounded,
+                  key: ValueKey<bool>(done),
+                  color: done ? ZadColors.green600 : ZadColors.textTertiary,
+                ),
               ),
-            ),
+              const SizedBox(width: ZadSpacing.sm),
+              Expanded(
+                child: Text(
+                  text,
+                  style: ZadType.bodyMedium.copyWith(
+                    decoration: done ? TextDecoration.lineThrough : null,
+                    color: done ? ZadColors.inkMuted : ZadColors.ink,
+                  ),
+                ),
+              ),
+              Text(
+                l.compXpGain(xp),
+                style: ZadType.labelMedium.copyWith(color: ZadColors.inkMuted),
+              ),
+              const SizedBox(width: ZadSpacing.xs),
+              ZadArt.icon(ZadIconArt.star, size: 16),
+            ],
           ),
-          Text(xp, style: ZadType.labelMedium.copyWith(color: ZadColors.slate)),
-        ],
-      ),
-    );
-    return _Card(
+        );
+    return ZadWorldCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Row(
             children: <Widget>[
-              Text(
-                'مهام النهارده',
-                style: ZadType.titleMedium.copyWith(
-                  fontWeight: FontWeight.w800,
+              Expanded(
+                child: Text(
+                  l.compMissionsTitle,
+                  style: ZadType.titleMedium.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
-              const Spacer(),
               Text(
                 '${m.done}/3',
                 style: ZadType.labelLarge.copyWith(color: ZadColors.green700),
@@ -606,16 +595,14 @@ class _Missions extends StatelessWidget {
             ],
           ),
           const SizedBox(height: ZadSpacing.xs),
-          row(done: m.logged, text: 'سجّل مصروف أو دخل', xp: '+١٠ ⭐'),
-          row(done: m.home, text: 'حدّث المخزن أو قائمة التسوق', xp: '+٥ ⭐'),
-          row(done: m.scanned, text: 'صوّر فاتورة', xp: '+٢٠ ⭐'),
+          row(done: m.logged, text: l.compMissionLog, xp: 10),
+          row(done: m.home, text: l.compMissionHome, xp: 5),
+          row(done: m.scanned, text: l.compMissionScan, xp: 20),
           const SizedBox(height: ZadSpacing.xs),
           Text(
-            m.done == 3
-                ? 'خلّصت التلاتة! خدت ٣٠ 🌱 النهارده.'
-                : 'خلّص التلاتة وخد ٣٠ 🌱 هدية.',
+            m.done == 3 ? l.compMissionsAllDone(30) : l.compMissionsReward(30),
             style: ZadType.bodySmall.copyWith(
-              color: m.done == 3 ? ZadColors.green700 : ZadColors.slate,
+              color: m.done == 3 ? ZadColors.green700 : ZadColors.inkMuted,
             ),
           ),
         ],
@@ -631,6 +618,7 @@ class _Evolution extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     final s = status;
     final nextLevel = s.nextStageLevel;
     final nextDays = s.nextStageDays;
@@ -638,16 +626,16 @@ class _Evolution extends StatelessWidget {
         ? CompanionStage.at(s.stage.index + 1)
         : null;
     final wait = <String>[
-      if (nextLevel != null && s.level < nextLevel) 'لفل $nextLevel',
+      if (nextLevel != null && s.level < nextLevel) l.compNeedLevel(nextLevel),
       if (nextDays != null && s.ageDays < nextDays)
-        'عمره $nextDays يوم (فاضل ${nextDays - s.ageDays})',
+        l.compNeedAge(nextDays, nextDays - s.ageDays),
     ];
-    return _Card(
+    return ZadWorldCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Text(
-            'رحلة ${s.persona.name}',
+            l.compJourney(s.persona.name),
             style: ZadType.titleMedium.copyWith(fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: ZadSpacing.md),
@@ -673,7 +661,7 @@ class _Evolution extends StatelessWidget {
                               : FontWeight.w500,
                           color: st == s.stage
                               ? ZadColors.green700
-                              : ZadColors.slate,
+                              : ZadColors.inkMuted,
                         ),
                       ),
                     ],
@@ -684,11 +672,11 @@ class _Evolution extends StatelessWidget {
           const SizedBox(height: ZadSpacing.md),
           Text(
             next == null
-                ? '${s.persona.name} وصل لأعلى مرحلة. حكيم البيت 👑'
+                ? l.compMaxStage(s.persona.name)
                 : wait.isEmpty
-                ? 'هيكبر ويبقى ${next.label} قريب جداً!'
-                : 'عشان يبقى ${next.label}: ${wait.join(' و')}.',
-            style: ZadType.bodyMedium.copyWith(color: ZadColors.slate),
+                ? l.compSoon(next.label)
+                : l.compNeeds(next.label, wait.join(l.compNeedJoin)),
+            style: ZadType.bodyMedium.copyWith(color: ZadColors.inkMuted),
           ),
         ],
       ),
@@ -779,6 +767,7 @@ class _ItemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     final o = offer;
     final preview = switch (o.kind) {
       OfferKind.persona => CompanionOrb(
@@ -826,27 +815,38 @@ class _ItemCard extends StatelessWidget {
         ),
       );
     } else if (worn) {
-      action = const _Pill(text: 'لابسه ✓', strong: true);
+      action = _Pill(text: l.compWorn, icon: Icons.check_rounded, strong: true);
     } else if (owned) {
       action = SizedBox(
         width: double.infinity,
         height: 44,
-        child: OutlinedButton(onPressed: onWear, child: const Text('البسه')),
+        child: OutlinedButton(onPressed: onWear, child: Text(l.compWear)),
       );
     } else if (o.seedPrice != null && canBuy) {
       action = SizedBox(
         width: double.infinity,
         height: 44,
         child: FilledButton.tonal(
+          key: ValueKey<String>('buy-${o.id}'),
           onPressed: onBuy,
-          child: Text(
-            '${o.seedPrice} 🌱',
-            style: TextStyle(color: affordable ? null : ZadColors.slate),
+          style: FilledButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: ZadSpacing.sm),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              ZadArt.icon(ZadIconArt.seed, size: 18),
+              const SizedBox(width: ZadSpacing.xs),
+              Text(
+                '${o.seedPrice}',
+                style: TextStyle(color: affordable ? null : ZadColors.inkMuted),
+              ),
+            ],
           ),
         ),
       );
     } else {
-      action = const _Pill(text: '🔒');
+      action = _Pill(text: l.compLocked, icon: Icons.lock_outline_rounded);
     }
     return Container(
       padding: const EdgeInsets.all(ZadSpacing.md),
@@ -875,7 +875,7 @@ class _ItemCard extends StatelessWidget {
               owned ? '' : (hint ?? ''),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: ZadType.bodySmall.copyWith(color: ZadColors.slate),
+              style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
             ),
           ),
           const SizedBox(height: ZadSpacing.xs),
@@ -886,8 +886,7 @@ class _ItemCard extends StatelessWidget {
               child: TextButton(
                 onPressed: onPay,
                 child: Text(
-                  'أو \$${o.usdPrice!.toStringAsFixed(2)}',
-                  textDirection: TextDirection.ltr,
+                  l.compOrUsd('\$${o.usdPrice!.toStringAsFixed(2)}'),
                   style: ZadType.labelMedium,
                 ),
               ),
@@ -899,26 +898,32 @@ class _ItemCard extends StatelessWidget {
 }
 
 class _Pill extends StatelessWidget {
-  const new({required this.text, this.strong = false});
+  const new({required this.text, required this.icon, this.strong = false});
 
   final String text;
+  final IconData icon;
   final bool strong;
 
   @override
-  Widget build(BuildContext context) => Container(
-    height: 44,
-    alignment: Alignment.center,
-    decoration: BoxDecoration(
-      color: strong ? ZadColors.mint50 : ZadColors.surfaceVariant,
-      borderRadius: BorderRadius.circular(ZadRadii.pill),
-    ),
-    child: Text(
-      text,
-      style: ZadType.labelLarge.copyWith(
-        color: strong ? ZadColors.green700 : ZadColors.slate,
+  Widget build(BuildContext context) {
+    final color = strong ? ZadColors.green700 : ZadColors.inkMuted;
+    return Container(
+      height: 44,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: strong ? ZadColors.mint50 : ZadColors.surfaceVariant,
+        borderRadius: BorderRadius.circular(ZadRadii.pill),
       ),
-    ),
-  );
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Icon(icon, size: 16, color: color),
+          const SizedBox(width: ZadSpacing.xs),
+          Text(text, style: ZadType.labelLarge.copyWith(color: color)),
+        ],
+      ),
+    );
+  }
 }
 
 class _Invite extends StatelessWidget {
@@ -929,21 +934,20 @@ class _Invite extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     final s = status;
-    return _Card(
+    return ZadWorldCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Text(
-            'ادعي صحابك',
+            l.compInviteTitle,
             style: ZadType.titleMedium.copyWith(fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: ZadSpacing.xs),
           Text(
-            'كل صاحب يسجّل أول مصروف = ٢٠٠ 🌱 ليك و١٠٠ ليه. '
-            'صاحب واحد يفتح «فلة»، وتلاتة يفتحوا طاقية التخرج '
-            'وخلفية «الشلة».',
-            style: ZadType.bodySmall.copyWith(color: ZadColors.slate),
+            l.compInviteBody,
+            style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
           ),
           const SizedBox(height: ZadSpacing.md),
           Row(
@@ -968,23 +972,23 @@ class _Invite extends StatelessWidget {
               ),
               const SizedBox(width: ZadSpacing.sm),
               IconButton.filledTonal(
-                tooltip: 'انسخ الكود',
+                tooltip: l.compInviteCopy,
                 onPressed: () async {
                   await Clipboard.setData(ClipboardData(text: s.inviteCode));
                   if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('اتنسخ الكود')),
-                    );
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text(l.compInviteCopied)));
                   }
                 },
                 icon: const Icon(Icons.copy_rounded),
               ),
               IconButton.filled(
-                tooltip: 'ابعته',
+                tooltip: l.compInviteSend,
                 onPressed: () => SharePlus.instance.share(
                   ShareParams(
                     text: companionInviteText(s.inviteCode),
-                    subject: 'جرّب زاد',
+                    subject: l.compInviteSubject,
                   ),
                 ),
                 icon: const Icon(Icons.share_rounded),
@@ -993,17 +997,15 @@ class _Invite extends StatelessWidget {
           ),
           const SizedBox(height: ZadSpacing.sm),
           Text(
-            'سجّلوا: ${s.invites}'
-            '${s.invitesPending > 0 ? ' · مستنيين أول مصروف: '
-                      '${s.invitesPending}' : ''}',
-            style: ZadType.labelMedium.copyWith(color: ZadColors.slate),
+            <String>[
+              l.compInviteCount(s.invites),
+              if (s.invitesPending > 0) l.compInvitePending(s.invitesPending),
+            ].join(' · '),
+            style: ZadType.labelMedium.copyWith(color: ZadColors.inkMuted),
           ),
           if (s.canClaimInvite) ...<Widget>[
             const SizedBox(height: ZadSpacing.xs),
-            TextButton(
-              onPressed: onEnterCode,
-              child: const Text('عندك كود صاحبك؟ اكتبه هنا'),
-            ),
+            TextButton(onPressed: onEnterCode, child: Text(l.compEnterCode)),
           ],
         ],
       ),
@@ -1015,46 +1017,46 @@ class _HowToEarn extends StatelessWidget {
   const new();
 
   @override
-  Widget build(BuildContext context) => _Card(
-    child: Theme(
-      data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-      child: ExpansionTile(
-        tilePadding: EdgeInsets.zero,
-        title: Text(
-          'الرفيق بيكبر إزاي؟',
-          style: ZadType.titleMedium.copyWith(fontWeight: FontWeight.w800),
-        ),
-        children: <Widget>[
-          for (final line in const <String>[
-            _xpLine,
-            _seedsLine,
-            '🌱 البذور للدولاب بس — مش بتتحول لمحاولات ذكاء اصطناعي.',
-            '😴 لو غبت يومين بينام. ارجع وهيصحى فرحان ومعاه هدية.',
-            '💚 عمره ما يزعل منك ولا ينزل لفل.',
-          ])
-            Padding(
-              padding: const EdgeInsets.only(bottom: ZadSpacing.sm),
-              child: Align(
-                alignment: AlignmentDirectional.centerStart,
-                child: Text(
-                  line,
-                  style: ZadType.bodyMedium.copyWith(color: ZadColors.slate),
-                ),
-              ),
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    return ZadWorldCard(
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: Material(
+          type: MaterialType.transparency,
+          child: ExpansionTile(
+            tilePadding: EdgeInsets.zero,
+            title: Text(
+              l.compHowTitle,
+              style: ZadType.titleMedium.copyWith(fontWeight: FontWeight.w800),
             ),
-        ],
+            children: <Widget>[
+              for (final line in <String>[
+                l.compHowXp,
+                l.compHowSeeds,
+                l.compHowAi,
+                l.compHowSleep,
+                l.compHowKind,
+              ])
+                Padding(
+                  padding: const EdgeInsets.only(bottom: ZadSpacing.sm),
+                  child: Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: Text(
+                      line,
+                      style: ZadType.bodyMedium.copyWith(
+                        color: ZadColors.inkMuted,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
       ),
-    ),
-  );
+    );
+  }
 }
-
-const String _xpLine =
-    '⭐ بتيجي من عاداتك بس: مصروف +١٠، فاتورة +٢٠، '
-    'المخزن أو القائمة +٥، يوم في السلسلة +٢٥، فرد عيلة جديد +٢٠٠.';
-
-const String _seedsLine =
-    '🌱 كل لفل جديد +٥٠، مهام اليوم التلاتة +٣٠، '
-    '٧ أيام ورا بعض +١٠٠، و٣٠ يوم +٣٠٠.';
 
 /// Seeds for money, and every character at once — Google Play.
 class _SeedShop extends StatelessWidget {
@@ -1064,23 +1066,24 @@ class _SeedShop extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     const packs = <(String, int, String)>[
       ('zad_pet_seeds_500', 500, r'$0.99'),
       ('zad_pet_seeds_2000', 2000, r'$2.99'),
       ('zad_pet_seeds_6000', 6000, r'$6.99'),
     ];
-    return _Card(
+    return ZadWorldCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Text(
-            'مستعجل؟ اشحن بذور',
+            l.compSeedShopTitle,
             style: ZadType.titleMedium.copyWith(fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: ZadSpacing.xs),
           Text(
-            'البذور بتتجمع ببلاش من عاداتك، وده للي مش عايز يستنى.',
-            style: ZadType.bodySmall.copyWith(color: ZadColors.slate),
+            l.compSeedShopBody,
+            style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
           ),
           const SizedBox(height: ZadSpacing.md),
           Row(
@@ -1092,6 +1095,7 @@ class _SeedShop extends StatelessWidget {
                       end: ZadSpacing.sm,
                     ),
                     child: OutlinedButton(
+                      key: ValueKey<String>('pack-$seeds'),
                       style: OutlinedButton.styleFrom(
                         minimumSize: const Size.fromHeight(56),
                         padding: EdgeInsets.zero,
@@ -1100,11 +1104,18 @@ class _SeedShop extends StatelessWidget {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: <Widget>[
-                          Text(
-                            '$seeds 🌱',
-                            style: ZadType.labelLarge.copyWith(
-                              fontWeight: FontWeight.w800,
-                            ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: <Widget>[
+                              ZadArt.icon(ZadIconArt.seed, size: 16),
+                              const SizedBox(width: ZadSpacing.xs),
+                              Text(
+                                '$seeds',
+                                style: ZadType.labelLarge.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ],
                           ),
                           Text(
                             price,
@@ -1124,7 +1135,7 @@ class _SeedShop extends StatelessWidget {
             height: 48,
             child: FilledButton.tonal(
               onPressed: () => onPay(ZadPlayProducts.allCharacters),
-              child: const Text(r'كل الشخصيات مرة واحدة · $6.99'),
+              child: Text(l.compAllCharacters(r'$6.99')),
             ),
           ),
         ],
@@ -1141,36 +1152,39 @@ class _WeekChallenge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     final w = week;
-    return _Card(
+    return ZadWorldCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Row(
             children: <Widget>[
-              Text(
-                'تحدي الأسبوع',
-                style: ZadType.titleMedium.copyWith(
-                  fontWeight: FontWeight.w800,
+              Expanded(
+                child: Text(
+                  l.compWeekTitle,
+                  style: ZadType.titleMedium.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
-              const Spacer(),
               Text(
-                '+١٠٠ ⭐',
+                l.compXpGain(100),
                 style: ZadType.labelLarge.copyWith(
                   color: ZadColors.mustardOchre,
                 ),
               ),
+              const SizedBox(width: ZadSpacing.xs),
+              ZadArt.icon(ZadIconArt.star, size: 18),
             ],
           ),
           const SizedBox(height: ZadSpacing.xs),
           Text(
             w.done
-                ? 'خلّصته! سجّلت ${w.days} أيام الأسبوع ده 🎉'
-                : 'سجّل مصروف في ${w.goal} أيام من ٧ — '
-                      'فاضلك ${w.goal - w.days}.',
+                ? l.compWeekDone(w.days)
+                : l.compWeekLeft(w.goal, w.goal - w.days),
             style: ZadType.bodyMedium.copyWith(
-              color: w.done ? ZadColors.green700 : ZadColors.slate,
+              color: w.done ? ZadColors.green700 : ZadColors.inkMuted,
             ),
           ),
           const SizedBox(height: ZadSpacing.sm),

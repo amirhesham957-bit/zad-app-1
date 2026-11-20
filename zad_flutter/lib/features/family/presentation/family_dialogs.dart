@@ -15,6 +15,7 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/design/tokens/zad_world_colors.dart';
 import 'package:zad/core/money/money.dart';
 import 'package:zad/shared/family/application/family_controller.dart';
 import 'package:zad/shared/family/application/family_format.dart';
@@ -107,7 +108,7 @@ class _InviteDialogState extends State<_InviteDialog> {
     return AlertDialog(
       title: const Row(
         children: <Widget>[
-          Icon(ZadIcons.invite, color: ZadColors.green700),
+          Icon(ZadIcons.invite, color: ZadWorldColors.family),
           SizedBox(width: ZadSpacing.sm),
           Text('دعوة أفراد جدد'),
         ],
@@ -177,7 +178,7 @@ class _InviteDialogState extends State<_InviteDialog> {
                           inviteLink(code),
                           textDirection: TextDirection.ltr,
                           style: ZadType.labelMedium.copyWith(
-                            color: ZadColors.green700,
+                            color: ZadWorldColors.family,
                           ),
                         ),
                       ),
@@ -186,7 +187,7 @@ class _InviteDialogState extends State<_InviteDialog> {
                         icon: const Icon(
                           ZadIcons.copy,
                           size: 18,
-                          color: ZadColors.green700,
+                          color: ZadWorldColors.family,
                         ),
                         onPressed: () {
                           unawaited(
@@ -207,7 +208,7 @@ class _InviteDialogState extends State<_InviteDialog> {
                 Container(
                   padding: const EdgeInsets.all(ZadSpacing.lg),
                   decoration: BoxDecoration(
-                    color: ZadColors.green700.withValues(alpha: 0.1),
+                    color: ZadWorldColors.family.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: SelectableText(
@@ -215,7 +216,7 @@ class _InviteDialogState extends State<_InviteDialog> {
                     textAlign: TextAlign.center,
                     textDirection: TextDirection.ltr,
                     style: ZadType.headlineMedium.copyWith(
-                      color: ZadColors.green700,
+                      color: ZadWorldColors.family,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -281,7 +282,7 @@ class _InviteDialogState extends State<_InviteDialog> {
                           Text(
                             'تم',
                             style: ZadType.labelMedium.copyWith(
-                              color: ZadColors.green700,
+                              color: ZadWorldColors.family,
                             ),
                           ),
                         ],
@@ -361,7 +362,7 @@ class _JoinDialogState extends State<_JoinDialog> {
   Widget build(BuildContext context) => AlertDialog(
     title: const Row(
       children: <Widget>[
-        Icon(ZadIcons.joinFamily, color: ZadColors.green700),
+        Icon(ZadIcons.joinFamily, color: ZadWorldColors.family),
         SizedBox(width: ZadSpacing.sm),
         Text('الانضمام للعائلة'),
       ],

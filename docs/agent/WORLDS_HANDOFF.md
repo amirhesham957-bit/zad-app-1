@@ -1,4 +1,33 @@
-# Worlds UI build: handoff (2026-11-20 evening)
+# Worlds UI build: handoff (updated 2026-11-21, after the power cut)
+
+## START HERE (2026-11-21)
+
+**The previous container died in a power cut.** Work that was never pushed is gone: the companion world rebuild, Home-as-world v1, and the occasions ambience. The board had them marked done/doing; it is now corrected to **21 of 23**. Lesson: push every WIP commit before touching the board.
+
+**State right now**
+- `main` = `77bdef34` (#627 merged: profile/settings, prices, premium, chat). Everything up to #627 is merged; only #605 (Amazon) and #300 are open.
+- **`feat/worlds-home` (pushed, no PR yet)**, worktree `/workspaces/zad-whome`. Home rebuilt on `ZadWorldScaffold`: account-zone sky (dawn 05-08, morning 08-12, noon 12-16, evening 16-19, night 19-05), greeting title, money state line, «عوالمك» grid in world art, new «النهارده في بيتك» card, tasbih, offers (Shein slot, nearby, Amazon). Analyze clean, `+210 ~9` tests passed, screenshot `build/screens/world_home.png`.
+  - **Fix before the PR** (seen in the screenshot):
+    1. With no name the title reads «نهارك سعيد يا ...» — drop «يا» when the name is empty.
+    2. The tasbih card renders empty («0/0», a tofu box).
+    3. «اشتراكاتك وأدويتك» duplicates «النهارده في بيتك» — merge or drop one.
+  - Then: install on the emulator, screenshots to the owner, `merge_main.sh`, PR, CI, merge.
+- **Board:** https://claude.ai/artifact/HwDtRcvuZZiQ9Qi44gC73K. Local source `zad_flutter/build/board/board.html` in the main checkout (gitignored). It still lacks the pharmacy (3 shots: `world_pharmacy*.png` from `test/features/pharmacy/pharmacy_family_test.dart` and `test/shared/worlds/world_scaffold_test.dart`), inventory, `games_hub.png`/`games_run.png` (`test/features/companion/games_hub_test.dart`, `test/shared/companion/games_widgets_test.dart`) and the new Home. Render with `ZAD_SCREENS=1 flutter test --update-goldens <file>`. The owner asked for these.
+- **Quota mod:** `/home/codespace/.claude/dev-mods/<session>/quota` (pane «الكوتة», `/quota`, status line). It lives in the session's mods folder; a new session needs it re-created or copied (not in the repo).
+
+**Order agreed with the owner (2026-11-21)**
+1. Finish Home (3 fixes, emulator check, PR).
+2. Companion world (rebuild from `shots/world_companion.png` on the board: garden scene, level/seeds/streak card, today's tasks, weekly challenge, wardrobe, docked «ربّت على زادو»), games hub as a world (`ZadWorld.games` maps to null today), «عروضي» (`ZadWorld.offers`, no screen at all).
+3. Not-yet-world screens (counted 2026-11-21): family, household, brain_family (one world), savings, intelligence, nearby, scan, support (2), bank, market, proposals. Auth/onboarding keep Zado from #601; chat keeps its compact header on purpose.
+4. Occasions ambience, #605 Amazon port, launch moment, the 6 missing achievements, notification `source` column, Play prep (`versionCode` > 12).
+- Estimate given to the owner: 8–12 hours of work over several sessions; max 2 builders at once on this 32 GB disk.
+- The family league game was planned on 15/11 and has no code.
+
+**Environment traps (this container)**
+- Root disk is 32 GB and was full twice. `/tmp` is a **separate 107 GB disk** (`/dev/sda1`), but notes say it gets wiped — keep only re-creatable things there.
+- Flutter 3.47.9 at `~/flutter`; Android SDK at `~/android-sdk` (platforms 36 + 37.0, build-tools 36). The NDK was deleted to make room; Gradle re-downloads it on the next build (~2.2 GB).
+- Emulator: the AVD `zadlite` (Android 11 `aosp_atd` x86_64, pixel_4, 2 GB RAM, 2G data) lives in `/tmp/zad-avd`; run with `ANDROID_AVD_HOME=/tmp/zad-avd emulator -avd zadlite -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -no-snapshot`. It boots, the debug APK (`~/zad-home.apk`, x64) installs, but **the emulator process died twice right after launching the app**. Not diagnosed yet: next try `-gpu swangle_indirect` or `-gpu guest`, and check `/tmp/android-codespace/emu-crash-*.db`. Stop Gradle daemons first (`./gradlew --stop` in `zad_flutter/android`); they held ~5 GB of RAM.
+- `zad_flutter/env.json` (gitignored) is written in both checkouts with the project's public anon key (`get_publishable_keys`).
 
 Read this first when resuming the "worlds" redesign. It records what is merged, what sits in open PRs, what was left half-done in worktrees, and the exact way of working that kept it moving. The owner follows progress on the live board, not in chat.
 

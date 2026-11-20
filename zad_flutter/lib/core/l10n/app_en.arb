@@ -234,7 +234,6 @@
   "amazonDisclosure": "Affiliate link — Zad earns a commission at no extra cost to you",
   "amazonOut": "Ran out",
   "amazonLow": "Running low",
-  "amazonShopEmoji": "🛍️ Shop on Amazon",
   "amazonNoNeeds": "Add what you're missing, or see today's deals",
   "amazonOneNeed": "You're out of {name} — order it from Amazon",
   "amazonManyNeeds": "You're missing {count} things — order each with a tap",
@@ -1555,7 +1554,6 @@
   "profileExportSubtitle": "A copy of everything Zad knows about you",
   "profileExportFailed": "Couldn't prepare the file, try again",
   "profileExportSubject": "My data from Zad",
-  "homeCareTitle": "Your subscriptions and medicines",
   "homeCareRenewsToday": "Renews today",
   "homeCareRenewsTomorrow": "Renews tomorrow",
   "homeCareRenewsInDays": "Renews in {days} days",
@@ -2180,5 +2178,616 @@
   "settingsAdsBody": "Personalised for you? Change your choice any time",
   "settingsAdsUnavailable": "No privacy choices are available right now",
   "settingsTermsTitle": "Terms and conditions",
-  "settingsTermsBody": "Usage and privacy policy"
+  "settingsTermsBody": "Usage and privacy policy",
+  "worldLabelHome": "Home",
+  "homeGreetDawn": "Good morning, {name}",
+  "@homeGreetDawn": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "homeGreetMorning": "Hello, {name}",
+  "@homeGreetMorning": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "homeGreetNoon": "Good day, {name}",
+  "@homeGreetNoon": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "homeGreetEvening": "Good evening, {name}",
+  "@homeGreetEvening": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "homeGreetNight": "A quiet night, {name}",
+  "@homeGreetNight": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "homeStateMoney": "{amount} {currency} available · {days}",
+  "@homeStateMoney": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "currency": {
+        "type": "String"
+      },
+      "days": {
+        "type": "String"
+      }
+    }
+  },
+  "homeStateIdle": "Your whole home, in one place",
+  "homeWorldsTitle": "Your worlds",
+  "homeWorldsHint": "Every part of your home, in its place",
+  "homeTodayTitle": "Today in your home",
+  "homeTodayEmpty": "No shortages, doses or renewals coming up",
+  "homeTodayEmptyHint": "A calm day. Anything that needs you will show here.",
+  "homeTodayShortTitle": "Running short",
+  "homeTodayShortSub": "{count} items · first {name}",
+  "@homeTodayShortSub": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "homeGreetDawnAnon": "Good morning",
+  "homeGreetMorningAnon": "Hello",
+  "homeGreetNoonAnon": "Good day",
+  "homeGreetEveningAnon": "Good evening",
+  "homeGreetNightAnon": "A quiet night",
+  "tasbihaHomeStart": "Plant your garden with a first tasbih",
+  "tasbihaHomeMature": "Fully grown · {score} tasbihs",
+  "@tasbihaHomeMature": {
+    "placeholders": {
+      "score": {
+        "type": "int"
+      }
+    }
+  },
+  "amazonShopEmoji": "🛍️ Shop on Amazon",
+  "homeCareTitle": "Your subscriptions and medicines",
+  "compEyebrow": "Level {level}",
+  "@compEyebrow": {
+    "description": "World text.",
+    "placeholders": {
+      "level": {
+        "type": "int"
+      }
+    }
+  },
+  "compStateAsleep": "{name} is asleep — pat to wake",
+  "@compStateAsleep": {
+    "description": "World text.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "compStateMissions": "{n} of today's tasks left",
+  "@compStateMissions": {
+    "description": "World text.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "compStateAllDone": "{name} is happy — all of today's tasks done",
+  "@compStateAllDone": {
+    "description": "World text.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "compAsleepLine": "Zzz… pat me to wake up.",
+  "@compAsleepLine": {
+    "description": "World text."
+  },
+  "compPet": "Pat {name}",
+  "@compPet": {
+    "description": "World text.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "compUnreachableTitle": "Your companion cannot be reached",
+  "@compUnreachableTitle": {
+    "description": "World text."
+  },
+  "compUnreachableMsg": "Make sure you are signed in and online, then come back.",
+  "@compUnreachableMsg": {
+    "description": "World text."
+  },
+  "compRetry": "Try again",
+  "@compRetry": {
+    "description": "World text."
+  },
+  "compLevel": "Level {level}",
+  "@compLevel": {
+    "description": "World text.",
+    "placeholders": {
+      "level": {
+        "type": "int"
+      }
+    }
+  },
+  "compXpOf": "{xp} / {need}",
+  "@compXpOf": {
+    "description": "World text.",
+    "placeholders": {
+      "xp": {
+        "type": "int"
+      },
+      "need": {
+        "type": "int"
+      }
+    }
+  },
+  "compStatStreak": "days in a row",
+  "@compStatStreak": {
+    "description": "World text."
+  },
+  "compStatSeeds": "seeds",
+  "@compStatSeeds": {
+    "description": "World text."
+  },
+  "compStatToday": "points today",
+  "@compStatToday": {
+    "description": "World text."
+  },
+  "compMissionsTitle": "Today's tasks",
+  "@compMissionsTitle": {
+    "description": "World text."
+  },
+  "compMissionLog": "Log an expense or income",
+  "@compMissionLog": {
+    "description": "World text."
+  },
+  "compMissionHome": "Update the pantry or shopping list",
+  "@compMissionHome": {
+    "description": "World text."
+  },
+  "compMissionScan": "Scan a receipt",
+  "@compMissionScan": {
+    "description": "World text."
+  },
+  "compXpGain": "+{n}",
+  "@compXpGain": {
+    "description": "World text.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "compMissionsAllDone": "All three done! You earned {n} seeds today.",
+  "@compMissionsAllDone": {
+    "description": "World text.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "compMissionsReward": "Finish all three and get {n} seeds.",
+  "@compMissionsReward": {
+    "description": "World text.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "compWeekTitle": "This week's challenge",
+  "@compWeekTitle": {
+    "description": "World text."
+  },
+  "compWeekDone": "Done! You logged on {days} days this week",
+  "@compWeekDone": {
+    "description": "World text.",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "compWeekLeft": "Log an expense on {goal} of 7 days — {left} to go.",
+  "@compWeekLeft": {
+    "description": "World text.",
+    "placeholders": {
+      "goal": {
+        "type": "int"
+      },
+      "left": {
+        "type": "int"
+      }
+    }
+  },
+  "compJourney": "{name}'s journey",
+  "@compJourney": {
+    "description": "World text.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "compMaxStage": "{name} reached the top stage: the house sage.",
+  "@compMaxStage": {
+    "description": "World text.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "compSoon": "Soon it will grow into {next}!",
+  "@compSoon": {
+    "description": "World text.",
+    "placeholders": {
+      "next": {
+        "type": "String"
+      }
+    }
+  },
+  "compNeeds": "To become {next}: {what}.",
+  "@compNeeds": {
+    "description": "World text.",
+    "placeholders": {
+      "next": {
+        "type": "String"
+      },
+      "what": {
+        "type": "String"
+      }
+    }
+  },
+  "compNeedLevel": "level {n}",
+  "@compNeedLevel": {
+    "description": "World text.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "compNeedAge": "{n} days old ({left} to go)",
+  "@compNeedAge": {
+    "description": "World text.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "left": {
+        "type": "int"
+      }
+    }
+  },
+  "compNeedJoin": "  and ",
+  "@compNeedJoin": {
+    "description": "World text."
+  },
+  "compWardrobe": "Wardrobe",
+  "@compWardrobe": {
+    "description": "World text."
+  },
+  "compTabPersona": "Characters",
+  "@compTabPersona": {
+    "description": "World text."
+  },
+  "compTabOutfit": "Outfits",
+  "@compTabOutfit": {
+    "description": "World text."
+  },
+  "compTabBackground": "Backgrounds",
+  "@compTabBackground": {
+    "description": "World text."
+  },
+  "compTakeOff": "Take off {outfit}",
+  "@compTakeOff": {
+    "description": "World text.",
+    "placeholders": {
+      "outfit": {
+        "type": "String"
+      }
+    }
+  },
+  "compWorn": "Wearing",
+  "@compWorn": {
+    "description": "World text."
+  },
+  "compWear": "Wear",
+  "@compWear": {
+    "description": "World text."
+  },
+  "compLocked": "Locked",
+  "@compLocked": {
+    "description": "World text."
+  },
+  "compOrUsd": "or {price}",
+  "@compOrUsd": {
+    "description": "World text.",
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "compBuyTitle": "Get {name}?",
+  "@compBuyTitle": {
+    "description": "World text.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "compBuyBody": "{price} seeds will be spent, and it stays yours for good.",
+  "@compBuyBody": {
+    "description": "World text.",
+    "placeholders": {
+      "price": {
+        "type": "int"
+      }
+    }
+  },
+  "compBuyNo": "Not now",
+  "@compBuyNo": {
+    "description": "World text."
+  },
+  "compBuyYes": "Get it",
+  "@compBuyYes": {
+    "description": "World text."
+  },
+  "compBought": "Congratulations! {name} is yours",
+  "@compBought": {
+    "description": "World text.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "compMissing": "You are {n} seeds short — finish today's tasks to get there.",
+  "@compMissing": {
+    "description": "World text.",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "compCodeTitle": "Your friend's code",
+  "@compCodeTitle": {
+    "description": "World text."
+  },
+  "compCancel": "Cancel",
+  "@compCancel": {
+    "description": "World text."
+  },
+  "compConfirm": "Confirm",
+  "@compConfirm": {
+    "description": "World text."
+  },
+  "compEnterCode": "Have a friend's code? Enter it here",
+  "@compEnterCode": {
+    "description": "World text."
+  },
+  "compCodeOk": "Done! Log your first expense and you and your friend both get seeds",
+  "@compCodeOk": {
+    "description": "World text."
+  },
+  "compReasonNotOwned": "You do not own it yet — unlock it first.",
+  "@compReasonNotOwned": {
+    "description": "World text."
+  },
+  "compReasonOwned": "You already own it.",
+  "@compReasonOwned": {
+    "description": "World text."
+  },
+  "compReasonSeason": "It only shows up in its season.",
+  "@compReasonSeason": {
+    "description": "World text."
+  },
+  "compReasonNotForSeeds": "It is not sold for seeds.",
+  "@compReasonNotForSeeds": {
+    "description": "World text."
+  },
+  "compReasonWrongCode": "That code is not right — check it again.",
+  "@compReasonWrongCode": {
+    "description": "World text."
+  },
+  "compReasonClaimed": "You already entered a friend's code.",
+  "@compReasonClaimed": {
+    "description": "World text."
+  },
+  "compReasonTooLate": "A friend's code can only be entered in the first 14 days.",
+  "@compReasonTooLate": {
+    "description": "World text."
+  },
+  "compReasonTooMany": "Too many tries — try again in an hour.",
+  "@compReasonTooMany": {
+    "description": "World text."
+  },
+  "compReasonOffline": "No connection right now — try again.",
+  "@compReasonOffline": {
+    "description": "World text."
+  },
+  "compPlayUnavailable": "Google Play is not available on this phone.",
+  "@compPlayUnavailable": {
+    "description": "World text."
+  },
+  "compPlayNotOnPlay": "Not on Google Play yet — try seeds.",
+  "@compPlayNotOnPlay": {
+    "description": "World text."
+  },
+  "compPlayFailed": "The purchase did not go through — try again.",
+  "@compPlayFailed": {
+    "description": "World text."
+  },
+  "compSeedShopTitle": "In a hurry? Top up seeds",
+  "@compSeedShopTitle": {
+    "description": "World text."
+  },
+  "compSeedShopBody": "Seeds are free from your habits; this is for those who do not want to wait.",
+  "@compSeedShopBody": {
+    "description": "World text."
+  },
+  "compAllCharacters": "All characters at once · {price}",
+  "@compAllCharacters": {
+    "description": "World text.",
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "compInviteTitle": "Invite your friends",
+  "@compInviteTitle": {
+    "description": "World text."
+  },
+  "compInviteBody": "Each friend who logs a first expense = 200 seeds for you and 100 for them. One friend unlocks Felfool, three unlock the graduation cap and the crew background.",
+  "@compInviteBody": {
+    "description": "World text."
+  },
+  "compInviteCopy": "Copy the code",
+  "@compInviteCopy": {
+    "description": "World text."
+  },
+  "compInviteCopied": "Code copied",
+  "@compInviteCopied": {
+    "description": "World text."
+  },
+  "compInviteSend": "Send it",
+  "@compInviteSend": {
+    "description": "World text."
+  },
+  "compInviteSubject": "Try Zad",
+  "@compInviteSubject": {
+    "description": "World text."
+  },
+  "compInviteCount": "Signed up: {n}",
+  "@compInviteCount": {
+    "description": "World text.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "compInvitePending": "Waiting for a first expense: {n}",
+  "@compInvitePending": {
+    "description": "World text.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "compHowTitle": "How does the companion grow?",
+  "@compHowTitle": {
+    "description": "World text."
+  },
+  "compHowXp": "Points come from your habits only: expense +10, receipt +20, pantry or list +5, a streak day +25, a new family member +200.",
+  "@compHowXp": {
+    "description": "World text."
+  },
+  "compHowSeeds": "Seeds: each new level +50, the three daily tasks +30, 7 days in a row +100, and 30 days +300.",
+  "@compHowSeeds": {
+    "description": "World text."
+  },
+  "compHowAi": "Seeds are for the wardrobe only — they do not turn into AI attempts.",
+  "@compHowAi": {
+    "description": "World text."
+  },
+  "compHowSleep": "If you are away two days it sleeps. Come back and it wakes up happy with a gift.",
+  "@compHowSleep": {
+    "description": "World text."
+  },
+  "compHowKind": "It never gets upset with you and never drops a level.",
+  "@compHowKind": {
+    "description": "World text."
+  },
+  "gamesWorldEmpty": "You have not played yet",
+  "@gamesWorldEmpty": {
+    "description": "World text."
+  },
+  "gamesWorldEmptyHint": "Start with any game — your first round begins your streak and earns seeds.",
+  "@gamesWorldEmptyHint": {
+    "description": "World text."
+  },
+  "offersEyebrowMine": "{count, plural, =1{1 from your notifications} other{{count} from your notifications}}",
+  "offersStateCount": "{count, plural, =1{1 live offer} other{{count} live offers}}",
+  "offersStateEmpty": "No live offers right now",
+  "offersMineTitle": "From your notifications",
+  "offersPartnerTitle": "Coupons for your country",
+  "offersCopy": "Copy",
+  "offersCopied": "Code {code} copied",
+  "offersNoCode": "No code needed",
+  "offersExpiresToday": "Ends today",
+  "offersExpiresInDays": "{count, plural, =1{Ends tomorrow} other{Ends in {count} days}}",
+  "offersPercentOff": "{percent}% off",
+  "offersAmountOff": "{amount} {currency} off",
+  "offersFallbackTitle": "Special offer",
+  "offersEmptyTitle": "No live offers",
+  "offersEmptyMessage": "When a coupon for your country shows up, or a shopping app sends you a discount notification, it lands here. Pull down to refresh.",
+  "offersNearbyTitle": "Nearby shop deals",
+  "offersNearbyMessage": "This week's prices and shops around you",
+  "offersOpenFailed": "Could not open the offer",
+  "worldLabelFamily": "Family",
+  "familyWorldNone": "No family yet",
+  "familyWorldChores": "{count, plural, =1{1 task ahead} other{{count} tasks ahead}}",
+  "familyWorldRequests": "{count, plural, =1{1 money request waiting on you} other{{count} money requests waiting on you}}",
+  "familyLoadingTitle": "Looking for your family",
+  "familyLoadingMessage": "The first time needs internet. Pull down if it takes long.",
+  "familyRetry": "Try again",
+  "familyWelcomeTitle": "Welcome to your Zad family",
+  "familyWelcomeBody": "Create a new family and be its admin, or join an existing one with an invite code.",
+  "familyCreateButton": "Create a new family as admin",
+  "familyJoinButton": "Join the family",
+  "familyAliasCardTitle": "Your name in the family",
+  "familyAliasLabel": "Your name in the family (optional)",
+  "familyAliasHint": "For example: Ahmed",
+  "familyJoinCardTitle": "Have an invite code?",
+  "familyCodeLabel": "Invite code",
+  "familyCodeHint": "For example: ZAD-1234",
+  "familyJoinPasteLink": "Have an invite link? Open the join window",
+  "familyTabChat": "Chat",
+  "familyTabTasks": "Tasks",
+  "familyTabMembers": "Members",
+  "familyTabGroceries": "Groceries",
+  "familyTabKids": "Kids",
+  "familyTabGoals": "Goals",
+  "familyMoreTitle": "More for the family",
+  "familyToolSavings": "Savings funds",
+  "familyToolAchievements": "Achievements and ranks",
+  "familyToolTasbiha": "Tasbiha",
+  "familyFollowStarted": "Following started."
 }

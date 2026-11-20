@@ -196,7 +196,7 @@ class _HomeDealsCarouselState extends ConsumerState<HomeDealsCarousel> {
               TextButton(
                 style: TextButton.styleFrom(minimumSize: const Size(44, 44)),
                 onPressed: () =>
-                    unawaited(ZadScreens.showNearbyDealsScreen(context)),
+                    unawaited(ZadScreens.showOffersScreen(context)),
                 child: Text(l.homeDealsSeeAll),
               ),
             ],
