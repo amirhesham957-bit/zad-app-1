@@ -10429,6 +10429,216 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'جرّب تاني'**
   String get achRetry;
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'لوحة الأسعار'**
+  String get pricesEyebrow;
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'أسعار السوق من بلاغات الناس'**
+  String get pricesWorldNeutral;
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأسعار ثابتة النهارده'**
+  String get pricesWorldFlat;
+
+  /// No description provided for @pricesWorldUp.
+  ///
+  /// In ar, this message translates to:
+  /// **'{name} طالع'**
+  String pricesWorldUp(String name);
+
+  /// No description provided for @pricesWorldDown.
+  ///
+  /// In ar, this message translates to:
+  /// **'{name} نازل'**
+  String pricesWorldDown(String name);
+
+  /// No description provided for @pricesWorldUpDown.
+  ///
+  /// In ar, this message translates to:
+  /// **'{up} طالع، {down} نازل'**
+  String pricesWorldUpDown(String up, String down);
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'مساهماتك'**
+  String get pricesMine;
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجّل سعر جديد'**
+  String get pricesReportNew;
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'أرخص سعر حواليك'**
+  String get pricesCheapestTitle;
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'من بلاغات مجتمع زاد آخر ١٤ يوم — مش أسعار رسمية'**
+  String get pricesCheapestNote;
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'المدينة أو المنطقة (اختياري)'**
+  String get pricesCityLabel;
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'دوّر'**
+  String get pricesSearch;
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقدرناش نجيب الأسعار دلوقتي'**
+  String get pricesFetchFailed;
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتأكد من النت وجرّب تاني'**
+  String get pricesFetchFailedHint;
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'جرّب تاني'**
+  String get pricesRetry;
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'لسه مفيش بلاغات هنا'**
+  String get pricesNoReportsTitle;
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'كن أول واحد يبلّغ عن سعر — جيرانك هيشكروك'**
+  String get pricesNoReportsHint;
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجّل أول سعر'**
+  String get pricesFirstReport;
+
+  /// No description provided for @pricesRowMeta.
+  ///
+  /// In ar, this message translates to:
+  /// **'{where} · {count} بلاغ'**
+  String pricesRowMeta(String where, int count);
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'ترندات سوقك'**
+  String get pricesTrendsTitle;
+
+  /// No description provided for @pricesTrendsNote.
+  ///
+  /// In ar, this message translates to:
+  /// **'اللي بيوت كتير في بلدك اشترته أو حطّته في قايمة التسوق آخر {days} يوم — من غير أسماء ولا محلات'**
+  String pricesTrendsNote(int days);
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختار بلدك الأول'**
+  String get pricesTrendsNoMarket;
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'الترندات بتتحسب لكل بلد لوحده.'**
+  String get pricesTrendsNoMarketHint;
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'لسه مفيش ترند في سوقك'**
+  String get pricesTrendsEmpty;
+
+  /// No description provided for @pricesTrendsEmptyHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصنف بيظهر هنا لما {homes} بيوت مختلفة على الأقل يشتروه أو يحطّوه في قايمتهم — عشان محدش يتعرف من مشترياته. كل فاتورة بتصوّرها بتقرّب اليوم ده.'**
+  String pricesTrendsEmptyHint(int homes);
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيزيد'**
+  String get pricesTrendUp;
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيقل'**
+  String get pricesTrendDown;
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'ثابت'**
+  String get pricesTrendFlat;
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'جديد'**
+  String get pricesTrendFresh;
+
+  /// No description provided for @pricesHomes.
+  ///
+  /// In ar, this message translates to:
+  /// **'{n} بيوت'**
+  String pricesHomes(int n);
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'أكثر المشاركين'**
+  String get pricesTopTitle;
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'لسه مفيش مساهمات'**
+  String get pricesTopNone;
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجّل أول سعر شفته في السوق — مساهمتك بتظهر هنا وبتساعد جيرانك يلاقوا أرخص مكان.'**
+  String get pricesTopNoneHint;
+
+  /// No description provided for @pricesContributor.
+  ///
+  /// In ar, this message translates to:
+  /// **'المساهم {rank}'**
+  String pricesContributor(int rank);
+
+  /// No description provided for @pricesContribCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'{n} مساهمات'**
+  String pricesContribCount(int n);
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

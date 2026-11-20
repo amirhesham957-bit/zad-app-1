@@ -6262,4 +6262,130 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get achRetry => 'Try again';
+
+  @override
+  String get pricesEyebrow => 'Price board';
+
+  @override
+  String get pricesWorldNeutral => 'Market prices, reported by people';
+
+  @override
+  String get pricesWorldFlat => 'Prices are steady today';
+
+  @override
+  String pricesWorldUp(String name) {
+    return '$name is rising';
+  }
+
+  @override
+  String pricesWorldDown(String name) {
+    return '$name is falling';
+  }
+
+  @override
+  String pricesWorldUpDown(String up, String down) {
+    return '$up rising, $down falling';
+  }
+
+  @override
+  String get pricesMine => 'Your reports';
+
+  @override
+  String get pricesReportNew => 'Report a price';
+
+  @override
+  String get pricesCheapestTitle => 'Cheapest near you';
+
+  @override
+  String get pricesCheapestNote =>
+      'From Zad community reports in the last 14 days — not official prices';
+
+  @override
+  String get pricesCityLabel => 'City or area (optional)';
+
+  @override
+  String get pricesSearch => 'Search';
+
+  @override
+  String get pricesFetchFailed => 'Couldn\'t get prices right now';
+
+  @override
+  String get pricesFetchFailedHint => 'Check your connection and try again';
+
+  @override
+  String get pricesRetry => 'Try again';
+
+  @override
+  String get pricesNoReportsTitle => 'No reports here yet';
+
+  @override
+  String get pricesNoReportsHint =>
+      'Be the first to report a price — your neighbours will thank you';
+
+  @override
+  String get pricesFirstReport => 'Report the first price';
+
+  @override
+  String pricesRowMeta(String where, int count) {
+    return '$where · $count reports';
+  }
+
+  @override
+  String get pricesTrendsTitle => 'Your market\'s trends';
+
+  @override
+  String pricesTrendsNote(int days) {
+    return 'What many homes in your country bought or listed in the last $days days — no names, no stores';
+  }
+
+  @override
+  String get pricesTrendsNoMarket => 'Pick your country first';
+
+  @override
+  String get pricesTrendsNoMarketHint => 'Trends are worked out per country.';
+
+  @override
+  String get pricesTrendsEmpty => 'No trend in your market yet';
+
+  @override
+  String pricesTrendsEmptyHint(int homes) {
+    return 'An item shows here once at least $homes different homes buy or list it — so nobody can be recognised from their purchases. Every receipt you scan brings that day closer.';
+  }
+
+  @override
+  String get pricesTrendUp => 'Rising';
+
+  @override
+  String get pricesTrendDown => 'Falling';
+
+  @override
+  String get pricesTrendFlat => 'Steady';
+
+  @override
+  String get pricesTrendFresh => 'New';
+
+  @override
+  String pricesHomes(int n) {
+    return '$n homes';
+  }
+
+  @override
+  String get pricesTopTitle => 'Top contributors';
+
+  @override
+  String get pricesTopNone => 'No contributions yet';
+
+  @override
+  String get pricesTopNoneHint =>
+      'Report the first price you saw in the market — your report shows here and helps neighbours find the cheapest place.';
+
+  @override
+  String pricesContributor(int rank) {
+    return 'Contributor $rank';
+  }
+
+  @override
+  String pricesContribCount(int n) {
+    return '$n reports';
+  }
 }
