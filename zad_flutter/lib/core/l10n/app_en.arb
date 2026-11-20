@@ -809,6 +809,74 @@
     }
   },
   "recipesTrendingGroup": "Trending now",
+  "chefWorldState": "{total, plural, =1{1 recipe} other{{total} recipes}} · {ready} complete",
+  "@chefWorldState": {
+    "description": "Chef world: the state line once there is an answer.",
+    "placeholders": {
+      "total": {
+        "type": "int"
+      },
+      "ready": {
+        "type": "int"
+      }
+    }
+  },
+  "chefStateEmpty": "The pantry is empty — add food and I will suggest",
+  "chefStateReady": "Ready to suggest a dish from your pantry",
+  "chefStateThinking": "Thinking of a dish from your pantry…",
+  "chefError": "I could not reach Chef Zad. Try again in a moment.",
+  "chefStale": "Your pantry has changed since the last suggestions — ask for new ones if you like.",
+  "chefReadyTitle": "Chef Zad is ready",
+  "chefReadyBody": "Tap \"Recipes from my pantry\" and Chef Zad tells you what to cook from what you have, and what is only missing a little.",
+  "chefEmptyTitle": "The pantry is empty",
+  "chefEmptyBody": "Add what you have to the pantry and Chef Zad suggests dishes from it.",
+  "chefAskCta": "Recipes from my pantry",
+  "chefAsking": "Chef Zad is thinking…",
+  "chefAskAgain": "New suggestions",
+  "chefGroupPantry": "From your pantry",
+  "chefGroupMore": "More meals",
+  "chefComplete": "Complete",
+  "chefMissingCount": "Missing {count}",
+  "@chefMissingCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "chefMinutes": "{count} min",
+  "@chefMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "chefHaveHeading": "You have",
+  "chefMissingHeading": "Missing",
+  "chefMethodHeading": "Method",
+  "chefStepByStep": "Full recipe, step by step",
+  "chefAddMissing": "Add the missing to the shopping list ({count})",
+  "@chefAddMissing": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "chefAddedOne": "Added 1 item to the shopping list.",
+  "chefAddedMany": "Added {count} items to the shopping list.",
+  "@chefAddedMany": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "chefNothingToAdd": "Everything missing is already on the list or in the pantry.",
+  "chefRatePrompt": "Did you like it? Chef Zad remembers.",
+  "chefLike": "I liked it",
+  "chefDislike": "Not for me",
   "homeDealsSeeAll": "All deals",
   "homeDealsSearching": "Looking for deals in your stores — tap to see what we found",
   "sheinShop": "Shop on SHEIN",

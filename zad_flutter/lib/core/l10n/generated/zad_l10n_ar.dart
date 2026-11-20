@@ -2721,6 +2721,113 @@ class ZadL10nAr extends ZadL10n {
   String get recipesTrendingGroup => 'ترند دلوقتي';
 
   @override
+  String chefWorldState(int total, int ready) {
+    String _temp0 = intl.Intl.pluralLogic(
+      total,
+      locale: localeName,
+      other: '$total وصفة',
+      few: '$total وصفات',
+      two: 'وصفتين',
+      one: 'وصفة واحدة',
+    );
+    return '$_temp0 · $ready منها مكتملة';
+  }
+
+  @override
+  String get chefStateEmpty => 'المخزن فاضي — ضيف أكلك وأنا أقترح';
+
+  @override
+  String get chefStateReady => 'جاهزة أقترحلك أكلة من مخزنك';
+
+  @override
+  String get chefStateThinking => 'بفكر في أكلة من مخزنك…';
+
+  @override
+  String get chefError => 'مقدرتش أوصل لشيف زاد. جرّب تاني بعد شوية.';
+
+  @override
+  String get chefStale => 'مخزنك اتغيّر من آخر اقتراحات — اطلب جديدة لو حابب.';
+
+  @override
+  String get chefReadyTitle => 'شيف زاد جاهزة';
+
+  @override
+  String get chefReadyBody =>
+      'دوس «وصفات من مخزني» وهتقولك تطبخ إيه من اللي عندك، واللي ناقصه حاجة بسيطة.';
+
+  @override
+  String get chefEmptyTitle => 'المخزن فاضي';
+
+  @override
+  String get chefEmptyBody =>
+      'ضيف اللي عندك في المخزن، وشيف زاد تقترح أكلات منه.';
+
+  @override
+  String get chefAskCta => 'وصفات من مخزني';
+
+  @override
+  String get chefAsking => 'شيف زاد بتفكر…';
+
+  @override
+  String get chefAskAgain => 'اقتراحات جديدة';
+
+  @override
+  String get chefGroupPantry => 'من مخزونك';
+
+  @override
+  String get chefGroupMore => 'وجبات تانية';
+
+  @override
+  String get chefComplete => 'مكتملة';
+
+  @override
+  String chefMissingCount(int count) {
+    return 'ناقصك $count';
+  }
+
+  @override
+  String chefMinutes(int count) {
+    return '$count دقيقة';
+  }
+
+  @override
+  String get chefHaveHeading => 'من عندك';
+
+  @override
+  String get chefMissingHeading => 'ناقصك';
+
+  @override
+  String get chefMethodHeading => 'الطريقة';
+
+  @override
+  String get chefStepByStep => 'الوصفة كاملة خطوة بخطوة';
+
+  @override
+  String chefAddMissing(int count) {
+    return 'ضيف الناقص لقايمة التسوق ($count)';
+  }
+
+  @override
+  String get chefAddedOne => 'ضفت صنف لقايمة التسوق.';
+
+  @override
+  String chefAddedMany(int count) {
+    return 'ضفت $count أصناف لقايمة التسوق.';
+  }
+
+  @override
+  String get chefNothingToAdd => 'الناقص كله في قايمة التسوق أو المخزن.';
+
+  @override
+  String get chefRatePrompt => 'عجبتك؟ شيف زاد بتفتكر.';
+
+  @override
+  String get chefLike => 'عجبتني';
+
+  @override
+  String get chefDislike => 'مش لذوقي';
+
+  @override
   String get homeDealsSeeAll => 'كل العروض';
 
   @override

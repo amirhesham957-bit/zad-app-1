@@ -586,12 +586,7 @@ class _Header extends StatelessWidget {
           ],
         ),
       ),
-      child: Center(
-        child: Text(
-          dishEmoji(recipe.name),
-          style: const TextStyle(fontSize: 72),
-        ),
-      ),
+      child: Center(child: dishArt(recipe.name, 96)),
     );
     final url = recipe.imageUrl ?? recipe.thumbUrl;
     return SizedBox(

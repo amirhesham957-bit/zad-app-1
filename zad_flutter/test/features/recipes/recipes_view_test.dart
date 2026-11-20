@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zad/core/design/zad_theme.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/recipes/application/recipes_controller.dart';
 import 'package:zad/features/recipes/domain/recipe.dart';
 import 'package:zad/features/recipes/presentation/recipe_detail_screen.dart';
@@ -27,6 +28,7 @@ import 'package:zad/shared/inventory/domain/inventory_item.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
 
 import '../../support/fonts.dart';
+import '../../support/quiet_household.dart';
 
 class _Recipes extends RecipesController {
   new(this.initial);
@@ -130,6 +132,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          ...quietOrbOverrides,
           recipesControllerProvider.overrideWith(() => recipes),
           pantryControllerProvider.overrideWith(() => _Pantry(pantry)),
           shoppingControllerProvider.overrideWith(_Shopping.new),
@@ -139,6 +142,11 @@ void main() {
         ],
         child: MaterialApp(
           theme: ZadTheme.light(),
+          // The scene loops forever: reduced motion lets pumpAndSettle end.
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(disableAnimations: true),
+            child: child!,
+          ),
           home: const Directionality(
             textDirection: TextDirection.rtl,
             child: Scaffold(body: ui.RecipesView()),
@@ -209,6 +217,31 @@ void main() {
     await tester.tap(find.text('ضيف للمخزن'));
     await tester.pump();
     expect(opened, 1);
+  });
+
+  testWidgets('the world says what the kitchen holds and what the chef found', (
+    tester,
+  ) async {
+    await pump(tester, pantry: _kitchen);
+    expect(find.text('شيف زاد'), findsOneWidget);
+    expect(find.text('صنفين'), findsOneWidget);
+    expect(find.text('جاهزة أقترحلك أكلة من مخزنك'), findsOneWidget);
+  });
+
+  testWidgets('the state line counts the recipes and the complete ones', (
+    tester,
+  ) async {
+    await pump(tester, pantry: _kitchen, suggestions: _answer());
+    expect(find.text('وصفتين · 1 منها مكتملة'), findsOneWidget);
+  });
+
+  testWidgets('an empty pantry: the world says so and leads to the pantry', (
+    tester,
+  ) async {
+    await pump(tester, pantry: <InventoryItem>[]);
+    expect(find.text('المخزن فاضي — ضيف أكلك وأنا أقترح'), findsOneWidget);
+    expect(find.text('ضيف للمخزن'), findsOneWidget);
+    expect(find.text('وصفات من مخزني'), findsNothing);
   });
 
   testWidgets('an answer is shown in its two groups, with the chef line', (
@@ -296,6 +329,44 @@ void main() {
     await expectLater(
       find.byType(MaterialApp),
       matchesGoldenFile('../../../build/screens/chef_secret.png'),
+    );
+  }, skip: Platform.environment['ZAD_SCREENS'] != '1');
+
+  testWidgets('screenshot: the chef world', (tester) async {
+    await loadZadFonts();
+    recipes = _Recipes(RecipesView(suggestions: _answer()));
+    tester.view
+      ..physicalSize = const Size(860, 1864)
+      ..devicePixelRatio = 2;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          ...quietOrbOverrides,
+          recipesControllerProvider.overrideWith(() => recipes),
+          pantryControllerProvider.overrideWith(() => _Pantry(_kitchen)),
+          shoppingControllerProvider.overrideWith(_Shopping.new),
+          budgetControllerProvider.overrideWith(_Budget.new),
+          adsAllowedProvider.overrideWithValue(false),
+        ],
+        child: MaterialApp(
+          debugShowCheckedModeBanner: false,
+          theme: ZadTheme.light(),
+          locale: const Locale('ar'),
+          supportedLocales: ZadL10n.supportedLocales,
+          localizationsDelegates: ZadL10n.localizationsDelegates,
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(disableAnimations: true),
+            child: child!,
+          ),
+          home: const Scaffold(body: ui.RecipesView()),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await expectLater(
+      find.byType(MaterialApp),
+      matchesGoldenFile('../../../build/screens/world_chef.png'),
     );
   }, skip: Platform.environment['ZAD_SCREENS'] != '1');
 

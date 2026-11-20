@@ -2047,6 +2047,74 @@
     }
   },
   "recipesTrendingGroup": "ترند دلوقتي",
+  "chefWorldState": "{total, plural, =1{وصفة واحدة} =2{وصفتين} few{{total} وصفات} other{{total} وصفة}} · {ready} منها مكتملة",
+  "@chefWorldState": {
+    "description": "Chef world: the state line once there is an answer.",
+    "placeholders": {
+      "total": {
+        "type": "int"
+      },
+      "ready": {
+        "type": "int"
+      }
+    }
+  },
+  "chefStateEmpty": "المخزن فاضي — ضيف أكلك وأنا أقترح",
+  "chefStateReady": "جاهزة أقترحلك أكلة من مخزنك",
+  "chefStateThinking": "بفكر في أكلة من مخزنك…",
+  "chefError": "مقدرتش أوصل لشيف زاد. جرّب تاني بعد شوية.",
+  "chefStale": "مخزنك اتغيّر من آخر اقتراحات — اطلب جديدة لو حابب.",
+  "chefReadyTitle": "شيف زاد جاهزة",
+  "chefReadyBody": "دوس «وصفات من مخزني» وهتقولك تطبخ إيه من اللي عندك، واللي ناقصه حاجة بسيطة.",
+  "chefEmptyTitle": "المخزن فاضي",
+  "chefEmptyBody": "ضيف اللي عندك في المخزن، وشيف زاد تقترح أكلات منه.",
+  "chefAskCta": "وصفات من مخزني",
+  "chefAsking": "شيف زاد بتفكر…",
+  "chefAskAgain": "اقتراحات جديدة",
+  "chefGroupPantry": "من مخزونك",
+  "chefGroupMore": "وجبات تانية",
+  "chefComplete": "مكتملة",
+  "chefMissingCount": "ناقصك {count}",
+  "@chefMissingCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "chefMinutes": "{count} دقيقة",
+  "@chefMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "chefHaveHeading": "من عندك",
+  "chefMissingHeading": "ناقصك",
+  "chefMethodHeading": "الطريقة",
+  "chefStepByStep": "الوصفة كاملة خطوة بخطوة",
+  "chefAddMissing": "ضيف الناقص لقايمة التسوق ({count})",
+  "@chefAddMissing": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "chefAddedOne": "ضفت صنف لقايمة التسوق.",
+  "chefAddedMany": "ضفت {count} أصناف لقايمة التسوق.",
+  "@chefAddedMany": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "chefNothingToAdd": "الناقص كله في قايمة التسوق أو المخزن.",
+  "chefRatePrompt": "عجبتك؟ شيف زاد بتفتكر.",
+  "chefLike": "عجبتني",
+  "chefDislike": "مش لذوقي",
   "homeDealsSeeAll": "كل العروض",
   "homeDealsSearching": "بندوّرلك على عروض في محلاتك — اضغط تشوف اللي لقيناه",
   "sheinShop": "تسوّق على SHEIN",

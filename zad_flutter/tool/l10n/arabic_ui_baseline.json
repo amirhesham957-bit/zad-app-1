@@ -73,7 +73,6 @@
   "features/proposals/presentation/proposals_screen.dart": 34,
   "features/recipes/presentation/home_chef_section.dart": 11,
   "features/recipes/presentation/recipe_detail_screen.dart": 17,
-  "features/recipes/presentation/recipes_view.dart": 42,
   "features/savings/presentation/family_savings_screen.dart": 49,
   "features/scan/application/camera_actions.dart": 12,
   "features/scan/application/document_scan_controller.dart": 1,
