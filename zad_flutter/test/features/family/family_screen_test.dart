@@ -90,12 +90,18 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          ...quietOrbOverrides,
           familyControllerProvider.overrideWith(() => fake),
           supabaseClientProvider.overrideWithValue(quietSupabase),
           localStoreProvider.overrideWithValue(store),
         ],
         child: MaterialApp(
           theme: ZadTheme.light(),
+          // The world's scene loops forever; reduced motion keeps it still.
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(disableAnimations: true),
+            child: child!,
+          ),
           home: const Directionality(
             textDirection: TextDirection.rtl,
             // The members tab: the chat tab would open a realtime channel.

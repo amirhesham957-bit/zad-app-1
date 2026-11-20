@@ -203,6 +203,7 @@ OpenScreen? _worldScreen(ZadWorld world) => switch (world) {
   ZadWorld.tas => ZadScreens.showTasbihaScreen,
   ZadWorld.prices => ZadScreens.showPricesScreen,
   ZadWorld.ach => ZadScreens.showAchievementsScreen,
+  ZadWorld.family => (c) => ZadScreens.showFamilyScreen(c),
   ZadWorld.games || ZadWorld.offers => null,
 };
 

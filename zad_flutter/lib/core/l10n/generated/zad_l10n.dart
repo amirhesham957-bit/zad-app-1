@@ -10813,6 +10813,180 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'سياسة الاستخدام والخصوصية'**
   String get settingsTermsBody;
+
+  /// No description provided for @worldLabelFamily.
+  ///
+  /// In ar, this message translates to:
+  /// **'العيلة'**
+  String get worldLabelFamily;
+
+  /// No description provided for @familyWorldNone.
+  ///
+  /// In ar, this message translates to:
+  /// **'لسه معندكش عيلة'**
+  String get familyWorldNone;
+
+  /// No description provided for @familyWorldChores.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{مهمة واحدة قدامكم} =2{مهمتين قدامكم} few{{count} مهام قدامكم} other{{count} مهمة قدامكم}}'**
+  String familyWorldChores(num count);
+
+  /// No description provided for @familyWorldRequests.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{طلب مصروف مستني قرارك} =2{طلبين مصروف مستنيين قرارك} few{{count} طلبات مصروف مستنية قرارك} other{{count} طلب مصروف مستني قرارك}}'**
+  String familyWorldRequests(num count);
+
+  /// No description provided for @familyLoadingTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'بنشوف عيلتك'**
+  String get familyLoadingTitle;
+
+  /// No description provided for @familyLoadingMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'أول مرة محتاجة نت. اسحب لتحت لو طوّلت.'**
+  String get familyLoadingMessage;
+
+  /// No description provided for @familyRetry.
+  ///
+  /// In ar, this message translates to:
+  /// **'جرّب تاني'**
+  String get familyRetry;
+
+  /// No description provided for @familyWelcomeTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'أهلاً بك في عائلة زاد'**
+  String get familyWelcomeTitle;
+
+  /// No description provided for @familyWelcomeBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'يمكنك إنشاء عائلة جديدة لتكون أنت المدير، أو الانضمام لعائلة موجودة عبر كود الدعوة.'**
+  String get familyWelcomeBody;
+
+  /// No description provided for @familyCreateButton.
+  ///
+  /// In ar, this message translates to:
+  /// **'إنشاء عائلة جديدة كمدير (Admin)'**
+  String get familyCreateButton;
+
+  /// No description provided for @familyJoinButton.
+  ///
+  /// In ar, this message translates to:
+  /// **'الانضمام للعائلة'**
+  String get familyJoinButton;
+
+  /// No description provided for @familyAliasCardTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسمك في العيلة'**
+  String get familyAliasCardTitle;
+
+  /// No description provided for @familyAliasLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسمك في العيلة (اختياري)'**
+  String get familyAliasLabel;
+
+  /// No description provided for @familyAliasHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'مثال: الابن أحمد'**
+  String get familyAliasHint;
+
+  /// No description provided for @familyJoinCardTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'عندك كود دعوة؟'**
+  String get familyJoinCardTitle;
+
+  /// No description provided for @familyCodeLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'كود الدعوة'**
+  String get familyCodeLabel;
+
+  /// No description provided for @familyCodeHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'مثال: ZAD-1234'**
+  String get familyCodeHint;
+
+  /// No description provided for @familyJoinPasteLink.
+  ///
+  /// In ar, this message translates to:
+  /// **'عندك رابط دعوة؟ افتح نافذة الانضمام'**
+  String get familyJoinPasteLink;
+
+  /// No description provided for @familyTabChat.
+  ///
+  /// In ar, this message translates to:
+  /// **'الشات'**
+  String get familyTabChat;
+
+  /// No description provided for @familyTabTasks.
+  ///
+  /// In ar, this message translates to:
+  /// **'المهام'**
+  String get familyTabTasks;
+
+  /// No description provided for @familyTabMembers.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأعضاء'**
+  String get familyTabMembers;
+
+  /// No description provided for @familyTabGroceries.
+  ///
+  /// In ar, this message translates to:
+  /// **'البقالة'**
+  String get familyTabGroceries;
+
+  /// No description provided for @familyTabKids.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأبناء'**
+  String get familyTabKids;
+
+  /// No description provided for @familyTabGoals.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأهداف'**
+  String get familyTabGoals;
+
+  /// No description provided for @familyMoreTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'كمان للعيلة'**
+  String get familyMoreTitle;
+
+  /// No description provided for @familyToolSavings.
+  ///
+  /// In ar, this message translates to:
+  /// **'صناديق التجميع'**
+  String get familyToolSavings;
+
+  /// No description provided for @familyToolAchievements.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإنجازات والرتب'**
+  String get familyToolAchievements;
+
+  /// No description provided for @familyToolTasbiha.
+  ///
+  /// In ar, this message translates to:
+  /// **'تسبيحة'**
+  String get familyToolTasbiha;
+
+  /// No description provided for @familyFollowStarted.
+  ///
+  /// In ar, this message translates to:
+  /// **'بدأت المتابعة.'**
+  String get familyFollowStarted;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

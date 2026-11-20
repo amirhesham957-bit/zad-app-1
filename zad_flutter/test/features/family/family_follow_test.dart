@@ -62,9 +62,12 @@ class _Remote implements FamilySharesRemote {
   Future<void> revoke(String shareId) async => calls.add('revoke $shareId');
 
   @override
-  Future<int> request(String ownerId, Set<FamilyShareScope> scopes) async {
+  Future<({int requested, String? status})> request(
+    String ownerId,
+    Set<FamilyShareScope> scopes,
+  ) async {
     calls.add('request $ownerId ${scopes.map((s) => s.wire).join(',')}');
-    return scopes.length;
+    return (requested: scopes.length, status: null);
   }
 
   @override
@@ -274,6 +277,30 @@ void main() {
     await tester.tap(find.text('إلغاء'));
     await tester.pump();
     expect(remote.calls, <String>['answer p1 true', 'revoke g1']);
+  });
+
+  testWidgets('an admin following a child needs no answer except location', (
+    tester,
+  ) async {
+    final remote = _Remote(view: FollowedMember.fromJson(_dryRun));
+    await pump(
+      tester,
+      remote,
+      const MemberFollowSection(
+        ownerId: 'son',
+        currency: 'EGP',
+        kidsGeofencing: true,
+        followsAutomatically: true,
+      ),
+    );
+    await tester.pump();
+
+    // Spending was pending: shown as followed, not as waiting.
+    expect(find.text('المصروف: وافق ✅'), findsOneWidget);
+    expect(find.text('المصروف: مستني موافقته'), findsNothing);
+    expect(find.text('المهام والمواعيد: وافق ✅'), findsOneWidget);
+    // Nothing left to ask for the scopes followed at once.
+    expect(find.text('اطلب متابعة'), findsNothing);
   });
 
   testWidgets('the admin sees what was granted, and can ask for the rest', (

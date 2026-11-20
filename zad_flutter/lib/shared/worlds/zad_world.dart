@@ -78,7 +78,10 @@ enum ZadWorld {
   offers(ZadWorldColors.offers, ZadIconArt.gift),
 
   /// إنجازاتي.
-  ach(ZadWorldColors.achievements, ZadIconArt.star);
+  ach(ZadWorldColors.achievements, ZadIconArt.star),
+
+  /// العيلة.
+  family(ZadWorldColors.family, ZadIconArt.family);
 
   new(this.color, this.art);
 
@@ -113,6 +116,7 @@ enum ZadWorld {
     prices => l.worldLabelPrices,
     offers => l.worldLabelOffers,
     ach => l.worldLabelAch,
+    family => l.worldLabelFamily,
   };
 
   /// The worlds this one feeds — what happens here changes what they show
@@ -141,5 +145,6 @@ enum ZadWorld {
     prices => const <ZadWorld>[shop, budget, chef],
     offers => const <ZadWorld>[shop, chef, notif],
     ach => const <ZadWorld>[comp, games, tas],
+    family => const <ZadWorld>[ph, appt, shop, chat],
   };
 }

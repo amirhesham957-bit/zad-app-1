@@ -17,6 +17,7 @@ import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_motion.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/design/tokens/zad_world_colors.dart';
 import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/family/presentation/family_dialogs.dart';
 import 'package:zad/features/family/presentation/family_follow.dart';
@@ -84,7 +85,7 @@ class _FamilyChatTabState extends ConsumerState<FamilyChatTab> {
         if (online.isNotEmpty)
           Container(
             width: double.infinity,
-            color: ZadColors.green700.withValues(alpha: 0.05),
+            color: ZadWorldColors.family.withValues(alpha: 0.05),
             padding: const EdgeInsets.symmetric(
               horizontal: ZadSpacing.lg,
               vertical: 6,
@@ -353,7 +354,7 @@ class _MessageRow extends ConsumerWidget {
               if (!isMe && !isAi) ...<Widget>[
                 CircleAvatar(
                   radius: 16,
-                  backgroundColor: ZadColors.green700.withValues(alpha: 0.2),
+                  backgroundColor: ZadWorldColors.family.withValues(alpha: 0.2),
                   // The member's own emoji when they picked one (a child does,
                   // from the kids' home); otherwise the first letter.
                   child: picture != null
@@ -361,7 +362,7 @@ class _MessageRow extends ConsumerWidget {
                       : Text(
                           alias.characters.firstOrNull ?? '?',
                           style: ZadType.labelLarge.copyWith(
-                            color: ZadColors.green700,
+                            color: ZadWorldColors.family,
                           ),
                         ),
                 ),
@@ -479,7 +480,7 @@ class _TextBubble extends ConsumerWidget {
                         const Icon(
                           ZadIcons.assistant,
                           size: 11,
-                          color: ZadColors.green700,
+                          color: ZadWorldColors.family,
                         ),
                         const SizedBox(width: 3),
                       ],
@@ -487,7 +488,9 @@ class _TextBubble extends ConsumerWidget {
                         alias,
                         style: ZadType.labelSmall.copyWith(
                           fontWeight: FontWeight.w700,
-                          color: isAi ? ZadColors.green700 : ZadColors.inkMuted,
+                          color: isAi
+                              ? ZadWorldColors.family
+                              : ZadColors.inkMuted,
                         ),
                       ),
                       if (message.isPinned) ...<Widget>[
@@ -546,7 +549,7 @@ class _TextBubble extends ConsumerWidget {
                   ZadIcons.pin,
                   size: 14,
                   color: message.isPinned
-                      ? ZadColors.green700
+                      ? ZadWorldColors.family
                       : ZadColors.inkMuted.withValues(alpha: 0.5),
                 ),
               ),
@@ -663,20 +666,20 @@ class _RequestBubble extends ConsumerWidget {
         decoration: BoxDecoration(
           color: ZadColors.surface.withValues(alpha: 0.9),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: ZadColors.green700),
+          border: Border.all(color: ZadWorldColors.family),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             Row(
               children: <Widget>[
-                const Icon(ZadIcons.shopping, color: ZadColors.green700),
+                const Icon(ZadIcons.shopping, color: ZadWorldColors.family),
                 const SizedBox(width: ZadSpacing.sm),
                 Expanded(
                   child: Text(
                     'طلب شراء من $alias',
                     style: ZadType.titleSmall.copyWith(
-                      color: ZadColors.green700,
+                      color: ZadWorldColors.family,
                     ),
                   ),
                 ),
@@ -690,6 +693,11 @@ class _RequestBubble extends ConsumerWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: <Widget>[
                   FilledButton(
+                    // The theme's buttons are full width; in a row that is
+                    // an unbounded width.
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size(0, 44),
+                    ),
                     onPressed: () {
                       unawaited(HapticFeedback.heavyImpact());
                       unawaited(controller.decide(message, approve: true));
@@ -698,6 +706,7 @@ class _RequestBubble extends ConsumerWidget {
                   ),
                   OutlinedButton(
                     style: OutlinedButton.styleFrom(
+                      minimumSize: const Size(0, 44),
                       foregroundColor: ZadColors.terracottaRust,
                     ),
                     onPressed: () {
@@ -713,7 +722,7 @@ class _RequestBubble extends ConsumerWidget {
               const _Status(
                 icon: ZadIcons.selected,
                 text: 'تمت الموافقة',
-                color: ZadColors.green700,
+                color: ZadWorldColors.family,
               ),
             ] else if (status == RequestStatus.rejected) ...<Widget>[
               const SizedBox(height: ZadSpacing.sm),
@@ -976,7 +985,7 @@ class _Composer extends StatelessWidget {
           }) {
             final color = urgent
                 ? ZadColors.terracottaRust
-                : ZadColors.green700;
+                : ZadWorldColors.family;
             return CupertinoActionSheetAction(
               isDestructiveAction: urgent,
               onPressed: () {
@@ -1061,7 +1070,7 @@ class _Composer extends StatelessWidget {
                 IconButton(
                   tooltip: context.l10n.familyChatTools,
                   onPressed: () => _showTools(context),
-                  icon: const Icon(ZadIcons.add, color: ZadColors.green700),
+                  icon: const Icon(ZadIcons.add, color: ZadWorldColors.family),
                 ),
                 Expanded(
                   child: Container(
@@ -1097,7 +1106,7 @@ class _Composer extends StatelessWidget {
                           onPressed: onSend,
                           icon: const CircleAvatar(
                             radius: 18,
-                            backgroundColor: ZadColors.green700,
+                            backgroundColor: ZadWorldColors.family,
                             child: Icon(
                               ZadIcons.send,
                               color: Colors.white,

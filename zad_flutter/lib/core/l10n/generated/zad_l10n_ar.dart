@@ -6392,6 +6392,114 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get settingsTermsBody => 'سياسة الاستخدام والخصوصية';
+
+  @override
+  String get worldLabelFamily => 'العيلة';
+
+  @override
+  String get familyWorldNone => 'لسه معندكش عيلة';
+
+  @override
+  String familyWorldChores(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count مهمة قدامكم',
+      few: '$count مهام قدامكم',
+      two: 'مهمتين قدامكم',
+      one: 'مهمة واحدة قدامكم',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String familyWorldRequests(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count طلب مصروف مستني قرارك',
+      few: '$count طلبات مصروف مستنية قرارك',
+      two: 'طلبين مصروف مستنيين قرارك',
+      one: 'طلب مصروف مستني قرارك',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get familyLoadingTitle => 'بنشوف عيلتك';
+
+  @override
+  String get familyLoadingMessage => 'أول مرة محتاجة نت. اسحب لتحت لو طوّلت.';
+
+  @override
+  String get familyRetry => 'جرّب تاني';
+
+  @override
+  String get familyWelcomeTitle => 'أهلاً بك في عائلة زاد';
+
+  @override
+  String get familyWelcomeBody =>
+      'يمكنك إنشاء عائلة جديدة لتكون أنت المدير، أو الانضمام لعائلة موجودة عبر كود الدعوة.';
+
+  @override
+  String get familyCreateButton => 'إنشاء عائلة جديدة كمدير (Admin)';
+
+  @override
+  String get familyJoinButton => 'الانضمام للعائلة';
+
+  @override
+  String get familyAliasCardTitle => 'اسمك في العيلة';
+
+  @override
+  String get familyAliasLabel => 'اسمك في العيلة (اختياري)';
+
+  @override
+  String get familyAliasHint => 'مثال: الابن أحمد';
+
+  @override
+  String get familyJoinCardTitle => 'عندك كود دعوة؟';
+
+  @override
+  String get familyCodeLabel => 'كود الدعوة';
+
+  @override
+  String get familyCodeHint => 'مثال: ZAD-1234';
+
+  @override
+  String get familyJoinPasteLink => 'عندك رابط دعوة؟ افتح نافذة الانضمام';
+
+  @override
+  String get familyTabChat => 'الشات';
+
+  @override
+  String get familyTabTasks => 'المهام';
+
+  @override
+  String get familyTabMembers => 'الأعضاء';
+
+  @override
+  String get familyTabGroceries => 'البقالة';
+
+  @override
+  String get familyTabKids => 'الأبناء';
+
+  @override
+  String get familyTabGoals => 'الأهداف';
+
+  @override
+  String get familyMoreTitle => 'كمان للعيلة';
+
+  @override
+  String get familyToolSavings => 'صناديق التجميع';
+
+  @override
+  String get familyToolAchievements => 'الإنجازات والرتب';
+
+  @override
+  String get familyToolTasbiha => 'تسبيحة';
+
+  @override
+  String get familyFollowStarted => 'بدأت المتابعة.';
 }
 
 /// The translations for Arabic, as used in Saudi Arabia (`ar_SA`).
@@ -8947,4 +9055,49 @@ class ZadL10nArSa extends ZadL10nAr {
 
   @override
   String get settingsAdsUnavailable => 'ما فيه اختيارات خصوصية متاحة الحين';
+
+  @override
+  String get familyWorldNone => 'ما عندك عيلة للحين';
+
+  @override
+  String familyWorldChores(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count مهمة قدامكم',
+      few: '$count مهام قدامكم',
+      two: 'مهمتين قدامكم',
+      one: 'مهمة وحدة قدامكم',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String familyWorldRequests(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count طلب مصروف ينتظر قرارك',
+      few: '$count طلبات مصروف تنتظر قرارك',
+      two: 'طلبين مصروف ينتظرون قرارك',
+      one: 'طلب مصروف ينتظر قرارك',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get familyLoadingMessage =>
+      'أول مرة تحتاج إنترنت. اسحب لتحت إذا تأخر.';
+
+  @override
+  String get familyRetry => 'جرّب مرة ثانية';
+
+  @override
+  String get familyCodeHint => 'مثال: ZAD-1234';
+
+  @override
+  String get familyJoinPasteLink => 'عندك رابط دعوة؟ افتح نافذة الانضمام';
+
+  @override
+  String get familyFollowStarted => 'بدأت المتابعة.';
 }

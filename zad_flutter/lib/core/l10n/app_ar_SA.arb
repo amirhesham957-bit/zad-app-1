@@ -685,5 +685,13 @@
   "pricesContribCount": "{n} مساهمات",
   "settingsAdsUnavailable": "ما فيه اختيارات خصوصية متاحة الحين",
   "paywallStatePlan": "خطتك الحين: {plan}",
-  "paywallStateInvite": "اختر الباقة اللي تناسب بيتك"
+  "paywallStateInvite": "اختر الباقة اللي تناسب بيتك",
+  "familyWorldNone": "ما عندك عيلة للحين",
+  "familyWorldChores": "{count, plural, =1{مهمة وحدة قدامكم} =2{مهمتين قدامكم} few{{count} مهام قدامكم} other{{count} مهمة قدامكم}}",
+  "familyWorldRequests": "{count, plural, =1{طلب مصروف ينتظر قرارك} =2{طلبين مصروف ينتظرون قرارك} few{{count} طلبات مصروف تنتظر قرارك} other{{count} طلب مصروف ينتظر قرارك}}",
+  "familyLoadingMessage": "أول مرة تحتاج إنترنت. اسحب لتحت إذا تأخر.",
+  "familyRetry": "جرّب مرة ثانية",
+  "familyCodeHint": "مثال: ZAD-1234",
+  "familyJoinPasteLink": "عندك رابط دعوة؟ افتح نافذة الانضمام",
+  "familyFollowStarted": "بدأت المتابعة."
 }
