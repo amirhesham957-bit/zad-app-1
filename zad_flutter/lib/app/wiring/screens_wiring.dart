@@ -203,7 +203,8 @@ OpenScreen? _worldScreen(ZadWorld world) => switch (world) {
   ZadWorld.tas => ZadScreens.showTasbihaScreen,
   ZadWorld.prices => ZadScreens.showPricesScreen,
   ZadWorld.ach => ZadScreens.showAchievementsScreen,
-  ZadWorld.games || ZadWorld.offers => null,
+  ZadWorld.games => ZadScreens.showGamesHub,
+  ZadWorld.offers => null,
 };
 
 /// Binds the slots.
