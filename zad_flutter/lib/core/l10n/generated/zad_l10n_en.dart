@@ -2807,6 +2807,172 @@ class ZadL10nEn extends ZadL10n {
   String get recipesTrendingGroup => 'Trending now';
 
   @override
+  String chefWorldState(int total, int ready) {
+    String _temp0 = intl.Intl.pluralLogic(
+      total,
+      locale: localeName,
+      other: '$total recipes',
+      one: '1 recipe',
+    );
+    return '$_temp0 · $ready complete';
+  }
+
+  @override
+  String get chefStateEmpty =>
+      'The pantry is empty — add food and I will suggest';
+
+  @override
+  String get chefStateReady => 'Ready to suggest a dish from your pantry';
+
+  @override
+  String get chefStateThinking => 'Thinking of a dish from your pantry…';
+
+  @override
+  String get chefError => 'I could not reach Chef Zad. Try again in a moment.';
+
+  @override
+  String get chefStale =>
+      'Your pantry has changed since the last suggestions — ask for new ones if you like.';
+
+  @override
+  String get chefReadyTitle => 'Chef Zad is ready';
+
+  @override
+  String get chefReadyBody =>
+      'Tap \"Recipes from my pantry\" and Chef Zad tells you what to cook from what you have, and what is only missing a little.';
+
+  @override
+  String get chefEmptyTitle => 'The pantry is empty';
+
+  @override
+  String get chefEmptyBody =>
+      'Add what you have to the pantry and Chef Zad suggests dishes from it.';
+
+  @override
+  String get chefAskCta => 'Recipes from my pantry';
+
+  @override
+  String get chefAsking => 'Chef Zad is thinking…';
+
+  @override
+  String get chefAskAgain => 'New suggestions';
+
+  @override
+  String get chefGroupPantry => 'From your pantry';
+
+  @override
+  String get chefGroupMore => 'More meals';
+
+  @override
+  String get chefComplete => 'Complete';
+
+  @override
+  String chefMissingCount(int count) {
+    return 'Missing $count';
+  }
+
+  @override
+  String chefMinutes(int count) {
+    return '$count min';
+  }
+
+  @override
+  String get chefHaveHeading => 'You have';
+
+  @override
+  String get chefMissingHeading => 'Missing';
+
+  @override
+  String get chefMethodHeading => 'Method';
+
+  @override
+  String get chefStepByStep => 'Full recipe, step by step';
+
+  @override
+  String chefAddMissing(int count) {
+    return 'Add the missing to the shopping list ($count)';
+  }
+
+  @override
+  String get chefAddedOne => 'Added 1 item to the shopping list.';
+
+  @override
+  String chefAddedMany(int count) {
+    return 'Added $count items to the shopping list.';
+  }
+
+  @override
+  String get chefNothingToAdd =>
+      'Everything missing is already on the list or in the pantry.';
+
+  @override
+  String get chefRatePrompt => 'Did you like it? Chef Zad remembers.';
+
+  @override
+  String get chefLike => 'I liked it';
+
+  @override
+  String get chefDislike => 'Not for me';
+
+  @override
+  String get chefDetailIngredients => 'Ingredients';
+
+  @override
+  String get chefDetailSteps => 'Method';
+
+  @override
+  String get chefDetailAddToShopping => 'Add missing to the list';
+
+  @override
+  String get chefDetailClose => 'Close';
+
+  @override
+  String get chefDetailRetry => 'Try again';
+
+  @override
+  String get chefDetailLoading => 'Chef Zad is preparing the recipe…';
+
+  @override
+  String get chefDetailEmpty => 'Chef Zad did not send this recipe — try again';
+
+  @override
+  String get chefDetailSlow => 'Chef Zad is slow to answer — try again';
+
+  @override
+  String get chefDetailFailed =>
+      'Sorry, something went wrong loading the recipe';
+
+  @override
+  String get chefHomeTitle => 'Chef Zad (smart suggestions)';
+
+  @override
+  String get chefHomeAllDepleted =>
+      'Your pantry is all used up — put the shortages on the shopping list and I will suggest food.';
+
+  @override
+  String get chefHomePantryEmpty =>
+      'Add items to your pantry so Chef Zad can suggest today\'s dish.';
+
+  @override
+  String get chefHomeComplete => 'Complete from your pantry';
+
+  @override
+  String chefHomeMinutes(int count) {
+    return '$count min';
+  }
+
+  @override
+  String chefHomeMissingList(String items) {
+    return 'Missing: $items';
+  }
+
+  @override
+  String get chefHomeAddMissing => 'Add them to the shopping list';
+
+  @override
+  String get chefHomeTapSteps => 'Tap for the steps';
+
+  @override
   String get homeDealsSeeAll => 'All deals';
 
   @override
@@ -2988,107 +3154,16 @@ class ZadL10nEn extends ZadL10n {
   }
 
   @override
-  String get zadStatusTitle => 'Zad status';
+  String get homeBankOffBanner =>
+      '⚠️ Bank message reading has stopped. Tap here to turn it back on so your balance and spending update by themselves.';
 
   @override
-  String get zadStatusAllGood => 'Zad is working and watching';
+  String get homeBankStalledHint =>
+      'If it is already on: switch it off and on again on the screen that opens.';
 
   @override
-  String get zadStatusNeedsFix =>
-      'Something has stopped and needs one step from you';
-
-  @override
-  String zadStatusAllButOne(String what) {
-    return 'All working except: $what';
-  }
-
-  @override
-  String get zadStatusWorking => 'Working';
-
-  @override
-  String get zadStatusStopped => 'Stopped';
-
-  @override
-  String get zadStatusMaybe => 'May stop';
-
-  @override
-  String get zadStatusBank => 'Bank message reading';
-
-  @override
-  String get zadStatusBankOk =>
-      'Zad is reading your bank messages and logging them.';
-
-  @override
-  String get zadStatusBankOff =>
-      'Bank message reading is off. Turn it on so your balance and spending update by themselves.';
-
-  @override
-  String get zadStatusBankStalled =>
-      'The service has not seen a notification for a while. If it is on: switch it off and on again on the screen that opens.';
-
-  @override
-  String get zadStatusBankSilent =>
-      'On, but no message has arrived yet. If you expect a bank message and it did not come: switch it off and on again.';
-
-  @override
-  String get zadStatusNotifications => 'Notifications';
-
-  @override
-  String get zadStatusNotificationsOk =>
-      'Dose, bill and budget alerts reach you.';
-
-  @override
-  String get zadStatusNotificationsOff =>
-      'Notifications are off, so dose and bill alerts will not reach you.';
-
-  @override
-  String get zadStatusLocation => 'Location';
-
-  @override
-  String get zadStatusLocationOk =>
-      'Location is on; deals and nearby shops are worked out from where you are.';
-
-  @override
-  String get zadStatusLocationServiceOff =>
-      'Location is switched off on the phone, so readings will not be from where you really are.';
-
-  @override
-  String get zadStatusLocationDenied =>
-      'Zad is not allowed to know where you are, so deals and nearby shops will not work.';
-
-  @override
-  String get zadStatusBackground => 'Location all the time';
-
-  @override
-  String get zadStatusBackgroundOk =>
-      'Street alerts work even with the app closed.';
-
-  @override
-  String get zadStatusBackgroundOff =>
-      'Without \"all the time\", street alerts will not work while the app is closed.';
-
-  @override
-  String get zadStatusBattery => 'Battery saver';
-
-  @override
-  String get zadStatusBatteryOk =>
-      'The phone is not restricting Zad in the background.';
-
-  @override
-  String get zadStatusBatteryWarn =>
-      'The phone may stop Zad in the background. Choose \"Unrestricted\" so reading does not cut out.';
-
-  @override
-  String get zadStatusFixOpenSettings => 'Open settings';
-
-  @override
-  String get zadStatusFixAllow => 'Allow';
-
-  @override
-  String get zadStatusFixLocationOn => 'Turn location on';
-
-  @override
-  String get zadStatusFixBattery => 'Remove limits';
+  String get homeLocationOffBanner =>
+      '📍 Your location is off. Turn it on so Zad can match supermarket deals and nearby shops and do its job properly.';
 
   @override
   String get homeLocationLater => 'Not now';
@@ -3330,7 +3405,7 @@ class ZadL10nEn extends ZadL10n {
   String get chefFullRecipe => 'Full recipe and chef\'s secrets';
 
   @override
-  String get chefSecrets => '🤫 Chef\'s secrets';
+  String get chefSecrets => 'Chef\'s secrets';
 
   @override
   String get chefSourceLink => 'See the recipe at its source';
@@ -4386,6 +4461,28 @@ class ZadL10nEn extends ZadL10n {
   String get profileExportSubject => 'My data from Zad';
 
   @override
+  String get homeCareTitle => 'Your subscriptions and medicines';
+
+  @override
+  String get homeCareRenewsToday => 'Renews today';
+
+  @override
+  String get homeCareRenewsTomorrow => 'Renews tomorrow';
+
+  @override
+  String homeCareRenewsInDays(Object days) {
+    return 'Renews in $days days';
+  }
+
+  @override
+  String homeCareDoseAt(Object time) {
+    return 'Dose at $time';
+  }
+
+  @override
+  String get homeCareDoseNow => 'Dose due now';
+
+  @override
   String get introSayPantry => 'This fridge is mine!';
 
   @override
@@ -4480,6 +4577,316 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get consentTermsUpdated => 'November 2026';
+
+  @override
+  String get worldLabelBrain => 'Zad\'s brain';
+
+  @override
+  String get worldLabelChef => 'Chef Zad';
+
+  @override
+  String get worldLabelInv => 'Pantry';
+
+  @override
+  String get worldLabelShop => 'Shopping';
+
+  @override
+  String get worldLabelTx => 'Transactions';
+
+  @override
+  String get worldLabelBudget => 'Budget';
+
+  @override
+  String get worldLabelStmt => 'Statement';
+
+  @override
+  String get worldLabelSubs => 'Subscriptions';
+
+  @override
+  String get worldLabelPh => 'Pharmacy';
+
+  @override
+  String get worldLabelAppt => 'Appointments';
+
+  @override
+  String get worldLabelMaint => 'Maintenance';
+
+  @override
+  String get worldLabelDocs => 'Documents';
+
+  @override
+  String get worldLabelPlaces => 'My places';
+
+  @override
+  String get worldLabelComp => 'Zad\'s companion';
+
+  @override
+  String get worldLabelChat => 'Chat';
+
+  @override
+  String get worldLabelNotif => 'Notifications';
+
+  @override
+  String get worldLabelProfile => 'My account';
+
+  @override
+  String get worldLabelPrem => 'Premium';
+
+  @override
+  String get worldLabelTas => 'Tasbih garden';
+
+  @override
+  String get worldLabelGames => 'Zado\'s games';
+
+  @override
+  String get worldLabelPrices => 'Today\'s prices';
+
+  @override
+  String get worldLabelOffers => 'My offers';
+
+  @override
+  String get worldLabelAch => 'Achievements';
+
+  @override
+  String get worldLinksTitle => 'Connected to';
+
+  @override
+  String get worldLinksHint => 'What happens here affects:';
+
+  @override
+  String get worldBack => 'Back';
+
+  @override
+  String pantryWorldEyebrow(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count items',
+      one: '1 item',
+      zero: 'No items yet',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String pantryWorldState(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count things are running out',
+      one: '1 thing is running out',
+      zero: 'Nothing is running out',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String pantryLegendLow(int count) {
+    return '$count running out';
+  }
+
+  @override
+  String pantryLegendExpiring(int count) {
+    return '$count expiring soon';
+  }
+
+  @override
+  String pantryLegendOk(int count) {
+    return '$count fine';
+  }
+
+  @override
+  String get brainWorldState => 'Connected and learning';
+
+  @override
+  String brainWorldEyebrow(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count items connected',
+      one: '1 item connected',
+      zero: 'Nothing connected yet',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get brainFilterAll => 'All';
+
+  @override
+  String get brainFilterLabel => 'Area filters';
+
+  @override
+  String get brainNetworkEmptyTitle => 'Zad is still learning about you';
+
+  @override
+  String get brainNetworkEmptyMessage =>
+      'Log your spending or add pantry items and medicines, and this network grows.';
+
+  @override
+  String get brainCardsTitle => 'Inside Zad\'s brain';
+
+  @override
+  String get brainCardStaffTitle => 'Zad\'s team';
+
+  @override
+  String get brainCardStaffBody =>
+      'What the staff noticed on the morning round of your home, money and family';
+
+  @override
+  String get brainCardMemoryTitle => 'What Zad knows about me';
+
+  @override
+  String get brainCardMemoryBody =>
+      'What Zad remembers about you and talks to you from — correct it or let it forget';
+
+  @override
+  String get brainCardGraphTitle => 'Zad\'s network';
+
+  @override
+  String get brainCardGraphBody =>
+      'The people, places and things Zad knows and how they connect — export to Obsidian';
+
+  @override
+  String get brainCardMapTitle => 'Zad\'s map';
+
+  @override
+  String get brainCardMapBody =>
+      'How your budget, subscriptions and home connect — full screen';
+
+  @override
+  String get brainCardLogTitle => 'Zad\'s change log';
+
+  @override
+  String get brainCardLogBody =>
+      'Everything Zad recorded or changed for you, with undo if it got it wrong';
+
+  @override
+  String get brainCardHealthTitle => 'Zad\'s brain health';
+
+  @override
+  String get brainCardHealthBody =>
+      'Whether Zad is working in the background or stopped, and why';
+
+  @override
+  String brainTelemetryLinks(int active, int total) {
+    return 'Links: $active/$total';
+  }
+
+  @override
+  String get brainTelemetryDecisions => 'Decisions today';
+
+  @override
+  String get brainTelemetryGauge => 'Stability';
+
+  @override
+  String get brainTelemetryStable => 'Stable';
+
+  @override
+  String get brainTelemetryAlert => 'Alert';
+
+  @override
+  String get zadStatusTitle => 'Zad status';
+
+  @override
+  String get zadStatusAllGood => 'Zad is working and watching';
+
+  @override
+  String get zadStatusNeedsFix =>
+      'Something has stopped and needs one step from you';
+
+  @override
+  String zadStatusAllButOne(String what) {
+    return 'All working except: $what';
+  }
+
+  @override
+  String get zadStatusWorking => 'Working';
+
+  @override
+  String get zadStatusStopped => 'Stopped';
+
+  @override
+  String get zadStatusMaybe => 'May stop';
+
+  @override
+  String get zadStatusBank => 'Bank message reading';
+
+  @override
+  String get zadStatusBankOk =>
+      'Zad is reading your bank messages and logging them.';
+
+  @override
+  String get zadStatusBankOff =>
+      'Bank message reading is off. Turn it on so your balance and spending update by themselves.';
+
+  @override
+  String get zadStatusBankStalled =>
+      'The service has not seen a notification for a while. If it is on: switch it off and on again on the screen that opens.';
+
+  @override
+  String get zadStatusBankSilent =>
+      'On, but no message has arrived yet. If you expect a bank message and it did not come: switch it off and on again.';
+
+  @override
+  String get zadStatusNotifications => 'Notifications';
+
+  @override
+  String get zadStatusNotificationsOk =>
+      'Dose, bill and budget alerts reach you.';
+
+  @override
+  String get zadStatusNotificationsOff =>
+      'Notifications are off, so dose and bill alerts will not reach you.';
+
+  @override
+  String get zadStatusLocation => 'Location';
+
+  @override
+  String get zadStatusLocationOk =>
+      'Location is on; deals and nearby shops are worked out from where you are.';
+
+  @override
+  String get zadStatusLocationServiceOff =>
+      'Location is switched off on the phone, so readings will not be from where you really are.';
+
+  @override
+  String get zadStatusLocationDenied =>
+      'Zad is not allowed to know where you are, so deals and nearby shops will not work.';
+
+  @override
+  String get zadStatusBackground => 'Location all the time';
+
+  @override
+  String get zadStatusBackgroundOk =>
+      'Street alerts work even with the app closed.';
+
+  @override
+  String get zadStatusBackgroundOff =>
+      'Without \"all the time\", street alerts will not work while the app is closed.';
+
+  @override
+  String get zadStatusBattery => 'Battery saver';
+
+  @override
+  String get zadStatusBatteryOk =>
+      'The phone is not restricting Zad in the background.';
+
+  @override
+  String get zadStatusBatteryWarn =>
+      'The phone may stop Zad in the background. Choose \"Unrestricted\" so reading does not cut out.';
+
+  @override
+  String get zadStatusFixOpenSettings => 'Open settings';
+
+  @override
+  String get zadStatusFixAllow => 'Allow';
+
+  @override
+  String get zadStatusFixLocationOn => 'Turn location on';
+
+  @override
+  String get zadStatusFixBattery => 'Remove limits';
 
   @override
   String get gamesHubButton => 'Zado\'s games';
@@ -4711,145 +5118,6 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get starGameOver => 'The stars got away';
-
-  @override
-  String get homeCareTitle => 'Your subscriptions and medicines';
-
-  @override
-  String get homeCareRenewsToday => 'Renews today';
-
-  @override
-  String get homeCareRenewsTomorrow => 'Renews tomorrow';
-
-  @override
-  String homeCareRenewsInDays(Object days) {
-    return 'Renews in $days days';
-  }
-
-  @override
-  String homeCareDoseAt(Object time) {
-    return 'Dose at $time';
-  }
-
-  @override
-  String get homeCareDoseNow => 'Dose due now';
-
-  @override
-  String get worldLabelBrain => 'Zad\'s brain';
-
-  @override
-  String get worldLabelChef => 'Chef Zad';
-
-  @override
-  String get worldLabelInv => 'Pantry';
-
-  @override
-  String get worldLabelShop => 'Shopping';
-
-  @override
-  String get worldLabelTx => 'Transactions';
-
-  @override
-  String get worldLabelBudget => 'Budget';
-
-  @override
-  String get worldLabelStmt => 'Statement';
-
-  @override
-  String get worldLabelSubs => 'Subscriptions';
-
-  @override
-  String get worldLabelPh => 'Pharmacy';
-
-  @override
-  String get worldLabelAppt => 'Appointments';
-
-  @override
-  String get worldLabelMaint => 'Maintenance';
-
-  @override
-  String get worldLabelDocs => 'Documents';
-
-  @override
-  String get worldLabelPlaces => 'My places';
-
-  @override
-  String get worldLabelComp => 'Zad\'s companion';
-
-  @override
-  String get worldLabelChat => 'Chat';
-
-  @override
-  String get worldLabelNotif => 'Notifications';
-
-  @override
-  String get worldLabelProfile => 'My account';
-
-  @override
-  String get worldLabelPrem => 'Premium';
-
-  @override
-  String get worldLabelTas => 'Tasbih garden';
-
-  @override
-  String get worldLabelGames => 'Zado\'s games';
-
-  @override
-  String get worldLabelPrices => 'Today\'s prices';
-
-  @override
-  String get worldLabelOffers => 'My offers';
-
-  @override
-  String get worldLabelAch => 'Achievements';
-
-  @override
-  String get worldLinksTitle => 'Connected to';
-
-  @override
-  String get worldLinksHint => 'What happens here affects:';
-
-  @override
-  String get worldBack => 'Back';
-
-  @override
-  String pantryWorldEyebrow(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count items',
-      one: '1 item',
-      zero: 'No items yet',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String pantryWorldState(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count things are running out',
-      one: '1 thing is running out',
-      zero: 'Nothing is running out',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String pantryLegendLow(int count) {
-    return '$count running out';
-  }
-
-  @override
-  String pantryLegendExpiring(int count) {
-    return '$count expiring soon';
-  }
-
-  @override
-  String pantryLegendOk(int count) {
-    return '$count fine';
-  }
 
   @override
   String shopWorldEyebrow(int count) {
@@ -5769,4 +6037,229 @@ class ZadL10nEn extends ZadL10n {
   String statementDropped(String text, int n) {
     return '$text. $n rows could not be read.';
   }
+
+  @override
+  String placesWorldEyebrow(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count outings',
+      one: '1 outing',
+      zero: 'No outings yet',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String placesWorldState(int count, String alerts) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count places',
+      one: '1 place',
+      zero: 'No places',
+    );
+    String _temp1 = intl.Intl.selectLogic(alerts, {
+      'on': 'street alerts on',
+      'other': 'street alerts off',
+    });
+    return '$_temp0 · $_temp1';
+  }
+
+  @override
+  String docsEyebrowCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count documents',
+      one: '1 document',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get docsStateEmpty => 'The drawer is empty — add your first document';
+
+  @override
+  String docsStateNearest(String name, String status) {
+    return 'Nearest: $name — $status';
+  }
+
+  @override
+  String get docsPrivacy =>
+      'Zad keeps only the kind of document and its expiry date — no number, no photo — and reminds you ahead.';
+
+  @override
+  String get docsDueOne => 'One document needs renewing soon';
+
+  @override
+  String docsDueMany(int count) {
+    return '$count documents need renewing soon';
+  }
+
+  @override
+  String get docsEmptyTitle => 'No documents yet';
+
+  @override
+  String get docsEmptyMessage =>
+      'Add your passport, ID or licence with its expiry date and Zad reminds you in good time to renew. Or tell Zad in chat: \"my passport expires 15 March 2027\".';
+
+  @override
+  String get docsAdd => 'Add a document';
+
+  @override
+  String get docsDelete => 'Delete';
+
+  @override
+  String docsExpires(String date) {
+    return 'Expires $date';
+  }
+
+  @override
+  String get docsSaveFailedEdit =>
+      'Not saved — a document with the same kind and name may exist, or you are offline.';
+
+  @override
+  String get docsSaveFailedAdd => 'Not saved — check your connection.';
+
+  @override
+  String get docsDeleteFailed => 'Not removed — check your connection.';
+
+  @override
+  String maintEyebrowCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count appliances',
+      one: '1 appliance',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get maintStateNone => 'Nothing registered yet';
+
+  @override
+  String get maintStateNoSchedule =>
+      'Set a service interval and Zad reminds you';
+
+  @override
+  String maintStateNext(String name, String status) {
+    return 'Next: $name — $status';
+  }
+
+  @override
+  String maintStateOverdue(String name, int days) {
+    return '$name is $days days late';
+  }
+
+  @override
+  String maintServiceOverdue(int days) {
+    return '$days days late';
+  }
+
+  @override
+  String maintServiceIn(int days) {
+    return 'Service in $days days';
+  }
+
+  @override
+  String get maintServiceSoon => 'Service soon';
+
+  @override
+  String get maintWarrantyEnded => 'Warranty ended';
+
+  @override
+  String maintWarrantyIn(int days) {
+    return 'Warranty ends in $days days';
+  }
+
+  @override
+  String get maintStatDevices => 'Appliances';
+
+  @override
+  String get maintStatSoon => 'Service soon';
+
+  @override
+  String get maintStatWarranty => 'Warranty ending';
+
+  @override
+  String maintOverdueBanner(int count) {
+    return '$count appliances are past their service date';
+  }
+
+  @override
+  String get maintEmptyTitle => 'No appliances yet';
+
+  @override
+  String get maintEmptyMessage =>
+      'Add the AC, the water heater or the car and Zad reminds you of its service and warranty.';
+
+  @override
+  String get maintAdd => 'Add an appliance';
+
+  @override
+  String get maintServicedToday => 'Serviced today';
+
+  @override
+  String get maintDelete => 'Delete';
+
+  @override
+  String get maintTechnicians => 'Technicians I trust';
+
+  @override
+  String get maintTechniciansHint =>
+      'Call or WhatsApp a technician you have tried';
+
+  @override
+  String get maintAddFailed =>
+      'The appliance was not saved — check your connection.';
+
+  @override
+  String get notifMarkAllRead => 'Mark all read';
+
+  @override
+  String get notifAllRead => 'All read';
+
+  @override
+  String achWorldState(int done, int total) {
+    return '$done of $total achievements';
+  }
+
+  @override
+  String achLevel(int level) {
+    return 'Level $level';
+  }
+
+  @override
+  String achLevelPoints(int points, int next) {
+    return '$points of $next points';
+  }
+
+  @override
+  String get achOnTrack => 'You are on the right track!';
+
+  @override
+  String get achContributions => 'Contributions';
+
+  @override
+  String get achStreak => 'Streak';
+
+  @override
+  String get achShelf => 'Achievements';
+
+  @override
+  String get achNext => 'Next achievement';
+
+  @override
+  String get achLocked => 'Locked';
+
+  @override
+  String get achLoadFailed => 'Could not load the achievements';
+
+  @override
+  String get achLoadFailedHint => 'Check your connection and try again';
+
+  @override
+  String get achRetry => 'Try again';
 }

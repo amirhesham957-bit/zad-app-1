@@ -561,5 +561,85 @@
   "tasChallengesTitle": "التحديات العائلية",
   "tasNoChallengesAdmin": "اضغط + وابدأ أول تحدي للعائلة.",
   "tasNoChallengesMember": "اطلب من المدير ينشئ تحدي جديد!",
-  "tasNoTreeTitle": "للحين ما فيه شجرة"
+  "tasNoTreeTitle": "للحين ما فيه شجرة",
+  "chefStateEmpty": "المخزن فاضي — أضف أكلك وأنا أقترح",
+  "chefStateReady": "جاهزة أقترح عليك أكلة من مخزنك",
+  "chefStateThinking": "أفكر في أكلة من مخزنك…",
+  "chefError": "ما قدرت أوصل لشيف زاد. جرّب مرة ثانية بعد شوي.",
+  "chefStale": "مخزنك تغيّر من آخر اقتراحات — اطلب جديدة إذا تبغى.",
+  "chefReadyBody": "اضغط «وصفات من مخزني» وتقول لك وش تطبخ من اللي عندك، واللي ناقصه شي بسيط.",
+  "chefEmptyBody": "أضف اللي عندك في المخزن، وشيف زاد تقترح لك أكلات منه.",
+  "chefAsking": "شيف زاد تفكّر…",
+  "chefGroupMore": "وجبات ثانية",
+  "chefStepByStep": "الوصفة كاملة خطوة خطوة",
+  "chefAddMissing": "أضف الناقص لقائمة التسوق ({count})",
+  "chefAddedOne": "أضفت صنف لقائمة التسوق.",
+  "chefAddedMany": "أضفت {count} أصناف لقائمة التسوق.",
+  "chefNothingToAdd": "الناقص كله في قائمة التسوق أو المخزن.",
+  "chefRatePrompt": "عجبتك؟ شيف زاد تتذكّر.",
+  "chefDislike": "مو على ذوقي",
+  "chefDetailLoading": "شيف زاد يجهّز لك الوصفة…",
+  "chefDetailEmpty": "شيف زاد ما رجّع الوصفة — جرّب مرة ثانية",
+  "chefDetailSlow": "شيف زاد تأخر في الرد — جرّب مرة ثانية",
+  "chefDetailFailed": "عذراً، صار خطأ أثناء تحميل الوصفة",
+  "chefHomeAllDepleted": "مخزونك كله خلص — نزّل النواقص في التسوق وأنا أقترح لك أكل.",
+  "chefHomePantryEmpty": "أضف أصناف لمخزونك عشان شيف زاد يقترح لك طبق اليوم.",
+  "chefHomeAddMissing": "أضفهم لقائمة التسوق",
+  "placesWorldEyebrow": "{count, plural, =0{ما فيه خروجات للحين} =1{خروجة وحدة} =2{خروجتين} few{{count} خروجات} other{{count} خروجة}}",
+  "@placesWorldEyebrow": {
+    "description": "Places world: outings count above the title.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "placesWorldState": "{count, plural, =0{ما فيه أماكن} =1{مكان واحد} =2{مكانين} few{{count} أماكن} other{{count} مكان}} · {alerts, select, on{تنبيهات الشارع شغّالة} other{تنبيهات الشارع مقفّلة}}",
+  "@placesWorldState": {
+    "description": "Places world state line: saved places and whether street alerts are on.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "alerts": {
+        "type": "String"
+      }
+    }
+  },
+  "brainWorldEyebrow": "{count, plural, =0{للحين ما فيه عناصر} other{{count} عنصر متصل}}",
+  "brainNetworkEmptyMessage": "سجّل مصاريفك أو أضف مخزون وأدوية، وبتلقى الشبكة تكبر هنا.",
+  "brainCardStaffBody": "اللي لاحظه الموظفين في جولة الصباح على بيتك وفلوسك وعيلتك",
+  "brainCardMemoryTitle": "وش يعرف زاد عني",
+  "brainCardMemoryBody": "اللي يتذكره زاد عنك ويكلمك على أساسه — صحّحه أو خله ينساه",
+  "brainCardMapBody": "كيف ميزانيتك واشتراكاتك وبيتك مرتبطين ببعض — بملء الشاشة",
+  "brainCardLogBody": "كل شي سجّله زاد أو عدّله لك، وتتراجع عنه لو غلط",
+  "brainCardHealthBody": "زاد شغال في الخلفية ولا واقف — ولو واقف، ليش",
+  "brainNetworkEmptyTitle": "زاد للحين يتعلم عنك",
+  "brainTelemetryDecisions": "قرارات اليوم",
+  "docsPrivacy": "زاد يحفظ نوع المستند وتاريخ انتهائه بس — بدون رقم ولا صورة — ويذكّرك قبلها.",
+  "docsSaveFailedEdit": "ما انحفظ — يمكن فيه مستند بنفس النوع والاسم، أو ما فيه نت.",
+  "docsSaveFailedAdd": "ما انحفظ — تأكد من النت.",
+  "docsDeleteFailed": "ما انحذف — تأكد من النت.",
+  "maintStateNone": "ما فيه جهاز مسجّل للحين",
+  "maintEmptyTitle": "ما فيه أجهزة مسجّلة للحين",
+  "maintEmptyMessage": "سجّل المكيف أو السخان أو السيارة، وزاد يذكّرك بموعد صيانتها وضمانها.",
+  "maintTechnicians": "فنيين أثق فيهم",
+  "maintTechniciansHint": "اتصل أو أرسل واتساب لفني جرّبته",
+  "maintAddFailed": "ما انسجّل الجهاز — تأكد من النت.",
+  "notifMarkAllRead": "علّم الكل كمقروء",
+  "notifAllRead": "الكل مقروء",
+  "achWorldState": "{done} من {total} إنجاز",
+  "achLevel": "المستوى {level}",
+  "achLevelPoints": "{points} من {next} نقطة",
+  "achOnTrack": "أنت على الطريق الصحيح!",
+  "achContributions": "المساهمات",
+  "achStreak": "التسلسل",
+  "achShelf": "الإنجازات",
+  "achNext": "الإنجاز التالي",
+  "achLocked": "مقفول",
+  "achLoadFailed": "ما قدرنا نجيب الإنجازات الحين",
+  "achLoadFailedHint": "تأكد من الاتصال وحاول مرة ثانية",
+  "achRetry": "حاول مرة ثانية",
+  "brainCardGraphBody": "الناس والأماكن والأشياء اللي يعرفها زاد وكيف تترابط — وصدّرها لأوبسيديان",
+  "docsEmptyTitle": "ما فيه مستندات مسجّلة"
 }

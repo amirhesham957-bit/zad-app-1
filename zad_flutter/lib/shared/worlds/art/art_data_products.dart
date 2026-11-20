@@ -231,6 +231,17 @@ const Map<ZadProductArt, String> zadProductSvg = <ZadProductArt, String>{
       '<path d="M32 30 v12" stroke="{steel}" stroke-width="2"/>'
       '<path d="M38 30 v12" stroke="{steel}" stroke-width="2"/>'
       '<circle cx="50" cy="48" r="3" fill="{butter}"/>',
+  ZadProductArt.meat:
+      '<ellipse cx="32" cy="60" rx="18" ry="3" fill="#000" opacity=".1"/>'
+      '<ellipse cx="32" cy="46" rx="26" ry="9" fill="#fff" '
+      'stroke="{plate}"/>'
+      '<path d="M12 38 C12 24 30 20 44 26 C54 30 54 42 42 44 '
+      'C30 48 12 46 12 38Z" fill="#B5473A"/>'
+      '<path d="M16 37 C16 28 30 25 42 30" stroke="#E27D6F" '
+      'stroke-width="3" fill="none" stroke-linecap="round"/>'
+      '<path d="M24 34 l8 6 M32 31 l8 6" stroke="#7A2A22" '
+      'stroke-width="2" stroke-linecap="round"/>'
+      '<circle cx="46" cy="36" r="4" fill="#F4E9D8"/>',
   ZadProductArt.salad:
       '<ellipse cx="32" cy="60" rx="18" ry="3" fill="#000" opacity=".1"/>'
       '<path d="M8 34 H56 a24 18 0 0 1 -48 0Z" fill="#fff" '

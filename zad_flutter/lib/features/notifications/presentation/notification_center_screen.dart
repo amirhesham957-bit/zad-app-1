@@ -13,11 +13,17 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zad/core/design/components/zad_kotlin_surfaces.dart';
+import 'package:intl/intl.dart' show DateFormat;
+import 'package:timezone/timezone.dart' as tz;
+import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/design/components/zad_empty_state.dart';
+import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/l10n/l10n.dart';
+import 'package:zad/features/notifications/domain/notification_source.dart';
+import 'package:zad/features/notifications/presentation/notification_world_scene.dart';
 import 'package:zad/shared/ads/presentation/native_ad.dart';
 import 'package:zad/shared/affiliate/data/affiliate_repository.dart';
 import 'package:zad/shared/affiliate/domain/affiliate.dart';
@@ -25,12 +31,19 @@ import 'package:zad/shared/insights/application/insights_controller.dart';
 import 'package:zad/shared/insights/application/local_insights.dart';
 import 'package:zad/shared/insights/domain/insight.dart';
 import 'package:zad/shared/insights/presentation/question_card.dart';
+import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/navigation/destinations.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
 import 'package:zad/shared/navigation/zad_slots.dart';
 import 'package:zad/shared/notifications/application/notifications_controller.dart';
+import 'package:zad/shared/orb/domain/companion_state.dart';
 import 'package:zad/shared/proposals/application/proposals_controller.dart';
 import 'package:zad/shared/voice/application/zad_voice.dart';
+import 'package:zad/shared/worlds/art/art.dart';
+import 'package:zad/shared/worlds/world_card.dart';
+import 'package:zad/shared/worlds/world_row.dart';
+import 'package:zad/shared/worlds/world_scaffold.dart';
+import 'package:zad/shared/worlds/zad_world.dart';
 
 /// Opens the screen.
 Future<void> showNotificationCenter(BuildContext context) =>
@@ -124,9 +137,34 @@ class _CenterState extends ConsumerState<NotificationCenterScreen> {
     super.dispose();
   }
 
+  /// «اليوم» / «أمس» / the date, all read in the account's zone.
+  String _dayLabel(tz.TZDateTime day, tz.TZDateTime today) {
+    final days = DateTime.utc(
+      today.year,
+      today.month,
+      today.day,
+    ).difference(DateTime.utc(day.year, day.month, day.day)).inDays;
+    final l = context.l10n;
+    if (days <= 0) return l.dayToday;
+    if (days == 1) return l.dayYesterday;
+    final lang = Localizations.localeOf(context).languageCode;
+    return DateFormat('EEEE d MMMM', lang).format(day);
+  }
+
+  Widget _section(String title) => Padding(
+    padding: const EdgeInsets.only(bottom: ZadSpacing.sm),
+    child: Text(
+      title,
+      style: ZadType.titleMedium.copyWith(
+        fontWeight: FontWeight.w800,
+        color: ZadColors.ink,
+      ),
+    ),
+  );
+
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final l = context.l10n;
     final notifications = ref.watch(
       notificationsControllerProvider.select((v) => v.items),
     );
@@ -140,23 +178,10 @@ class _CenterState extends ConsumerState<NotificationCenterScreen> {
       });
     }
     final proposals = ref.watch(proposalsControllerProvider);
-    final unread =
-        notifications.where((n) => !n.isRead).length +
-        bell.length +
-        proposals.rows.length;
+    final unreadApp = notifications.where((n) => !n.isRead).length;
+    final unread = unreadApp + bell.length + proposals.rows.length;
     final sorted = [...notifications]
       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-
-    Widget section(String title, {Color? color}) => Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Text(
-        title,
-        style: ZadType.titleMedium.copyWith(
-          fontWeight: FontWeight.bold,
-          color: color ?? scheme.primary,
-        ),
-      ),
-    );
 
     final local = ref.watch(alertInsightsProvider);
     final empty =
@@ -165,107 +190,168 @@ class _CenterState extends ConsumerState<NotificationCenterScreen> {
         proposals.isEmpty &&
         local.isEmpty;
 
+    final zone = tz.getLocation(ref.watch(accountTimeZoneProvider));
+    final today = tz.TZDateTime.from(ref.read(nowProvider)().toUtc(), zone);
+
+    // Day groups, newest first; an ad goes between cards, never inside one.
+    final app = <Widget>[];
+    var index = 0;
+    var rows = <Widget>[];
+    void flush() {
+      if (rows.isEmpty) return;
+      app.add(ZadWorldCard(child: Column(children: rows)));
+      rows = <Widget>[];
+    }
+
+    String? lastDay;
+    for (final n in sorted) {
+      final at = tz.TZDateTime.from(n.createdAt.toUtc(), zone);
+      final key = '${at.year}-${at.month}-${at.day}';
+      if (key != lastDay) {
+        flush();
+        if (app.isNotEmpty) app.add(const SizedBox(height: ZadSpacing.md));
+        app.add(_section(_dayLabel(at, today)));
+        lastDay = key;
+      }
+      if (rows.isNotEmpty) rows.add(const ZadWorldDivider());
+      rows.add(
+        NotificationCard(
+          title: n.title,
+          message: n.message,
+          source: notificationSource(n.title, n.message),
+          isRead: n.isRead,
+          onTap: () => unawaited(controller.markRead(n)),
+        ),
+      );
+      if (nativeAdAfter(index)) {
+        flush();
+        app.add(const ZadNativeAd());
+      }
+      index++;
+    }
+    flush();
+
     return Scaffold(
-      appBar: AppBar(title: Text(context.l10n.notifTitle)),
-      body: Column(
-        children: <Widget>[
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Row(
-              children: <Widget>[
-                if (unread > 0)
-                  Text(
-                    context.l10n.notifUnread(unread),
-                    style: ZadType.labelSmall.copyWith(
-                      color: scheme.onSurfaceVariant,
-                    ),
-                  ),
-                const Spacer(),
-                IconButton(
-                  tooltip: context.l10n.notifReadAloud,
-                  onPressed: _readAloud,
-                  icon: Icon(Icons.volume_up, color: scheme.primary),
-                ),
-              ],
-            ),
+      backgroundColor: ZadColors.canvasMid,
+      body: SafeArea(
+        bottom: false,
+        child: ZadWorldScaffold(
+          world: ZadWorld.notif,
+          title: l.worldLabelNotif,
+          stateLine: unread > 0 ? l.notifUnread(unread) : l.notifAllRead,
+          scene: (loop) => NotificationWorldScene(loop, ringing: unread > 0),
+          zado: ZadWorldZado(
+            left: 70,
+            state: unread > 0 ? CompanionState.alert : CompanionState.happy,
           ),
-          Expanded(
-            child: empty
-                ? KtEmptyState(
-                    icon: Icons.notifications_none,
-                    title: context.l10n.notifEmptyTitle,
-                    subtitle: context.l10n.notifEmptyBody,
-                  )
-                : ListView(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 110),
+          onRefresh: () => controller.refresh(force: true),
+          slivers: <Widget>[
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: ZadSpacing.gutter,
+              ),
+              sliver: SliverList.list(
+                children: <Widget>[
+                  Row(
                     children: <Widget>[
-                      if (!proposals.isEmpty) ...<Widget>[
-                        section(context.l10n.notifBankSection),
-                        for (final p in proposals.rows) ...<Widget>[
-                          ZadSlots.proposalCard(
-                            proposal: p,
-                            busy: proposals.deciding.contains(p.id),
-                            failed: proposals.failed.contains(p.id),
-                            onDecide: (d) => ref
-                                .read(proposalsControllerProvider.notifier)
-                                .decide(p.id, d),
+                      if (unreadApp > 0)
+                        TextButton(
+                          onPressed: () => unawaited(controller.markAllRead()),
+                          style: TextButton.styleFrom(
+                            minimumSize: const Size(0, 44),
+                            foregroundColor: ZadWorld.notif.color,
                           ),
-                          const SizedBox(height: 8),
-                        ],
-                        const SizedBox(height: 12),
-                      ],
-                      if (local.isNotEmpty) ...<Widget>[
-                        section(context.l10n.notifInsightsSection),
-                        for (final a in local)
-                          NotificationCard(
-                            title: a.title,
-                            message: a.description,
-                            color: scheme.primary,
-                            isRead: true,
-                            onTap: () => _openFor(a),
-                          ),
-                        const SizedBox(height: 20),
-                      ],
-                      if (bell.isNotEmpty) ...<Widget>[
-                        section(context.l10n.notifBrainSection),
-                        for (final a in bell)
-                          if (a.isQuestion)
-                            Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 5),
-                              child: ZadQuestionCard(
-                                insight: a,
-                                onAnswer: (t) =>
-                                    unawaited(insights.answer(a, t)),
-                                onDismiss: () => unawaited(insights.dismiss(a)),
-                              ),
-                            )
-                          else
-                            _BellCard(insight: a),
-                        const SizedBox(height: 20),
-                      ],
-                      if (sorted.isNotEmpty) ...<Widget>[
-                        section(
-                          context.l10n.notifAppSection,
-                          color: scheme.onSurface,
+                          child: Text(l.notifMarkAllRead),
                         ),
-                        for (final (i, n) in sorted.indexed) ...<Widget>[
-                          NotificationCard(
-                            title: n.title,
-                            message: n.message,
-                            color: n.isRead
-                                ? scheme.onSurfaceVariant
-                                : scheme.error,
-                            isRead: n.isRead,
-                            onTap: () => unawaited(controller.markRead(n)),
-                          ),
-                          // Between cards, never inside one (ZAD_PLAN ١٠.٣ ب).
-                          if (nativeAdAfter(i)) const ZadNativeAd(),
-                        ],
-                      ],
+                      const Spacer(),
+                      IconButton(
+                        tooltip: l.notifReadAloud,
+                        onPressed: _readAloud,
+                        style: IconButton.styleFrom(
+                          minimumSize: const Size(44, 44),
+                        ),
+                        icon: Icon(
+                          Icons.volume_up,
+                          color: ZadWorld.notif.color,
+                        ),
+                      ),
                     ],
                   ),
-          ),
-        ],
+                  if (empty)
+                    ZadEmptyState(
+                      icon: Icons.notifications_none,
+                      title: l.notifEmptyTitle,
+                      message: l.notifEmptyBody,
+                    )
+                  else ...<Widget>[
+                    if (!proposals.isEmpty) ...<Widget>[
+                      _section(l.notifBankSection),
+                      for (final p in proposals.rows) ...<Widget>[
+                        ZadSlots.proposalCard(
+                          proposal: p,
+                          busy: proposals.deciding.contains(p.id),
+                          failed: proposals.failed.contains(p.id),
+                          onDecide: (d) => ref
+                              .read(proposalsControllerProvider.notifier)
+                              .decide(p.id, d),
+                        ),
+                        const SizedBox(height: ZadSpacing.sm),
+                      ],
+                      const SizedBox(height: ZadSpacing.md),
+                    ],
+                    if (local.isNotEmpty) ...<Widget>[
+                      _section(l.notifInsightsSection),
+                      ZadWorldCard(
+                        child: Column(
+                          children: <Widget>[
+                            for (final (i, a) in local.indexed) ...<Widget>[
+                              if (i > 0) const ZadWorldDivider(),
+                              NotificationCard(
+                                title: a.title,
+                                message: a.description,
+                                source: notificationSource(
+                                  a.title,
+                                  a.description,
+                                ),
+                                isRead: true,
+                                onTap: () => _openFor(a),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: ZadSpacing.lg),
+                    ],
+                    if (bell.isNotEmpty) ...<Widget>[
+                      _section(l.notifBrainSection),
+                      for (final a in bell)
+                        if (a.isQuestion)
+                          Padding(
+                            padding: const EdgeInsets.only(
+                              bottom: ZadSpacing.sm,
+                            ),
+                            child: ZadQuestionCard(
+                              insight: a,
+                              onAnswer: (t) => unawaited(insights.answer(a, t)),
+                              onDismiss: () => unawaited(insights.dismiss(a)),
+                            ),
+                          )
+                        else
+                          Padding(
+                            padding: const EdgeInsets.only(
+                              bottom: ZadSpacing.sm,
+                            ),
+                            child: _BellCard(insight: a),
+                          ),
+                      const SizedBox(height: ZadSpacing.md),
+                    ],
+                    ...app,
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -281,61 +367,64 @@ class _BellCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final scheme = Theme.of(context).colorScheme;
     return Builder(
-      builder: (cardContext) => NotificationCard(
-        title: insight.title,
-        message: insight.body,
-        color: insight.isCritical ? scheme.error : scheme.primary,
-        isRead: false,
-        onTap: () async {
-          final box = cardContext.findRenderObject()! as RenderBox;
-          final at = box.localToGlobal(Offset.zero);
-          final reason = await showMenu<DismissReason>(
-            context: cardContext,
-            position: RelativeRect.fromLTRB(
-              at.dx,
-              at.dy + box.size.height,
-              at.dx + box.size.width,
-              0,
-            ),
-            items: <PopupMenuEntry<DismissReason>>[
-              PopupMenuItem<DismissReason>(
-                value: DismissReason.notRelevant,
-                child: Text(context.l10n.notifNotImportant),
+      builder: (cardContext) => ZadWorldCard(
+        child: NotificationCard(
+          title: insight.title,
+          message: insight.body,
+          source: ZadWorld.brain,
+          isRead: false,
+          onTap: () async {
+            final box = cardContext.findRenderObject()! as RenderBox;
+            final at = box.localToGlobal(Offset.zero);
+            final reason = await showMenu<DismissReason>(
+              context: cardContext,
+              position: RelativeRect.fromLTRB(
+                at.dx,
+                at.dy + box.size.height,
+                at.dx + box.size.width,
+                0,
               ),
-              PopupMenuItem<DismissReason>(
-                value: DismissReason.wrongData,
-                child: Text(
-                  context.l10n.notifWrongNumber,
-                  style: TextStyle(color: scheme.error),
+              items: <PopupMenuEntry<DismissReason>>[
+                PopupMenuItem<DismissReason>(
+                  value: DismissReason.notRelevant,
+                  child: Text(context.l10n.notifNotImportant),
                 ),
-              ),
-              PopupMenuItem<DismissReason>(
-                value: DismissReason.timing,
-                child: Text(
-                  context.l10n.notifAlreadyKnew,
-                  style: TextStyle(color: scheme.onSurfaceVariant),
+                PopupMenuItem<DismissReason>(
+                  value: DismissReason.wrongData,
+                  child: Text(
+                    context.l10n.notifWrongNumber,
+                    style: TextStyle(color: scheme.error),
+                  ),
                 ),
-              ),
-            ],
-          );
-          if (reason == null) return;
-          await ref
-              .read(insightsControllerProvider.notifier)
-              .dismiss(insight, reason: reason);
-        },
+                PopupMenuItem<DismissReason>(
+                  value: DismissReason.timing,
+                  child: Text(
+                    context.l10n.notifAlreadyKnew,
+                    style: TextStyle(color: scheme.onSurfaceVariant),
+                  ),
+                ),
+              ],
+            );
+            if (reason == null) return;
+            await ref
+                .read(insightsControllerProvider.notifier)
+                .dismiss(insight, reason: reason);
+          },
+        ),
       ),
     );
   }
 }
 
-/// Kotlin's `NotificationCard`: a 20dp surface card with a hairline, a 10dp
-/// dot in the severity colour (35% once read), title over body.
+/// One notification row: the source world's drawing on its tile, a pill
+/// with that world's name in its colour, title over body, and a dot in the
+/// same colour while unread.
 class NotificationCard extends StatelessWidget {
-  /// Creates the card.
+  /// Creates the row.
   const new({
     required this.title,
     required this.message,
-    required this.color,
+    required this.source,
     required this.isRead,
     required this.onTap,
     super.key,
@@ -347,8 +436,8 @@ class NotificationCard extends StatelessWidget {
   /// The body.
   final String message;
 
-  /// The severity colour.
-  final Color color;
+  /// The world it came from: its colour and its drawing.
+  final ZadWorld source;
 
   /// Read or not.
   final bool isRead;
@@ -358,86 +447,93 @@ class NotificationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
     // «حاجة خلصت»: a button per item rather than its encoded Amazon link.
     final body = splitAmazonLinks(message);
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 5),
-      child: Material(
-        color: scheme.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: BorderSide(color: scheme.outline, width: 0.5),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Padding(
-                  padding: const EdgeInsets.only(top: 5),
-                  child: Container(
-                    width: 10,
-                    height: 10,
+    final color = source.color;
+    final art = source == ZadWorld.inv ? ZadIconArt.jar : source.art;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(ZadRadii.chip),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 44),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            ZadWorldTile(color: color, child: ZadArt.icon(art, size: 28)),
+            const SizedBox(width: ZadSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: ZadSpacing.sm,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
-                      color: isRead ? color.withValues(alpha: 0.35) : color,
-                      shape: BoxShape.circle,
+                      color: color.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(ZadRadii.pill),
+                    ),
+                    child: Text(
+                      source.label(context.l10n),
+                      style: ZadType.labelSmall.copyWith(
+                        color: color,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                   ),
+                  const SizedBox(height: ZadSpacing.xs),
+                  Text(
+                    title,
+                    style: ZadType.titleSmall.copyWith(
+                      fontWeight: isRead ? FontWeight.w600 : FontWeight.w800,
+                    ),
+                  ),
+                  Text(
+                    body.text,
+                    style: ZadType.bodySmall.copyWith(
+                      color: ZadColors.inkMuted,
+                    ),
+                  ),
+                  if (body.links.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: ZadSpacing.sm),
+                      child: Wrap(
+                        spacing: ZadSpacing.sm,
+                        runSpacing: ZadSpacing.xs,
+                        children: <Widget>[
+                          for (final l in body.links)
+                            OutlinedButton(
+                              onPressed: () => unawaited(openAmazonLink(l.url)),
+                              style: OutlinedButton.styleFrom(
+                                minimumSize: const Size(0, 44),
+                                shape: const StadiumBorder(),
+                              ),
+                              child: Text(context.l10n.notifOnAmazon(l.name)),
+                            ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            if (!isRead)
+              Padding(
+                padding: const EdgeInsets.only(
+                  top: ZadSpacing.sm,
+                  right: ZadSpacing.xs,
+                  left: ZadSpacing.xs,
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(
-                        title,
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: scheme.onSurface,
-                        ),
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        body.text,
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          height: 18 / 12.5,
-                          color: scheme.onSurfaceVariant,
-                        ),
-                      ),
-                      if (body.links.isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(top: ZadSpacing.sm),
-                          child: Wrap(
-                            spacing: ZadSpacing.sm,
-                            runSpacing: ZadSpacing.xs,
-                            children: <Widget>[
-                              for (final l in body.links)
-                                OutlinedButton(
-                                  onPressed: () =>
-                                      unawaited(openAmazonLink(l.url)),
-                                  style: OutlinedButton.styleFrom(
-                                    minimumSize: const Size(0, 44),
-                                    shape: const StadiumBorder(),
-                                  ),
-                                  child: Text(
-                                    context.l10n.notifOnAmazon(l.name),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                    ],
+                child: Container(
+                  width: 10,
+                  height: 10,
+                  decoration: BoxDecoration(
+                    color: color,
+                    shape: BoxShape.circle,
                   ),
                 ),
-              ],
-            ),
-          ),
+              ),
+          ],
         ),
       ),
     );

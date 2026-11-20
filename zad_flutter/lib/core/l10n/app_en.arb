@@ -814,6 +814,105 @@
     }
   },
   "recipesTrendingGroup": "Trending now",
+  "chefWorldState": "{total, plural, =1{1 recipe} other{{total} recipes}} · {ready} complete",
+  "@chefWorldState": {
+    "description": "Chef world: the state line once there is an answer.",
+    "placeholders": {
+      "total": {
+        "type": "int"
+      },
+      "ready": {
+        "type": "int"
+      }
+    }
+  },
+  "chefStateEmpty": "The pantry is empty — add food and I will suggest",
+  "chefStateReady": "Ready to suggest a dish from your pantry",
+  "chefStateThinking": "Thinking of a dish from your pantry…",
+  "chefError": "I could not reach Chef Zad. Try again in a moment.",
+  "chefStale": "Your pantry has changed since the last suggestions — ask for new ones if you like.",
+  "chefReadyTitle": "Chef Zad is ready",
+  "chefReadyBody": "Tap \"Recipes from my pantry\" and Chef Zad tells you what to cook from what you have, and what is only missing a little.",
+  "chefEmptyTitle": "The pantry is empty",
+  "chefEmptyBody": "Add what you have to the pantry and Chef Zad suggests dishes from it.",
+  "chefAskCta": "Recipes from my pantry",
+  "chefAsking": "Chef Zad is thinking…",
+  "chefAskAgain": "New suggestions",
+  "chefGroupPantry": "From your pantry",
+  "chefGroupMore": "More meals",
+  "chefComplete": "Complete",
+  "chefMissingCount": "Missing {count}",
+  "@chefMissingCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "chefMinutes": "{count} min",
+  "@chefMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "chefHaveHeading": "You have",
+  "chefMissingHeading": "Missing",
+  "chefMethodHeading": "Method",
+  "chefStepByStep": "Full recipe, step by step",
+  "chefAddMissing": "Add the missing to the shopping list ({count})",
+  "@chefAddMissing": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "chefAddedOne": "Added 1 item to the shopping list.",
+  "chefAddedMany": "Added {count} items to the shopping list.",
+  "@chefAddedMany": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "chefNothingToAdd": "Everything missing is already on the list or in the pantry.",
+  "chefRatePrompt": "Did you like it? Chef Zad remembers.",
+  "chefLike": "I liked it",
+  "chefDislike": "Not for me",
+  "chefDetailIngredients": "Ingredients",
+  "chefDetailSteps": "Method",
+  "chefDetailAddToShopping": "Add missing to the list",
+  "chefDetailClose": "Close",
+  "chefDetailRetry": "Try again",
+  "chefDetailLoading": "Chef Zad is preparing the recipe…",
+  "chefDetailEmpty": "Chef Zad did not send this recipe — try again",
+  "chefDetailSlow": "Chef Zad is slow to answer — try again",
+  "chefDetailFailed": "Sorry, something went wrong loading the recipe",
+  "chefHomeTitle": "Chef Zad (smart suggestions)",
+  "chefHomeAllDepleted": "Your pantry is all used up — put the shortages on the shopping list and I will suggest food.",
+  "chefHomePantryEmpty": "Add items to your pantry so Chef Zad can suggest today's dish.",
+  "chefHomeComplete": "Complete from your pantry",
+  "chefHomeMinutes": "{count} min",
+  "@chefHomeMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "chefHomeMissingList": "Missing: {items}",
+  "@chefHomeMissingList": {
+    "placeholders": {
+      "items": {
+        "type": "String"
+      }
+    }
+  },
+  "chefHomeAddMissing": "Add them to the shopping list",
+  "chefHomeTapSteps": "Tap for the steps",
   "homeDealsSeeAll": "All deals",
   "homeDealsSearching": "Looking for deals in your stores — tap to see what we found",
   "sheinShop": "Shop on SHEIN",
@@ -921,35 +1020,9 @@
       }
     }
   },
-  "zadStatusTitle": "Zad status",
-  "zadStatusAllGood": "Zad is working and watching",
-  "zadStatusNeedsFix": "Something has stopped and needs one step from you",
-  "zadStatusAllButOne": "All working except: {what}",
-  "zadStatusWorking": "Working",
-  "zadStatusStopped": "Stopped",
-  "zadStatusMaybe": "May stop",
-  "zadStatusBank": "Bank message reading",
-  "zadStatusBankOk": "Zad is reading your bank messages and logging them.",
-  "zadStatusBankOff": "Bank message reading is off. Turn it on so your balance and spending update by themselves.",
-  "zadStatusBankStalled": "The service has not seen a notification for a while. If it is on: switch it off and on again on the screen that opens.",
-  "zadStatusBankSilent": "On, but no message has arrived yet. If you expect a bank message and it did not come: switch it off and on again.",
-  "zadStatusNotifications": "Notifications",
-  "zadStatusNotificationsOk": "Dose, bill and budget alerts reach you.",
-  "zadStatusNotificationsOff": "Notifications are off, so dose and bill alerts will not reach you.",
-  "zadStatusLocation": "Location",
-  "zadStatusLocationOk": "Location is on; deals and nearby shops are worked out from where you are.",
-  "zadStatusLocationServiceOff": "Location is switched off on the phone, so readings will not be from where you really are.",
-  "zadStatusLocationDenied": "Zad is not allowed to know where you are, so deals and nearby shops will not work.",
-  "zadStatusBackground": "Location all the time",
-  "zadStatusBackgroundOk": "Street alerts work even with the app closed.",
-  "zadStatusBackgroundOff": "Without \"all the time\", street alerts will not work while the app is closed.",
-  "zadStatusBattery": "Battery saver",
-  "zadStatusBatteryOk": "The phone is not restricting Zad in the background.",
-  "zadStatusBatteryWarn": "The phone may stop Zad in the background. Choose \"Unrestricted\" so reading does not cut out.",
-  "zadStatusFixOpenSettings": "Open settings",
-  "zadStatusFixAllow": "Allow",
-  "zadStatusFixLocationOn": "Turn location on",
-  "zadStatusFixBattery": "Remove limits",
+  "homeBankOffBanner": "⚠️ Bank message reading has stopped. Tap here to turn it back on so your balance and spending update by themselves.",
+  "homeBankStalledHint": "If it is already on: switch it off and on again on the screen that opens.",
+  "homeLocationOffBanner": "📍 Your location is off. Turn it on so Zad can match supermarket deals and nearby shops and do its job properly.",
   "homeLocationLater": "Not now",
   "channelCardTitle": "Zad has no way to reach you",
   "channelCardBody": "Notifications are off and Telegram isn't linked, so medicine times, bills and budget alerts won't reach you. Either one is enough.",
@@ -1021,7 +1094,7 @@
   "shellLanguageShort": "ع",
   "chefHomeTapHint": "Tap and I'll suggest a dish from your pantry.",
   "chefFullRecipe": "Full recipe and chef's secrets",
-  "chefSecrets": "🤫 Chef's secrets",
+  "chefSecrets": "Chef's secrets",
   "chefSourceLink": "See the recipe at its source",
   "chefSourceHandle": "See it at @{handle}",
   "chefAsk": "Ask the chef about this dish",
@@ -1474,6 +1547,12 @@
   "profileExportSubtitle": "A copy of everything Zad knows about you",
   "profileExportFailed": "Couldn't prepare the file, try again",
   "profileExportSubject": "My data from Zad",
+  "homeCareTitle": "Your subscriptions and medicines",
+  "homeCareRenewsToday": "Renews today",
+  "homeCareRenewsTomorrow": "Renews tomorrow",
+  "homeCareRenewsInDays": "Renews in {days} days",
+  "homeCareDoseAt": "Dose at {time}",
+  "homeCareDoseNow": "Dose due now",
   "introSayPantry": "This fridge is mine!",
   "introSayFamily": "The whole house in one hand",
   "introSayAssistant": "I learn from you every day",
@@ -1519,6 +1598,107 @@
   "consentTermsLink": "Terms of Use",
   "consentTermsVersion": "2.2",
   "consentTermsUpdated": "November 2026",
+  "worldLabelBrain": "Zad's brain",
+  "worldLabelChef": "Chef Zad",
+  "worldLabelInv": "Pantry",
+  "worldLabelShop": "Shopping",
+  "worldLabelTx": "Transactions",
+  "worldLabelBudget": "Budget",
+  "worldLabelStmt": "Statement",
+  "worldLabelSubs": "Subscriptions",
+  "worldLabelPh": "Pharmacy",
+  "worldLabelAppt": "Appointments",
+  "worldLabelMaint": "Maintenance",
+  "worldLabelDocs": "Documents",
+  "worldLabelPlaces": "My places",
+  "worldLabelComp": "Zad's companion",
+  "worldLabelChat": "Chat",
+  "worldLabelNotif": "Notifications",
+  "worldLabelProfile": "My account",
+  "worldLabelPrem": "Premium",
+  "worldLabelTas": "Tasbih garden",
+  "worldLabelGames": "Zado's games",
+  "worldLabelPrices": "Today's prices",
+  "worldLabelOffers": "My offers",
+  "worldLabelAch": "Achievements",
+  "worldLinksTitle": "Connected to",
+  "worldLinksHint": "What happens here affects:",
+  "worldBack": "Back",
+  "pantryWorldEyebrow": "{count, plural, =0{No items yet} =1{1 item} other{{count} items}}",
+  "pantryWorldState": "{count, plural, =0{Nothing is running out} =1{1 thing is running out} other{{count} things are running out}}",
+  "pantryLegendLow": "{count} running out",
+  "pantryLegendExpiring": "{count} expiring soon",
+  "pantryLegendOk": "{count} fine",
+  "brainWorldState": "Connected and learning",
+  "brainWorldEyebrow": "{count, plural, =0{Nothing connected yet} =1{1 item connected} other{{count} items connected}}",
+  "@brainWorldEyebrow": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "brainFilterAll": "All",
+  "brainFilterLabel": "Area filters",
+  "brainNetworkEmptyTitle": "Zad is still learning about you",
+  "brainNetworkEmptyMessage": "Log your spending or add pantry items and medicines, and this network grows.",
+  "brainCardsTitle": "Inside Zad's brain",
+  "brainCardStaffTitle": "Zad's team",
+  "brainCardStaffBody": "What the staff noticed on the morning round of your home, money and family",
+  "brainCardMemoryTitle": "What Zad knows about me",
+  "brainCardMemoryBody": "What Zad remembers about you and talks to you from — correct it or let it forget",
+  "brainCardGraphTitle": "Zad's network",
+  "brainCardGraphBody": "The people, places and things Zad knows and how they connect — export to Obsidian",
+  "brainCardMapTitle": "Zad's map",
+  "brainCardMapBody": "How your budget, subscriptions and home connect — full screen",
+  "brainCardLogTitle": "Zad's change log",
+  "brainCardLogBody": "Everything Zad recorded or changed for you, with undo if it got it wrong",
+  "brainCardHealthTitle": "Zad's brain health",
+  "brainCardHealthBody": "Whether Zad is working in the background or stopped, and why",
+  "brainTelemetryLinks": "Links: {active}/{total}",
+  "@brainTelemetryLinks": {
+    "placeholders": {
+      "active": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "brainTelemetryDecisions": "Decisions today",
+  "brainTelemetryGauge": "Stability",
+  "brainTelemetryStable": "Stable",
+  "brainTelemetryAlert": "Alert",
+  "zadStatusTitle": "Zad status",
+  "zadStatusAllGood": "Zad is working and watching",
+  "zadStatusNeedsFix": "Something has stopped and needs one step from you",
+  "zadStatusAllButOne": "All working except: {what}",
+  "zadStatusWorking": "Working",
+  "zadStatusStopped": "Stopped",
+  "zadStatusMaybe": "May stop",
+  "zadStatusBank": "Bank message reading",
+  "zadStatusBankOk": "Zad is reading your bank messages and logging them.",
+  "zadStatusBankOff": "Bank message reading is off. Turn it on so your balance and spending update by themselves.",
+  "zadStatusBankStalled": "The service has not seen a notification for a while. If it is on: switch it off and on again on the screen that opens.",
+  "zadStatusBankSilent": "On, but no message has arrived yet. If you expect a bank message and it did not come: switch it off and on again.",
+  "zadStatusNotifications": "Notifications",
+  "zadStatusNotificationsOk": "Dose, bill and budget alerts reach you.",
+  "zadStatusNotificationsOff": "Notifications are off, so dose and bill alerts will not reach you.",
+  "zadStatusLocation": "Location",
+  "zadStatusLocationOk": "Location is on; deals and nearby shops are worked out from where you are.",
+  "zadStatusLocationServiceOff": "Location is switched off on the phone, so readings will not be from where you really are.",
+  "zadStatusLocationDenied": "Zad is not allowed to know where you are, so deals and nearby shops will not work.",
+  "zadStatusBackground": "Location all the time",
+  "zadStatusBackgroundOk": "Street alerts work even with the app closed.",
+  "zadStatusBackgroundOff": "Without \"all the time\", street alerts will not work while the app is closed.",
+  "zadStatusBattery": "Battery saver",
+  "zadStatusBatteryOk": "The phone is not restricting Zad in the background.",
+  "zadStatusBatteryWarn": "The phone may stop Zad in the background. Choose \"Unrestricted\" so reading does not cut out.",
+  "zadStatusFixOpenSettings": "Open settings",
+  "zadStatusFixAllow": "Allow",
+  "zadStatusFixLocationOn": "Turn location on",
+  "zadStatusFixBattery": "Remove limits",
   "gamesHubButton": "Zado's games",
   "gamesHubTitle": "Zado's games",
   "gamesBackTooltip": "Back",
@@ -1577,43 +1757,6 @@
   "starGameTitle": "Catch the Stars",
   "starGameHint": "Drag {name} left and right to catch the stars",
   "starGameOver": "The stars got away",
-  "homeCareTitle": "Your subscriptions and medicines",
-  "homeCareRenewsToday": "Renews today",
-  "homeCareRenewsTomorrow": "Renews tomorrow",
-  "homeCareRenewsInDays": "Renews in {days} days",
-  "homeCareDoseAt": "Dose at {time}",
-  "homeCareDoseNow": "Dose due now",
-  "worldLabelBrain": "Zad's brain",
-  "worldLabelChef": "Chef Zad",
-  "worldLabelInv": "Pantry",
-  "worldLabelShop": "Shopping",
-  "worldLabelTx": "Transactions",
-  "worldLabelBudget": "Budget",
-  "worldLabelStmt": "Statement",
-  "worldLabelSubs": "Subscriptions",
-  "worldLabelPh": "Pharmacy",
-  "worldLabelAppt": "Appointments",
-  "worldLabelMaint": "Maintenance",
-  "worldLabelDocs": "Documents",
-  "worldLabelPlaces": "My places",
-  "worldLabelComp": "Zad's companion",
-  "worldLabelChat": "Chat",
-  "worldLabelNotif": "Notifications",
-  "worldLabelProfile": "My account",
-  "worldLabelPrem": "Premium",
-  "worldLabelTas": "Tasbih garden",
-  "worldLabelGames": "Zado's games",
-  "worldLabelPrices": "Today's prices",
-  "worldLabelOffers": "My offers",
-  "worldLabelAch": "Achievements",
-  "worldLinksTitle": "Connected to",
-  "worldLinksHint": "What happens here affects:",
-  "worldBack": "Back",
-  "pantryWorldEyebrow": "{count, plural, =0{No items yet} =1{1 item} other{{count} items}}",
-  "pantryWorldState": "{count, plural, =0{Nothing is running out} =1{1 thing is running out} other{{count} things are running out}}",
-  "pantryLegendLow": "{count} running out",
-  "pantryLegendExpiring": "{count} expiring soon",
-  "pantryLegendOk": "{count} fine",
   "shopWorldEyebrow": "{count, plural, =0{Nothing missing} =1{1 thing missing} other{{count} things missing}}",
   "shopWorldStores": "{count, plural, =1{From 1 shop} other{From {count} shops}}",
   "shopWorldAnyStore": "From any shop",
@@ -1902,5 +2045,76 @@
   "statementCheckBalanced": "The numbers match the statement balance",
   "statementCheckMismatch": "Some numbers do not match the statement balance — those rows are left unticked, review them",
   "statementCheckUnknown": "The statement has no balance to check against — review every row before importing",
-  "statementDropped": "{text}. {n} rows could not be read."
+  "statementDropped": "{text}. {n} rows could not be read.",
+  "placesWorldEyebrow": "{count, plural, =0{No outings yet} =1{1 outing} other{{count} outings}}",
+  "@placesWorldEyebrow": {
+    "description": "Places world: outings count above the title.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "placesWorldState": "{count, plural, =0{No places} =1{1 place} other{{count} places}} · {alerts, select, on{street alerts on} other{street alerts off}}",
+  "@placesWorldState": {
+    "description": "Places world state line: saved places and whether street alerts are on.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "alerts": {
+        "type": "String"
+      }
+    }
+  },
+  "docsEyebrowCount": "{count, plural, =1{1 document} other{{count} documents}}",
+  "docsStateEmpty": "The drawer is empty — add your first document",
+  "docsStateNearest": "Nearest: {name} — {status}",
+  "docsPrivacy": "Zad keeps only the kind of document and its expiry date — no number, no photo — and reminds you ahead.",
+  "docsDueOne": "One document needs renewing soon",
+  "docsDueMany": "{count} documents need renewing soon",
+  "docsEmptyTitle": "No documents yet",
+  "docsEmptyMessage": "Add your passport, ID or licence with its expiry date and Zad reminds you in good time to renew. Or tell Zad in chat: \"my passport expires 15 March 2027\".",
+  "docsAdd": "Add a document",
+  "docsDelete": "Delete",
+  "docsExpires": "Expires {date}",
+  "docsSaveFailedEdit": "Not saved — a document with the same kind and name may exist, or you are offline.",
+  "docsSaveFailedAdd": "Not saved — check your connection.",
+  "docsDeleteFailed": "Not removed — check your connection.",
+  "maintEyebrowCount": "{count, plural, =1{1 appliance} other{{count} appliances}}",
+  "maintStateNone": "Nothing registered yet",
+  "maintStateNoSchedule": "Set a service interval and Zad reminds you",
+  "maintStateNext": "Next: {name} — {status}",
+  "maintStateOverdue": "{name} is {days} days late",
+  "maintServiceOverdue": "{days} days late",
+  "maintServiceIn": "Service in {days} days",
+  "maintServiceSoon": "Service soon",
+  "maintWarrantyEnded": "Warranty ended",
+  "maintWarrantyIn": "Warranty ends in {days} days",
+  "maintStatDevices": "Appliances",
+  "maintStatSoon": "Service soon",
+  "maintStatWarranty": "Warranty ending",
+  "maintOverdueBanner": "{count} appliances are past their service date",
+  "maintEmptyTitle": "No appliances yet",
+  "maintEmptyMessage": "Add the AC, the water heater or the car and Zad reminds you of its service and warranty.",
+  "maintAdd": "Add an appliance",
+  "maintServicedToday": "Serviced today",
+  "maintDelete": "Delete",
+  "maintTechnicians": "Technicians I trust",
+  "maintTechniciansHint": "Call or WhatsApp a technician you have tried",
+  "maintAddFailed": "The appliance was not saved — check your connection.",
+  "notifMarkAllRead": "Mark all read",
+  "notifAllRead": "All read",
+  "achWorldState": "{done} of {total} achievements",
+  "achLevel": "Level {level}",
+  "achLevelPoints": "{points} of {next} points",
+  "achOnTrack": "You are on the right track!",
+  "achContributions": "Contributions",
+  "achStreak": "Streak",
+  "achShelf": "Achievements",
+  "achNext": "Next achievement",
+  "achLocked": "Locked",
+  "achLoadFailed": "Could not load the achievements",
+  "achLoadFailedHint": "Check your connection and try again",
+  "achRetry": "Try again"
 }

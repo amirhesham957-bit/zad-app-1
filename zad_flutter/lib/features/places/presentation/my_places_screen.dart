@@ -32,14 +32,21 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/design/tokens/zad_world_colors.dart';
 import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/places/application/street_alerts_controller.dart';
 import 'package:zad/features/places/domain/my_places.dart';
 import 'package:zad/features/places/presentation/keep_alive_guide.dart';
 import 'package:zad/features/places/presentation/places_orbit.dart';
+import 'package:zad/features/places/presentation/places_world_scene.dart';
 import 'package:zad/features/places/presentation/street_alerts_section.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/navigation/zad_slots.dart';
+import 'package:zad/shared/worlds/art/art.dart';
+import 'package:zad/shared/worlds/world_card.dart';
+import 'package:zad/shared/worlds/world_row.dart';
+import 'package:zad/shared/worlds/world_scaffold.dart';
+import 'package:zad/shared/worlds/zad_world.dart';
 
 /// Opens the screen.
 Future<void> showMyPlacesScreen(BuildContext context) => Navigator.of(
@@ -74,8 +81,19 @@ String placeSaveError(Object e) => switch (e) {
 
 /// The screen.
 class MyPlacesScreen extends ConsumerStatefulWidget {
-  /// Creates the screen.
-  const new({super.key});
+  /// Creates the screen. The seeds are rows shown before (or without) a
+  /// server answer — for tests only.
+  const new({
+    super.key,
+    @visibleForTesting this.seedReminders = const <PlaceReminder>[],
+    @visibleForTesting this.seedVisits = const <PlaceVisit>[],
+  });
+
+  /// Reminders shown until the server answers.
+  final List<PlaceReminder> seedReminders;
+
+  /// Outings shown until the server answers.
+  final List<PlaceVisit> seedVisits;
 
   @override
   ConsumerState<MyPlacesScreen> createState() => _MyPlacesState();
@@ -86,8 +104,8 @@ const String _stillLearning =
     'وأفكّرك بالناقص قبلها.';
 
 class _MyPlacesState extends ConsumerState<MyPlacesScreen> {
-  List<PlaceReminder> _reminders = const <PlaceReminder>[];
-  List<PlaceVisit> _visits = const <PlaceVisit>[];
+  late List<PlaceReminder> _reminders = widget.seedReminders;
+  late List<PlaceVisit> _visits = widget.seedVisits;
   bool _loading = true;
 
   DateTime _local(DateTime utc) {
@@ -241,15 +259,23 @@ class _MyPlacesState extends ConsumerState<MyPlacesScreen> {
   @override
   Widget build(BuildContext context) {
     final habits = placeHabits(_visits, _local);
-    return DecoratedBox(
-      decoration: BoxDecoration(gradient: ZadColors.canvas),
-      child: DefaultTabController(
-        length: 3,
-        child: Scaffold(
-          backgroundColor: Colors.transparent,
-          appBar: AppBar(
-            title: const Text('أماكني'),
-            bottom: TabBar(
+    return DefaultTabController(
+      length: 3,
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: TabBarView(
+          children: <Widget>[
+            _world(context, habits),
+            ZadSlots.dealsView(),
+            ZadSlots.nearbyList(),
+          ],
+        ),
+        // The tabs sit in the thumb zone.
+        bottomNavigationBar: Material(
+          color: ZadColors.surface,
+          child: SafeArea(
+            top: false,
+            child: TabBar(
               tabs: <Widget>[
                 Tab(text: context.l10n.placesTabMine),
                 Tab(text: context.l10n.dealsTabDeals),
@@ -257,87 +283,100 @@ class _MyPlacesState extends ConsumerState<MyPlacesScreen> {
               ],
             ),
           ),
-          body: TabBarView(
+        ),
+      ),
+    );
+  }
+
+  Widget _world(BuildContext context, List<PlaceHabit> habits) {
+    final l = context.l10n;
+    final alerts = ref.watch(streetAlertsControllerProvider);
+    final alertsOn = alerts.status == StreetAlertsStatus.on;
+    return ZadWorldScaffold(
+      world: ZadWorld.places,
+      eyebrow: l.placesWorldEyebrow(_visits.length),
+      title: l.worldLabelPlaces,
+      stateLine: l.placesWorldState(_reminders.length, alertsOn ? 'on' : 'off'),
+      scene: (loop) => PlacesWorldScene(loop, alertsOn: alertsOn),
+      zado: const ZadWorldZado(left: 60, top: 50, size: 140),
+      onRefresh: _load,
+      dockHeight: 80,
+      overlay: Positioned(
+        right: ZadSpacing.lg,
+        bottom: ZadSpacing.md,
+        child: FloatingActionButton.extended(
+          heroTag: 'places-add',
+          onPressed: () => unawaited(_add()),
+          icon: const Icon(ZadIcons.add),
+          label: const Text('تذكير بمكان'),
+        ),
+      ),
+      slivers: <Widget>[
+        SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: ZadSpacing.gutter),
+          sliver: SliverList.list(
             children: <Widget>[
-              RefreshIndicator(
-                onRefresh: _load,
-                child: ListView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(
-                    ZadSpacing.lg,
-                    ZadSpacing.sm,
-                    ZadSpacing.lg,
-                    120,
-                  ),
-                  children: <Widget>[
-                    ZadAppearOnEntry(
-                      child: _PlaceReminders(
-                        reminders: _reminders,
-                        onAdd: () => unawaited(_add()),
-                        onCancel: (r) => unawaited(_cancel(r)),
-                      ),
-                    ),
-                    const SizedBox(height: ZadSpacing.lg),
-                    const KeepAliveGuide(),
-                    const SizedBox(height: ZadSpacing.lg),
-                    ZadAppearOnEntry(
-                      delayMs: 80,
-                      child: _Section(
-                        icon: ZadIcons.brain,
-                        title: 'اتعلّمت من خروجاتك',
-                        child: habits.isEmpty
-                            ? Text(
-                                _loading ? 'بنشوف خروجاتك…' : _stillLearning,
-                                style: ZadType.bodySmall.copyWith(
-                                  color: ZadColors.inkMuted,
-                                ),
-                              )
-                            : Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: <Widget>[
-                                  PlacesOrbit(
-                                    habits: habits,
-                                    onOpen: _openHabit,
-                                  ),
-                                  const SizedBox(height: ZadSpacing.lg),
-                                  PlaceHabitCards(
-                                    habits: habits,
-                                    onOpen: _openHabit,
-                                  ),
-                                ],
-                              ),
-                      ),
-                    ),
-                    const SizedBox(height: ZadSpacing.lg),
-                    ZadAppearOnEntry(
-                      delayMs: 160,
-                      child: _Section(
-                        icon: Icons.directions_walk,
-                        title: 'خروجاتك',
-                        child: _visits.isEmpty
-                            ? const _NoOutings()
-                            : Column(
-                                children: <Widget>[
-                                  for (final v in _visits.take(10))
-                                    _VisitCard(
-                                      when: _whenLabel(v),
-                                      away: _awayLabel(v),
-                                      spent: _spentLabel(v),
-                                      onDelete: () => unawaited(_forget(v)),
-                                    ),
-                                ],
-                              ),
-                      ),
-                    ),
-                  ],
+              const SizedBox(height: ZadSpacing.md),
+              // Without it no reminder here can ever fire: nothing knows the
+              // customer has reached the shop.
+              const StreetAlertsSection(),
+              const SizedBox(height: ZadSpacing.lg),
+              ZadAppearOnEntry(
+                child: _PlaceReminders(
+                  reminders: _reminders,
+                  onCancel: (r) => unawaited(_cancel(r)),
                 ),
               ),
-              ZadSlots.dealsView(),
-              ZadSlots.nearbyList(),
+              const SizedBox(height: ZadSpacing.lg),
+              const KeepAliveGuide(),
+              const SizedBox(height: ZadSpacing.lg),
+              ZadAppearOnEntry(
+                delayMs: 80,
+                child: _Section(
+                  art: ZadIconArt.pin,
+                  title: 'اتعلّمت من خروجاتك',
+                  child: habits.isEmpty
+                      ? Text(
+                          _loading ? 'بنشوف خروجاتك…' : _stillLearning,
+                          style: ZadType.bodySmall.copyWith(
+                            color: ZadColors.inkMuted,
+                          ),
+                        )
+                      : Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: <Widget>[
+                            PlacesOrbit(habits: habits, onOpen: _openHabit),
+                            const SizedBox(height: ZadSpacing.lg),
+                            PlaceHabitCards(habits: habits, onOpen: _openHabit),
+                          ],
+                        ),
+                ),
+              ),
+              const SizedBox(height: ZadSpacing.lg),
+              ZadAppearOnEntry(
+                delayMs: 160,
+                child: _Section(
+                  art: ZadIconArt.store,
+                  title: 'خروجاتك',
+                  child: _visits.isEmpty
+                      ? const _NoOutings()
+                      : Column(
+                          children: <Widget>[
+                            for (final v in _visits.take(10))
+                              _VisitCard(
+                                when: _whenLabel(v),
+                                away: _awayLabel(v),
+                                spent: _spentLabel(v),
+                                onDelete: () => unawaited(_forget(v)),
+                              ),
+                          ],
+                        ),
+                ),
+              ),
             ],
           ),
         ),
-      ),
+      ],
     );
   }
 
@@ -393,42 +432,27 @@ class _NoOutings extends ConsumerWidget {
 }
 
 class _Section extends StatelessWidget {
-  const new({required this.icon, required this.title, required this.child});
+  const new({required this.art, required this.title, required this.child});
 
-  final IconData icon;
+  final ZadIconArt art;
   final String title;
   final Widget child;
 
   @override
-  Widget build(BuildContext context) => DecoratedBox(
-    decoration: BoxDecoration(
-      color: ZadColors.surface,
-      borderRadius: BorderRadius.circular(ZadRadii.cardLarge),
-      border: Border.all(color: ZadColors.outlineVariant),
-    ),
-    child: Padding(
-      padding: const EdgeInsets.all(ZadSpacing.lg),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Row(
-            children: <Widget>[
-              Icon(icon, size: 20, color: ZadColors.green700),
-              const SizedBox(width: ZadSpacing.sm),
-              Expanded(
-                child: Text(
-                  title,
-                  style: ZadType.titleSmall.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: ZadSpacing.sm),
-          child,
-        ],
-      ),
+  Widget build(BuildContext context) => ZadWorldCard(
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Row(
+          children: <Widget>[
+            ZadArt.icon(art, size: 28),
+            const SizedBox(width: ZadSpacing.sm),
+            Expanded(child: Text(title, style: ZadType.titleSmall)),
+          ],
+        ),
+        const SizedBox(height: ZadSpacing.md),
+        child,
+      ],
     ),
   );
 }
@@ -448,170 +472,79 @@ class _VisitCard extends StatelessWidget {
   final VoidCallback? onDelete;
 
   @override
-  Widget build(BuildContext context) => Container(
-    margin: const EdgeInsets.only(bottom: ZadSpacing.sm),
-    padding: const EdgeInsetsDirectional.fromSTEB(
-      ZadSpacing.md,
-      ZadSpacing.sm,
-      ZadSpacing.xs,
-      ZadSpacing.sm,
-    ),
-    decoration: BoxDecoration(
-      color: ZadColors.surfaceVariant,
-      borderRadius: BorderRadius.circular(ZadRadii.card),
-    ),
-    child: Row(
-      children: <Widget>[
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Text(
-                when,
-                style: ZadType.bodyMedium.copyWith(fontWeight: FontWeight.w600),
-              ),
-              const SizedBox(height: ZadSpacing.xs),
-              Text(
-                away,
-                style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
-              ),
-              const SizedBox(height: ZadSpacing.xs),
-              Text(
-                spent,
-                style: ZadType.labelSmall.copyWith(
-                  color: ZadColors.green700,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
-        ),
-        if (onDelete != null)
-          IconButton(
-            tooltip: 'امسح الخروجة دي',
-            onPressed: onDelete,
-            icon: Icon(ZadIcons.dismiss, color: ZadColors.inkMuted),
-          ),
-      ],
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: ZadSpacing.sm),
+    child: ZadWorldRow(
+      leading: ZadWorldTile(
+        color: ZadWorldColors.places,
+        child: ZadArt.icon(ZadIconArt.store, size: 28),
+      ),
+      title: when,
+      subtitle: '$away\n$spent',
+      stateColor: ZadWorldColors.places,
+      trailing: onDelete == null
+          ? null
+          : IconButton(
+              tooltip: 'امسح الخروجة دي',
+              onPressed: onDelete,
+              style: IconButton.styleFrom(minimumSize: const Size(44, 44)),
+              icon: Icon(ZadIcons.dismiss, color: ZadColors.inkMuted),
+            ),
     ),
   );
 }
 
 class _PlaceReminders extends StatelessWidget {
-  const new({
-    required this.reminders,
-    required this.onAdd,
-    required this.onCancel,
-  });
+  const new({required this.reminders, required this.onCancel});
 
   final List<PlaceReminder> reminders;
-  final VoidCallback onAdd;
   final ValueChanged<PlaceReminder> onCancel;
 
   @override
-  Widget build(BuildContext context) => DecoratedBox(
-    decoration: BoxDecoration(
-      color: ZadColors.surface,
-      borderRadius: BorderRadius.circular(ZadRadii.cardLarge),
-      border: Border.all(color: ZadColors.outlineVariant),
-    ),
-    child: Padding(
-      padding: const EdgeInsets.all(ZadSpacing.lg),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Row(
-            children: <Widget>[
-              const Icon(Icons.place, size: 20, color: ZadColors.green700),
-              const SizedBox(width: ZadSpacing.sm),
-              Expanded(
-                child: Text(
-                  'لما توصل مكان',
-                  style: ZadType.titleSmall.copyWith(
-                    fontWeight: FontWeight.w700,
+  Widget build(BuildContext context) => ZadWorldCard(
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Row(
+          children: <Widget>[
+            ZadArt.icon(ZadIconArt.pin, size: 28),
+            const SizedBox(width: ZadSpacing.sm),
+            const Expanded(
+              child: Text('لما توصل مكان', style: ZadType.titleSmall),
+            ),
+          ],
+        ),
+        const SizedBox(height: ZadSpacing.md),
+        if (reminders.isEmpty)
+          Text(
+            'قول لزاد «فكّريني لما أروح الصيدلية أجيب بنادول» — هتقولهالك '
+            'بصوتها أول ما توصل.',
+            style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
+          )
+        else
+          for (final r in reminders)
+            Padding(
+              padding: const EdgeInsets.only(bottom: ZadSpacing.sm),
+              child: ZadWorldRow(
+                leading: ZadWorldTile(
+                  color: _placeAccent(r.place),
+                  child: Icon(
+                    _placeIcon(r.place),
+                    size: 22,
+                    color: _placeAccent(r.place),
                   ),
                 ),
-              ),
-              TextButton.icon(
-                onPressed: onAdd,
-                icon: const Icon(ZadIcons.add, size: 18),
-                label: const Text('تذكير بمكان'),
-              ),
-            ],
-          ),
-          // Without it no reminder here can ever fire: nothing knows the
-          // customer has reached the shop.
-          const StreetAlertsSection(),
-          if (reminders.isEmpty)
-            Text(
-              'قول لزاد «فكّريني لما أروح الصيدلية أجيب بنادول» — هتقولهالك '
-              'بصوتها أول ما توصل.',
-              style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
-            )
-          else
-            for (final r in reminders)
-              Container(
-                margin: const EdgeInsets.only(top: ZadSpacing.sm),
-                padding: const EdgeInsetsDirectional.fromSTEB(
-                  ZadSpacing.md,
-                  ZadSpacing.sm,
-                  ZadSpacing.xs,
-                  ZadSpacing.sm,
-                ),
-                decoration: BoxDecoration(
-                  color: _placeAccent(r.place).withValues(alpha: 0.06),
-                  borderRadius: BorderRadius.circular(ZadRadii.card),
-                  border: Border.all(
-                    color: _placeAccent(r.place).withValues(alpha: 0.18),
-                  ),
-                ),
-                child: Row(
-                  children: <Widget>[
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: _placeAccent(r.place).withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(ZadRadii.chip),
-                      ),
-                      child: Icon(
-                        _placeIcon(r.place),
-                        size: 18,
-                        color: _placeAccent(r.place),
-                      ),
-                    ),
-                    const SizedBox(width: ZadSpacing.md),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          Text(
-                            r.note,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: ZadType.bodyMedium.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          Text(
-                            placeLabel(r.place),
-                            style: ZadType.bodySmall.copyWith(
-                              color: ZadColors.inkMuted,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    IconButton(
-                      tooltip: 'إلغاء التذكير',
-                      onPressed: () => onCancel(r),
-                      icon: Icon(ZadIcons.dismiss, color: ZadColors.inkMuted),
-                    ),
-                  ],
+                title: r.note,
+                subtitle: placeLabel(r.place),
+                trailing: IconButton(
+                  tooltip: 'إلغاء التذكير',
+                  onPressed: () => onCancel(r),
+                  style: IconButton.styleFrom(minimumSize: const Size(44, 44)),
+                  icon: Icon(ZadIcons.dismiss, color: ZadColors.inkMuted),
                 ),
               ),
-        ],
-      ),
+            ),
+      ],
     ),
   );
 }
