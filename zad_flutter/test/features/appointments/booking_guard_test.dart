@@ -89,6 +89,20 @@ void main() {
   ) async {
     final guard = _Guard(answer);
     final repo = _Repo();
+    // The world's scene loops for ever, which pumpAndSettle would wait on; a
+    // phone asked for reduced motion holds it still.
+    TestWidgetsFlutterBinding
+        .instance
+        .platformDispatcher
+        .accessibilityFeaturesTestValue = const FakeAccessibilityFeatures(
+      disableAnimations: true,
+    );
+    addTearDown(
+      TestWidgetsFlutterBinding
+          .instance
+          .platformDispatcher
+          .clearAccessibilityFeaturesTestValue,
+    );
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -108,7 +122,7 @@ void main() {
       ),
     );
     await tester.pump();
-    await tester.tap(find.text('ميعاد جديد'));
+    await tester.tap(find.byType(FloatingActionButton));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).first, 'دكتور الأسنان');
     await tester.pump();
