@@ -5766,5 +5766,26 @@
   "achRetry": "جرّب تاني",
   "@achRetry": {
     "description": "Notifications / achievements world."
-  }
+  },
+  "profileGroupMe": "أنا وزاد",
+  "profileGroupAccount": "الحساب والعيلة",
+  "profileGroupMoney": "الفلوس",
+  "profileGroupPlan": "رفيق زاد والاشتراك",
+  "profilePlanFree": "المجانية",
+  "profilePlanBasic": "الأساسية",
+  "profilePlanPlus": "المتقدمة",
+  "profilePlanUltra": "العيلة",
+  "profileSettingsTitle": "الإعدادات",
+  "profileSettingsSubtitle": "السقف، الأصوات، الإعلانات والخصوصية",
+  "settingsWorldTitle": "الإعدادات",
+  "settingsGroupMoney": "الفلوس",
+  "settingsGroupCompanion": "رفيق زاد",
+  "settingsGroupSounds": "الأصوات واللغة",
+  "settingsGroupPrivacy": "الإعلانات والخصوصية",
+  "settingsGroupAccount": "الحساب",
+  "settingsAdsTitle": "الإعلانات",
+  "settingsAdsBody": "مخصّصة ليك؟ تقدر تغيّر اختيارك في أي وقت",
+  "settingsAdsUnavailable": "مفيش اختيارات خصوصية متاحة دلوقتي",
+  "settingsTermsTitle": "الشروط والأحكام",
+  "settingsTermsBody": "سياسة الاستخدام والخصوصية"
 }

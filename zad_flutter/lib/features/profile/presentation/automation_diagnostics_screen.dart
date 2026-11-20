@@ -15,7 +15,6 @@ import 'package:intl/intl.dart' show DateFormat;
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/components/zad_appear.dart';
 import 'package:zad/core/design/components/zad_empty_state.dart';
-import 'package:zad/core/design/components/zad_kotlin_surfaces.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
@@ -69,8 +68,8 @@ class _State extends ConsumerState<AutomationDiagnosticsScreen> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final server = _server;
-    return Scaffold(
-      appBar: SubScreenTopBar(title: l10n.diagTitle),
+    return ProfileSubPage(
+      title: l10n.diagTitle,
       body: ZadAppearOnEntry(
         child: RefreshIndicator(
           onRefresh: _load,

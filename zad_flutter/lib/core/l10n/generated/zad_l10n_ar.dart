@@ -6168,6 +6168,69 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get achRetry => 'جرّب تاني';
+
+  @override
+  String get profileGroupMe => 'أنا وزاد';
+
+  @override
+  String get profileGroupAccount => 'الحساب والعيلة';
+
+  @override
+  String get profileGroupMoney => 'الفلوس';
+
+  @override
+  String get profileGroupPlan => 'رفيق زاد والاشتراك';
+
+  @override
+  String get profilePlanFree => 'المجانية';
+
+  @override
+  String get profilePlanBasic => 'الأساسية';
+
+  @override
+  String get profilePlanPlus => 'المتقدمة';
+
+  @override
+  String get profilePlanUltra => 'العيلة';
+
+  @override
+  String get profileSettingsTitle => 'الإعدادات';
+
+  @override
+  String get profileSettingsSubtitle => 'السقف، الأصوات، الإعلانات والخصوصية';
+
+  @override
+  String get settingsWorldTitle => 'الإعدادات';
+
+  @override
+  String get settingsGroupMoney => 'الفلوس';
+
+  @override
+  String get settingsGroupCompanion => 'رفيق زاد';
+
+  @override
+  String get settingsGroupSounds => 'الأصوات واللغة';
+
+  @override
+  String get settingsGroupPrivacy => 'الإعلانات والخصوصية';
+
+  @override
+  String get settingsGroupAccount => 'الحساب';
+
+  @override
+  String get settingsAdsTitle => 'الإعلانات';
+
+  @override
+  String get settingsAdsBody => 'مخصّصة ليك؟ تقدر تغيّر اختيارك في أي وقت';
+
+  @override
+  String get settingsAdsUnavailable => 'مفيش اختيارات خصوصية متاحة دلوقتي';
+
+  @override
+  String get settingsTermsTitle => 'الشروط والأحكام';
+
+  @override
+  String get settingsTermsBody => 'سياسة الاستخدام والخصوصية';
 }
 
 /// The translations for Arabic, as used in Saudi Arabia (`ar_SA`).
