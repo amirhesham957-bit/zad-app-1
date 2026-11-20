@@ -5180,23 +5180,173 @@ abstract class ZadL10n {
   /// **'اتحفظ — زاد هيحسب {item} على كده'**
   String patternEditSaved(String item);
 
-  /// No description provided for @homeBankOffBanner.
+  /// No description provided for @zadStatusTitle.
   ///
   /// In ar, this message translates to:
-  /// **'⚠️ قراءة رسائل البنك متوقفة.. اضغط هنا لإعادة تفعيلها لتحديث رصيدك ومصاريفك تلقائياً'**
-  String get homeBankOffBanner;
+  /// **'حالة زاد'**
+  String get zadStatusTitle;
 
-  /// No description provided for @homeBankStalledHint.
+  /// No description provided for @zadStatusAllGood.
   ///
   /// In ar, this message translates to:
-  /// **'لو هي مفعّلة: اطفيها وشغّلها تاني من الصفحة اللي هتفتح.'**
-  String get homeBankStalledHint;
+  /// **'زاد شغال وبيتابع'**
+  String get zadStatusAllGood;
 
-  /// No description provided for @homeLocationOffBanner.
+  /// No description provided for @zadStatusNeedsFix.
   ///
   /// In ar, this message translates to:
-  /// **'📍 موقعك غير مفعّل.. فعّل اللوكيشن عشان زاد يربط عروض السوبرماركت والمحلات القريبة منك ويقوم بمهامه صح'**
-  String get homeLocationOffBanner;
+  /// **'في حاجة واقفة ومحتاجة منك خطوة'**
+  String get zadStatusNeedsFix;
+
+  /// No description provided for @zadStatusWorking.
+  ///
+  /// In ar, this message translates to:
+  /// **'شغال'**
+  String get zadStatusWorking;
+
+  /// No description provided for @zadStatusStopped.
+  ///
+  /// In ar, this message translates to:
+  /// **'واقف'**
+  String get zadStatusStopped;
+
+  /// No description provided for @zadStatusMaybe.
+  ///
+  /// In ar, this message translates to:
+  /// **'ممكن يقف'**
+  String get zadStatusMaybe;
+
+  /// No description provided for @zadStatusBank.
+  ///
+  /// In ar, this message translates to:
+  /// **'قراءة رسائل البنك'**
+  String get zadStatusBank;
+
+  /// No description provided for @zadStatusBankOk.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد بيقرا رسائل البنك ويسجّلها.'**
+  String get zadStatusBankOk;
+
+  /// No description provided for @zadStatusBankOff.
+  ///
+  /// In ar, this message translates to:
+  /// **'قراءة رسائل البنك متوقفة. شغّلها عشان رصيدك ومصاريفك تتحدّث لوحدها.'**
+  String get zadStatusBankOff;
+
+  /// No description provided for @zadStatusBankStalled.
+  ///
+  /// In ar, this message translates to:
+  /// **'الخدمة مابقتش بتشوف إشعارات من فترة. لو هي مفعّلة: اطفيها وشغّلها تاني من الصفحة اللي هتفتح.'**
+  String get zadStatusBankStalled;
+
+  /// No description provided for @zadStatusBankSilent.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفعّلة، بس لسه ماجاتش ولا رسالة. لو مستني رسالة من البنك ومجتش: اطفيها وشغّلها تاني.'**
+  String get zadStatusBankSilent;
+
+  /// No description provided for @zadStatusNotifications.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإشعارات'**
+  String get zadStatusNotifications;
+
+  /// No description provided for @zadStatusNotificationsOk.
+  ///
+  /// In ar, this message translates to:
+  /// **'تنبيهات الجرعات والفواتير والميزانية بتوصلك.'**
+  String get zadStatusNotificationsOk;
+
+  /// No description provided for @zadStatusNotificationsOff.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإشعارات مقفولة، فتنبيهات الجرعات والفواتير مش هتوصلك.'**
+  String get zadStatusNotificationsOff;
+
+  /// No description provided for @zadStatusLocation.
+  ///
+  /// In ar, this message translates to:
+  /// **'الموقع'**
+  String get zadStatusLocation;
+
+  /// No description provided for @zadStatusLocationOk.
+  ///
+  /// In ar, this message translates to:
+  /// **'الموقع شغال، والعروض والمحلات القريبة بتتحسب من مكانك.'**
+  String get zadStatusLocationOk;
+
+  /// No description provided for @zadStatusLocationServiceOff.
+  ///
+  /// In ar, this message translates to:
+  /// **'الموقع مقفول في الموبايل، فالقراءات مش هتبقى من مكانك الحقيقي.'**
+  String get zadStatusLocationServiceOff;
+
+  /// No description provided for @zadStatusLocationDenied.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد مش مسموحله يعرف مكانك، فالعروض والمحلات القريبة مش هتشتغل.'**
+  String get zadStatusLocationDenied;
+
+  /// No description provided for @zadStatusBackground.
+  ///
+  /// In ar, this message translates to:
+  /// **'الموقع طول الوقت'**
+  String get zadStatusBackground;
+
+  /// No description provided for @zadStatusBackgroundOk.
+  ///
+  /// In ar, this message translates to:
+  /// **'تنبيهات الطريق شغالة حتى والتطبيق مقفول.'**
+  String get zadStatusBackgroundOk;
+
+  /// No description provided for @zadStatusBackgroundOff.
+  ///
+  /// In ar, this message translates to:
+  /// **'من غير «طول الوقت» تنبيهات الطريق مش هتشتغل والتطبيق مقفول.'**
+  String get zadStatusBackgroundOff;
+
+  /// No description provided for @zadStatusBattery.
+  ///
+  /// In ar, this message translates to:
+  /// **'توفير البطارية'**
+  String get zadStatusBattery;
+
+  /// No description provided for @zadStatusBatteryOk.
+  ///
+  /// In ar, this message translates to:
+  /// **'الموبايل مش بيقيّد زاد في الخلفية.'**
+  String get zadStatusBatteryOk;
+
+  /// No description provided for @zadStatusBatteryWarn.
+  ///
+  /// In ar, this message translates to:
+  /// **'الموبايل ممكن يوقف زاد في الخلفية. اختار «بدون قيود» عشان القراءة ماتقطعش.'**
+  String get zadStatusBatteryWarn;
+
+  /// No description provided for @zadStatusFixOpenSettings.
+  ///
+  /// In ar, this message translates to:
+  /// **'افتح الإعدادات'**
+  String get zadStatusFixOpenSettings;
+
+  /// No description provided for @zadStatusFixAllow.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسمح'**
+  String get zadStatusFixAllow;
+
+  /// No description provided for @zadStatusFixLocationOn.
+  ///
+  /// In ar, this message translates to:
+  /// **'شغّل الموقع'**
+  String get zadStatusFixLocationOn;
+
+  /// No description provided for @zadStatusFixBattery.
+  ///
+  /// In ar, this message translates to:
+  /// **'فكّ القيود'**
+  String get zadStatusFixBattery;
 
   /// No description provided for @homeLocationLater.
   ///

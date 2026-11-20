@@ -2967,16 +2967,102 @@ class ZadL10nEn extends ZadL10n {
   }
 
   @override
-  String get homeBankOffBanner =>
-      '⚠️ Bank message reading has stopped. Tap here to turn it back on so your balance and spending update by themselves.';
+  String get zadStatusTitle => 'Zad status';
 
   @override
-  String get homeBankStalledHint =>
-      'If it is already on: switch it off and on again on the screen that opens.';
+  String get zadStatusAllGood => 'Zad is working and watching';
 
   @override
-  String get homeLocationOffBanner =>
-      '📍 Your location is off. Turn it on so Zad can match supermarket deals and nearby shops and do its job properly.';
+  String get zadStatusNeedsFix =>
+      'Something has stopped and needs one step from you';
+
+  @override
+  String get zadStatusWorking => 'Working';
+
+  @override
+  String get zadStatusStopped => 'Stopped';
+
+  @override
+  String get zadStatusMaybe => 'May stop';
+
+  @override
+  String get zadStatusBank => 'Bank message reading';
+
+  @override
+  String get zadStatusBankOk =>
+      'Zad is reading your bank messages and logging them.';
+
+  @override
+  String get zadStatusBankOff =>
+      'Bank message reading is off. Turn it on so your balance and spending update by themselves.';
+
+  @override
+  String get zadStatusBankStalled =>
+      'The service has not seen a notification for a while. If it is on: switch it off and on again on the screen that opens.';
+
+  @override
+  String get zadStatusBankSilent =>
+      'On, but no message has arrived yet. If you expect a bank message and it did not come: switch it off and on again.';
+
+  @override
+  String get zadStatusNotifications => 'Notifications';
+
+  @override
+  String get zadStatusNotificationsOk =>
+      'Dose, bill and budget alerts reach you.';
+
+  @override
+  String get zadStatusNotificationsOff =>
+      'Notifications are off, so dose and bill alerts will not reach you.';
+
+  @override
+  String get zadStatusLocation => 'Location';
+
+  @override
+  String get zadStatusLocationOk =>
+      'Location is on; deals and nearby shops are worked out from where you are.';
+
+  @override
+  String get zadStatusLocationServiceOff =>
+      'Location is switched off on the phone, so readings will not be from where you really are.';
+
+  @override
+  String get zadStatusLocationDenied =>
+      'Zad is not allowed to know where you are, so deals and nearby shops will not work.';
+
+  @override
+  String get zadStatusBackground => 'Location all the time';
+
+  @override
+  String get zadStatusBackgroundOk =>
+      'Street alerts work even with the app closed.';
+
+  @override
+  String get zadStatusBackgroundOff =>
+      'Without \"all the time\", street alerts will not work while the app is closed.';
+
+  @override
+  String get zadStatusBattery => 'Battery saver';
+
+  @override
+  String get zadStatusBatteryOk =>
+      'The phone is not restricting Zad in the background.';
+
+  @override
+  String get zadStatusBatteryWarn =>
+      'The phone may stop Zad in the background. Choose \"Unrestricted\" so reading does not cut out.';
+
+  @override
+  String get zadStatusFixOpenSettings => 'Open settings';
+
+  @override
+  String get zadStatusFixAllow => 'Allow';
+
+  @override
+  String get zadStatusFixLocationOn => 'Turn location on';
+
+  @override
+  String get zadStatusFixBattery => 'Remove limits';
 
   @override
   String get homeLocationLater => 'Not now';

@@ -4,7 +4,7 @@ library;
 
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/shared/auth/application/session_controller.dart';
@@ -204,6 +204,18 @@ final Provider<void> placesRunnerProvider = Provider<void>((ref) {
   ref.onDispose(arrivals.cancel);
 
   run(engine.handlePending);
+  // Android forgets every fence when location is switched off (and some
+  // phones when the app is killed), and the plugin only re-registers after a
+  // boot: so the app hands them over again on start and on every return to
+  // the front (owner, 2026-11-20: location «sometimes disconnects»).
+  run(() => reregisterFences(engine));
+  final life = AppLifecycleListener(
+    onResume: () => run(() async {
+      await reregisterFences(engine);
+      await engine.handlePending();
+    }),
+  );
+  ref.onDispose(life.dispose);
   // A child's school zones (ZAD_LIVING_BRAIN.md slice 2): picked up on every
   // start, so a zone the parent added since is watched from now on.
   run(() => ref.read(childZonesSyncProvider).sync());
@@ -218,3 +230,14 @@ final Provider<void> placesRunnerProvider = Provider<void>((ref) {
     if (fix != null) await engine.refresh(fix.at);
   });
 });
+
+/// [PlaceEngine.reregister], with Android's refusal (no "all the time"
+/// permission) said in the log instead of thrown: the status card on home
+/// is where the customer is told.
+Future<void> reregisterFences(PlaceEngine engine) async {
+  try {
+    await engine.reregister();
+  } on Object catch (e) {
+    debugPrint('[places] fences not re-registered: $e');
+  }
+}

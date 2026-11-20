@@ -2900,16 +2900,99 @@ class ZadL10nAr extends ZadL10n {
   }
 
   @override
-  String get homeBankOffBanner =>
-      '⚠️ قراءة رسائل البنك متوقفة.. اضغط هنا لإعادة تفعيلها لتحديث رصيدك ومصاريفك تلقائياً';
+  String get zadStatusTitle => 'حالة زاد';
 
   @override
-  String get homeBankStalledHint =>
-      'لو هي مفعّلة: اطفيها وشغّلها تاني من الصفحة اللي هتفتح.';
+  String get zadStatusAllGood => 'زاد شغال وبيتابع';
 
   @override
-  String get homeLocationOffBanner =>
-      '📍 موقعك غير مفعّل.. فعّل اللوكيشن عشان زاد يربط عروض السوبرماركت والمحلات القريبة منك ويقوم بمهامه صح';
+  String get zadStatusNeedsFix => 'في حاجة واقفة ومحتاجة منك خطوة';
+
+  @override
+  String get zadStatusWorking => 'شغال';
+
+  @override
+  String get zadStatusStopped => 'واقف';
+
+  @override
+  String get zadStatusMaybe => 'ممكن يقف';
+
+  @override
+  String get zadStatusBank => 'قراءة رسائل البنك';
+
+  @override
+  String get zadStatusBankOk => 'زاد بيقرا رسائل البنك ويسجّلها.';
+
+  @override
+  String get zadStatusBankOff =>
+      'قراءة رسائل البنك متوقفة. شغّلها عشان رصيدك ومصاريفك تتحدّث لوحدها.';
+
+  @override
+  String get zadStatusBankStalled =>
+      'الخدمة مابقتش بتشوف إشعارات من فترة. لو هي مفعّلة: اطفيها وشغّلها تاني من الصفحة اللي هتفتح.';
+
+  @override
+  String get zadStatusBankSilent =>
+      'مفعّلة، بس لسه ماجاتش ولا رسالة. لو مستني رسالة من البنك ومجتش: اطفيها وشغّلها تاني.';
+
+  @override
+  String get zadStatusNotifications => 'الإشعارات';
+
+  @override
+  String get zadStatusNotificationsOk =>
+      'تنبيهات الجرعات والفواتير والميزانية بتوصلك.';
+
+  @override
+  String get zadStatusNotificationsOff =>
+      'الإشعارات مقفولة، فتنبيهات الجرعات والفواتير مش هتوصلك.';
+
+  @override
+  String get zadStatusLocation => 'الموقع';
+
+  @override
+  String get zadStatusLocationOk =>
+      'الموقع شغال، والعروض والمحلات القريبة بتتحسب من مكانك.';
+
+  @override
+  String get zadStatusLocationServiceOff =>
+      'الموقع مقفول في الموبايل، فالقراءات مش هتبقى من مكانك الحقيقي.';
+
+  @override
+  String get zadStatusLocationDenied =>
+      'زاد مش مسموحله يعرف مكانك، فالعروض والمحلات القريبة مش هتشتغل.';
+
+  @override
+  String get zadStatusBackground => 'الموقع طول الوقت';
+
+  @override
+  String get zadStatusBackgroundOk =>
+      'تنبيهات الطريق شغالة حتى والتطبيق مقفول.';
+
+  @override
+  String get zadStatusBackgroundOff =>
+      'من غير «طول الوقت» تنبيهات الطريق مش هتشتغل والتطبيق مقفول.';
+
+  @override
+  String get zadStatusBattery => 'توفير البطارية';
+
+  @override
+  String get zadStatusBatteryOk => 'الموبايل مش بيقيّد زاد في الخلفية.';
+
+  @override
+  String get zadStatusBatteryWarn =>
+      'الموبايل ممكن يوقف زاد في الخلفية. اختار «بدون قيود» عشان القراءة ماتقطعش.';
+
+  @override
+  String get zadStatusFixOpenSettings => 'افتح الإعدادات';
+
+  @override
+  String get zadStatusFixAllow => 'اسمح';
+
+  @override
+  String get zadStatusFixLocationOn => 'شغّل الموقع';
+
+  @override
+  String get zadStatusFixBattery => 'فكّ القيود';
 
   @override
   String get homeLocationLater => 'مش دلوقتي';
@@ -5091,12 +5174,99 @@ class ZadL10nArSa extends ZadL10nAr {
   }
 
   @override
-  String get homeBankStalledHint =>
-      'إذا كانت مفعّلة: طفّها وشغّلها مرة ثانية من الصفحة اللي بتفتح.';
+  String get zadStatusTitle => 'حالة زاد';
 
   @override
-  String get homeLocationOffBanner =>
-      '📍 موقعك مو مفعّل.. فعّل الموقع عشان زاد يربط عروض السوبرماركت والمحلات القريبة منك ويسوّي شغله صح';
+  String get zadStatusAllGood => 'زاد شغّال ويتابع';
+
+  @override
+  String get zadStatusNeedsFix => 'فيه شي واقف ويحتاج منك خطوة';
+
+  @override
+  String get zadStatusWorking => 'شغال';
+
+  @override
+  String get zadStatusStopped => 'واقف';
+
+  @override
+  String get zadStatusMaybe => 'ممكن يقف';
+
+  @override
+  String get zadStatusBank => 'قراءة رسائل البنك';
+
+  @override
+  String get zadStatusBankOk => 'زاد بيقرا رسائل البنك ويسجّلها.';
+
+  @override
+  String get zadStatusBankOff =>
+      'قراءة رسائل البنك متوقفة. شغّلها عشان رصيدك ومصاريفك تتحدّث لحالها.';
+
+  @override
+  String get zadStatusBankStalled =>
+      'الخدمة ما عادت تشوف إشعارات من فترة. إذا كانت مفعّلة: طفّها وشغّلها مرة ثانية من الصفحة اللي بتفتح.';
+
+  @override
+  String get zadStatusBankSilent =>
+      'مفعّلة، بس للحين ما وصلت ولا رسالة. إذا تنتظر رسالة من البنك وما وصلت: طفّها وشغّلها مرة ثانية.';
+
+  @override
+  String get zadStatusNotifications => 'الإشعارات';
+
+  @override
+  String get zadStatusNotificationsOk =>
+      'تنبيهات الجرعات والفواتير والميزانية بتوصلك.';
+
+  @override
+  String get zadStatusNotificationsOff =>
+      'الإشعارات مقفولة، فتنبيهات الجرعات والفواتير ما بتوصلك.';
+
+  @override
+  String get zadStatusLocation => 'الموقع';
+
+  @override
+  String get zadStatusLocationOk =>
+      'الموقع شغّال، والعروض والمحلات القريبة تنحسب من مكانك.';
+
+  @override
+  String get zadStatusLocationServiceOff =>
+      'الموقع مقفول في الجوال، فالقراءات ما بتكون من مكانك الحقيقي.';
+
+  @override
+  String get zadStatusLocationDenied =>
+      'زاد ما هو مسموح له يعرف مكانك، فالعروض والمحلات القريبة ما بتشتغل.';
+
+  @override
+  String get zadStatusBackground => 'الموقع طول الوقت';
+
+  @override
+  String get zadStatusBackgroundOk =>
+      'تنبيهات الطريق شغالة حتى والتطبيق مقفول.';
+
+  @override
+  String get zadStatusBackgroundOff =>
+      'بدون «طوال الوقت» تنبيهات الطريق ما بتشتغل والتطبيق مقفول.';
+
+  @override
+  String get zadStatusBattery => 'توفير البطارية';
+
+  @override
+  String get zadStatusBatteryOk => 'الجوال ما يقيّد زاد في الخلفية.';
+
+  @override
+  String get zadStatusBatteryWarn =>
+      'الجوال ممكن يوقف زاد في الخلفية. اختر «بدون قيود» عشان القراءة ما تنقطع.';
+
+  @override
+  String get zadStatusFixOpenSettings => 'افتح الإعدادات';
+
+  @override
+  String get zadStatusFixAllow => 'اسمح';
+
+  @override
+  String get zadStatusFixLocationOn => 'شغّل الموقع';
+
+  @override
+  String get zadStatusFixBattery => 'فكّ القيود';
 
   @override
   String get homeLocationLater => 'مو الحين';

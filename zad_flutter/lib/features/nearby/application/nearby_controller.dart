@@ -158,7 +158,17 @@ class NearbyController extends Notifier<NearbyView> {
     if (access != LocationAccess.granted) return;
 
     state = state.copyWith(isLocating: true);
-    final fix = await source.current() ?? await source.lastKnown();
+    var fix = await source.current();
+    if (fix == null) {
+      // The OS's own last fix stands in only while it is recent: an hour-old
+      // point is "far from the customer", not a position.
+      final last = await source.lastKnown();
+      if (last != null &&
+          ref.read(nowProvider)().toUtc().difference(last.takenAt) <=
+              lastKnownFor) {
+        fix = last;
+      }
+    }
     if (!ref.mounted) return;
     if (fix == null) {
       state = state.copyWith(isLocating: false, noFix: true);

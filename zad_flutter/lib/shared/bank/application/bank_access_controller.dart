@@ -72,6 +72,24 @@ final batteryUnrestrictedProvider = Provider<Future<bool?> Function()>(
   },
 );
 
+/// Asks Android to exempt Zad from battery optimisation — its own dialog,
+/// and the app's settings page when the customer says no or the phone has no
+/// such dialog. Returns whether the exemption stands afterwards. A provider so
+/// tests say the answer.
+final batteryExemptionRequestProvider = Provider<Future<bool> Function()>(
+  (ref) => () async {
+    try {
+      if (await Permission.ignoreBatteryOptimizations.request().isGranted) {
+        return true;
+      }
+      await openAppSettings();
+    } on Object {
+      // No plugin (a test host).
+    }
+    return false;
+  },
+);
+
 /// The event for [unrestricted] (owner's 2026-11-13 decision): the server
 /// learns which phones may stop the listener in the background — the owner's
 /// own deposit was lost that way that day. Null sends nothing.
