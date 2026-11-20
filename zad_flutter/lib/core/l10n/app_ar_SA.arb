@@ -615,5 +615,15 @@
   "brainCardLogBody": "كل شي سجّله زاد أو عدّله لك، وتتراجع عنه لو غلط",
   "brainCardHealthBody": "زاد شغال في الخلفية ولا واقف — ولو واقف، ليش",
   "brainNetworkEmptyTitle": "زاد للحين يتعلم عنك",
-  "brainTelemetryDecisions": "قرارات اليوم"
+  "brainTelemetryDecisions": "قرارات اليوم",
+  "docsPrivacy": "زاد يحفظ نوع المستند وتاريخ انتهائه بس — بدون رقم ولا صورة — ويذكّرك قبلها.",
+  "docsSaveFailedEdit": "ما انحفظ — يمكن فيه مستند بنفس النوع والاسم، أو ما فيه نت.",
+  "docsSaveFailedAdd": "ما انحفظ — تأكد من النت.",
+  "docsDeleteFailed": "ما انحذف — تأكد من النت.",
+  "maintStateNone": "ما فيه جهاز مسجّل للحين",
+  "maintEmptyTitle": "ما فيه أجهزة مسجّلة للحين",
+  "maintEmptyMessage": "سجّل المكيف أو السخان أو السيارة، وزاد يذكّرك بموعد صيانتها وضمانها.",
+  "maintTechnicians": "فنيين أثق فيهم",
+  "maintTechniciansHint": "اتصل أو أرسل واتساب لفني جرّبته",
+  "maintAddFailed": "ما انسجّل الجهاز — تأكد من النت."
 }

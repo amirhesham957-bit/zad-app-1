@@ -5462,7 +5462,232 @@
     }
   },
   "placesWorldEyebrow": "{count, plural, =0{لسه مفيش خروجات} =1{خروجة واحدة} =2{خروجتين} few{{count} خروجات} other{{count} خروجة}}",
-  "@placesWorldEyebrow": {"description": "Places world: outings count above the title.", "placeholders": {"count": {"type": "int"}}},
+  "@placesWorldEyebrow": {
+    "description": "Places world: outings count above the title.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "placesWorldState": "{count, plural, =0{مفيش أماكن} =1{مكان واحد} =2{مكانين} few{{count} أماكن} other{{count} مكان}} · {alerts, select, on{تنبيهات الشارع شغالة} other{تنبيهات الشارع مقفولة}}",
-  "@placesWorldState": {"description": "Places world state line: saved places and whether street alerts are on.", "placeholders": {"count": {"type": "int"}, "alerts": {"type": "String"}}}
+  "@placesWorldState": {
+    "description": "Places world state line: saved places and whether street alerts are on.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "alerts": {
+        "type": "String"
+      }
+    }
+  },
+  "docsEyebrowCount": "{count, plural, =1{مستند واحد} =2{مستندين} few{{count} مستندات} other{{count} مستند}}",
+  "@docsEyebrowCount": {
+    "description": "Documents world: the count above the title.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "docsStateEmpty": "الدرج فاضي — ضيف أول مستند",
+  "@docsStateEmpty": {
+    "description": "Documents world state line with no documents."
+  },
+  "docsStateNearest": "الأقرب: {name} — {status}",
+  "@docsStateNearest": {
+    "description": "Documents world state line: the document that expires first.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "docsPrivacy": "زاد بيحفظ نوع المستند وتاريخ انتهائه بس — من غير رقم ولا صورة — ويفكّرك قبلها.",
+  "@docsPrivacy": {
+    "description": "Documents world: what is stored."
+  },
+  "docsDueOne": "مستند واحد محتاج تجديد قريب",
+  "@docsDueOne": {
+    "description": "Documents world: how many are near expiry."
+  },
+  "docsDueMany": "{count} مستندات محتاجة تجديد قريب",
+  "@docsDueMany": {
+    "description": "Documents world: how many are near expiry.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "docsEmptyTitle": "مفيش مستندات متسجلة",
+  "@docsEmptyTitle": {
+    "description": "Documents world empty state title."
+  },
+  "docsEmptyMessage": "ضيف الجواز أو البطاقة أو الرخصة بتاريخ انتهائها، وزاد يفكّرك قبلها بوقت كفاية للتجديد. أو قول لزاد في الشات: «جوازي بينتهي ١٥ مارس ٢٠٢٧».",
+  "@docsEmptyMessage": {
+    "description": "Documents world empty state guidance."
+  },
+  "docsAdd": "إضافة مستند",
+  "@docsAdd": {
+    "description": "Documents world: the docked add button."
+  },
+  "docsDelete": "حذف",
+  "@docsDelete": {
+    "description": "Tooltip of a delete button."
+  },
+  "docsExpires": "بينتهي {date}",
+  "@docsExpires": {
+    "description": "A document's expiry date.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "docsSaveFailedEdit": "ماتحفظش — يمكن فيه مستند بنفس النوع والاسم، أو النت مقطوع.",
+  "@docsSaveFailedEdit": {
+    "description": "Snackbar when an edit fails."
+  },
+  "docsSaveFailedAdd": "ماتحفظش — اتأكد من النت.",
+  "@docsSaveFailedAdd": {
+    "description": "Snackbar when an add fails."
+  },
+  "docsDeleteFailed": "ماتشالش — اتأكد من النت.",
+  "@docsDeleteFailed": {
+    "description": "Snackbar when a delete fails."
+  },
+  "maintEyebrowCount": "{count, plural, =1{جهاز واحد} =2{جهازين} few{{count} أجهزة} other{{count} جهاز}}",
+  "@maintEyebrowCount": {
+    "description": "Maintenance world: the count above the title.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "maintStateNone": "مفيش جهاز متسجل لسه",
+  "@maintStateNone": {
+    "description": "Maintenance world state line with no items."
+  },
+  "maintStateNoSchedule": "سجّل دورة الصيانة وزاد يفكّرك",
+  "@maintStateNoSchedule": {
+    "description": "Maintenance world state line when no item has an interval."
+  },
+  "maintStateNext": "الجاي: {name} — {status}",
+  "@maintStateNext": {
+    "description": "Maintenance world state line: the next due task.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "maintStateOverdue": "{name} متأخر {days} يوم",
+  "@maintStateOverdue": {
+    "description": "Maintenance world state line: an overdue task.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "maintServiceOverdue": "متأخر {days} يوم",
+  "@maintServiceOverdue": {
+    "description": "A task's status.",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "maintServiceIn": "الصيانة خلال {days} يوم",
+  "@maintServiceIn": {
+    "description": "A task's status.",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "maintServiceSoon": "صيانة قريبة",
+  "@maintServiceSoon": {
+    "description": "A task's status when no interval is known."
+  },
+  "maintWarrantyEnded": "الضمان منتهي",
+  "@maintWarrantyEnded": {
+    "description": "A task's warranty line."
+  },
+  "maintWarrantyIn": "الضمان ينتهي خلال {days} يوم",
+  "@maintWarrantyIn": {
+    "description": "A task's warranty line.",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "maintStatDevices": "الأجهزة",
+  "@maintStatDevices": {
+    "description": "Maintenance count label."
+  },
+  "maintStatSoon": "صيانة قريبة",
+  "@maintStatSoon": {
+    "description": "Maintenance count label."
+  },
+  "maintStatWarranty": "ضمان قارب",
+  "@maintStatWarranty": {
+    "description": "Maintenance count label."
+  },
+  "maintOverdueBanner": "{count} جهاز متأخر عن موعد الصيانة",
+  "@maintOverdueBanner": {
+    "description": "Maintenance overdue banner.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "maintEmptyTitle": "لا توجد أجهزة مسجلة بعد",
+  "@maintEmptyTitle": {
+    "description": "Maintenance empty state title."
+  },
+  "maintEmptyMessage": "سجّل التكييف أو السخان أو العربية، وزاد يفكّرك بميعاد صيانتها وضمانها.",
+  "@maintEmptyMessage": {
+    "description": "Maintenance empty state guidance."
+  },
+  "maintAdd": "إضافة جهاز",
+  "@maintAdd": {
+    "description": "Maintenance: the docked add button."
+  },
+  "maintServicedToday": "تمت الصيانة اليوم",
+  "@maintServicedToday": {
+    "description": "Maintenance: mark a task done."
+  },
+  "maintDelete": "حذف",
+  "@maintDelete": {
+    "description": "Tooltip of a delete button."
+  },
+  "maintTechnicians": "فنيين بثق فيهم",
+  "@maintTechnicians": {
+    "description": "Maintenance: opens the trusted technicians sheet."
+  },
+  "maintTechniciansHint": "اتصل أو ابعت واتساب لفني اتجرّبته",
+  "@maintTechniciansHint": {
+    "description": "Maintenance: hint under the technicians row."
+  },
+  "maintAddFailed": "ماتسجلش الجهاز — اتأكد من النت.",
+  "@maintAddFailed": {
+    "description": "Snackbar when an add fails."
+  }
 }

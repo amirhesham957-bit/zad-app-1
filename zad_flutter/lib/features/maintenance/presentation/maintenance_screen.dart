@@ -9,7 +9,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:zad/core/data/local/screen_cache.dart';
@@ -18,12 +17,19 @@ import 'package:zad/core/design/components/zad_empty_state.dart';
 import 'package:zad/core/design/components/zad_scroll_away.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
-import 'package:zad/core/design/tokens/zad_motion.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
+import 'package:zad/features/maintenance/presentation/maintenance_scene.dart';
 import 'package:zad/features/maintenance/presentation/trusted_technicians_sheet.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
+import 'package:zad/shared/orb/domain/companion_state.dart';
+import 'package:zad/shared/worlds/art/art.dart';
+import 'package:zad/shared/worlds/world_card.dart';
+import 'package:zad/shared/worlds/world_row.dart';
+import 'package:zad/shared/worlds/world_scaffold.dart';
+import 'package:zad/shared/worlds/zad_world.dart';
 
 /// Opens the screen.
 Future<void> showMaintenanceScreen(BuildContext context) =>
@@ -112,7 +118,10 @@ class _MaintenanceState extends ConsumerState<MaintenanceScreen> {
   Future<void> _load() async {
     final client = ref.read(supabaseClientProvider);
     final userId = client.auth.currentUser?.id;
-    if (userId == null) return;
+    if (userId == null) {
+      if (mounted) setState(() => _loading = false);
+      return;
+    }
     final cache = ref.read(screenCacheProvider);
     // Last time's list first; the server's answer replaces it.
     if (_loading) {
@@ -140,12 +149,12 @@ class _MaintenanceState extends ConsumerState<MaintenanceScreen> {
     }
   }
 
-  Future<void> _serviced(_Item item) async {
+  Future<void> _serviced(String id) async {
     final today = _todayIso;
     setState(() {
       _rows = <Map<String, dynamic>>[
         for (final r in _rows)
-          if ('${r['id']}' == item.id)
+          if ('${r['id']}' == id)
             <String, dynamic>{...r, 'last_service_date': today}
           else
             r,
@@ -157,17 +166,17 @@ class _MaintenanceState extends ConsumerState<MaintenanceScreen> {
           .read(supabaseClientProvider)
           .from('zad_maintenance_items')
           .update(<String, dynamic>{'last_service_date': today})
-          .eq('id', item.id);
+          .eq('id', id);
     } on Object catch (e) {
       debugPrint('maintenance serviced failed: $e');
     }
   }
 
-  Future<void> _delete(_Item item) async {
+  Future<void> _delete(String id) async {
     setState(() {
       _rows = <Map<String, dynamic>>[
         for (final r in _rows)
-          if ('${r['id']}' != item.id) r,
+          if ('${r['id']}' != id) r,
       ];
     });
     try {
@@ -175,7 +184,7 @@ class _MaintenanceState extends ConsumerState<MaintenanceScreen> {
           .read(supabaseClientProvider)
           .from('zad_maintenance_items')
           .delete()
-          .eq('id', item.id);
+          .eq('id', id);
     } on Object catch (e) {
       debugPrint('maintenance delete failed: $e');
       await _load();
@@ -183,6 +192,7 @@ class _MaintenanceState extends ConsumerState<MaintenanceScreen> {
   }
 
   Future<void> _add() async {
+    final l = context.l10n;
     final row = await showDialog<Map<String, dynamic>>(
       context: context,
       builder: (_) => const _AddDialog(),
@@ -197,18 +207,89 @@ class _MaintenanceState extends ConsumerState<MaintenanceScreen> {
     } on Object catch (e) {
       debugPrint('maintenance insert failed: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('ماتسجلش الجهاز — اتأكد من النت.')),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(l.maintAddFailed)));
       }
     }
     await _load();
   }
 
   @override
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: Colors.transparent,
+    body: MaintenanceWorld(
+      rows: _rows,
+      loading: _loading,
+      today: _today,
+      onRefresh: _load,
+      onAdd: () => unawaited(_add()),
+      onTechnicians: () => unawaited(showTrustedTechnicians(context)),
+      onServiced: (id) => unawaited(_serviced(id)),
+      onDelete: (id) => unawaited(_delete(id)),
+    ),
+  );
+}
+
+ZadIconArt _art(String category) => switch (category) {
+  'تكييف' => ZadIconArt.snow, // l10n: data
+  'فلتر مياه' => ZadIconArt.drop, // l10n: data
+  'سيارة' => ZadIconArt.car, // l10n: data
+  'سخان' => ZadIconArt.flame, // l10n: data
+  _ => ZadIconArt.wrench,
+};
+
+/// The world: the next due task on top, every task one row of a calm card
+/// with its bar toward the date, add docked in the thumb zone.
+class MaintenanceWorld extends StatelessWidget {
+  /// Creates the world over the `zad_maintenance_items` [rows].
+  const new({
+    required this.rows,
+    required this.loading,
+    required this.today,
+    required this.onRefresh,
+    required this.onAdd,
+    required this.onTechnicians,
+    required this.onServiced,
+    required this.onDelete,
+    super.key,
+  });
+
+  /// The rows, any order.
+  final List<Map<String, dynamic>> rows;
+
+  /// The first answer has not come.
+  final bool loading;
+
+  /// Today in the account's zone.
+  final DateTime today;
+
+  /// Pull-to-refresh.
+  final Future<void> Function() onRefresh;
+
+  /// The add button.
+  final VoidCallback onAdd;
+
+  /// Opens the trusted technicians.
+  final VoidCallback onTechnicians;
+
+  /// «تمت الصيانة اليوم» for the row with this id.
+  final void Function(String id) onServiced;
+
+  /// Delete the row with this id.
+  final void Function(String id) onDelete;
+
+  static (Color, String) _service(ZadL10n l, _Item item) {
+    final d = item.daysUntilService;
+    if (d == null) return (ZadColors.green700, l.maintServiceSoon);
+    if (d < 0) return (ZadColors.terracottaRust, l.maintServiceOverdue(-d));
+    if (d <= 14) return (_warning, l.maintServiceIn(d));
+    return (ZadColors.green700, l.maintServiceIn(d));
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final today = _today;
-    final items = <_Item>[for (final r in _rows) _Item(r, today)];
+    final l = context.l10n;
+    final items = <_Item>[for (final r in rows) _Item(r, today)];
     final dueSoon = items.where((i) {
       final d = i.daysUntilService;
       return d != null && d >= 0 && d <= 14;
@@ -227,300 +308,217 @@ class _MaintenanceState extends ConsumerState<MaintenanceScreen> {
           b.daysUntilService ?? 1 << 30,
         );
       });
-
-    return DecoratedBox(
-      decoration: BoxDecoration(gradient: ZadColors.canvas),
-      child: ZadScrollAwayScope(
-        child: Scaffold(
-          backgroundColor: Colors.transparent,
-          appBar: AppBar(
-            title: const Text('صيانة المنزل'),
-            actions: <Widget>[
-              IconButton(
-                tooltip: 'فنيين بثق فيهم',
-                onPressed: () => unawaited(showTrustedTechnicians(context)),
-                icon: const Icon(Icons.handyman_outlined),
-              ),
-            ],
-          ),
-          floatingActionButton: ZadStepsAside(
-            child: FloatingActionButton(
-              tooltip: 'إضافة',
-              onPressed: () => unawaited(_add()),
-              child: const Icon(ZadIcons.add),
+    final next = sorted.where((i) => i.daysUntilService != null).firstOrNull;
+    final String state;
+    if (items.isEmpty) {
+      state = l.maintStateNone;
+    } else if (next == null) {
+      state = l.maintStateNoSchedule;
+    } else if ((next.daysUntilService ?? 0) < 0) {
+      state = l.maintStateOverdue(next.name, -(next.daysUntilService ?? 0));
+    } else {
+      state = l.maintStateNext(next.name, _service(l, next).$2);
+    }
+    return ZadScrollAwayScope(
+      child: ZadWorldScaffold(
+        world: ZadWorld.maint,
+        eyebrow: items.isEmpty ? null : l.maintEyebrowCount(items.length),
+        title: l.worldLabelMaint,
+        stateLine: state,
+        scene: (loop) => MaintenanceWorldScene(loop, overdue: overdue > 0),
+        zado: ZadWorldZado(
+          left: 30,
+          top: 60,
+          state: overdue > 0 ? CompanionState.idle : CompanionState.happy,
+        ),
+        onRefresh: onRefresh,
+        dockHeight: 80,
+        overlay: Positioned(
+          right: ZadSpacing.lg,
+          bottom: ZadSpacing.md,
+          child: ZadStepsAside(
+            child: FloatingActionButton.extended(
+              heroTag: 'maintenance-add',
+              tooltip: l.maintAdd,
+              onPressed: onAdd,
+              icon: const Icon(ZadIcons.add),
+              label: Text(l.maintAdd),
             ),
           ),
-          body: RefreshIndicator(
-            onRefresh: _load,
-            child: ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(
-                ZadSpacing.lg,
-                ZadSpacing.md,
-                ZadSpacing.lg,
-                120,
-              ),
+        ),
+        slivers: <Widget>[
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(
+              ZadSpacing.gutter,
+              ZadSpacing.md,
+              ZadSpacing.gutter,
+              0,
+            ),
+            sliver: SliverList.list(
               children: <Widget>[
-                Row(
-                  children: <Widget>[
-                    Expanded(
-                      child: _Stat('${items.length}', 'الأجهزة', ZadColors.ink),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: _Stat(
-                        '$dueSoon',
-                        'صيانة قريبة',
-                        ZadColors.mustardOchre,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: _Stat(
-                        '$warranty',
-                        'ضمان قارب',
-                        ZadColors.terracottaRust,
-                      ),
-                    ),
-                  ],
-                ).animate().fadeIn(duration: ZadDuration.enter),
-                if (overdue > 0) ...<Widget>[
-                  const SizedBox(height: ZadSpacing.md),
-                  DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: ZadColors.terracottaRust.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(ZadSpacing.md),
-                      child: Row(
-                        children: <Widget>[
-                          Icon(
-                            ZadIcons.failed,
-                            size: 18,
-                            color: ZadColors.terracottaRust,
-                          ),
-                          const SizedBox(width: ZadSpacing.sm),
-                          Text(
-                            '$overdue جهاز متأخر عن موعد الصيانة',
-                            style: ZadType.bodySmall.copyWith(
-                              color: ZadColors.terracottaRust,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
+                if (items.isNotEmpty) ...<Widget>[
+                  ZadWorldCard(
+                    child: Row(
+                      children: <Widget>[
+                        _Stat('${items.length}', l.maintStatDevices),
+                        _Stat(
+                          '$dueSoon',
+                          l.maintStatSoon,
+                          ZadColors.mustardOchre,
+                        ),
+                        _Stat(
+                          '$warranty',
+                          l.maintStatWarranty,
+                          ZadColors.terracottaRust,
+                        ),
+                      ],
                     ),
                   ),
+                  const SizedBox(height: ZadSpacing.md),
                 ],
-                const SizedBox(height: ZadSpacing.md),
-                if (_loading)
+                if (overdue > 0) ...<Widget>[
+                  Row(
+                    children: <Widget>[
+                      Icon(
+                        ZadIcons.failed,
+                        size: 18,
+                        color: ZadColors.terracottaRust,
+                      ),
+                      const SizedBox(width: ZadSpacing.sm),
+                      Expanded(
+                        child: Text(
+                          l.maintOverdueBanner(overdue),
+                          style: ZadType.titleSmall.copyWith(
+                            color: ZadColors.terracottaRust,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: ZadSpacing.md),
+                ],
+                if (loading)
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 48),
                     child: Center(child: CircularProgressIndicator()),
                   )
                 else if (sorted.isEmpty)
-                  const ZadEmptyState(
+                  ZadEmptyState(
                     icon: ZadIcons.maintenance,
-                    title: 'لا توجد أجهزة مسجلة بعد',
-                    message:
-                        'سجّل التكييف أو السخان أو العربية، وزاد يفكّرك بميعاد '
-                        'صيانتها وضمانها.',
+                    title: l.maintEmptyTitle,
+                    message: l.maintEmptyMessage,
                   )
                 else
-                  for (final (i, item) in sorted.indexed)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: ZadSpacing.md),
-                      child:
-                          _ItemCard(
-                                item: item,
-                                onServiced: () => unawaited(_serviced(item)),
-                                onDelete: () => unawaited(_delete(item)),
-                              )
-                              .animate(delay: (i * 40).clamp(0, 400).ms)
-                              .fadeIn(duration: ZadDuration.enter)
-                              .moveY(begin: 8, curve: ZadCurves.standard),
+                  ZadWorldCard(
+                    child: Column(
+                      children: <Widget>[
+                        for (final (i, item) in sorted.indexed) ...<Widget>[
+                          if (i > 0) const ZadWorldDivider(),
+                          _row(l, item),
+                        ],
+                      ],
                     ),
+                  ),
+                const SizedBox(height: ZadSpacing.md),
+                ZadWorldCard(
+                  child: ZadWorldRow(
+                    leading: ZadWorldTile(
+                      color: ZadColors.inkMuted,
+                      child: ZadArt.icon(ZadIconArt.person, size: 30),
+                    ),
+                    title: l.maintTechnicians,
+                    subtitle: l.maintTechniciansHint,
+                    onTap: onTechnicians,
+                  ),
+                ),
               ],
             ),
           ),
-        ),
+        ],
       ),
+    );
+  }
+
+  Widget _row(ZadL10n l, _Item item) {
+    final (color, status) = _service(l, item);
+    final service = item.daysUntilService;
+    final interval = item.interval;
+    final warranty = item.daysUntilWarranty;
+    final warrantyLine = warranty != null && warranty < 0
+        ? l.maintWarrantyEnded
+        : warranty != null
+        ? l.maintWarrantyIn(warranty)
+        : item.category;
+    double? progress;
+    if (service != null && interval != null && interval > 0) {
+      progress = service < 0 ? 1 : 1 - service / interval;
+    }
+    return Column(
+      children: <Widget>[
+        ZadWorldRow(
+          leading: ZadWorldTile(
+            color: color,
+            child: ZadArt.icon(_art(item.category), size: 30),
+          ),
+          title: item.name,
+          subtitle: '$status · $warrantyLine',
+          stateColor: color,
+          progress: progress,
+        ),
+        Align(
+          alignment: AlignmentDirectional.centerEnd,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              if (interval != null)
+                TextButton(
+                  style: TextButton.styleFrom(minimumSize: const Size(0, 44)),
+                  onPressed: () => onServiced(item.id),
+                  child: Text(l.maintServicedToday),
+                ),
+              IconButton(
+                tooltip: l.maintDelete,
+                onPressed: () => onDelete(item.id),
+                style: IconButton.styleFrom(minimumSize: const Size(44, 44)),
+                icon: Icon(
+                  ZadIcons.delete,
+                  size: 18,
+                  color: ZadColors.inkMuted,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
 
 class _Stat extends StatelessWidget {
-  const new(this.value, this.label, this.color);
+  const new(this.value, this.label, [this.color]);
 
   final String value;
   final String label;
-  final Color color;
+  final Color? color;
 
   @override
-  Widget build(BuildContext context) => DecoratedBox(
-    decoration: BoxDecoration(
-      color: ZadColors.surface,
-      borderRadius: BorderRadius.circular(ZadRadii.card),
-      border: Border.all(color: ZadColors.hairline, width: 0.5),
-    ),
-    child: Padding(
-      padding: const EdgeInsets.all(14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text(
-            label,
-            maxLines: 2,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: ZadColors.inkMuted,
-            ),
-          ),
-          const SizedBox(height: ZadSpacing.xs),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              color: color,
-            ),
-          ),
-        ],
-      ),
+  Widget build(BuildContext context) => Expanded(
+    child: Column(
+      children: <Widget>[
+        Text(
+          value,
+          style: ZadType.titleLarge.copyWith(color: color ?? ZadColors.ink),
+        ),
+        const SizedBox(height: ZadSpacing.xs),
+        Text(
+          label,
+          textAlign: TextAlign.center,
+          maxLines: 2,
+          style: ZadType.labelSmall.copyWith(color: ZadColors.inkMuted),
+        ),
+      ],
     ),
   );
-}
-
-class _ItemCard extends StatelessWidget {
-  const new({
-    required this.item,
-    required this.onServiced,
-    required this.onDelete,
-  });
-
-  final _Item item;
-  final VoidCallback onServiced;
-  final VoidCallback onDelete;
-
-  @override
-  Widget build(BuildContext context) {
-    final service = item.daysUntilService;
-    final warranty = item.daysUntilWarranty;
-    final overdue = service != null && service < 0;
-    final dueSoon = service != null && service >= 0 && service <= 14;
-    final (bg, fg) = overdue
-        ? (
-            ZadColors.terracottaRust.withValues(alpha: 0.12),
-            ZadColors.terracottaRust,
-          )
-        : dueSoon
-        ? (_warning.withValues(alpha: 0.10), _warning)
-        : (ZadColors.green700.withValues(alpha: 0.06), ZadColors.green700);
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: ZadColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: const <BoxShadow>[
-          BoxShadow(
-            color: ZadColors.shadowSpot,
-            blurRadius: 10,
-            offset: Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: ZadSpacing.lg,
-          vertical: 14,
-        ),
-        child: Row(
-          children: <Widget>[
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    item.name,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: ZadSpacing.xs),
-                  Text(
-                    warranty != null && warranty < 0
-                        ? 'الضمان منتهي'
-                        : warranty != null
-                        ? 'الضمان ينتهي خلال $warranty يوم'
-                        : item.category,
-                    style: TextStyle(fontSize: 11.5, color: ZadColors.inkMuted),
-                  ),
-                ],
-              ),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: <Widget>[
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: bg,
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    overdue
-                        ? 'متأخر ${-service} يوم'
-                        : service != null
-                        ? 'الصيانة خلال $service يوم'
-                        : 'صيانة قريبة',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: fg,
-                    ),
-                  ),
-                ),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    if (item.interval != null)
-                      TextButton(
-                        style: TextButton.styleFrom(
-                          minimumSize: const Size(0, 44),
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                        ),
-                        onPressed: onServiced,
-                        child: const Text(
-                          'تمت الصيانة اليوم',
-                          style: TextStyle(
-                            fontSize: 10.5,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                    IconButton(
-                      tooltip: 'حذف',
-                      onPressed: onDelete,
-                      icon: Icon(
-                        ZadIcons.delete,
-                        size: 16,
-                        color: ZadColors.inkMuted,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
 class _AddDialog extends ConsumerStatefulWidget {
