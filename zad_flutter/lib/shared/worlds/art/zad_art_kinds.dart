@@ -57,6 +57,9 @@ enum ZadProductArt {
   /// The fish drawing.
   fish,
 
+  /// The meat (steak) drawing.
+  meat,
+
   /// The salad drawing.
   salad,
 

@@ -2828,6 +2828,63 @@ class ZadL10nAr extends ZadL10n {
   String get chefDislike => 'مش لذوقي';
 
   @override
+  String get chefDetailIngredients => 'المقادير';
+
+  @override
+  String get chefDetailSteps => 'طريقة التحضير';
+
+  @override
+  String get chefDetailAddToShopping => 'إضافة الناقص للتسوق';
+
+  @override
+  String get chefDetailClose => 'إغلاق';
+
+  @override
+  String get chefDetailRetry => 'إعادة المحاولة';
+
+  @override
+  String get chefDetailLoading => 'شيف زاد يجهز لك الوصفة…';
+
+  @override
+  String get chefDetailEmpty => 'شيف زاد مارجّعش الوصفة دي — جرب تاني';
+
+  @override
+  String get chefDetailSlow => 'شيف زاد اتأخر في الرد — جرب تاني';
+
+  @override
+  String get chefDetailFailed => 'عذراً، حدث خطأ أثناء تحميل الوصفة';
+
+  @override
+  String get chefHomeTitle => 'شيف زاد (اقتراحات ذكية)';
+
+  @override
+  String get chefHomeAllDepleted =>
+      'مخزونك كله خلص — نزّل النواقص في التسوق وأنا أقترحلك أكل.';
+
+  @override
+  String get chefHomePantryEmpty =>
+      'ضيف أصناف لمخزونك عشان شيف زاد يقترح لك طبق اليوم.';
+
+  @override
+  String get chefHomeComplete => 'مكتملة من مخزونك';
+
+  @override
+  String chefHomeMinutes(int count) {
+    return '$count د';
+  }
+
+  @override
+  String chefHomeMissingList(String items) {
+    return 'ناقصك: $items';
+  }
+
+  @override
+  String get chefHomeAddMissing => 'ضيفهم لقائمة التسوق';
+
+  @override
+  String get chefHomeTapSteps => 'اضغط للخطوات';
+
+  @override
   String get homeDealsSeeAll => 'كل العروض';
 
   @override
@@ -3257,7 +3314,7 @@ class ZadL10nAr extends ZadL10n {
   String get chefFullRecipe => 'الشرح الكامل وأسرار الشيف';
 
   @override
-  String get chefSecrets => '🤫 أسرار الشيف';
+  String get chefSecrets => 'أسرار الشيف';
 
   @override
   String get chefSourceLink => 'شوف الوصفة في مصدرها';
@@ -5168,6 +5225,83 @@ class ZadL10nArSa extends ZadL10nAr {
 
   @override
   String get recipesTrendingGroup => 'ترند الحين';
+
+  @override
+  String get chefStateEmpty => 'المخزن فاضي — أضف أكلك وأنا أقترح';
+
+  @override
+  String get chefStateReady => 'جاهزة أقترح عليك أكلة من مخزنك';
+
+  @override
+  String get chefStateThinking => 'أفكر في أكلة من مخزنك…';
+
+  @override
+  String get chefError => 'ما قدرت أوصل لشيف زاد. جرّب مرة ثانية بعد شوي.';
+
+  @override
+  String get chefStale => 'مخزنك تغيّر من آخر اقتراحات — اطلب جديدة إذا تبغى.';
+
+  @override
+  String get chefReadyBody =>
+      'اضغط «وصفات من مخزني» وتقول لك وش تطبخ من اللي عندك، واللي ناقصه شي بسيط.';
+
+  @override
+  String get chefEmptyBody =>
+      'أضف اللي عندك في المخزن، وشيف زاد تقترح لك أكلات منه.';
+
+  @override
+  String get chefAsking => 'شيف زاد تفكّر…';
+
+  @override
+  String get chefGroupMore => 'وجبات ثانية';
+
+  @override
+  String get chefStepByStep => 'الوصفة كاملة خطوة خطوة';
+
+  @override
+  String chefAddMissing(int count) {
+    return 'أضف الناقص لقائمة التسوق ($count)';
+  }
+
+  @override
+  String get chefAddedOne => 'أضفت صنف لقائمة التسوق.';
+
+  @override
+  String chefAddedMany(int count) {
+    return 'أضفت $count أصناف لقائمة التسوق.';
+  }
+
+  @override
+  String get chefNothingToAdd => 'الناقص كله في قائمة التسوق أو المخزن.';
+
+  @override
+  String get chefRatePrompt => 'عجبتك؟ شيف زاد تتذكّر.';
+
+  @override
+  String get chefDislike => 'مو على ذوقي';
+
+  @override
+  String get chefDetailLoading => 'شيف زاد يجهّز لك الوصفة…';
+
+  @override
+  String get chefDetailEmpty => 'شيف زاد ما رجّع الوصفة — جرّب مرة ثانية';
+
+  @override
+  String get chefDetailSlow => 'شيف زاد تأخر في الرد — جرّب مرة ثانية';
+
+  @override
+  String get chefDetailFailed => 'عذراً، صار خطأ أثناء تحميل الوصفة';
+
+  @override
+  String get chefHomeAllDepleted =>
+      'مخزونك كله خلص — نزّل النواقص في التسوق وأنا أقترح لك أكل.';
+
+  @override
+  String get chefHomePantryEmpty =>
+      'أضف أصناف لمخزونك عشان شيف زاد يقترح لك طبق اليوم.';
+
+  @override
+  String get chefHomeAddMissing => 'أضفهم لقائمة التسوق';
 
   @override
   String get patternLearningTitle => 'للحين أتعلّم';

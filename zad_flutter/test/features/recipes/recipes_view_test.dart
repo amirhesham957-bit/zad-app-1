@@ -370,6 +370,46 @@ void main() {
     );
   }, skip: Platform.environment['ZAD_SCREENS'] != '1');
 
+  testWidgets('screenshot: the chef world, full recipe', (tester) async {
+    await loadZadFonts();
+    recipes = _Recipes(RecipesView(suggestions: _answer()));
+    tester.view
+      ..physicalSize = const Size(860, 1864)
+      ..devicePixelRatio = 2;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          ...quietOrbOverrides,
+          recipesControllerProvider.overrideWith(() => recipes),
+          pantryControllerProvider.overrideWith(() => _Pantry(_kitchen)),
+          shoppingControllerProvider.overrideWith(_Shopping.new),
+          budgetControllerProvider.overrideWith(_Budget.new),
+          adsAllowedProvider.overrideWithValue(false),
+        ],
+        child: MaterialApp(
+          debugShowCheckedModeBanner: false,
+          theme: ZadTheme.light(),
+          locale: const Locale('ar'),
+          supportedLocales: ZadL10n.supportedLocales,
+          localizationsDelegates: ZadL10n.localizationsDelegates,
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(disableAnimations: true),
+            child: child!,
+          ),
+          home: Scaffold(
+            body: RecipeDetailDialog(recipe: _answer().recipes.last),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await expectLater(
+      find.byType(MaterialApp),
+      matchesGoldenFile('../../../build/screens/world_chef_detail.png'),
+    );
+  }, skip: Platform.environment['ZAD_SCREENS'] != '1');
+
   testWidgets('a recipe from an older answer has no secret card', (
     tester,
   ) async {

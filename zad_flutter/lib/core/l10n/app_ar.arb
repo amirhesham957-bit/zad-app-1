@@ -2115,6 +2115,37 @@
   "chefRatePrompt": "عجبتك؟ شيف زاد بتفتكر.",
   "chefLike": "عجبتني",
   "chefDislike": "مش لذوقي",
+  "chefDetailIngredients": "المقادير",
+  "chefDetailSteps": "طريقة التحضير",
+  "chefDetailAddToShopping": "إضافة الناقص للتسوق",
+  "chefDetailClose": "إغلاق",
+  "chefDetailRetry": "إعادة المحاولة",
+  "chefDetailLoading": "شيف زاد يجهز لك الوصفة…",
+  "chefDetailEmpty": "شيف زاد مارجّعش الوصفة دي — جرب تاني",
+  "chefDetailSlow": "شيف زاد اتأخر في الرد — جرب تاني",
+  "chefDetailFailed": "عذراً، حدث خطأ أثناء تحميل الوصفة",
+  "chefHomeTitle": "شيف زاد (اقتراحات ذكية)",
+  "chefHomeAllDepleted": "مخزونك كله خلص — نزّل النواقص في التسوق وأنا أقترحلك أكل.",
+  "chefHomePantryEmpty": "ضيف أصناف لمخزونك عشان شيف زاد يقترح لك طبق اليوم.",
+  "chefHomeComplete": "مكتملة من مخزونك",
+  "chefHomeMinutes": "{count} د",
+  "@chefHomeMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "chefHomeMissingList": "ناقصك: {items}",
+  "@chefHomeMissingList": {
+    "placeholders": {
+      "items": {
+        "type": "String"
+      }
+    }
+  },
+  "chefHomeAddMissing": "ضيفهم لقائمة التسوق",
+  "chefHomeTapSteps": "اضغط للخطوات",
   "homeDealsSeeAll": "كل العروض",
   "homeDealsSearching": "بندوّرلك على عروض في محلاتك — اضغط تشوف اللي لقيناه",
   "sheinShop": "تسوّق على SHEIN",
@@ -2430,7 +2461,7 @@
   "shellLanguageShort": "EN",
   "chefHomeTapHint": "اضغط وأنا أقترحلك طبق من اللي عندك في المخزون.",
   "chefFullRecipe": "الشرح الكامل وأسرار الشيف",
-  "chefSecrets": "🤫 أسرار الشيف",
+  "chefSecrets": "أسرار الشيف",
   "chefSourceLink": "شوف الوصفة في مصدرها",
   "chefSourceHandle": "شوف الوصفة عند @{handle}",
   "chefAsk": "اسأل الشيف عن الوصفة دي",

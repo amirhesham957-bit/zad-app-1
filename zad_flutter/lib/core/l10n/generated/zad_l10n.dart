@@ -5042,6 +5042,108 @@ abstract class ZadL10n {
   /// **'مش لذوقي'**
   String get chefDislike;
 
+  /// No description provided for @chefDetailIngredients.
+  ///
+  /// In ar, this message translates to:
+  /// **'المقادير'**
+  String get chefDetailIngredients;
+
+  /// No description provided for @chefDetailSteps.
+  ///
+  /// In ar, this message translates to:
+  /// **'طريقة التحضير'**
+  String get chefDetailSteps;
+
+  /// No description provided for @chefDetailAddToShopping.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة الناقص للتسوق'**
+  String get chefDetailAddToShopping;
+
+  /// No description provided for @chefDetailClose.
+  ///
+  /// In ar, this message translates to:
+  /// **'إغلاق'**
+  String get chefDetailClose;
+
+  /// No description provided for @chefDetailRetry.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعادة المحاولة'**
+  String get chefDetailRetry;
+
+  /// No description provided for @chefDetailLoading.
+  ///
+  /// In ar, this message translates to:
+  /// **'شيف زاد يجهز لك الوصفة…'**
+  String get chefDetailLoading;
+
+  /// No description provided for @chefDetailEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'شيف زاد مارجّعش الوصفة دي — جرب تاني'**
+  String get chefDetailEmpty;
+
+  /// No description provided for @chefDetailSlow.
+  ///
+  /// In ar, this message translates to:
+  /// **'شيف زاد اتأخر في الرد — جرب تاني'**
+  String get chefDetailSlow;
+
+  /// No description provided for @chefDetailFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'عذراً، حدث خطأ أثناء تحميل الوصفة'**
+  String get chefDetailFailed;
+
+  /// No description provided for @chefHomeTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'شيف زاد (اقتراحات ذكية)'**
+  String get chefHomeTitle;
+
+  /// No description provided for @chefHomeAllDepleted.
+  ///
+  /// In ar, this message translates to:
+  /// **'مخزونك كله خلص — نزّل النواقص في التسوق وأنا أقترحلك أكل.'**
+  String get chefHomeAllDepleted;
+
+  /// No description provided for @chefHomePantryEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضيف أصناف لمخزونك عشان شيف زاد يقترح لك طبق اليوم.'**
+  String get chefHomePantryEmpty;
+
+  /// No description provided for @chefHomeComplete.
+  ///
+  /// In ar, this message translates to:
+  /// **'مكتملة من مخزونك'**
+  String get chefHomeComplete;
+
+  /// No description provided for @chefHomeMinutes.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} د'**
+  String chefHomeMinutes(int count);
+
+  /// No description provided for @chefHomeMissingList.
+  ///
+  /// In ar, this message translates to:
+  /// **'ناقصك: {items}'**
+  String chefHomeMissingList(String items);
+
+  /// No description provided for @chefHomeAddMissing.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضيفهم لقائمة التسوق'**
+  String get chefHomeAddMissing;
+
+  /// No description provided for @chefHomeTapSteps.
+  ///
+  /// In ar, this message translates to:
+  /// **'اضغط للخطوات'**
+  String get chefHomeTapSteps;
+
   /// No description provided for @homeDealsSeeAll.
   ///
   /// In ar, this message translates to:
@@ -5759,7 +5861,7 @@ abstract class ZadL10n {
   /// No description provided for @chefSecrets.
   ///
   /// In ar, this message translates to:
-  /// **'🤫 أسرار الشيف'**
+  /// **'أسرار الشيف'**
   String get chefSecrets;
 
   /// No description provided for @chefSourceLink.

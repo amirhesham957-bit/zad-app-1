@@ -41,6 +41,9 @@ const Map<ZadProductArt, List<String>> _words = <ZadProductArt, List<String>>{
     'فراخ', 'دجاج', 'دجاجة', 'chicken', //
   ],
   ZadProductArt.fish: <String>['سمك', 'سمكة', 'fish'],
+  ZadProductArt.meat: <String>[
+    'لحم', 'لحمة', 'كفتة', 'ستيك', 'برجر', 'meat', 'beef', //
+  ],
   ZadProductArt.koshari: <String>['كشري', 'koshari'],
   ZadProductArt.salad: <String>['سلطة', 'سلطه', '=خس', 'salad'],
   ZadProductArt.blender: <String>['خلاط', 'blender'],

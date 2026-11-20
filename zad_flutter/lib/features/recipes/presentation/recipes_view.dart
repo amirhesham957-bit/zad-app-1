@@ -712,8 +712,7 @@ Widget dishArt(String name, double size) {
     _ when name.contains('تونة') || name.contains('سمك') => ZadProductArt.fish,
     _ when name.contains('دجاج') || name.contains('فراخ') =>
       ZadProductArt.chicken,
-    _ when name.contains('لحم') || name.contains('كفتة') =>
-      ZadProductArt.chicken,
+    _ when name.contains('لحم') || name.contains('كفتة') => ZadProductArt.meat,
     _ when name.contains('أرز') || name.contains('رز') => ZadProductArt.rice,
     _ when name.contains('سلطة') => ZadProductArt.salad,
     _ when name.contains('مكرونة') || name.contains('باستا') =>

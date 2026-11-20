@@ -877,6 +877,37 @@
   "chefRatePrompt": "Did you like it? Chef Zad remembers.",
   "chefLike": "I liked it",
   "chefDislike": "Not for me",
+  "chefDetailIngredients": "Ingredients",
+  "chefDetailSteps": "Method",
+  "chefDetailAddToShopping": "Add missing to the list",
+  "chefDetailClose": "Close",
+  "chefDetailRetry": "Try again",
+  "chefDetailLoading": "Chef Zad is preparing the recipe…",
+  "chefDetailEmpty": "Chef Zad did not send this recipe — try again",
+  "chefDetailSlow": "Chef Zad is slow to answer — try again",
+  "chefDetailFailed": "Sorry, something went wrong loading the recipe",
+  "chefHomeTitle": "Chef Zad (smart suggestions)",
+  "chefHomeAllDepleted": "Your pantry is all used up — put the shortages on the shopping list and I will suggest food.",
+  "chefHomePantryEmpty": "Add items to your pantry so Chef Zad can suggest today's dish.",
+  "chefHomeComplete": "Complete from your pantry",
+  "chefHomeMinutes": "{count} min",
+  "@chefHomeMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "chefHomeMissingList": "Missing: {items}",
+  "@chefHomeMissingList": {
+    "placeholders": {
+      "items": {
+        "type": "String"
+      }
+    }
+  },
+  "chefHomeAddMissing": "Add them to the shopping list",
+  "chefHomeTapSteps": "Tap for the steps",
   "homeDealsSeeAll": "All deals",
   "homeDealsSearching": "Looking for deals in your stores — tap to see what we found",
   "sheinShop": "Shop on SHEIN",
@@ -1058,7 +1089,7 @@
   "shellLanguageShort": "ع",
   "chefHomeTapHint": "Tap and I'll suggest a dish from your pantry.",
   "chefFullRecipe": "Full recipe and chef's secrets",
-  "chefSecrets": "🤫 Chef's secrets",
+  "chefSecrets": "Chef's secrets",
   "chefSourceLink": "See the recipe at its source",
   "chefSourceHandle": "See it at @{handle}",
   "chefAsk": "Ask the chef about this dish",
