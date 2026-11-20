@@ -6394,95 +6394,112 @@ class ZadL10nAr extends ZadL10n {
   String get settingsTermsBody => 'سياسة الاستخدام والخصوصية';
 
   @override
-  String offersEyebrowMine(int count) {
+  String get worldLabelFamily => 'العيلة';
+
+  @override
+  String get familyWorldNone => 'لسه معندكش عيلة';
+
+  @override
+  String familyWorldChores(num count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count من إشعاراتك',
-      few: '$count من إشعاراتك',
-      two: 'اتنين من إشعاراتك',
-      one: 'واحد من إشعاراتك',
+      other: '$count مهمة قدامكم',
+      few: '$count مهام قدامكم',
+      two: 'مهمتين قدامكم',
+      one: 'مهمة واحدة قدامكم',
     );
     return '$_temp0';
   }
 
   @override
-  String offersStateCount(int count) {
+  String familyWorldRequests(num count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count عرض شغال',
-      few: '$count عروض شغالة',
-      two: 'عرضين شغالين',
-      one: 'عرض واحد شغال',
+      other: '$count طلب مصروف مستني قرارك',
+      few: '$count طلبات مصروف مستنية قرارك',
+      two: 'طلبين مصروف مستنيين قرارك',
+      one: 'طلب مصروف مستني قرارك',
     );
     return '$_temp0';
   }
 
   @override
-  String get offersStateEmpty => 'مفيش عروض شغالة دلوقتي';
+  String get familyLoadingTitle => 'بنشوف عيلتك';
 
   @override
-  String get offersMineTitle => 'من إشعاراتك';
+  String get familyLoadingMessage => 'أول مرة محتاجة نت. اسحب لتحت لو طوّلت.';
 
   @override
-  String get offersPartnerTitle => 'كوبونات لبلدك';
+  String get familyRetry => 'جرّب تاني';
 
   @override
-  String get offersCopy => 'انسخ';
+  String get familyWelcomeTitle => 'أهلاً بك في عائلة زاد';
 
   @override
-  String offersCopied(String code) {
-    return 'اتنسخ الكود $code';
-  }
+  String get familyWelcomeBody =>
+      'يمكنك إنشاء عائلة جديدة لتكون أنت المدير، أو الانضمام لعائلة موجودة عبر كود الدعوة.';
 
   @override
-  String get offersNoCode => 'من غير كود';
+  String get familyCreateButton => 'إنشاء عائلة جديدة كمدير (Admin)';
 
   @override
-  String get offersExpiresToday => 'بينتهي النهارده';
+  String get familyJoinButton => 'الانضمام للعائلة';
 
   @override
-  String offersExpiresInDays(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'بينتهي بعد $count يوم',
-      few: 'بينتهي بعد $count أيام',
-      two: 'بينتهي بعد يومين',
-      one: 'بينتهي بكرة',
-    );
-    return '$_temp0';
-  }
+  String get familyAliasCardTitle => 'اسمك في العيلة';
 
   @override
-  String offersPercentOff(String percent) {
-    return 'خصم $percent٪';
-  }
+  String get familyAliasLabel => 'اسمك في العيلة (اختياري)';
 
   @override
-  String offersAmountOff(String amount, String currency) {
-    return 'خصم $amount $currency';
-  }
+  String get familyAliasHint => 'مثال: الابن أحمد';
 
   @override
-  String get offersFallbackTitle => 'عرض خاص';
+  String get familyJoinCardTitle => 'عندك كود دعوة؟';
 
   @override
-  String get offersEmptyTitle => 'مفيش عروض شغالة';
+  String get familyCodeLabel => 'كود الدعوة';
 
   @override
-  String get offersEmptyMessage =>
-      'أول ما يظهر كوبون لبلدك أو يوصلك إشعار بخصم من تطبيق تسوق، هتلاقيه هنا. اسحب لتحت عشان تحدّث.';
+  String get familyCodeHint => 'مثال: ZAD-1234';
 
   @override
-  String get offersNearbyTitle => 'عروض المحلات القريبة';
+  String get familyJoinPasteLink => 'عندك رابط دعوة؟ افتح نافذة الانضمام';
 
   @override
-  String get offersNearbyMessage => 'أسعار الأسبوع ومحلات حواليك';
+  String get familyTabChat => 'الشات';
 
   @override
-  String get offersOpenFailed => 'ماقدرناش نفتح العرض';
+  String get familyTabTasks => 'المهام';
+
+  @override
+  String get familyTabMembers => 'الأعضاء';
+
+  @override
+  String get familyTabGroceries => 'البقالة';
+
+  @override
+  String get familyTabKids => 'الأبناء';
+
+  @override
+  String get familyTabGoals => 'الأهداف';
+
+  @override
+  String get familyMoreTitle => 'كمان للعيلة';
+
+  @override
+  String get familyToolSavings => 'صناديق التجميع';
+
+  @override
+  String get familyToolAchievements => 'الإنجازات والرتب';
+
+  @override
+  String get familyToolTasbiha => 'تسبيحة';
+
+  @override
+  String get familyFollowStarted => 'بدأت المتابعة.';
 }
 
 /// The translations for Arabic, as used in Saudi Arabia (`ar_SA`).
@@ -9040,93 +9057,47 @@ class ZadL10nArSa extends ZadL10nAr {
   String get settingsAdsUnavailable => 'ما فيه اختيارات خصوصية متاحة الحين';
 
   @override
-  String offersEyebrowMine(int count) {
+  String get familyWorldNone => 'ما عندك عيلة للحين';
+
+  @override
+  String familyWorldChores(num count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count من إشعاراتك',
-      few: '$count من إشعاراتك',
-      two: 'اثنين من إشعاراتك',
-      one: 'واحد من إشعاراتك',
+      other: '$count مهمة قدامكم',
+      few: '$count مهام قدامكم',
+      two: 'مهمتين قدامكم',
+      one: 'مهمة وحدة قدامكم',
     );
     return '$_temp0';
   }
 
   @override
-  String offersStateCount(int count) {
+  String familyWorldRequests(num count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count عرض شغال',
-      few: '$count عروض شغالة',
-      two: 'عرضين شغالين',
-      one: 'عرض واحد شغال',
+      other: '$count طلب مصروف ينتظر قرارك',
+      few: '$count طلبات مصروف تنتظر قرارك',
+      two: 'طلبين مصروف ينتظرون قرارك',
+      one: 'طلب مصروف ينتظر قرارك',
     );
     return '$_temp0';
   }
 
   @override
-  String get offersStateEmpty => 'ما فيه عروض شغالة الحين';
+  String get familyLoadingMessage =>
+      'أول مرة تحتاج إنترنت. اسحب لتحت إذا تأخر.';
 
   @override
-  String get offersMineTitle => 'من إشعاراتك';
+  String get familyRetry => 'جرّب مرة ثانية';
 
   @override
-  String get offersPartnerTitle => 'كوبونات لبلدك';
+  String get familyCodeHint => 'مثال: ZAD-1234';
 
   @override
-  String get offersCopy => 'انسخ';
+  String get familyJoinPasteLink => 'عندك رابط دعوة؟ افتح نافذة الانضمام';
 
   @override
-  String offersCopied(String code) {
-    return 'اننسخ الكود $code';
-  }
-
-  @override
-  String get offersNoCode => 'بدون كود';
-
-  @override
-  String get offersExpiresToday => 'ينتهي اليوم';
-
-  @override
-  String offersExpiresInDays(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'ينتهي بعد $count يوم',
-      few: 'ينتهي بعد $count أيام',
-      two: 'ينتهي بعد يومين',
-      one: 'ينتهي بكرة',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String offersPercentOff(String percent) {
-    return 'خصم $percent٪';
-  }
-
-  @override
-  String offersAmountOff(String amount, String currency) {
-    return 'خصم $amount $currency';
-  }
-
-  @override
-  String get offersFallbackTitle => 'عرض خاص';
-
-  @override
-  String get offersEmptyTitle => 'ما فيه عروض شغالة';
-
-  @override
-  String get offersEmptyMessage =>
-      'أول ما يظهر كوبون لبلدك أو يوصلك إشعار بخصم من تطبيق تسوق، تلقاه هنا. اسحب لتحت للتحديث.';
-
-  @override
-  String get offersNearbyTitle => 'عروض المحلات القريبة';
-
-  @override
-  String get offersNearbyMessage => 'أسعار الأسبوع والمحلات اللي حولك';
-
-  @override
-  String get offersOpenFailed => 'ما قدرنا نفتح العرض';
+  String get familyFollowStarted => 'بدأت المتابعة.';
 }

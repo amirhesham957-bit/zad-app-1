@@ -16,7 +16,10 @@ abstract interface class FamilySharesRemote {
   Future<List<FamilyShare>> mine();
 
   /// Asks [ownerId] to share [scopes]. Family admins only (server-checked).
-  Future<int> request(String ownerId, Set<FamilyShareScope> scopes);
+  Future<({int requested, String? status})> request(
+    String ownerId,
+    Set<FamilyShareScope> scopes,
+  );
 
   /// Answers a request made to this account.
   Future<void> answer(String shareId, {required bool accept});
@@ -81,7 +84,10 @@ class SupabaseFamilySharesRemote implements FamilySharesRemote {
   }
 
   @override
-  Future<int> request(String ownerId, Set<FamilyShareScope> scopes) async {
+  Future<({int requested, String? status})> request(
+    String ownerId,
+    Set<FamilyShareScope> scopes,
+  ) async {
     final result = await _client.rpc<Object?>(
       'zad_family_request_share',
       params: <String, dynamic>{
@@ -89,7 +95,14 @@ class SupabaseFamilySharesRemote implements FamilySharesRemote {
         'p_scopes': <String>[for (final s in scopes) s.wire],
       },
     );
-    return (_ok(result)['requested'] as num?)?.toInt() ?? 0;
+    final ok = _ok(result);
+    // `status` is 'granted' when the server follows at once (an admin
+    // following a child) and 'pending' when the member must answer; older
+    // servers send none.
+    return (
+      requested: (ok['requested'] as num?)?.toInt() ?? 0,
+      status: ok['status'] as String?,
+    );
   }
 
   @override

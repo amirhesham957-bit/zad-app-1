@@ -78,6 +78,9 @@ abstract final class ZadWorldColors {
   /// إنجازاتي.
   static const Color achievements = Color(0xFFF5B93A);
 
+  /// العيلة.
+  static const Color family = Color(0xFFB2358F);
+
   /// A world's backdrop top: its colour at a tenth over white.
   static Color tint(Color world) =>
       Color.lerp(const Color(0xFFFFFFFF), world, 0.10)!;

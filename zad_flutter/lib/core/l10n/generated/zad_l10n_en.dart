@@ -6489,87 +6489,107 @@ class ZadL10nEn extends ZadL10n {
   String get settingsTermsBody => 'Usage and privacy policy';
 
   @override
-  String offersEyebrowMine(int count) {
+  String get worldLabelFamily => 'Family';
+
+  @override
+  String get familyWorldNone => 'No family yet';
+
+  @override
+  String familyWorldChores(num count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count from your notifications',
-      one: '1 from your notifications',
+      other: '$count tasks ahead',
+      one: '1 task ahead',
     );
     return '$_temp0';
   }
 
   @override
-  String offersStateCount(int count) {
+  String familyWorldRequests(num count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count live offers',
-      one: '1 live offer',
+      other: '$count money requests waiting on you',
+      one: '1 money request waiting on you',
     );
     return '$_temp0';
   }
 
   @override
-  String get offersStateEmpty => 'No live offers right now';
+  String get familyLoadingTitle => 'Looking for your family';
 
   @override
-  String get offersMineTitle => 'From your notifications';
+  String get familyLoadingMessage =>
+      'The first time needs internet. Pull down if it takes long.';
 
   @override
-  String get offersPartnerTitle => 'Coupons for your country';
+  String get familyRetry => 'Try again';
 
   @override
-  String get offersCopy => 'Copy';
+  String get familyWelcomeTitle => 'Welcome to your Zad family';
 
   @override
-  String offersCopied(String code) {
-    return 'Code $code copied';
-  }
+  String get familyWelcomeBody =>
+      'Create a new family and be its admin, or join an existing one with an invite code.';
 
   @override
-  String get offersNoCode => 'No code needed';
+  String get familyCreateButton => 'Create a new family as admin';
 
   @override
-  String get offersExpiresToday => 'Ends today';
+  String get familyJoinButton => 'Join the family';
 
   @override
-  String offersExpiresInDays(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'Ends in $count days',
-      one: 'Ends tomorrow',
-    );
-    return '$_temp0';
-  }
+  String get familyAliasCardTitle => 'Your name in the family';
 
   @override
-  String offersPercentOff(String percent) {
-    return '$percent% off';
-  }
+  String get familyAliasLabel => 'Your name in the family (optional)';
 
   @override
-  String offersAmountOff(String amount, String currency) {
-    return '$amount $currency off';
-  }
+  String get familyAliasHint => 'For example: Ahmed';
 
   @override
-  String get offersFallbackTitle => 'Special offer';
+  String get familyJoinCardTitle => 'Have an invite code?';
 
   @override
-  String get offersEmptyTitle => 'No live offers';
+  String get familyCodeLabel => 'Invite code';
 
   @override
-  String get offersEmptyMessage =>
-      'When a coupon for your country shows up, or a shopping app sends you a discount notification, it lands here. Pull down to refresh.';
+  String get familyCodeHint => 'For example: ZAD-1234';
 
   @override
-  String get offersNearbyTitle => 'Nearby shop deals';
+  String get familyJoinPasteLink => 'Have an invite link? Open the join window';
 
   @override
-  String get offersNearbyMessage => 'This week\'s prices and shops around you';
+  String get familyTabChat => 'Chat';
 
   @override
-  String get offersOpenFailed => 'Could not open the offer';
+  String get familyTabTasks => 'Tasks';
+
+  @override
+  String get familyTabMembers => 'Members';
+
+  @override
+  String get familyTabGroceries => 'Groceries';
+
+  @override
+  String get familyTabKids => 'Kids';
+
+  @override
+  String get familyTabGoals => 'Goals';
+
+  @override
+  String get familyMoreTitle => 'More for the family';
+
+  @override
+  String get familyToolSavings => 'Savings funds';
+
+  @override
+  String get familyToolAchievements => 'Achievements and ranks';
+
+  @override
+  String get familyToolTasbiha => 'Tasbiha';
+
+  @override
+  String get familyFollowStarted => 'Following started.';
 }

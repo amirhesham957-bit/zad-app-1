@@ -209,6 +209,7 @@ OpenScreen? _worldScreen(ZadWorld world) => switch (world) {
   ZadWorld.home => null,
   ZadWorld.games => ZadScreens.showGamesHub,
   ZadWorld.offers => ZadScreens.showOffersScreen,
+  ZadWorld.family => (c) => ZadScreens.showFamilyScreen(c),
 };
 
 /// Binds the slots.

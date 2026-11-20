@@ -10814,113 +10814,179 @@ abstract class ZadL10n {
   /// **'سياسة الاستخدام والخصوصية'**
   String get settingsTermsBody;
 
-  /// Offers world eyebrow: how many of the live offers came from the customer's notifications.
+  /// No description provided for @worldLabelFamily.
   ///
   /// In ar, this message translates to:
-  /// **'{count, plural, =1{واحد من إشعاراتك} =2{اتنين من إشعاراتك} few{{count} من إشعاراتك} other{{count} من إشعاراتك}}'**
-  String offersEyebrowMine(int count);
+  /// **'العيلة'**
+  String get worldLabelFamily;
 
-  /// Offers world state line: the number of live offers.
+  /// No description provided for @familyWorldNone.
   ///
   /// In ar, this message translates to:
-  /// **'{count, plural, =1{عرض واحد شغال} =2{عرضين شغالين} few{{count} عروض شغالة} other{{count} عرض شغال}}'**
-  String offersStateCount(int count);
+  /// **'لسه معندكش عيلة'**
+  String get familyWorldNone;
 
-  /// Offers world state line with nothing live.
+  /// No description provided for @familyWorldChores.
   ///
   /// In ar, this message translates to:
-  /// **'مفيش عروض شغالة دلوقتي'**
-  String get offersStateEmpty;
+  /// **'{count, plural, =1{مهمة واحدة قدامكم} =2{مهمتين قدامكم} few{{count} مهام قدامكم} other{{count} مهمة قدامكم}}'**
+  String familyWorldChores(num count);
 
-  /// Section: offers seen in the customer's notifications.
+  /// No description provided for @familyWorldRequests.
   ///
   /// In ar, this message translates to:
-  /// **'من إشعاراتك'**
-  String get offersMineTitle;
+  /// **'{count, plural, =1{طلب مصروف مستني قرارك} =2{طلبين مصروف مستنيين قرارك} few{{count} طلبات مصروف مستنية قرارك} other{{count} طلب مصروف مستني قرارك}}'**
+  String familyWorldRequests(num count);
 
-  /// Section: partner coupons for the customer's country.
+  /// No description provided for @familyLoadingTitle.
   ///
   /// In ar, this message translates to:
-  /// **'كوبونات لبلدك'**
-  String get offersPartnerTitle;
+  /// **'بنشوف عيلتك'**
+  String get familyLoadingTitle;
 
-  /// Button: copy the promo code.
+  /// No description provided for @familyLoadingMessage.
   ///
   /// In ar, this message translates to:
-  /// **'انسخ'**
-  String get offersCopy;
+  /// **'أول مرة محتاجة نت. اسحب لتحت لو طوّلت.'**
+  String get familyLoadingMessage;
 
-  /// Snackbar after the code was copied.
+  /// No description provided for @familyRetry.
   ///
   /// In ar, this message translates to:
-  /// **'اتنسخ الكود {code}'**
-  String offersCopied(String code);
+  /// **'جرّب تاني'**
+  String get familyRetry;
 
-  /// Label of an offer that needs no code.
+  /// No description provided for @familyWelcomeTitle.
   ///
   /// In ar, this message translates to:
-  /// **'من غير كود'**
-  String get offersNoCode;
+  /// **'أهلاً بك في عائلة زاد'**
+  String get familyWelcomeTitle;
 
-  /// Offer ends today.
+  /// No description provided for @familyWelcomeBody.
   ///
   /// In ar, this message translates to:
-  /// **'بينتهي النهارده'**
-  String get offersExpiresToday;
+  /// **'يمكنك إنشاء عائلة جديدة لتكون أنت المدير، أو الانضمام لعائلة موجودة عبر كود الدعوة.'**
+  String get familyWelcomeBody;
 
-  /// Offer ends in some days.
+  /// No description provided for @familyCreateButton.
   ///
   /// In ar, this message translates to:
-  /// **'{count, plural, =1{بينتهي بكرة} =2{بينتهي بعد يومين} few{بينتهي بعد {count} أيام} other{بينتهي بعد {count} يوم}}'**
-  String offersExpiresInDays(int count);
+  /// **'إنشاء عائلة جديدة كمدير (Admin)'**
+  String get familyCreateButton;
 
-  /// Discount in percent.
+  /// No description provided for @familyJoinButton.
   ///
   /// In ar, this message translates to:
-  /// **'خصم {percent}٪'**
-  String offersPercentOff(String percent);
+  /// **'الانضمام للعائلة'**
+  String get familyJoinButton;
 
-  /// Discount as an amount.
+  /// No description provided for @familyAliasCardTitle.
   ///
   /// In ar, this message translates to:
-  /// **'خصم {amount} {currency}'**
-  String offersAmountOff(String amount, String currency);
+  /// **'اسمك في العيلة'**
+  String get familyAliasCardTitle;
 
-  /// Title of an offer the source gave no words for.
+  /// No description provided for @familyAliasLabel.
   ///
   /// In ar, this message translates to:
-  /// **'عرض خاص'**
-  String get offersFallbackTitle;
+  /// **'اسمك في العيلة (اختياري)'**
+  String get familyAliasLabel;
 
-  /// Empty state title of the offers world.
+  /// No description provided for @familyAliasHint.
   ///
   /// In ar, this message translates to:
-  /// **'مفيش عروض شغالة'**
-  String get offersEmptyTitle;
+  /// **'مثال: الابن أحمد'**
+  String get familyAliasHint;
 
-  /// Empty state guidance of the offers world.
+  /// No description provided for @familyJoinCardTitle.
   ///
   /// In ar, this message translates to:
-  /// **'أول ما يظهر كوبون لبلدك أو يوصلك إشعار بخصم من تطبيق تسوق، هتلاقيه هنا. اسحب لتحت عشان تحدّث.'**
-  String get offersEmptyMessage;
+  /// **'عندك كود دعوة؟'**
+  String get familyJoinCardTitle;
 
-  /// Row opening the nearby shops and deals screen.
+  /// No description provided for @familyCodeLabel.
   ///
   /// In ar, this message translates to:
-  /// **'عروض المحلات القريبة'**
-  String get offersNearbyTitle;
+  /// **'كود الدعوة'**
+  String get familyCodeLabel;
 
-  /// Subtitle of the nearby deals row.
+  /// No description provided for @familyCodeHint.
   ///
   /// In ar, this message translates to:
-  /// **'أسعار الأسبوع ومحلات حواليك'**
-  String get offersNearbyMessage;
+  /// **'مثال: ZAD-1234'**
+  String get familyCodeHint;
 
-  /// Snackbar when an offer link cannot be opened.
+  /// No description provided for @familyJoinPasteLink.
   ///
   /// In ar, this message translates to:
-  /// **'ماقدرناش نفتح العرض'**
-  String get offersOpenFailed;
+  /// **'عندك رابط دعوة؟ افتح نافذة الانضمام'**
+  String get familyJoinPasteLink;
+
+  /// No description provided for @familyTabChat.
+  ///
+  /// In ar, this message translates to:
+  /// **'الشات'**
+  String get familyTabChat;
+
+  /// No description provided for @familyTabTasks.
+  ///
+  /// In ar, this message translates to:
+  /// **'المهام'**
+  String get familyTabTasks;
+
+  /// No description provided for @familyTabMembers.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأعضاء'**
+  String get familyTabMembers;
+
+  /// No description provided for @familyTabGroceries.
+  ///
+  /// In ar, this message translates to:
+  /// **'البقالة'**
+  String get familyTabGroceries;
+
+  /// No description provided for @familyTabKids.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأبناء'**
+  String get familyTabKids;
+
+  /// No description provided for @familyTabGoals.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأهداف'**
+  String get familyTabGoals;
+
+  /// No description provided for @familyMoreTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'كمان للعيلة'**
+  String get familyMoreTitle;
+
+  /// No description provided for @familyToolSavings.
+  ///
+  /// In ar, this message translates to:
+  /// **'صناديق التجميع'**
+  String get familyToolSavings;
+
+  /// No description provided for @familyToolAchievements.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإنجازات والرتب'**
+  String get familyToolAchievements;
+
+  /// No description provided for @familyToolTasbiha.
+  ///
+  /// In ar, this message translates to:
+  /// **'تسبيحة'**
+  String get familyToolTasbiha;
+
+  /// No description provided for @familyFollowStarted.
+  ///
+  /// In ar, this message translates to:
+  /// **'بدأت المتابعة.'**
+  String get familyFollowStarted;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {
