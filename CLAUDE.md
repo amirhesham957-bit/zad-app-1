@@ -260,6 +260,8 @@ Rules that apply to every Flutter change, in short:
 
 ## Project plan and task numbering
 
+**The first priority since 2026-11-20 (owner's decision) is [`docs/agent/ZAD_OR_PLAN.md`](./docs/agent/ZAD_OR_PLAN.md).** It covers the calculation engine (Operations Research), the data kernel and the hybrid brain. Its "ابدأ من هنا" section and its first open box say what comes next. Item numbers such as «م١.٢» or «ج٢» refer to it. Tick its boxes in the commit that closes the item, because the `zad-or-plan` mod reads them. `ZAD_PLAN.md` stays as the reference for UI work only. Where the two disagree, `ZAD_OR_PLAN.md` wins.
+
 **UI overhaul (since 2026-11-09): read [`docs/agent/UI_OVERHAUL_STATUS.md`](./docs/agent/UI_OVERHAUL_STATUS.md) before touching any screen, and update it in the same commit.** It says what changed, how far it was checked, what is broken and what is left.
 
 **Session record (since 2026-11-11): read [`docs/agent/SESSION_LOG.md`](./docs/agent/SESSION_LOG.md) first and append one entry before the session ends** — what was done (PRs), measured, answered by the owner, left, and the traps.

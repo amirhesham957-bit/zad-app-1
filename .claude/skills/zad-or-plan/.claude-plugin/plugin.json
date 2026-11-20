@@ -1,0 +1,1 @@
+{ "name": "zad-or-plan", "version": "0.1.0", "description": "Live pane for Zad's ZAD_OR_PLAN.md: done and remaining per phase, the next item, and the current status lines.", "types": "./types/index.d.ts" }
