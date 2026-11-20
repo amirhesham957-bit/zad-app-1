@@ -214,7 +214,7 @@ class ZadL10nAr extends ZadL10n {
   String get paywallPlusTitle => 'المتقدمة (Plus)';
 
   @override
-  String get paywallPlusBadge => 'الأكثر شعبية ⭐';
+  String get paywallPlusBadge => 'الأكثر شعبية';
 
   @override
   String get paywallAllBasicPerks => 'كل مزايا الأساسية';
@@ -230,7 +230,7 @@ class ZadL10nAr extends ZadL10n {
   String get paywallFamilyTitle => 'العيلة (Family)';
 
   @override
-  String get paywallFamilyBadge => 'أكبر رصيد 👑';
+  String get paywallFamilyBadge => 'أكبر رصيد';
 
   @override
   String get paywallFamilyPerkAttempts =>
@@ -307,6 +307,14 @@ class ZadL10nAr extends ZadL10n {
   String paywallPricePerMonth(String price) {
     return '$price في الشهر';
   }
+
+  @override
+  String paywallStatePlan(String plan) {
+    return 'خطتك دلوقتي: $plan';
+  }
+
+  @override
+  String get paywallStateInvite => 'اختار الباقة اللي تناسب بيتك';
 
   @override
   String get navHome => 'الرئيسية';
@@ -6371,6 +6379,14 @@ class ZadL10nArSa extends ZadL10nAr {
   @override
   String get paywallNotOnPlayBody =>
       'الباقة هذي للحين ما تفعّلت على Google Play. جرّب مرة ثانية قريب.';
+
+  @override
+  String paywallStatePlan(String plan) {
+    return 'خطتك الحين: $plan';
+  }
+
+  @override
+  String get paywallStateInvite => 'اختر الباقة اللي تناسب بيتك';
 
   @override
   String get navMyFamily => 'عائلتي';

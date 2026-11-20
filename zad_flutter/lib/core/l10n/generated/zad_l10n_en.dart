@@ -217,7 +217,7 @@ class ZadL10nEn extends ZadL10n {
   String get paywallPlusTitle => 'Plus';
 
   @override
-  String get paywallPlusBadge => 'Most popular ⭐';
+  String get paywallPlusBadge => 'Most popular';
 
   @override
   String get paywallAllBasicPerks => 'Everything in Basic';
@@ -234,7 +234,7 @@ class ZadL10nEn extends ZadL10n {
   String get paywallFamilyTitle => 'Family';
 
   @override
-  String get paywallFamilyBadge => 'Biggest allowance 👑';
+  String get paywallFamilyBadge => 'Biggest allowance';
 
   @override
   String get paywallFamilyPerkAttempts =>
@@ -311,6 +311,14 @@ class ZadL10nEn extends ZadL10n {
   String paywallPricePerMonth(String price) {
     return '$price a month';
   }
+
+  @override
+  String paywallStatePlan(String plan) {
+    return 'Your plan now: $plan';
+  }
+
+  @override
+  String get paywallStateInvite => 'Pick the plan that fits your home';
 
   @override
   String get navHome => 'Home';

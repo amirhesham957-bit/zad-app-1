@@ -473,7 +473,7 @@ abstract class ZadL10n {
   /// No description provided for @paywallPlusBadge.
   ///
   /// In ar, this message translates to:
-  /// **'الأكثر شعبية ⭐'**
+  /// **'الأكثر شعبية'**
   String get paywallPlusBadge;
 
   /// No description provided for @paywallAllBasicPerks.
@@ -503,7 +503,7 @@ abstract class ZadL10n {
   /// No description provided for @paywallFamilyBadge.
   ///
   /// In ar, this message translates to:
-  /// **'أكبر رصيد 👑'**
+  /// **'أكبر رصيد'**
   String get paywallFamilyBadge;
 
   /// No description provided for @paywallFamilyPerkAttempts.
@@ -631,6 +631,18 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'{price} في الشهر'**
   String paywallPricePerMonth(String price);
+
+  /// Premium world state line when the customer is on a paid plan.
+  ///
+  /// In ar, this message translates to:
+  /// **'خطتك دلوقتي: {plan}'**
+  String paywallStatePlan(String plan);
+
+  /// Premium world state line on the free plan or when the plan is unknown.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختار الباقة اللي تناسب بيتك'**
+  String get paywallStateInvite;
 
   /// No description provided for @navHome.
   ///
