@@ -101,8 +101,9 @@ const List<AchievementDef> kAchievementCatalog = <AchievementDef>[
 /// One real `user_achievements` row.
 typedef UnlockedRow = ({String achievementId, int points});
 
-/// One achievement as shown.
-typedef AchievementView = ({AchievementDef def, bool unlocked});
+/// One achievement as shown; `at` is when the server recorded it, when it
+/// has (one earned by progress alone has no row yet).
+typedef AchievementView = ({AchievementDef def, bool unlocked, DateTime? at});
 
 /// The header figures.
 typedef AchievementStats = ({
@@ -128,6 +129,7 @@ int contributionStreak(DateTime? last, DateTime now) {
   required List<UnlockedRow> unlocked,
   required int contributions,
   required int streak,
+  Map<String, DateTime> unlockedAt = const <String, DateTime>{},
 }) {
   final points = <String, int>{
     for (final r in unlocked) r.achievementId: r.points,
@@ -183,7 +185,7 @@ int contributionStreak(DateTime? last, DateTime now) {
     ),
     <AchievementView>[
       for (final d in kAchievementCatalog)
-        (def: d, unlocked: ids.contains(d.id)),
+        (def: d, unlocked: ids.contains(d.id), at: unlockedAt[d.id]),
     ],
   );
 }

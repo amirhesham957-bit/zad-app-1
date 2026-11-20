@@ -625,5 +625,19 @@
   "maintEmptyMessage": "سجّل المكيف أو السخان أو السيارة، وزاد يذكّرك بموعد صيانتها وضمانها.",
   "maintTechnicians": "فنيين أثق فيهم",
   "maintTechniciansHint": "اتصل أو أرسل واتساب لفني جرّبته",
-  "maintAddFailed": "ما انسجّل الجهاز — تأكد من النت."
+  "maintAddFailed": "ما انسجّل الجهاز — تأكد من النت.",
+  "notifMarkAllRead": "علّم الكل كمقروء",
+  "notifAllRead": "الكل مقروء",
+  "achWorldState": "{done} من {total} إنجاز",
+  "achLevel": "المستوى {level}",
+  "achLevelPoints": "{points} من {next} نقطة",
+  "achOnTrack": "أنت على الطريق الصحيح!",
+  "achContributions": "المساهمات",
+  "achStreak": "التسلسل",
+  "achShelf": "الإنجازات",
+  "achNext": "الإنجاز التالي",
+  "achLocked": "مقفول",
+  "achLoadFailed": "ما قدرنا نجيب الإنجازات الحين",
+  "achLoadFailedHint": "تأكد من الاتصال وحاول مرة ثانية",
+  "achRetry": "حاول مرة ثانية"
 }

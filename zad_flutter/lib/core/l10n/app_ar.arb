@@ -5689,5 +5689,82 @@
   "maintAddFailed": "ماتسجلش الجهاز — اتأكد من النت.",
   "@maintAddFailed": {
     "description": "Snackbar when an add fails."
+  },
+  "notifMarkAllRead": "علّم الكل مقروء",
+  "@notifMarkAllRead": {
+    "description": "Notifications / achievements world."
+  },
+  "notifAllRead": "كله مقروء",
+  "@notifAllRead": {
+    "description": "Notifications / achievements world."
+  },
+  "achWorldState": "{done} من {total} إنجاز",
+  "@achWorldState": {
+    "description": "Notifications / achievements world.",
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "achLevel": "المستوى {level}",
+  "@achLevel": {
+    "description": "Notifications / achievements world.",
+    "placeholders": {
+      "level": {
+        "type": "int"
+      }
+    }
+  },
+  "achLevelPoints": "{points} من {next} نقطة",
+  "@achLevelPoints": {
+    "description": "Notifications / achievements world.",
+    "placeholders": {
+      "points": {
+        "type": "int"
+      },
+      "next": {
+        "type": "int"
+      }
+    }
+  },
+  "achOnTrack": "أنت على الطريق الصحيح!",
+  "@achOnTrack": {
+    "description": "Notifications / achievements world."
+  },
+  "achContributions": "المساهمات",
+  "@achContributions": {
+    "description": "Notifications / achievements world."
+  },
+  "achStreak": "التسلسل",
+  "@achStreak": {
+    "description": "Notifications / achievements world."
+  },
+  "achShelf": "الإنجازات",
+  "@achShelf": {
+    "description": "Notifications / achievements world."
+  },
+  "achNext": "الإنجاز التالي",
+  "@achNext": {
+    "description": "Notifications / achievements world."
+  },
+  "achLocked": "مقفول",
+  "@achLocked": {
+    "description": "Notifications / achievements world."
+  },
+  "achLoadFailed": "مش قادرين نجيب الإنجازات دلوقتي",
+  "@achLoadFailed": {
+    "description": "Notifications / achievements world."
+  },
+  "achLoadFailedHint": "اتأكد من النت وجرّب تاني",
+  "@achLoadFailedHint": {
+    "description": "Notifications / achievements world."
+  },
+  "achRetry": "جرّب تاني",
+  "@achRetry": {
+    "description": "Notifications / achievements world."
   }
 }

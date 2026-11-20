@@ -2102,5 +2102,19 @@
   "maintDelete": "Delete",
   "maintTechnicians": "Technicians I trust",
   "maintTechniciansHint": "Call or WhatsApp a technician you have tried",
-  "maintAddFailed": "The appliance was not saved — check your connection."
+  "maintAddFailed": "The appliance was not saved — check your connection.",
+  "notifMarkAllRead": "Mark all read",
+  "notifAllRead": "All read",
+  "achWorldState": "{done} of {total} achievements",
+  "achLevel": "Level {level}",
+  "achLevelPoints": "{points} of {next} points",
+  "achOnTrack": "You are on the right track!",
+  "achContributions": "Contributions",
+  "achStreak": "Streak",
+  "achShelf": "Achievements",
+  "achNext": "Next achievement",
+  "achLocked": "Locked",
+  "achLoadFailed": "Could not load the achievements",
+  "achLoadFailedHint": "Check your connection and try again",
+  "achRetry": "Try again"
 }
