@@ -810,20 +810,35 @@ async function embedAndLinkNote(
  * كتابة سكوب "نسخة واحدة" (استبدال) + تضمين — للسكوبات اللي المفروض تحمل ملاحظة
  * واحدة بس لكل مستخدم.
  *
- * الاستبدال اليدوي (delete ثم insert) مقصود ومش قابل للتحويل لـ`zad_memory_upsert`:
- * الأخيرة بتقارن بالتشابه فبتقوّي ملاحظة قديمة بدل ما تستبدلها، و
- * `onConflict: "user_id,scope"` بيرمي 42P10 لأن مفيش unique(user_id,scope) على
- * الجدول عن قصد (سكوبات زي general بتحمل أكتر من ملاحظة).
+ * `zad_memory_replace_single` (20261120200000) بتعمل ده في transaction واحدة: أحدث صف بيتعدّل
+ * مكانه والباقي بيتمسح. قبلها كان مسح ثم إدراج: لو الإدراج وقع الذاكرة بتضيع، وكل كتابة بتعدّ
+ * حذف (١٥٠ حذف على zad_memory لحد ٢٠/١١). `zad_memory_upsert` مش بديل: بتقارن بالتشابه فبتقوّي
+ * ملاحظة قديمة بدل ما تستبدلها، ومفيش unique(user_id,scope) عن قصد.
+ *
+ * لو الدالة لسه مش على الداتابيز (الكود اتنشر قبل المايجريشن) بيرجع للطريقة القديمة.
  */
-async function writeSingleCopyMemory(
+export async function writeSingleCopyMemory(
   sb: SupabaseClient, userId: string, scope: string, note: string, confidence: number,
 ): Promise<{ error: unknown }> {
-  await sb.from("zad_memory").delete().eq("user_id", userId).eq("scope", scope);
-  const { error } = await sb.from("zad_memory")
-    .insert({ user_id: userId, scope, note, confidence, evidence_count: 1 });
-  if (error) return { error };
-  await embedAndLinkNote(sb, userId, scope, note);
+  const { data: noteId, error: rpcError } = await sb.rpc("zad_memory_replace_single", {
+    p_user: userId, p_scope: scope, p_note: note, p_confidence: confidence,
+  });
+  if (rpcError) {
+    if (!isMissingFunction(rpcError)) return { error: rpcError };
+    await sb.from("zad_memory").delete().eq("user_id", userId).eq("scope", scope);
+    const { error } = await sb.from("zad_memory")
+      .insert({ user_id: userId, scope, note, confidence, evidence_count: 1 });
+    if (error) return { error };
+    await embedAndLinkNote(sb, userId, scope, note);
+    return { error: null };
+  }
+  await embedAndLinkNote(sb, userId, scope, note, { link: true, noteId: (noteId as string | null) ?? null });
   return { error: null };
+}
+
+/** PostgREST بيرد PGRST202 لما الدالة مش موجودة، وPostgres بيرد 42883. */
+export function isMissingFunction(error: { code?: string } | null | undefined): boolean {
+  return error?.code === "PGRST202" || error?.code === "42883";
 }
 
 /**
@@ -2790,8 +2805,10 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       return "اتعدلت المعاملة";
     }
     case "delete_transaction": {
+      // الصف كامل: التراجع (zad_agent_undo) بيرجّعه بـjsonb_populate_record، ومن غير user_id كان بيرد
+      // ownership_mismatch، فالمعاملة المحذوفة ماكانتش بترجع (ZAD_OR_PLAN م١، ٢٠/١١).
       const { data: before } = await sb.from("zad_transactions")
-        .select("amount,title,category,txn_kind").eq("id", input.transaction_id).eq("user_id", userId).maybeSingle();
+        .select("*").eq("id", input.transaction_id).eq("user_id", userId).maybeSingle();
       if (!before) return "مرفوض: المعاملة مش بتاعت العميل ده — عدّل وحاول تاني.";
       const w = await writeRows(
         sb.from("zad_transactions").delete().eq("id", input.transaction_id).eq("user_id", userId).select("id"),
