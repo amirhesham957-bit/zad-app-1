@@ -4582,15 +4582,9 @@ class ZadL10nEn extends ZadL10n {
       'Whether Zad is working in the background or stopped, and why';
 
   @override
-  String get brainTelemetryOnline => 'System online';
-
-  @override
   String brainTelemetryLinks(int active, int total) {
     return 'Links: $active/$total';
   }
-
-  @override
-  String get brainTelemetryOps => 'Automatic actions';
 
   @override
   String get brainTelemetryDecisions => 'Decisions today';

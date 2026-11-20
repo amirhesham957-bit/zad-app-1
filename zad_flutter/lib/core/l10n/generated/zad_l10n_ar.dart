@@ -4472,15 +4472,9 @@ class ZadL10nAr extends ZadL10n {
       'زاد شغال في الخلفية ولا واقف — ولو واقف، ليه';
 
   @override
-  String get brainTelemetryOnline => 'النظام متصل';
-
-  @override
   String brainTelemetryLinks(int active, int total) {
     return 'الروابط: $active/$total';
   }
-
-  @override
-  String get brainTelemetryOps => 'عمليات تلقائية';
 
   @override
   String get brainTelemetryDecisions => 'قرارات النهارده';

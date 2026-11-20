@@ -13,6 +13,7 @@ import 'package:zad/core/l10n/generated/zad_l10n.dart';
 import 'package:zad/features/brain/application/knowledge_map_controller.dart';
 import 'package:zad/features/brain/domain/knowledge_map.dart';
 import 'package:zad/features/brain/presentation/brain_hub_screen.dart';
+import 'package:zad/features/brain/presentation/brain_map_stage.dart';
 
 import '../../support/fonts.dart';
 import '../../support/quiet_household.dart';
@@ -82,7 +83,10 @@ void main() {
     expect(find.text('الكل'), findsOneWidget);
     // A chip and a node each: the area is on the map and in the filters.
     expect(find.text('المخزون'), findsNWidgets(2));
+    expect(find.byKey(brainNodeKey(MapDomainKey.pantry)), findsOneWidget);
     expect(find.text('5 عنصر متصل'), findsOneWidget);
+    // The stability and decisions card sits under the map.
+    expect(find.text('مؤشر الثبات'), findsOneWidget);
   });
 
   testWidgets('says so when there is nothing to draw yet', (tester) async {
@@ -92,7 +96,7 @@ void main() {
     expect(find.text('الكل'), findsNothing);
   });
 
-  testWidgets('a chip keeps one area and what it touches', (tester) async {
+  testWidgets('a chip dims the areas it does not touch', (tester) async {
     await pump(
       tester,
       const MapInputs(
@@ -103,24 +107,25 @@ void main() {
         pendingShopping: <MapStock>[MapStock('لبن', '1')],
       ),
     );
+    double opacity(MapDomainKey k) => tester
+        .widget<Opacity>(
+          find.descendant(
+            of: find.byKey(brainNodeKey(k)),
+            matching: find.byType(Opacity),
+          ),
+        )
+        .opacity;
+    expect(opacity(MapDomainKey.shopping), 1);
 
     // The subscriptions touch the pantry and the budget, never the shopping
-    // list.
-    final shopping = find.text('قائمة التسوق');
-    final before = shopping.evaluate().length;
-    expect(before, greaterThan(0));
-    // The chip row scrolls sideways: bring the chip into view.
-    await tester.ensureVisible(find.text('الاشتراكات والأقساط').first);
+    // list. The chip row scrolls sideways: bring the chip into view.
+    final chip = find.text('الاشتراكات والأقساط').first;
+    await tester.ensureVisible(chip);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('الاشتراكات والأقساط').first);
+    await tester.tap(chip);
     await tester.pumpAndSettle();
-    expect(shopping.evaluate().length, lessThan(before));
-
-    await tester.ensureVisible(find.text('الكل'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('الكل'));
-    await tester.pumpAndSettle();
-    expect(shopping.evaluate().length, before);
+    expect(opacity(MapDomainKey.shopping), lessThan(1));
+    expect(opacity(MapDomainKey.subscriptions), 1);
   });
 
   testWidgets('keeps every card of the old hub', (tester) async {

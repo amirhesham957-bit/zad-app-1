@@ -1,12 +1,13 @@
-/// Kotlin's `ZadKnowledgeMapScreen`: the customer's areas on a slowly
-/// orbiting 3D sphere around «زاد CORE.3D» — drag or flick to turn it, pinch
-/// or the round buttons to zoom, and every node buzzes under the finger —
-/// with the telemetry bar, the node count,
-/// the legend, and a tapped area opening its panel (the budget's figures, or
-/// the area's items with «فتح الشاشة» and «اسأل زاد»).
+/// خريطة زاد, the brain map: the companion at the centre of a dark grid and
+/// one glowing node per area of the customer's life (see `BrainMapStage`),
+/// the filter chips above it, a tapped area opening its panel (the budget's
+/// figures, or the area's items with «فتح الشاشة» and «اسأل زاد»), and under it
+/// the stability index, the decisions today and the legend (`BrainStatsCard`).
 ///
-/// The sci-fi look is this screen's own (the same exception CLAUDE.md makes
-/// for Kids Mode), so its colours are the `ZadPalette.sciFi*` constants.
+/// The brain hub embeds [KnowledgeMapBody]; [KnowledgeMapScreen] is the same
+/// thing full screen. The sci-fi look is this map's own (the same exception
+/// CLAUDE.md makes for Kids Mode), so its colours are the `ZadPalette.sciFi*`
+/// constants.
 ///
 /// One number differs from Kotlin: its «decisions today» adds 12 to the
 /// insight count. Here it is the insight count itself.
@@ -14,11 +15,8 @@ library;
 
 import 'dart:async';
 import 'dart:math' as math;
-import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/physics.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' show NumberFormat;
@@ -34,16 +32,17 @@ import 'package:zad/core/design/tokens/zad_world_colors.dart';
 import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/brain/application/knowledge_map_controller.dart';
 import 'package:zad/features/brain/domain/knowledge_map.dart';
+import 'package:zad/features/brain/presentation/brain_map_stage.dart';
+import 'package:zad/features/brain/presentation/brain_map_style.dart';
 import 'package:zad/shared/chat/application/chat_controller.dart';
 import 'package:zad/shared/navigation/destinations.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
 import 'package:zad/shared/navigation/zad_slots.dart';
 
 const Color _bg = ZadPalette.sciFiBg;
-const Color _grid = ZadPalette.sciFiGrid;
-const Color _emerald = ZadPalette.sciFiNeonGreen;
-const Color _cyan = ZadPalette.sciFiCyanElectric;
-const Color _amber = ZadPalette.sciFiAmber;
+const Color _emerald = kMapEmerald;
+const Color _cyan = kMapCyan;
+const Color _amber = kMapAmber;
 const Color _text = ZadPalette.sciFiTextPrimary;
 const Color _textDim = ZadPalette.sciFiTextSecondary;
 
@@ -82,33 +81,24 @@ IconData _icon(MapDomainKey key) => switch (key) {
   MapDomainKey.maintenance => Icons.build,
 };
 
-Color _color(MapDomain d) => switch (d.key) {
-  MapDomainKey.budget || MapDomainKey.subscriptions => _cyan,
-  MapDomainKey.obligations ||
-  MapDomainKey.debts ||
-  MapDomainKey.maintenance => _amber,
-  MapDomainKey.pharmacy when d.needsAttention => _amber,
-  _ => _emerald,
-};
-
-/// The map, full screen. The hub embeds the same [KnowledgeMapBody].
-class KnowledgeMapScreen extends StatelessWidget {
+/// The map, full screen.
+class KnowledgeMapScreen extends ConsumerWidget {
   /// Creates the screen.
   const new({super.key});
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    backgroundColor: ZadWorldColors.darkBottom,
-    body: DecoratedBox(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: <Color>[ZadWorldColors.darkTop, ZadWorldColors.darkBottom],
+  Widget build(BuildContext context, WidgetRef ref) {
+    final nodes = ref.watch(knowledgeMapControllerProvider).map.nodeCount;
+    return Scaffold(
+      backgroundColor: ZadWorldColors.darkBottom,
+      body: DecoratedBox(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: <Color>[ZadWorldColors.darkTop, ZadWorldColors.darkBottom],
+          ),
         ),
-      ),
-      child: CustomPaint(
-        painter: _GridPainter(),
         child: SafeArea(
           child: Column(
             children: <Widget>[
@@ -120,7 +110,7 @@ class KnowledgeMapScreen extends StatelessWidget {
                       onPressed: () => Navigator.of(context).maybePop(),
                       icon: const Icon(Icons.arrow_back, color: _textDim),
                     ),
-                    // Flexible: a long name at large text ran 28px off a 360dp
+                    // Flexible: a long name at large text ran off a 360dp
                     // screen.
                     Flexible(
                       child: Text(
@@ -133,59 +123,38 @@ class KnowledgeMapScreen extends StatelessWidget {
                         ),
                       ),
                     ),
+                    const SizedBox(width: 12),
+                    Text(
+                      '$nodes عنصر متصل',
+                      style: ZadType.labelSmall.copyWith(color: _textDim),
+                    ),
                   ],
                 ),
               ),
               const Expanded(child: KnowledgeMapBody()),
+              const Padding(
+                padding: EdgeInsets.fromLTRB(12, 0, 12, 12),
+                child: BrainStatsCard(),
+              ),
             ],
           ),
         ),
       ),
-    ),
-  );
+    );
+  }
 }
 
-/// The living map itself — telemetry, the sphere of areas, an area's panel and
-/// the legend — in whatever height it is given. [embedded] is the brain
-/// world's card: it adds the filter chips (one area and what it touches) and
-/// says so when there is nothing to draw yet.
+/// The map itself — filter chips, the stage of areas (or an area's panel) —
+/// in whatever height it is given.
 class KnowledgeMapBody extends ConsumerStatefulWidget {
   /// Creates the body.
-  const new({this.embedded = false, super.key});
-
-  /// In the brain world rather than on its own screen.
-  final bool embedded;
+  const new({super.key});
 
   @override
   ConsumerState<KnowledgeMapBody> createState() => _KnowledgeMapBodyState();
 }
 
-class _KnowledgeMapBodyState extends ConsumerState<KnowledgeMapBody>
-    with TickerProviderStateMixin {
-  // Kotlin's infinite transitions: the live pulse (900ms, reversing), the
-  // particle run (2400ms), the cosmic orbit (28s) and the telemetry (1800ms
-  // wave, 750ms blink).
-  late final AnimationController _live = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 900),
-  )..repeat(reverse: true);
-  late final AnimationController _particles = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 2400),
-  )..repeat();
-  late final AnimationController _orbit = AnimationController(
-    vsync: this,
-    duration: const Duration(seconds: 28),
-  )..repeat();
-  late final AnimationController _wave = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 1800),
-  )..repeat();
-  late final AnimationController _blink = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 750),
-  )..repeat(reverse: true);
-
+class _KnowledgeMapBodyState extends ConsumerState<KnowledgeMapBody> {
   MapDomainKey? _selected;
 
   /// The chip the customer picked; null is «الكل».
@@ -201,37 +170,6 @@ class _KnowledgeMapBodyState extends ConsumerState<KnowledgeMapBody>
             : null,
       ),
     );
-  }
-
-  // Motion is decoration here; a phone set to reduce it gets a still map.
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final still = MediaQuery.disableAnimationsOf(context);
-    for (final c in <AnimationController>[_particles, _orbit, _wave]) {
-      if (still) {
-        c.stop();
-      } else if (!c.isAnimating) {
-        c.repeat();
-      }
-    }
-    for (final c in <AnimationController>[_live, _blink]) {
-      if (still) {
-        c.stop();
-      } else if (!c.isAnimating) {
-        c.repeat(reverse: true);
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    _live.dispose();
-    _particles.dispose();
-    _orbit.dispose();
-    _wave.dispose();
-    _blink.dispose();
-    super.dispose();
   }
 
   /// Kotlin's `askZadAbout`: the question in زاد's composer, the customer
@@ -266,26 +204,17 @@ class _KnowledgeMapBodyState extends ConsumerState<KnowledgeMapBody>
     _ => null,
   };
 
-  /// [map] cut down to the picked area and the areas it touches.
-  KnowledgeMap _filtered(KnowledgeMap map) {
+  /// The areas that stay bright under the picked chip: it and what it
+  /// touches. Null is all of them.
+  Set<MapDomainKey>? _lit(KnowledgeMap map) {
     final focus = _focus;
-    if (focus == null || map.domain(focus) == null) return map;
+    if (focus == null || map.domain(focus) == null) return null;
     final keep = <MapDomainKey>{focus};
     for (final e in map.edges) {
       if (e.from == focus) keep.add(e.to);
       if (e.to == focus) keep.add(e.from);
     }
-    bool both(MapEdge e) => keep.contains(e.from) && keep.contains(e.to);
-    return KnowledgeMap(
-      domains: <MapDomain>[
-        for (final d in map.domains)
-          if (keep.contains(d.key)) d,
-      ],
-      edges: map.edges.where(both).toList(),
-      liveDomains: map.liveDomains,
-      liveEdges: map.liveEdges.where(both).toSet(),
-      inputs: map.inputs,
-    );
+    return keep;
   }
 
   @override
@@ -293,14 +222,10 @@ class _KnowledgeMapBodyState extends ConsumerState<KnowledgeMapBody>
     final l = context.l10n;
     final view = ref.watch(knowledgeMapControllerProvider);
     final map = view.map;
-    final shown = _filtered(map);
     final selected = _selected == null ? null : map.domain(_selected!);
     final inputs = map.inputs;
-    final limit = inputs.limit ?? 0;
     final nothingYet =
-        widget.embedded &&
-        (inputs.limit ?? 0) <= 0 &&
-        map.domains.every((d) => d.count == 0);
+        (inputs.limit ?? 0) <= 0 && map.domains.every((d) => d.count == 0);
 
     return PopScope(
       canPop: _selected == null,
@@ -309,7 +234,7 @@ class _KnowledgeMapBodyState extends ConsumerState<KnowledgeMapBody>
       },
       child: Column(
         children: <Widget>[
-          if (widget.embedded && !nothingYet)
+          if (!nothingYet)
             _DomainChips(
               domains: map.domains,
               focus: _focus != null && map.domain(_focus!) != null
@@ -320,58 +245,42 @@ class _KnowledgeMapBodyState extends ConsumerState<KnowledgeMapBody>
                 _selected = null;
               }),
             ),
-          if (!widget.embedded || selected != null)
+          if (selected != null)
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
                 children: <Widget>[
                   Expanded(
                     child: Text(
-                      selected == null
-                          ? '${map.nodeCount} عنصر متصل'
-                          : mapDomainLabel(selected.key),
+                      mapDomainLabel(selected.key),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: selected == null
-                          ? ZadType.labelSmall.copyWith(color: _textDim)
-                          : ZadType.titleSmall.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: _color(selected),
-                            ),
+                      style: ZadType.titleSmall.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: mapDomainColor(selected),
+                      ),
                     ),
                   ),
-                  if (selected != null)
-                    InkWell(
-                      onTap: () => setState(() => _selected = null),
-                      borderRadius: BorderRadius.circular(8),
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(
-                          minWidth: 44,
-                          minHeight: 44,
-                        ),
-                        child: Center(
-                          child: Text(
-                            '×',
-                            style: ZadType.titleMedium.copyWith(
-                              color: _color(selected),
-                            ),
+                  InkWell(
+                    onTap: () => setState(() => _selected = null),
+                    borderRadius: BorderRadius.circular(8),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(
+                        minWidth: 44,
+                        minHeight: 44,
+                      ),
+                      child: Center(
+                        child: Text(
+                          '×',
+                          style: ZadType.titleMedium.copyWith(
+                            color: mapDomainColor(selected),
                           ),
                         ),
                       ),
                     ),
+                  ),
                 ],
               ),
-            ),
-          if (!nothingYet)
-            _Telemetry(
-              wave: _wave,
-              blink: _blink,
-              activeLinks: map.edges.where((e) => e.solid).length,
-              totalLinks: map.edges.length,
-              insights: inputs.insights.length,
-              budgetRatio: limit > 0
-                  ? ((limit - inputs.committed) / limit).clamp(0.1, 1.0)
-                  : 0.85,
             ),
           Expanded(
             child: nothingYet
@@ -397,12 +306,11 @@ class _KnowledgeMapBodyState extends ConsumerState<KnowledgeMapBody>
                       ),
                     ),
                     child: switch (selected) {
-                      null => _DomainRing(
-                        key: const ValueKey<String>('ring'),
-                        map: shown,
-                        live: _live,
-                        particles: _particles,
-                        orbit: _orbit,
+                      null => BrainMapStage(
+                        key: const ValueKey<String>('stage'),
+                        map: map,
+                        lit: _lit(map),
+                        label: mapDomainLabel,
                         onSelect: (k) => setState(() => _selected = k),
                       ),
                       MapDomain(key: MapDomainKey.budget) => _BudgetPanel(
@@ -421,9 +329,105 @@ class _KnowledgeMapBodyState extends ConsumerState<KnowledgeMapBody>
                     },
                   ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Wrap(
+        ],
+      ),
+    );
+  }
+}
+
+/// The calm card under the stage: how stable the budget is, how many
+/// decisions Zad made today, how many links are computed, and what the lines
+/// mean.
+class BrainStatsCard extends ConsumerWidget {
+  /// Creates the card.
+  const new({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = context.l10n;
+    final map = ref.watch(knowledgeMapControllerProvider).map;
+    final inputs = map.inputs;
+    final limit = inputs.limit ?? 0;
+    final ratio = limit > 0
+        ? ((limit - inputs.committed) / limit).clamp(0.1, 1.0)
+        : 0.85;
+    final stability = (ratio * 100).toInt().clamp(10, 100);
+    final stable = stability >= 75;
+    final tone = stable ? _emerald : _amber;
+    final solid = map.edges.where((e) => e.solid).length;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: ZadWorldColors.darkSurface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: ZadWorldColors.darkOutline),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Row(
+              children: <Widget>[
+                SizedBox.square(
+                  dimension: 48,
+                  child: CustomPaint(
+                    painter: _GaugePainter(stability / 100, tone),
+                    child: Center(
+                      child: Text(
+                        '$stability%',
+                        style: ZadType.labelSmall.copyWith(
+                          color: _text,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        l.brainTelemetryGauge,
+                        style: ZadType.labelSmall.copyWith(color: _textDim),
+                      ),
+                      Text(
+                        stable ? l.brainTelemetryStable : l.brainTelemetryAlert,
+                        style: ZadType.titleSmall.copyWith(
+                          color: tone,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: <Widget>[
+                    Text(
+                      l.brainTelemetryDecisions,
+                      style: ZadType.labelSmall.copyWith(color: _textDim),
+                    ),
+                    Text(
+                      // LRM first: in an RTL run a bare «+0» reads «0+».
+                      '\u200e+${inputs.insights.length}',
+                      style: ZadType.titleMedium.copyWith(
+                        color: _cyan,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              l.brainTelemetryLinks(solid, map.edges.length),
+              style: ZadType.labelSmall.copyWith(color: _textDim),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
               spacing: 16,
               runSpacing: 6,
               children: <Widget>[
@@ -444,8 +448,8 @@ class _KnowledgeMapBodyState extends ConsumerState<KnowledgeMapBody>
                 ),
               ],
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -483,7 +487,7 @@ class _DomainChips extends StatelessWidget {
               for (final d in domains)
                 _Chip(
                   label: mapDomainLabel(d.key),
-                  color: _color(d),
+                  color: mapDomainColor(d),
                   selected: focus == d.key,
                   onTap: () => onPick(d.key),
                 ),
@@ -550,25 +554,6 @@ class _Chip extends StatelessWidget {
   );
 }
 
-/// Kotlin's `drawKmGrid`: a 24dp grid at 35%.
-class _GridPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final p = Paint()
-      ..color = _grid.withValues(alpha: 0.35)
-      ..strokeWidth = 1;
-    for (var x = 0.0; x < size.width; x += 24) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), p);
-    }
-    for (var y = 0.0; y < size.height; y += 24) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), p);
-    }
-  }
-
-  @override
-  bool shouldRepaint(_GridPainter old) => false;
-}
-
 class _LegendDot extends StatelessWidget {
   const new({required this.color, required this.dashed, required this.label});
 
@@ -593,185 +578,6 @@ class _LegendDot extends StatelessWidget {
       ),
     ],
   );
-}
-
-/// Kotlin's `SciFiTelemetryBar`.
-class _Telemetry extends StatelessWidget {
-  const new({
-    required this.wave,
-    required this.blink,
-    required this.activeLinks,
-    required this.totalLinks,
-    required this.insights,
-    required this.budgetRatio,
-  });
-
-  final Animation<double> wave;
-  final Animation<double> blink;
-  final int activeLinks;
-  final int totalLinks;
-  final int insights;
-  final double budgetRatio;
-
-  @override
-  Widget build(BuildContext context) {
-    final l = context.l10n;
-    final stability = (budgetRatio * 100).toInt().clamp(10, 100);
-    final stable = stability >= 75;
-    TextStyle mono(double size, Color color, {bool bold = false}) =>
-        ZadType.labelSmall.copyWith(
-          fontSize: size,
-          color: color,
-          fontWeight: bold ? FontWeight.bold : null,
-        );
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: ZadPalette.sciFiCardBg.withValues(alpha: 0.92),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: _cyan.withValues(alpha: 0.28)),
-      ),
-      child: Row(
-        children: <Widget>[
-          Expanded(
-            flex: 11,
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: AlignmentDirectional.centerStart,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Row(
-                    children: <Widget>[
-                      FadeTransition(
-                        opacity: Tween<double>(begin: 0.35, end: 1).animate(
-                          CurvedAnimation(
-                            parent: blink,
-                            curve: Curves.fastOutSlowIn,
-                          ),
-                        ),
-                        child: Container(
-                          width: 6,
-                          height: 6,
-                          decoration: const BoxDecoration(
-                            color: _emerald,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 5),
-                      Text(
-                        l.brainTelemetryOnline,
-                        style: mono(10, _emerald, bold: true),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 3),
-                  SizedBox(
-                    width: 85,
-                    height: 12,
-                    child: AnimatedBuilder(
-                      animation: wave,
-                      builder: (_, _) =>
-                          CustomPaint(painter: _WavePainter(wave.value * 6.28)),
-                    ),
-                  ),
-                  Text(
-                    l.brainTelemetryLinks(activeLinks, totalLinks),
-                    style: mono(9, _textDim),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          Expanded(
-            flex: 10,
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Column(
-                children: <Widget>[
-                  Text(l.brainTelemetryOps, style: mono(9, _textDim)),
-                  Text(
-                    // LRM first: in an RTL run a bare «+0» reads «0+».
-                    '\u200e+$insights',
-                    style: ZadType.titleMedium.copyWith(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w900,
-                      color: _cyan,
-                    ),
-                  ),
-                  Text(l.brainTelemetryDecisions, style: mono(9, _emerald)),
-                ],
-              ),
-            ),
-          ),
-          Row(
-            children: <Widget>[
-              SizedBox.square(
-                dimension: 36,
-                child: CustomPaint(
-                  painter: _GaugePainter(
-                    stability / 100,
-                    stable ? _emerald : _amber,
-                  ),
-                  child: Center(
-                    child: Text(
-                      '$stability%',
-                      style: mono(9, _text, bold: true),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(l.brainTelemetryGauge, style: mono(9, _textDim)),
-                  Text(
-                    stable ? l.brainTelemetryStable : l.brainTelemetryAlert,
-                    style: mono(10, stable ? _emerald : _amber, bold: true),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _WavePainter extends CustomPainter {
-  new(this.offset);
-
-  final double offset;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final step = size.width / 16;
-    final mid = size.height / 2;
-    final path = Path();
-    for (var i = 0; i <= 16; i++) {
-      final x = i * step;
-      final y = mid + math.sin(i * 0.7 + offset) * (mid * 0.7);
-      if (i == 0) {
-        path.moveTo(x, y);
-      } else {
-        path.lineTo(x, y);
-      }
-    }
-    canvas.drawPath(
-      path,
-      Paint()
-        ..color = _cyan
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.2,
-    );
-  }
-
-  @override
-  bool shouldRepaint(_WavePainter old) => old.offset != offset;
 }
 
 class _GaugePainter extends CustomPainter {
@@ -811,625 +617,6 @@ class _GaugePainter extends CustomPainter {
   @override
   bool shouldRepaint(_GaugePainter old) =>
       old.fraction != fraction || old.color != color;
-}
-
-/// A domain projected onto the screen.
-typedef _Projected = ({
-  MapDomain domain,
-  double x,
-  double y,
-  double z,
-  double scale,
-  double alpha,
-});
-
-/// Kotlin's golden-spiral point [i] of [n] on the unit sphere.
-(double, double, double) _spherePoint(int i, int n) {
-  final phi = math.acos(1 - 2 * (i + 0.5) / n);
-  final theta = math.pi * (1 + math.sqrt(5)) * (i + 0.5);
-  return (
-    math.sin(phi) * math.cos(theta),
-    math.cos(phi),
-    math.sin(phi) * math.sin(theta),
-  );
-}
-
-/// Kotlin's `DomainRing`: the 3D sphere.
-class _DomainRing extends StatefulWidget {
-  const new({
-    required this.map,
-    required this.live,
-    required this.particles,
-    required this.orbit,
-    required this.onSelect,
-    super.key,
-  });
-
-  final KnowledgeMap map;
-  final Animation<double> live;
-  final Animation<double> particles;
-  final Animation<double> orbit;
-  final ValueChanged<MapDomainKey> onSelect;
-
-  @override
-  State<_DomainRing> createState() => _DomainRingState();
-}
-
-class _DomainRingState extends State<_DomainRing>
-    with TickerProviderStateMixin {
-  static const double _minZoom = 0.7;
-  static const double _maxZoom = 2.2;
-
-  double _rotX = 14;
-  double _rotY = 0;
-  double _zoom = 1;
-  double _zoomAtStart = 1;
-  bool _atZoomEnd = false;
-
-  /// The turn a flick leaves behind.
-  late final AnimationController _spin = AnimationController.unbounded(
-    vsync: this,
-  )..addListener(() => setState(() => _rotY = _spin.value));
-
-  /// A button's zoom, eased rather than jumped.
-  late final AnimationController _zoomer =
-      AnimationController(
-        vsync: this,
-        duration: ZadDuration.quick,
-      )..addListener(() {
-        if (_zooming case final zooming?) setState(() => _zoom = zooming.value);
-      });
-  Animation<double>? _zooming;
-
-  /// The nodes spreading out of the core when the ring appears.
-  late final AnimationController _enter = AnimationController(
-    vsync: this,
-    duration: ZadDuration.settle,
-  );
-
-  static final List<(double, double, double)> _ambient =
-      <(double, double, double)>[
-        for (var i = 0; i < 40; i++) _spherePoint(i, 40),
-      ];
-
-  bool get _still => MediaQuery.disableAnimationsOf(context);
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (_still) {
-      _enter.value = 1;
-    } else if (_enter.isDismissed) {
-      _enter.forward();
-    }
-  }
-
-  @override
-  void dispose() {
-    _spin.dispose();
-    _zoomer.dispose();
-    _enter.dispose();
-    super.dispose();
-  }
-
-  void _onScaleStart(ScaleStartDetails d) {
-    _spin.stop();
-    _zoomer.stop();
-    _zoomAtStart = _zoom;
-    _atZoomEnd = false;
-  }
-
-  void _onScaleUpdate(ScaleUpdateDetails d) => setState(() {
-    _rotY += d.focalPointDelta.dx * 0.45;
-    _rotX = (_rotX - d.focalPointDelta.dy * 0.45).clamp(-75, 75);
-    if (d.pointerCount < 2) return;
-    final wanted = _zoomAtStart * d.scale;
-    final zoom = wanted.clamp(_minZoom, _maxZoom);
-    // One tick on reaching the end, not one per frame spent against it.
-    final atEnd = zoom != wanted;
-    if (atEnd && !_atZoomEnd) unawaited(HapticFeedback.lightImpact());
-    _atZoomEnd = atEnd;
-    _zoom = zoom;
-  });
-
-  void _onScaleEnd(ScaleEndDetails d) {
-    if (_still || d.pointerCount > 0) return;
-    final velocity = d.velocity.pixelsPerSecond.dx.clamp(-2000.0, 2000.0);
-    if (velocity.abs() < 60) return;
-    _spin.value = _rotY;
-    _spin.animateWith(
-      FrictionSimulation(
-        0.135,
-        _rotY,
-        velocity * 0.45,
-        tolerance: const Tolerance(velocity: 1),
-      ),
-    );
-  }
-
-  void _zoomTo(double target) {
-    final zoom = target.clamp(_minZoom, _maxZoom);
-    if (zoom == _zoom) {
-      unawaited(HapticFeedback.lightImpact());
-      return;
-    }
-    unawaited(HapticFeedback.selectionClick());
-    if (_still) {
-      setState(() => _zoom = zoom);
-      return;
-    }
-    _zooming = Tween<double>(
-      begin: _zoom,
-      end: zoom,
-    ).animate(CurvedAnimation(parent: _zoomer, curve: ZadCurves.standard));
-    _zoomer.forward(from: 0);
-  }
-
-  @override
-  Widget build(BuildContext context) => GestureDetector(
-    onScaleStart: _onScaleStart,
-    onScaleUpdate: _onScaleUpdate,
-    onScaleEnd: _onScaleEnd,
-    child: LayoutBuilder(
-      builder: (context, c) => AnimatedBuilder(
-        animation: Listenable.merge(<Listenable>[
-          widget.live,
-          widget.particles,
-          widget.orbit,
-          _enter,
-        ]),
-        builder: (context, _) => _frame(context, c.biggest),
-      ),
-    ),
-  );
-
-  Widget _frame(BuildContext context, Size size) {
-    final domains = widget.map.domains;
-    final center = Offset(size.width / 2, size.height / 2);
-    // From a quarter out, never from nothing: the camera below is a multiple
-    // of the radius and divides by it.
-    final opening = 0.25 + 0.75 * Curves.easeOutBack.transform(_enter.value);
-    final radius =
-        math.max(math.min(size.width, size.height) / 2 - 48, 24) *
-        _zoom *
-        opening;
-    final camera = radius * 2.5;
-    final rotY = (_rotY + widget.orbit.value * 360) % 360;
-    final cx = math.cos(_rotX * math.pi / 180);
-    final sx = math.sin(_rotX * math.pi / 180);
-    final cy = math.cos(rotY * math.pi / 180);
-    final sy = math.sin(rotY * math.pi / 180);
-    // Kotlin's live pulse: 0.35 → 0.95, FastOutSlowIn.
-    final liveAlpha =
-        0.35 + 0.6 * Curves.fastOutSlowIn.transform(widget.live.value);
-
-    (double, double, double) project(double x, double y, double z) {
-      final y1 = y * cx - z * sx;
-      final z1 = y * sx + z * cx;
-      final x2 = x * cy + z1 * sy;
-      final z2 = -x * sy + z1 * cy;
-      final f = camera / (camera + z2);
-      return (center.dx + x2 * f, center.dy + y1 * f, z2);
-    }
-
-    final projected = <_Projected>[
-      for (var i = 0; i < domains.length; i++)
-        () {
-          final (ux, uy, uz) = _spherePoint(i, domains.length);
-          final (px, py, pz) = project(ux * radius, uy * radius, uz * radius);
-          final depth = radius == 0 ? 0.0 : (pz / radius).clamp(-1.0, 1.0);
-          return (
-            domain: domains[i],
-            x: px,
-            y: py,
-            z: pz,
-            scale: (1 - depth * 0.35).clamp(0.65, 1.35),
-            alpha: (0.65 - depth * 0.35).clamp(0.25, 1.0),
-          );
-        }(),
-    ];
-    final ambient = <(double, double, double)>[
-      for (final (ux, uy, uz) in _ambient)
-        project(ux * radius, uy * radius, uz * radius),
-    ];
-    final sorted = [...projected]..sort((a, b) => a.z.compareTo(b.z));
-    final scheme = Theme.of(context).colorScheme;
-
-    return Stack(
-      // Zoomed in, the nodes would otherwise run over the telemetry.
-      clipBehavior: _zoom > 1 ? Clip.hardEdge : Clip.none,
-      children: <Widget>[
-        Positioned.fill(
-          child: CustomPaint(
-            painter: _SpherePainter(
-              center: center,
-              radius: radius,
-              ambient: ambient,
-              nodes: projected,
-              edges: widget.map.edges,
-              liveEdges: widget.map.liveEdges,
-              particle: widget.particles.value,
-              liveAlpha: liveAlpha,
-              primary: scheme.primary,
-              edgeParticle: context.zadExt.primaryLight,
-            ),
-          ),
-        ),
-        Positioned(
-          left: center.dx - 36,
-          top: center.dy - 36,
-          child: Container(
-            width: 72,
-            height: 72,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: const RadialGradient(
-                colors: <Color>[_cyan, _emerald, ZadPalette.sciFiEmeraldDark],
-              ),
-              border: Border.all(
-                color: _cyan.withValues(alpha: 0.85),
-                width: 2,
-              ),
-            ),
-            // A fixed 72dp circle: scaled down at large text, not cut.
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  Text(
-                    'زاد',
-                    style: ZadType.titleSmall.copyWith(
-                      fontWeight: FontWeight.w900,
-                      color: _bg,
-                    ),
-                  ),
-                  Text(
-                    'CORE.3D',
-                    style: ZadType.labelSmall.copyWith(
-                      fontSize: 7.5,
-                      fontWeight: FontWeight.bold,
-                      color: _bg.withValues(alpha: 0.85),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-        for (final n in sorted)
-          _NodeCard(
-            node: n,
-            isLive: widget.map.liveDomains.contains(n.domain.key),
-            liveAlpha: liveAlpha,
-            onTap: () => widget.onSelect(n.domain.key),
-          ),
-        PositionedDirectional(
-          end: 16,
-          bottom: 16,
-          child: Column(
-            children: <Widget>[
-              _RoundControl(
-                icon: Icons.add,
-                label: 'تكبير',
-                color: _cyan,
-                onTap: () => _zoomTo(_zoom * 1.2),
-              ),
-              const SizedBox(height: 8),
-              _RoundControl(
-                icon: Icons.remove,
-                label: 'تصغير',
-                color: _cyan,
-                onTap: () => _zoomTo(_zoom / 1.2),
-              ),
-              const SizedBox(height: 8),
-              _RoundControl(
-                icon: Icons.restart_alt,
-                label: 'إعادة ضبط',
-                color: _emerald,
-                onTap: () {
-                  _spin.stop();
-                  setState(() {
-                    _rotX = 14;
-                    _rotY = 0;
-                  });
-                  _zoomTo(1);
-                },
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _SpherePainter extends CustomPainter {
-  new({
-    required this.center,
-    required this.radius,
-    required this.ambient,
-    required this.nodes,
-    required this.edges,
-    required this.liveEdges,
-    required this.particle,
-    required this.liveAlpha,
-    required this.primary,
-    required this.edgeParticle,
-  });
-
-  final Offset center;
-  final double radius;
-  final List<(double, double, double)> ambient;
-  final List<_Projected> nodes;
-  final List<MapEdge> edges;
-  final Set<MapEdge> liveEdges;
-  final double particle;
-  final double liveAlpha;
-  final Color primary;
-  final Color edgeParticle;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (radius <= 0) return;
-    // 1. The ambient particle cloud.
-    for (final (px, py, pz) in ambient) {
-      final a = (0.5 - (pz / radius) * 0.35).clamp(0.08, 0.65);
-      canvas.drawCircle(
-        Offset(px, py),
-        pz < 0 ? 2.4 : 1.4,
-        Paint()..color = ZadPalette.sciFiCyanSoft.withValues(alpha: a),
-      );
-    }
-    // 2. The core's halo.
-    final halo = radius * 0.95;
-    canvas.drawCircle(
-      center,
-      halo,
-      Paint()
-        ..shader = ui.Gradient.radial(
-          center,
-          halo,
-          <Color>[
-            primary.withValues(alpha: 0.22 * liveAlpha),
-            _cyan.withValues(alpha: 0.06 * liveAlpha),
-            Colors.transparent,
-          ],
-          // Compose spreads three colours evenly; dart:ui needs it said.
-          const <double>[0, 0.5, 1],
-        ),
-    );
-    // 3. The guide rings.
-    final ring = Paint()
-      ..color = _grid.withValues(alpha: 0.35)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1;
-    for (final f in <double>[0.4, 0.7, 1]) {
-      canvas.drawCircle(center, radius * f, ring);
-    }
-    // 4. Core → node filaments, each with its energy particle.
-    for (final n in nodes) {
-      final end = Offset(n.x, n.y);
-      final c = _color(n.domain);
-      final a = (n.alpha * 0.55).clamp(0.12, 0.85);
-      canvas
-        ..drawLine(
-          center,
-          end,
-          Paint()
-            ..color = c.withValues(alpha: a * 0.4)
-            ..strokeWidth = 4 * n.scale,
-        )
-        ..drawLine(
-          center,
-          end,
-          Paint()
-            ..color = c.withValues(alpha: a)
-            ..strokeWidth = 1.5 * n.scale,
-        )
-        ..drawCircle(
-          Offset.lerp(center, end, particle)!,
-          3.2 * n.scale,
-          Paint()..color = c,
-        );
-    }
-    // 5. The edges: solid (computed) or dashed (outside the sum).
-    final byKey = <MapDomainKey, _Projected>{
-      for (final n in nodes) n.domain.key: n,
-    };
-    for (final e in edges) {
-      final from = byKey[e.from];
-      final to = byKey[e.to];
-      if (from == null || to == null) continue;
-      final start = Offset(from.x, from.y);
-      final end = Offset(to.x, to.y);
-      final avg = ((from.alpha + to.alpha) / 2).clamp(0.15, 0.9);
-      final paint = Paint()
-        ..color = _textDim.withValues(alpha: e.solid ? avg * 0.75 : avg * 0.35)
-        ..strokeWidth = e.solid ? 2 : 1.2;
-      if (e.solid) {
-        canvas
-          ..drawLine(start, end, paint)
-          ..drawCircle(
-            Offset.lerp(start, end, particle)!,
-            2.4,
-            Paint()..color = edgeParticle,
-          );
-      } else {
-        _dashed(canvas, start, end, paint);
-      }
-      if (liveEdges.contains(e)) {
-        canvas.drawLine(
-          start,
-          end,
-          Paint()
-            ..color = edgeParticle.withValues(alpha: liveAlpha * avg)
-            ..strokeWidth = 2.8,
-        );
-      }
-    }
-  }
-
-  /// Kotlin's `dashPathEffect(12, 10)` in pixels.
-  void _dashed(Canvas canvas, Offset a, Offset b, Paint p) {
-    final total = (b - a).distance;
-    if (total == 0) return;
-    final dir = (b - a) / total;
-    for (var d = 0.0; d < total; d += 22) {
-      canvas.drawLine(a + dir * d, a + dir * math.min(d + 12, total), p);
-    }
-  }
-
-  @override
-  bool shouldRepaint(_SpherePainter old) => true;
-}
-
-class _NodeCard extends StatelessWidget {
-  const new({
-    required this.node,
-    required this.isLive,
-    required this.liveAlpha,
-    required this.onTap,
-  });
-
-  final _Projected node;
-  final bool isLive;
-  final double liveAlpha;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final d = node.domain;
-    final c = _color(d);
-    final width = 88 * node.scale;
-    return Positioned(
-      left: node.x - width / 2,
-      top: node.y - 36 * node.scale,
-      width: width,
-      child: Opacity(
-        opacity: node.alpha,
-        child: Transform.scale(
-          scale: node.scale,
-          child: ZadPressable(
-            onPressed: onTap,
-            scale: 0.94,
-            semanticLabel: mapDomainLabel(d.key),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Stack(
-                  alignment: Alignment.center,
-                  clipBehavior: Clip.none,
-                  children: <Widget>[
-                    Container(
-                      width: 68,
-                      height: 68,
-                      decoration: BoxDecoration(
-                        gradient: RadialGradient(
-                          colors: <Color>[
-                            c.withValues(
-                              alpha: isLive ? 0.50 * liveAlpha : 0.25,
-                            ),
-                            Colors.transparent,
-                          ],
-                        ),
-                      ),
-                    ),
-                    Container(
-                      width: 54,
-                      height: 54,
-                      decoration: BoxDecoration(
-                        color: ZadPalette.sciFiNodeBg.withValues(alpha: 0.9),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: c.withValues(alpha: isLive ? 0.95 : 0.55),
-                          width: isLive ? 1.5 : 1,
-                        ),
-                      ),
-                      child: Icon(_icon(d.key), color: c, size: 24),
-                    ),
-                    if (d.count > 0)
-                      PositionedDirectional(
-                        top: 3,
-                        end: 3,
-                        child: Container(
-                          width: 18,
-                          height: 18,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: c,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: _bg, width: 1.2),
-                          ),
-                          child: Text(
-                            '${d.count}',
-                            style: const TextStyle(
-                              fontSize: 9,
-                              fontWeight: FontWeight.bold,
-                              color: _bg,
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: ZadPalette.sciFiSheetBg.withValues(alpha: 0.92),
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: c.withValues(alpha: 0.45)),
-                  ),
-                  child: Text(
-                    mapDomainLabel(d.key),
-                    maxLines: 1,
-                    textAlign: TextAlign.center,
-                    style: ZadType.labelSmall.copyWith(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 9.5,
-                      color: c,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _RoundControl extends StatelessWidget {
-  const new({
-    required this.icon,
-    required this.label,
-    required this.color,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final Color color;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) => Material(
-    color: ZadPalette.sciFiButtonBg.withValues(alpha: 0.85),
-    shape: CircleBorder(side: BorderSide(color: color.withValues(alpha: 0.5))),
-    clipBehavior: Clip.antiAlias,
-    child: InkWell(
-      onTap: onTap,
-      child: SizedBox.square(
-        dimension: 44,
-        child: Icon(icon, size: 20, color: color, semanticLabel: label),
-      ),
-    ),
-  );
 }
 
 /// Kotlin's `DomainActionButton`.
@@ -1558,7 +745,7 @@ class _ItemRing extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = _color(domain);
+    final c = mapDomainColor(domain);
     final still = MediaQuery.disableAnimationsOf(context);
     if (domain.items.isEmpty) {
       return Padding(

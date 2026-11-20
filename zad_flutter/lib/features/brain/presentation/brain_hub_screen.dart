@@ -18,12 +18,10 @@ import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/brain/application/knowledge_map_controller.dart';
 import 'package:zad/features/brain/presentation/agent_action_log_screen.dart';
 import 'package:zad/features/brain/presentation/brain_health_screen.dart';
-import 'package:zad/features/brain/presentation/brain_world_scene.dart';
 import 'package:zad/features/brain/presentation/knowledge_map_screen.dart';
 import 'package:zad/features/brain/presentation/memory_graph_screen.dart';
 import 'package:zad/features/brain/presentation/memory_screen.dart';
 import 'package:zad/features/brain/presentation/staff_screen.dart';
-import 'package:zad/shared/orb/domain/companion_state.dart';
 import 'package:zad/shared/worlds/world_card.dart';
 import 'package:zad/shared/worlds/world_scaffold.dart';
 import 'package:zad/shared/worlds/world_tone.dart';
@@ -92,33 +90,19 @@ class BrainHubScreen extends ConsumerWidget {
         eyebrow: l.brainWorldEyebrow(nodes),
         title: l.worldLabelBrain,
         stateLine: l.brainWorldState,
-        scene: BrainWorldScene.new,
-        zado: const ZadWorldZado(
-          left: 150,
-          top: 52,
-          size: 130,
-          state: CompanionState.focused,
+        stage: const Padding(
+          padding: EdgeInsets.symmetric(horizontal: ZadSpacing.gutter),
+          child: _Stage(),
         ),
         slivers: <Widget>[
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(
+          const SliverPadding(
+            padding: EdgeInsets.fromLTRB(
               ZadSpacing.gutter,
               ZadSpacing.md,
               ZadSpacing.gutter,
               0,
             ),
-            sliver: SliverToBoxAdapter(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(ZadRadii.cardLarge),
-                child: const ColoredBox(
-                  color: ZadPalette.sciFiBg,
-                  child: SizedBox(
-                    height: 520,
-                    child: KnowledgeMapBody(embedded: true),
-                  ),
-                ),
-              ),
-            ),
+            sliver: SliverToBoxAdapter(child: BrainStatsCard()),
           ),
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(
@@ -153,6 +137,23 @@ class BrainHubScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// The map: the whole first screen under the title.
+class _Stage extends StatelessWidget {
+  const new();
+
+  @override
+  Widget build(BuildContext context) => ClipRRect(
+    borderRadius: BorderRadius.circular(ZadRadii.cardLarge),
+    child: DecoratedBox(
+      decoration: const BoxDecoration(color: ZadPalette.sciFiBg),
+      child: SizedBox(
+        height: MediaQuery.sizeOf(context).height < 700 ? 440 : 520,
+        child: const KnowledgeMapBody(),
+      ),
+    ),
+  );
 }
 
 class _Entry {

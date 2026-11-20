@@ -69,8 +69,9 @@ class ZadWorldScaffold extends ConsumerStatefulWidget {
   const new({
     required this.world,
     required this.title,
-    required this.scene,
     required this.slivers,
+    this.scene,
+    this.stage,
     this.eyebrow,
     this.stateLine,
     this.zado = const ZadWorldZado(),
@@ -81,7 +82,10 @@ class ZadWorldScaffold extends ConsumerStatefulWidget {
     this.dockHeight = 0,
     this.tone = ZadWorldTone.light,
     super.key,
-  });
+  }) : assert(
+         (scene == null) != (stage == null),
+         'a world has a scene or a stage, not both and not neither',
+       );
 
   /// Which world — its colour and its links.
   final ZadWorld world;
@@ -95,8 +99,13 @@ class ZadWorldScaffold extends ConsumerStatefulWidget {
   /// The one state line under the title, in the world colour.
   final String? stateLine;
 
-  /// The scene.
-  final ZadSceneBuilder scene;
+  /// The scene (with the companion in it).
+  final ZadSceneBuilder? scene;
+
+  /// Instead of a scene: a widget that is the world's whole first screen
+  /// under the title (the brain's interactive map, which holds the companion
+  /// itself).
+  final Widget? stage;
 
   /// The companion's pose and position.
   final ZadWorldZado zado;
@@ -250,7 +259,7 @@ class _ZadWorldScaffoldState extends ConsumerState<ZadWorldScaffold>
           ),
         ),
         const SizedBox(height: ZadSpacing.sm),
-        _scene(look),
+        widget.stage ?? _scene(look),
       ],
     );
   }
@@ -272,7 +281,7 @@ class _ZadWorldScaffoldState extends ConsumerState<ZadWorldScaffold>
                   Positioned.fill(
                     child: RepaintBoundary(
                       child: CustomPaint(
-                        painter: ScaledScene(widget.scene(_loop), s),
+                        painter: ScaledScene(widget.scene!(_loop), s),
                       ),
                     ),
                   ),
