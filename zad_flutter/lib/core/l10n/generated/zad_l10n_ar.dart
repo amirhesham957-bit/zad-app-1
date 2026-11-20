@@ -6392,6 +6392,97 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get settingsTermsBody => 'سياسة الاستخدام والخصوصية';
+
+  @override
+  String offersEyebrowMine(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count من إشعاراتك',
+      few: '$count من إشعاراتك',
+      two: 'اتنين من إشعاراتك',
+      one: 'واحد من إشعاراتك',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String offersStateCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count عرض شغال',
+      few: '$count عروض شغالة',
+      two: 'عرضين شغالين',
+      one: 'عرض واحد شغال',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get offersStateEmpty => 'مفيش عروض شغالة دلوقتي';
+
+  @override
+  String get offersMineTitle => 'من إشعاراتك';
+
+  @override
+  String get offersPartnerTitle => 'كوبونات لبلدك';
+
+  @override
+  String get offersCopy => 'انسخ';
+
+  @override
+  String offersCopied(String code) {
+    return 'اتنسخ الكود $code';
+  }
+
+  @override
+  String get offersNoCode => 'من غير كود';
+
+  @override
+  String get offersExpiresToday => 'بينتهي النهارده';
+
+  @override
+  String offersExpiresInDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'بينتهي بعد $count يوم',
+      few: 'بينتهي بعد $count أيام',
+      two: 'بينتهي بعد يومين',
+      one: 'بينتهي بكرة',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String offersPercentOff(String percent) {
+    return 'خصم $percent٪';
+  }
+
+  @override
+  String offersAmountOff(String amount, String currency) {
+    return 'خصم $amount $currency';
+  }
+
+  @override
+  String get offersFallbackTitle => 'عرض خاص';
+
+  @override
+  String get offersEmptyTitle => 'مفيش عروض شغالة';
+
+  @override
+  String get offersEmptyMessage =>
+      'أول ما يظهر كوبون لبلدك أو يوصلك إشعار بخصم من تطبيق تسوق، هتلاقيه هنا. اسحب لتحت عشان تحدّث.';
+
+  @override
+  String get offersNearbyTitle => 'عروض المحلات القريبة';
+
+  @override
+  String get offersNearbyMessage => 'أسعار الأسبوع ومحلات حواليك';
+
+  @override
+  String get offersOpenFailed => 'ماقدرناش نفتح العرض';
 }
 
 /// The translations for Arabic, as used in Saudi Arabia (`ar_SA`).
@@ -8947,4 +9038,95 @@ class ZadL10nArSa extends ZadL10nAr {
 
   @override
   String get settingsAdsUnavailable => 'ما فيه اختيارات خصوصية متاحة الحين';
+
+  @override
+  String offersEyebrowMine(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count من إشعاراتك',
+      few: '$count من إشعاراتك',
+      two: 'اثنين من إشعاراتك',
+      one: 'واحد من إشعاراتك',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String offersStateCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count عرض شغال',
+      few: '$count عروض شغالة',
+      two: 'عرضين شغالين',
+      one: 'عرض واحد شغال',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get offersStateEmpty => 'ما فيه عروض شغالة الحين';
+
+  @override
+  String get offersMineTitle => 'من إشعاراتك';
+
+  @override
+  String get offersPartnerTitle => 'كوبونات لبلدك';
+
+  @override
+  String get offersCopy => 'انسخ';
+
+  @override
+  String offersCopied(String code) {
+    return 'اننسخ الكود $code';
+  }
+
+  @override
+  String get offersNoCode => 'بدون كود';
+
+  @override
+  String get offersExpiresToday => 'ينتهي اليوم';
+
+  @override
+  String offersExpiresInDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'ينتهي بعد $count يوم',
+      few: 'ينتهي بعد $count أيام',
+      two: 'ينتهي بعد يومين',
+      one: 'ينتهي بكرة',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String offersPercentOff(String percent) {
+    return 'خصم $percent٪';
+  }
+
+  @override
+  String offersAmountOff(String amount, String currency) {
+    return 'خصم $amount $currency';
+  }
+
+  @override
+  String get offersFallbackTitle => 'عرض خاص';
+
+  @override
+  String get offersEmptyTitle => 'ما فيه عروض شغالة';
+
+  @override
+  String get offersEmptyMessage =>
+      'أول ما يظهر كوبون لبلدك أو يوصلك إشعار بخصم من تطبيق تسوق، تلقاه هنا. اسحب لتحت للتحديث.';
+
+  @override
+  String get offersNearbyTitle => 'عروض المحلات القريبة';
+
+  @override
+  String get offersNearbyMessage => 'أسعار الأسبوع والمحلات اللي حولك';
+
+  @override
+  String get offersOpenFailed => 'ما قدرنا نفتح العرض';
 }

@@ -10813,6 +10813,114 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'سياسة الاستخدام والخصوصية'**
   String get settingsTermsBody;
+
+  /// Offers world eyebrow: how many of the live offers came from the customer's notifications.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{واحد من إشعاراتك} =2{اتنين من إشعاراتك} few{{count} من إشعاراتك} other{{count} من إشعاراتك}}'**
+  String offersEyebrowMine(int count);
+
+  /// Offers world state line: the number of live offers.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{عرض واحد شغال} =2{عرضين شغالين} few{{count} عروض شغالة} other{{count} عرض شغال}}'**
+  String offersStateCount(int count);
+
+  /// Offers world state line with nothing live.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش عروض شغالة دلوقتي'**
+  String get offersStateEmpty;
+
+  /// Section: offers seen in the customer's notifications.
+  ///
+  /// In ar, this message translates to:
+  /// **'من إشعاراتك'**
+  String get offersMineTitle;
+
+  /// Section: partner coupons for the customer's country.
+  ///
+  /// In ar, this message translates to:
+  /// **'كوبونات لبلدك'**
+  String get offersPartnerTitle;
+
+  /// Button: copy the promo code.
+  ///
+  /// In ar, this message translates to:
+  /// **'انسخ'**
+  String get offersCopy;
+
+  /// Snackbar after the code was copied.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتنسخ الكود {code}'**
+  String offersCopied(String code);
+
+  /// Label of an offer that needs no code.
+  ///
+  /// In ar, this message translates to:
+  /// **'من غير كود'**
+  String get offersNoCode;
+
+  /// Offer ends today.
+  ///
+  /// In ar, this message translates to:
+  /// **'بينتهي النهارده'**
+  String get offersExpiresToday;
+
+  /// Offer ends in some days.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{بينتهي بكرة} =2{بينتهي بعد يومين} few{بينتهي بعد {count} أيام} other{بينتهي بعد {count} يوم}}'**
+  String offersExpiresInDays(int count);
+
+  /// Discount in percent.
+  ///
+  /// In ar, this message translates to:
+  /// **'خصم {percent}٪'**
+  String offersPercentOff(String percent);
+
+  /// Discount as an amount.
+  ///
+  /// In ar, this message translates to:
+  /// **'خصم {amount} {currency}'**
+  String offersAmountOff(String amount, String currency);
+
+  /// Title of an offer the source gave no words for.
+  ///
+  /// In ar, this message translates to:
+  /// **'عرض خاص'**
+  String get offersFallbackTitle;
+
+  /// Empty state title of the offers world.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش عروض شغالة'**
+  String get offersEmptyTitle;
+
+  /// Empty state guidance of the offers world.
+  ///
+  /// In ar, this message translates to:
+  /// **'أول ما يظهر كوبون لبلدك أو يوصلك إشعار بخصم من تطبيق تسوق، هتلاقيه هنا. اسحب لتحت عشان تحدّث.'**
+  String get offersEmptyMessage;
+
+  /// Row opening the nearby shops and deals screen.
+  ///
+  /// In ar, this message translates to:
+  /// **'عروض المحلات القريبة'**
+  String get offersNearbyTitle;
+
+  /// Subtitle of the nearby deals row.
+  ///
+  /// In ar, this message translates to:
+  /// **'أسعار الأسبوع ومحلات حواليك'**
+  String get offersNearbyMessage;
+
+  /// Snackbar when an offer link cannot be opened.
+  ///
+  /// In ar, this message translates to:
+  /// **'ماقدرناش نفتح العرض'**
+  String get offersOpenFailed;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

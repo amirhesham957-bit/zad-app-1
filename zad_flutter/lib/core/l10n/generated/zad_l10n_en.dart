@@ -6487,4 +6487,89 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get settingsTermsBody => 'Usage and privacy policy';
+
+  @override
+  String offersEyebrowMine(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count from your notifications',
+      one: '1 from your notifications',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String offersStateCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count live offers',
+      one: '1 live offer',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get offersStateEmpty => 'No live offers right now';
+
+  @override
+  String get offersMineTitle => 'From your notifications';
+
+  @override
+  String get offersPartnerTitle => 'Coupons for your country';
+
+  @override
+  String get offersCopy => 'Copy';
+
+  @override
+  String offersCopied(String code) {
+    return 'Code $code copied';
+  }
+
+  @override
+  String get offersNoCode => 'No code needed';
+
+  @override
+  String get offersExpiresToday => 'Ends today';
+
+  @override
+  String offersExpiresInDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Ends in $count days',
+      one: 'Ends tomorrow',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String offersPercentOff(String percent) {
+    return '$percent% off';
+  }
+
+  @override
+  String offersAmountOff(String amount, String currency) {
+    return '$amount $currency off';
+  }
+
+  @override
+  String get offersFallbackTitle => 'Special offer';
+
+  @override
+  String get offersEmptyTitle => 'No live offers';
+
+  @override
+  String get offersEmptyMessage =>
+      'When a coupon for your country shows up, or a shopping app sends you a discount notification, it lands here. Pull down to refresh.';
+
+  @override
+  String get offersNearbyTitle => 'Nearby shop deals';
+
+  @override
+  String get offersNearbyMessage => 'This week\'s prices and shops around you';
+
+  @override
+  String get offersOpenFailed => 'Could not open the offer';
 }

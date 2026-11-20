@@ -49,6 +49,7 @@ import 'package:zad/features/notifications/presentation/notification_center_scre
 import 'package:zad/features/obligations/application/obligations_controller.dart';
 import 'package:zad/features/obligations/domain/obligation.dart';
 import 'package:zad/features/obligations/presentation/obligations_section.dart';
+import 'package:zad/features/offers/presentation/offers_screen.dart';
 import 'package:zad/features/paywall/presentation/paywall_screen.dart';
 import 'package:zad/features/pharmacy/presentation/pharmacy_view.dart';
 import 'package:zad/features/places/presentation/keep_alive_guide.dart';
@@ -120,6 +121,7 @@ void wireScreens() {
             dueDay: dueDay,
           );
   ZadScreens.showNearbyDealsScreen = showNearbyDealsScreen;
+  ZadScreens.showOffersScreen = showOffersScreen;
   ZadScreens.showNotificationCenter = showNotificationCenter;
   ZadScreens.showCompanionStudio = showCompanionStudio;
   ZadScreens.showGamesHub = showGamesHub;
@@ -203,7 +205,8 @@ OpenScreen? _worldScreen(ZadWorld world) => switch (world) {
   ZadWorld.tas => ZadScreens.showTasbihaScreen,
   ZadWorld.prices => ZadScreens.showPricesScreen,
   ZadWorld.ach => ZadScreens.showAchievementsScreen,
-  ZadWorld.games || ZadWorld.offers => null,
+  ZadWorld.games => null,
+  ZadWorld.offers => ZadScreens.showOffersScreen,
 };
 
 /// Binds the slots.
