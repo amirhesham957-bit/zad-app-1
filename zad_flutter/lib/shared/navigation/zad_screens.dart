@@ -156,6 +156,10 @@ abstract final class ZadScreens {
   /// Shops near the customer.
   static late OpenScreen showNearbyDealsScreen;
 
+  // ── offers
+  /// «عروضي»: coupons, notification offers and nearby deals.
+  static late OpenScreen showOffersScreen;
+
   // ── places
   /// «أماكني»: place reminders, outings and the habits learned from them.
   static late OpenScreen showMyPlaces;

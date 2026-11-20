@@ -6558,5 +6558,110 @@
   "gamesWorldEmptyHint": "ابدأ بأي لعبة — أول جولة بتبدأ سلسلتك وبتكسب بذور.",
   "@gamesWorldEmptyHint": {
     "description": "World text."
+  },
+  "offersEyebrowMine": "{count, plural, =1{واحد من إشعاراتك} =2{اتنين من إشعاراتك} few{{count} من إشعاراتك} other{{count} من إشعاراتك}}",
+  "@offersEyebrowMine": {
+    "description": "Offers world eyebrow: how many of the live offers came from the customer's notifications.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "offersStateCount": "{count, plural, =1{عرض واحد شغال} =2{عرضين شغالين} few{{count} عروض شغالة} other{{count} عرض شغال}}",
+  "@offersStateCount": {
+    "description": "Offers world state line: the number of live offers.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "offersStateEmpty": "مفيش عروض شغالة دلوقتي",
+  "@offersStateEmpty": {
+    "description": "Offers world state line with nothing live."
+  },
+  "offersMineTitle": "من إشعاراتك",
+  "@offersMineTitle": {
+    "description": "Section: offers seen in the customer's notifications."
+  },
+  "offersPartnerTitle": "كوبونات لبلدك",
+  "@offersPartnerTitle": {
+    "description": "Section: partner coupons for the customer's country."
+  },
+  "offersCopy": "انسخ",
+  "@offersCopy": {
+    "description": "Button: copy the promo code."
+  },
+  "offersCopied": "اتنسخ الكود {code}",
+  "@offersCopied": {
+    "description": "Snackbar after the code was copied.",
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "offersNoCode": "من غير كود",
+  "@offersNoCode": {
+    "description": "Label of an offer that needs no code."
+  },
+  "offersExpiresToday": "بينتهي النهارده",
+  "@offersExpiresToday": {
+    "description": "Offer ends today."
+  },
+  "offersExpiresInDays": "{count, plural, =1{بينتهي بكرة} =2{بينتهي بعد يومين} few{بينتهي بعد {count} أيام} other{بينتهي بعد {count} يوم}}",
+  "@offersExpiresInDays": {
+    "description": "Offer ends in some days.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "offersPercentOff": "خصم {percent}٪",
+  "@offersPercentOff": {
+    "description": "Discount in percent.",
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "offersAmountOff": "خصم {amount} {currency}",
+  "@offersAmountOff": {
+    "description": "Discount as an amount.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
+  "offersFallbackTitle": "عرض خاص",
+  "@offersFallbackTitle": {
+    "description": "Title of an offer the source gave no words for."
+  },
+  "offersEmptyTitle": "مفيش عروض شغالة",
+  "@offersEmptyTitle": {
+    "description": "Empty state title of the offers world."
+  },
+  "offersEmptyMessage": "أول ما يظهر كوبون لبلدك أو يوصلك إشعار بخصم من تطبيق تسوق، هتلاقيه هنا. اسحب لتحت عشان تحدّث.",
+  "@offersEmptyMessage": {
+    "description": "Empty state guidance of the offers world."
+  },
+  "offersNearbyTitle": "عروض المحلات القريبة",
+  "@offersNearbyTitle": {
+    "description": "Row opening the nearby shops and deals screen."
+  },
+  "offersNearbyMessage": "أسعار الأسبوع ومحلات حواليك",
+  "@offersNearbyMessage": {
+    "description": "Subtitle of the nearby deals row."
+  },
+  "offersOpenFailed": "ماقدرناش نفتح العرض",
+  "@offersOpenFailed": {
+    "description": "Snackbar when an offer link cannot be opened."
   }
 }
