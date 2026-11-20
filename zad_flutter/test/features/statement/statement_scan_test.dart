@@ -194,20 +194,16 @@ void main() {
   });
 
   testWidgets('a statement the AI could not read shows no ad', (tester) async {
-    await pump(tester, (
-      name: 'shot.png',
-      bytes: Uint8List.fromList(<int>[1]),
-    ));
+    await pump(tester, (name: 'shot.png', bytes: Uint8List.fromList(<int>[1])));
     expect(find.textContaining('ما لقيتش حركات'), findsOneWidget);
     expect(find.byType(ZadInlineAd), findsNothing);
   });
 
   testWidgets('a failed statement read shows no ad', (tester) async {
-    await pump(
-      tester,
-      (name: 'shot.jpg', bytes: Uint8List.fromList(<int>[1])),
-      error: StateError('offline'),
-    );
+    await pump(tester, (
+      name: 'shot.jpg',
+      bytes: Uint8List.fromList(<int>[1]),
+    ), error: StateError('offline'));
     expect(find.byType(ZadInlineAd), findsNothing);
   });
 
