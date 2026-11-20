@@ -7,12 +7,12 @@ library;
 import 'package:flutter/material.dart';
 import 'package:zad/core/design/components/zad_pressable.dart';
 import 'package:zad/core/design/foundation/squircle.dart';
-import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
 import 'package:zad/shared/worlds/art/zad_art.dart';
+import 'package:zad/shared/worlds/world_tone.dart';
 import 'package:zad/shared/worlds/zad_world.dart';
 
 /// The strip for [world]; nothing at all when none of its links can open.
@@ -26,6 +26,7 @@ class ZadWorldLinks extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
+    final tone = ZadWorldTone.of(context);
     final open = <(ZadWorld, OpenScreen)>[
       for (final w in world.feeds)
         if (ZadScreens.worldScreen(w) case final screen?) (w, screen),
@@ -33,10 +34,10 @@ class ZadWorldLinks extends StatelessWidget {
     if (open.isEmpty) return const SizedBox.shrink();
     return DecoratedBox(
       decoration: ShapeDecoration(
-        color: ZadColors.surface,
+        color: tone.surface,
         shape: zadSquircle(
           ZadRadii.cardLarge,
-          side: BorderSide(color: ZadColors.outline, width: 1.5),
+          side: BorderSide(color: tone.outline, width: 1.5),
         ),
       ),
       child: Padding(
@@ -49,13 +50,11 @@ class ZadWorldLinks extends StatelessWidget {
                 children: <InlineSpan>[
                   TextSpan(
                     text: l.worldLinksTitle,
-                    style: ZadType.titleSmall.copyWith(color: ZadColors.ink),
+                    style: ZadType.titleSmall.copyWith(color: tone.ink),
                   ),
                   TextSpan(
                     text: '  ${l.worldLinksHint}',
-                    style: ZadType.labelMedium.copyWith(
-                      color: ZadColors.textTertiary,
-                    ),
+                    style: ZadType.labelMedium.copyWith(color: tone.inkMuted),
                   ),
                 ],
               ),

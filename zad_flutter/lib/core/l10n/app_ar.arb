@@ -2295,42 +2295,9 @@
       }
     }
   },
-  "zadStatusTitle": "حالة زاد",
-  "zadStatusAllGood": "زاد شغال وبيتابع",
-  "zadStatusNeedsFix": "في حاجة واقفة ومحتاجة منك خطوة",
-  "zadStatusAllButOne": "كله شغال ما عدا: {what}",
-  "@zadStatusAllButOne": {
-    "placeholders": {
-      "what": {
-        "type": "String"
-      }
-    }
-  },
-  "zadStatusWorking": "شغال",
-  "zadStatusStopped": "واقف",
-  "zadStatusMaybe": "ممكن يقف",
-  "zadStatusBank": "قراءة رسائل البنك",
-  "zadStatusBankOk": "زاد بيقرا رسائل البنك ويسجّلها.",
-  "zadStatusBankOff": "قراءة رسائل البنك متوقفة. شغّلها عشان رصيدك ومصاريفك تتحدّث لوحدها.",
-  "zadStatusBankStalled": "الخدمة مابقتش بتشوف إشعارات من فترة. لو هي مفعّلة: اطفيها وشغّلها تاني من الصفحة اللي هتفتح.",
-  "zadStatusBankSilent": "مفعّلة، بس لسه ماجاتش ولا رسالة. لو مستني رسالة من البنك ومجتش: اطفيها وشغّلها تاني.",
-  "zadStatusNotifications": "الإشعارات",
-  "zadStatusNotificationsOk": "تنبيهات الجرعات والفواتير والميزانية بتوصلك.",
-  "zadStatusNotificationsOff": "الإشعارات مقفولة، فتنبيهات الجرعات والفواتير مش هتوصلك.",
-  "zadStatusLocation": "الموقع",
-  "zadStatusLocationOk": "الموقع شغال، والعروض والمحلات القريبة بتتحسب من مكانك.",
-  "zadStatusLocationServiceOff": "الموقع مقفول في الموبايل، فالقراءات مش هتبقى من مكانك الحقيقي.",
-  "zadStatusLocationDenied": "زاد مش مسموحله يعرف مكانك، فالعروض والمحلات القريبة مش هتشتغل.",
-  "zadStatusBackground": "الموقع طول الوقت",
-  "zadStatusBackgroundOk": "تنبيهات الطريق شغالة حتى والتطبيق مقفول.",
-  "zadStatusBackgroundOff": "من غير «طول الوقت» تنبيهات الطريق مش هتشتغل والتطبيق مقفول.",
-  "zadStatusBattery": "توفير البطارية",
-  "zadStatusBatteryOk": "الموبايل مش بيقيّد زاد في الخلفية.",
-  "zadStatusBatteryWarn": "الموبايل ممكن يوقف زاد في الخلفية. اختار «بدون قيود» عشان القراءة ماتقطعش.",
-  "zadStatusFixOpenSettings": "افتح الإعدادات",
-  "zadStatusFixAllow": "اسمح",
-  "zadStatusFixLocationOn": "شغّل الموقع",
-  "zadStatusFixBattery": "فكّ القيود",
+  "homeBankOffBanner": "⚠️ قراءة رسائل البنك متوقفة.. اضغط هنا لإعادة تفعيلها لتحديث رصيدك ومصاريفك تلقائياً",
+  "homeBankStalledHint": "لو هي مفعّلة: اطفيها وشغّلها تاني من الصفحة اللي هتفتح.",
+  "homeLocationOffBanner": "📍 موقعك غير مفعّل.. فعّل اللوكيشن عشان زاد يربط عروض السوبرماركت والمحلات القريبة منك ويقوم بمهامه صح",
   "homeLocationLater": "مش دلوقتي",
   "channelCardTitle": "مفيش طريقة أوصلك بيها",
   "channelCardBody": "الإشعارات مقفولة وتليجرام مش مربوط، فمواعيد الدوا والفواتير وتنبيه الميزانية مش هتوصلك. واحدة منهم كفاية.",
@@ -3717,6 +3684,12 @@
   "profileExportSubtitle": "نسخة من كل اللي زاد عارفه عنك",
   "profileExportFailed": "معرفناش نجهز الملف، جرّب تاني",
   "profileExportSubject": "بياناتي من زاد",
+  "homeCareTitle": "اشتراكاتك وأدويتك",
+  "homeCareRenewsToday": "بيتجدد النهارده",
+  "homeCareRenewsTomorrow": "بيتجدد بكرة",
+  "homeCareRenewsInDays": "بيتجدد بعد {days} يوم",
+  "homeCareDoseAt": "الجرعة {time}",
+  "homeCareDoseNow": "جرعتها دلوقتي",
   "introSayPantry": "التلاجة دي بتاعتي!",
   "@introSayPantry": {
     "description": "Zado's bubble on the intro's pantry scene."
@@ -3842,6 +3815,232 @@
   "@consentTermsUpdated": {
     "description": "The month the terms were last updated, on the consent sheet; keep it equal to kTermsLastUpdated."
   },
+  "worldLabelBrain": "عقل زاد",
+  "@worldLabelBrain": {
+    "description": "A world's name, in the links strip and its own title."
+  },
+  "worldLabelChef": "شيف زاد",
+  "@worldLabelChef": {
+    "description": "A world's name, in the links strip and its own title."
+  },
+  "worldLabelInv": "المخزون",
+  "@worldLabelInv": {
+    "description": "A world's name, in the links strip and its own title."
+  },
+  "worldLabelShop": "التسوق",
+  "@worldLabelShop": {
+    "description": "A world's name, in the links strip and its own title."
+  },
+  "worldLabelTx": "المعاملات",
+  "@worldLabelTx": {
+    "description": "A world's name, in the links strip and its own title."
+  },
+  "worldLabelBudget": "الميزانية",
+  "@worldLabelBudget": {
+    "description": "A world's name, in the links strip and its own title."
+  },
+  "worldLabelStmt": "كشف الحساب",
+  "@worldLabelStmt": {
+    "description": "A world's name, in the links strip and its own title."
+  },
+  "worldLabelSubs": "الاشتراكات",
+  "@worldLabelSubs": {
+    "description": "A world's name, in the links strip and its own title."
+  },
+  "worldLabelPh": "الصيدلية",
+  "@worldLabelPh": {
+    "description": "A world's name, in the links strip and its own title."
+  },
+  "worldLabelAppt": "المواعيد",
+  "@worldLabelAppt": {
+    "description": "A world's name, in the links strip and its own title."
+  },
+  "worldLabelMaint": "الصيانة",
+  "@worldLabelMaint": {
+    "description": "A world's name, in the links strip and its own title."
+  },
+  "worldLabelDocs": "المستندات",
+  "@worldLabelDocs": {
+    "description": "A world's name, in the links strip and its own title."
+  },
+  "worldLabelPlaces": "أماكني",
+  "@worldLabelPlaces": {
+    "description": "A world's name, in the links strip and its own title."
+  },
+  "worldLabelComp": "رفيق زاد",
+  "@worldLabelComp": {
+    "description": "A world's name, in the links strip and its own title."
+  },
+  "worldLabelChat": "الشات",
+  "@worldLabelChat": {
+    "description": "A world's name, in the links strip and its own title."
+  },
+  "worldLabelNotif": "الإشعارات",
+  "@worldLabelNotif": {
+    "description": "A world's name, in the links strip and its own title."
+  },
+  "worldLabelProfile": "حسابي",
+  "@worldLabelProfile": {
+    "description": "A world's name, in the links strip and its own title."
+  },
+  "worldLabelPrem": "بريميوم",
+  "@worldLabelPrem": {
+    "description": "A world's name, in the links strip and its own title."
+  },
+  "worldLabelTas": "بستان التسبيح",
+  "@worldLabelTas": {
+    "description": "A world's name, in the links strip and its own title."
+  },
+  "worldLabelGames": "ألعاب زادو",
+  "@worldLabelGames": {
+    "description": "A world's name, in the links strip and its own title."
+  },
+  "worldLabelPrices": "أسعار النهارده",
+  "@worldLabelPrices": {
+    "description": "A world's name, in the links strip and its own title."
+  },
+  "worldLabelOffers": "عروضي",
+  "@worldLabelOffers": {
+    "description": "A world's name, in the links strip and its own title."
+  },
+  "worldLabelAch": "إنجازاتي",
+  "@worldLabelAch": {
+    "description": "A world's name, in the links strip and its own title."
+  },
+  "worldLinksTitle": "متصلة بـ",
+  "@worldLinksTitle": {
+    "description": "Links strip heading."
+  },
+  "worldLinksHint": "اللي بيحصل هنا بيأثر في:",
+  "@worldLinksHint": {
+    "description": "Links strip hint."
+  },
+  "worldBack": "رجوع",
+  "@worldBack": {
+    "description": "Back button of a world screen."
+  },
+  "pantryWorldEyebrow": "{count, plural, =0{لسه مفيش أصناف} =1{صنف واحد} =2{صنفين} few{{count} أصناف} other{{count} صنف}}",
+  "@pantryWorldEyebrow": {
+    "description": "Pantry world: the count above the title.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pantryWorldState": "{count, plural, =0{مفيش حاجة قربت تخلص} =1{حاجة واحدة قربت تخلص} =2{حاجتين قربوا يخلصوا} few{{count} حاجات قربت تخلص} other{{count} حاجة قربت تخلص}}",
+  "@pantryWorldState": {
+    "description": "Pantry world: the state line under the title.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pantryLegendLow": "{count} قربت تخلص",
+  "@pantryLegendLow": {
+    "description": "Pantry legend: items running out.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pantryLegendExpiring": "{count} هتبوظ قريب",
+  "@pantryLegendExpiring": {
+    "description": "Pantry legend: items about to expire.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pantryLegendOk": "{count} تمام",
+  "@pantryLegendOk": {
+    "description": "Pantry legend: items that are fine.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "brainWorldState": "متصل ويتعلم",
+  "brainWorldEyebrow": "{count, plural, =0{لسه مفيش عناصر} other{{count} عنصر متصل}}",
+  "@brainWorldEyebrow": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "brainFilterAll": "الكل",
+  "brainFilterLabel": "فلتر المجالات",
+  "brainNetworkEmptyTitle": "زاد لسه بيتعلم عنك",
+  "brainNetworkEmptyMessage": "سجّل مصاريفك أو ضيف مخزون وأدوية، وهتلاقي الشبكة بتكبر هنا.",
+  "brainCardsTitle": "جوه عقل زاد",
+  "brainCardStaffTitle": "فريق زاد",
+  "brainCardStaffBody": "اللي الموظفين لاحظوه في جولة الصبح على بيتك وفلوسك وعيلتك",
+  "brainCardMemoryTitle": "زاد عارف عني إيه",
+  "brainCardMemoryBody": "اللي زاد فاكره عنك وبيكلمك على أساسه — صحّحه أو خلّيه ينساه",
+  "brainCardGraphTitle": "شبكة زاد",
+  "brainCardGraphBody": "الناس والأماكن والحاجات اللي زاد عارفها ومترابطة إزاي — وصدّرها لأوبسيديان",
+  "brainCardMapTitle": "خريطة زاد",
+  "brainCardMapBody": "إزاي ميزانيتك واشتراكاتك وبيتك متصلين ببعض — بملء الشاشة",
+  "brainCardLogTitle": "سجل تعديلات زاد",
+  "brainCardLogBody": "كل حاجة زاد سجّلها أو عدّلها لك، وترجع فيها لو غلط",
+  "brainCardHealthTitle": "صحة عقل زاد",
+  "brainCardHealthBody": "زاد شغال في الخلفية ولا واقف — ولو واقف، ليه",
+  "brainTelemetryLinks": "الروابط: {active}/{total}",
+  "@brainTelemetryLinks": {
+    "placeholders": {
+      "active": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "brainTelemetryDecisions": "قرارات النهارده",
+  "brainTelemetryGauge": "مؤشر الثبات",
+  "brainTelemetryStable": "مستقر",
+  "brainTelemetryAlert": "تنبيه",
+  "zadStatusTitle": "حالة زاد",
+  "zadStatusAllGood": "زاد شغال وبيتابع",
+  "zadStatusNeedsFix": "في حاجة واقفة ومحتاجة منك خطوة",
+  "zadStatusAllButOne": "كله شغال ما عدا: {what}",
+  "@zadStatusAllButOne": {
+    "placeholders": {
+      "what": {
+        "type": "String"
+      }
+    }
+  },
+  "zadStatusWorking": "شغال",
+  "zadStatusStopped": "واقف",
+  "zadStatusMaybe": "ممكن يقف",
+  "zadStatusBank": "قراءة رسائل البنك",
+  "zadStatusBankOk": "زاد بيقرا رسائل البنك ويسجّلها.",
+  "zadStatusBankOff": "قراءة رسائل البنك متوقفة. شغّلها عشان رصيدك ومصاريفك تتحدّث لوحدها.",
+  "zadStatusBankStalled": "الخدمة مابقتش بتشوف إشعارات من فترة. لو هي مفعّلة: اطفيها وشغّلها تاني من الصفحة اللي هتفتح.",
+  "zadStatusBankSilent": "مفعّلة، بس لسه ماجاتش ولا رسالة. لو مستني رسالة من البنك ومجتش: اطفيها وشغّلها تاني.",
+  "zadStatusNotifications": "الإشعارات",
+  "zadStatusNotificationsOk": "تنبيهات الجرعات والفواتير والميزانية بتوصلك.",
+  "zadStatusNotificationsOff": "الإشعارات مقفولة، فتنبيهات الجرعات والفواتير مش هتوصلك.",
+  "zadStatusLocation": "الموقع",
+  "zadStatusLocationOk": "الموقع شغال، والعروض والمحلات القريبة بتتحسب من مكانك.",
+  "zadStatusLocationServiceOff": "الموقع مقفول في الموبايل، فالقراءات مش هتبقى من مكانك الحقيقي.",
+  "zadStatusLocationDenied": "زاد مش مسموحله يعرف مكانك، فالعروض والمحلات القريبة مش هتشتغل.",
+  "zadStatusBackground": "الموقع طول الوقت",
+  "zadStatusBackgroundOk": "تنبيهات الطريق شغالة حتى والتطبيق مقفول.",
+  "zadStatusBackgroundOff": "من غير «طول الوقت» تنبيهات الطريق مش هتشتغل والتطبيق مقفول.",
+  "zadStatusBattery": "توفير البطارية",
+  "zadStatusBatteryOk": "الموبايل مش بيقيّد زاد في الخلفية.",
+  "zadStatusBatteryWarn": "الموبايل ممكن يوقف زاد في الخلفية. اختار «بدون قيود» عشان القراءة ماتقطعش.",
+  "zadStatusFixOpenSettings": "افتح الإعدادات",
+  "zadStatusFixAllow": "اسمح",
+  "zadStatusFixLocationOn": "شغّل الموقع",
+  "zadStatusFixBattery": "فكّ القيود",
   "gamesHubButton": "ألعاب زادو",
   "@gamesHubButton": {
     "description": "Care sheet: opens the games hub."
@@ -4182,161 +4381,6 @@
   "starGameOver": "النجوم خلصت منك",
   "@starGameOver": {
     "description": "Star game: end card title."
-  },
-  "homeCareTitle": "اشتراكاتك وأدويتك",
-  "homeCareRenewsToday": "بيتجدد النهارده",
-  "homeCareRenewsTomorrow": "بيتجدد بكرة",
-  "homeCareRenewsInDays": "بيتجدد بعد {days} يوم",
-  "homeCareDoseAt": "الجرعة {time}",
-  "homeCareDoseNow": "جرعتها دلوقتي",
-  "worldLabelBrain": "عقل زاد",
-  "@worldLabelBrain": {
-    "description": "A world's name, in the links strip and its own title."
-  },
-  "worldLabelChef": "شيف زاد",
-  "@worldLabelChef": {
-    "description": "A world's name, in the links strip and its own title."
-  },
-  "worldLabelInv": "المخزون",
-  "@worldLabelInv": {
-    "description": "A world's name, in the links strip and its own title."
-  },
-  "worldLabelShop": "التسوق",
-  "@worldLabelShop": {
-    "description": "A world's name, in the links strip and its own title."
-  },
-  "worldLabelTx": "المعاملات",
-  "@worldLabelTx": {
-    "description": "A world's name, in the links strip and its own title."
-  },
-  "worldLabelBudget": "الميزانية",
-  "@worldLabelBudget": {
-    "description": "A world's name, in the links strip and its own title."
-  },
-  "worldLabelStmt": "كشف الحساب",
-  "@worldLabelStmt": {
-    "description": "A world's name, in the links strip and its own title."
-  },
-  "worldLabelSubs": "الاشتراكات",
-  "@worldLabelSubs": {
-    "description": "A world's name, in the links strip and its own title."
-  },
-  "worldLabelPh": "الصيدلية",
-  "@worldLabelPh": {
-    "description": "A world's name, in the links strip and its own title."
-  },
-  "worldLabelAppt": "المواعيد",
-  "@worldLabelAppt": {
-    "description": "A world's name, in the links strip and its own title."
-  },
-  "worldLabelMaint": "الصيانة",
-  "@worldLabelMaint": {
-    "description": "A world's name, in the links strip and its own title."
-  },
-  "worldLabelDocs": "المستندات",
-  "@worldLabelDocs": {
-    "description": "A world's name, in the links strip and its own title."
-  },
-  "worldLabelPlaces": "أماكني",
-  "@worldLabelPlaces": {
-    "description": "A world's name, in the links strip and its own title."
-  },
-  "worldLabelComp": "رفيق زاد",
-  "@worldLabelComp": {
-    "description": "A world's name, in the links strip and its own title."
-  },
-  "worldLabelChat": "الشات",
-  "@worldLabelChat": {
-    "description": "A world's name, in the links strip and its own title."
-  },
-  "worldLabelNotif": "الإشعارات",
-  "@worldLabelNotif": {
-    "description": "A world's name, in the links strip and its own title."
-  },
-  "worldLabelProfile": "حسابي",
-  "@worldLabelProfile": {
-    "description": "A world's name, in the links strip and its own title."
-  },
-  "worldLabelPrem": "بريميوم",
-  "@worldLabelPrem": {
-    "description": "A world's name, in the links strip and its own title."
-  },
-  "worldLabelTas": "بستان التسبيح",
-  "@worldLabelTas": {
-    "description": "A world's name, in the links strip and its own title."
-  },
-  "worldLabelGames": "ألعاب زادو",
-  "@worldLabelGames": {
-    "description": "A world's name, in the links strip and its own title."
-  },
-  "worldLabelPrices": "أسعار النهارده",
-  "@worldLabelPrices": {
-    "description": "A world's name, in the links strip and its own title."
-  },
-  "worldLabelOffers": "عروضي",
-  "@worldLabelOffers": {
-    "description": "A world's name, in the links strip and its own title."
-  },
-  "worldLabelAch": "إنجازاتي",
-  "@worldLabelAch": {
-    "description": "A world's name, in the links strip and its own title."
-  },
-  "worldLinksTitle": "متصلة بـ",
-  "@worldLinksTitle": {
-    "description": "Links strip heading."
-  },
-  "worldLinksHint": "اللي بيحصل هنا بيأثر في:",
-  "@worldLinksHint": {
-    "description": "Links strip hint."
-  },
-  "worldBack": "رجوع",
-  "@worldBack": {
-    "description": "Back button of a world screen."
-  },
-  "pantryWorldEyebrow": "{count, plural, =0{لسه مفيش أصناف} =1{صنف واحد} =2{صنفين} few{{count} أصناف} other{{count} صنف}}",
-  "@pantryWorldEyebrow": {
-    "description": "Pantry world: the count above the title.",
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "pantryWorldState": "{count, plural, =0{مفيش حاجة قربت تخلص} =1{حاجة واحدة قربت تخلص} =2{حاجتين قربوا يخلصوا} few{{count} حاجات قربت تخلص} other{{count} حاجة قربت تخلص}}",
-  "@pantryWorldState": {
-    "description": "Pantry world: the state line under the title.",
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "pantryLegendLow": "{count} قربت تخلص",
-  "@pantryLegendLow": {
-    "description": "Pantry legend: items running out.",
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "pantryLegendExpiring": "{count} هتبوظ قريب",
-  "@pantryLegendExpiring": {
-    "description": "Pantry legend: items about to expire.",
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "pantryLegendOk": "{count} تمام",
-  "@pantryLegendOk": {
-    "description": "Pantry legend: items that are fine.",
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
   },
   "shopWorldEyebrow": "{count, plural, =0{مفيش حاجة ناقصة} =1{حاجة واحدة ناقصة} =2{حاجتين ناقصين} few{{count} حاجات ناقصة} other{{count} حاجة ناقصة}}",
   "@shopWorldEyebrow": {

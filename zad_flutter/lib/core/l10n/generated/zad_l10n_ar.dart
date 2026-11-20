@@ -3085,104 +3085,16 @@ class ZadL10nAr extends ZadL10n {
   }
 
   @override
-  String get zadStatusTitle => 'حالة زاد';
+  String get homeBankOffBanner =>
+      '⚠️ قراءة رسائل البنك متوقفة.. اضغط هنا لإعادة تفعيلها لتحديث رصيدك ومصاريفك تلقائياً';
 
   @override
-  String get zadStatusAllGood => 'زاد شغال وبيتابع';
+  String get homeBankStalledHint =>
+      'لو هي مفعّلة: اطفيها وشغّلها تاني من الصفحة اللي هتفتح.';
 
   @override
-  String get zadStatusNeedsFix => 'في حاجة واقفة ومحتاجة منك خطوة';
-
-  @override
-  String zadStatusAllButOne(String what) {
-    return 'كله شغال ما عدا: $what';
-  }
-
-  @override
-  String get zadStatusWorking => 'شغال';
-
-  @override
-  String get zadStatusStopped => 'واقف';
-
-  @override
-  String get zadStatusMaybe => 'ممكن يقف';
-
-  @override
-  String get zadStatusBank => 'قراءة رسائل البنك';
-
-  @override
-  String get zadStatusBankOk => 'زاد بيقرا رسائل البنك ويسجّلها.';
-
-  @override
-  String get zadStatusBankOff =>
-      'قراءة رسائل البنك متوقفة. شغّلها عشان رصيدك ومصاريفك تتحدّث لوحدها.';
-
-  @override
-  String get zadStatusBankStalled =>
-      'الخدمة مابقتش بتشوف إشعارات من فترة. لو هي مفعّلة: اطفيها وشغّلها تاني من الصفحة اللي هتفتح.';
-
-  @override
-  String get zadStatusBankSilent =>
-      'مفعّلة، بس لسه ماجاتش ولا رسالة. لو مستني رسالة من البنك ومجتش: اطفيها وشغّلها تاني.';
-
-  @override
-  String get zadStatusNotifications => 'الإشعارات';
-
-  @override
-  String get zadStatusNotificationsOk =>
-      'تنبيهات الجرعات والفواتير والميزانية بتوصلك.';
-
-  @override
-  String get zadStatusNotificationsOff =>
-      'الإشعارات مقفولة، فتنبيهات الجرعات والفواتير مش هتوصلك.';
-
-  @override
-  String get zadStatusLocation => 'الموقع';
-
-  @override
-  String get zadStatusLocationOk =>
-      'الموقع شغال، والعروض والمحلات القريبة بتتحسب من مكانك.';
-
-  @override
-  String get zadStatusLocationServiceOff =>
-      'الموقع مقفول في الموبايل، فالقراءات مش هتبقى من مكانك الحقيقي.';
-
-  @override
-  String get zadStatusLocationDenied =>
-      'زاد مش مسموحله يعرف مكانك، فالعروض والمحلات القريبة مش هتشتغل.';
-
-  @override
-  String get zadStatusBackground => 'الموقع طول الوقت';
-
-  @override
-  String get zadStatusBackgroundOk =>
-      'تنبيهات الطريق شغالة حتى والتطبيق مقفول.';
-
-  @override
-  String get zadStatusBackgroundOff =>
-      'من غير «طول الوقت» تنبيهات الطريق مش هتشتغل والتطبيق مقفول.';
-
-  @override
-  String get zadStatusBattery => 'توفير البطارية';
-
-  @override
-  String get zadStatusBatteryOk => 'الموبايل مش بيقيّد زاد في الخلفية.';
-
-  @override
-  String get zadStatusBatteryWarn =>
-      'الموبايل ممكن يوقف زاد في الخلفية. اختار «بدون قيود» عشان القراءة ماتقطعش.';
-
-  @override
-  String get zadStatusFixOpenSettings => 'افتح الإعدادات';
-
-  @override
-  String get zadStatusFixAllow => 'اسمح';
-
-  @override
-  String get zadStatusFixLocationOn => 'شغّل الموقع';
-
-  @override
-  String get zadStatusFixBattery => 'فكّ القيود';
+  String get homeLocationOffBanner =>
+      '📍 موقعك غير مفعّل.. فعّل اللوكيشن عشان زاد يربط عروض السوبرماركت والمحلات القريبة منك ويقوم بمهامه صح';
 
   @override
   String get homeLocationLater => 'مش دلوقتي';
@@ -4436,6 +4348,28 @@ class ZadL10nAr extends ZadL10n {
   String get profileExportSubject => 'بياناتي من زاد';
 
   @override
+  String get homeCareTitle => 'اشتراكاتك وأدويتك';
+
+  @override
+  String get homeCareRenewsToday => 'بيتجدد النهارده';
+
+  @override
+  String get homeCareRenewsTomorrow => 'بيتجدد بكرة';
+
+  @override
+  String homeCareRenewsInDays(Object days) {
+    return 'بيتجدد بعد $days يوم';
+  }
+
+  @override
+  String homeCareDoseAt(Object time) {
+    return 'الجرعة $time';
+  }
+
+  @override
+  String get homeCareDoseNow => 'جرعتها دلوقتي';
+
+  @override
   String get introSayPantry => 'التلاجة دي بتاعتي!';
 
   @override
@@ -4528,6 +4462,316 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get consentTermsUpdated => 'نوفمبر ٢٠٢٦';
+
+  @override
+  String get worldLabelBrain => 'عقل زاد';
+
+  @override
+  String get worldLabelChef => 'شيف زاد';
+
+  @override
+  String get worldLabelInv => 'المخزون';
+
+  @override
+  String get worldLabelShop => 'التسوق';
+
+  @override
+  String get worldLabelTx => 'المعاملات';
+
+  @override
+  String get worldLabelBudget => 'الميزانية';
+
+  @override
+  String get worldLabelStmt => 'كشف الحساب';
+
+  @override
+  String get worldLabelSubs => 'الاشتراكات';
+
+  @override
+  String get worldLabelPh => 'الصيدلية';
+
+  @override
+  String get worldLabelAppt => 'المواعيد';
+
+  @override
+  String get worldLabelMaint => 'الصيانة';
+
+  @override
+  String get worldLabelDocs => 'المستندات';
+
+  @override
+  String get worldLabelPlaces => 'أماكني';
+
+  @override
+  String get worldLabelComp => 'رفيق زاد';
+
+  @override
+  String get worldLabelChat => 'الشات';
+
+  @override
+  String get worldLabelNotif => 'الإشعارات';
+
+  @override
+  String get worldLabelProfile => 'حسابي';
+
+  @override
+  String get worldLabelPrem => 'بريميوم';
+
+  @override
+  String get worldLabelTas => 'بستان التسبيح';
+
+  @override
+  String get worldLabelGames => 'ألعاب زادو';
+
+  @override
+  String get worldLabelPrices => 'أسعار النهارده';
+
+  @override
+  String get worldLabelOffers => 'عروضي';
+
+  @override
+  String get worldLabelAch => 'إنجازاتي';
+
+  @override
+  String get worldLinksTitle => 'متصلة بـ';
+
+  @override
+  String get worldLinksHint => 'اللي بيحصل هنا بيأثر في:';
+
+  @override
+  String get worldBack => 'رجوع';
+
+  @override
+  String pantryWorldEyebrow(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count صنف',
+      few: '$count أصناف',
+      two: 'صنفين',
+      one: 'صنف واحد',
+      zero: 'لسه مفيش أصناف',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String pantryWorldState(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count حاجة قربت تخلص',
+      few: '$count حاجات قربت تخلص',
+      two: 'حاجتين قربوا يخلصوا',
+      one: 'حاجة واحدة قربت تخلص',
+      zero: 'مفيش حاجة قربت تخلص',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String pantryLegendLow(int count) {
+    return '$count قربت تخلص';
+  }
+
+  @override
+  String pantryLegendExpiring(int count) {
+    return '$count هتبوظ قريب';
+  }
+
+  @override
+  String pantryLegendOk(int count) {
+    return '$count تمام';
+  }
+
+  @override
+  String get brainWorldState => 'متصل ويتعلم';
+
+  @override
+  String brainWorldEyebrow(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count عنصر متصل',
+      zero: 'لسه مفيش عناصر',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get brainFilterAll => 'الكل';
+
+  @override
+  String get brainFilterLabel => 'فلتر المجالات';
+
+  @override
+  String get brainNetworkEmptyTitle => 'زاد لسه بيتعلم عنك';
+
+  @override
+  String get brainNetworkEmptyMessage =>
+      'سجّل مصاريفك أو ضيف مخزون وأدوية، وهتلاقي الشبكة بتكبر هنا.';
+
+  @override
+  String get brainCardsTitle => 'جوه عقل زاد';
+
+  @override
+  String get brainCardStaffTitle => 'فريق زاد';
+
+  @override
+  String get brainCardStaffBody =>
+      'اللي الموظفين لاحظوه في جولة الصبح على بيتك وفلوسك وعيلتك';
+
+  @override
+  String get brainCardMemoryTitle => 'زاد عارف عني إيه';
+
+  @override
+  String get brainCardMemoryBody =>
+      'اللي زاد فاكره عنك وبيكلمك على أساسه — صحّحه أو خلّيه ينساه';
+
+  @override
+  String get brainCardGraphTitle => 'شبكة زاد';
+
+  @override
+  String get brainCardGraphBody =>
+      'الناس والأماكن والحاجات اللي زاد عارفها ومترابطة إزاي — وصدّرها لأوبسيديان';
+
+  @override
+  String get brainCardMapTitle => 'خريطة زاد';
+
+  @override
+  String get brainCardMapBody =>
+      'إزاي ميزانيتك واشتراكاتك وبيتك متصلين ببعض — بملء الشاشة';
+
+  @override
+  String get brainCardLogTitle => 'سجل تعديلات زاد';
+
+  @override
+  String get brainCardLogBody =>
+      'كل حاجة زاد سجّلها أو عدّلها لك، وترجع فيها لو غلط';
+
+  @override
+  String get brainCardHealthTitle => 'صحة عقل زاد';
+
+  @override
+  String get brainCardHealthBody =>
+      'زاد شغال في الخلفية ولا واقف — ولو واقف، ليه';
+
+  @override
+  String brainTelemetryLinks(int active, int total) {
+    return 'الروابط: $active/$total';
+  }
+
+  @override
+  String get brainTelemetryDecisions => 'قرارات النهارده';
+
+  @override
+  String get brainTelemetryGauge => 'مؤشر الثبات';
+
+  @override
+  String get brainTelemetryStable => 'مستقر';
+
+  @override
+  String get brainTelemetryAlert => 'تنبيه';
+
+  @override
+  String get zadStatusTitle => 'حالة زاد';
+
+  @override
+  String get zadStatusAllGood => 'زاد شغال وبيتابع';
+
+  @override
+  String get zadStatusNeedsFix => 'في حاجة واقفة ومحتاجة منك خطوة';
+
+  @override
+  String zadStatusAllButOne(String what) {
+    return 'كله شغال ما عدا: $what';
+  }
+
+  @override
+  String get zadStatusWorking => 'شغال';
+
+  @override
+  String get zadStatusStopped => 'واقف';
+
+  @override
+  String get zadStatusMaybe => 'ممكن يقف';
+
+  @override
+  String get zadStatusBank => 'قراءة رسائل البنك';
+
+  @override
+  String get zadStatusBankOk => 'زاد بيقرا رسائل البنك ويسجّلها.';
+
+  @override
+  String get zadStatusBankOff =>
+      'قراءة رسائل البنك متوقفة. شغّلها عشان رصيدك ومصاريفك تتحدّث لوحدها.';
+
+  @override
+  String get zadStatusBankStalled =>
+      'الخدمة مابقتش بتشوف إشعارات من فترة. لو هي مفعّلة: اطفيها وشغّلها تاني من الصفحة اللي هتفتح.';
+
+  @override
+  String get zadStatusBankSilent =>
+      'مفعّلة، بس لسه ماجاتش ولا رسالة. لو مستني رسالة من البنك ومجتش: اطفيها وشغّلها تاني.';
+
+  @override
+  String get zadStatusNotifications => 'الإشعارات';
+
+  @override
+  String get zadStatusNotificationsOk =>
+      'تنبيهات الجرعات والفواتير والميزانية بتوصلك.';
+
+  @override
+  String get zadStatusNotificationsOff =>
+      'الإشعارات مقفولة، فتنبيهات الجرعات والفواتير مش هتوصلك.';
+
+  @override
+  String get zadStatusLocation => 'الموقع';
+
+  @override
+  String get zadStatusLocationOk =>
+      'الموقع شغال، والعروض والمحلات القريبة بتتحسب من مكانك.';
+
+  @override
+  String get zadStatusLocationServiceOff =>
+      'الموقع مقفول في الموبايل، فالقراءات مش هتبقى من مكانك الحقيقي.';
+
+  @override
+  String get zadStatusLocationDenied =>
+      'زاد مش مسموحله يعرف مكانك، فالعروض والمحلات القريبة مش هتشتغل.';
+
+  @override
+  String get zadStatusBackground => 'الموقع طول الوقت';
+
+  @override
+  String get zadStatusBackgroundOk =>
+      'تنبيهات الطريق شغالة حتى والتطبيق مقفول.';
+
+  @override
+  String get zadStatusBackgroundOff =>
+      'من غير «طول الوقت» تنبيهات الطريق مش هتشتغل والتطبيق مقفول.';
+
+  @override
+  String get zadStatusBattery => 'توفير البطارية';
+
+  @override
+  String get zadStatusBatteryOk => 'الموبايل مش بيقيّد زاد في الخلفية.';
+
+  @override
+  String get zadStatusBatteryWarn =>
+      'الموبايل ممكن يوقف زاد في الخلفية. اختار «بدون قيود» عشان القراءة ماتقطعش.';
+
+  @override
+  String get zadStatusFixOpenSettings => 'افتح الإعدادات';
+
+  @override
+  String get zadStatusFixAllow => 'اسمح';
+
+  @override
+  String get zadStatusFixLocationOn => 'شغّل الموقع';
+
+  @override
+  String get zadStatusFixBattery => 'فكّ القيود';
 
   @override
   String get gamesHubButton => 'ألعاب زادو';
@@ -4757,149 +5001,6 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get starGameOver => 'النجوم خلصت منك';
-
-  @override
-  String get homeCareTitle => 'اشتراكاتك وأدويتك';
-
-  @override
-  String get homeCareRenewsToday => 'بيتجدد النهارده';
-
-  @override
-  String get homeCareRenewsTomorrow => 'بيتجدد بكرة';
-
-  @override
-  String homeCareRenewsInDays(Object days) {
-    return 'بيتجدد بعد $days يوم';
-  }
-
-  @override
-  String homeCareDoseAt(Object time) {
-    return 'الجرعة $time';
-  }
-
-  @override
-  String get homeCareDoseNow => 'جرعتها دلوقتي';
-
-  @override
-  String get worldLabelBrain => 'عقل زاد';
-
-  @override
-  String get worldLabelChef => 'شيف زاد';
-
-  @override
-  String get worldLabelInv => 'المخزون';
-
-  @override
-  String get worldLabelShop => 'التسوق';
-
-  @override
-  String get worldLabelTx => 'المعاملات';
-
-  @override
-  String get worldLabelBudget => 'الميزانية';
-
-  @override
-  String get worldLabelStmt => 'كشف الحساب';
-
-  @override
-  String get worldLabelSubs => 'الاشتراكات';
-
-  @override
-  String get worldLabelPh => 'الصيدلية';
-
-  @override
-  String get worldLabelAppt => 'المواعيد';
-
-  @override
-  String get worldLabelMaint => 'الصيانة';
-
-  @override
-  String get worldLabelDocs => 'المستندات';
-
-  @override
-  String get worldLabelPlaces => 'أماكني';
-
-  @override
-  String get worldLabelComp => 'رفيق زاد';
-
-  @override
-  String get worldLabelChat => 'الشات';
-
-  @override
-  String get worldLabelNotif => 'الإشعارات';
-
-  @override
-  String get worldLabelProfile => 'حسابي';
-
-  @override
-  String get worldLabelPrem => 'بريميوم';
-
-  @override
-  String get worldLabelTas => 'بستان التسبيح';
-
-  @override
-  String get worldLabelGames => 'ألعاب زادو';
-
-  @override
-  String get worldLabelPrices => 'أسعار النهارده';
-
-  @override
-  String get worldLabelOffers => 'عروضي';
-
-  @override
-  String get worldLabelAch => 'إنجازاتي';
-
-  @override
-  String get worldLinksTitle => 'متصلة بـ';
-
-  @override
-  String get worldLinksHint => 'اللي بيحصل هنا بيأثر في:';
-
-  @override
-  String get worldBack => 'رجوع';
-
-  @override
-  String pantryWorldEyebrow(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count صنف',
-      few: '$count أصناف',
-      two: 'صنفين',
-      one: 'صنف واحد',
-      zero: 'لسه مفيش أصناف',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String pantryWorldState(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count حاجة قربت تخلص',
-      few: '$count حاجات قربت تخلص',
-      two: 'حاجتين قربوا يخلصوا',
-      one: 'حاجة واحدة قربت تخلص',
-      zero: 'مفيش حاجة قربت تخلص',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String pantryLegendLow(int count) {
-    return '$count قربت تخلص';
-  }
-
-  @override
-  String pantryLegendExpiring(int count) {
-    return '$count هتبوظ قريب';
-  }
-
-  @override
-  String pantryLegendOk(int count) {
-    return '$count تمام';
-  }
 
   @override
   String shopWorldEyebrow(int count) {
@@ -6660,104 +6761,12 @@ class ZadL10nArSa extends ZadL10nAr {
   }
 
   @override
-  String get zadStatusTitle => 'حالة زاد';
+  String get homeBankStalledHint =>
+      'إذا كانت مفعّلة: طفّها وشغّلها مرة ثانية من الصفحة اللي بتفتح.';
 
   @override
-  String get zadStatusAllGood => 'زاد شغّال ويتابع';
-
-  @override
-  String get zadStatusNeedsFix => 'فيه شي واقف ويحتاج منك خطوة';
-
-  @override
-  String zadStatusAllButOne(String what) {
-    return 'كله شغّال ما عدا: $what';
-  }
-
-  @override
-  String get zadStatusWorking => 'شغال';
-
-  @override
-  String get zadStatusStopped => 'واقف';
-
-  @override
-  String get zadStatusMaybe => 'ممكن يقف';
-
-  @override
-  String get zadStatusBank => 'قراءة رسائل البنك';
-
-  @override
-  String get zadStatusBankOk => 'زاد بيقرا رسائل البنك ويسجّلها.';
-
-  @override
-  String get zadStatusBankOff =>
-      'قراءة رسائل البنك متوقفة. شغّلها عشان رصيدك ومصاريفك تتحدّث لحالها.';
-
-  @override
-  String get zadStatusBankStalled =>
-      'الخدمة ما عادت تشوف إشعارات من فترة. إذا كانت مفعّلة: طفّها وشغّلها مرة ثانية من الصفحة اللي بتفتح.';
-
-  @override
-  String get zadStatusBankSilent =>
-      'مفعّلة، بس للحين ما وصلت ولا رسالة. إذا تنتظر رسالة من البنك وما وصلت: طفّها وشغّلها مرة ثانية.';
-
-  @override
-  String get zadStatusNotifications => 'الإشعارات';
-
-  @override
-  String get zadStatusNotificationsOk =>
-      'تنبيهات الجرعات والفواتير والميزانية بتوصلك.';
-
-  @override
-  String get zadStatusNotificationsOff =>
-      'الإشعارات مقفولة، فتنبيهات الجرعات والفواتير ما بتوصلك.';
-
-  @override
-  String get zadStatusLocation => 'الموقع';
-
-  @override
-  String get zadStatusLocationOk =>
-      'الموقع شغّال، والعروض والمحلات القريبة تنحسب من مكانك.';
-
-  @override
-  String get zadStatusLocationServiceOff =>
-      'الموقع مقفول في الجوال، فالقراءات ما بتكون من مكانك الحقيقي.';
-
-  @override
-  String get zadStatusLocationDenied =>
-      'زاد ما هو مسموح له يعرف مكانك، فالعروض والمحلات القريبة ما بتشتغل.';
-
-  @override
-  String get zadStatusBackground => 'الموقع طول الوقت';
-
-  @override
-  String get zadStatusBackgroundOk =>
-      'تنبيهات الطريق شغالة حتى والتطبيق مقفول.';
-
-  @override
-  String get zadStatusBackgroundOff =>
-      'بدون «طوال الوقت» تنبيهات الطريق ما بتشتغل والتطبيق مقفول.';
-
-  @override
-  String get zadStatusBattery => 'توفير البطارية';
-
-  @override
-  String get zadStatusBatteryOk => 'الجوال ما يقيّد زاد في الخلفية.';
-
-  @override
-  String get zadStatusBatteryWarn =>
-      'الجوال ممكن يوقف زاد في الخلفية. اختر «بدون قيود» عشان القراءة ما تنقطع.';
-
-  @override
-  String get zadStatusFixOpenSettings => 'افتح الإعدادات';
-
-  @override
-  String get zadStatusFixAllow => 'اسمح';
-
-  @override
-  String get zadStatusFixLocationOn => 'شغّل الموقع';
-
-  @override
-  String get zadStatusFixBattery => 'فكّ القيود';
+  String get homeLocationOffBanner =>
+      '📍 موقعك مو مفعّل.. فعّل الموقع عشان زاد يربط عروض السوبرماركت والمحلات القريبة منك ويسوّي شغله صح';
 
   @override
   String get homeLocationLater => 'مو الحين';
@@ -7171,6 +7180,20 @@ class ZadL10nArSa extends ZadL10nAr {
   String get profileTelegramSubtitle => 'اربط حسابك وخلّ التذكيرات توصلك';
 
   @override
+  String get homeCareRenewsToday => 'يتجدد اليوم';
+
+  @override
+  String get homeCareRenewsTomorrow => 'يتجدد بكرة';
+
+  @override
+  String homeCareRenewsInDays(Object days) {
+    return 'يتجدد بعد $days يوم';
+  }
+
+  @override
+  String get homeCareDoseNow => 'جرعتها الحين';
+
+  @override
   String get introSayPantry => 'الثلاجة هذي حقتي!';
 
   @override
@@ -7185,6 +7208,184 @@ class ZadL10nArSa extends ZadL10nAr {
   @override
   String get consentPoint4Body =>
       'راجع الأرقام قبل أي قرار؛ زاد مو بنك ولا مستشار مالي.';
+
+  @override
+  String get worldLabelPrices => 'أسعار اليوم';
+
+  @override
+  String get worldLinksHint => 'اللي يصير هنا يأثر في:';
+
+  @override
+  String pantryWorldEyebrow(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count صنف',
+      few: '$count أصناف',
+      two: 'صنفين',
+      one: 'صنف واحد',
+      zero: 'للحين ما فيه أصناف',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String pantryWorldState(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count شي قرّب يخلص',
+      few: '$count أشياء قرّبت تخلص',
+      two: 'شيئين قرّبوا يخلصون',
+      one: 'شي واحد قرّب يخلص',
+      zero: 'ما فيه شي قرّب يخلص',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String brainWorldEyebrow(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count عنصر متصل',
+      zero: 'للحين ما فيه عناصر',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get brainNetworkEmptyTitle => 'زاد للحين يتعلم عنك';
+
+  @override
+  String get brainNetworkEmptyMessage =>
+      'سجّل مصاريفك أو أضف مخزون وأدوية، وبتلقى الشبكة تكبر هنا.';
+
+  @override
+  String get brainCardStaffBody =>
+      'اللي لاحظه الموظفين في جولة الصباح على بيتك وفلوسك وعيلتك';
+
+  @override
+  String get brainCardMemoryTitle => 'وش يعرف زاد عني';
+
+  @override
+  String get brainCardMemoryBody =>
+      'اللي يتذكره زاد عنك ويكلمك على أساسه — صحّحه أو خله ينساه';
+
+  @override
+  String get brainCardMapBody =>
+      'كيف ميزانيتك واشتراكاتك وبيتك مرتبطين ببعض — بملء الشاشة';
+
+  @override
+  String get brainCardLogBody =>
+      'كل شي سجّله زاد أو عدّله لك، وتتراجع عنه لو غلط';
+
+  @override
+  String get brainCardHealthBody =>
+      'زاد شغال في الخلفية ولا واقف — ولو واقف، ليش';
+
+  @override
+  String get brainTelemetryDecisions => 'قرارات اليوم';
+
+  @override
+  String get zadStatusTitle => 'حالة زاد';
+
+  @override
+  String get zadStatusAllGood => 'زاد شغّال ويتابع';
+
+  @override
+  String get zadStatusNeedsFix => 'فيه شي واقف ويحتاج منك خطوة';
+
+  @override
+  String zadStatusAllButOne(String what) {
+    return 'كله شغّال ما عدا: $what';
+  }
+
+  @override
+  String get zadStatusWorking => 'شغال';
+
+  @override
+  String get zadStatusStopped => 'واقف';
+
+  @override
+  String get zadStatusMaybe => 'ممكن يقف';
+
+  @override
+  String get zadStatusBank => 'قراءة رسائل البنك';
+
+  @override
+  String get zadStatusBankOk => 'زاد بيقرا رسائل البنك ويسجّلها.';
+
+  @override
+  String get zadStatusBankOff =>
+      'قراءة رسائل البنك متوقفة. شغّلها عشان رصيدك ومصاريفك تتحدّث لحالها.';
+
+  @override
+  String get zadStatusBankStalled =>
+      'الخدمة ما عادت تشوف إشعارات من فترة. إذا كانت مفعّلة: طفّها وشغّلها مرة ثانية من الصفحة اللي بتفتح.';
+
+  @override
+  String get zadStatusBankSilent =>
+      'مفعّلة، بس للحين ما وصلت ولا رسالة. إذا تنتظر رسالة من البنك وما وصلت: طفّها وشغّلها مرة ثانية.';
+
+  @override
+  String get zadStatusNotifications => 'الإشعارات';
+
+  @override
+  String get zadStatusNotificationsOk =>
+      'تنبيهات الجرعات والفواتير والميزانية بتوصلك.';
+
+  @override
+  String get zadStatusNotificationsOff =>
+      'الإشعارات مقفولة، فتنبيهات الجرعات والفواتير ما بتوصلك.';
+
+  @override
+  String get zadStatusLocation => 'الموقع';
+
+  @override
+  String get zadStatusLocationOk =>
+      'الموقع شغّال، والعروض والمحلات القريبة تنحسب من مكانك.';
+
+  @override
+  String get zadStatusLocationServiceOff =>
+      'الموقع مقفول في الجوال، فالقراءات ما بتكون من مكانك الحقيقي.';
+
+  @override
+  String get zadStatusLocationDenied =>
+      'زاد ما هو مسموح له يعرف مكانك، فالعروض والمحلات القريبة ما بتشتغل.';
+
+  @override
+  String get zadStatusBackground => 'الموقع طول الوقت';
+
+  @override
+  String get zadStatusBackgroundOk =>
+      'تنبيهات الطريق شغالة حتى والتطبيق مقفول.';
+
+  @override
+  String get zadStatusBackgroundOff =>
+      'بدون «طوال الوقت» تنبيهات الطريق ما بتشتغل والتطبيق مقفول.';
+
+  @override
+  String get zadStatusBattery => 'توفير البطارية';
+
+  @override
+  String get zadStatusBatteryOk => 'الجوال ما يقيّد زاد في الخلفية.';
+
+  @override
+  String get zadStatusBatteryWarn =>
+      'الجوال ممكن يوقف زاد في الخلفية. اختر «بدون قيود» عشان القراءة ما تنقطع.';
+
+  @override
+  String get zadStatusFixOpenSettings => 'افتح الإعدادات';
+
+  @override
+  String get zadStatusFixAllow => 'اسمح';
+
+  @override
+  String get zadStatusFixLocationOn => 'شغّل الموقع';
+
+  @override
+  String get zadStatusFixBattery => 'فكّ القيود';
 
   @override
   String get gamesHubIntro => 'العب، كمّل السلسلة، واكسب بذور';
@@ -7250,54 +7451,6 @@ class ZadL10nArSa extends ZadL10nAr {
 
   @override
   String get sortGameStuck => 'ما فيه حركات ثانية';
-
-  @override
-  String get homeCareRenewsToday => 'يتجدد اليوم';
-
-  @override
-  String get homeCareRenewsTomorrow => 'يتجدد بكرة';
-
-  @override
-  String homeCareRenewsInDays(Object days) {
-    return 'يتجدد بعد $days يوم';
-  }
-
-  @override
-  String get homeCareDoseNow => 'جرعتها الحين';
-
-  @override
-  String get worldLabelPrices => 'أسعار اليوم';
-
-  @override
-  String get worldLinksHint => 'اللي يصير هنا يأثر في:';
-
-  @override
-  String pantryWorldEyebrow(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count صنف',
-      few: '$count أصناف',
-      two: 'صنفين',
-      one: 'صنف واحد',
-      zero: 'للحين ما فيه أصناف',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String pantryWorldState(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count شي قرّب يخلص',
-      few: '$count أشياء قرّبت تخلص',
-      two: 'شيئين قرّبوا يخلصون',
-      one: 'شي واحد قرّب يخلص',
-      zero: 'ما فيه شي قرّب يخلص',
-    );
-    return '$_temp0';
-  }
 
   @override
   String shopWorldEyebrow(int count) {

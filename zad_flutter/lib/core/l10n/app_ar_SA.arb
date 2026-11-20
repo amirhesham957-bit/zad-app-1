@@ -605,5 +605,15 @@
         "type": "String"
       }
     }
-  }
+  },
+  "brainWorldEyebrow": "{count, plural, =0{للحين ما فيه عناصر} other{{count} عنصر متصل}}",
+  "brainNetworkEmptyMessage": "سجّل مصاريفك أو أضف مخزون وأدوية، وبتلقى الشبكة تكبر هنا.",
+  "brainCardStaffBody": "اللي لاحظه الموظفين في جولة الصباح على بيتك وفلوسك وعيلتك",
+  "brainCardMemoryTitle": "وش يعرف زاد عني",
+  "brainCardMemoryBody": "اللي يتذكره زاد عنك ويكلمك على أساسه — صحّحه أو خله ينساه",
+  "brainCardMapBody": "كيف ميزانيتك واشتراكاتك وبيتك مرتبطين ببعض — بملء الشاشة",
+  "brainCardLogBody": "كل شي سجّله زاد أو عدّله لك، وتتراجع عنه لو غلط",
+  "brainCardHealthBody": "زاد شغال في الخلفية ولا واقف — ولو واقف، ليش",
+  "brainNetworkEmptyTitle": "زاد للحين يتعلم عنك",
+  "brainTelemetryDecisions": "قرارات اليوم"
 }

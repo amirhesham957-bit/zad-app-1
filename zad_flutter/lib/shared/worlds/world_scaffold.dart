@@ -28,6 +28,7 @@ import 'package:zad/shared/orb/domain/orb_occasion.dart';
 import 'package:zad/shared/orb/presentation/companion_orb.dart';
 import 'package:zad/shared/worlds/world_links.dart';
 import 'package:zad/shared/worlds/world_scene.dart';
+import 'package:zad/shared/worlds/world_tone.dart';
 import 'package:zad/shared/worlds/zad_world.dart';
 
 /// Paints a scene in the 430×230 design space; repaints from [loop].
@@ -68,8 +69,9 @@ class ZadWorldScaffold extends ConsumerStatefulWidget {
   const new({
     required this.world,
     required this.title,
-    required this.scene,
     required this.slivers,
+    this.scene,
+    this.stage,
     this.eyebrow,
     this.stateLine,
     this.zado = const ZadWorldZado(),
@@ -78,8 +80,12 @@ class ZadWorldScaffold extends ConsumerStatefulWidget {
     this.onRefresh,
     this.bottomInset = ZadSpacing.xl,
     this.dockHeight = 0,
+    this.tone = ZadWorldTone.light,
     super.key,
-  });
+  }) : assert(
+         (scene == null) != (stage == null),
+         'a world has a scene or a stage, not both and not neither',
+       );
 
   /// Which world — its colour and its links.
   final ZadWorld world;
@@ -93,8 +99,13 @@ class ZadWorldScaffold extends ConsumerStatefulWidget {
   /// The one state line under the title, in the world colour.
   final String? stateLine;
 
-  /// The scene.
-  final ZadSceneBuilder scene;
+  /// The scene (with the companion in it).
+  final ZadSceneBuilder? scene;
+
+  /// Instead of a scene: a widget that is the world's whole first screen
+  /// under the title (the brain's interactive map, which holds the companion
+  /// itself).
+  final Widget? stage;
 
   /// The companion's pose and position.
   final ZadWorldZado zado;
@@ -113,6 +124,9 @@ class ZadWorldScaffold extends ConsumerStatefulWidget {
 
   /// Space after the links strip.
   final double bottomInset;
+
+  /// Light (default) or the dark night variant.
+  final ZadWorldTone tone;
 
   /// A strip at the bottom the scroll never enters: an [overlay] button
   /// docked there (the thumb zone) cannot cover a row.
@@ -176,14 +190,19 @@ class _ZadWorldScaffoldState extends ConsumerState<ZadWorldScaffold>
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: <Color>[ZadWorldColors.tint(w.color), ZadColors.canvasMid],
+          colors: widget.tone.isDark
+              ? const <Color>[ZadWorldColors.darkTop, ZadWorldColors.darkBottom]
+              : <Color>[ZadWorldColors.tint(w.color), ZadColors.canvasMid],
         ),
       ),
-      child: Stack(
-        children: <Widget>[
-          Positioned.fill(bottom: widget.dockHeight, child: scroll),
-          ?widget.overlay,
-        ],
+      child: ZadWorldToneScope(
+        tone: widget.tone,
+        child: Stack(
+          children: <Widget>[
+            Positioned.fill(bottom: widget.dockHeight, child: scroll),
+            ?widget.overlay,
+          ],
+        ),
       ),
     );
   }
@@ -211,27 +230,27 @@ class _ZadWorldScaffoldState extends ConsumerState<ZadWorldScaffold>
                   icon: const Icon(Icons.arrow_back_ios_new_rounded),
                   style: IconButton.styleFrom(
                     minimumSize: const Size(44, 44),
-                    foregroundColor: ZadColors.ink,
+                    foregroundColor: widget.tone.ink,
                   ),
                 ),
               if (widget.eyebrow != null)
                 Text(
                   widget.eyebrow!,
                   style: ZadType.labelMedium.copyWith(
-                    color: w.color,
+                    color: widget.tone.accent(w.color),
                     fontWeight: FontWeight.w800,
                   ),
                 ),
               Text(
                 widget.title,
-                style: ZadType.worldTitle.copyWith(color: ZadColors.ink),
+                style: ZadType.worldTitle.copyWith(color: widget.tone.ink),
               ),
               if (widget.stateLine != null) ...<Widget>[
                 const SizedBox(height: ZadSpacing.xs),
                 Text(
                   widget.stateLine!,
                   style: ZadType.titleMedium.copyWith(
-                    color: w.color,
+                    color: widget.tone.accent(w.color),
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -240,7 +259,7 @@ class _ZadWorldScaffoldState extends ConsumerState<ZadWorldScaffold>
           ),
         ),
         const SizedBox(height: ZadSpacing.sm),
-        _scene(look),
+        widget.stage ?? _scene(look),
       ],
     );
   }
@@ -262,7 +281,7 @@ class _ZadWorldScaffoldState extends ConsumerState<ZadWorldScaffold>
                   Positioned.fill(
                     child: RepaintBoundary(
                       child: CustomPaint(
-                        painter: ScaledScene(widget.scene(_loop), s),
+                        painter: ScaledScene(widget.scene!(_loop), s),
                       ),
                     ),
                   ),

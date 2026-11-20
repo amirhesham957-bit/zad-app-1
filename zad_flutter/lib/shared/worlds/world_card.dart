@@ -5,6 +5,7 @@ library;
 import 'package:flutter/widgets.dart';
 import 'package:zad/core/design/components/zad_card.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
+import 'package:zad/shared/worlds/world_tone.dart';
 
 /// A world's card.
 class ZadWorldCard extends StatelessWidget {
@@ -18,6 +19,10 @@ class ZadWorldCard extends StatelessWidget {
   final VoidCallback? onTap;
 
   @override
-  Widget build(BuildContext context) =>
-      ZadCard(onTap: onTap, radius: ZadRadii.cardLarge, child: child);
+  Widget build(BuildContext context) => ZadCard(
+    onTap: onTap,
+    radius: ZadRadii.cardLarge,
+    color: ZadWorldTone.of(context).isDark ? ZadWorldTone.dark.surface : null,
+    child: child,
+  );
 }
