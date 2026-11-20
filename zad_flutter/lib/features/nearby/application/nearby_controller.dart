@@ -102,7 +102,7 @@ class NearbyView {
 /// Holds the tab.
 class NearbyController extends Notifier<NearbyView> {
   /// How old the phone's last position may be and still count as "here".
-  static const Duration lastKnownFor = Duration(minutes: 30);
+  static const Duration lastKnownFor = kLastKnownFor;
 
   /// The customer went to the phone's settings from here, so coming back
   /// with location on is the answer to «حدّد مكاني», not a new visit.
@@ -158,7 +158,17 @@ class NearbyController extends Notifier<NearbyView> {
     if (access != LocationAccess.granted) return;
 
     state = state.copyWith(isLocating: true);
-    final fix = await source.current() ?? await source.lastKnown();
+    var fix = await source.current();
+    if (fix == null) {
+      // The OS's own last fix stands in only while it is recent: an hour-old
+      // point is "far from the customer", not a position.
+      final last = await source.lastKnown();
+      if (last != null &&
+          ref.read(nowProvider)().toUtc().difference(last.takenAt) <=
+              lastKnownFor) {
+        fix = last;
+      }
+    }
     if (!ref.mounted) return;
     if (fix == null) {
       state = state.copyWith(isLocating: false, noFix: true);

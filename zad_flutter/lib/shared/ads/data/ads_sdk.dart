@@ -89,8 +89,10 @@ abstract final class AdsSdk {
         await ConsentInformation.instance.getConsentStatus() ==
         ConsentStatus.unknown;
     if (unknown) {
-      debugPrint('[ads] consent status unknown after a failed update; '
-          'requesting ads anyway');
+      debugPrint(
+        '[ads] consent status unknown after a failed update; '
+        'requesting ads anyway',
+      );
     }
     return unknown;
   }

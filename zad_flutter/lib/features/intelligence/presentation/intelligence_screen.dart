@@ -900,7 +900,10 @@ class _ReportState extends ConsumerState<_ReportCard> {
     // One ad per AI request, under the report and clear of its buttons.
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[card, ZadInlineAd(key: ValueKey<int>(_reports))],
+      children: <Widget>[
+        card,
+        ZadInlineAd(key: ValueKey<int>(_reports)),
+      ],
     );
   }
 }

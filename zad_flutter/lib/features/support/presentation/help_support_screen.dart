@@ -349,8 +349,7 @@ class _HelpSupportScreenState extends ConsumerState<HelpSupportScreen> {
               horizontal: ZadSpacing.lg,
               vertical: ZadSpacing.lg,
             ),
-            itemCount:
-                _messages.length + (_typing || _showAd ? 1 : 0),
+            itemCount: _messages.length + (_typing || _showAd ? 1 : 0),
             separatorBuilder: (_, _) => const SizedBox(height: ZadSpacing.md),
             itemBuilder: (context, i) => i == _messages.length
                 ? (_typing

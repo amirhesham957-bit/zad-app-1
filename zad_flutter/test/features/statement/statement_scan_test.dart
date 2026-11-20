@@ -4,6 +4,7 @@
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -11,13 +12,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/statement/data/statement_reader.dart';
 import 'package:zad/features/statement/domain/statement_import.dart';
 import 'package:zad/features/statement/presentation/statement_import_screen.dart';
 import 'package:zad/shared/ads/application/ads_policy.dart';
 import 'package:zad/shared/ads/presentation/inline_ad.dart';
+import 'package:zad/shared/market/application/account_time_zone.dart';
+import 'package:zad/shared/transactions/application/transactions_controller.dart';
 import 'package:zad/shared/transactions/data/merchant_categories.dart';
+
+import '../../support/fonts.dart';
+import '../../support/quiet_household.dart';
 
 class _Reader implements StatementReader {
   new(this.answer, {this.error});
@@ -40,6 +48,14 @@ class _Reader implements StatementReader {
     if (error case final e?) Error.throwWithStackTrace(e, StackTrace.current);
     return answer;
   }
+}
+
+class _Txns extends TransactionsController {
+  @override
+  TransactionsView build() => const TransactionsView();
+
+  @override
+  Future<void> refresh({bool force = false}) async {}
 }
 
 class _NoCorrections implements MerchantCategories {
@@ -80,7 +96,11 @@ const Map<String, dynamic> _statement = <String, dynamic>{
 };
 
 void main() {
-  setUpAll(() => initializeDateFormatting('en'));
+  setUpAll(() async {
+    tz_data.initializeTimeZones();
+    await initializeDateFormatting('en');
+    await initializeDateFormatting('ar');
+  });
 
   group('readScannedStatement', () {
     test('rows, direction, balance marks and the check are kept', () {
@@ -144,16 +164,32 @@ void main() {
     Completer<void>? gate,
     bool settle = true,
   }) async {
+    tester.view
+      ..physicalSize = const Size(400, 2400)
+      ..devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
     final reader = _Reader(answer, error: error)..gate = gate;
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          ...quietOrbOverrides,
           adsAllowedProvider.overrideWithValue(false),
           statementReaderProvider.overrideWithValue(reader),
           merchantCategoriesProvider.overrideWithValue(_NoCorrections()),
           signedInUserIdProvider.overrideWithValue(() => 'u1'),
+          nowProvider.overrideWithValue(() => DateTime.utc(2026, 10, 20, 12)),
+          accountTimeZoneProvider.overrideWithValue('Africa/Cairo'),
+          transactionsControllerProvider.overrideWith(_Txns.new),
         ],
-        child: MaterialApp(home: StatementImportScreen(initialFile: file)),
+        child: MediaQuery(
+          data: const MediaQueryData(disableAnimations: true),
+          child: MaterialApp(
+            localizationsDelegates: ZadL10n.localizationsDelegates,
+            supportedLocales: ZadL10n.supportedLocales,
+            locale: const Locale('ar'),
+            home: StatementImportScreen(initialFile: file),
+          ),
+        ),
       ),
     );
     if (settle) await tester.pumpAndSettle();
@@ -194,20 +230,16 @@ void main() {
   });
 
   testWidgets('a statement the AI could not read shows no ad', (tester) async {
-    await pump(tester, (
-      name: 'shot.png',
-      bytes: Uint8List.fromList(<int>[1]),
-    ));
+    await pump(tester, (name: 'shot.png', bytes: Uint8List.fromList(<int>[1])));
     expect(find.textContaining('ما لقيتش حركات'), findsOneWidget);
     expect(find.byType(ZadInlineAd), findsNothing);
   });
 
   testWidgets('a failed statement read shows no ad', (tester) async {
-    await pump(
-      tester,
-      (name: 'shot.jpg', bytes: Uint8List.fromList(<int>[1])),
-      error: StateError('offline'),
-    );
+    await pump(tester, (
+      name: 'shot.jpg',
+      bytes: Uint8List.fromList(<int>[1]),
+    ), error: StateError('offline'));
     expect(find.byType(ZadInlineAd), findsNothing);
   });
 
@@ -250,4 +282,20 @@ void main() {
     expect(reader.mime, isNull);
     expect(find.textContaining('تعذّرت قراءة الملف'), findsOneWidget);
   });
+
+  testWidgets('screenshot: the statement world', (tester) async {
+    await loadZadFonts();
+    await pump(tester, (
+      name: 'kashf.pdf',
+      bytes: Uint8List.fromList(<int>[1]),
+    ), answer: _statement);
+    tester.view
+      ..physicalSize = const Size(860, 1864)
+      ..devicePixelRatio = 2;
+    await tester.pump(const Duration(milliseconds: 600));
+    await expectLater(
+      find.byType(MaterialApp),
+      matchesGoldenFile('../../../build/screens/world_statement.png'),
+    );
+  }, skip: Platform.environment['ZAD_SCREENS'] != '1');
 }
