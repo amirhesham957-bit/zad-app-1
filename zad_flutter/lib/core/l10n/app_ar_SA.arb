@@ -511,5 +511,6 @@
   "tasNoTreesMsg": "أول ما أحد من العائلة يسبّح تظهر شجرته هنا.",
   "tasChallengesTitle": "التحديات العائلية",
   "tasNoChallengesAdmin": "اضغط + وابدأ أول تحدي للعائلة.",
-  "tasNoChallengesMember": "اطلب من المدير ينشئ تحدي جديد!"
+  "tasNoChallengesMember": "اطلب من المدير ينشئ تحدي جديد!",
+  "tasNoTreeTitle": "للحين ما فيه شجرة"
 }

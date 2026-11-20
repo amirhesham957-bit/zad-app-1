@@ -7388,6 +7388,9 @@ class ZadL10nArSa extends ZadL10nAr {
   String get tasBloom => 'تفتّحت وردة جديدة!';
 
   @override
+  String get tasNoTreeTitle => 'للحين ما فيه شجرة';
+
+  @override
   String get tasNoTreesMsg => 'أول ما أحد من العائلة يسبّح تظهر شجرته هنا.';
 
   @override
