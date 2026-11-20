@@ -9319,6 +9319,18 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'{count, plural, =1{بعد يوم} =2{بعد يومين} few{بعد {count} أيام} other{بعد {count} يوم}}'**
   String apptInDays(int count);
+
+  /// Places world: outings count above the title.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =0{لسه مفيش خروجات} =1{خروجة واحدة} =2{خروجتين} few{{count} خروجات} other{{count} خروجة}}'**
+  String placesWorldEyebrow(int count);
+
+  /// Places world state line: saved places and whether street alerts are on.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =0{مفيش أماكن} =1{مكان واحد} =2{مكانين} few{{count} أماكن} other{{count} مكان}} · {alerts, select, on{تنبيهات الشارع شغالة} other{تنبيهات الشارع مقفولة}}'**
+  String placesWorldState(int count, String alerts);
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

@@ -544,5 +544,9 @@
   "apptInNow": "الحين",
   "apptInMinutes": "{count, plural, =1{بعد دقيقة} =2{بعد دقيقتين} few{بعد {count} دقائق} other{بعد {count} دقيقة}}",
   "apptInHours": "{count, plural, =1{بعد ساعة} =2{بعد ساعتين} few{بعد {count} ساعات} other{بعد {count} ساعة}}",
-  "apptInDays": "{count, plural, =1{بعد يوم} =2{بعد يومين} few{بعد {count} أيام} other{بعد {count} يوم}}"
+  "apptInDays": "{count, plural, =1{بعد يوم} =2{بعد يومين} few{بعد {count} أيام} other{بعد {count} يوم}}",
+  "placesWorldEyebrow": "{count, plural, =0{ما فيه خروجات للحين} =1{خروجة وحدة} =2{خروجتين} few{{count} خروجات} other{{count} خروجة}}",
+  "@placesWorldEyebrow": {"description": "Places world: outings count above the title.", "placeholders": {"count": {"type": "int"}}},
+  "placesWorldState": "{count, plural, =0{ما فيه أماكن} =1{مكان واحد} =2{مكانين} few{{count} أماكن} other{{count} مكان}} · {alerts, select, on{تنبيهات الشارع شغّالة} other{تنبيهات الشارع مقفّلة}}",
+  "@placesWorldState": {"description": "Places world state line: saved places and whether street alerts are on.", "placeholders": {"count": {"type": "int"}, "alerts": {"type": "String"}}}
 }

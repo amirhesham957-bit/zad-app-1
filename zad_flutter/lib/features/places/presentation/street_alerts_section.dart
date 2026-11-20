@@ -129,61 +129,68 @@ class _StreetAlertsSectionState extends ConsumerState<StreetAlertsSection>
         ),
         ZadCard(
           padding: const EdgeInsets.symmetric(vertical: ZadSpacing.xs),
-          child: Column(
-            children: <Widget>[
-              SwitchListTile(
-                secondary: Icon(
-                  ZadIcons.location,
-                  color: on ? ZadColors.green600 : ZadColors.inkMuted,
-                ),
-                title: const Text('تنبيهات قرب المحلات'),
-                subtitle: Text(
-                  status,
-                  style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
-                ),
-                value: on,
-                onChanged:
-                    view.busy || view.status == StreetAlertsStatus.unknown
-                    ? null
-                    : (v) => unawaited(_toggle(v)),
-              ),
-              if (on)
+          // The switches are ListTiles: they paint their ink on the nearest
+          // Material, which must sit inside the card's filled box.
+          child: Material(
+            type: MaterialType.transparency,
+            child: Column(
+              children: <Widget>[
                 SwitchListTile(
-                  key: const ValueKey<String>('commute'),
                   secondary: Icon(
-                    ZadIcons.home,
-                    color: view.commuteOn
-                        ? ZadColors.green600
-                        : ZadColors.inkMuted,
+                    ZadIcons.location,
+                    color: on ? ZadColors.green600 : ZadColors.inkMuted,
                   ),
-                  title: Text(context.l10n.commuteTitle),
+                  title: const Text('تنبيهات قرب المحلات'),
                   subtitle: Text(
-                    context.l10n.commuteBody,
+                    status,
                     style: ZadType.bodySmall.copyWith(
                       color: ZadColors.inkMuted,
                     ),
                   ),
-                  value: view.commuteOn,
-                  onChanged: view.busy
+                  value: on,
+                  onChanged:
+                      view.busy || view.status == StreetAlertsStatus.unknown
                       ? null
-                      : (v) => unawaited(_toggleCommute(v)),
+                      : (v) => unawaited(_toggle(v)),
                 ),
-              if (fix != null)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    ZadSpacing.lg,
-                    0,
-                    ZadSpacing.lg,
-                    ZadSpacing.md,
+                if (on)
+                  SwitchListTile(
+                    key: const ValueKey<String>('commute'),
+                    secondary: Icon(
+                      ZadIcons.home,
+                      color: view.commuteOn
+                          ? ZadColors.green600
+                          : ZadColors.inkMuted,
+                    ),
+                    title: Text(context.l10n.commuteTitle),
+                    subtitle: Text(
+                      context.l10n.commuteBody,
+                      style: ZadType.bodySmall.copyWith(
+                        color: ZadColors.inkMuted,
+                      ),
+                    ),
+                    value: view.commuteOn,
+                    onChanged: view.busy
+                        ? null
+                        : (v) => unawaited(_toggleCommute(v)),
                   ),
-                  child: FilledButton(
-                    onPressed: ref
-                        .read(streetAlertsControllerProvider.notifier)
-                        .openSettings,
-                    child: Text(fix),
+                if (fix != null)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      ZadSpacing.lg,
+                      0,
+                      ZadSpacing.lg,
+                      ZadSpacing.md,
+                    ),
+                    child: FilledButton(
+                      onPressed: ref
+                          .read(streetAlertsControllerProvider.notifier)
+                          .openSettings,
+                      child: Text(fix),
+                    ),
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
         ),
       ],

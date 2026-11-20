@@ -5473,6 +5473,38 @@ class ZadL10nAr extends ZadL10n {
     );
     return '$_temp0';
   }
+
+  @override
+  String placesWorldEyebrow(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count خروجة',
+      few: '$count خروجات',
+      two: 'خروجتين',
+      one: 'خروجة واحدة',
+      zero: 'لسه مفيش خروجات',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String placesWorldState(int count, String alerts) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count مكان',
+      few: '$count أماكن',
+      two: 'مكانين',
+      one: 'مكان واحد',
+      zero: 'مفيش أماكن',
+    );
+    String _temp1 = intl.Intl.selectLogic(alerts, {
+      'on': 'تنبيهات الشارع شغالة',
+      'other': 'تنبيهات الشارع مقفولة',
+    });
+    return '$_temp0 · $_temp1';
+  }
 }
 
 /// The translations for Arabic, as used in Saudi Arabia (`ar_SA`).
@@ -7561,5 +7593,37 @@ class ZadL10nArSa extends ZadL10nAr {
       one: 'بعد يوم',
     );
     return '$_temp0';
+  }
+
+  @override
+  String placesWorldEyebrow(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count خروجة',
+      few: '$count خروجات',
+      two: 'خروجتين',
+      one: 'خروجة وحدة',
+      zero: 'ما فيه خروجات للحين',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String placesWorldState(int count, String alerts) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count مكان',
+      few: '$count أماكن',
+      two: 'مكانين',
+      one: 'مكان واحد',
+      zero: 'ما فيه أماكن',
+    );
+    String _temp1 = intl.Intl.selectLogic(alerts, {
+      'on': 'تنبيهات الشارع شغّالة',
+      'other': 'تنبيهات الشارع مقفّلة',
+    });
+    return '$_temp0 · $_temp1';
   }
 }

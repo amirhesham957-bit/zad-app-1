@@ -1784,5 +1784,9 @@
   "apptInNow": "now",
   "apptInMinutes": "{count, plural, =1{in 1 minute} other{in {count} minutes}}",
   "apptInHours": "{count, plural, =1{in 1 hour} other{in {count} hours}}",
-  "apptInDays": "{count, plural, =1{in 1 day} other{in {count} days}}"
+  "apptInDays": "{count, plural, =1{in 1 day} other{in {count} days}}",
+  "placesWorldEyebrow": "{count, plural, =0{No outings yet} =1{1 outing} other{{count} outings}}",
+  "@placesWorldEyebrow": {"description": "Places world: outings count above the title.", "placeholders": {"count": {"type": "int"}}},
+  "placesWorldState": "{count, plural, =0{No places} =1{1 place} other{{count} places}} · {alerts, select, on{street alerts on} other{street alerts off}}",
+  "@placesWorldState": {"description": "Places world state line: saved places and whether street alerts are on.", "placeholders": {"count": {"type": "int"}, "alerts": {"type": "String"}}}
 }

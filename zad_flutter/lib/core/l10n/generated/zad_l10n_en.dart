@@ -5567,4 +5567,32 @@ class ZadL10nEn extends ZadL10n {
     );
     return '$_temp0';
   }
+
+  @override
+  String placesWorldEyebrow(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count outings',
+      one: '1 outing',
+      zero: 'No outings yet',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String placesWorldState(int count, String alerts) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count places',
+      one: '1 place',
+      zero: 'No places',
+    );
+    String _temp1 = intl.Intl.selectLogic(alerts, {
+      'on': 'street alerts on',
+      'other': 'street alerts off',
+    });
+    return '$_temp0 · $_temp1';
+  }
 }
