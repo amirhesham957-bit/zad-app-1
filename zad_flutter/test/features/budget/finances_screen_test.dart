@@ -16,8 +16,10 @@ import 'package:zad/features/budget/presentation/finances_screen.dart';
 import 'package:zad/features/obligations/application/obligations_controller.dart';
 import 'package:zad/features/obligations/domain/obligation.dart';
 import 'package:zad/features/obligations/presentation/obligations_section.dart';
+import 'package:zad/features/subscriptions/presentation/subscriptions_screen.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/budget/application/category_budgets_controller.dart';
+import 'package:zad/shared/budget/domain/budget_snapshot.dart';
 import 'package:zad/shared/modes/application/modes_controller.dart';
 import 'package:zad/shared/settings/application/settings_controller.dart';
 import 'package:zad/shared/settings/domain/account_settings.dart';
@@ -25,15 +27,42 @@ import 'package:zad/shared/subscriptions/application/subscriptions_controller.da
 import 'package:zad/shared/subscriptions/domain/subscription.dart';
 import 'package:zad/shared/transactions/application/transactions_controller.dart';
 import 'package:zad/shared/transactions/domain/transaction.dart';
+import 'package:zad/shared/worlds/art/art.dart';
 
+import '../../support/fonts.dart';
 import '../../support/quiet_household.dart';
 
 final DateTime _today = DateTime.utc(2026, 9, 25);
 
 class _Budget extends BudgetController {
+  new([this.view = const BudgetView()]);
+
+  final BudgetView view;
+
   @override
-  BudgetView build() => const BudgetView();
+  BudgetView build() => view;
 }
+
+BudgetView _realBudget() => BudgetView(
+  snapshot: BudgetSnapshot(
+    userId: 'u',
+    currency: 'ج.م',
+    timeZone: 'Africa/Cairo',
+    spent: 4760,
+    income: 8000,
+    committed: 3000,
+    daysLeft: 12,
+    cycleLengthDays: 30,
+    threat: BudgetThreat.safe,
+    unverifiedCount: 0,
+    computedAt: DateTime.utc(2026, 9, 25),
+    available: 1240,
+    remaining: 4240,
+    openingBalance: 5000,
+    limitConfirmed: true,
+    cycleEnd: DateTime.utc(2026, 10, 7),
+  ),
+);
 
 class _Settings extends SettingsController {
   @override
@@ -112,35 +141,54 @@ void main() {
     await dir.delete(recursive: true);
   });
 
-  testWidgets('shows obligations, the summary and the category cards', (
-    tester,
-  ) async {
-    await tester.binding.setSurfaceSize(const Size(400, 2400));
+  Future<void> pumpFinances(
+    WidgetTester tester, {
+    BudgetView view = const BudgetView(),
+    Size size = const Size(400, 2400),
+    bool still = false,
+    bool embedded = false,
+  }) async {
+    tester.view
+      ..physicalSize = size
+      ..devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          budgetControllerProvider.overrideWith(_Budget.new),
+          budgetControllerProvider.overrideWith(() => _Budget(view)),
           settingsControllerProvider.overrideWith(_Settings.new),
           transactionsControllerProvider.overrideWith(_Txns.new),
           obligationsControllerProvider.overrideWith(_Obligations.new),
           subscriptionsControllerProvider.overrideWith(_Subs.new),
           categoryBudgetsProvider.overrideWith(_NoCeilings.new),
+          ...quietOrbOverrides,
           modesControllerProvider.overrideWith(QuietModes.new),
           localStoreProvider.overrideWithValue(store),
           supabaseClientProvider.overrideWithValue(quietSupabase),
         ],
-        child: MaterialApp(
-          theme: ZadTheme.light(),
-          home: const Directionality(
-            textDirection: TextDirection.rtl,
-            child: FinancesScreen(),
+        child: MediaQuery(
+          data: MediaQueryData(disableAnimations: still),
+          child: MaterialApp(
+            theme: ZadTheme.light(),
+            home: Directionality(
+              textDirection: TextDirection.rtl,
+              child: FinancesScreen(embedded: embedded),
+            ),
           ),
         ),
       ),
     );
     await tester.pump();
+  }
 
-    expect(find.text('الميزانية والالتزامات'), findsOneWidget);
+  testWidgets('shows obligations, the summary and the category cards', (
+    tester,
+  ) async {
+    await pumpFinances(tester);
+
+    // The world's title (and the summary column of the same name).
+    expect(find.text('الميزانية'), findsNWidgets(2));
+    expect(find.text('الحركات والميزانية'), findsOneWidget);
     expect(find.text('إجمالي الالتزامات'), findsOneWidget);
     expect(find.byType(ObligationCard), findsOneWidget);
     expect(
@@ -152,9 +200,61 @@ void main() {
     // No snapshot, nothing spent by the server's count: the calm tier.
     expect(find.textContaining('صرفت 0% فقط'), findsOneWidget);
     // The category card's title, and the purchase's row under it.
-    expect(find.text('البقالة'), findsNWidgets(2));
+    expect(find.textContaining('البقالة'), findsNWidgets(2));
     expect(find.textContaining('بدون حد'), findsOneWidget);
   });
+
+  testWidgets('the state line is the real available amount and per-day '
+      'allowance', (tester) async {
+    await pumpFinances(tester, view: _realBudget());
+    // 1,240 available over 12 days left is 103 a day.
+    expect(find.text('متاح 1,240 ج.م · 103 ج.م في اليوم'), findsOneWidget);
+    expect(find.text('لحد يوم 7'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('has no overflow at 360x640, embedded or pushed', (tester) async {
+    for (final embedded in <bool>[true, false]) {
+      await pumpFinances(
+        tester,
+        view: _realBudget(),
+        size: const Size(360, 640),
+        embedded: embedded,
+      );
+      expect(tester.takeException(), isNull);
+      expect(find.byType(ZadArt), findsWidgets);
+      await tester.pumpWidget(const SizedBox());
+    }
+  });
+
+  testWidgets('the obligations tab is still one tap away', (tester) async {
+    await pumpFinances(tester, size: const Size(360, 900));
+    await tester.tap(find.text('التزاماتي'));
+    await tester.pump(const Duration(milliseconds: 600));
+    expect(tester.takeException(), isNull);
+    expect(find.byType(SubscriptionsScreen), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('with disableAnimations the scene is still', (tester) async {
+    await pumpFinances(tester, still: true, view: _realBudget());
+    await tester.pump(const Duration(seconds: 1));
+    expect(tester.binding.hasScheduledFrame, isFalse);
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('screenshot: the budget world', (tester) async {
+    await loadZadFonts();
+    await pumpFinances(tester, view: _realBudget(), still: true);
+    tester.view
+      ..physicalSize = const Size(860, 1864)
+      ..devicePixelRatio = 2;
+    await tester.pump(const Duration(milliseconds: 600));
+    await expectLater(
+      find.byType(MaterialApp),
+      matchesGoldenFile('../../../build/screens/world_budget.png'),
+    );
+  }, skip: Platform.environment['ZAD_SCREENS'] != '1');
 }
 
 class _NoCeilings extends CategoryBudgetsController {

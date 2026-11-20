@@ -4831,99 +4831,188 @@ class ZadL10nEn extends ZadL10n {
   }
 
   @override
-  String shopWorldEyebrow(int count) {
+  String txWorldEyebrow(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count things missing',
-      one: '1 thing missing',
-      zero: 'Nothing missing',
+      other: '$count transactions',
+      one: '1 transaction',
+      zero: 'No transactions yet',
     );
     return '$_temp0';
   }
 
   @override
-  String shopWorldStores(int count) {
+  String txWorldState(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'From $count shops',
-      one: 'From 1 shop',
+      other: '$count logged themselves today',
+      one: '1 logged itself today',
+      zero: 'Nothing logged itself today',
     );
     return '$_temp0';
   }
 
   @override
-  String get shopWorldAnyStore => 'From any shop';
+  String get txSourceBank => 'A bank message';
 
   @override
-  String get shopWorldDone => 'The list is empty';
+  String txSourceBankNamed(String bank) {
+    return '$bank · message';
+  }
 
   @override
-  String get shopGroupAnyStore => 'Any shop';
+  String get txSourceReceipt => 'A photographed receipt';
 
   @override
-  String shopPantryCount(int count) {
+  String get txSourceVoice => 'You said it';
+
+  @override
+  String get txSourceStatement => 'From a statement';
+
+  @override
+  String get txSourcePharmacy => 'Pharmacy refill';
+
+  @override
+  String get txSourceManual => 'Typed by you';
+
+  @override
+  String budgetWorldUntil(int day) {
+    return 'Until day $day';
+  }
+
+  @override
+  String budgetWorldDaysLeft(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count items in the pantry',
-      one: '1 item in the pantry',
-      zero: 'The pantry is empty',
+      other: '$count days left',
+      one: '1 day left',
+      zero: 'Last day',
     );
     return '$_temp0';
   }
 
   @override
-  String apptWorldToday(String weekday) {
-    return 'Today is $weekday';
+  String budgetWorldState(String amount, String perDay) {
+    return '$amount available · $perDay a day';
   }
 
   @override
-  String apptWorldNext(String title, String when) {
-    return '$title $when';
+  String budgetWorldAvailable(String amount) {
+    return '$amount available';
   }
 
   @override
-  String get apptWorldNone => 'Nothing coming up';
-
-  @override
-  String get apptNextLabel => 'Next up';
-
-  @override
-  String get apptInNow => 'now';
-
-  @override
-  String apptInMinutes(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'in $count minutes',
-      one: 'in 1 minute',
-    );
-    return '$_temp0';
+  String statementWorldStateLess(int pct) {
+    return 'You spent $pct% less than the same days last month';
   }
 
   @override
-  String apptInHours(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'in $count hours',
-      one: 'in 1 hour',
-    );
-    return '$_temp0';
+  String statementWorldStateMore(int pct) {
+    return 'You spent $pct% more than the same days last month';
   }
 
   @override
-  String apptInDays(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'in $count days',
-      one: 'in 1 day',
-    );
-    return '$_temp0';
+  String get statementWorldStateSame =>
+      'Your spending is level with last month';
+
+  @override
+  String get statementWorldStateNone =>
+      'Import a statement to see where your money goes';
+
+  @override
+  String get statementWorldBreakdownTitle =>
+      'Where your money comes from and goes';
+
+  @override
+  String get statementWorldIn => 'Income';
+
+  @override
+  String get statementWorldEmptyTitle => 'Nothing this month yet';
+
+  @override
+  String get statementWorldEmptyBody =>
+      'Import a statement or log a transaction and your income and spending by category show up here.';
+
+  @override
+  String get statementPickBody =>
+      'Choose your statement: a PDF from your bank app, a photo, or a CSV file. Zad reads the entries and checks them against the statement balance, and nothing is saved until you review it.';
+
+  @override
+  String get statementReading =>
+      'Reading the statement… a long one takes a minute';
+
+  @override
+  String get statementPickButton => 'Choose statement';
+
+  @override
+  String get statementMapIntro =>
+      'Say which column of the file is which — files differ from bank to bank';
+
+  @override
+  String get statementMapDate => 'Date column';
+
+  @override
+  String get statementMapTitle => 'Description column';
+
+  @override
+  String get statementMapAmount => 'Amount column';
+
+  @override
+  String get statementMapCategory => 'Category column (optional)';
+
+  @override
+  String get statementMapInvert =>
+      'Flip the amount sign (if negative means money in here)';
+
+  @override
+  String get statementMapContinue => 'Continue to review';
+
+  @override
+  String get statementMapNone => 'None';
+
+  @override
+  String statementMapColumnN(int n) {
+    return 'Column $n';
+  }
+
+  @override
+  String statementPreviewCount(int rows, int checked) {
+    return '$rows rows — $checked selected to import';
+  }
+
+  @override
+  String get statementPreviewEmptyTitle => 'No transactions found in the file';
+
+  @override
+  String get statementPreviewEmptyBody =>
+      'The file was read but has no rows I can import — make sure it is a statement in CSV or readable PDF form.';
+
+  @override
+  String get statementRowUnreadable =>
+      'The date or amount of this row could not be read';
+
+  @override
+  String get statementRowBalance =>
+      'The statement balance does not match this row — check the amount';
+
+  @override
+  String get statementCheckBalanced =>
+      'The numbers match the statement balance';
+
+  @override
+  String get statementCheckMismatch =>
+      'Some numbers do not match the statement balance — those rows are left unticked, review them';
+
+  @override
+  String get statementCheckUnknown =>
+      'The statement has no balance to check against — review every row before importing';
+
+  @override
+  String statementDropped(String text, int n) {
+    return '$text. $n rows could not be read.';
   }
 
   @override
@@ -5382,4 +5471,100 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get phErrRejected => 'The server refused to save. Try again.';
+
+  @override
+  String shopWorldEyebrow(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count things missing',
+      one: '1 thing missing',
+      zero: 'Nothing missing',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String shopWorldStores(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'From $count shops',
+      one: 'From 1 shop',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get shopWorldAnyStore => 'From any shop';
+
+  @override
+  String get shopWorldDone => 'The list is empty';
+
+  @override
+  String get shopGroupAnyStore => 'Any shop';
+
+  @override
+  String shopPantryCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count items in the pantry',
+      one: '1 item in the pantry',
+      zero: 'The pantry is empty',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String apptWorldToday(String weekday) {
+    return 'Today is $weekday';
+  }
+
+  @override
+  String apptWorldNext(String title, String when) {
+    return '$title $when';
+  }
+
+  @override
+  String get apptWorldNone => 'Nothing coming up';
+
+  @override
+  String get apptNextLabel => 'Next up';
+
+  @override
+  String get apptInNow => 'now';
+
+  @override
+  String apptInMinutes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'in $count minutes',
+      one: 'in 1 minute',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String apptInHours(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'in $count hours',
+      one: 'in 1 hour',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String apptInDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'in $count days',
+      one: 'in 1 day',
+    );
+    return '$_temp0';
+  }
 }
