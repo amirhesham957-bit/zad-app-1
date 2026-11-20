@@ -1530,5 +1530,13 @@
   "shopWorldAnyStore": "From any shop",
   "shopWorldDone": "The list is empty",
   "shopGroupAnyStore": "Any shop",
-  "shopPantryCount": "{count, plural, =0{The pantry is empty} =1{1 item in the pantry} other{{count} items in the pantry}}"
+  "shopPantryCount": "{count, plural, =0{The pantry is empty} =1{1 item in the pantry} other{{count} items in the pantry}}",
+  "apptWorldToday": "Today is {weekday}",
+  "apptWorldNext": "{title} {when}",
+  "apptWorldNone": "Nothing coming up",
+  "apptNextLabel": "Next up",
+  "apptInNow": "now",
+  "apptInMinutes": "{count, plural, =1{in 1 minute} other{in {count} minutes}}",
+  "apptInHours": "{count, plural, =1{in 1 hour} other{in {count} hours}}",
+  "apptInDays": "{count, plural, =1{in 1 day} other{in {count} days}}"
 }

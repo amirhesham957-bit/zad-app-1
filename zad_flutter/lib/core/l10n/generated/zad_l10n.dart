@@ -7795,6 +7795,54 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'{count, plural, =0{المخزن فاضي} =1{في المخزن صنف واحد} =2{في المخزن صنفين} few{في المخزن {count} أصناف} other{في المخزن {count} صنف}}'**
   String shopPantryCount(int count);
+
+  /// Appointments world: the line above the title, today's weekday.
+  ///
+  /// In ar, this message translates to:
+  /// **'النهارده {weekday}'**
+  String apptWorldToday(String weekday);
+
+  /// Appointments world: the state line, the next appointment and how far it is.
+  ///
+  /// In ar, this message translates to:
+  /// **'{title} {when}'**
+  String apptWorldNext(String title, String when);
+
+  /// Appointments world: the state line when nothing is coming.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش مواعيد جاية'**
+  String get apptWorldNone;
+
+  /// Appointments world: the label of the next appointment's card.
+  ///
+  /// In ar, this message translates to:
+  /// **'الميعاد الجاي'**
+  String get apptNextLabel;
+
+  /// Appointments world: the next appointment is due this minute.
+  ///
+  /// In ar, this message translates to:
+  /// **'دلوقتي'**
+  String get apptInNow;
+
+  /// Appointments world: minutes left.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{بعد دقيقة} =2{بعد دقيقتين} few{بعد {count} دقايق} other{بعد {count} دقيقة}}'**
+  String apptInMinutes(int count);
+
+  /// Appointments world: hours left.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{بعد ساعة} =2{بعد ساعتين} few{بعد {count} ساعات} other{بعد {count} ساعة}}'**
+  String apptInHours(int count);
+
+  /// Appointments world: days left.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{بعد يوم} =2{بعد يومين} few{بعد {count} أيام} other{بعد {count} يوم}}'**
+  String apptInDays(int count);
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

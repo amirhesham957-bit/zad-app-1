@@ -3868,5 +3868,65 @@
         "type": "int"
       }
     }
+  },
+  "apptWorldToday": "النهارده {weekday}",
+  "@apptWorldToday": {
+    "description": "Appointments world: the line above the title, today's weekday.",
+    "placeholders": {
+      "weekday": {
+        "type": "String"
+      }
+    }
+  },
+  "apptWorldNext": "{title} {when}",
+  "@apptWorldNext": {
+    "description": "Appointments world: the state line, the next appointment and how far it is.",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "apptWorldNone": "مفيش مواعيد جاية",
+  "@apptWorldNone": {
+    "description": "Appointments world: the state line when nothing is coming."
+  },
+  "apptNextLabel": "الميعاد الجاي",
+  "@apptNextLabel": {
+    "description": "Appointments world: the label of the next appointment's card."
+  },
+  "apptInNow": "دلوقتي",
+  "@apptInNow": {
+    "description": "Appointments world: the next appointment is due this minute."
+  },
+  "apptInMinutes": "{count, plural, =1{بعد دقيقة} =2{بعد دقيقتين} few{بعد {count} دقايق} other{بعد {count} دقيقة}}",
+  "@apptInMinutes": {
+    "description": "Appointments world: minutes left.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "apptInHours": "{count, plural, =1{بعد ساعة} =2{بعد ساعتين} few{بعد {count} ساعات} other{بعد {count} ساعة}}",
+  "@apptInHours": {
+    "description": "Appointments world: hours left.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "apptInDays": "{count, plural, =1{بعد يوم} =2{بعد يومين} few{بعد {count} أيام} other{بعد {count} يوم}}",
+  "@apptInDays": {
+    "description": "Appointments world: days left.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   }
 }
