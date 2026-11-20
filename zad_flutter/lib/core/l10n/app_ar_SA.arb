@@ -341,5 +341,13 @@
   "budgetWorldUntil": "لين يوم {day}",
   "budgetWorldDaysLeft": "{count, plural, =0{آخر يوم} =1{باقي يوم واحد} =2{باقي يومين} few{باقي {count} أيام} other{باقي {count} يوم}}",
   "budgetWorldState": "متاح {amount} · {perDay} في اليوم",
-  "budgetWorldAvailable": "متاح {amount}"
+  "budgetWorldAvailable": "متاح {amount}",
+  "statementWorldStateLess": "صرفت {pct}٪ أقل من نفس الفترة الشهر اللي فات",
+  "statementWorldStateMore": "صرفت {pct}٪ أكثر من نفس الفترة الشهر اللي فات",
+  "statementWorldStateSame": "صرفك مثل الشهر اللي فات",
+  "statementWorldStateNone": "استورد كشفك وشف فلوسك وين راحت",
+  "statementWorldBreakdownTitle": "فلوسك من وين تدخل وين تطلع",
+  "statementWorldIn": "الدخل",
+  "statementWorldEmptyTitle": "ما فيه حركات هذا الشهر للحين",
+  "statementWorldEmptyBody": "استورد كشفك أو سجّل معاملة، وتلقى هنا الدخل والمصروف حسب الفئة."
 }

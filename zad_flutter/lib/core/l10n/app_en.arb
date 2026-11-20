@@ -1537,5 +1537,13 @@
   "budgetWorldUntil": "Until day {day}",
   "budgetWorldDaysLeft": "{count, plural, =0{Last day} =1{1 day left} other{{count} days left}}",
   "budgetWorldState": "{amount} available · {perDay} a day",
-  "budgetWorldAvailable": "{amount} available"
+  "budgetWorldAvailable": "{amount} available",
+  "statementWorldStateLess": "You spent {pct}% less than the same days last month",
+  "statementWorldStateMore": "You spent {pct}% more than the same days last month",
+  "statementWorldStateSame": "Your spending is level with last month",
+  "statementWorldStateNone": "Import a statement to see where your money goes",
+  "statementWorldBreakdownTitle": "Where your money comes from and goes",
+  "statementWorldIn": "Income",
+  "statementWorldEmptyTitle": "Nothing this month yet",
+  "statementWorldEmptyBody": "Import a statement or log a transaction and your income and spending by category show up here."
 }

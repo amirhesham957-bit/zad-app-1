@@ -15,22 +15,29 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart' show DateFormat, NumberFormat;
+import 'package:intl/intl.dart' show DateFormat;
+import 'package:timezone/timezone.dart' as tz;
 import 'package:zad/core/data/providers.dart';
-import 'package:zad/core/design/components/zad_card.dart';
-import 'package:zad/core/design/components/zad_empty_state.dart';
-import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
-import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/design/tokens/zad_world_colors.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/statement/data/statement_reader.dart';
 import 'package:zad/features/statement/domain/statement_import.dart';
-import 'package:zad/shared/ads/presentation/inline_ad.dart';
+import 'package:zad/features/statement/domain/statement_months.dart';
+import 'package:zad/features/statement/presentation/statement_breakdown.dart';
+import 'package:zad/features/statement/presentation/statement_preview.dart';
+import 'package:zad/features/statement/presentation/statement_steps.dart';
+import 'package:zad/features/statement/presentation/statement_world_scene.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
+import 'package:zad/shared/market/application/account_time_zone.dart';
+import 'package:zad/shared/orb/domain/companion_state.dart';
 import 'package:zad/shared/quota/domain/server_refusal.dart';
 import 'package:zad/shared/transactions/application/transactions_controller.dart';
 import 'package:zad/shared/transactions/data/merchant_categories.dart';
 import 'package:zad/shared/transactions/data/transactions_repository.dart';
 import 'package:zad/shared/transactions/domain/transaction.dart';
+import 'package:zad/shared/worlds/world_scaffold.dart';
+import 'package:zad/shared/worlds/zad_world.dart';
 
 /// Opens the import.
 Future<void> showStatementImportScreen(BuildContext context) =>
@@ -43,8 +50,6 @@ typedef StatementFile = ({String name, Uint8List bytes});
 
 /// Larger than this is not a statement a phone should upload in one go.
 const int _maxScanBytes = 10 * 1024 * 1024;
-
-String _money(double v) => NumberFormat('#,##0.##', 'en').format(v);
 
 /// The import.
 class StatementImportScreen extends ConsumerStatefulWidget {
@@ -59,7 +64,8 @@ class StatementImportScreen extends ConsumerStatefulWidget {
       _StatementImportScreenState();
 }
 
-class _StatementImportScreenState extends ConsumerState<StatementImportScreen> {
+class _StatementImportScreenState extends ConsumerState<StatementImportScreen>
+    with SingleTickerProviderStateMixin {
   int _step = 0;
   CsvTable? _table;
   int? _date;
@@ -75,6 +81,19 @@ class _StatementImportScreenState extends ConsumerState<StatementImportScreen> {
   ScannedStatement? _scanned;
   // Counts statements the AI read, so each scan gets a fresh ad.
   int _scans = 0;
+
+  /// The scene's curve draws itself once, on arriving.
+  late final AnimationController _draw = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1800),
+  );
+  bool _drawStarted = false;
+
+  @override
+  void dispose() {
+    _draw.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -278,415 +297,128 @@ class _StatementImportScreenState extends ConsumerState<StatementImportScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => DecoratedBox(
-    decoration: BoxDecoration(gradient: ZadColors.canvas),
-    child: Scaffold(
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    if (!_drawStarted) {
+      _drawStarted = true;
+      if (MediaQuery.maybeDisableAnimationsOf(context) ?? false) {
+        _draw.value = 1;
+      } else {
+        _draw.forward();
+      }
+    }
+    // The curve, the state line and the breakdown are read from the rows the
+    // controller holds, so they redraw when an import lands.
+    final all = ref.watch(transactionsControllerProvider).rows;
+    final zone = tz.getLocation(ref.watch(accountTimeZoneProvider));
+    final now = ref.read(nowProvider)();
+    final months = monthlyTotals(all, zone, now);
+    final peak = months.fold<double>(0, (m, t) => t.spent > m ? t.spent : m);
+    final series = <double>[
+      if (peak > 0)
+        for (final m in months) m.spent / peak,
+    ];
+    final pace = spendingPaceChange(all, zone, now);
+    final pct = pace == null ? 0 : (pace.abs() * 100).round();
+
+    return Scaffold(
       backgroundColor: Colors.transparent,
-      appBar: AppBar(title: const Text('استيراد كشف حساب')),
-      body: switch (_step) {
-        0 => _PickStep(error: _error, reading: _reading, onPick: _pick),
-        1 => _MappingStep(
-          headers: _table!.headers,
-          date: _date,
-          title: _title,
-          amount: _amount,
-          category: _category,
-          invert: _invert,
-          onDate: (v) => setState(() => _date = v),
-          onTitle: (v) => setState(() => _title = v),
-          onAmount: (v) => setState(() => _amount = v),
-          onCategory: (v) => setState(() => _category = v),
-          onInvert: (v) => setState(() => _invert = v),
-          onConfirm: _preview,
+      body: ZadWorldScaffold(
+        world: ZadWorld.stmt,
+        eyebrow: DateFormat.MMMM(l.localeName).format(now),
+        title: l.worldLabelStmt,
+        stateLine: switch (pace) {
+          null => l.statementWorldStateNone,
+          _ when pct == 0 => l.statementWorldStateSame,
+          final p when p < 0 => l.statementWorldStateLess(pct),
+          _ => l.statementWorldStateMore(pct),
+        },
+        scene: (loop) => StatementWorldScene(loop, _draw, series),
+        zado: ZadWorldZado(
+          left: 24,
+          top: 56,
+          size: 130,
+          state: _reading ? CompanionState.focused : CompanionState.happy,
         ),
-        _ => _PreviewStep(
-          scanned: _scanned,
-          scans: _scans,
-          rows: _rows,
-          checked: _checked,
-          importing: _importing,
-          onToggle: (i) => setState(
-            () => _checked.contains(i) ? _checked.remove(i) : _checked.add(i),
-          ),
-          onImport: () => unawaited(_import()),
-        ),
-      },
-    ),
-  );
-}
-
-class _PickStep extends StatelessWidget {
-  const new({required this.error, required this.reading, required this.onPick});
-
-  final String? error;
-  final bool reading;
-  final Future<void> Function() onPick;
-
-  @override
-  Widget build(BuildContext context) => Center(
-    child: Padding(
-      padding: const EdgeInsets.all(ZadSpacing.xl),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          const Icon(Icons.upload_file, size: 56, color: ZadColors.green700),
-          const SizedBox(height: ZadSpacing.lg),
-          Text(
-            'اختار كشف حسابك: PDF من تطبيق البنك، أو صورة، أو ملف CSV. '
-            'زاد بيقرا الحركات ويراجعها على رصيد الكشف، ومفيش حاجة بتتسجل '
-            'غير بعد ما تراجعها.',
-            textAlign: TextAlign.center,
-            style: ZadType.bodyMedium.copyWith(color: ZadColors.inkMuted),
-          ),
-          const SizedBox(height: 20),
-          if (error case final message?) ...<Widget>[
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: ZadType.bodySmall.copyWith(
-                color: ZadColors.terracottaRust,
-              ),
-            ),
-            const SizedBox(height: ZadSpacing.md),
-          ],
-          if (reading) ...<Widget>[
-            const CircularProgressIndicator(),
-            const SizedBox(height: ZadSpacing.md),
-            Text(
-              'بقرا الكشف… الكشف الطويل بياخد دقيقة',
-              style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
-            ),
-          ] else
-            FilledButton(
-              style: FilledButton.styleFrom(
-                minimumSize: const Size(0, 48),
-                shape: const StadiumBorder(),
-              ),
-              onPressed: () => unawaited(onPick()),
-              child: const Text('اختيار الكشف'),
-            ),
-        ],
-      ),
-    ),
-  );
-}
-
-class _MappingStep extends StatelessWidget {
-  const new({
-    required this.headers,
-    required this.date,
-    required this.title,
-    required this.amount,
-    required this.category,
-    required this.invert,
-    required this.onDate,
-    required this.onTitle,
-    required this.onAmount,
-    required this.onCategory,
-    required this.onInvert,
-    required this.onConfirm,
-  });
-
-  final List<String> headers;
-  final int? date;
-  final int? title;
-  final int? amount;
-  final int? category;
-  final bool invert;
-  final ValueChanged<int> onDate;
-  final ValueChanged<int> onTitle;
-  final ValueChanged<int> onAmount;
-  final ValueChanged<int> onCategory;
-  final ValueChanged<bool> onInvert;
-  final VoidCallback onConfirm;
-
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.all(20),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        Text(
-          'حدد أي عمود من الملف يمثل كل بيانة — الملف مختلف من بنك لبنك',
-          style: ZadType.bodyMedium.copyWith(color: ZadColors.inkMuted),
-        ),
-        const SizedBox(height: ZadSpacing.lg),
-        _ColumnPicker('عمود التاريخ', headers, date, onDate),
-        const SizedBox(height: ZadSpacing.md),
-        _ColumnPicker('عمود الوصف/العنوان', headers, title, onTitle),
-        const SizedBox(height: ZadSpacing.md),
-        _ColumnPicker('عمود المبلغ', headers, amount, onAmount),
-        const SizedBox(height: ZadSpacing.md),
-        _ColumnPicker(
-          'عمود التصنيف (اختياري)',
-          headers,
-          category,
-          onCategory,
-          optional: true,
-        ),
-        const SizedBox(height: ZadSpacing.md),
-        Row(
-          children: <Widget>[
-            const Expanded(
-              child: Text(
-                'اعكس إشارة المبلغ (لو السالب هنا معناه دخل مش مصروف)',
-                style: ZadType.bodyMedium,
-              ),
-            ),
-            Switch(value: invert, onChanged: onInvert),
-          ],
-        ),
-        const Spacer(),
-        FilledButton(
-          style: FilledButton.styleFrom(
-            minimumSize: const Size.fromHeight(48),
-            shape: const StadiumBorder(),
-          ),
-          onPressed: date != null && title != null && amount != null
-              ? onConfirm
-              : null,
-          child: const Text('متابعة للمراجعة'),
-        ),
-      ],
-    ),
-  );
-}
-
-class _ColumnPicker extends StatelessWidget {
-  const new(
-    this.label,
-    this.headers,
-    this.selected,
-    this.onSelect, {
-    this.optional = false,
-  });
-
-  final String label;
-  final List<String> headers;
-  final int? selected;
-  final ValueChanged<int> onSelect;
-  final bool optional;
-
-  @override
-  Widget build(BuildContext context) => DropdownMenu<int>(
-    expandedInsets: EdgeInsets.zero,
-    label: Text(label),
-    initialSelection: selected,
-    hintText: optional ? 'بدون' : null,
-    onSelected: (v) => v == null ? null : onSelect(v),
-    dropdownMenuEntries: <DropdownMenuEntry<int>>[
-      for (final (i, h) in headers.indexed)
-        DropdownMenuEntry<int>(
-          value: i,
-          label: h.trim().isEmpty ? 'عمود ${i + 1}' : h,
-        ),
-    ],
-  );
-}
-
-class _PreviewStep extends StatelessWidget {
-  const new({
-    required this.scanned,
-    required this.scans,
-    required this.rows,
-    required this.checked,
-    required this.importing,
-    required this.onToggle,
-    required this.onImport,
-  });
-
-  final ScannedStatement? scanned;
-  final int scans;
-  final List<PreviewRow> rows;
-  final Set<int> checked;
-  final bool importing;
-  final ValueChanged<int> onToggle;
-  final VoidCallback onImport;
-
-  @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: <Widget>[
-      Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 20,
-          vertical: ZadSpacing.sm,
-        ),
-        child: Text(
-          '${rows.length} صف — ${checked.length} محدد للاستيراد',
-          style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
-        ),
-      ),
-      if (scanned case final s?) ...<Widget>[
-        _CheckBanner(scanned: s),
-        // One ad per AI request (owner, 11/11).
-        ZadInlineAd(key: ValueKey<int>(scans)),
-      ],
-      Expanded(
-        child: rows.isEmpty
-            ? const Padding(
-                padding: EdgeInsets.symmetric(vertical: ZadSpacing.xxl),
-                child: ZadEmptyState(
-                  icon: Icons.description,
-                  title: 'ما لقيتش أي معاملة في الملف',
-                  message:
-                      'الملف اتقرا لكن مفيهوش صفوف أقدر أستوردها — اتأكد إنه '
-                      'كشف حساب وإن صيغته CSV أو PDF مقروء.',
+        // The import button docks under the review, in the thumb zone, so it
+        // never covers a row.
+        dockHeight: _step == 2 ? 88 : 0,
+        overlay: _step == 2
+            ? Positioned(
+                left: ZadSpacing.gutter,
+                right: ZadSpacing.gutter,
+                bottom: ZadSpacing.md,
+                child: FilledButton(
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size.fromHeight(52),
+                    backgroundColor: ZadWorldColors.statement,
+                    shape: const StadiumBorder(),
+                  ),
+                  onPressed: _checked.isNotEmpty && !_importing
+                      ? () => unawaited(_import())
+                      : null,
+                  child: Text('استيراد ${_checked.length} معاملة'),
                 ),
               )
-            : ListView.separated(
-                padding: const EdgeInsets.fromLTRB(
-                  ZadSpacing.lg,
-                  0,
-                  ZadSpacing.lg,
-                  ZadSpacing.sm,
-                ),
-                itemCount: rows.length,
-                separatorBuilder: (_, _) =>
-                    const SizedBox(height: ZadSpacing.sm),
-                itemBuilder: (context, i) => _RowCard(
-                  row: rows[i],
-                  checked: checked.contains(rows[i].rowIndex),
-                  onToggle: onToggle,
-                ),
+            : null,
+        slivers: switch (_step) {
+          0 => <Widget>[
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(
+                ZadSpacing.gutter,
+                ZadSpacing.md,
+                ZadSpacing.gutter,
+                0,
               ),
-      ),
-      SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.all(ZadSpacing.lg),
-          child: FilledButton(
-            style: FilledButton.styleFrom(
-              minimumSize: const Size.fromHeight(48),
-              shape: const StadiumBorder(),
-            ),
-            onPressed: checked.isNotEmpty && !importing ? onImport : null,
-            child: Text('استيراد ${checked.length} معاملة'),
-          ),
-        ),
-      ),
-    ],
-  );
-}
-
-class _RowCard extends StatelessWidget {
-  const new({required this.row, required this.checked, required this.onToggle});
-
-  final PreviewRow row;
-  final bool checked;
-  final ValueChanged<int> onToggle;
-
-  @override
-  Widget build(BuildContext context) {
-    final amount = row.amount;
-    final date = row.date;
-    final tone = row.isExpense ? ZadColors.terracottaRust : ZadColors.green600;
-    return ZadCard(
-      color: row.hasError
-          ? ZadColors.terracottaRust.withValues(alpha: 0.06)
-          : ZadColors.surface,
-      padding: const EdgeInsets.all(10),
-      child: Row(
-        children: <Widget>[
-          Checkbox(
-            value: checked,
-            onChanged: row.hasError ? null : (_) => onToggle(row.rowIndex),
-          ),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  row.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: ZadType.bodyMedium.copyWith(
-                    fontWeight: FontWeight.w600,
+              sliver: SliverList.list(
+                children: <Widget>[
+                  StatementPickCard(
+                    error: _error,
+                    reading: _reading,
+                    onPick: _pick,
                   ),
-                ),
-                Text(
-                  row.hasError || date == null
-                      ? 'تعذّرت قراءة التاريخ أو المبلغ في هذا الصف'
-                      : '${DateFormat('yyyy-MM-dd', 'en').format(date)} · '
-                            '${row.category}',
-                  style: ZadType.labelSmall.copyWith(
-                    color: row.hasError
-                        ? ZadColors.terracottaRust
-                        : ZadColors.inkMuted,
-                  ),
-                ),
-                if (row.balanceOk == false)
-                  Text(
-                    'الرصيد في الكشف مش متطابق مع الصف ده — راجع المبلغ',
-                    style: ZadType.labelSmall.copyWith(
-                      color: ZadColors.terracottaRust,
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          if (amount != null)
-            Text(
-              '${row.isExpense ? '-' : '+'}${_money(amount)}',
-              style: ZadType.bodyMedium.copyWith(
-                fontWeight: FontWeight.w700,
-                color: tone,
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-/// What the statement's own balance said, in one line above the rows.
-class _CheckBanner extends StatelessWidget {
-  const new({required this.scanned});
-
-  final ScannedStatement scanned;
-
-  @override
-  Widget build(BuildContext context) {
-    final (icon, tone, text) = switch (scanned.check) {
-      StatementCheck.balanced => (
-        Icons.verified_outlined,
-        ZadColors.green600,
-        'الأرقام متطابقة مع رصيد الكشف',
-      ),
-      StatementCheck.mismatch => (
-        Icons.error_outline,
-        ZadColors.terracottaRust,
-        'في أرقام مش متطابقة مع رصيد الكشف — الصفوف دي مش متعلّمة، راجعها',
-      ),
-      StatementCheck.unknown => (
-        Icons.info_outline,
-        ZadColors.inkMuted,
-        'الكشف مفيهوش رصيد أراجع عليه — راجع كل صف قبل الاستيراد',
-      ),
-    };
-    final dropped = scanned.dropped;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        ZadSpacing.lg,
-        0,
-        ZadSpacing.lg,
-        ZadSpacing.sm,
-      ),
-      child: ZadCard(
-        color: tone.withValues(alpha: 0.08),
-        padding: const EdgeInsets.all(ZadSpacing.md),
-        child: Row(
-          children: <Widget>[
-            Icon(icon, color: tone),
-            const SizedBox(width: ZadSpacing.sm),
-            Expanded(
-              child: Text(
-                dropped > 0 ? '$text. وفي $dropped صف ماقدرتش أقراه.' : text,
-                style: ZadType.bodySmall.copyWith(color: tone),
+                  const SizedBox(height: ZadSpacing.md),
+                  StatementBreakdown(month: monthBreakdown(all, zone, now)),
+                ],
               ),
             ),
           ],
-        ),
+          1 => <Widget>[
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(
+                ZadSpacing.gutter,
+                ZadSpacing.md,
+                ZadSpacing.gutter,
+                0,
+              ),
+              sliver: SliverToBoxAdapter(
+                child: StatementMappingCard(
+                  headers: _table!.headers,
+                  date: _date,
+                  title: _title,
+                  amount: _amount,
+                  category: _category,
+                  invert: _invert,
+                  onDate: (v) => setState(() => _date = v),
+                  onTitle: (v) => setState(() => _title = v),
+                  onAmount: (v) => setState(() => _amount = v),
+                  onCategory: (v) => setState(() => _category = v),
+                  onInvert: (v) => setState(() => _invert = v),
+                  onConfirm: _preview,
+                ),
+              ),
+            ),
+          ],
+          _ => statementPreviewSlivers(
+            scanned: _scanned,
+            scans: _scans,
+            rows: _rows,
+            checked: _checked,
+            onToggle: (i) => setState(
+              () => _checked.contains(i) ? _checked.remove(i) : _checked.add(i),
+            ),
+          ),
+        },
       ),
     );
   }

@@ -4581,4 +4581,36 @@ class ZadL10nEn extends ZadL10n {
   String budgetWorldAvailable(String amount) {
     return '$amount available';
   }
+
+  @override
+  String statementWorldStateLess(int pct) {
+    return 'You spent $pct% less than the same days last month';
+  }
+
+  @override
+  String statementWorldStateMore(int pct) {
+    return 'You spent $pct% more than the same days last month';
+  }
+
+  @override
+  String get statementWorldStateSame =>
+      'Your spending is level with last month';
+
+  @override
+  String get statementWorldStateNone =>
+      'Import a statement to see where your money goes';
+
+  @override
+  String get statementWorldBreakdownTitle =>
+      'Where your money comes from and goes';
+
+  @override
+  String get statementWorldIn => 'Income';
+
+  @override
+  String get statementWorldEmptyTitle => 'Nothing this month yet';
+
+  @override
+  String get statementWorldEmptyBody =>
+      'Import a statement or log a transaction and your income and spending by category show up here.';
 }

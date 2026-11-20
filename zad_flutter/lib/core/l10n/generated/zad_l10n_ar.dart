@@ -4478,6 +4478,35 @@ class ZadL10nAr extends ZadL10n {
   String budgetWorldAvailable(String amount) {
     return 'متاح $amount';
   }
+
+  @override
+  String statementWorldStateLess(int pct) {
+    return 'صرفت $pct٪ أقل من نفس الفترة الشهر اللي فات';
+  }
+
+  @override
+  String statementWorldStateMore(int pct) {
+    return 'صرفت $pct٪ أكتر من نفس الفترة الشهر اللي فات';
+  }
+
+  @override
+  String get statementWorldStateSame => 'صرفك زي الشهر اللي فات';
+
+  @override
+  String get statementWorldStateNone => 'استورد كشفك وشوف فلوسك رايحة فين';
+
+  @override
+  String get statementWorldBreakdownTitle => 'فلوسك داخلة منين وخارجة فين';
+
+  @override
+  String get statementWorldIn => 'الدخل';
+
+  @override
+  String get statementWorldEmptyTitle => 'مفيش حركات الشهر ده لسه';
+
+  @override
+  String get statementWorldEmptyBody =>
+      'استورد كشفك أو سجّل معاملة، وهتلاقي هنا الدخل والمصروف حسب الفئة.';
 }
 
 /// The translations for Arabic, as used in Saudi Arabia (`ar_SA`).
@@ -5732,4 +5761,33 @@ class ZadL10nArSa extends ZadL10nAr {
   String budgetWorldAvailable(String amount) {
     return 'متاح $amount';
   }
+
+  @override
+  String statementWorldStateLess(int pct) {
+    return 'صرفت $pct٪ أقل من نفس الفترة الشهر اللي فات';
+  }
+
+  @override
+  String statementWorldStateMore(int pct) {
+    return 'صرفت $pct٪ أكثر من نفس الفترة الشهر اللي فات';
+  }
+
+  @override
+  String get statementWorldStateSame => 'صرفك مثل الشهر اللي فات';
+
+  @override
+  String get statementWorldStateNone => 'استورد كشفك وشف فلوسك وين راحت';
+
+  @override
+  String get statementWorldBreakdownTitle => 'فلوسك من وين تدخل وين تطلع';
+
+  @override
+  String get statementWorldIn => 'الدخل';
+
+  @override
+  String get statementWorldEmptyTitle => 'ما فيه حركات هذا الشهر للحين';
+
+  @override
+  String get statementWorldEmptyBody =>
+      'استورد كشفك أو سجّل معاملة، وتلقى هنا الدخل والمصروف حسب الفئة.';
 }

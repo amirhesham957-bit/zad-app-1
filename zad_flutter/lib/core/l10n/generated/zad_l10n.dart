@@ -7837,6 +7837,54 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'متاح {amount}'**
   String budgetWorldAvailable(String amount);
+
+  /// Statement world: the state line when this month is running under last month at the same day.
+  ///
+  /// In ar, this message translates to:
+  /// **'صرفت {pct}٪ أقل من نفس الفترة الشهر اللي فات'**
+  String statementWorldStateLess(int pct);
+
+  /// Statement world: the state line when this month is running over last month at the same day.
+  ///
+  /// In ar, this message translates to:
+  /// **'صرفت {pct}٪ أكتر من نفس الفترة الشهر اللي فات'**
+  String statementWorldStateMore(int pct);
+
+  /// Statement world: the state line when the two months are level.
+  ///
+  /// In ar, this message translates to:
+  /// **'صرفك زي الشهر اللي فات'**
+  String get statementWorldStateSame;
+
+  /// Statement world: the state line when there is no earlier month to compare with.
+  ///
+  /// In ar, this message translates to:
+  /// **'استورد كشفك وشوف فلوسك رايحة فين'**
+  String get statementWorldStateNone;
+
+  /// Statement world: the title of the money in/out card.
+  ///
+  /// In ar, this message translates to:
+  /// **'فلوسك داخلة منين وخارجة فين'**
+  String get statementWorldBreakdownTitle;
+
+  /// Statement world: the income bar.
+  ///
+  /// In ar, this message translates to:
+  /// **'الدخل'**
+  String get statementWorldIn;
+
+  /// Statement world: empty breakdown title.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش حركات الشهر ده لسه'**
+  String get statementWorldEmptyTitle;
+
+  /// Statement world: empty breakdown guidance.
+  ///
+  /// In ar, this message translates to:
+  /// **'استورد كشفك أو سجّل معاملة، وهتلاقي هنا الدخل والمصروف حسب الفئة.'**
+  String get statementWorldEmptyBody;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

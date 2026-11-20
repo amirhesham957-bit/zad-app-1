@@ -3919,5 +3919,47 @@
         "type": "String"
       }
     }
+  },
+  "statementWorldStateLess": "صرفت {pct}٪ أقل من نفس الفترة الشهر اللي فات",
+  "@statementWorldStateLess": {
+    "description": "Statement world: the state line when this month is running under last month at the same day.",
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
+  "statementWorldStateMore": "صرفت {pct}٪ أكتر من نفس الفترة الشهر اللي فات",
+  "@statementWorldStateMore": {
+    "description": "Statement world: the state line when this month is running over last month at the same day.",
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
+  "statementWorldStateSame": "صرفك زي الشهر اللي فات",
+  "@statementWorldStateSame": {
+    "description": "Statement world: the state line when the two months are level."
+  },
+  "statementWorldStateNone": "استورد كشفك وشوف فلوسك رايحة فين",
+  "@statementWorldStateNone": {
+    "description": "Statement world: the state line when there is no earlier month to compare with."
+  },
+  "statementWorldBreakdownTitle": "فلوسك داخلة منين وخارجة فين",
+  "@statementWorldBreakdownTitle": {
+    "description": "Statement world: the title of the money in/out card."
+  },
+  "statementWorldIn": "الدخل",
+  "@statementWorldIn": {
+    "description": "Statement world: the income bar."
+  },
+  "statementWorldEmptyTitle": "مفيش حركات الشهر ده لسه",
+  "@statementWorldEmptyTitle": {
+    "description": "Statement world: empty breakdown title."
+  },
+  "statementWorldEmptyBody": "استورد كشفك أو سجّل معاملة، وهتلاقي هنا الدخل والمصروف حسب الفئة.",
+  "@statementWorldEmptyBody": {
+    "description": "Statement world: empty breakdown guidance."
   }
 }
