@@ -328,5 +328,10 @@
   "worldLinksHint": "اللي يصير هنا يأثر في:",
   "worldLabelPrices": "أسعار اليوم",
   "pantryWorldEyebrow": "{count, plural, =0{للحين ما فيه أصناف} =1{صنف واحد} =2{صنفين} few{{count} أصناف} other{{count} صنف}}",
-  "pantryWorldState": "{count, plural, =0{ما فيه شي قرّب يخلص} =1{شي واحد قرّب يخلص} =2{شيئين قرّبوا يخلصون} few{{count} أشياء قرّبت تخلص} other{{count} شي قرّب يخلص}}"
+  "pantryWorldState": "{count, plural, =0{ما فيه شي قرّب يخلص} =1{شي واحد قرّب يخلص} =2{شيئين قرّبوا يخلصون} few{{count} أشياء قرّبت تخلص} other{{count} شي قرّب يخلص}}",
+  "subsWorldNone": "ما فيه اشتراكات للحين",
+  "subsWorldTotal": "{amount} في الشهر",
+  "subsWorldNextToday": "{amount} في الشهر · {title} يتجدد اليوم",
+  "subsWorldNext": "{amount} في الشهر · {title} بعد {days} يوم",
+  "subsEmptyHint": "اضغط «إضافة» وزاد يحسب لك التجديد الجاي."
 }

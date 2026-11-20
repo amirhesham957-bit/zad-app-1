@@ -3224,6 +3224,36 @@ abstract class ZadL10n {
   /// **'الاشتراكات والفواتير'**
   String get subsTitle;
 
+  /// No description provided for @subsWorldNone.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش اشتراكات لسه'**
+  String get subsWorldNone;
+
+  /// No description provided for @subsWorldTotal.
+  ///
+  /// In ar, this message translates to:
+  /// **'{amount} في الشهر'**
+  String subsWorldTotal(String amount);
+
+  /// No description provided for @subsWorldNextToday.
+  ///
+  /// In ar, this message translates to:
+  /// **'{amount} في الشهر · {title} بيجدد النهارده'**
+  String subsWorldNextToday(String amount, String title);
+
+  /// No description provided for @subsWorldNext.
+  ///
+  /// In ar, this message translates to:
+  /// **'{amount} في الشهر · {title} بعد {days} يوم'**
+  String subsWorldNext(String amount, String title, int days);
+
+  /// No description provided for @subsEmptyHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'اضغط «إضافة» وزاد يحسب لك التجديد الجاي.'**
+  String get subsEmptyHint;
+
   /// No description provided for @subsBnplTag.
   ///
   /// In ar, this message translates to:

@@ -17,23 +17,31 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' show NumberFormat;
+import 'package:zad/core/design/components/zad_empty_state.dart';
 import 'package:zad/core/design/components/zad_kotlin_surfaces.dart';
 import 'package:zad/core/design/components/zad_scroll_away.dart';
-import 'package:zad/core/design/foundation/compose_shadow.dart';
-import 'package:zad/core/design/tokens/zad_extended_colors.dart';
+import 'package:zad/core/design/tokens/zad_colors.dart';
+import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_palette.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/design/tokens/zad_world_colors.dart';
 import 'package:zad/core/l10n/l10n.dart';
+import 'package:zad/features/subscriptions/presentation/subscriptions_world_scene.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
 import 'package:zad/shared/navigation/zad_slots.dart';
+import 'package:zad/shared/orb/domain/companion_state.dart';
 import 'package:zad/shared/subscriptions/application/subscriptions_controller.dart';
 import 'package:zad/shared/subscriptions/domain/bnpl.dart';
 import 'package:zad/shared/subscriptions/domain/renewal.dart';
 import 'package:zad/shared/subscriptions/domain/subscription.dart';
 import 'package:zad/shared/subscriptions/presentation/subscription_brands.dart';
+import 'package:zad/shared/worlds/art/art.dart';
+import 'package:zad/shared/worlds/world_card.dart';
+import 'package:zad/shared/worlds/world_scaffold.dart';
+import 'package:zad/shared/worlds/zad_world.dart';
 
 /// Opens the screen.
 Future<void> showSubscriptionsScreen(BuildContext context) =>
@@ -135,8 +143,7 @@ class _SubsState extends ConsumerState<SubscriptionsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final ext = context.zadExt;
+    final l = context.l10n;
     final view = ref.watch(subscriptionsControllerProvider);
     final controller = ref.read(subscriptionsControllerProvider.notifier);
     final symbol = ref.watch(
@@ -162,266 +169,347 @@ class _SubsState extends ConsumerState<SubscriptionsScreen> {
       });
     final detected = view.items.where(_isAutoDetected).toList();
 
+    // The ribbon: every running row's next charge, and the soonest of them
+    // for the state line.
+    final charges = <WorldCharge>[];
+    Subscription? soonest;
+    var soonestDays = 0;
+    for (final s in active) {
+      final next = s.nextRenewalFrom(today) ?? _storedRenewal(s);
+      if (next == null) continue;
+      final days = next.difference(today).inDays;
+      if (days < 0) continue;
+      charges.add((
+        day: days,
+        color:
+            subscriptionBrandFor(s.title, s.provider)?.color ??
+            ZadWorldColors.subscriptions,
+      ));
+      if (soonest == null || days < soonestDays) {
+        soonest = s;
+        soonestDays = days;
+      }
+    }
+    final amount = _money(totalMonthly, symbol);
+    final stateLine = active.isEmpty
+        ? l.subsWorldNone
+        : soonest == null
+        ? l.subsWorldTotal(amount)
+        : soonestDays == 0
+        ? l.subsWorldNextToday(amount, soonest.title)
+        : l.subsWorldNext(amount, soonest.title, soonestDays);
+
     final tabs = ZadSegmentedTabs(
-      tabs: _tabs(context.l10n),
+      margin: EdgeInsets.zero,
+      tabs: _tabs(l),
       selectedIndex: _tab,
       onSelect: (i) => setState(() => _tab = i),
     );
-    if (_tab == _loansTab) {
-      final loans = Column(
-        children: <Widget>[
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-            child: tabs,
+    final fab = PositionedDirectional(
+      end: ZadSpacing.lg,
+      bottom: ZadSpacing.md,
+      child: SafeArea(
+        child: ZadStepsAside(
+          child: FloatingActionButton.extended(
+            heroTag: null,
+            onPressed: () => unawaited(showAddEditSubscriptionDialog(context)),
+            backgroundColor: ZadWorldColors.subscriptions,
+            foregroundColor: ZadColors.ink,
+            elevation: 4,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(ZadRadii.card),
+            ),
+            tooltip: l.commonAdd,
+            icon: const Icon(ZadIcons.add),
+            label: Text(l.commonAdd),
           ),
-          Expanded(child: ZadSlots.debtsTab()),
-        ],
+        ),
+      ),
+    );
+
+    List<Widget> padded(List<Widget> children) => <Widget>[
+      SliverPadding(
+        padding: const EdgeInsets.symmetric(horizontal: ZadSpacing.gutter),
+        sliver: SliverList.list(children: children),
+      ),
+    ];
+
+    if (_tab == _loansTab) {
+      final loansSlivers = <Widget>[
+        ...padded(<Widget>[tabs]),
+        SliverFillRemaining(child: ZadSlots.debtsTab()),
+      ];
+      if (widget.embedded) {
+        return Column(
+          children: <Widget>[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                ZadSpacing.gutter,
+                ZadSpacing.sm,
+                ZadSpacing.gutter,
+                0,
+              ),
+              child: tabs,
+            ),
+            Expanded(child: ZadSlots.debtsTab()),
+          ],
+        );
+      }
+      return _world(
+        context,
+        stateLine: stateLine,
+        charges: charges,
+        soonestDays: soonest == null ? null : soonestDays,
+        hasActive: active.isNotEmpty,
+        slivers: loansSlivers,
+        fab: fab,
+        controller: controller,
       );
-      return widget.embedded
-          ? loans
-          : Scaffold(
-              appBar: AppBar(title: Text(context.l10n.drawerObligations)),
-              body: loans,
-            );
     }
 
-    final empty = Padding(
-      padding: const EdgeInsets.symmetric(vertical: 32),
-      child: KtEmptyState(
-        icon: Icons.credit_card,
-        title: _tab == 0 ? context.l10n.subsNone : context.l10n.subsNoneInTab,
-      ),
+    final empty = ZadEmptyState(
+      icon: ZadIcons.recurring,
+      title: _tab == 0 ? l.subsNone : l.subsNoneInTab,
+      message: l.subsEmptyHint,
     );
     final obligationKinds = _obligationKinds(_tab);
 
-    final list = ListView(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 110),
-      children: <Widget>[
-        Row(
-          mainAxisAlignment: MainAxisAlignment.end,
+    final children = <Widget>[
+      Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: <Widget>[
+          _Chip(
+            label: l.subsActive,
+            selected: !_showInactive,
+            onTap: () => setState(() => _showInactive = false),
+          ),
+          const SizedBox(width: ZadSpacing.sm),
+          _Chip(
+            label: l.subsTabAll,
+            selected: _showInactive,
+            onTap: () => setState(() => _showInactive = true),
+          ),
+        ],
+      ),
+      const SizedBox(height: ZadSpacing.sm),
+      ZadWorldCard(
+        child: Row(
           children: <Widget>[
-            _Chip(
-              label: context.l10n.subsActive,
-              selected: !_showInactive,
-              selectedColor: scheme.primaryContainer,
-              onTap: () => setState(() => _showInactive = false),
-            ),
-            const SizedBox(width: 6),
-            _Chip(
-              label: context.l10n.subsTabAll,
-              selected: _showInactive,
-              selectedColor: ext.surfaceContainerHigh,
-              onTap: () => setState(() => _showInactive = true),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Stack(
-          clipBehavior: Clip.none,
-          children: <Widget>[
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              child: HeroGradientCard.banner(
-                padding: const EdgeInsets.all(20),
-                child: Row(
-                  children: <Widget>[
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.18),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.credit_card,
-                        color: Colors.white,
-                        size: 22,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    l.subsMonthlyTotal,
+                    style: ZadType.labelMedium.copyWith(
+                      color: ZadColors.inkMuted,
+                    ),
+                  ),
+                  const SizedBox(height: ZadSpacing.xs),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: AlignmentDirectional.centerStart,
+                    child: Text(
+                      amount,
+                      style: ZadType.displayMedium.copyWith(
+                        color: ZadColors.ink,
+                        fontWeight: FontWeight.w900,
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          Text(
-                            context.l10n.subsMonthlyTotal,
-                            style: ZadType.labelMedium.copyWith(
-                              color: Colors.white.withValues(alpha: 0.85),
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          FittedBox(
-                            fit: BoxFit.scaleDown,
-                            alignment: AlignmentDirectional.centerStart,
-                            child: Text(
-                              _money(totalMonthly, symbol),
-                              style: ZadType.displayMedium.copyWith(
-                                fontSize: 36,
-                                height: 44 / 36,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: <Widget>[
-                        Text(
-                          context.l10n.subsActiveCount,
-                          style: ZadType.labelSmall.copyWith(
-                            color: Colors.white.withValues(alpha: 0.7),
-                          ),
-                        ),
-                        Text(
-                          '${active.length}',
-                          style: ZadType.titleLarge.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        tabs,
-        if (detected.isNotEmpty) ...<Widget>[
-          const SizedBox(height: 12),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: <Widget>[
                 Text(
-                  context.l10n.subsDetected(detected.length),
-                  style: ZadType.labelMedium.copyWith(
-                    color: scheme.onSurfaceVariant,
-                  ),
+                  l.subsActiveCount,
+                  style: ZadType.labelSmall.copyWith(color: ZadColors.inkMuted),
                 ),
-                TextButton.icon(
-                  onPressed: () => unawaited(_clearDetected(detected)),
-                  icon: Icon(Icons.auto_delete, size: 16, color: scheme.error),
-                  label: Text(
-                    context.l10n.subsClearAll,
-                    style: ZadType.labelLarge.copyWith(color: scheme.error),
+                Text(
+                  '${active.length}',
+                  style: ZadType.titleLarge.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: ZadColors.mustardOchre,
                   ),
                 ),
               ],
             ),
-          ),
-        ],
-        const SizedBox(height: 12),
-        if (filtered.isEmpty)
-          switch (_obligationKinds(_tab)) {
-            null => empty,
-            final kinds => ZadSlots.obligationRows(
-              kinds: kinds,
-              whenEmpty: empty,
+          ],
+        ),
+      ),
+      const SizedBox(height: ZadSpacing.md),
+      tabs,
+      if (detected.isNotEmpty) ...<Widget>[
+        const SizedBox(height: ZadSpacing.md),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: <Widget>[
+            Text(
+              l.subsDetected(detected.length),
+              style: ZadType.labelMedium.copyWith(color: ZadColors.inkMuted),
             ),
-          }
-        else
-          for (final (i, sub) in filtered.indexed) ...<Widget>[
-            if (_tab == 3 &&
-                (i == 0 || isBnpl(filtered[i - 1]) != isBnpl(sub))) ...<Widget>[
-              if (i > 0) const SizedBox(height: 16),
-              Text(
-                isBnpl(sub) ? context.l10n.subsBnpl : context.l10n.subsLoans,
-                style: ZadType.titleSmall,
+            TextButton.icon(
+              onPressed: () => unawaited(_clearDetected(detected)),
+              style: TextButton.styleFrom(minimumSize: const Size(44, 44)),
+              icon: Icon(
+                Icons.auto_delete,
+                size: 16,
+                color: ZadColors.terracottaRust,
               ),
-              const SizedBox(height: 8),
-            ] else if (i > 0)
-              const SizedBox(height: 12),
-            _ListItemEnter(
-              key: ValueKey<String>(sub.id),
-              index: i,
-              child: SubscriptionCardFull(
-                sub: sub,
-                today: today,
-                symbol: symbol,
-                onToggleActive: () =>
-                    unawaited(controller.setActive(sub, active: !sub.isActive)),
-                onToggleAutoDeduct: () => unawaited(
-                  controller.save(sub.copyWith(autoDeduct: !sub.autoDeduct)),
+              label: Text(
+                l.subsClearAll,
+                style: ZadType.labelLarge.copyWith(
+                  color: ZadColors.terracottaRust,
                 ),
-                onEdit: () => unawaited(
-                  showAddEditSubscriptionDialog(context, subscription: sub),
-                ),
-                onDelete: () => unawaited(controller.remove(sub)),
-                onMarkAsPaid: () async {
-                  final messenger = ScaffoldMessenger.of(context);
-                  final paid = context.l10n.subsPaid(sub.title);
-                  await controller.markPaid(sub);
-                  messenger.showSnackBar(SnackBar(content: Text(paid)));
-                },
               ),
             ),
           ],
-        if (filtered.isNotEmpty && obligationKinds != null)
-          ZadSlots.obligationRows(
-            kinds: obligationKinds,
-            title: context.l10n.subsFixed,
-          ),
+        ),
       ],
-    );
-
-    final body = ZadScrollAwayScope(
-      child: Stack(
-        children: <Widget>[
-          Positioned.fill(
-            child: RefreshIndicator(
-              onRefresh: () => controller.refresh(force: true),
-              child: list,
-            ),
+      const SizedBox(height: ZadSpacing.md),
+      if (filtered.isEmpty)
+        switch (obligationKinds) {
+          null => empty,
+          final kinds => ZadSlots.obligationRows(
+            kinds: kinds,
+            whenEmpty: empty,
           ),
-          PositionedDirectional(
-            end: 24,
-            bottom: 16,
-            child: SafeArea(
-              child: ZadStepsAside(
-                child: FloatingActionButton(
-                  heroTag: null,
-                  onPressed: () =>
-                      unawaited(showAddEditSubscriptionDialog(context)),
-                  backgroundColor: scheme.primary,
-                  foregroundColor: Colors.white,
-                  tooltip: context.l10n.commonAdd,
-                  child: const Icon(Icons.add),
-                ),
+        }
+      else
+        for (final (i, sub) in filtered.indexed) ...<Widget>[
+          if (_tab == 3 &&
+              (i == 0 || isBnpl(filtered[i - 1]) != isBnpl(sub))) ...<Widget>[
+            if (i > 0) const SizedBox(height: ZadSpacing.lg),
+            Text(
+              isBnpl(sub) ? l.subsBnpl : l.subsLoans,
+              style: ZadType.titleSmall.copyWith(color: ZadColors.ink),
+            ),
+            const SizedBox(height: ZadSpacing.sm),
+          ] else if (i > 0)
+            const SizedBox(height: ZadSpacing.md),
+          _ListItemEnter(
+            key: ValueKey<String>(sub.id),
+            index: i,
+            child: SubscriptionCardFull(
+              sub: sub,
+              today: today,
+              symbol: symbol,
+              onToggleActive: () =>
+                  unawaited(controller.setActive(sub, active: !sub.isActive)),
+              onToggleAutoDeduct: () => unawaited(
+                controller.save(sub.copyWith(autoDeduct: !sub.autoDeduct)),
               ),
+              onEdit: () => unawaited(
+                showAddEditSubscriptionDialog(context, subscription: sub),
+              ),
+              onDelete: () => unawaited(controller.remove(sub)),
+              onMarkAsPaid: () async {
+                final messenger = ScaffoldMessenger.of(context);
+                final paid = l.subsPaid(sub.title);
+                await controller.markPaid(sub);
+                messenger.showSnackBar(SnackBar(content: Text(paid)));
+              },
             ),
           ),
         ],
-      ),
-    );
+      if (filtered.isNotEmpty && obligationKinds != null)
+        ZadSlots.obligationRows(kinds: obligationKinds, title: l.subsFixed),
+    ];
 
+    if (widget.embedded) {
+      return Scaffold(
+        backgroundColor: Colors.transparent,
+        body: ZadScrollAwayScope(
+          child: Stack(
+            children: <Widget>[
+              Positioned.fill(
+                child: RefreshIndicator(
+                  onRefresh: () => controller.refresh(force: true),
+                  child: CustomScrollView(
+                    slivers: <Widget>[
+                      SliverPadding(
+                        padding: const EdgeInsets.fromLTRB(
+                          ZadSpacing.gutter,
+                          ZadSpacing.sm,
+                          ZadSpacing.gutter,
+                          110,
+                        ),
+                        sliver: SliverList.list(children: children),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              fab,
+            ],
+          ),
+        ),
+      );
+    }
+    return _world(
+      context,
+      stateLine: stateLine,
+      charges: charges,
+      soonestDays: soonest == null ? null : soonestDays,
+      hasActive: active.isNotEmpty,
+      slivers: padded(children),
+      fab: fab,
+      controller: controller,
+    );
+  }
+
+  /// The world: the scene and state line on top, [slivers] under them, «إضافة»
+  /// docked in the thumb zone.
+  Widget _world(
+    BuildContext context, {
+    required String stateLine,
+    required List<WorldCharge> charges,
+    required int? soonestDays,
+    required bool hasActive,
+    required List<Widget> slivers,
+    required Widget fab,
+    required SubscriptionsController controller,
+  }) {
+    final l = context.l10n;
     return Scaffold(
-      appBar: widget.embedded
-          ? null
-          : AppBar(title: Text(context.l10n.subsTitle)),
-      backgroundColor: widget.embedded ? Colors.transparent : null,
-      body: body,
+      backgroundColor: ZadWorldColors.tint(ZadWorld.subs.color),
+      body: SafeArea(
+        bottom: false,
+        child: ZadScrollAwayScope(
+          child: ZadWorldScaffold(
+            world: ZadWorld.subs,
+            eyebrow: l.subsTitle,
+            title: l.worldLabelSubs,
+            stateLine: stateLine,
+            scene: (loop) => SubscriptionsWorldScene(loop, charges: charges),
+            zado: ZadWorldZado(
+              left: 0,
+              top: 60,
+              size: 120,
+              state: !hasActive
+                  ? CompanionState.sleepy
+                  : soonestDays != null && soonestDays <= 3
+                  ? CompanionState.alert
+                  : CompanionState.idle,
+            ),
+            onRefresh: () => controller.refresh(force: true),
+            dockHeight: 80,
+            overlay: fab,
+            slivers: slivers,
+          ),
+        ),
+      ),
     );
   }
 }
 
 class _Chip extends StatelessWidget {
-  const new({
-    required this.label,
-    required this.selected,
-    required this.selectedColor,
-    required this.onTap,
-  });
+  const new({required this.label, required this.selected, required this.onTap});
 
   final String label;
   final bool selected;
-  final Color selectedColor;
   final VoidCallback onTap;
 
   @override
@@ -429,7 +517,7 @@ class _Chip extends StatelessWidget {
     label: Text(label, style: ZadType.labelSmall),
     selected: selected,
     showCheckmark: true,
-    selectedColor: selectedColor,
+    selectedColor: ZadWorldColors.subscriptions.withValues(alpha: 0.25),
     onSelected: (_) => onTap(),
     materialTapTargetSize: MaterialTapTargetSize.padded,
   );
@@ -528,19 +616,12 @@ class SubscriptionCardFull extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final ext = context.zadExt;
+    final l = context.l10n;
     final next = sub.nextRenewalFrom(today) ?? _storedRenewal(sub);
     final daysLeft = next?.difference(today).inDays;
     final brand = subscriptionBrandFor(sub.title, sub.provider);
-    final accent = !sub.isActive
-        ? scheme.outlineVariant
-        : daysLeft != null && daysLeft <= 3
-        ? scheme.error
-        : daysLeft != null && daysLeft <= 7
-        ? scheme.secondary
-        : scheme.primary;
-    final shape = BorderRadius.circular(ZadRadii.cardLarge);
+    final tileColor = brand?.color ?? ZadWorldColors.subscriptions;
+    final soon = sub.isActive && daysLeft != null && daysLeft <= 3;
 
     // A full 44dp each: they were 24dp, side by side, next to Delete.
     Widget quiet(IconData icon, String label, Color tint, VoidCallback onTap) =>
@@ -564,261 +645,175 @@ class SubscriptionCardFull extends StatelessWidget {
       'WEEKLY' => sub.amount * 52,
       _ => sub.amount * 12,
     };
+    final muted = ZadColors.inkMuted;
 
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        borderRadius: shape,
-        boxShadow: composeShadow(
-          elevation: 2,
-          ambient: Colors.black,
-          spot: Colors.black,
-        ),
-      ),
-      child: ClipRRect(
-        borderRadius: shape,
-        child: Container(
-          decoration: BoxDecoration(
-            color: sub.isActive ? scheme.surface : ext.surfaceContainerLow,
-            borderRadius: shape,
-            border: Border.all(
-              color: sub.isActive
-                  ? scheme.outlineVariant.withValues(alpha: 0.5)
-                  : scheme.outlineVariant,
-            ),
-          ),
-          child: IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+    return Opacity(
+      opacity: sub.isActive ? 1 : 0.6,
+      child: ZadWorldCard(
+        child: Column(
+          children: <Widget>[
+            Row(
               children: <Widget>[
-                Container(width: 4, color: accent),
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: tileColor.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(ZadRadii.chip),
+                  ),
+                  child: brand != null
+                      ? Icon(brand.icon, size: 22, color: brand.color)
+                      : Center(child: ZadArt.icon(ZadIconArt.repeat, size: 26)),
+                ),
+                const SizedBox(width: ZadSpacing.md),
                 Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 14,
-                    ),
-                    child: Column(
-                      children: <Widget>[
-                        Row(
-                          children: <Widget>[
-                            if (brand != null) ...<Widget>[
-                              Container(
-                                width: 42,
-                                height: 42,
-                                decoration: BoxDecoration(
-                                  color: brand.color.withValues(
-                                    alpha: sub.isActive ? 0.14 : 0.06,
-                                  ),
-                                  borderRadius: BorderRadius.circular(
-                                    ZadRadii.chip,
-                                  ),
-                                  boxShadow: composeShadow(
-                                    elevation: 2,
-                                    ambient: Colors.black,
-                                    spot: brand.color.withValues(alpha: 0.3),
-                                  ),
-                                ),
-                                child: Icon(
-                                  brand.icon,
-                                  size: 22,
-                                  color: brand.color.withValues(
-                                    alpha: sub.isActive ? 1 : 0.5,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 14),
-                            ],
-                            Expanded(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: <Widget>[
-                                  Text(
-                                    sub.title,
-                                    style: ZadType.titleSmall.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                      color: sub.isActive
-                                          ? scheme.onSurface
-                                          : scheme.onSurfaceVariant,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 3),
-                                  if (bnplProviderOf(sub.title, sub.provider)
-                                      case final bnpl?) ...<Widget>[
-                                    Container(
-                                      margin: const EdgeInsets.only(bottom: 3),
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 6,
-                                        vertical: 1,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: scheme.secondaryContainer,
-                                        borderRadius: BorderRadius.circular(
-                                          ZadRadii.pill,
-                                        ),
-                                      ),
-                                      child: Text(
-                                        context.l10n.subsBnplTag(bnpl.name),
-                                        style: ZadType.labelSmall.copyWith(
-                                          fontWeight: FontWeight.w700,
-                                          color: scheme.onSecondaryContainer,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                  Text(
-                                    switch (daysLeft) {
-                                      null => sub.provider ?? '',
-                                      0 => context.l10n.subsRenewsToday,
-                                      < 0 => context.l10n.subsExpiredAgo(
-                                        -daysLeft,
-                                      ),
-                                      _ => context.l10n.subsRenewsIn(daysLeft),
-                                    },
-                                    style: ZadType.labelMedium.copyWith(
-                                      color:
-                                          daysLeft != null &&
-                                              daysLeft <= 3 &&
-                                              sub.isActive
-                                          ? scheme.error
-                                          : scheme.onSurfaceVariant,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: <Widget>[
-                                Text(
-                                  _money(sub.amount, symbol),
-                                  style: ZadType.titleSmall.copyWith(
-                                    fontWeight: FontWeight.w800,
-                                    color: sub.isActive
-                                        ? scheme.onSurface
-                                        : scheme.outlineVariant,
-                                  ),
-                                ),
-                                if (sub.isActive) ...<Widget>[
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    context.l10n.subsPerYear(
-                                      _money(yearly, symbol),
-                                    ),
-                                    style: ZadType.labelSmall.copyWith(
-                                      color: scheme.onSurfaceVariant,
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ],
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        sub.title,
+                        style: ZadType.titleSmall.copyWith(
+                          fontWeight: FontWeight.w800,
+                          color: ZadColors.ink,
                         ),
-                        const SizedBox(height: ZadSpacing.sm),
-                        Row(
-                          mainAxisAlignment: sub.isActive
-                              ? MainAxisAlignment.spaceBetween
-                              : MainAxisAlignment.end,
-                          children: <Widget>[
-                            if (sub.isActive)
-                              Flexible(
-                                child: Material(
-                                  color: scheme.primary.withValues(alpha: 0.12),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(
-                                      ZadRadii.chip,
-                                    ),
-                                  ),
-                                  clipBehavior: Clip.antiAlias,
-                                  child: InkWell(
-                                    onTap: () {
-                                      unawaited(HapticFeedback.mediumImpact());
-                                      onMarkAsPaid();
-                                    },
-                                    child: ConstrainedBox(
-                                      constraints: const BoxConstraints(
-                                        minHeight: 44,
-                                      ),
-                                      child: Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: ZadSpacing.md,
-                                        ),
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: <Widget>[
-                                            Icon(
-                                              Icons.check_circle,
-                                              size: 16,
-                                              color: scheme.primary,
-                                            ),
-                                            const SizedBox(
-                                              width: ZadSpacing.xs,
-                                            ),
-                                            Flexible(
-                                              child: Text(
-                                                context.l10n.subsPaidMark,
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                                style: ZadType.labelMedium
-                                                    .copyWith(
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                      color: scheme.primary,
-                                                    ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: <Widget>[
-                                quiet(
-                                  Icons.bolt,
-                                  context.l10n.subsToggleAuto,
-                                  sub.autoDeduct
-                                      ? scheme.primary
-                                      : scheme.outlineVariant,
-                                  onToggleAutoDeduct,
-                                ),
-                                quiet(
-                                  sub.isActive
-                                      ? Icons.pause_circle
-                                      : Icons.play_circle,
-                                  sub.isActive
-                                      ? context.l10n.subsDisable
-                                      : context.l10n.subsEnable,
-                                  scheme.onSurfaceVariant,
-                                  onToggleActive,
-                                ),
-                                quiet(
-                                  Icons.edit_note,
-                                  context.l10n.subsEdit,
-                                  scheme.onSurfaceVariant,
-                                  onEdit,
-                                ),
-                                quiet(
-                                  Icons.delete_outline,
-                                  context.l10n.commonDelete,
-                                  scheme.onSurfaceVariant,
-                                  onDelete,
-                                ),
-                              ],
+                      ),
+                      if (bnplProviderOf(sub.title, sub.provider)
+                          case final bnpl?) ...<Widget>[
+                        const SizedBox(height: ZadSpacing.xs),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: ZadSpacing.sm,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: tileColor.withValues(alpha: 0.14),
+                            borderRadius: BorderRadius.circular(ZadRadii.pill),
+                          ),
+                          child: Text(
+                            l.subsBnplTag(bnpl.name),
+                            style: ZadType.labelSmall.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: ZadColors.slate,
                             ),
-                          ],
+                          ),
                         ),
                       ],
-                    ),
+                      const SizedBox(height: ZadSpacing.xs),
+                      Text(
+                        switch (daysLeft) {
+                          null => sub.provider ?? '',
+                          0 => l.subsRenewsToday,
+                          < 0 => l.subsExpiredAgo(-daysLeft),
+                          _ => l.subsRenewsIn(daysLeft),
+                        },
+                        style: ZadType.labelMedium.copyWith(
+                          color: soon ? ZadColors.terracottaRust : muted,
+                          fontWeight: soon ? FontWeight.w800 : null,
+                        ),
+                      ),
+                    ],
                   ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: <Widget>[
+                    Text(
+                      _money(sub.amount, symbol),
+                      style: ZadType.titleSmall.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: ZadColors.ink,
+                      ),
+                    ),
+                    if (sub.isActive) ...<Widget>[
+                      const SizedBox(height: ZadSpacing.xs),
+                      Text(
+                        l.subsPerYear(_money(yearly, symbol)),
+                        style: ZadType.labelSmall.copyWith(color: muted),
+                      ),
+                    ],
+                  ],
                 ),
               ],
             ),
-          ),
+            const SizedBox(height: ZadSpacing.sm),
+            Row(
+              mainAxisAlignment: sub.isActive
+                  ? MainAxisAlignment.spaceBetween
+                  : MainAxisAlignment.end,
+              children: <Widget>[
+                if (sub.isActive)
+                  Flexible(
+                    child: Material(
+                      color: ZadColors.mint50,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(ZadRadii.chip),
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: InkWell(
+                        onTap: () {
+                          unawaited(HapticFeedback.mediumImpact());
+                          onMarkAsPaid();
+                        },
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(minHeight: 44),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: ZadSpacing.md,
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: <Widget>[
+                                const Icon(
+                                  Icons.check_circle,
+                                  size: 16,
+                                  color: ZadColors.green700,
+                                ),
+                                const SizedBox(width: ZadSpacing.xs),
+                                Flexible(
+                                  child: Text(
+                                    l.subsPaidMark,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: ZadType.labelMedium.copyWith(
+                                      fontWeight: FontWeight.w800,
+                                      color: ZadColors.green700,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    quiet(
+                      Icons.bolt,
+                      l.subsToggleAuto,
+                      sub.autoDeduct ? ZadColors.mustardOchre : muted,
+                      onToggleAutoDeduct,
+                    ),
+                    quiet(
+                      sub.isActive ? Icons.pause_circle : Icons.play_circle,
+                      sub.isActive ? l.subsDisable : l.subsEnable,
+                      muted,
+                      onToggleActive,
+                    ),
+                    quiet(Icons.edit_note, l.subsEdit, muted, onEdit),
+                    quiet(
+                      Icons.delete_outline,
+                      l.commonDelete,
+                      muted,
+                      onDelete,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );

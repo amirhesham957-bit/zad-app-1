@@ -1811,6 +1811,27 @@ class ZadL10nAr extends ZadL10n {
   String get subsTitle => 'الاشتراكات والفواتير';
 
   @override
+  String get subsWorldNone => 'مفيش اشتراكات لسه';
+
+  @override
+  String subsWorldTotal(String amount) {
+    return '$amount في الشهر';
+  }
+
+  @override
+  String subsWorldNextToday(String amount, String title) {
+    return '$amount في الشهر · $title بيجدد النهارده';
+  }
+
+  @override
+  String subsWorldNext(String amount, String title, int days) {
+    return '$amount في الشهر · $title بعد $days يوم';
+  }
+
+  @override
+  String get subsEmptyHint => 'اضغط «إضافة» وزاد يحسب لك التجديد الجاي.';
+
+  @override
   String subsBnplTag(String name) {
     return 'اشتري وادفع بعدين · $name';
   }
@@ -4926,6 +4947,27 @@ class ZadL10nArSa extends ZadL10nAr {
 
   @override
   String get subsBnpl => 'اشترِ الحين وادفع بعدين';
+
+  @override
+  String get subsWorldNone => 'ما فيه اشتراكات للحين';
+
+  @override
+  String subsWorldTotal(String amount) {
+    return '$amount في الشهر';
+  }
+
+  @override
+  String subsWorldNextToday(String amount, String title) {
+    return '$amount في الشهر · $title يتجدد اليوم';
+  }
+
+  @override
+  String subsWorldNext(String amount, String title, int days) {
+    return '$amount في الشهر · $title بعد $days يوم';
+  }
+
+  @override
+  String get subsEmptyHint => 'اضغط «إضافة» وزاد يحسب لك التجديد الجاي.';
 
   @override
   String get oblNoneHint => 'الأقساط والفواتير الثابتة بتطلع هنا أول ما تنسجل';
