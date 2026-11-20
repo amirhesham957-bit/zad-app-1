@@ -7,10 +7,11 @@ const PANE = 'zad-or-plan'
 const TITLE = 'خطة زاد الحسابية'
 const REL = 'docs/agent/ZAD_OR_PLAN.md'
 const FALLBACK_ROOT = '/workspaces/zad-app-1'
+const BRANCHES = ['docs/zad-or-plan', 'origin/docs/zad-or-plan', 'main', 'origin/main']
 
 const EMPTY: Plan = { status: [], phases: [], read: false, mtimeMs: 0 }
 const plan = atom({ plugin: 'zad-or-plan', key: 'plan' } as const, EMPTY, {
-  shape: 'plan-1',
+  shape: 'plan-2',
 })
 
 /** Reads the plan's markdown: "### " headings are phases, "- [x]"/"- [ ]" lines their items,
@@ -46,22 +47,47 @@ export function parsePlan(text: string, mtimeMs: number): Plan {
   return { status, phases: phases.filter(p => p.total > 0), read: true, mtimeMs }
 }
 
-let path: string | undefined
+let root: string | undefined
+
+/** الملف من شجرة الشغل، ولو مش موجود (فرع تاني) من فرع الخطة في git. */
+async function loadPlan($: EngineInterface): Promise<{ text: string; mtimeMs: number }> {
+  if (!root) {
+    const cwd = await $.session.cwd()
+    root = (await $.fs.exists(`${cwd}/${REL}`)) || (await $.fs.exists(`${cwd}/.git`)) ? cwd : FALLBACK_ROOT
+  }
+  const file = `${root}/${REL}`
+  if (await $.fs.exists(file)) {
+    const { mtimeMs } = await $.fs.stat(file)
+    const current = await read($, plan)
+    if (current.read && current.mtimeMs === mtimeMs && current.source === 'file') return { text: '', mtimeMs: -1 }
+    return { text: await $.fs.read(file), mtimeMs }
+  }
+  for (const ref of BRANCHES) {
+    const out = await $.process.run(['git', 'show', `${ref}:${REL}`], { cwd: root })
+    if (out.exitCode === 0 && out.stdout) return { text: out.stdout, mtimeMs: 0 }
+  }
+  throw new Error(`${REL} مش موجود في الشغل ولا في ${BRANCHES.join(' أو ')}`)
+}
+
+function summary(p: Plan): string {
+  const done = p.phases.reduce((n, x) => n + x.done, 0)
+  const total = p.phases.reduce((n, x) => n + x.total, 0)
+  const current = p.phases.find(x => x.done < x.total)
+  return `خطة زاد ${done}/${total}` + (current ? ` · الجاي: ${current.next ?? current.title}` : '')
+}
 
 async function refresh($: EngineInterface): Promise<void> {
   try {
-    if (!path) {
-      const cwd = await $.session.cwd()
-      const here = `${cwd}/${REL}`
-      path = (await $.fs.exists(here)) ? here : `${FALLBACK_ROOT}/${REL}`
-    }
-    const { mtimeMs } = await $.fs.stat(path)
-    const current = await read($, plan)
-    if (current.read && current.mtimeMs === mtimeMs) return
-    const text = await $.fs.read(path)
-    await update($, plan, () => parsePlan(text, mtimeMs))
+    const { text, mtimeMs } = await loadPlan($)
+    if (mtimeMs === -1) return
+    const parsed: Plan = { ...parsePlan(text, mtimeMs), source: mtimeMs === 0 ? 'git' : 'file' }
+    const before = await read($, plan)
+    if (before.read && mtimeMs === 0 && summary(before) === summary(parsed) && before.source === 'git') return
+    await update($, plan, () => parsed)
+    $.ui.status(summary(parsed).slice(0, 120))
   } catch (err) {
     await update($, plan, p => ({ ...p, read: false, error: String(err).slice(0, 200) }))
+    $.ui.status('خطة زاد: الملف مش لاقيه')
   }
 }
 
@@ -79,8 +105,11 @@ export const register: Register = on => {
 
   on('command.run', { command: 'zad-plan' }, async $ => {
     await refresh($)
-    await $.ui.open({ id: PANE, title: TITLE })
-    return { text: 'لوحة الخطة اتفتحت.' }
+    const placed = await $.ui.open({ id: PANE, title: TITLE })
+    const p = await read($, plan)
+    if (!p.read) return { text: p.error ?? 'الخطة مش لاقيها' }
+    const lines = [summary(p), ...p.status, '', ...p.phases.map(x => `${x.done === x.total ? 'خلص' : `${x.done}/${x.total}`}  ${x.title}`)]
+    return { text: (placed.isPlaced ? '' : 'اللوحة مش ظاهرة هنا، دي الخطة:\n') + lines.join('\n') }
   })
 
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {

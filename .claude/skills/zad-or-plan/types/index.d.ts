@@ -1,5 +1,5 @@
 export type Phase = { title: string; done: number; total: number; next?: string }
-export type Plan = { status: string[]; phases: Phase[]; read: boolean; error?: string; mtimeMs: number }
+export type Plan = { status: string[]; phases: Phase[]; read: boolean; error?: string; mtimeMs: number; source?: 'file' | 'git' }
 
 declare module 'claude-code' {
   interface PluginState {

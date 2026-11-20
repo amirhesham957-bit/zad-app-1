@@ -31,7 +31,7 @@ test('the pane shows the next open item of the plan', async ($, on) => {
   on('clock.every', () => ({ value: undefined }))
   on('session.cwd', () => ({ value: '/workspaces/zad-app-1' }))
   on('fs.exists', () => ({ value: true }))
-  on('fs.stat', () => ({ value: { mtimeMs: 1, size: PLAN.length, isFile: true, isDirectory: false } }))
+  on('fs.stat', () => ({ value: { mtimeMs: 1, size: PLAN.length, kind: 'file', isLink: false } }))
   on('fs.read', () => ({ value: PLAN }))
   on('session.start', (_, e) => ({ cwd: e.cwd }))
 
@@ -41,4 +41,18 @@ test('the pane shows the next open item of the plan', async ($, on) => {
   expect((await ui.find({ type: 'Text', text: /الجاي:/ }))?.text).toContain('ج١')
   expect((await ui.find({ type: 'Text', text: /ج١\.٢/ }))).toBeTruthy()
   await ui.unmount()
+})
+
+test('on another branch the plan comes from git, and the command answers in text', async ($, on) => {
+  on('command.register', () => ({ value: { command: 'zad-plan' } }))
+  on('ui.open', () => ({ value: { isPlaced: false, reason: 'no pane here' } }))
+  on('clock.every', () => ({ value: undefined }))
+  on('session.cwd', () => ({ value: '/workspaces/zad-app-1' }))
+  on('fs.exists', (_, e) => ({ value: String((e as { path?: string }).path ?? '').endsWith('.git') }))
+  on('process.run', () => ({ value: { exitCode: 0, stdout: PLAN, stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }))
+  on('session.start', (_, e) => ({ cwd: e.cwd }))
+
+  await $.session.start({ cwd: '/workspaces/zad-app-1', surface: 'vscode', isInteractive: true })
+  const out = await $.command.run({ command: 'zad-plan', args: '' } as never)
+  expect(JSON.stringify(out)).toContain('ج١.٢')
 })
