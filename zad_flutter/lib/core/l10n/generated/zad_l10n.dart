@@ -10651,6 +10651,132 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'{n} مساهمات'**
   String pricesContribCount(int n);
+
+  /// No description provided for @profileGroupMe.
+  ///
+  /// In ar, this message translates to:
+  /// **'أنا وزاد'**
+  String get profileGroupMe;
+
+  /// No description provided for @profileGroupAccount.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحساب والعيلة'**
+  String get profileGroupAccount;
+
+  /// No description provided for @profileGroupMoney.
+  ///
+  /// In ar, this message translates to:
+  /// **'الفلوس'**
+  String get profileGroupMoney;
+
+  /// No description provided for @profileGroupPlan.
+  ///
+  /// In ar, this message translates to:
+  /// **'رفيق زاد والاشتراك'**
+  String get profileGroupPlan;
+
+  /// No description provided for @profilePlanFree.
+  ///
+  /// In ar, this message translates to:
+  /// **'المجانية'**
+  String get profilePlanFree;
+
+  /// No description provided for @profilePlanBasic.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأساسية'**
+  String get profilePlanBasic;
+
+  /// No description provided for @profilePlanPlus.
+  ///
+  /// In ar, this message translates to:
+  /// **'المتقدمة'**
+  String get profilePlanPlus;
+
+  /// No description provided for @profilePlanUltra.
+  ///
+  /// In ar, this message translates to:
+  /// **'العيلة'**
+  String get profilePlanUltra;
+
+  /// No description provided for @profileSettingsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإعدادات'**
+  String get profileSettingsTitle;
+
+  /// No description provided for @profileSettingsSubtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'السقف، الأصوات، الإعلانات والخصوصية'**
+  String get profileSettingsSubtitle;
+
+  /// No description provided for @settingsWorldTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإعدادات'**
+  String get settingsWorldTitle;
+
+  /// No description provided for @settingsGroupMoney.
+  ///
+  /// In ar, this message translates to:
+  /// **'الفلوس'**
+  String get settingsGroupMoney;
+
+  /// No description provided for @settingsGroupCompanion.
+  ///
+  /// In ar, this message translates to:
+  /// **'رفيق زاد'**
+  String get settingsGroupCompanion;
+
+  /// No description provided for @settingsGroupSounds.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأصوات واللغة'**
+  String get settingsGroupSounds;
+
+  /// No description provided for @settingsGroupPrivacy.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإعلانات والخصوصية'**
+  String get settingsGroupPrivacy;
+
+  /// No description provided for @settingsGroupAccount.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحساب'**
+  String get settingsGroupAccount;
+
+  /// No description provided for @settingsAdsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإعلانات'**
+  String get settingsAdsTitle;
+
+  /// No description provided for @settingsAdsBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'مخصّصة ليك؟ تقدر تغيّر اختيارك في أي وقت'**
+  String get settingsAdsBody;
+
+  /// No description provided for @settingsAdsUnavailable.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش اختيارات خصوصية متاحة دلوقتي'**
+  String get settingsAdsUnavailable;
+
+  /// No description provided for @settingsTermsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الشروط والأحكام'**
+  String get settingsTermsTitle;
+
+  /// No description provided for @settingsTermsBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'سياسة الاستخدام والخصوصية'**
+  String get settingsTermsBody;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

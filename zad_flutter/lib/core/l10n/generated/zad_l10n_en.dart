@@ -6396,4 +6396,69 @@ class ZadL10nEn extends ZadL10n {
   String pricesContribCount(int n) {
     return '$n reports';
   }
+
+  @override
+  String get profileGroupMe => 'Me and Zad';
+
+  @override
+  String get profileGroupAccount => 'Account and family';
+
+  @override
+  String get profileGroupMoney => 'Money';
+
+  @override
+  String get profileGroupPlan => 'Companion and plan';
+
+  @override
+  String get profilePlanFree => 'Free';
+
+  @override
+  String get profilePlanBasic => 'Basic';
+
+  @override
+  String get profilePlanPlus => 'Plus';
+
+  @override
+  String get profilePlanUltra => 'Family';
+
+  @override
+  String get profileSettingsTitle => 'Settings';
+
+  @override
+  String get profileSettingsSubtitle => 'Limit, sounds, ads and privacy';
+
+  @override
+  String get settingsWorldTitle => 'Settings';
+
+  @override
+  String get settingsGroupMoney => 'Money';
+
+  @override
+  String get settingsGroupCompanion => 'Your companion';
+
+  @override
+  String get settingsGroupSounds => 'Sounds and language';
+
+  @override
+  String get settingsGroupPrivacy => 'Ads and privacy';
+
+  @override
+  String get settingsGroupAccount => 'Account';
+
+  @override
+  String get settingsAdsTitle => 'Ads';
+
+  @override
+  String get settingsAdsBody =>
+      'Personalised for you? Change your choice any time';
+
+  @override
+  String get settingsAdsUnavailable =>
+      'No privacy choices are available right now';
+
+  @override
+  String get settingsTermsTitle => 'Terms and conditions';
+
+  @override
+  String get settingsTermsBody => 'Usage and privacy policy';
 }
