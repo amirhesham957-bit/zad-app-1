@@ -5626,4 +5626,94 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get docsDeleteFailed => 'Not removed — check your connection.';
+
+  @override
+  String maintEyebrowCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count appliances',
+      one: '1 appliance',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get maintStateNone => 'Nothing registered yet';
+
+  @override
+  String get maintStateNoSchedule =>
+      'Set a service interval and Zad reminds you';
+
+  @override
+  String maintStateNext(String name, String status) {
+    return 'Next: $name — $status';
+  }
+
+  @override
+  String maintStateOverdue(String name, int days) {
+    return '$name is $days days late';
+  }
+
+  @override
+  String maintServiceOverdue(int days) {
+    return '$days days late';
+  }
+
+  @override
+  String maintServiceIn(int days) {
+    return 'Service in $days days';
+  }
+
+  @override
+  String get maintServiceSoon => 'Service soon';
+
+  @override
+  String get maintWarrantyEnded => 'Warranty ended';
+
+  @override
+  String maintWarrantyIn(int days) {
+    return 'Warranty ends in $days days';
+  }
+
+  @override
+  String get maintStatDevices => 'Appliances';
+
+  @override
+  String get maintStatSoon => 'Service soon';
+
+  @override
+  String get maintStatWarranty => 'Warranty ending';
+
+  @override
+  String maintOverdueBanner(int count) {
+    return '$count appliances are past their service date';
+  }
+
+  @override
+  String get maintEmptyTitle => 'No appliances yet';
+
+  @override
+  String get maintEmptyMessage =>
+      'Add the AC, the water heater or the car and Zad reminds you of its service and warranty.';
+
+  @override
+  String get maintAdd => 'Add an appliance';
+
+  @override
+  String get maintServicedToday => 'Serviced today';
+
+  @override
+  String get maintDelete => 'Delete';
+
+  @override
+  String get maintTechnicians => 'Technicians I trust';
+
+  @override
+  String get maintTechniciansHint =>
+      'Call or WhatsApp a technician you have tried';
+
+  @override
+  String get maintAddFailed =>
+      'The appliance was not saved — check your connection.';
 }

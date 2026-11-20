@@ -5248,5 +5248,134 @@
   "docsDeleteFailed": "ماتشالش — اتأكد من النت.",
   "@docsDeleteFailed": {
     "description": "Snackbar when a delete fails."
+  },
+  "maintEyebrowCount": "{count, plural, =1{جهاز واحد} =2{جهازين} few{{count} أجهزة} other{{count} جهاز}}",
+  "@maintEyebrowCount": {
+    "description": "Maintenance world: the count above the title.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "maintStateNone": "مفيش جهاز متسجل لسه",
+  "@maintStateNone": {
+    "description": "Maintenance world state line with no items."
+  },
+  "maintStateNoSchedule": "سجّل دورة الصيانة وزاد يفكّرك",
+  "@maintStateNoSchedule": {
+    "description": "Maintenance world state line when no item has an interval."
+  },
+  "maintStateNext": "الجاي: {name} — {status}",
+  "@maintStateNext": {
+    "description": "Maintenance world state line: the next due task.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "maintStateOverdue": "{name} متأخر {days} يوم",
+  "@maintStateOverdue": {
+    "description": "Maintenance world state line: an overdue task.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "maintServiceOverdue": "متأخر {days} يوم",
+  "@maintServiceOverdue": {
+    "description": "A task's status.",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "maintServiceIn": "الصيانة خلال {days} يوم",
+  "@maintServiceIn": {
+    "description": "A task's status.",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "maintServiceSoon": "صيانة قريبة",
+  "@maintServiceSoon": {
+    "description": "A task's status when no interval is known."
+  },
+  "maintWarrantyEnded": "الضمان منتهي",
+  "@maintWarrantyEnded": {
+    "description": "A task's warranty line."
+  },
+  "maintWarrantyIn": "الضمان ينتهي خلال {days} يوم",
+  "@maintWarrantyIn": {
+    "description": "A task's warranty line.",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "maintStatDevices": "الأجهزة",
+  "@maintStatDevices": {
+    "description": "Maintenance count label."
+  },
+  "maintStatSoon": "صيانة قريبة",
+  "@maintStatSoon": {
+    "description": "Maintenance count label."
+  },
+  "maintStatWarranty": "ضمان قارب",
+  "@maintStatWarranty": {
+    "description": "Maintenance count label."
+  },
+  "maintOverdueBanner": "{count} جهاز متأخر عن موعد الصيانة",
+  "@maintOverdueBanner": {
+    "description": "Maintenance overdue banner.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "maintEmptyTitle": "لا توجد أجهزة مسجلة بعد",
+  "@maintEmptyTitle": {
+    "description": "Maintenance empty state title."
+  },
+  "maintEmptyMessage": "سجّل التكييف أو السخان أو العربية، وزاد يفكّرك بميعاد صيانتها وضمانها.",
+  "@maintEmptyMessage": {
+    "description": "Maintenance empty state guidance."
+  },
+  "maintAdd": "إضافة جهاز",
+  "@maintAdd": {
+    "description": "Maintenance: the docked add button."
+  },
+  "maintServicedToday": "تمت الصيانة اليوم",
+  "@maintServicedToday": {
+    "description": "Maintenance: mark a task done."
+  },
+  "maintDelete": "حذف",
+  "@maintDelete": {
+    "description": "Tooltip of a delete button."
+  },
+  "maintTechnicians": "فنيين بثق فيهم",
+  "@maintTechnicians": {
+    "description": "Maintenance: opens the trusted technicians sheet."
+  },
+  "maintTechniciansHint": "اتصل أو ابعت واتساب لفني اتجرّبته",
+  "@maintTechniciansHint": {
+    "description": "Maintenance: hint under the technicians row."
+  },
+  "maintAddFailed": "ماتسجلش الجهاز — اتأكد من النت.",
+  "@maintAddFailed": {
+    "description": "Snackbar when an add fails."
   }
 }

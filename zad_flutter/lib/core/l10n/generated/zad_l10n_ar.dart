@@ -5534,6 +5534,95 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get docsDeleteFailed => 'ماتشالش — اتأكد من النت.';
+
+  @override
+  String maintEyebrowCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count جهاز',
+      few: '$count أجهزة',
+      two: 'جهازين',
+      one: 'جهاز واحد',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get maintStateNone => 'مفيش جهاز متسجل لسه';
+
+  @override
+  String get maintStateNoSchedule => 'سجّل دورة الصيانة وزاد يفكّرك';
+
+  @override
+  String maintStateNext(String name, String status) {
+    return 'الجاي: $name — $status';
+  }
+
+  @override
+  String maintStateOverdue(String name, int days) {
+    return '$name متأخر $days يوم';
+  }
+
+  @override
+  String maintServiceOverdue(int days) {
+    return 'متأخر $days يوم';
+  }
+
+  @override
+  String maintServiceIn(int days) {
+    return 'الصيانة خلال $days يوم';
+  }
+
+  @override
+  String get maintServiceSoon => 'صيانة قريبة';
+
+  @override
+  String get maintWarrantyEnded => 'الضمان منتهي';
+
+  @override
+  String maintWarrantyIn(int days) {
+    return 'الضمان ينتهي خلال $days يوم';
+  }
+
+  @override
+  String get maintStatDevices => 'الأجهزة';
+
+  @override
+  String get maintStatSoon => 'صيانة قريبة';
+
+  @override
+  String get maintStatWarranty => 'ضمان قارب';
+
+  @override
+  String maintOverdueBanner(int count) {
+    return '$count جهاز متأخر عن موعد الصيانة';
+  }
+
+  @override
+  String get maintEmptyTitle => 'لا توجد أجهزة مسجلة بعد';
+
+  @override
+  String get maintEmptyMessage =>
+      'سجّل التكييف أو السخان أو العربية، وزاد يفكّرك بميعاد صيانتها وضمانها.';
+
+  @override
+  String get maintAdd => 'إضافة جهاز';
+
+  @override
+  String get maintServicedToday => 'تمت الصيانة اليوم';
+
+  @override
+  String get maintDelete => 'حذف';
+
+  @override
+  String get maintTechnicians => 'فنيين بثق فيهم';
+
+  @override
+  String get maintTechniciansHint => 'اتصل أو ابعت واتساب لفني اتجرّبته';
+
+  @override
+  String get maintAddFailed => 'ماتسجلش الجهاز — اتأكد من النت.';
 }
 
 /// The translations for Arabic, as used in Saudi Arabia (`ar_SA`).
@@ -7637,4 +7726,23 @@ class ZadL10nArSa extends ZadL10nAr {
 
   @override
   String get docsDeleteFailed => 'ما انحذف — تأكد من النت.';
+
+  @override
+  String get maintStateNone => 'ما فيه جهاز مسجّل للحين';
+
+  @override
+  String get maintEmptyTitle => 'ما فيه أجهزة مسجّلة للحين';
+
+  @override
+  String get maintEmptyMessage =>
+      'سجّل المكيف أو السخان أو السيارة، وزاد يذكّرك بموعد صيانتها وضمانها.';
+
+  @override
+  String get maintTechnicians => 'فنيين أثق فيهم';
+
+  @override
+  String get maintTechniciansHint => 'اتصل أو أرسل واتساب لفني جرّبته';
+
+  @override
+  String get maintAddFailed => 'ما انسجّل الجهاز — تأكد من النت.';
 }

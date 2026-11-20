@@ -9403,6 +9403,138 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'ماتشالش — اتأكد من النت.'**
   String get docsDeleteFailed;
+
+  /// Maintenance world: the count above the title.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{جهاز واحد} =2{جهازين} few{{count} أجهزة} other{{count} جهاز}}'**
+  String maintEyebrowCount(int count);
+
+  /// Maintenance world state line with no items.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش جهاز متسجل لسه'**
+  String get maintStateNone;
+
+  /// Maintenance world state line when no item has an interval.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجّل دورة الصيانة وزاد يفكّرك'**
+  String get maintStateNoSchedule;
+
+  /// Maintenance world state line: the next due task.
+  ///
+  /// In ar, this message translates to:
+  /// **'الجاي: {name} — {status}'**
+  String maintStateNext(String name, String status);
+
+  /// Maintenance world state line: an overdue task.
+  ///
+  /// In ar, this message translates to:
+  /// **'{name} متأخر {days} يوم'**
+  String maintStateOverdue(String name, int days);
+
+  /// A task's status.
+  ///
+  /// In ar, this message translates to:
+  /// **'متأخر {days} يوم'**
+  String maintServiceOverdue(int days);
+
+  /// A task's status.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصيانة خلال {days} يوم'**
+  String maintServiceIn(int days);
+
+  /// A task's status when no interval is known.
+  ///
+  /// In ar, this message translates to:
+  /// **'صيانة قريبة'**
+  String get maintServiceSoon;
+
+  /// A task's warranty line.
+  ///
+  /// In ar, this message translates to:
+  /// **'الضمان منتهي'**
+  String get maintWarrantyEnded;
+
+  /// A task's warranty line.
+  ///
+  /// In ar, this message translates to:
+  /// **'الضمان ينتهي خلال {days} يوم'**
+  String maintWarrantyIn(int days);
+
+  /// Maintenance count label.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأجهزة'**
+  String get maintStatDevices;
+
+  /// Maintenance count label.
+  ///
+  /// In ar, this message translates to:
+  /// **'صيانة قريبة'**
+  String get maintStatSoon;
+
+  /// Maintenance count label.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضمان قارب'**
+  String get maintStatWarranty;
+
+  /// Maintenance overdue banner.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} جهاز متأخر عن موعد الصيانة'**
+  String maintOverdueBanner(int count);
+
+  /// Maintenance empty state title.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد أجهزة مسجلة بعد'**
+  String get maintEmptyTitle;
+
+  /// Maintenance empty state guidance.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجّل التكييف أو السخان أو العربية، وزاد يفكّرك بميعاد صيانتها وضمانها.'**
+  String get maintEmptyMessage;
+
+  /// Maintenance: the docked add button.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة جهاز'**
+  String get maintAdd;
+
+  /// Maintenance: mark a task done.
+  ///
+  /// In ar, this message translates to:
+  /// **'تمت الصيانة اليوم'**
+  String get maintServicedToday;
+
+  /// Tooltip of a delete button.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف'**
+  String get maintDelete;
+
+  /// Maintenance: opens the trusted technicians sheet.
+  ///
+  /// In ar, this message translates to:
+  /// **'فنيين بثق فيهم'**
+  String get maintTechnicians;
+
+  /// Maintenance: hint under the technicians row.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتصل أو ابعت واتساب لفني اتجرّبته'**
+  String get maintTechniciansHint;
+
+  /// Snackbar when an add fails.
+  ///
+  /// In ar, this message translates to:
+  /// **'ماتسجلش الجهاز — اتأكد من النت.'**
+  String get maintAddFailed;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {
