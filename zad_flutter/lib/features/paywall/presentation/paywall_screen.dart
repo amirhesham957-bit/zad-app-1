@@ -7,7 +7,11 @@
 /// phone that did not get زاد from Play, or a plan not yet set up in the Play
 /// Console, is told so plainly — nothing pretends a purchase went through.
 ///
-/// Motion (owner, 2026-10-05): a slow gradient behind the page, a pulsing
+/// Rebuilt as the premium world (2026-11-20): a gold scene with the
+/// companion, the plans as white cards, the subscribe button docked at the
+/// bottom. Only layout changed; billing, products and prices are untouched.
+///
+/// Motion (owner, 2026-10-05): a pulsing
 /// glow on Plus and Ultra with a shimmer across their badge, a pulsing
 /// subscribe button, and confetti when a plan is picked — all still under
 /// reduced motion. **No countdown and no discount** until a real offer exists
@@ -20,16 +24,21 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lottie/lottie.dart';
-import 'package:zad/core/design/foundation/glass_surface.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_motion.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/l10n/l10n.dart';
+import 'package:zad/features/paywall/presentation/paywall_scene.dart';
 import 'package:zad/shared/ads/presentation/watch_ad_button.dart';
 import 'package:zad/shared/billing/data/play_billing.dart';
 import 'package:zad/shared/companion/presentation/companion_paywall_aside.dart';
+import 'package:zad/shared/quota/application/attempts_balance_provider.dart';
+import 'package:zad/shared/worlds/art/art.dart';
+import 'package:zad/shared/worlds/world_card.dart';
+import 'package:zad/shared/worlds/world_scaffold.dart';
+import 'package:zad/shared/worlds/zad_world.dart';
 
 /// Opens the plans.
 Future<void> showPaywallScreen(BuildContext context) => Navigator.of(context)
@@ -136,12 +145,6 @@ class _PaywallState extends ConsumerState<PaywallScreen>
     duration: ZadDuration.shimmer,
   );
 
-  /// The backdrop's slow drift.
-  late final AnimationController _drift = AnimationController(
-    vsync: this,
-    duration: ZadDuration.ambient,
-  );
-
   /// Counts picks; each one restarts the confetti.
   int _bursts = 0;
 
@@ -153,17 +156,14 @@ class _PaywallState extends ConsumerState<PaywallScreen>
     _still = MediaQuery.disableAnimationsOf(context);
     if (_still) {
       _pulse.stop();
-      _drift.stop();
     } else {
       if (!_pulse.isAnimating) _pulse.repeat(reverse: true);
-      if (!_drift.isAnimating) _drift.repeat(reverse: true);
     }
   }
 
   @override
   void dispose() {
     _pulse.dispose();
-    _drift.dispose();
     unawaited(_results?.cancel());
     super.dispose();
   }
@@ -227,99 +227,90 @@ class _PaywallState extends ConsumerState<PaywallScreen>
     ),
   );
 
-  @override
-  Widget build(BuildContext context) => Scaffold(
-    backgroundColor: ZadColors.canvasMid,
-    appBar: AppBar(
-      backgroundColor: Colors.transparent,
-      title: Text(
-        context.l10n.paywallTitle,
-        style: ZadType.titleMedium.copyWith(fontWeight: FontWeight.w700),
-      ),
-    ),
-    extendBodyBehindAppBar: true,
-    body: Stack(
-      children: <Widget>[
-        Positioned.fill(child: _Backdrop(drift: _drift)),
-        SafeArea(child: _plans(context)),
-        if (_bursts > 0 && !_still)
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 260,
-            child: IgnorePointer(
-              child: Lottie.asset(
-                'assets/lottie/lottie_confetti_burst.json',
-                key: ValueKey<int>(_bursts),
-                repeat: false,
-                fit: BoxFit.cover,
-                errorBuilder: (_, _, _) => const SizedBox.shrink(),
-              ),
-            ),
-          ),
-      ],
-    ),
-  );
+  /// The plan the customer is on now (from the server's balance), or null on
+  /// the free plan / unknown — then the line only invites.
+  String? _currentPlan() {
+    final b = ref.watch(attemptsBalanceProvider).value;
+    if (b == null || b.isFree) return null;
+    return b.planName;
+  }
 
-  Widget _plans(BuildContext context) => ListView(
-    padding: const EdgeInsets.symmetric(
-      horizontal: 20,
-      vertical: ZadSpacing.md,
-    ),
-    children: <Widget>[
-      // ZAD_PLAN ٥.٢: the pet knows which screen this is.
-      const CompanionPaywallAside(),
-      DecoratedBox(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(ZadRadii.cardLarge),
-          gradient: LinearGradient(
-            colors: <Color>[ZadColors.forestEmerald, ZadColors.forestLight],
-          ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(22),
-          child: Column(
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    final plan = _currentPlan();
+    final bottom = MediaQuery.paddingOf(context).bottom;
+    return Scaffold(
+      backgroundColor: ZadColors.canvasMid,
+      body: ZadWorldScaffold(
+        world: ZadWorld.prem,
+        title: l.worldLabelPrem,
+        stateLine: plan == null
+            ? l.paywallStateInvite
+            : l.paywallStatePlan(plan),
+        scene: PaywallWorldScene.new,
+        zado: const ZadWorldZado(left: 140, top: 52),
+        dockHeight: _dockHeight + bottom,
+        overlay: Positioned.fill(
+          child: Stack(
             children: <Widget>[
-              Icon(ZadIcons.assistant, size: 40, color: ZadColors.mustardLight),
-              const SizedBox(height: 10),
-              Text(
-                context.l10n.paywallHeadline,
-                textAlign: TextAlign.center,
-                style: ZadType.titleLarge.copyWith(
-                  fontWeight: FontWeight.w800,
-                  color: Colors.white,
+              if (_bursts > 0 && !_still)
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: 260,
+                  child: IgnorePointer(
+                    child: Lottie.asset(
+                      'assets/lottie/lottie_confetti_burst.json',
+                      key: ValueKey<int>(_bursts),
+                      repeat: false,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                    ),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                context.l10n.paywallSubhead,
-                textAlign: TextAlign.center,
-                style: ZadType.bodySmall.copyWith(
-                  color: Colors.white.withValues(alpha: 0.9),
-                  height: 1.5,
-                ),
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: _dock(context, bottom),
               ),
             ],
           ),
         ),
-      ),
-      const SizedBox(height: 20),
-      for (final plan in _Plan.values)
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: ZadSpacing.sm),
-          child: _PlanCard(
-            plan: plan,
-            price: _prices[plan.productId],
-            selected: plan == _selected,
-            pulse: _pulse,
-            onTap: () => _pick(plan),
+        slivers: <Widget>[
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(
+              ZadSpacing.gutter,
+              ZadSpacing.md,
+              ZadSpacing.gutter,
+              0,
+            ),
+            sliver: SliverList.list(children: _body(context)),
           ),
-        ),
-      const SizedBox(height: ZadSpacing.xl),
-      // The beat stops while Play is open: nothing pulls at a purchase
-      // already under way.
-      AnimatedBuilder(
+        ],
+      ),
+    );
+  }
+
+  static const double _dockHeight = 86;
+
+  /// The subscribe button, in the thumb zone. The beat stops while Play is
+  /// open: nothing pulls at a purchase already under way.
+  Widget _dock(BuildContext context, double bottom) => DecoratedBox(
+    decoration: BoxDecoration(
+      color: ZadColors.canvasMid,
+      border: const Border(top: BorderSide(color: ZadColors.hairline)),
+    ),
+    child: Padding(
+      padding: EdgeInsets.fromLTRB(
+        ZadSpacing.gutter,
+        ZadSpacing.md,
+        ZadSpacing.gutter,
+        ZadSpacing.md + bottom,
+      ),
+      child: AnimatedBuilder(
         animation: _pulse,
         builder: (context, child) {
           final beat = _buying ? 0.0 : _pulse.value;
@@ -328,7 +319,7 @@ class _PaywallState extends ConsumerState<PaywallScreen>
             child: DecoratedBox(
               key: const ValueKey<String>('cta-glow'),
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(ZadRadii.card),
                 boxShadow: <BoxShadow>[
                   BoxShadow(
                     color: ZadColors.mustardOchre.withValues(
@@ -349,22 +340,59 @@ class _PaywallState extends ConsumerState<PaywallScreen>
             style: FilledButton.styleFrom(
               backgroundColor: ZadColors.forestEmerald,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(ZadRadii.card),
               ),
             ),
             onPressed: _buying ? null : () => unawaited(_subscribe()),
             icon: const Icon(Icons.shopping_bag, size: 20),
             label: Text(
               context.l10n.paywallSubscribeTo(_selected.title(context.l10n)),
-              style: const TextStyle(
-                fontWeight: FontWeight.w800,
-                fontSize: 14.5,
-              ),
+              style: ZadType.labelLarge.copyWith(fontWeight: FontWeight.w800),
             ),
           ),
         ),
       ),
-      const SizedBox(height: 14),
+    ),
+  );
+
+  List<Widget> _body(BuildContext context) {
+    final l = context.l10n;
+    return <Widget>[
+      ZadWorldCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text(
+              l.paywallHeadline,
+              style: ZadType.titleMedium.copyWith(fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: ZadSpacing.xs),
+            Text(
+              l.paywallSubhead,
+              style: ZadType.bodySmall.copyWith(
+                color: ZadColors.inkMuted,
+                height: 1.5,
+              ),
+            ),
+            // ZAD_PLAN ٥.٢: the pet knows which screen this is. The companion
+            // is already in the scene, so only its line.
+            const SizedBox(height: ZadSpacing.md),
+            const CompanionPaywallAside(showOrb: false),
+          ],
+        ),
+      ),
+      for (final plan in _Plan.values)
+        Padding(
+          padding: const EdgeInsets.only(top: ZadSpacing.md),
+          child: _PlanCard(
+            plan: plan,
+            price: _prices[plan.productId],
+            selected: plan == _selected,
+            pulse: _pulse,
+            onTap: () => _pick(plan),
+          ),
+        ),
+      const SizedBox(height: ZadSpacing.md),
       // A Wrap, not a Row: the column around it is as wide as its widest
       // child, so shorter plan copy (2026-10-12) left this row 153dp too wide
       // at 320dp and 1.3× text. Wrapping fits any width.
@@ -372,105 +400,85 @@ class _PaywallState extends ConsumerState<PaywallScreen>
         alignment: WrapAlignment.center,
         runSpacing: ZadSpacing.xs,
         children: <Widget>[
-          for (final (method, icon) in <(String, String)>[
-            ('Google Play', '💳'),
-            (context.l10n.paywallSafePayment, '🔒'),
-          ])
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 4),
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: ZadColors.surfaceVariant,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                '$icon $method',
-                style: TextStyle(
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.w600,
-                  color: ZadColors.inkMuted,
-                ),
-              ),
-            ),
+          const _Chip(
+            icon: Icon(Icons.credit_card, size: 14),
+            label: 'Google Play',
+          ),
+          _Chip(
+            icon: ZadArt.icon(ZadIconArt.shield, size: 14),
+            label: l.paywallSafePayment,
+          ),
         ],
       ),
-      const SizedBox(height: 10),
+      const SizedBox(height: ZadSpacing.sm),
       Text(
-        context.l10n.paywallBillingNote,
+        l.paywallBillingNote,
         textAlign: TextAlign.center,
         style: ZadType.bodySmall.copyWith(
           color: ZadColors.inkMuted.withValues(alpha: 0.7),
-          fontSize: 11,
-        ),
-      ),
-      const SizedBox(height: ZadSpacing.xl),
-      DecoratedBox(
-        decoration: BoxDecoration(
-          color: ZadColors.forestEmerald.withValues(alpha: 0.04),
-          borderRadius: BorderRadius.circular(ZadRadii.card),
-          border: Border.all(color: ZadColors.hairline),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(ZadSpacing.lg),
-          child: Column(
-            children: <Widget>[
-              Text(
-                context.l10n.paywallStayFree,
-                style: ZadType.titleSmall.copyWith(fontWeight: FontWeight.w700),
-              ),
-              const SizedBox(height: ZadSpacing.xs),
-              // The free plan as zad_entitlement_refresh gives it.
-              Text(
-                context.l10n.paywallFreeTerms,
-                textAlign: TextAlign.center,
-                style: ZadType.bodySmall.copyWith(
-                  color: ZadColors.inkMuted,
-                  height: 1.5,
-                ),
-              ),
-              // The real rewarded ad (AdMob + server SSV) is in the app since
-              // c924d8ae; it hides itself on paid plans, in kids mode and
-              // when the server has no ad to offer.
-              const SizedBox(height: ZadSpacing.md),
-              const WatchAdButton(),
-            ],
-          ),
         ),
       ),
       const SizedBox(height: ZadSpacing.lg),
-    ],
-  );
+      ZadWorldCard(
+        child: Column(
+          children: <Widget>[
+            Text(
+              l.paywallStayFree,
+              style: ZadType.titleSmall.copyWith(fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: ZadSpacing.xs),
+            // The free plan as zad_entitlement_refresh gives it.
+            Text(
+              l.paywallFreeTerms,
+              textAlign: TextAlign.center,
+              style: ZadType.bodySmall.copyWith(
+                color: ZadColors.inkMuted,
+                height: 1.5,
+              ),
+            ),
+            // The real rewarded ad (AdMob + server SSV) is in the app since
+            // c924d8ae; it hides itself on paid plans, in kids mode and
+            // when the server has no ad to offer.
+            const SizedBox(height: ZadSpacing.md),
+            const WatchAdButton(),
+          ],
+        ),
+      ),
+    ];
+  }
 }
 
-/// The page behind the plans: canvas to mint to a touch of gold, drifting.
-class _Backdrop extends StatelessWidget {
-  const new({required this.drift});
+class _Chip extends StatelessWidget {
+  const new({required this.icon, required this.label});
 
-  final Animation<double> drift;
+  final Widget icon;
+  final String label;
 
   @override
-  Widget build(BuildContext context) => AnimatedBuilder(
-    animation: drift,
-    builder: (context, _) {
-      final t = ZadCurves.standard.transform(drift.value);
-      return DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment(-1 + t, -1),
-            end: Alignment(1, 1 - t),
-            colors: <Color>[
-              ZadColors.canvasMid,
-              ZadColors.mint50,
-              Color.lerp(
-                ZadColors.canvasMid,
-                ZadColors.mustardOchre,
-                0.10 + 0.06 * t,
-              )!,
-            ],
+  Widget build(BuildContext context) => Container(
+    margin: const EdgeInsets.symmetric(horizontal: ZadSpacing.xs),
+    padding: const EdgeInsets.symmetric(
+      horizontal: ZadSpacing.sm,
+      vertical: ZadSpacing.xs,
+    ),
+    decoration: BoxDecoration(
+      color: ZadColors.surfaceVariant,
+      borderRadius: BorderRadius.circular(ZadRadii.chip),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        icon,
+        const SizedBox(width: ZadSpacing.xs),
+        Text(
+          label,
+          style: ZadType.labelSmall.copyWith(
+            fontWeight: FontWeight.w600,
+            color: ZadColors.inkMuted,
           ),
         ),
-      );
-    },
+      ],
+    ),
   );
 }
 
@@ -494,7 +502,18 @@ class _PlanCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final card = _card(context);
+    final card = DecoratedBox(
+      key: ValueKey<String>('plan-card-${plan.name}'),
+      position: DecorationPosition.foreground,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(ZadRadii.cardLarge),
+        border: Border.all(
+          color: selected ? plan.accent : Colors.transparent,
+          width: 2,
+        ),
+      ),
+      child: ZadWorldCard(onTap: onTap, child: _content(context)),
+    );
     if (!plan.glows) return card;
     // Plus and Ultra glow in their own colour, stronger when picked.
     return AnimatedBuilder(
@@ -502,7 +521,7 @@ class _PlanCard extends StatelessWidget {
       builder: (context, child) => DecoratedBox(
         key: ValueKey<String>('glow-${plan.name}'),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(ZadRadii.cardLarge),
           boxShadow: <BoxShadow>[
             BoxShadow(
               color: plan.accent.withValues(
@@ -522,10 +541,13 @@ class _PlanCard extends StatelessWidget {
   /// The badge, with a light sweeping across it on the glowing plans.
   Widget _badge(BuildContext context) {
     final chip = Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(
+        horizontal: ZadSpacing.sm,
+        vertical: ZadSpacing.xs,
+      ),
       decoration: BoxDecoration(
         color: plan.accent.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(ZadRadii.chip),
       ),
       child: Text(
         plan.badge(context.l10n),
@@ -559,118 +581,78 @@ class _PlanCard extends StatelessWidget {
     );
   }
 
-  // Frosted glass over the drifting backdrop (ZAD_PLAN ٢.٥). No drop
-  // shadow: under a translucent pane it shows through as a smudge, and the
-  // edge is what makes the pane read.
-  Widget _card(BuildContext context) => ZadGlass(
-    key: ValueKey<String>('plan-glass-${plan.name}'),
-    radius: 22,
-    blur: 16,
-    padding: EdgeInsets.zero,
-    tint: selected
-        ? ZadColors.surfaceVariant.withValues(alpha: 0.6)
-        : ZadColors.surface.withValues(alpha: 0.55),
-    edge: selected
-        ? ZadColors.forestEmerald
-        : ZadColors.outline.withValues(alpha: 0.5),
-    edgeWidth: selected ? 2 : 1,
-    child: Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(22),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(18),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Row(
-                children: <Widget>[
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Text(
-                          plan.title(context.l10n),
-                          style: ZadType.titleMedium.copyWith(
-                            fontWeight: FontWeight.w800,
-                            color: selected
-                                ? ZadColors.forestEmerald
-                                : ZadColors.ink,
-                          ),
-                        ),
-                        Text(
-                          context.l10n.paywallAttemptsPerMonth(plan.quota),
-                          style: TextStyle(
-                            fontSize: 11.5,
-                            color: ZadColors.inkMuted,
-                          ),
-                        ),
-                        if (price case final p?)
-                          Text(
-                            context.l10n.paywallPricePerMonth(p),
-                            key: ValueKey<String>('price-${plan.name}'),
-                            style: ZadType.labelLarge.copyWith(
-                              fontWeight: FontWeight.w800,
-                              color: plan.accent,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                  // Shrinks and wraps at large text instead of pushing past
-                  // the card's edge (it overflowed by 39dp at 320dp, 1.3×).
-                  Flexible(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: <Widget>[
-                        Text(
-                          context.l10n.paywallFromPlay,
-                          textAlign: TextAlign.end,
-                          style: ZadType.titleSmall.copyWith(
-                            fontWeight: FontWeight.w800,
-                            color: ZadColors.forestEmerald,
-                          ),
-                        ),
-                        Text(
-                          context.l10n.paywallAutoRenew,
-                          textAlign: TextAlign.end,
-                          style: TextStyle(
-                            fontSize: 9,
-                            color: ZadColors.inkMuted,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: ZadSpacing.sm),
-              _badge(context),
-              const SizedBox(height: 14),
-              Divider(color: ZadColors.outline.withValues(alpha: 0.5)),
-              const SizedBox(height: ZadSpacing.sm),
-              for (final perk in plan.perks(context.l10n))
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 3),
-                  child: Row(
-                    children: <Widget>[
-                      Icon(
-                        ZadIcons.selected,
-                        size: 16,
-                        color: ZadColors.forestEmerald,
-                      ),
-                      const SizedBox(width: ZadSpacing.sm),
-                      Expanded(
-                        child: Text(perk, style: const TextStyle(fontSize: 12)),
-                      ),
-                    ],
+  Widget _content(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: <Widget>[
+      Row(
+        children: <Widget>[
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  plan.title(context.l10n),
+                  style: ZadType.titleMedium.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: selected ? plan.accent : ZadColors.ink,
                   ),
                 ),
+                Text(
+                  context.l10n.paywallAttemptsPerMonth(plan.quota),
+                  style: ZadType.labelSmall.copyWith(color: ZadColors.inkMuted),
+                ),
+                if (price case final p?)
+                  Text(
+                    context.l10n.paywallPricePerMonth(p),
+                    key: ValueKey<String>('price-${plan.name}'),
+                    style: ZadType.labelLarge.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: plan.accent,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          // Shrinks and wraps at large text instead of pushing past the
+          // card's edge (it overflowed by 39dp at 320dp, 1.3×).
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: <Widget>[
+                Text(
+                  context.l10n.paywallFromPlay,
+                  textAlign: TextAlign.end,
+                  style: ZadType.titleSmall.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: ZadColors.forestEmerald,
+                  ),
+                ),
+                Text(
+                  context.l10n.paywallAutoRenew,
+                  textAlign: TextAlign.end,
+                  style: ZadType.labelSmall.copyWith(color: ZadColors.inkMuted),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+      const SizedBox(height: ZadSpacing.sm),
+      _badge(context),
+      const SizedBox(height: ZadSpacing.md),
+      Divider(color: ZadColors.outline.withValues(alpha: 0.5)),
+      const SizedBox(height: ZadSpacing.sm),
+      for (final perk in plan.perks(context.l10n))
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 3),
+          child: Row(
+            children: <Widget>[
+              Icon(ZadIcons.selected, size: 16, color: ZadColors.forestEmerald),
+              const SizedBox(width: ZadSpacing.sm),
+              Expanded(child: Text(perk, style: ZadType.bodySmall)),
             ],
           ),
         ),
-      ),
-    ),
+    ],
   );
 }

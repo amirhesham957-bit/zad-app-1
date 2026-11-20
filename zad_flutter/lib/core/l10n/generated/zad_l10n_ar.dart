@@ -214,7 +214,7 @@ class ZadL10nAr extends ZadL10n {
   String get paywallPlusTitle => 'المتقدمة (Plus)';
 
   @override
-  String get paywallPlusBadge => 'الأكثر شعبية ⭐';
+  String get paywallPlusBadge => 'الأكثر شعبية';
 
   @override
   String get paywallAllBasicPerks => 'كل مزايا الأساسية';
@@ -230,7 +230,7 @@ class ZadL10nAr extends ZadL10n {
   String get paywallFamilyTitle => 'العيلة (Family)';
 
   @override
-  String get paywallFamilyBadge => 'أكبر رصيد 👑';
+  String get paywallFamilyBadge => 'أكبر رصيد';
 
   @override
   String get paywallFamilyPerkAttempts =>
@@ -307,6 +307,14 @@ class ZadL10nAr extends ZadL10n {
   String paywallPricePerMonth(String price) {
     return '$price في الشهر';
   }
+
+  @override
+  String paywallStatePlan(String plan) {
+    return 'خطتك دلوقتي: $plan';
+  }
+
+  @override
+  String get paywallStateInvite => 'اختار الباقة اللي تناسب بيتك';
 
   @override
   String get navHome => 'الرئيسية';
@@ -1075,11 +1083,11 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get chatWelcome =>
-      'أهلاً بيك! أنا زاد 🤖، مساعدك العائلي الذكي. أقدر أساعدك إزاي النهاردة؟\nاسألني عن الوصفات، أو راجع ثلاجتك، أو ضيف النواقص لقائمة التسوق!';
+      'أهلاً بيك! أنا زاد، مساعدك العائلي الذكي. أقدر أساعدك إزاي النهاردة؟\nاسألني عن الوصفات، أو راجع ثلاجتك، أو ضيف النواقص لقائمة التسوق!';
 
   @override
   String get chatBusy =>
-      'الذكاء الاصطناعي مشغول شوية دلوقتي 🙏 جرب تاني بعد لحظات.';
+      'الذكاء الاصطناعي مشغول شوية دلوقتي جرب تاني بعد لحظات.';
 
   @override
   String get chatUnexpected => 'حصل خطأ غير متوقع.';
@@ -1116,6 +1124,34 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get chatReportFailed => 'البلاغ ماوصلش — جرّب تاني';
+
+  @override
+  String get chatWorldEyebrow => 'اسأل أي حاجة';
+
+  @override
+  String get chatStateThinking => 'بيفكّر…';
+
+  @override
+  String get chatStateListening => 'بيسمعك…';
+
+  @override
+  String get chatStateSpeaking => 'بيتكلم…';
+
+  @override
+  String get chatStateEmpty => 'أنا سامعك';
+
+  @override
+  String chatStateCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count رسالة',
+      few: '$count رسايل',
+      two: 'رسالتين',
+      one: 'رسالة واحدة',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get chatThinking => 'بفكر…';
@@ -6168,6 +6204,194 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get achRetry => 'جرّب تاني';
+
+  @override
+  String get pricesEyebrow => 'لوحة الأسعار';
+
+  @override
+  String get pricesWorldNeutral => 'أسعار السوق من بلاغات الناس';
+
+  @override
+  String get pricesWorldFlat => 'الأسعار ثابتة النهارده';
+
+  @override
+  String pricesWorldUp(String name) {
+    return '$name طالع';
+  }
+
+  @override
+  String pricesWorldDown(String name) {
+    return '$name نازل';
+  }
+
+  @override
+  String pricesWorldUpDown(String up, String down) {
+    return '$up طالع، $down نازل';
+  }
+
+  @override
+  String get pricesMine => 'مساهماتك';
+
+  @override
+  String get pricesReportNew => 'سجّل سعر جديد';
+
+  @override
+  String get pricesCheapestTitle => 'أرخص سعر حواليك';
+
+  @override
+  String get pricesCheapestNote =>
+      'من بلاغات مجتمع زاد آخر ١٤ يوم — مش أسعار رسمية';
+
+  @override
+  String get pricesCityLabel => 'المدينة أو المنطقة (اختياري)';
+
+  @override
+  String get pricesSearch => 'دوّر';
+
+  @override
+  String get pricesFetchFailed => 'مقدرناش نجيب الأسعار دلوقتي';
+
+  @override
+  String get pricesFetchFailedHint => 'اتأكد من النت وجرّب تاني';
+
+  @override
+  String get pricesRetry => 'جرّب تاني';
+
+  @override
+  String get pricesNoReportsTitle => 'لسه مفيش بلاغات هنا';
+
+  @override
+  String get pricesNoReportsHint => 'كن أول واحد يبلّغ عن سعر — جيرانك هيشكروك';
+
+  @override
+  String get pricesFirstReport => 'سجّل أول سعر';
+
+  @override
+  String pricesRowMeta(String where, int count) {
+    return '$where · $count بلاغ';
+  }
+
+  @override
+  String get pricesTrendsTitle => 'ترندات سوقك';
+
+  @override
+  String pricesTrendsNote(int days) {
+    return 'اللي بيوت كتير في بلدك اشترته أو حطّته في قايمة التسوق آخر $days يوم — من غير أسماء ولا محلات';
+  }
+
+  @override
+  String get pricesTrendsNoMarket => 'اختار بلدك الأول';
+
+  @override
+  String get pricesTrendsNoMarketHint => 'الترندات بتتحسب لكل بلد لوحده.';
+
+  @override
+  String get pricesTrendsEmpty => 'لسه مفيش ترند في سوقك';
+
+  @override
+  String pricesTrendsEmptyHint(int homes) {
+    return 'الصنف بيظهر هنا لما $homes بيوت مختلفة على الأقل يشتروه أو يحطّوه في قايمتهم — عشان محدش يتعرف من مشترياته. كل فاتورة بتصوّرها بتقرّب اليوم ده.';
+  }
+
+  @override
+  String get pricesTrendUp => 'بيزيد';
+
+  @override
+  String get pricesTrendDown => 'بيقل';
+
+  @override
+  String get pricesTrendFlat => 'ثابت';
+
+  @override
+  String get pricesTrendFresh => 'جديد';
+
+  @override
+  String pricesHomes(int n) {
+    return '$n بيوت';
+  }
+
+  @override
+  String get pricesTopTitle => 'أكثر المشاركين';
+
+  @override
+  String get pricesTopNone => 'لسه مفيش مساهمات';
+
+  @override
+  String get pricesTopNoneHint =>
+      'سجّل أول سعر شفته في السوق — مساهمتك بتظهر هنا وبتساعد جيرانك يلاقوا أرخص مكان.';
+
+  @override
+  String pricesContributor(int rank) {
+    return 'المساهم $rank';
+  }
+
+  @override
+  String pricesContribCount(int n) {
+    return '$n مساهمات';
+  }
+
+  @override
+  String get profileGroupMe => 'أنا وزاد';
+
+  @override
+  String get profileGroupAccount => 'الحساب والعيلة';
+
+  @override
+  String get profileGroupMoney => 'الفلوس';
+
+  @override
+  String get profileGroupPlan => 'رفيق زاد والاشتراك';
+
+  @override
+  String get profilePlanFree => 'المجانية';
+
+  @override
+  String get profilePlanBasic => 'الأساسية';
+
+  @override
+  String get profilePlanPlus => 'المتقدمة';
+
+  @override
+  String get profilePlanUltra => 'العيلة';
+
+  @override
+  String get profileSettingsTitle => 'الإعدادات';
+
+  @override
+  String get profileSettingsSubtitle => 'السقف، الأصوات، الإعلانات والخصوصية';
+
+  @override
+  String get settingsWorldTitle => 'الإعدادات';
+
+  @override
+  String get settingsGroupMoney => 'الفلوس';
+
+  @override
+  String get settingsGroupCompanion => 'رفيق زاد';
+
+  @override
+  String get settingsGroupSounds => 'الأصوات واللغة';
+
+  @override
+  String get settingsGroupPrivacy => 'الإعلانات والخصوصية';
+
+  @override
+  String get settingsGroupAccount => 'الحساب';
+
+  @override
+  String get settingsAdsTitle => 'الإعلانات';
+
+  @override
+  String get settingsAdsBody => 'مخصّصة ليك؟ تقدر تغيّر اختيارك في أي وقت';
+
+  @override
+  String get settingsAdsUnavailable => 'مفيش اختيارات خصوصية متاحة دلوقتي';
+
+  @override
+  String get settingsTermsTitle => 'الشروط والأحكام';
+
+  @override
+  String get settingsTermsBody => 'سياسة الاستخدام والخصوصية';
 }
 
 /// The translations for Arabic, as used in Saudi Arabia (`ar_SA`).
@@ -6246,6 +6470,14 @@ class ZadL10nArSa extends ZadL10nAr {
   @override
   String get paywallNotOnPlayBody =>
       'الباقة هذي للحين ما تفعّلت على Google Play. جرّب مرة ثانية قريب.';
+
+  @override
+  String paywallStatePlan(String plan) {
+    return 'خطتك الحين: $plan';
+  }
+
+  @override
+  String get paywallStateInvite => 'اختر الباقة اللي تناسب بيتك';
 
   @override
   String get navMyFamily => 'عائلتي';
@@ -6490,11 +6722,11 @@ class ZadL10nArSa extends ZadL10nAr {
 
   @override
   String get chatWelcome =>
-      'هلا والله! أنا زاد 🤖، مساعدك العائلي الذكي. كيف أقدر أساعدك اليوم؟\nاسألني عن الوصفات، أو راجع ثلاجتك، أو أضف النواقص لقائمة التسوق!';
+      'هلا والله! أنا زاد، مساعدك العائلي الذكي. كيف أقدر أساعدك اليوم؟\nاسألني عن الوصفات، أو راجع ثلاجتك، أو أضف النواقص لقائمة التسوق!';
 
   @override
   String get chatBusy =>
-      'الذكاء الاصطناعي مشغول شوي الحين 🙏 جرّب مرة ثانية بعد لحظات.';
+      'الذكاء الاصطناعي مشغول شوي الحين جرّب مرة ثانية بعد لحظات.';
 
   @override
   String get chatResend => 'ما وصلت — أرسلها مرة ثانية';
@@ -6513,6 +6745,34 @@ class ZadL10nArSa extends ZadL10nAr {
 
   @override
   String get chatReportFailed => 'ما وصل البلاغ — حاول مرة ثانية';
+
+  @override
+  String get chatWorldEyebrow => 'اسألني أي شيء';
+
+  @override
+  String get chatStateThinking => 'يفكّر…';
+
+  @override
+  String get chatStateListening => 'يسمعك…';
+
+  @override
+  String get chatStateSpeaking => 'يتكلم…';
+
+  @override
+  String get chatStateEmpty => 'أنا أسمعك';
+
+  @override
+  String chatStateCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count رسالة',
+      few: '$count رسائل',
+      two: 'رسالتان',
+      one: 'رسالة واحدة',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get chatThinking => 'أفكّر…';
@@ -8559,4 +8819,132 @@ class ZadL10nArSa extends ZadL10nAr {
 
   @override
   String get achRetry => 'حاول مرة ثانية';
+
+  @override
+  String get pricesEyebrow => 'لوحة الأسعار';
+
+  @override
+  String get pricesWorldNeutral => 'أسعار السوق من بلاغات الناس';
+
+  @override
+  String get pricesWorldFlat => 'الأسعار ثابتة اليوم';
+
+  @override
+  String pricesWorldUp(String name) {
+    return '$name طالع';
+  }
+
+  @override
+  String pricesWorldDown(String name) {
+    return '$name نازل';
+  }
+
+  @override
+  String pricesWorldUpDown(String up, String down) {
+    return '$up طالع، $down نازل';
+  }
+
+  @override
+  String get pricesMine => 'مساهماتك';
+
+  @override
+  String get pricesReportNew => 'سجّل سعراً جديداً';
+
+  @override
+  String get pricesCheapestTitle => 'أرخص سعر حولك';
+
+  @override
+  String get pricesCheapestNote =>
+      'من بلاغات مجتمع زاد آخر ١٤ يوماً — وليست أسعاراً رسمية';
+
+  @override
+  String get pricesCityLabel => 'المدينة أو المنطقة (اختياري)';
+
+  @override
+  String get pricesSearch => 'ابحث';
+
+  @override
+  String get pricesFetchFailed => 'ما قدرنا نجيب الأسعار الحين';
+
+  @override
+  String get pricesFetchFailedHint => 'تأكد من الإنترنت وحاول مرة ثانية';
+
+  @override
+  String get pricesRetry => 'حاول مرة ثانية';
+
+  @override
+  String get pricesNoReportsTitle => 'ما فيه بلاغات هنا للحين';
+
+  @override
+  String get pricesNoReportsHint => 'كن أول من يبلّغ عن سعر — جيرانك بيشكرونك';
+
+  @override
+  String get pricesFirstReport => 'سجّل أول سعر';
+
+  @override
+  String pricesRowMeta(String where, int count) {
+    return '$where · $count بلاغ';
+  }
+
+  @override
+  String get pricesTrendsTitle => 'ترندات سوقك';
+
+  @override
+  String pricesTrendsNote(int days) {
+    return 'ما اشترته أو أضافته بيوت كثيرة في بلدك لقائمة التسوق آخر $days يوم — بدون أسماء ولا محلات';
+  }
+
+  @override
+  String get pricesTrendsNoMarket => 'اختر بلدك أولاً';
+
+  @override
+  String get pricesTrendsNoMarketHint => 'الترندات تُحسب لكل بلد على حدة.';
+
+  @override
+  String get pricesTrendsEmpty => 'ما فيه ترند في سوقك للحين';
+
+  @override
+  String pricesTrendsEmptyHint(int homes) {
+    return 'يظهر الصنف هنا لما يشتريه أو يضيفه $homes بيوت مختلفة على الأقل — حتى لا يُعرف أحد من مشترياته. كل فاتورة تصوّرها تقرّب هذا اليوم.';
+  }
+
+  @override
+  String get pricesTrendUp => 'يزيد';
+
+  @override
+  String get pricesTrendDown => 'يقل';
+
+  @override
+  String get pricesTrendFlat => 'ثابت';
+
+  @override
+  String get pricesTrendFresh => 'جديد';
+
+  @override
+  String pricesHomes(int n) {
+    return '$n بيوت';
+  }
+
+  @override
+  String get pricesTopTitle => 'أكثر المشاركين';
+
+  @override
+  String get pricesTopNone => 'ما فيه مساهمات للحين';
+
+  @override
+  String get pricesTopNoneHint =>
+      'سجّل أول سعر رأيته في السوق — تظهر مساهمتك هنا وتساعد جيرانك يلقون أرخص مكان.';
+
+  @override
+  String pricesContributor(int rank) {
+    return 'المساهم $rank';
+  }
+
+  @override
+  String pricesContribCount(int n) {
+    return '$n مساهمات';
+  }
+
+  @override
+  String get settingsAdsUnavailable => 'ما فيه اختيارات خصوصية متاحة الحين';
 }

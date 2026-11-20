@@ -127,12 +127,12 @@
   "paywallBasicPerkPriority": "مكانك محجوز وقت الزحمة، وزاد بيفتكر كلامكم أطول",
   "paywallBasicPerkTelegram": "صور وفويس في بوت تليجرام",
   "paywallPlusTitle": "المتقدمة (Plus)",
-  "paywallPlusBadge": "الأكثر شعبية ⭐",
+  "paywallPlusBadge": "الأكثر شعبية",
   "paywallAllBasicPerks": "كل مزايا الأساسية",
   "paywallPlusPerkAttempts": "1000 محاولة في الشهر (حوالي 33 في اليوم)",
   "paywallPlusPerkDaily": "تكفي مسح فواتير وتحليل عميق كل يوم",
   "paywallFamilyTitle": "العيلة (Family)",
-  "paywallFamilyBadge": "أكبر رصيد 👑",
+  "paywallFamilyBadge": "أكبر رصيد",
   "paywallFamilyPerkAttempts": "2500 محاولة في الشهر (حوالي 83 في اليوم)",
   "paywallFamilyPerkHeavy": "لأكتر حد بيعتمد على زاد في البيت",
   "paywallNoPlayTitle": "Google Play مش متاح",
@@ -177,6 +177,19 @@
         "type": "String"
       }
     }
+  },
+  "paywallStatePlan": "خطتك دلوقتي: {plan}",
+  "@paywallStatePlan": {
+    "description": "Premium world state line when the customer is on a paid plan.",
+    "placeholders": {
+      "plan": {
+        "type": "String"
+      }
+    }
+  },
+  "paywallStateInvite": "اختار الباقة اللي تناسب بيتك",
+  "@paywallStateInvite": {
+    "description": "Premium world state line on the free plan or when the plan is unknown."
   },
   "navHome": "الرئيسية",
   "navMoney": "فلوسي",
@@ -743,8 +756,8 @@
   "chatNewTitle": "تبدأ محادثة جديدة؟",
   "chatNewBody": "الكلام اللي فات هيتمسح من التليفون ده. اللي زاد اتعلمه عنك هيفضل زي ما هو.",
   "chatClear": "امسح",
-  "chatWelcome": "أهلاً بيك! أنا زاد 🤖، مساعدك العائلي الذكي. أقدر أساعدك إزاي النهاردة؟\nاسألني عن الوصفات، أو راجع ثلاجتك، أو ضيف النواقص لقائمة التسوق!",
-  "chatBusy": "الذكاء الاصطناعي مشغول شوية دلوقتي 🙏 جرب تاني بعد لحظات.",
+  "chatWelcome": "أهلاً بيك! أنا زاد، مساعدك العائلي الذكي. أقدر أساعدك إزاي النهاردة؟\nاسألني عن الوصفات، أو راجع ثلاجتك، أو ضيف النواقص لقائمة التسوق!",
+  "chatBusy": "الذكاء الاصطناعي مشغول شوية دلوقتي جرب تاني بعد لحظات.",
   "chatUnexpected": "حصل خطأ غير متوقع.",
   "chatResend": "ماوصلتش — ابعتها تاني",
   "chatStopVoice": "وقّف الصوت",
@@ -757,6 +770,20 @@
   "chatReportOther": "حاجة تانية",
   "chatReportSent": "وصل بلاغك، شكراً. هنراجع الرد ده.",
   "chatReportFailed": "البلاغ ماوصلش — جرّب تاني",
+  "chatWorldEyebrow": "اسأل أي حاجة",
+  "chatStateThinking": "بيفكّر…",
+  "chatStateListening": "بيسمعك…",
+  "chatStateSpeaking": "بيتكلم…",
+  "chatStateEmpty": "أنا سامعك",
+  "chatStateCount": "{count, plural, =1{رسالة واحدة} =2{رسالتين} few{{count} رسايل} other{{count} رسالة}}",
+  "@chatStateCount": {
+    "description": "Chat world: state line, how many messages are in the conversation.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "chatThinking": "بفكر…",
   "refillBack": "رصيدك رجع — ابعت رسالتك تاني",
   "refillDays": "رصيدك بيتجدد بعد {days} أيام",
@@ -5766,5 +5793,208 @@
   "achRetry": "جرّب تاني",
   "@achRetry": {
     "description": "Notifications / achievements world."
-  }
+  },
+  "pricesEyebrow": "لوحة الأسعار",
+  "@pricesEyebrow": {
+    "description": "The prices world."
+  },
+  "pricesWorldNeutral": "أسعار السوق من بلاغات الناس",
+  "@pricesWorldNeutral": {
+    "description": "The prices world."
+  },
+  "pricesWorldFlat": "الأسعار ثابتة النهارده",
+  "@pricesWorldFlat": {
+    "description": "The prices world."
+  },
+  "pricesWorldUp": "{name} طالع",
+  "@pricesWorldUp": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "pricesWorldDown": "{name} نازل",
+  "@pricesWorldDown": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "pricesWorldUpDown": "{up} طالع، {down} نازل",
+  "@pricesWorldUpDown": {
+    "placeholders": {
+      "up": {
+        "type": "String"
+      },
+      "down": {
+        "type": "String"
+      }
+    }
+  },
+  "pricesMine": "مساهماتك",
+  "@pricesMine": {
+    "description": "The prices world."
+  },
+  "pricesReportNew": "سجّل سعر جديد",
+  "@pricesReportNew": {
+    "description": "The prices world."
+  },
+  "pricesCheapestTitle": "أرخص سعر حواليك",
+  "@pricesCheapestTitle": {
+    "description": "The prices world."
+  },
+  "pricesCheapestNote": "من بلاغات مجتمع زاد آخر ١٤ يوم — مش أسعار رسمية",
+  "@pricesCheapestNote": {
+    "description": "The prices world."
+  },
+  "pricesCityLabel": "المدينة أو المنطقة (اختياري)",
+  "@pricesCityLabel": {
+    "description": "The prices world."
+  },
+  "pricesSearch": "دوّر",
+  "@pricesSearch": {
+    "description": "The prices world."
+  },
+  "pricesFetchFailed": "مقدرناش نجيب الأسعار دلوقتي",
+  "@pricesFetchFailed": {
+    "description": "The prices world."
+  },
+  "pricesFetchFailedHint": "اتأكد من النت وجرّب تاني",
+  "@pricesFetchFailedHint": {
+    "description": "The prices world."
+  },
+  "pricesRetry": "جرّب تاني",
+  "@pricesRetry": {
+    "description": "The prices world."
+  },
+  "pricesNoReportsTitle": "لسه مفيش بلاغات هنا",
+  "@pricesNoReportsTitle": {
+    "description": "The prices world."
+  },
+  "pricesNoReportsHint": "كن أول واحد يبلّغ عن سعر — جيرانك هيشكروك",
+  "@pricesNoReportsHint": {
+    "description": "The prices world."
+  },
+  "pricesFirstReport": "سجّل أول سعر",
+  "@pricesFirstReport": {
+    "description": "The prices world."
+  },
+  "pricesRowMeta": "{where} · {count} بلاغ",
+  "@pricesRowMeta": {
+    "placeholders": {
+      "where": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pricesTrendsTitle": "ترندات سوقك",
+  "@pricesTrendsTitle": {
+    "description": "The prices world."
+  },
+  "pricesTrendsNote": "اللي بيوت كتير في بلدك اشترته أو حطّته في قايمة التسوق آخر {days} يوم — من غير أسماء ولا محلات",
+  "@pricesTrendsNote": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "pricesTrendsNoMarket": "اختار بلدك الأول",
+  "@pricesTrendsNoMarket": {
+    "description": "The prices world."
+  },
+  "pricesTrendsNoMarketHint": "الترندات بتتحسب لكل بلد لوحده.",
+  "@pricesTrendsNoMarketHint": {
+    "description": "The prices world."
+  },
+  "pricesTrendsEmpty": "لسه مفيش ترند في سوقك",
+  "@pricesTrendsEmpty": {
+    "description": "The prices world."
+  },
+  "pricesTrendsEmptyHint": "الصنف بيظهر هنا لما {homes} بيوت مختلفة على الأقل يشتروه أو يحطّوه في قايمتهم — عشان محدش يتعرف من مشترياته. كل فاتورة بتصوّرها بتقرّب اليوم ده.",
+  "@pricesTrendsEmptyHint": {
+    "placeholders": {
+      "homes": {
+        "type": "int"
+      }
+    }
+  },
+  "pricesTrendUp": "بيزيد",
+  "@pricesTrendUp": {
+    "description": "The prices world."
+  },
+  "pricesTrendDown": "بيقل",
+  "@pricesTrendDown": {
+    "description": "The prices world."
+  },
+  "pricesTrendFlat": "ثابت",
+  "@pricesTrendFlat": {
+    "description": "The prices world."
+  },
+  "pricesTrendFresh": "جديد",
+  "@pricesTrendFresh": {
+    "description": "The prices world."
+  },
+  "pricesHomes": "{n} بيوت",
+  "@pricesHomes": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "pricesTopTitle": "أكثر المشاركين",
+  "@pricesTopTitle": {
+    "description": "The prices world."
+  },
+  "pricesTopNone": "لسه مفيش مساهمات",
+  "@pricesTopNone": {
+    "description": "The prices world."
+  },
+  "pricesTopNoneHint": "سجّل أول سعر شفته في السوق — مساهمتك بتظهر هنا وبتساعد جيرانك يلاقوا أرخص مكان.",
+  "@pricesTopNoneHint": {
+    "description": "The prices world."
+  },
+  "pricesContributor": "المساهم {rank}",
+  "@pricesContributor": {
+    "placeholders": {
+      "rank": {
+        "type": "int"
+      }
+    }
+  },
+  "pricesContribCount": "{n} مساهمات",
+  "@pricesContribCount": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "profileGroupMe": "أنا وزاد",
+  "profileGroupAccount": "الحساب والعيلة",
+  "profileGroupMoney": "الفلوس",
+  "profileGroupPlan": "رفيق زاد والاشتراك",
+  "profilePlanFree": "المجانية",
+  "profilePlanBasic": "الأساسية",
+  "profilePlanPlus": "المتقدمة",
+  "profilePlanUltra": "العيلة",
+  "profileSettingsTitle": "الإعدادات",
+  "profileSettingsSubtitle": "السقف، الأصوات، الإعلانات والخصوصية",
+  "settingsWorldTitle": "الإعدادات",
+  "settingsGroupMoney": "الفلوس",
+  "settingsGroupCompanion": "رفيق زاد",
+  "settingsGroupSounds": "الأصوات واللغة",
+  "settingsGroupPrivacy": "الإعلانات والخصوصية",
+  "settingsGroupAccount": "الحساب",
+  "settingsAdsTitle": "الإعلانات",
+  "settingsAdsBody": "مخصّصة ليك؟ تقدر تغيّر اختيارك في أي وقت",
+  "settingsAdsUnavailable": "مفيش اختيارات خصوصية متاحة دلوقتي",
+  "settingsTermsTitle": "الشروط والأحكام",
+  "settingsTermsBody": "سياسة الاستخدام والخصوصية"
 }

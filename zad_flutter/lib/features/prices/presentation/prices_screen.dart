@@ -17,14 +17,26 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 // `hide TextDirection`: the price field needs dart:ui's, digits left to right.
 import 'package:intl/intl.dart' hide TextDirection;
-import 'package:zad/core/design/components/zad_kotlin_surfaces.dart';
+import 'package:zad/core/design/components/zad_empty_state.dart';
+import 'package:zad/core/design/components/zad_scroll_away.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
+import 'package:zad/core/design/tokens/zad_icons.dart';
+import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/design/tokens/zad_world_colors.dart';
 import 'package:zad/core/l10n/l10n.dart';
+import 'package:zad/features/prices/application/live_market_controller.dart';
 import 'package:zad/features/prices/application/prices_controller.dart';
+import 'package:zad/features/prices/presentation/prices_world_scene.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/market/domain/market_examples.dart';
+import 'package:zad/shared/orb/domain/companion_state.dart';
 import 'package:zad/shared/prices/domain/prices.dart';
+import 'package:zad/shared/worlds/art/art.dart';
+import 'package:zad/shared/worlds/world_card.dart';
+import 'package:zad/shared/worlds/world_row.dart';
+import 'package:zad/shared/worlds/world_scaffold.dart';
+import 'package:zad/shared/worlds/zad_world.dart';
 
 /// Opens the prices screen.
 Future<void> showPricesScreen(BuildContext context) =>
@@ -360,7 +372,7 @@ class _PriceReportFormState extends ConsumerState<PriceReportForm> {
   }
 }
 
-/// Kotlin's `CrowdsourceDashboard`.
+/// Kotlin's `CrowdsourceDashboard`, as the prices world.
 class CrowdsourceDashboard extends ConsumerStatefulWidget {
   /// Creates the board.
   const new({required this.onReportPrice, required this.onBack, super.key});
@@ -386,104 +398,143 @@ class _DashboardState extends ConsumerState<CrowdsourceDashboard> {
     super.dispose();
   }
 
+  /// The state line from the prices the live strip already holds (its cache:
+  /// nothing is fetched here): which moved, and which way.
+  static String _stateLine(ZadL10n l, List<MarketPriceItem> prices) {
+    final up = prices.where((p) => p.trend == 'up').firstOrNull;
+    final down = prices.where((p) => p.trend == 'down').firstOrNull;
+    if (up != null && down != null) {
+      return l.pricesWorldUpDown(up.symbol, down.symbol);
+    }
+    if (up != null) return l.pricesWorldUp(up.symbol);
+    if (down != null) return l.pricesWorldDown(down.symbol);
+    return prices.isEmpty ? l.pricesWorldNeutral : l.pricesWorldFlat;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final l = context.l10n;
     final view = ref.watch(pricesControllerProvider);
     final controller = ref.read(pricesControllerProvider.notifier);
+    final live = ref.watch(liveMarketControllerProvider).prices;
     final mine = view.leaderboard.where((r) => r.isMe).firstOrNull;
     final contributions =
         (mine?.reports ?? 0) + view.queued.where((q) => !q.refused).length;
+    final goingUp = live.any((p) => p.trend == 'up');
+    final goingDown = live.any((p) => p.trend == 'down');
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16 + _hubBottom),
-      children: <Widget>[
-        Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: Row(
-            children: <Widget>[
-              SizedBox.square(
-                dimension: 40,
-                child: IconButton(
-                  padding: EdgeInsets.zero,
-                  onPressed: widget.onBack,
-                  tooltip: 'Back',
-                  icon: Icon(Icons.arrow_back, color: scheme.primary),
+    final report = PositionedDirectional(
+      start: ZadSpacing.lg,
+      end: ZadSpacing.lg,
+      bottom: ZadSpacing.md,
+      child: SafeArea(
+        child: ZadStepsAside(
+          child: FilledButton.icon(
+            onPressed: widget.onReportPrice,
+            style: FilledButton.styleFrom(
+              backgroundColor: ZadWorldColors.prices,
+              foregroundColor: ZadColors.ink,
+              minimumSize: const Size.fromHeight(52),
+              elevation: 4,
+            ),
+            icon: const Icon(ZadIcons.add),
+            label: Text(
+              l.pricesReportNew,
+              style: ZadType.labelLarge.copyWith(fontWeight: FontWeight.w900),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    return Scaffold(
+      backgroundColor: ZadWorldColors.tint(ZadWorld.prices.color),
+      body: SafeArea(
+        bottom: false,
+        child: ZadScrollAwayScope(
+          child: ZadWorldScaffold(
+            world: ZadWorld.prices,
+            eyebrow: l.pricesEyebrow,
+            title: l.worldLabelPrices,
+            stateLine: _stateLine(l, live),
+            scene: (loop) =>
+                PricesWorldScene(loop, up: goingUp, down: goingDown),
+            zado: ZadWorldZado(
+              left: 0,
+              top: 60,
+              size: 120,
+              state: goingUp
+                  ? CompanionState.alert
+                  : goingDown
+                  ? CompanionState.happy
+                  : CompanionState.idle,
+            ),
+            onRefresh: controller.refresh,
+            dockHeight: 80,
+            overlay: report,
+            slivers: <Widget>[
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: ZadSpacing.gutter,
                 ),
-              ),
-              Text(
-                'لوحة الأسعار',
-                style: ZadType.titleLarge.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: scheme.onSurface,
+                sliver: SliverList.list(
+                  children: <Widget>[
+                    _MineCard(value: contributions),
+                    const SizedBox(height: ZadSpacing.lg),
+                    _CheapestNearYou(
+                      view: view,
+                      location: _location,
+                      onSearch: () =>
+                          unawaited(controller.setCity(_location.text)),
+                      onReportPrice: widget.onReportPrice,
+                    ),
+                    const SizedBox(height: ZadSpacing.xl),
+                    AreaTrendsSection(trends: view.trends),
+                    const SizedBox(height: ZadSpacing.xl),
+                    _Leaderboard(
+                      rows: view.leaderboard,
+                      onReportPrice: widget.onReportPrice,
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
         ),
-        const SizedBox(height: 16),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          child: _StatCard(
-            title: 'مساهماتك',
-            value: '$contributions',
-            icon: Icons.trending_up,
-          ),
-        ),
-        const SizedBox(height: 16),
-        SizedBox(
-          height: 48,
-          child: FilledButton.icon(
-            onPressed: widget.onReportPrice,
-            style: FilledButton.styleFrom(backgroundColor: scheme.primary),
-            icon: const Icon(Icons.add, color: Colors.white),
-            label: const Text(
-              'سجّل سعر جديد',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
-        _CheapestNearYou(
-          view: view,
-          location: _location,
-          onSearch: () => unawaited(controller.setCity(_location.text)),
-          onReportPrice: widget.onReportPrice,
-        ),
-        const SizedBox(height: 24),
-        AreaTrendsSection(trends: view.trends),
-        const SizedBox(height: 24),
+      ),
+    );
+  }
+}
+
+class _SectionTitle extends StatelessWidget {
+  const new(this.title, {this.note});
+
+  final String title;
+  final String? note;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: ZadSpacing.sm),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
         Text(
-          'أكثر المشاركين 🏆',
+          title,
           style: ZadType.titleMedium.copyWith(
-            fontWeight: FontWeight.bold,
-            color: scheme.onSurface,
+            fontWeight: FontWeight.w900,
+            color: ZadColors.ink,
           ),
         ),
-        for (final (i, entry) in view.leaderboard.indexed) ...<Widget>[
-          const SizedBox(height: 16),
-          _LeaderboardCard(entry: entry, rank: i + 1),
-        ],
-        if (view.leaderboard.isEmpty) ...<Widget>[
-          const SizedBox(height: 16),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            child: KtEmptyState(
-              icon: Icons.emoji_events,
-              title: 'لسه مفيش مساهمات',
-              subtitle:
-                  'سجّل أول سعر شفته في السوق — مساهمتك بتظهر هنا وبتساعد '
-                  'جيرانك يلاقوا أرخص مكان.',
-              action: _FirstReportButton(
-                onPressed: widget.onReportPrice,
-                withIcon: true,
-              ),
-            ),
+        if (note != null) ...<Widget>[
+          const SizedBox(height: ZadSpacing.xs),
+          Text(
+            note!,
+            style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
           ),
         ],
       ],
-    );
-  }
+    ),
+  );
 }
 
 class _FirstReportButton extends StatelessWidget {
@@ -501,11 +552,11 @@ class _FirstReportButton extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           if (withIcon) ...<Widget>[
-            const Icon(Icons.add, size: 18),
-            const SizedBox(width: 8),
+            const Icon(ZadIcons.add, size: 18),
+            const SizedBox(width: ZadSpacing.sm),
           ],
           Text(
-            'سجّل أول سعر',
+            context.l10n.pricesFirstReport,
             style: TextStyle(fontWeight: withIcon ? FontWeight.bold : null),
           ),
         ],
@@ -514,114 +565,111 @@ class _FirstReportButton extends StatelessWidget {
   );
 }
 
-/// Kotlin's `StatCard`.
-class _StatCard extends StatelessWidget {
-  const new({required this.title, required this.value, required this.icon});
+/// Kotlin's `StatCard`: how many prices this customer gave.
+class _MineCard extends StatelessWidget {
+  const new({required this.value});
 
-  final String title;
-  final String value;
-  final IconData icon;
+  final int value;
+
+  @override
+  Widget build(BuildContext context) => ZadWorldCard(
+    child: Row(
+      children: <Widget>[
+        ZadWorldTile(
+          color: ZadWorldColors.prices,
+          child: ZadArt.icon(ZadIconArt.tag, size: 28),
+        ),
+        const SizedBox(width: ZadSpacing.md),
+        Expanded(
+          child: Text(
+            context.l10n.pricesMine,
+            style: ZadType.labelLarge.copyWith(color: ZadColors.inkMuted),
+          ),
+        ),
+        Text(
+          '$value',
+          style: ZadType.headlineMedium.copyWith(
+            fontWeight: FontWeight.w900,
+            color: ZadColors.ink,
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+/// Kotlin's `LeaderboardCard` rows: gold, silver, bronze, then grey.
+class _Leaderboard extends StatelessWidget {
+  const new({required this.rows, required this.onReportPrice});
+
+  final List<LeaderboardRow> rows;
+  final VoidCallback onReportPrice;
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Container(
-      constraints: const BoxConstraints(minHeight: 96),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: scheme.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: scheme.outline, width: 0.5),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Icon(icon, color: scheme.primary, size: 20),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: ZadType.headlineMedium.copyWith(
-              fontWeight: FontWeight.bold,
-              color: scheme.primary,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            title,
-            style: ZadType.labelLarge.copyWith(color: scheme.onSurfaceVariant),
-          ),
-        ],
-      ),
+    final l = context.l10n;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        _SectionTitle(l.pricesTopTitle),
+        ZadWorldCard(
+          child: rows.isEmpty
+              ? ZadEmptyState(
+                  icon: Icons.emoji_events,
+                  title: l.pricesTopNone,
+                  message: l.pricesTopNoneHint,
+                  action: _FirstReportButton(
+                    onPressed: onReportPrice,
+                    withIcon: true,
+                  ),
+                )
+              : Column(
+                  children: <Widget>[
+                    for (final (i, entry) in rows.indexed) ...<Widget>[
+                      if (i > 0) const ZadWorldDivider(),
+                      ZadWorldRow(
+                        leading: _RankTile(rank: i + 1),
+                        title: l.pricesContributor(i + 1),
+                        subtitle: l.pricesContribCount(entry.reports),
+                        stateColor: ZadColors.inkMuted,
+                      ),
+                    ],
+                  ],
+                ),
+        ),
+      ],
     );
   }
 }
 
-/// Kotlin's `LeaderboardCard`: gold, silver, bronze, then grey.
-class _LeaderboardCard extends StatelessWidget {
-  const new({required this.entry, required this.rank});
+class _RankTile extends StatelessWidget {
+  const new({required this.rank});
 
-  final LeaderboardRow entry;
   final int rank;
 
   @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 8),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: scheme.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: scheme.outline, width: 0.5),
+  Widget build(BuildContext context) => Container(
+    width: 44,
+    height: 44,
+    alignment: Alignment.center,
+    decoration: BoxDecoration(
+      // Gold, silver, bronze: the medal colours, as Kotlin has them.
+      color: switch (rank) {
+        1 => const Color(0xFFFFD700),
+        2 => const Color(0xFFC0C0C0),
+        3 => const Color(0xFFCD7F32),
+        _ => const Color(0xFFE0E0E0),
+      },
+      borderRadius: BorderRadius.circular(ZadRadii.chip),
+    ),
+    child: Text(
+      '$rank',
+      style: ZadType.titleMedium.copyWith(
+        fontWeight: FontWeight.w900,
+        color: Colors.white,
       ),
-      child: Row(
-        children: <Widget>[
-          Container(
-            width: 40,
-            height: 40,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: switch (rank) {
-                1 => const Color(0xFFFFD700),
-                2 => const Color(0xFFC0C0C0),
-                3 => const Color(0xFFCD7F32),
-                _ => const Color(0xFFE0E0E0),
-              },
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              '$rank',
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  'المساهم $rank',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: _ink,
-                  ),
-                ),
-                Text(
-                  '${entry.reports} مساهمات',
-                  style: const TextStyle(fontSize: 12, color: _slate),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+    ),
+  );
 }
 
 /// Kotlin's `CheapestNearYouSection`: the community's reports of the last
@@ -641,27 +689,68 @@ class _CheapestNearYou extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final l = context.l10n;
     final rows = view.rows;
     final symbol = view.market?.currencySymbol ?? '';
     final hasRows = view.snapshot != null && rows.isNotEmpty;
 
+    final Widget body;
+    if (view.isRefreshing && !hasRows) {
+      body = const Padding(
+        padding: EdgeInsets.symmetric(vertical: ZadSpacing.lg),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    } else if (view.error != null && !hasRows) {
+      body = ZadEmptyState(
+        icon: ZadIcons.pending,
+        title: l.pricesFetchFailed,
+        message: l.pricesFetchFailedHint,
+        tone: ZadEmptyTone.problem,
+        action: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 44),
+          child: OutlinedButton(
+            onPressed: onSearch,
+            child: Text(l.pricesRetry),
+          ),
+        ),
+      );
+    } else if (!hasRows) {
+      body = ZadEmptyState(
+        icon: ZadIcons.store,
+        title: l.pricesNoReportsTitle,
+        message: l.pricesNoReportsHint,
+        action: _FirstReportButton(onPressed: onReportPrice),
+      );
+    } else {
+      body = Column(
+        children: <Widget>[
+          for (final (i, row) in rows.indexed) ...<Widget>[
+            if (i > 0) const ZadWorldDivider(),
+            ZadWorldRow(
+              leading: ZadWorldTile(
+                color: ZadWorldColors.prices,
+                child: zadItemArt(row.itemName, size: 30),
+              ),
+              title: row.itemName,
+              subtitle: l.pricesRowMeta(_where(row), row.reports),
+              stateColor: ZadColors.inkMuted,
+              trailing: Text(
+                '${formatPrice(row.minPrice)} $symbol'.trim(),
+                style: ZadType.titleMedium.copyWith(
+                  fontWeight: FontWeight.w900,
+                  color: ZadColors.ink,
+                ),
+              ),
+            ),
+          ],
+        ],
+      );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        Text(
-          'أرخص سعر حواليك',
-          style: ZadType.titleMedium.copyWith(
-            fontWeight: FontWeight.bold,
-            color: scheme.onSurface,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'من بلاغات مجتمع زاد آخر ١٤ يوم — مش أسعار رسمية',
-          style: ZadType.bodySmall.copyWith(color: scheme.onSurfaceVariant),
-        ),
-        const SizedBox(height: 8),
+        _SectionTitle(l.pricesCheapestTitle, note: l.pricesCheapestNote),
         Row(
           children: <Widget>[
             Expanded(
@@ -675,99 +764,26 @@ class _CheapestNearYou extends StatelessWidget {
                   maxLength,
                 }) => null,
                 onSubmitted: (_) => onSearch(),
-                decoration: const InputDecoration(
-                  labelText: 'المدينة أو المنطقة (اختياري)',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: l.pricesCityLabel,
+                  border: const OutlineInputBorder(),
                 ),
               ),
             ),
-            const SizedBox(width: 8),
-            ConstrainedBox(
-              constraints: const BoxConstraints(minHeight: 44),
-              child: FilledButton.tonal(
-                onPressed: onSearch,
-                style: FilledButton.styleFrom(minimumSize: const Size(44, 44)),
-                child: const Icon(
-                  Icons.search,
-                  size: 18,
-                  semanticLabel: 'دوّر',
-                ),
+            const SizedBox(width: ZadSpacing.sm),
+            FilledButton.tonal(
+              onPressed: onSearch,
+              style: FilledButton.styleFrom(minimumSize: const Size(44, 48)),
+              child: Icon(
+                ZadIcons.search,
+                size: 18,
+                semanticLabel: l.pricesSearch,
               ),
             ),
           ],
         ),
-        const SizedBox(height: 8),
-        if (view.isRefreshing && !hasRows)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            child: Center(
-              child: CircularProgressIndicator(color: scheme.primary),
-            ),
-          )
-        else if (view.error != null && !hasRows)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: KtEmptyState(
-              icon: Icons.cloud_off,
-              title: 'مقدرناش نجيب الأسعار دلوقتي',
-              action: ConstrainedBox(
-                constraints: const BoxConstraints(minHeight: 44),
-                child: OutlinedButton(
-                  onPressed: onSearch,
-                  child: const Text('جرّب تاني'),
-                ),
-              ),
-            ),
-          )
-        else if (!hasRows)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: KtEmptyState(
-              icon: Icons.storefront,
-              title: 'لسه مفيش بلاغات هنا',
-              subtitle: 'كن أول واحد يبلّغ عن سعر — جيرانك هيشكروك',
-              action: _FirstReportButton(onPressed: onReportPrice),
-            ),
-          )
-        else
-          for (final row in rows) ...<Widget>[
-            ZadListCard(
-              child: Row(
-                children: <Widget>[
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Text(
-                          row.itemName,
-                          style: ZadType.bodyLarge.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: scheme.onSurface,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          '${_where(row)} · ${row.reports} بلاغ',
-                          style: ZadType.bodySmall.copyWith(
-                            color: scheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    '${formatPrice(row.minPrice)} $symbol'.trim(),
-                    style: ZadType.titleMedium.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: scheme.primary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 8),
-          ],
+        const SizedBox(height: ZadSpacing.sm),
+        ZadWorldCard(child: body),
       ],
     );
   }
@@ -796,39 +812,36 @@ class AreaTrendsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final l = context.l10n;
     final t = trends;
+    final noMarket = t?.noMarket ?? false;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        Text(
-          'ترندات سوقك',
-          style: ZadType.titleMedium.copyWith(
-            fontWeight: FontWeight.bold,
-            color: scheme.onSurface,
-          ),
+        _SectionTitle(
+          l.pricesTrendsTitle,
+          note: l.pricesTrendsNote(t?.days ?? 14),
         ),
-        const SizedBox(height: 8),
-        Text(
-          'اللي بيوت كتير في بلدك اشترته أو حطّته في قايمة التسوق آخر '
-          '${t?.days ?? 14} يوم — من غير أسماء ولا محلات',
-          style: ZadType.bodySmall.copyWith(color: scheme.onSurfaceVariant),
+        ZadWorldCard(
+          child: t == null || t.items.isEmpty
+              ? ZadEmptyState(
+                  icon: ZadIcons.family,
+                  title: noMarket
+                      ? l.pricesTrendsNoMarket
+                      : l.pricesTrendsEmpty,
+                  message: noMarket
+                      ? l.pricesTrendsNoMarketHint
+                      : l.pricesTrendsEmptyHint(t?.minHouseholds ?? 5),
+                )
+              : Column(
+                  children: <Widget>[
+                    for (final (i, trend) in t.items.indexed) ...<Widget>[
+                      if (i > 0) const ZadWorldDivider(),
+                      _TrendRow(trend: trend),
+                    ],
+                  ],
+                ),
         ),
-        const SizedBox(height: 12),
-        if (t == null || t.items.isEmpty)
-          KtEmptyState(
-            icon: Icons.groups_outlined,
-            title: t?.noMarket ?? false
-                ? 'اختار بلدك الأول'
-                : 'لسه مفيش ترند في سوقك',
-            subtitle: t?.noMarket ?? false
-                ? 'الترندات بتتحسب لكل بلد لوحده.'
-                : 'الصنف بيظهر هنا لما ${t?.minHouseholds ?? 5} بيوت مختلفة '
-                      'على الأقل يشتروه أو يحطّوه في قايمتهم — عشان محدش '
-                      'يتعرف من مشترياته. كل فاتورة بتصوّرها بتقرّب اليوم ده.',
-          )
-        else
-          for (final trend in t.items) _TrendRow(trend: trend),
       ],
     );
   }
@@ -841,38 +854,42 @@ class _TrendRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final l = context.l10n;
     final (
       IconData icon,
       Color color,
       String label,
     ) = switch (trend.direction) {
-      TrendDirection.up => (Icons.trending_up, ZadColors.green700, 'بيزيد'),
+      TrendDirection.up => (
+        Icons.trending_up,
+        ZadColors.green700,
+        l.pricesTrendUp,
+      ),
       TrendDirection.down => (
         Icons.trending_down,
         ZadColors.terracottaRust,
-        'بيقل',
+        l.pricesTrendDown,
       ),
-      TrendDirection.flat => (Icons.trending_flat, scheme.outline, 'ثابت'),
-      TrendDirection.fresh => (Icons.fiber_new, scheme.primary, 'جديد'),
+      TrendDirection.flat => (
+        Icons.trending_flat,
+        ZadColors.inkMuted,
+        l.pricesTrendFlat,
+      ),
+      TrendDirection.fresh => (
+        Icons.fiber_new,
+        ZadWorldColors.prices,
+        l.pricesTrendFresh,
+      ),
     };
-    return ConstrainedBox(
-      constraints: const BoxConstraints(minHeight: 48),
-      child: Row(
-        children: <Widget>[
-          Icon(icon, color: color, size: 20, semanticLabel: label),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              trend.item,
-              style: ZadType.bodyLarge.copyWith(color: scheme.onSurface),
-            ),
-          ),
-          Text(
-            '${trend.households} بيوت',
-            style: ZadType.labelMedium.copyWith(color: scheme.onSurfaceVariant),
-          ),
-        ],
+    return ZadWorldRow(
+      leading: ZadWorldTile(
+        color: color,
+        child: Icon(icon, color: color, size: 22, semanticLabel: label),
+      ),
+      title: trend.item,
+      trailing: Text(
+        l.pricesHomes(trend.households),
+        style: ZadType.labelMedium.copyWith(color: ZadColors.inkMuted),
       ),
     );
   }

@@ -217,7 +217,7 @@ class ZadL10nEn extends ZadL10n {
   String get paywallPlusTitle => 'Plus';
 
   @override
-  String get paywallPlusBadge => 'Most popular ⭐';
+  String get paywallPlusBadge => 'Most popular';
 
   @override
   String get paywallAllBasicPerks => 'Everything in Basic';
@@ -234,7 +234,7 @@ class ZadL10nEn extends ZadL10n {
   String get paywallFamilyTitle => 'Family';
 
   @override
-  String get paywallFamilyBadge => 'Biggest allowance 👑';
+  String get paywallFamilyBadge => 'Biggest allowance';
 
   @override
   String get paywallFamilyPerkAttempts =>
@@ -311,6 +311,14 @@ class ZadL10nEn extends ZadL10n {
   String paywallPricePerMonth(String price) {
     return '$price a month';
   }
+
+  @override
+  String paywallStatePlan(String plan) {
+    return 'Your plan now: $plan';
+  }
+
+  @override
+  String get paywallStateInvite => 'Pick the plan that fits your home';
 
   @override
   String get navHome => 'Home';
@@ -1113,11 +1121,11 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get chatWelcome =>
-      'Welcome! I\'m Zad 🤖, your smart family assistant. How can I help you today?\nAsk me about recipes, check your fridge, or add what\'s missing to the shopping list!';
+      'Welcome! I\'m Zad, your smart family assistant. How can I help you today?\nAsk me about recipes, check your fridge, or add what\'s missing to the shopping list!';
 
   @override
   String get chatBusy =>
-      'The AI is a bit busy right now 🙏 Try again in a moment.';
+      'The AI is a bit busy right now Try again in a moment.';
 
   @override
   String get chatUnexpected => 'Something unexpected went wrong.';
@@ -1155,6 +1163,32 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get chatReportFailed => 'The report didn\'t go through — try again';
+
+  @override
+  String get chatWorldEyebrow => 'Ask anything';
+
+  @override
+  String get chatStateThinking => 'Thinking…';
+
+  @override
+  String get chatStateListening => 'Listening…';
+
+  @override
+  String get chatStateSpeaking => 'Speaking…';
+
+  @override
+  String get chatStateEmpty => 'I\'m listening';
+
+  @override
+  String chatStateCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count messages',
+      one: '1 message',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get chatThinking => 'Thinking…';
@@ -6262,4 +6296,195 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get achRetry => 'Try again';
+
+  @override
+  String get pricesEyebrow => 'Price board';
+
+  @override
+  String get pricesWorldNeutral => 'Market prices, reported by people';
+
+  @override
+  String get pricesWorldFlat => 'Prices are steady today';
+
+  @override
+  String pricesWorldUp(String name) {
+    return '$name is rising';
+  }
+
+  @override
+  String pricesWorldDown(String name) {
+    return '$name is falling';
+  }
+
+  @override
+  String pricesWorldUpDown(String up, String down) {
+    return '$up rising, $down falling';
+  }
+
+  @override
+  String get pricesMine => 'Your reports';
+
+  @override
+  String get pricesReportNew => 'Report a price';
+
+  @override
+  String get pricesCheapestTitle => 'Cheapest near you';
+
+  @override
+  String get pricesCheapestNote =>
+      'From Zad community reports in the last 14 days — not official prices';
+
+  @override
+  String get pricesCityLabel => 'City or area (optional)';
+
+  @override
+  String get pricesSearch => 'Search';
+
+  @override
+  String get pricesFetchFailed => 'Couldn\'t get prices right now';
+
+  @override
+  String get pricesFetchFailedHint => 'Check your connection and try again';
+
+  @override
+  String get pricesRetry => 'Try again';
+
+  @override
+  String get pricesNoReportsTitle => 'No reports here yet';
+
+  @override
+  String get pricesNoReportsHint =>
+      'Be the first to report a price — your neighbours will thank you';
+
+  @override
+  String get pricesFirstReport => 'Report the first price';
+
+  @override
+  String pricesRowMeta(String where, int count) {
+    return '$where · $count reports';
+  }
+
+  @override
+  String get pricesTrendsTitle => 'Your market\'s trends';
+
+  @override
+  String pricesTrendsNote(int days) {
+    return 'What many homes in your country bought or listed in the last $days days — no names, no stores';
+  }
+
+  @override
+  String get pricesTrendsNoMarket => 'Pick your country first';
+
+  @override
+  String get pricesTrendsNoMarketHint => 'Trends are worked out per country.';
+
+  @override
+  String get pricesTrendsEmpty => 'No trend in your market yet';
+
+  @override
+  String pricesTrendsEmptyHint(int homes) {
+    return 'An item shows here once at least $homes different homes buy or list it — so nobody can be recognised from their purchases. Every receipt you scan brings that day closer.';
+  }
+
+  @override
+  String get pricesTrendUp => 'Rising';
+
+  @override
+  String get pricesTrendDown => 'Falling';
+
+  @override
+  String get pricesTrendFlat => 'Steady';
+
+  @override
+  String get pricesTrendFresh => 'New';
+
+  @override
+  String pricesHomes(int n) {
+    return '$n homes';
+  }
+
+  @override
+  String get pricesTopTitle => 'Top contributors';
+
+  @override
+  String get pricesTopNone => 'No contributions yet';
+
+  @override
+  String get pricesTopNoneHint =>
+      'Report the first price you saw in the market — your report shows here and helps neighbours find the cheapest place.';
+
+  @override
+  String pricesContributor(int rank) {
+    return 'Contributor $rank';
+  }
+
+  @override
+  String pricesContribCount(int n) {
+    return '$n reports';
+  }
+
+  @override
+  String get profileGroupMe => 'Me and Zad';
+
+  @override
+  String get profileGroupAccount => 'Account and family';
+
+  @override
+  String get profileGroupMoney => 'Money';
+
+  @override
+  String get profileGroupPlan => 'Companion and plan';
+
+  @override
+  String get profilePlanFree => 'Free';
+
+  @override
+  String get profilePlanBasic => 'Basic';
+
+  @override
+  String get profilePlanPlus => 'Plus';
+
+  @override
+  String get profilePlanUltra => 'Family';
+
+  @override
+  String get profileSettingsTitle => 'Settings';
+
+  @override
+  String get profileSettingsSubtitle => 'Limit, sounds, ads and privacy';
+
+  @override
+  String get settingsWorldTitle => 'Settings';
+
+  @override
+  String get settingsGroupMoney => 'Money';
+
+  @override
+  String get settingsGroupCompanion => 'Your companion';
+
+  @override
+  String get settingsGroupSounds => 'Sounds and language';
+
+  @override
+  String get settingsGroupPrivacy => 'Ads and privacy';
+
+  @override
+  String get settingsGroupAccount => 'Account';
+
+  @override
+  String get settingsAdsTitle => 'Ads';
+
+  @override
+  String get settingsAdsBody =>
+      'Personalised for you? Change your choice any time';
+
+  @override
+  String get settingsAdsUnavailable =>
+      'No privacy choices are available right now';
+
+  @override
+  String get settingsTermsTitle => 'Terms and conditions';
+
+  @override
+  String get settingsTermsBody => 'Usage and privacy policy';
 }

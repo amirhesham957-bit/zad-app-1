@@ -16,7 +16,11 @@ import 'package:zad/shared/orb/presentation/companion_orb.dart';
 /// The pet beside the plans, with one line about the screen it is on.
 class CompanionPaywallAside extends ConsumerStatefulWidget {
   /// Creates it.
-  const new({super.key});
+  const new({this.showOrb = true, super.key});
+
+  /// Whether it draws its own small orb (a page that already shows the
+  /// companion passes false and gets the line alone).
+  final bool showOrb;
 
   @override
   ConsumerState<CompanionPaywallAside> createState() =>
@@ -42,8 +46,10 @@ class _CompanionPaywallAsideState extends ConsumerState<CompanionPaywallAside> {
       child: Row(
         key: const ValueKey<String>('paywall-pet'),
         children: <Widget>[
-          const CompanionOrb(size: 48),
-          const SizedBox(width: ZadSpacing.sm),
+          if (widget.showOrb) ...<Widget>[
+            const CompanionOrb(size: 48),
+            const SizedBox(width: ZadSpacing.sm),
+          ],
           Expanded(
             child: Text(
               line,

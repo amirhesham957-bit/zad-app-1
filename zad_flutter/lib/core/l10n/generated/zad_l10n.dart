@@ -473,7 +473,7 @@ abstract class ZadL10n {
   /// No description provided for @paywallPlusBadge.
   ///
   /// In ar, this message translates to:
-  /// **'الأكثر شعبية ⭐'**
+  /// **'الأكثر شعبية'**
   String get paywallPlusBadge;
 
   /// No description provided for @paywallAllBasicPerks.
@@ -503,7 +503,7 @@ abstract class ZadL10n {
   /// No description provided for @paywallFamilyBadge.
   ///
   /// In ar, this message translates to:
-  /// **'أكبر رصيد 👑'**
+  /// **'أكبر رصيد'**
   String get paywallFamilyBadge;
 
   /// No description provided for @paywallFamilyPerkAttempts.
@@ -631,6 +631,18 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'{price} في الشهر'**
   String paywallPricePerMonth(String price);
+
+  /// Premium world state line when the customer is on a paid plan.
+  ///
+  /// In ar, this message translates to:
+  /// **'خطتك دلوقتي: {plan}'**
+  String paywallStatePlan(String plan);
+
+  /// Premium world state line on the free plan or when the plan is unknown.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختار الباقة اللي تناسب بيتك'**
+  String get paywallStateInvite;
 
   /// No description provided for @navHome.
   ///
@@ -1907,13 +1919,13 @@ abstract class ZadL10n {
   /// No description provided for @chatWelcome.
   ///
   /// In ar, this message translates to:
-  /// **'أهلاً بيك! أنا زاد 🤖، مساعدك العائلي الذكي. أقدر أساعدك إزاي النهاردة؟\nاسألني عن الوصفات، أو راجع ثلاجتك، أو ضيف النواقص لقائمة التسوق!'**
+  /// **'أهلاً بيك! أنا زاد، مساعدك العائلي الذكي. أقدر أساعدك إزاي النهاردة؟\nاسألني عن الوصفات، أو راجع ثلاجتك، أو ضيف النواقص لقائمة التسوق!'**
   String get chatWelcome;
 
   /// No description provided for @chatBusy.
   ///
   /// In ar, this message translates to:
-  /// **'الذكاء الاصطناعي مشغول شوية دلوقتي 🙏 جرب تاني بعد لحظات.'**
+  /// **'الذكاء الاصطناعي مشغول شوية دلوقتي جرب تاني بعد لحظات.'**
   String get chatBusy;
 
   /// No description provided for @chatUnexpected.
@@ -1987,6 +1999,42 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'البلاغ ماوصلش — جرّب تاني'**
   String get chatReportFailed;
+
+  /// No description provided for @chatWorldEyebrow.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسأل أي حاجة'**
+  String get chatWorldEyebrow;
+
+  /// No description provided for @chatStateThinking.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيفكّر…'**
+  String get chatStateThinking;
+
+  /// No description provided for @chatStateListening.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيسمعك…'**
+  String get chatStateListening;
+
+  /// No description provided for @chatStateSpeaking.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيتكلم…'**
+  String get chatStateSpeaking;
+
+  /// No description provided for @chatStateEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'أنا سامعك'**
+  String get chatStateEmpty;
+
+  /// Chat world: state line, how many messages are in the conversation.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{رسالة واحدة} =2{رسالتين} few{{count} رسايل} other{{count} رسالة}}'**
+  String chatStateCount(int count);
 
   /// No description provided for @chatThinking.
   ///
@@ -10429,6 +10477,342 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'جرّب تاني'**
   String get achRetry;
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'لوحة الأسعار'**
+  String get pricesEyebrow;
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'أسعار السوق من بلاغات الناس'**
+  String get pricesWorldNeutral;
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأسعار ثابتة النهارده'**
+  String get pricesWorldFlat;
+
+  /// No description provided for @pricesWorldUp.
+  ///
+  /// In ar, this message translates to:
+  /// **'{name} طالع'**
+  String pricesWorldUp(String name);
+
+  /// No description provided for @pricesWorldDown.
+  ///
+  /// In ar, this message translates to:
+  /// **'{name} نازل'**
+  String pricesWorldDown(String name);
+
+  /// No description provided for @pricesWorldUpDown.
+  ///
+  /// In ar, this message translates to:
+  /// **'{up} طالع، {down} نازل'**
+  String pricesWorldUpDown(String up, String down);
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'مساهماتك'**
+  String get pricesMine;
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجّل سعر جديد'**
+  String get pricesReportNew;
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'أرخص سعر حواليك'**
+  String get pricesCheapestTitle;
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'من بلاغات مجتمع زاد آخر ١٤ يوم — مش أسعار رسمية'**
+  String get pricesCheapestNote;
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'المدينة أو المنطقة (اختياري)'**
+  String get pricesCityLabel;
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'دوّر'**
+  String get pricesSearch;
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقدرناش نجيب الأسعار دلوقتي'**
+  String get pricesFetchFailed;
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتأكد من النت وجرّب تاني'**
+  String get pricesFetchFailedHint;
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'جرّب تاني'**
+  String get pricesRetry;
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'لسه مفيش بلاغات هنا'**
+  String get pricesNoReportsTitle;
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'كن أول واحد يبلّغ عن سعر — جيرانك هيشكروك'**
+  String get pricesNoReportsHint;
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجّل أول سعر'**
+  String get pricesFirstReport;
+
+  /// No description provided for @pricesRowMeta.
+  ///
+  /// In ar, this message translates to:
+  /// **'{where} · {count} بلاغ'**
+  String pricesRowMeta(String where, int count);
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'ترندات سوقك'**
+  String get pricesTrendsTitle;
+
+  /// No description provided for @pricesTrendsNote.
+  ///
+  /// In ar, this message translates to:
+  /// **'اللي بيوت كتير في بلدك اشترته أو حطّته في قايمة التسوق آخر {days} يوم — من غير أسماء ولا محلات'**
+  String pricesTrendsNote(int days);
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختار بلدك الأول'**
+  String get pricesTrendsNoMarket;
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'الترندات بتتحسب لكل بلد لوحده.'**
+  String get pricesTrendsNoMarketHint;
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'لسه مفيش ترند في سوقك'**
+  String get pricesTrendsEmpty;
+
+  /// No description provided for @pricesTrendsEmptyHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصنف بيظهر هنا لما {homes} بيوت مختلفة على الأقل يشتروه أو يحطّوه في قايمتهم — عشان محدش يتعرف من مشترياته. كل فاتورة بتصوّرها بتقرّب اليوم ده.'**
+  String pricesTrendsEmptyHint(int homes);
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيزيد'**
+  String get pricesTrendUp;
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيقل'**
+  String get pricesTrendDown;
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'ثابت'**
+  String get pricesTrendFlat;
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'جديد'**
+  String get pricesTrendFresh;
+
+  /// No description provided for @pricesHomes.
+  ///
+  /// In ar, this message translates to:
+  /// **'{n} بيوت'**
+  String pricesHomes(int n);
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'أكثر المشاركين'**
+  String get pricesTopTitle;
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'لسه مفيش مساهمات'**
+  String get pricesTopNone;
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجّل أول سعر شفته في السوق — مساهمتك بتظهر هنا وبتساعد جيرانك يلاقوا أرخص مكان.'**
+  String get pricesTopNoneHint;
+
+  /// No description provided for @pricesContributor.
+  ///
+  /// In ar, this message translates to:
+  /// **'المساهم {rank}'**
+  String pricesContributor(int rank);
+
+  /// No description provided for @pricesContribCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'{n} مساهمات'**
+  String pricesContribCount(int n);
+
+  /// No description provided for @profileGroupMe.
+  ///
+  /// In ar, this message translates to:
+  /// **'أنا وزاد'**
+  String get profileGroupMe;
+
+  /// No description provided for @profileGroupAccount.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحساب والعيلة'**
+  String get profileGroupAccount;
+
+  /// No description provided for @profileGroupMoney.
+  ///
+  /// In ar, this message translates to:
+  /// **'الفلوس'**
+  String get profileGroupMoney;
+
+  /// No description provided for @profileGroupPlan.
+  ///
+  /// In ar, this message translates to:
+  /// **'رفيق زاد والاشتراك'**
+  String get profileGroupPlan;
+
+  /// No description provided for @profilePlanFree.
+  ///
+  /// In ar, this message translates to:
+  /// **'المجانية'**
+  String get profilePlanFree;
+
+  /// No description provided for @profilePlanBasic.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأساسية'**
+  String get profilePlanBasic;
+
+  /// No description provided for @profilePlanPlus.
+  ///
+  /// In ar, this message translates to:
+  /// **'المتقدمة'**
+  String get profilePlanPlus;
+
+  /// No description provided for @profilePlanUltra.
+  ///
+  /// In ar, this message translates to:
+  /// **'العيلة'**
+  String get profilePlanUltra;
+
+  /// No description provided for @profileSettingsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإعدادات'**
+  String get profileSettingsTitle;
+
+  /// No description provided for @profileSettingsSubtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'السقف، الأصوات، الإعلانات والخصوصية'**
+  String get profileSettingsSubtitle;
+
+  /// No description provided for @settingsWorldTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإعدادات'**
+  String get settingsWorldTitle;
+
+  /// No description provided for @settingsGroupMoney.
+  ///
+  /// In ar, this message translates to:
+  /// **'الفلوس'**
+  String get settingsGroupMoney;
+
+  /// No description provided for @settingsGroupCompanion.
+  ///
+  /// In ar, this message translates to:
+  /// **'رفيق زاد'**
+  String get settingsGroupCompanion;
+
+  /// No description provided for @settingsGroupSounds.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأصوات واللغة'**
+  String get settingsGroupSounds;
+
+  /// No description provided for @settingsGroupPrivacy.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإعلانات والخصوصية'**
+  String get settingsGroupPrivacy;
+
+  /// No description provided for @settingsGroupAccount.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحساب'**
+  String get settingsGroupAccount;
+
+  /// No description provided for @settingsAdsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإعلانات'**
+  String get settingsAdsTitle;
+
+  /// No description provided for @settingsAdsBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'مخصّصة ليك؟ تقدر تغيّر اختيارك في أي وقت'**
+  String get settingsAdsBody;
+
+  /// No description provided for @settingsAdsUnavailable.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش اختيارات خصوصية متاحة دلوقتي'**
+  String get settingsAdsUnavailable;
+
+  /// No description provided for @settingsTermsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الشروط والأحكام'**
+  String get settingsTermsTitle;
+
+  /// No description provided for @settingsTermsBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'سياسة الاستخدام والخصوصية'**
+  String get settingsTermsBody;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {
