@@ -13,6 +13,8 @@ import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/prices/application/live_market_controller.dart';
 import 'package:zad/shared/navigation/destinations.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
+import 'package:zad/shared/worlds/art/zad_art.dart';
+import 'package:zad/shared/worlds/art/zad_art_kinds.dart';
 
 /// `zadCardShadow(elevation = 6.dp)`.
 final List<BoxShadow> _pillShadow = composeShadow(
@@ -407,7 +409,7 @@ class _Contribute extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          const Text('📊', style: TextStyle(fontSize: 12)),
+          ZadArt.icon(ZadIconArt.chart, size: 14),
           const SizedBox(width: 4),
           Text(
             context.l10n.tickerContribute,

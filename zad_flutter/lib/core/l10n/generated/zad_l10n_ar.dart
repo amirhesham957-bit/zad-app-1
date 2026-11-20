@@ -824,9 +824,6 @@ class ZadL10nAr extends ZadL10n {
   String get amazonLow => 'قرب يخلص';
 
   @override
-  String get amazonShopEmoji => '🛍️ تسوق من أمازون';
-
-  @override
   String get amazonNoNeeds => 'ضيف اللي ناقصك، أو شوف عروض النهارده';
 
   @override

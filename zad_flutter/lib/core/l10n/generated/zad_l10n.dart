@@ -1502,12 +1502,6 @@ abstract class ZadL10n {
   /// **'قرب يخلص'**
   String get amazonLow;
 
-  /// No description provided for @amazonShopEmoji.
-  ///
-  /// In ar, this message translates to:
-  /// **'🛍️ تسوق من أمازون'**
-  String get amazonShopEmoji;
-
   /// No description provided for @amazonNoNeeds.
   ///
   /// In ar, this message translates to:

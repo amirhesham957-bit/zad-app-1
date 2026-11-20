@@ -854,9 +854,6 @@ class ZadL10nEn extends ZadL10n {
   String get amazonLow => 'Running low';
 
   @override
-  String get amazonShopEmoji => '🛍️ Shop on Amazon';
-
-  @override
   String get amazonNoNeeds => 'Add what you\'re missing, or see today\'s deals';
 
   @override

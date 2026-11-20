@@ -234,7 +234,6 @@
   "amazonDisclosure": "Affiliate link — Zad earns a commission at no extra cost to you",
   "amazonOut": "Ran out",
   "amazonLow": "Running low",
-  "amazonShopEmoji": "🛍️ Shop on Amazon",
   "amazonNoNeeds": "Add what you're missing, or see today's deals",
   "amazonOneNeed": "You're out of {name} — order it from Amazon",
   "amazonManyNeeds": "You're missing {count} things — order each with a tap",
