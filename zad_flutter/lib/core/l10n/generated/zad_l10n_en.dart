@@ -2807,6 +2807,172 @@ class ZadL10nEn extends ZadL10n {
   String get recipesTrendingGroup => 'Trending now';
 
   @override
+  String chefWorldState(int total, int ready) {
+    String _temp0 = intl.Intl.pluralLogic(
+      total,
+      locale: localeName,
+      other: '$total recipes',
+      one: '1 recipe',
+    );
+    return '$_temp0 · $ready complete';
+  }
+
+  @override
+  String get chefStateEmpty =>
+      'The pantry is empty — add food and I will suggest';
+
+  @override
+  String get chefStateReady => 'Ready to suggest a dish from your pantry';
+
+  @override
+  String get chefStateThinking => 'Thinking of a dish from your pantry…';
+
+  @override
+  String get chefError => 'I could not reach Chef Zad. Try again in a moment.';
+
+  @override
+  String get chefStale =>
+      'Your pantry has changed since the last suggestions — ask for new ones if you like.';
+
+  @override
+  String get chefReadyTitle => 'Chef Zad is ready';
+
+  @override
+  String get chefReadyBody =>
+      'Tap \"Recipes from my pantry\" and Chef Zad tells you what to cook from what you have, and what is only missing a little.';
+
+  @override
+  String get chefEmptyTitle => 'The pantry is empty';
+
+  @override
+  String get chefEmptyBody =>
+      'Add what you have to the pantry and Chef Zad suggests dishes from it.';
+
+  @override
+  String get chefAskCta => 'Recipes from my pantry';
+
+  @override
+  String get chefAsking => 'Chef Zad is thinking…';
+
+  @override
+  String get chefAskAgain => 'New suggestions';
+
+  @override
+  String get chefGroupPantry => 'From your pantry';
+
+  @override
+  String get chefGroupMore => 'More meals';
+
+  @override
+  String get chefComplete => 'Complete';
+
+  @override
+  String chefMissingCount(int count) {
+    return 'Missing $count';
+  }
+
+  @override
+  String chefMinutes(int count) {
+    return '$count min';
+  }
+
+  @override
+  String get chefHaveHeading => 'You have';
+
+  @override
+  String get chefMissingHeading => 'Missing';
+
+  @override
+  String get chefMethodHeading => 'Method';
+
+  @override
+  String get chefStepByStep => 'Full recipe, step by step';
+
+  @override
+  String chefAddMissing(int count) {
+    return 'Add the missing to the shopping list ($count)';
+  }
+
+  @override
+  String get chefAddedOne => 'Added 1 item to the shopping list.';
+
+  @override
+  String chefAddedMany(int count) {
+    return 'Added $count items to the shopping list.';
+  }
+
+  @override
+  String get chefNothingToAdd =>
+      'Everything missing is already on the list or in the pantry.';
+
+  @override
+  String get chefRatePrompt => 'Did you like it? Chef Zad remembers.';
+
+  @override
+  String get chefLike => 'I liked it';
+
+  @override
+  String get chefDislike => 'Not for me';
+
+  @override
+  String get chefDetailIngredients => 'Ingredients';
+
+  @override
+  String get chefDetailSteps => 'Method';
+
+  @override
+  String get chefDetailAddToShopping => 'Add missing to the list';
+
+  @override
+  String get chefDetailClose => 'Close';
+
+  @override
+  String get chefDetailRetry => 'Try again';
+
+  @override
+  String get chefDetailLoading => 'Chef Zad is preparing the recipe…';
+
+  @override
+  String get chefDetailEmpty => 'Chef Zad did not send this recipe — try again';
+
+  @override
+  String get chefDetailSlow => 'Chef Zad is slow to answer — try again';
+
+  @override
+  String get chefDetailFailed =>
+      'Sorry, something went wrong loading the recipe';
+
+  @override
+  String get chefHomeTitle => 'Chef Zad (smart suggestions)';
+
+  @override
+  String get chefHomeAllDepleted =>
+      'Your pantry is all used up — put the shortages on the shopping list and I will suggest food.';
+
+  @override
+  String get chefHomePantryEmpty =>
+      'Add items to your pantry so Chef Zad can suggest today\'s dish.';
+
+  @override
+  String get chefHomeComplete => 'Complete from your pantry';
+
+  @override
+  String chefHomeMinutes(int count) {
+    return '$count min';
+  }
+
+  @override
+  String chefHomeMissingList(String items) {
+    return 'Missing: $items';
+  }
+
+  @override
+  String get chefHomeAddMissing => 'Add them to the shopping list';
+
+  @override
+  String get chefHomeTapSteps => 'Tap for the steps';
+
+  @override
   String get homeDealsSeeAll => 'All deals';
 
   @override
@@ -3330,7 +3496,7 @@ class ZadL10nEn extends ZadL10n {
   String get chefFullRecipe => 'Full recipe and chef\'s secrets';
 
   @override
-  String get chefSecrets => '🤫 Chef\'s secrets';
+  String get chefSecrets => 'Chef\'s secrets';
 
   @override
   String get chefSourceLink => 'See the recipe at its source';

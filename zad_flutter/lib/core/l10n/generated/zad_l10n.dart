@@ -4898,6 +4898,282 @@ abstract class ZadL10n {
   /// **'ترند دلوقتي'**
   String get recipesTrendingGroup;
 
+  /// Chef world: the state line once there is an answer.
+  ///
+  /// In ar, this message translates to:
+  /// **'{total, plural, =1{وصفة واحدة} =2{وصفتين} few{{total} وصفات} other{{total} وصفة}} · {ready} منها مكتملة'**
+  String chefWorldState(int total, int ready);
+
+  /// No description provided for @chefStateEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'المخزن فاضي — ضيف أكلك وأنا أقترح'**
+  String get chefStateEmpty;
+
+  /// No description provided for @chefStateReady.
+  ///
+  /// In ar, this message translates to:
+  /// **'جاهزة أقترحلك أكلة من مخزنك'**
+  String get chefStateReady;
+
+  /// No description provided for @chefStateThinking.
+  ///
+  /// In ar, this message translates to:
+  /// **'بفكر في أكلة من مخزنك…'**
+  String get chefStateThinking;
+
+  /// No description provided for @chefError.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقدرتش أوصل لشيف زاد. جرّب تاني بعد شوية.'**
+  String get chefError;
+
+  /// No description provided for @chefStale.
+  ///
+  /// In ar, this message translates to:
+  /// **'مخزنك اتغيّر من آخر اقتراحات — اطلب جديدة لو حابب.'**
+  String get chefStale;
+
+  /// No description provided for @chefReadyTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'شيف زاد جاهزة'**
+  String get chefReadyTitle;
+
+  /// No description provided for @chefReadyBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'دوس «وصفات من مخزني» وهتقولك تطبخ إيه من اللي عندك، واللي ناقصه حاجة بسيطة.'**
+  String get chefReadyBody;
+
+  /// No description provided for @chefEmptyTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'المخزن فاضي'**
+  String get chefEmptyTitle;
+
+  /// No description provided for @chefEmptyBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضيف اللي عندك في المخزن، وشيف زاد تقترح أكلات منه.'**
+  String get chefEmptyBody;
+
+  /// No description provided for @chefAskCta.
+  ///
+  /// In ar, this message translates to:
+  /// **'وصفات من مخزني'**
+  String get chefAskCta;
+
+  /// No description provided for @chefAsking.
+  ///
+  /// In ar, this message translates to:
+  /// **'شيف زاد بتفكر…'**
+  String get chefAsking;
+
+  /// No description provided for @chefAskAgain.
+  ///
+  /// In ar, this message translates to:
+  /// **'اقتراحات جديدة'**
+  String get chefAskAgain;
+
+  /// No description provided for @chefGroupPantry.
+  ///
+  /// In ar, this message translates to:
+  /// **'من مخزونك'**
+  String get chefGroupPantry;
+
+  /// No description provided for @chefGroupMore.
+  ///
+  /// In ar, this message translates to:
+  /// **'وجبات تانية'**
+  String get chefGroupMore;
+
+  /// No description provided for @chefComplete.
+  ///
+  /// In ar, this message translates to:
+  /// **'مكتملة'**
+  String get chefComplete;
+
+  /// No description provided for @chefMissingCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'ناقصك {count}'**
+  String chefMissingCount(int count);
+
+  /// No description provided for @chefMinutes.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} دقيقة'**
+  String chefMinutes(int count);
+
+  /// No description provided for @chefHaveHeading.
+  ///
+  /// In ar, this message translates to:
+  /// **'من عندك'**
+  String get chefHaveHeading;
+
+  /// No description provided for @chefMissingHeading.
+  ///
+  /// In ar, this message translates to:
+  /// **'ناقصك'**
+  String get chefMissingHeading;
+
+  /// No description provided for @chefMethodHeading.
+  ///
+  /// In ar, this message translates to:
+  /// **'الطريقة'**
+  String get chefMethodHeading;
+
+  /// No description provided for @chefStepByStep.
+  ///
+  /// In ar, this message translates to:
+  /// **'الوصفة كاملة خطوة بخطوة'**
+  String get chefStepByStep;
+
+  /// No description provided for @chefAddMissing.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضيف الناقص لقايمة التسوق ({count})'**
+  String chefAddMissing(int count);
+
+  /// No description provided for @chefAddedOne.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضفت صنف لقايمة التسوق.'**
+  String get chefAddedOne;
+
+  /// No description provided for @chefAddedMany.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضفت {count} أصناف لقايمة التسوق.'**
+  String chefAddedMany(int count);
+
+  /// No description provided for @chefNothingToAdd.
+  ///
+  /// In ar, this message translates to:
+  /// **'الناقص كله في قايمة التسوق أو المخزن.'**
+  String get chefNothingToAdd;
+
+  /// No description provided for @chefRatePrompt.
+  ///
+  /// In ar, this message translates to:
+  /// **'عجبتك؟ شيف زاد بتفتكر.'**
+  String get chefRatePrompt;
+
+  /// No description provided for @chefLike.
+  ///
+  /// In ar, this message translates to:
+  /// **'عجبتني'**
+  String get chefLike;
+
+  /// No description provided for @chefDislike.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش لذوقي'**
+  String get chefDislike;
+
+  /// No description provided for @chefDetailIngredients.
+  ///
+  /// In ar, this message translates to:
+  /// **'المقادير'**
+  String get chefDetailIngredients;
+
+  /// No description provided for @chefDetailSteps.
+  ///
+  /// In ar, this message translates to:
+  /// **'طريقة التحضير'**
+  String get chefDetailSteps;
+
+  /// No description provided for @chefDetailAddToShopping.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة الناقص للتسوق'**
+  String get chefDetailAddToShopping;
+
+  /// No description provided for @chefDetailClose.
+  ///
+  /// In ar, this message translates to:
+  /// **'إغلاق'**
+  String get chefDetailClose;
+
+  /// No description provided for @chefDetailRetry.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعادة المحاولة'**
+  String get chefDetailRetry;
+
+  /// No description provided for @chefDetailLoading.
+  ///
+  /// In ar, this message translates to:
+  /// **'شيف زاد يجهز لك الوصفة…'**
+  String get chefDetailLoading;
+
+  /// No description provided for @chefDetailEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'شيف زاد مارجّعش الوصفة دي — جرب تاني'**
+  String get chefDetailEmpty;
+
+  /// No description provided for @chefDetailSlow.
+  ///
+  /// In ar, this message translates to:
+  /// **'شيف زاد اتأخر في الرد — جرب تاني'**
+  String get chefDetailSlow;
+
+  /// No description provided for @chefDetailFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'عذراً، حدث خطأ أثناء تحميل الوصفة'**
+  String get chefDetailFailed;
+
+  /// No description provided for @chefHomeTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'شيف زاد (اقتراحات ذكية)'**
+  String get chefHomeTitle;
+
+  /// No description provided for @chefHomeAllDepleted.
+  ///
+  /// In ar, this message translates to:
+  /// **'مخزونك كله خلص — نزّل النواقص في التسوق وأنا أقترحلك أكل.'**
+  String get chefHomeAllDepleted;
+
+  /// No description provided for @chefHomePantryEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضيف أصناف لمخزونك عشان شيف زاد يقترح لك طبق اليوم.'**
+  String get chefHomePantryEmpty;
+
+  /// No description provided for @chefHomeComplete.
+  ///
+  /// In ar, this message translates to:
+  /// **'مكتملة من مخزونك'**
+  String get chefHomeComplete;
+
+  /// No description provided for @chefHomeMinutes.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} د'**
+  String chefHomeMinutes(int count);
+
+  /// No description provided for @chefHomeMissingList.
+  ///
+  /// In ar, this message translates to:
+  /// **'ناقصك: {items}'**
+  String chefHomeMissingList(String items);
+
+  /// No description provided for @chefHomeAddMissing.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضيفهم لقائمة التسوق'**
+  String get chefHomeAddMissing;
+
+  /// No description provided for @chefHomeTapSteps.
+  ///
+  /// In ar, this message translates to:
+  /// **'اضغط للخطوات'**
+  String get chefHomeTapSteps;
+
   /// No description provided for @homeDealsSeeAll.
   ///
   /// In ar, this message translates to:
@@ -5771,7 +6047,7 @@ abstract class ZadL10n {
   /// No description provided for @chefSecrets.
   ///
   /// In ar, this message translates to:
-  /// **'🤫 أسرار الشيف'**
+  /// **'أسرار الشيف'**
   String get chefSecrets;
 
   /// No description provided for @chefSourceLink.
