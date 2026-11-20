@@ -78,11 +78,7 @@ class HomeWorldScene extends CustomPainter {
       ..drawRect(
         full,
         Paint()
-          ..shader = ui.Gradient.linear(
-            Offset.zero,
-            const Offset(0, 230),
-            sky,
-          ),
+          ..shader = ui.Gradient.linear(Offset.zero, const Offset(0, 230), sky),
       );
 
     if (_dark) _stars(canvas, t);
@@ -123,11 +119,7 @@ class HomeWorldScene extends CustomPainter {
           Paint()..color = const Color(0xFFFFF3C4).withValues(alpha: 0.12),
         )
         ..drawCircle(c, 24, Paint()..color = const Color(0xFFFFF3C4))
-        ..drawCircle(
-          c + const Offset(11, -6),
-          21,
-          Paint()..color = sky0(),
-        );
+        ..drawCircle(c + const Offset(11, -6), 21, Paint()..color = sky0());
       return;
     }
     final (c, r, color) = switch (phase) {
@@ -154,15 +146,20 @@ class HomeWorldScene extends CustomPainter {
       HomeDayPhase.night => (Offset.zero, 0.0, Colors.white),
     };
     final pulse = 1 + 0.05 * math.sin(t * 2 * math.pi);
-    canvas.drawCircle(
-      c,
-      r * 1.9 * pulse,
-      Paint()..color = color.withValues(alpha: 0.22),
-    );
-    canvas.drawCircle(c, r, Paint()..color = color);
+    canvas
+      ..drawCircle(
+        c,
+        r * 1.9 * pulse,
+        Paint()..color = color.withValues(alpha: 0.22),
+      )
+      ..drawCircle(c, r, Paint()..color = color);
   }
 
-  Color sky0() => _sky[HomeDayPhase.night]![0].withValues(alpha: 1);
+  /// The night sky's top colour, which the moon's bite is cut with.
+  Color sky0() {
+    final night = _sky[HomeDayPhase.night]!;
+    return Color.lerp(night[0], night[1], 0.2)!;
+  }
 
   void _clouds(Canvas canvas, double t) {
     final tint = switch (phase) {
@@ -173,7 +170,10 @@ class HomeWorldScene extends CustomPainter {
     void cloud(double x, double y, double s) {
       final p = Paint()..color = tint;
       canvas
-        ..drawOval(Rect.fromCenter(center: Offset(x, y), width: 62 * s, height: 22 * s), p)
+        ..drawOval(
+          Rect.fromCenter(center: Offset(x, y), width: 62 * s, height: 22 * s),
+          p,
+        )
         ..drawCircle(Offset(x - 12 * s, y - 8 * s), 12 * s, p)
         ..drawCircle(Offset(x + 6 * s, y - 12 * s), 15 * s, p);
     }
