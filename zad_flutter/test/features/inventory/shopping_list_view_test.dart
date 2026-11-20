@@ -114,10 +114,7 @@ void main() {
     // language; the names are what they typed.
     final text = shoppingShareText(
       lookupZadL10n(const Locale('en')),
-      <ShoppingItem>[
-        _s('1', 'لبن', price: 20, qty: 2),
-        _s('2', 'عيش'),
-      ],
+      <ShoppingItem>[_s('1', 'لبن', price: 20, qty: 2), _s('2', 'عيش')],
       'EGP',
     );
     expect(text, startsWith('Zad shopping list:'));

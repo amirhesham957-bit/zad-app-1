@@ -4,6 +4,7 @@
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -23,6 +24,7 @@ import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/transactions/application/transactions_controller.dart';
 import 'package:zad/shared/transactions/data/merchant_categories.dart';
 
+import '../../support/fonts.dart';
 import '../../support/quiet_household.dart';
 
 class _Reader implements StatementReader {
@@ -280,4 +282,20 @@ void main() {
     expect(reader.mime, isNull);
     expect(find.textContaining('تعذّرت قراءة الملف'), findsOneWidget);
   });
+
+  testWidgets('screenshot: the statement world', (tester) async {
+    await loadZadFonts();
+    await pump(tester, (
+      name: 'kashf.pdf',
+      bytes: Uint8List.fromList(<int>[1]),
+    ), answer: _statement);
+    tester.view
+      ..physicalSize = const Size(860, 1864)
+      ..devicePixelRatio = 2;
+    await tester.pump(const Duration(milliseconds: 600));
+    await expectLater(
+      find.byType(MaterialApp),
+      matchesGoldenFile('../../../build/screens/world_statement.png'),
+    );
+  }, skip: Platform.environment['ZAD_SCREENS'] != '1');
 }

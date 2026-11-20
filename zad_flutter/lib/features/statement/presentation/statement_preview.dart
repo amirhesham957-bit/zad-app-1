@@ -9,6 +9,7 @@ import 'package:zad/core/design/components/zad_empty_state.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/statement/domain/statement_import.dart';
 import 'package:zad/shared/ads/presentation/inline_ad.dart';
 import 'package:zad/shared/worlds/world_card.dart';
@@ -16,7 +17,8 @@ import 'package:zad/shared/worlds/world_card.dart';
 String _money(double v) => NumberFormat('#,##0.##', 'en').format(v);
 
 /// The review's slivers: the count, the balance check and its ad, the rows.
-List<Widget> statementPreviewSlivers({
+List<Widget> statementPreviewSlivers(
+  BuildContext context, {
   required ScannedStatement? scanned,
   required int scans,
   required List<PreviewRow> rows,
@@ -33,7 +35,7 @@ List<Widget> statementPreviewSlivers({
     sliver: SliverList.list(
       children: <Widget>[
         Text(
-          '${rows.length} صف — ${checked.length} محدد للاستيراد',
+          context.l10n.statementPreviewCount(rows.length, checked.length),
           style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
         ),
         if (scanned case final s?) ...<Widget>[
@@ -46,15 +48,13 @@ List<Widget> statementPreviewSlivers({
     ),
   ),
   if (rows.isEmpty)
-    const SliverToBoxAdapter(
+    SliverToBoxAdapter(
       child: Padding(
-        padding: EdgeInsets.symmetric(vertical: ZadSpacing.xxl),
+        padding: const EdgeInsets.symmetric(vertical: ZadSpacing.xxl),
         child: ZadEmptyState(
           icon: Icons.description,
-          title: 'ما لقيتش أي معاملة في الملف',
-          message:
-              'الملف اتقرا لكن مفيهوش صفوف أقدر أستوردها — اتأكد إنه '
-              'كشف حساب وإن صيغته CSV أو PDF مقروء.',
+          title: context.l10n.statementPreviewEmptyTitle,
+          message: context.l10n.statementPreviewEmptyBody,
         ),
       ),
     )
@@ -118,7 +118,7 @@ class StatementRowCard extends StatelessWidget {
                 ),
                 Text(
                   row.hasError || date == null
-                      ? 'تعذّرت قراءة التاريخ أو المبلغ في هذا الصف'
+                      ? context.l10n.statementRowUnreadable
                       : '${DateFormat('yyyy-MM-dd', 'en').format(date)} · '
                             '${row.category}',
                   style: ZadType.labelSmall.copyWith(
@@ -129,7 +129,7 @@ class StatementRowCard extends StatelessWidget {
                 ),
                 if (row.balanceOk == false)
                   Text(
-                    'الرصيد في الكشف مش متطابق مع الصف ده — راجع المبلغ',
+                    context.l10n.statementRowBalance,
                     style: ZadType.labelSmall.copyWith(
                       color: ZadColors.terracottaRust,
                     ),
@@ -166,17 +166,17 @@ class StatementCheckBanner extends StatelessWidget {
       StatementCheck.balanced => (
         Icons.verified_outlined,
         ZadColors.green600,
-        'الأرقام متطابقة مع رصيد الكشف',
+        context.l10n.statementCheckBalanced,
       ),
       StatementCheck.mismatch => (
         Icons.error_outline,
         ZadColors.terracottaRust,
-        'في أرقام مش متطابقة مع رصيد الكشف — الصفوف دي مش متعلّمة، راجعها',
+        context.l10n.statementCheckMismatch,
       ),
       StatementCheck.unknown => (
         Icons.info_outline,
         ZadColors.inkMuted,
-        'الكشف مفيهوش رصيد أراجع عليه — راجع كل صف قبل الاستيراد',
+        context.l10n.statementCheckUnknown,
       ),
     };
     final dropped = scanned.dropped;
@@ -189,7 +189,9 @@ class StatementCheckBanner extends StatelessWidget {
             const SizedBox(width: ZadSpacing.sm),
             Expanded(
               child: Text(
-                dropped > 0 ? '$text. وفي $dropped صف ماقدرتش أقراه.' : text,
+                dropped > 0
+                    ? context.l10n.statementDropped(text, dropped)
+                    : text,
                 style: ZadType.bodySmall.copyWith(color: tone),
               ),
             ),

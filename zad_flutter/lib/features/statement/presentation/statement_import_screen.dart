@@ -410,6 +410,7 @@ class _StatementImportScreenState extends ConsumerState<StatementImportScreen>
             ),
           ],
           _ => statementPreviewSlivers(
+            context,
             scanned: _scanned,
             scans: _scans,
             rows: _rows,

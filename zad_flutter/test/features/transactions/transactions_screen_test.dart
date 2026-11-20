@@ -1,6 +1,8 @@
 // The transactions list: Kotlin's four filters, and a tap that offers edit and
 // delete on the row.
 
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -18,6 +20,7 @@ import 'package:zad/shared/transactions/application/transactions_controller.dart
 import 'package:zad/shared/transactions/domain/transaction.dart';
 import 'package:zad/shared/worlds/art/art.dart';
 
+import '../../support/fonts.dart';
 import '../../support/quiet_household.dart';
 
 final DateTime _at = DateTime.utc(2026, 9, 20, 10);
@@ -196,4 +199,58 @@ void main() {
     expect(tester.binding.hasScheduledFrame, isFalse);
     await tester.pumpWidget(const SizedBox());
   });
+
+  testWidgets('screenshot: the transactions world', (tester) async {
+    await loadZadFonts();
+    ZadTransaction sample(
+      String id,
+      String title,
+      num amount,
+      String category,
+      int day, {
+      bool income = false,
+      String? source,
+      String? bank,
+    }) => ZadTransaction.fromJson(<String, dynamic>{
+      'id': id,
+      'user_id': 'u',
+      'amount': amount,
+      'title': title,
+      'category': category,
+      'created_at': DateTime.utc(2026, 9, day, 10).toIso8601String(),
+      'wallet': 'card',
+      'txn_kind': income ? 'income' : 'expense',
+      'is_expense': !income,
+      'source_type': source,
+      'bank_name': bank,
+    });
+    await pump(
+      tester,
+      still: true,
+      rows: <ZadTransaction>[
+        sample('1', 'مرتب سبتمبر', 12000, 'الراتب', 1, income: true),
+        sample('2', 'كارفور المعادي', 1480, 'البقالة', 19, source: 'receipt'),
+        sample('3', 'بنزين', 450, 'المواصلات', 18),
+        sample(
+          '4',
+          'فودافون فاتورة',
+          320,
+          'الفواتير',
+          15,
+          source: 'notification_listener',
+          bank: 'الأهلي',
+        ),
+        sample('5', 'قهوة', 65, 'مطاعم', 14),
+        sample('6', 'صيدلية العزبي', 210, 'الرعاية الصحية', 12),
+      ],
+    );
+    tester.view
+      ..physicalSize = const Size(860, 1864)
+      ..devicePixelRatio = 2;
+    await tester.pump(const Duration(milliseconds: 600));
+    await expectLater(
+      find.byType(MaterialApp),
+      matchesGoldenFile('../../../build/screens/world_transactions.png'),
+    );
+  }, skip: Platform.environment['ZAD_SCREENS'] != '1');
 }

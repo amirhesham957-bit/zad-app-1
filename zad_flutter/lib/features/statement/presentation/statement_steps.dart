@@ -9,6 +9,7 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/design/tokens/zad_world_colors.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/worlds/art/art.dart';
 import 'package:zad/shared/worlds/world_card.dart';
 
@@ -42,9 +43,7 @@ class StatementPickCard extends StatelessWidget {
             const SizedBox(width: ZadSpacing.md),
             Expanded(
               child: Text(
-                'اختار كشف حسابك: PDF من تطبيق البنك، أو صورة، أو ملف CSV. '
-                'زاد بيقرا الحركات ويراجعها على رصيد الكشف، ومفيش حاجة بتتسجل '
-                'غير بعد ما تراجعها.',
+                context.l10n.statementPickBody,
                 style: ZadType.bodyMedium.copyWith(color: ZadColors.inkMuted),
               ),
             ),
@@ -62,7 +61,7 @@ class StatementPickCard extends StatelessWidget {
           const Center(child: CircularProgressIndicator()),
           const SizedBox(height: ZadSpacing.md),
           Text(
-            'بقرا الكشف… الكشف الطويل بياخد دقيقة',
+            context.l10n.statementReading,
             textAlign: TextAlign.center,
             style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
           ),
@@ -74,7 +73,7 @@ class StatementPickCard extends StatelessWidget {
               shape: const StadiumBorder(),
             ),
             onPressed: () => unawaited(onPick()),
-            child: const Text('اختيار الكشف'),
+            child: Text(context.l10n.statementPickButton),
           ),
       ],
     ),
@@ -143,18 +142,23 @@ class StatementMappingCard extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         Text(
-          'حدد أي عمود من الملف يمثل كل بيانة — الملف مختلف من بنك لبنك',
+          context.l10n.statementMapIntro,
           style: ZadType.bodyMedium.copyWith(color: ZadColors.inkMuted),
         ),
         const SizedBox(height: ZadSpacing.lg),
-        _ColumnPicker('عمود التاريخ', headers, date, onDate),
+        _ColumnPicker(context.l10n.statementMapDate, headers, date, onDate),
         const SizedBox(height: ZadSpacing.md),
-        _ColumnPicker('عمود الوصف/العنوان', headers, title, onTitle),
-        const SizedBox(height: ZadSpacing.md),
-        _ColumnPicker('عمود المبلغ', headers, amount, onAmount),
+        _ColumnPicker(context.l10n.statementMapTitle, headers, title, onTitle),
         const SizedBox(height: ZadSpacing.md),
         _ColumnPicker(
-          'عمود التصنيف (اختياري)',
+          context.l10n.statementMapAmount,
+          headers,
+          amount,
+          onAmount,
+        ),
+        const SizedBox(height: ZadSpacing.md),
+        _ColumnPicker(
+          context.l10n.statementMapCategory,
           headers,
           category,
           onCategory,
@@ -163,9 +167,9 @@ class StatementMappingCard extends StatelessWidget {
         const SizedBox(height: ZadSpacing.md),
         Row(
           children: <Widget>[
-            const Expanded(
+            Expanded(
               child: Text(
-                'اعكس إشارة المبلغ (لو السالب هنا معناه دخل مش مصروف)',
+                context.l10n.statementMapInvert,
                 style: ZadType.bodyMedium,
               ),
             ),
@@ -182,7 +186,7 @@ class StatementMappingCard extends StatelessWidget {
           onPressed: date != null && title != null && amount != null
               ? onConfirm
               : null,
-          child: const Text('متابعة للمراجعة'),
+          child: Text(context.l10n.statementMapContinue),
         ),
       ],
     ),
@@ -209,13 +213,13 @@ class _ColumnPicker extends StatelessWidget {
     expandedInsets: EdgeInsets.zero,
     label: Text(label),
     initialSelection: selected,
-    hintText: optional ? 'بدون' : null,
+    hintText: optional ? context.l10n.statementMapNone : null,
     onSelected: (v) => v == null ? null : onSelect(v),
     dropdownMenuEntries: <DropdownMenuEntry<int>>[
       for (final (i, h) in headers.indexed)
         DropdownMenuEntry<int>(
           value: i,
-          label: h.trim().isEmpty ? 'عمود ${i + 1}' : h,
+          label: h.trim().isEmpty ? context.l10n.statementMapColumnN(i + 1) : h,
         ),
     ],
   );

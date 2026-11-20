@@ -3961,5 +3961,110 @@
   "statementWorldEmptyBody": "استورد كشفك أو سجّل معاملة، وهتلاقي هنا الدخل والمصروف حسب الفئة.",
   "@statementWorldEmptyBody": {
     "description": "Statement world: empty breakdown guidance."
+  },
+  "statementPickBody": "اختار كشف حسابك: PDF من تطبيق البنك، أو صورة، أو ملف CSV. زاد بيقرا الحركات ويراجعها على رصيد الكشف، ومفيش حاجة بتتسجل غير بعد ما تراجعها.",
+  "@statementPickBody": {
+    "description": "Statement import: pick step guidance."
+  },
+  "statementReading": "بقرا الكشف… الكشف الطويل بياخد دقيقة",
+  "@statementReading": {
+    "description": "Statement import: shown while the server reads."
+  },
+  "statementPickButton": "اختيار الكشف",
+  "@statementPickButton": {
+    "description": "Statement import: pick button."
+  },
+  "statementMapIntro": "حدد أي عمود من الملف يمثل كل بيانة — الملف مختلف من بنك لبنك",
+  "@statementMapIntro": {
+    "description": "Statement import: column mapping intro."
+  },
+  "statementMapDate": "عمود التاريخ",
+  "@statementMapDate": {
+    "description": "Statement import: date column picker."
+  },
+  "statementMapTitle": "عمود الوصف/العنوان",
+  "@statementMapTitle": {
+    "description": "Statement import: description column picker."
+  },
+  "statementMapAmount": "عمود المبلغ",
+  "@statementMapAmount": {
+    "description": "Statement import: amount column picker."
+  },
+  "statementMapCategory": "عمود التصنيف (اختياري)",
+  "@statementMapCategory": {
+    "description": "Statement import: category column picker."
+  },
+  "statementMapInvert": "اعكس إشارة المبلغ (لو السالب هنا معناه دخل مش مصروف)",
+  "@statementMapInvert": {
+    "description": "Statement import: sign switch."
+  },
+  "statementMapContinue": "متابعة للمراجعة",
+  "@statementMapContinue": {
+    "description": "Statement import: go to review."
+  },
+  "statementMapNone": "بدون",
+  "@statementMapNone": {
+    "description": "Statement import: optional column left empty."
+  },
+  "statementMapColumnN": "عمود {n}",
+  "@statementMapColumnN": {
+    "description": "Statement import: a header-less column.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "statementPreviewCount": "{rows} صف — {checked} محدد للاستيراد",
+  "@statementPreviewCount": {
+    "description": "Statement import: review count.",
+    "placeholders": {
+      "rows": {
+        "type": "int"
+      },
+      "checked": {
+        "type": "int"
+      }
+    }
+  },
+  "statementPreviewEmptyTitle": "ما لقيتش أي معاملة في الملف",
+  "@statementPreviewEmptyTitle": {
+    "description": "Statement import: empty review title."
+  },
+  "statementPreviewEmptyBody": "الملف اتقرا لكن مفيهوش صفوف أقدر أستوردها — اتأكد إنه كشف حساب وإن صيغته CSV أو PDF مقروء.",
+  "@statementPreviewEmptyBody": {
+    "description": "Statement import: empty review guidance."
+  },
+  "statementRowUnreadable": "تعذّرت قراءة التاريخ أو المبلغ في هذا الصف",
+  "@statementRowUnreadable": {
+    "description": "Statement import: row error."
+  },
+  "statementRowBalance": "الرصيد في الكشف مش متطابق مع الصف ده — راجع المبلغ",
+  "@statementRowBalance": {
+    "description": "Statement import: row balance mismatch."
+  },
+  "statementCheckBalanced": "الأرقام متطابقة مع رصيد الكشف",
+  "@statementCheckBalanced": {
+    "description": "Statement import: balance check ok."
+  },
+  "statementCheckMismatch": "في أرقام مش متطابقة مع رصيد الكشف — الصفوف دي مش متعلّمة، راجعها",
+  "@statementCheckMismatch": {
+    "description": "Statement import: balance check mismatch."
+  },
+  "statementCheckUnknown": "الكشف مفيهوش رصيد أراجع عليه — راجع كل صف قبل الاستيراد",
+  "@statementCheckUnknown": {
+    "description": "Statement import: no balance to check."
+  },
+  "statementDropped": "{text}. وفي {n} صف ماقدرتش أقراه.",
+  "@statementDropped": {
+    "description": "Statement import: banner with unread rows.",
+    "placeholders": {
+      "text": {
+        "type": "String"
+      },
+      "n": {
+        "type": "int"
+      }
+    }
   }
 }

@@ -29,6 +29,7 @@ import 'package:zad/shared/transactions/application/transactions_controller.dart
 import 'package:zad/shared/transactions/domain/transaction.dart';
 import 'package:zad/shared/worlds/art/art.dart';
 
+import '../../support/fonts.dart';
 import '../../support/quiet_household.dart';
 
 final DateTime _today = DateTime.utc(2026, 9, 25);
@@ -241,6 +242,19 @@ void main() {
     expect(tester.binding.hasScheduledFrame, isFalse);
     await tester.pumpWidget(const SizedBox());
   });
+
+  testWidgets('screenshot: the budget world', (tester) async {
+    await loadZadFonts();
+    await pumpFinances(tester, view: _realBudget(), still: true);
+    tester.view
+      ..physicalSize = const Size(860, 1864)
+      ..devicePixelRatio = 2;
+    await tester.pump(const Duration(milliseconds: 600));
+    await expectLater(
+      find.byType(MaterialApp),
+      matchesGoldenFile('../../../build/screens/world_budget.png'),
+    );
+  }, skip: Platform.environment['ZAD_SCREENS'] != '1');
 }
 
 class _NoCeilings extends CategoryBudgetsController {

@@ -4613,4 +4613,83 @@ class ZadL10nEn extends ZadL10n {
   @override
   String get statementWorldEmptyBody =>
       'Import a statement or log a transaction and your income and spending by category show up here.';
+
+  @override
+  String get statementPickBody =>
+      'Choose your statement: a PDF from your bank app, a photo, or a CSV file. Zad reads the entries and checks them against the statement balance, and nothing is saved until you review it.';
+
+  @override
+  String get statementReading =>
+      'Reading the statement… a long one takes a minute';
+
+  @override
+  String get statementPickButton => 'Choose statement';
+
+  @override
+  String get statementMapIntro =>
+      'Say which column of the file is which — files differ from bank to bank';
+
+  @override
+  String get statementMapDate => 'Date column';
+
+  @override
+  String get statementMapTitle => 'Description column';
+
+  @override
+  String get statementMapAmount => 'Amount column';
+
+  @override
+  String get statementMapCategory => 'Category column (optional)';
+
+  @override
+  String get statementMapInvert =>
+      'Flip the amount sign (if negative means money in here)';
+
+  @override
+  String get statementMapContinue => 'Continue to review';
+
+  @override
+  String get statementMapNone => 'None';
+
+  @override
+  String statementMapColumnN(int n) {
+    return 'Column $n';
+  }
+
+  @override
+  String statementPreviewCount(int rows, int checked) {
+    return '$rows rows — $checked selected to import';
+  }
+
+  @override
+  String get statementPreviewEmptyTitle => 'No transactions found in the file';
+
+  @override
+  String get statementPreviewEmptyBody =>
+      'The file was read but has no rows I can import — make sure it is a statement in CSV or readable PDF form.';
+
+  @override
+  String get statementRowUnreadable =>
+      'The date or amount of this row could not be read';
+
+  @override
+  String get statementRowBalance =>
+      'The statement balance does not match this row — check the amount';
+
+  @override
+  String get statementCheckBalanced =>
+      'The numbers match the statement balance';
+
+  @override
+  String get statementCheckMismatch =>
+      'Some numbers do not match the statement balance — those rows are left unticked, review them';
+
+  @override
+  String get statementCheckUnknown =>
+      'The statement has no balance to check against — review every row before importing';
+
+  @override
+  String statementDropped(String text, int n) {
+    return '$text. $n rows could not be read.';
+  }
 }
