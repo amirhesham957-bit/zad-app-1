@@ -1158,6 +1158,41 @@
   },
   "subsFixed": "التزامات ثابتة",
   "subsTitle": "الاشتراكات والفواتير",
+  "subsWorldNone": "مفيش اشتراكات لسه",
+  "subsWorldTotal": "{amount} في الشهر",
+  "@subsWorldTotal": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "subsWorldNextToday": "{amount} في الشهر · {title} بيجدد النهارده",
+  "@subsWorldNextToday": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "subsWorldNext": "{amount} في الشهر · {title} بعد {days} يوم",
+  "@subsWorldNext": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "title": {
+        "type": "String"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "subsEmptyHint": "اضغط «إضافة» وزاد يحسب لك التجديد الجاي.",
   "subsBnplTag": "اشتري وادفع بعدين · {name}",
   "@subsBnplTag": {
     "placeholders": {
@@ -1191,7 +1226,7 @@
       }
     }
   },
-  "subsPaidMark": "تم الدفع ✓",
+  "subsPaidMark": "تم الدفع",
   "subsToggleAuto": "تفعيل/إيقاف الخصم التلقائي",
   "subsDisable": "تعطيل",
   "subsEnable": "تفعيل",

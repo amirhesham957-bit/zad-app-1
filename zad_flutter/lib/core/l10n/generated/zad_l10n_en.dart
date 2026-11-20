@@ -1858,6 +1858,27 @@ class ZadL10nEn extends ZadL10n {
   String get subsTitle => 'Subscriptions and bills';
 
   @override
+  String get subsWorldNone => 'No subscriptions yet';
+
+  @override
+  String subsWorldTotal(String amount) {
+    return '$amount a month';
+  }
+
+  @override
+  String subsWorldNextToday(String amount, String title) {
+    return '$amount a month · $title renews today';
+  }
+
+  @override
+  String subsWorldNext(String amount, String title, int days) {
+    return '$amount a month · $title in $days days';
+  }
+
+  @override
+  String get subsEmptyHint => 'Tap Add and Zad will track the next renewal.';
+
+  @override
   String subsBnplTag(String name) {
     return 'Buy now pay later · $name';
   }
@@ -1881,7 +1902,7 @@ class ZadL10nEn extends ZadL10n {
   }
 
   @override
-  String get subsPaidMark => 'Paid ✓';
+  String get subsPaidMark => 'Paid';
 
   @override
   String get subsToggleAuto => 'Turn auto-debit on or off';
