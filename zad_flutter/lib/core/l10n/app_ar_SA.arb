@@ -676,5 +676,6 @@
   "pricesTopNone": "ما فيه مساهمات للحين",
   "pricesTopNoneHint": "سجّل أول سعر رأيته في السوق — تظهر مساهمتك هنا وتساعد جيرانك يلقون أرخص مكان.",
   "pricesContributor": "المساهم {rank}",
-  "pricesContribCount": "{n} مساهمات"
+  "pricesContribCount": "{n} مساهمات",
+  "settingsAdsUnavailable": "ما فيه اختيارات خصوصية متاحة الحين"
 }

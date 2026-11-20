@@ -1,5 +1,6 @@
-/// Kotlin's `ProfileScreen`: the emerald header card (picture, name, member
-/// id), the settings menu, the account group (analysis consent, delete) and
+/// حسابي as a world: the companion in its scene, one state line
+/// (name · market · plan), an identity card (picture, name, member id) and the
+/// settings in four groups, the account group (analysis consent, delete) and
 /// sign-out — with the edit-profile page, the regional sheet (country and
 /// the currency it brings, limits carried across) and the new-goal dialog.
 library;
@@ -13,7 +14,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:zad/core/design/components/zad_card.dart';
 import 'package:zad/core/design/components/zad_network_image.dart';
 import 'package:zad/core/design/foundation/squircle.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
@@ -35,8 +35,16 @@ import 'package:zad/shared/market/application/market_gate_controller.dart';
 import 'package:zad/shared/market/domain/market.dart';
 import 'package:zad/shared/navigation/shell_navigation.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
+import 'package:zad/shared/orb/domain/companion_state.dart';
 import 'package:zad/shared/profile/application/profile_controller.dart';
+import 'package:zad/shared/quota/application/attempts_balance_provider.dart';
 import 'package:zad/shared/settings/application/settings_controller.dart';
+import 'package:zad/shared/worlds/art/art.dart';
+import 'package:zad/shared/worlds/profile_world_scene.dart';
+import 'package:zad/shared/worlds/world_card.dart';
+import 'package:zad/shared/worlds/world_group.dart';
+import 'package:zad/shared/worlds/world_scaffold.dart';
+import 'package:zad/shared/worlds/zad_world.dart';
 
 /// Opens the profile.
 Future<void> showProfileScreen(BuildContext context) => Navigator.of(context)
@@ -53,254 +61,298 @@ class ProfileScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = context.l10n;
     final view = ref.watch(profileControllerProvider);
-    return DecoratedBox(
-      decoration: BoxDecoration(gradient: ZadColors.canvas),
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        appBar: AppBar(title: const Text('حسابي')),
-        body: RefreshIndicator(
-          onRefresh: ref.read(profileControllerProvider.notifier).refresh,
-          child: ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(20, ZadSpacing.lg, 20, 96),
-            children: <Widget>[
-              _Header(view: view),
-              const SizedBox(height: 14),
-              const _KidsModeCard(),
-              const SizedBox(height: ZadSpacing.xl),
-              // Grouped by what the customer is looking for, Zad's brain first:
-              // the smart-analysis switch and what Zad knows used to sit at the
-              // bottom of one sixteen-row «الإعدادات» list (owner: «التفعيلات
-              // مستخبية جوه البروفايل», 2026-09-30).
-              const _SectionTitle('عقل زاد'),
-              const SizedBox(height: ZadSpacing.md),
-              _MenuGroup(
-                hue: 0,
-                rows: <_MenuRow>[
-                  _MenuRow(
-                    icon: ZadIcons.memory,
-                    title: 'زاد عارف عني إيه',
-                    // «التحليل الذكي للسلوك» was a switch that saved a flag
-                    // nothing read (owner: «التفعيلات وهمية», 2026-10-01).
-                    // Zad analyses to help either way; this is where the
-                    // customer sees what it learnt and deletes any of it.
-                    subtitle:
-                        'زاد بيتعلم من صرفك ومخزونك عشان يساعدك — شوف '
-                        'اللي اتعلمه وامسح أي حاجة',
-                    onTap: () =>
-                        unawaited(ZadScreens.showMemoryScreen(context)),
-                  ),
-                  _MenuRow(
-                    icon: ZadIcons.actionLog,
-                    title: 'سجل تعديلات زاد',
-                    subtitle: 'كل حاجة زاد سجّلها أو عدّلها لك',
-                    onTap: () =>
-                        unawaited(ZadScreens.showAgentActionLog(context)),
-                  ),
-                  _MenuRow(
-                    icon: ZadIcons.notifications,
-                    title: 'تنبيهات المساعد الذكي',
-                    subtitle: 'التحكم في التنبيهات الذكية',
-                    onTap: () => unawaited(showAssistantAlertsScreen(context)),
-                  ),
-                  _MenuRow(
-                    icon: ZadIcons.savings,
-                    title: 'هدف حياة جديد',
-                    subtitle: 'خلّي زاد يتابع معاك هدف توفير أو عادة',
-                    onTap: () => unawaited(_newGoal(context, ref)),
-                  ),
-                ],
-              ),
-              const SizedBox(height: ZadSpacing.xl),
-              const _SectionTitle('أنا وعيلتي'),
-              const SizedBox(height: ZadSpacing.md),
-              _MenuGroup(
-                hue: 2,
-                rows: <_MenuRow>[
-                  _MenuRow(
-                    icon: ZadIcons.profile,
-                    title: 'تعديل الملف الشخصي',
-                    subtitle: 'الاسم أو اللقب',
-                    onTap: () => Navigator.of(context).push<void>(
-                      MaterialPageRoute<void>(
-                        builder: (_) => const EditProfileScreen(),
-                      ),
-                    ),
-                  ),
-                  _MenuRow(
-                    icon: ZadIcons.family,
-                    title: 'إدارة العائلة',
-                    subtitle: 'الأعضاء والصلاحيات',
-                    onTap: () => unawaited(showFamilyManagementScreen(context)),
-                  ),
-                  _MenuRow(
-                    icon: Icons.translate,
-                    title: context.l10n.settingsLanguageSection,
-                    subtitle: context.l10n.profileLanguageSubtitle,
-                    onTap: () {
-                      final isEnglish =
-                          ref.read(appLocaleProvider).languageCode == 'en';
-                      ref
-                          .read(appLanguageProvider.notifier)
-                          .choose(
-                            isEnglish
-                                ? AppLanguage.arabic
-                                : AppLanguage.english,
-                          );
-                    },
-                  ),
-                  _MenuRow(
-                    icon: ZadIcons.market,
-                    title: 'الإعدادات الإقليمية',
-                    subtitle: 'البلد والعملة',
-                    onTap: () => unawaited(showRegionalSheet(context)),
-                  ),
-                  // The tour moved here from home (ZAD_PLAN ١٠.٨, owner
-                  // 11/11): Home keeps one clear thing per level.
-                  _MenuRow(
-                    icon: Icons.explore,
-                    title: context.l10n.tourOpen,
-                    subtitle: context.l10n.profileTourSubtitle,
-                    onTap: () => unawaited(ZadScreens.showGuidedTour(context)),
-                  ),
-                ],
-              ),
-              const SizedBox(height: ZadSpacing.xl),
-              const _SectionTitle('فلوسي'),
-              const SizedBox(height: ZadSpacing.md),
-              _MenuGroup(
-                hue: 4,
-                rows: <_MenuRow>[
-                  _MenuRow(
-                    icon: ZadIcons.budget,
-                    title: 'الميزانية وطرق الدفع',
-                    subtitle: 'الميزانية الشهرية والربط البنكي',
-                    onTap: () => unawaited(showPaymentAndBudgetScreen(context)),
-                  ),
-                  _MenuRow(
-                    icon: Icons.upload_file,
-                    title: 'استيراد كشف حساب',
-                    subtitle: 'استورد كشف حساب CSV من البنك',
-                    onTap: () => unawaited(
-                      ZadScreens.showStatementImportScreen(context),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: ZadSpacing.xl),
-              const _SectionTitle('زاد بتاعي'),
-              const SizedBox(height: ZadSpacing.md),
-              _MenuGroup(
-                hue: 6,
-                rows: <_MenuRow>[
-                  _MenuRow(
-                    icon: Icons.pets,
-                    title: context.l10n.profileCompanionTitle,
-                    subtitle: context.l10n.profileCompanionSubtitle,
-                    onTap: () =>
-                        unawaited(ZadScreens.showCompanionStudio(context)),
-                  ),
-                  _MenuRow(
-                    icon: Icons.workspace_premium,
-                    title: context.l10n.profilePremiumTitle,
-                    subtitle: context.l10n.profilePremiumSubtitle,
-                    onTap: () =>
-                        unawaited(ZadScreens.showPaywallScreen(context)),
-                  ),
-                  // The bot had no row anywhere once Home's card hid itself
-                  // (owner 13/11).
-                  _MenuRow(
-                    icon: ZadIcons.send,
-                    title: context.l10n.rewardsTelegram,
-                    subtitle: context.l10n.profileTelegramSubtitle,
-                    onTap: () =>
-                        unawaited(ZadScreens.showTelegramBotSheet(context)),
-                  ),
-                  _MenuRow(
-                    icon: ZadIcons.inventory,
-                    title: context.l10n.patternTitle,
-                    subtitle: context.l10n.patternMenuSubtitle,
-                    onTap: () =>
-                        unawaited(showConsumptionPatternScreen(context)),
-                  ),
-                  _MenuRow(
-                    icon: ZadIcons.leaderboard,
-                    title: 'الإنجازات والرتب',
-                    subtitle: 'نقاطك وإنجازاتك من المساهمة بالأسعار',
-                    onTap: () =>
-                        unawaited(ZadScreens.showAchievementsScreen(context)),
-                  ),
-                ],
-              ),
-              const SizedBox(height: ZadSpacing.xl),
-              const _SectionTitle('المساعدة'),
-              const SizedBox(height: ZadSpacing.md),
-              _MenuGroup(
-                hue: 8,
-                rows: <_MenuRow>[
-                  _MenuRow(
-                    icon: ZadIcons.brainHealth,
-                    title: context.l10n.diagTitle,
-                    subtitle: context.l10n.diagMenuSubtitle,
-                    onTap: () =>
-                        unawaited(showAutomationDiagnosticsScreen(context)),
-                  ),
-                  _MenuRow(
-                    icon: Icons.support_agent,
-                    title: 'الدعم الفني',
-                    subtitle: 'شكوى أو مشكلة؟ كلّم فريق الدعم',
-                    onTap: () =>
-                        unawaited(ZadScreens.showHelpSupportScreen(context)),
-                  ),
-                  _MenuRow(
-                    icon: Icons.description,
-                    title: 'الشروط والأحكام',
-                    subtitle: 'سياسة الاستخدام والخصوصية',
-                    onTap: () => unawaited(ZadScreens.showTermsScreen(context)),
-                  ),
-                ],
-              ),
-              const SizedBox(height: ZadSpacing.xl),
-              const _SectionTitle('الحساب'),
-              const SizedBox(height: ZadSpacing.md),
-              _MenuGroup(
-                hue: 10,
-                rows: <_MenuRow>[
-                  _MenuRow(
-                    icon: ZadIcons.share,
-                    title: context.l10n.profileExportTitle,
-                    subtitle: context.l10n.profileExportSubtitle,
-                    onTap: () => unawaited(_exportMyData(context, ref)),
-                  ),
-                  _MenuRow(
-                    icon: ZadIcons.delete,
-                    title: 'حذف الحساب',
-                    subtitle: 'بيتمسح بعد مهلة ١٤ يوم',
-                    danger: true,
-                    onTap: () => unawaited(_deleteAccount(context, ref)),
-                  ),
-                ],
-              ),
-              const SizedBox(height: ZadSpacing.xl),
-              SizedBox(
-                height: 52,
-                child: FilledButton.icon(
-                  style: FilledButton.styleFrom(
-                    backgroundColor: ZadColors.terracottaRust.withValues(
-                      alpha: 0.12,
-                    ),
-                    foregroundColor: ZadColors.terracottaRust,
-                    shape: const StadiumBorder(),
-                  ),
-                  onPressed: () =>
-                      unawaited(ZadScreens.confirmAndSignOut(context, ref)),
-                  icon: const Icon(ZadIcons.leave, size: 20),
-                  label: const Text('تسجيل الخروج'),
-                ),
-              ),
-            ],
+    final market = marketFor(
+      ref.watch(settingsControllerProvider.select((v) => v.settings?.country)),
+    );
+    final tier = ref.watch(
+      attemptsBalanceProvider.select((v) => v.asData?.value?.tier),
+    );
+    final plan = switch (tier) {
+      'basic' => l.profilePlanBasic,
+      'plus' => l.profilePlanPlus,
+      'ultra' => l.profilePlanUltra,
+      'free' => l.profilePlanFree,
+      _ => null,
+    };
+    final paid = tier == 'basic' || tier == 'plus' || tier == 'ultra';
+    final color = ZadWorld.profile.color;
+    return Scaffold(
+      backgroundColor: ZadColors.canvasMid,
+      body: SafeArea(
+        bottom: false,
+        child: ZadWorldScaffold(
+          world: ZadWorld.profile,
+          title: l.worldLabelProfile,
+          // name · market · plan — whichever of them is known.
+          stateLine: <String>[
+            view.displayName,
+            ?market?.nameAr,
+            ?plan,
+          ].join(' · '),
+          scene: (loop) => ProfileWorldScene(loop, plan: paid ? plan : null),
+          zado: ZadWorldZado(
+            left: 140,
+            state: paid ? CompanionState.celebrating : CompanionState.happy,
           ),
+          onRefresh: ref.read(profileControllerProvider.notifier).refresh,
+          slivers: <Widget>[
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: ZadSpacing.gutter,
+              ),
+              sliver: SliverList.list(
+                children: <Widget>[
+                  _Header(view: view),
+                  const SizedBox(height: ZadSpacing.lg),
+                  const _KidsModeCard(),
+                  // 1. Zad's brain first: the smart-analysis switch and what
+                  // Zad knows used to sit at the bottom of one sixteen-row
+                  // list (owner: «التفعيلات مستخبية جوه البروفايل»).
+                  ZadWorldGroup(
+                    title: l.profileGroupMe,
+                    children: <Widget>[
+                      ZadWorldMenuRow(
+                        art: ZadIconArt.brain,
+                        color: color,
+                        title: 'زاد عارف عني إيه',
+                        // «التحليل الذكي للسلوك» was a switch that saved a
+                        // flag nothing read (owner: «التفعيلات وهمية»,
+                        // 2026-10-01). Zad analyses to help either way; this
+                        // is where the customer sees what it learnt and
+                        // deletes any of it.
+                        subtitle:
+                            'زاد بيتعلم من صرفك ومخزونك عشان يساعدك — شوف '
+                            'اللي اتعلمه وامسح أي حاجة',
+                        onTap: () =>
+                            unawaited(ZadScreens.showMemoryScreen(context)),
+                      ),
+                      ZadWorldMenuRow(
+                        art: ZadIconArt.folder,
+                        color: color,
+                        title: 'سجل تعديلات زاد',
+                        subtitle: 'كل حاجة زاد سجّلها أو عدّلها لك',
+                        onTap: () =>
+                            unawaited(ZadScreens.showAgentActionLog(context)),
+                      ),
+                      ZadWorldMenuRow(
+                        art: ZadIconArt.bell,
+                        color: color,
+                        title: 'تنبيهات المساعد الذكي',
+                        subtitle: 'التحكم في التنبيهات الذكية',
+                        onTap: () =>
+                            unawaited(showAssistantAlertsScreen(context)),
+                      ),
+                      ZadWorldMenuRow(
+                        art: ZadIconArt.star,
+                        color: color,
+                        title: 'هدف حياة جديد',
+                        subtitle: 'خلّي زاد يتابع معاك هدف توفير أو عادة',
+                        onTap: () => unawaited(_newGoal(context, ref)),
+                      ),
+                      ZadWorldMenuRow(
+                        art: ZadIconArt.pot,
+                        color: color,
+                        title: l.patternTitle,
+                        subtitle: l.patternMenuSubtitle,
+                        onTap: () =>
+                            unawaited(showConsumptionPatternScreen(context)),
+                      ),
+                      ZadWorldMenuRow(
+                        art: ZadIconArt.bolt,
+                        color: color,
+                        title: l.diagTitle,
+                        subtitle: l.diagMenuSubtitle,
+                        onTap: () =>
+                            unawaited(showAutomationDiagnosticsScreen(context)),
+                      ),
+                    ],
+                  ),
+                  // 2. Who I am, my family, the app's language and country,
+                  // help, my data and the way out.
+                  ZadWorldGroup(
+                    title: l.profileGroupAccount,
+                    children: <Widget>[
+                      ZadWorldMenuRow(
+                        art: ZadIconArt.person,
+                        color: color,
+                        title: 'تعديل الملف الشخصي',
+                        subtitle: 'الاسم أو اللقب',
+                        onTap: () => Navigator.of(context).push<void>(
+                          MaterialPageRoute<void>(
+                            builder: (_) => const EditProfileScreen(),
+                          ),
+                        ),
+                      ),
+                      ZadWorldMenuRow(
+                        art: ZadIconArt.family,
+                        color: color,
+                        title: 'إدارة العائلة',
+                        subtitle: 'الأعضاء والصلاحيات',
+                        onTap: () =>
+                            unawaited(showFamilyManagementScreen(context)),
+                      ),
+                      ZadWorldMenuRow(
+                        art: ZadIconArt.chat,
+                        color: color,
+                        title: l.settingsLanguageSection,
+                        subtitle: l.profileLanguageSubtitle,
+                        onTap: () {
+                          final isEnglish =
+                              ref.read(appLocaleProvider).languageCode == 'en';
+                          ref
+                              .read(appLanguageProvider.notifier)
+                              .choose(
+                                isEnglish
+                                    ? AppLanguage.arabic
+                                    : AppLanguage.english,
+                              );
+                        },
+                      ),
+                      ZadWorldMenuRow(
+                        art: ZadIconArt.pin,
+                        color: color,
+                        title: 'الإعدادات الإقليمية',
+                        subtitle: 'البلد والعملة',
+                        onTap: () => unawaited(showRegionalSheet(context)),
+                      ),
+                      // The tour moved here from home (ZAD_PLAN ١٠.٨, owner
+                      // 11/11): Home keeps one clear thing per level.
+                      ZadWorldMenuRow(
+                        art: ZadIconArt.sun,
+                        color: color,
+                        title: l.tourOpen,
+                        subtitle: l.profileTourSubtitle,
+                        onTap: () =>
+                            unawaited(ZadScreens.showGuidedTour(context)),
+                      ),
+                      ZadWorldMenuRow(
+                        art: ZadIconArt.wrench,
+                        color: color,
+                        title: l.profileSettingsTitle,
+                        subtitle: l.profileSettingsSubtitle,
+                        onTap: () =>
+                            unawaited(ZadScreens.showSettingsScreen(context)),
+                      ),
+                      ZadWorldMenuRow(
+                        art: ZadIconArt.heart,
+                        color: color,
+                        title: 'الدعم الفني',
+                        subtitle: 'شكوى أو مشكلة؟ كلّم فريق الدعم',
+                        onTap: () => unawaited(
+                          ZadScreens.showHelpSupportScreen(context),
+                        ),
+                      ),
+                      ZadWorldMenuRow(
+                        art: ZadIconArt.shield,
+                        color: color,
+                        title: 'الشروط والأحكام',
+                        subtitle: 'سياسة الاستخدام والخصوصية',
+                        onTap: () =>
+                            unawaited(ZadScreens.showTermsScreen(context)),
+                      ),
+                      ZadWorldMenuRow(
+                        art: ZadIconArt.download,
+                        color: color,
+                        title: l.profileExportTitle,
+                        subtitle: l.profileExportSubtitle,
+                        onTap: () => unawaited(_exportMyData(context, ref)),
+                      ),
+                      ZadWorldMenuRow(
+                        art: ZadIconArt.trash,
+                        color: color,
+                        danger: true,
+                        title: 'حذف الحساب',
+                        subtitle: 'بيتمسح بعد مهلة ١٤ يوم',
+                        onTap: () => unawaited(_deleteAccount(context, ref)),
+                      ),
+                    ],
+                  ),
+                  // 3. Money.
+                  ZadWorldGroup(
+                    title: l.profileGroupMoney,
+                    children: <Widget>[
+                      ZadWorldMenuRow(
+                        art: ZadIconArt.chart,
+                        color: color,
+                        title: 'الميزانية وطرق الدفع',
+                        subtitle: 'الميزانية الشهرية والربط البنكي',
+                        onTap: () =>
+                            unawaited(showPaymentAndBudgetScreen(context)),
+                      ),
+                      ZadWorldMenuRow(
+                        art: ZadIconArt.receipt,
+                        color: color,
+                        title: 'استيراد كشف حساب',
+                        subtitle: 'استورد كشف حساب CSV من البنك',
+                        onTap: () => unawaited(
+                          ZadScreens.showStatementImportScreen(context),
+                        ),
+                      ),
+                    ],
+                  ),
+                  // 4. The companion and the plan.
+                  ZadWorldGroup(
+                    title: l.profileGroupPlan,
+                    children: <Widget>[
+                      ZadWorldMenuRow(
+                        art: ZadIconArt.sprout,
+                        color: color,
+                        title: l.profileCompanionTitle,
+                        subtitle: l.profileCompanionSubtitle,
+                        onTap: () =>
+                            unawaited(ZadScreens.showCompanionStudio(context)),
+                      ),
+                      ZadWorldMenuRow(
+                        art: ZadIconArt.crown,
+                        color: color,
+                        title: l.profilePremiumTitle,
+                        subtitle: l.profilePremiumSubtitle,
+                        onTap: () =>
+                            unawaited(ZadScreens.showPaywallScreen(context)),
+                      ),
+                      // The bot had no row anywhere once Home's card hid
+                      // itself (owner 13/11).
+                      ZadWorldMenuRow(
+                        art: ZadIconArt.chat,
+                        color: color,
+                        title: l.rewardsTelegram,
+                        subtitle: l.profileTelegramSubtitle,
+                        onTap: () =>
+                            unawaited(ZadScreens.showTelegramBotSheet(context)),
+                      ),
+                      ZadWorldMenuRow(
+                        art: ZadIconArt.star,
+                        color: color,
+                        title: 'الإنجازات والرتب',
+                        subtitle: 'نقاطك وإنجازاتك من المساهمة بالأسعار',
+                        onTap: () => unawaited(
+                          ZadScreens.showAchievementsScreen(context),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(
+                    height: 52,
+                    child: FilledButton.icon(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: ZadColors.terracottaRust.withValues(
+                          alpha: 0.12,
+                        ),
+                        foregroundColor: ZadColors.terracottaRust,
+                        shape: const StadiumBorder(),
+                      ),
+                      onPressed: () =>
+                          unawaited(ZadScreens.confirmAndSignOut(context, ref)),
+                      icon: const Icon(ZadIcons.leave, size: 20),
+                      label: const Text('تسجيل الخروج'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -424,6 +476,8 @@ class ProfileScreen extends ConsumerWidget {
   }
 }
 
+/// The identity card at the top of the body: the picture (tap to change
+/// it), the name (tap to edit it) and the `#ZAD-` member id.
 class _Header extends ConsumerWidget {
   const new({required this.view});
 
@@ -472,241 +526,110 @@ class _Header extends ConsumerWidget {
     final avatar = view.avatarUrl;
     final initial = (view.displayName.characters.firstOrNull ?? '?')
         .toUpperCase();
-    return ClipPath(
-      clipper: ShapeBorderClipper(shape: zadSquircle(ZadRadii.hero)),
-      child: DecoratedBox(
-        decoration: const BoxDecoration(gradient: ZadColors.hero),
-        child: Stack(
-          children: <Widget>[
-            PositionedDirectional(
-              top: -24,
-              start: -24,
-              child: Container(
-                width: 120,
-                height: 120,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withValues(alpha: 0.12),
+    final color = ZadWorld.profile.color;
+    final letter = Text(
+      initial,
+      style: ZadType.headlineMedium.copyWith(color: color),
+    );
+    return ZadWorldCard(
+      child: Row(
+        children: <Widget>[
+          SizedBox(
+            width: 64,
+            height: 64,
+            child: Stack(
+              children: <Widget>[
+                Positioned.fill(
+                  child: InkWell(
+                    customBorder: const CircleBorder(),
+                    onTap: view.isUploading
+                        ? null
+                        : () => unawaited(_pickAvatar(context, ref)),
+                    child: Container(
+                      clipBehavior: Clip.antiAlias,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: color.withValues(alpha: 0.12),
+                      ),
+                      child: avatar != null && avatar.isNotEmpty
+                          ? ZadNetworkImage(
+                              avatar,
+                              width: 64,
+                              height: 64,
+                              fit: BoxFit.cover,
+                              fallback: letter,
+                            )
+                          : letter,
+                    ),
+                  ),
                 ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Center(
-                child: Column(
-                  children: <Widget>[
-                    SizedBox(
-                      width: 88,
-                      height: 88,
-                      child: Stack(
-                        children: <Widget>[
-                          Positioned.fill(
-                            child: InkWell(
-                              customBorder: const CircleBorder(),
-                              onTap: view.isUploading
-                                  ? null
-                                  : () => unawaited(_pickAvatar(context, ref)),
-                              child: Container(
-                                clipBehavior: Clip.antiAlias,
-                                alignment: Alignment.center,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Colors.white.withValues(alpha: 0.15),
-                                  border: Border.all(
-                                    color: Colors.white.withValues(alpha: 0.4),
-                                    width: 2,
-                                  ),
-                                ),
-                                child: avatar != null && avatar.isNotEmpty
-                                    ? ZadNetworkImage(
-                                        avatar,
-                                        width: 88,
-                                        height: 88,
-                                        fit: BoxFit.cover,
-                                        fallback: _Initial(initial),
-                                      )
-                                    : _Initial(initial),
-                              ),
-                            ),
-                          ),
-                          PositionedDirectional(
-                            bottom: 0,
-                            end: 0,
-                            child: GestureDetector(
-                              onTap: view.isUploading
-                                  ? null
-                                  : () => unawaited(_pickAvatar(context, ref)),
-                              child: CircleAvatar(
-                                radius: 12,
-                                backgroundColor: ZadColors.surface,
-                                child: const Icon(
-                                  ZadIcons.edit,
-                                  size: 13,
-                                  color: ZadColors.green700,
-                                ),
-                              ),
-                            ),
-                          ),
-                          if (view.isUploading)
-                            Positioned.fill(
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Colors.black.withValues(alpha: 0.4),
-                                ),
-                                padding: const EdgeInsets.all(20),
-                                child: const CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2,
-                                ),
-                              ),
-                            ),
-                        ],
+                PositionedDirectional(
+                  bottom: 0,
+                  end: 0,
+                  child: CircleAvatar(
+                    radius: 11,
+                    backgroundColor: color,
+                    child: const Icon(
+                      ZadIcons.edit,
+                      size: 12,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+                if (view.isUploading)
+                  Positioned.fill(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.black.withValues(alpha: 0.4),
+                      ),
+                      padding: const EdgeInsets.all(18),
+                      child: const CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
                       ),
                     ),
-                    const SizedBox(height: ZadSpacing.sm),
-                    InkWell(
-                      borderRadius: BorderRadius.circular(8),
-                      onTap: () => unawaited(_editName(context, ref)),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: ZadSpacing.sm,
-                          vertical: 2,
-                        ),
-                        child: Text(
-                          view.displayName,
-                          style: ZadType.titleLarge.copyWith(
-                            color: Colors.white,
-                          ),
-                        ),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(width: ZadSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                InkWell(
+                  borderRadius: BorderRadius.circular(8),
+                  onTap: () => unawaited(_editName(context, ref)),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(minHeight: 44),
+                    child: Align(
+                      alignment: AlignmentDirectional.centerStart,
+                      child: Text(
+                        view.displayName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: ZadType.titleLarge,
                       ),
                     ),
-                    if (view.shortId.isNotEmpty)
-                      Text(
-                        '#ZAD-${view.shortId}',
-                        textDirection: TextDirection.ltr,
-                        style: ZadType.labelSmall.copyWith(
-                          color: Colors.white.withValues(alpha: 0.7),
-                        ),
-                      ),
-                  ],
+                  ),
                 ),
-              ),
+                if (view.shortId.isNotEmpty)
+                  Text(
+                    '#ZAD-${view.shortId}',
+                    textDirection: TextDirection.ltr,
+                    style: ZadType.labelSmall.copyWith(
+                      color: ZadColors.inkMuted,
+                    ),
+                  ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
-}
-
-class _Initial extends StatelessWidget {
-  const new(this.text);
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) =>
-      Text(text, style: ZadType.headlineMedium.copyWith(color: Colors.white));
-}
-
-class _SectionTitle extends StatelessWidget {
-  const new(this.text);
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) => Text(text, style: ZadType.titleMedium);
-}
-
-class _MenuRow {
-  const new({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-    this.trailing,
-    this.danger = false,
-  });
-
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-  final Widget? trailing;
-  final bool danger;
-}
-
-/// The row badges' hues, like the coloured tiles of iPhone's Settings.
-const List<Color> _badgeHues = <Color>[
-  ZadColors.green700,
-  Color(0xFF2B6CB0),
-  Color(0xFFC68216),
-  Color(0xFF6D28D9),
-  Color(0xFFD95726),
-  ZadColors.green600,
-];
-
-/// One card, hairlines between its rows, each row led by its coloured badge
-/// (owner, 2026-11-09: grey icons read as hidden and uncoloured).
-class _MenuGroup extends StatelessWidget {
-  const new({required this.rows, required this.hue});
-
-  final List<_MenuRow> rows;
-
-  /// Where in [_badgeHues] this group's first row starts.
-  final int hue;
-
-  @override
-  Widget build(BuildContext context) => ZadCard(
-    padding: EdgeInsets.zero,
-    // The rows' ink draws on the nearest Material; without this one it was
-    // the page behind the card, so a tap showed no ripple at all.
-    child: Material(
-      type: MaterialType.transparency,
-      child: Column(
-        children: <Widget>[
-          for (final (i, row) in rows.indexed) ...<Widget>[
-            if (i > 0)
-              const Divider(
-                height: 1,
-                indent: ZadSpacing.lg,
-                endIndent: ZadSpacing.lg,
-                color: ZadColors.hairline,
-              ),
-            ListTile(
-              onTap: row.onTap,
-              leading: Container(
-                width: 40,
-                height: 40,
-                alignment: Alignment.center,
-                decoration: ShapeDecoration(
-                  shape: zadSquircle(ZadRadii.chip),
-                  color: row.danger
-                      ? ZadColors.terracottaRust
-                      : _badgeHues[(hue + i) % _badgeHues.length],
-                ),
-                child: Icon(row.icon, size: 20, color: Colors.white),
-              ),
-              title: Text(
-                row.title,
-                style: ZadType.titleSmall.copyWith(
-                  color: row.danger ? ZadColors.terracottaRust : ZadColors.ink,
-                ),
-              ),
-              subtitle: Text(
-                row.subtitle,
-                style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
-              ),
-              trailing:
-                  row.trailing ??
-                  Icon(ZadIcons.forward, size: 18, color: ZadColors.inkMuted),
-            ),
-          ],
-        ],
-      ),
-    ),
-  );
 }
 
 class _EditNameDialog extends StatefulWidget {
@@ -1134,16 +1057,14 @@ class _KidsModeCard extends ConsumerWidget {
     final isChild = ref.watch(isChildRoleProvider);
     final unlocked = ref.watch(kidsModeProvider.select((s) => s.pinUnlocked));
     if (isChild && unlocked) {
-      return _MenuGroup(
-        hue: 2,
-        rows: <_MenuRow>[
-          _MenuRow(
-            icon: Icons.lock,
-            title: 'إعادة قفل وضع الأطفال',
-            subtitle: 'يرجع الجهاز لوضع الأطفال',
-            onTap: () => ref.read(kidsModeProvider.notifier).relock(),
-          ),
-        ],
+      return _KidsCard(
+        child: ZadWorldMenuRow(
+          art: ZadIconArt.shield,
+          color: ZadWorld.profile.color,
+          title: 'إعادة قفل وضع الأطفال',
+          subtitle: 'يرجع الجهاز لوضع الأطفال',
+          onTap: () => ref.read(kidsModeProvider.notifier).relock(),
+        ),
       );
     }
     if (!isAdmin) return const SizedBox.shrink();
@@ -1156,20 +1077,32 @@ class _KidsModeCard extends ConsumerWidget {
       }
     }
 
-    return _MenuGroup(
-      hue: 2,
-      rows: <_MenuRow>[
-        _MenuRow(
-          icon: ZadIcons.child,
-          title: 'تبديل لوضع الأطفال',
-          subtitle: 'لما تدي الجهاز لطفلك مؤقتاً — الخروج محتاج PIN',
-          onTap: () => unawaited(enter()),
-          trailing: Switch(
-            value: false,
-            onChanged: (on) => on ? unawaited(enter()) : null,
-          ),
+    return _KidsCard(
+      child: ZadWorldMenuRow(
+        art: ZadIconArt.school,
+        color: ZadWorld.profile.color,
+        title: 'تبديل لوضع الأطفال',
+        subtitle: 'لما تدي الجهاز لطفلك مؤقتاً — الخروج محتاج PIN',
+        onTap: () => unawaited(enter()),
+        trailing: Switch(
+          value: false,
+          onChanged: (on) => on ? unawaited(enter()) : null,
         ),
-      ],
+      ),
     );
   }
+}
+
+class _KidsCard extends StatelessWidget {
+  const new({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: ZadSpacing.lg),
+    child: ZadWorldCard(
+      child: Material(type: MaterialType.transparency, child: child),
+    ),
+  );
 }
