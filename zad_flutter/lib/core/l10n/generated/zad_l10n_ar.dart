@@ -6392,6 +6392,315 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get settingsTermsBody => 'سياسة الاستخدام والخصوصية';
+
+  @override
+  String compEyebrow(int level) {
+    return 'المستوى $level';
+  }
+
+  @override
+  String compStateAsleep(String name) {
+    return '$name نايم — ربّت عليه يصحى';
+  }
+
+  @override
+  String compStateMissions(int n) {
+    return 'فاضل $n من مهام النهارده';
+  }
+
+  @override
+  String compStateAllDone(String name) {
+    return '$name فرحان — خلّصت مهام النهارده';
+  }
+
+  @override
+  String get compAsleepLine => 'زززز… ربّت عليّ أصحى.';
+
+  @override
+  String compPet(String name) {
+    return 'ربّت على $name';
+  }
+
+  @override
+  String get compUnreachableTitle => 'الرفيق مش قادر يوصل';
+
+  @override
+  String get compUnreachableMsg =>
+      'اتأكد إنك مسجل دخول وفيه نت، وبعدين ارجع هنا.';
+
+  @override
+  String get compRetry => 'جرّب تاني';
+
+  @override
+  String compLevel(int level) {
+    return 'لفل $level';
+  }
+
+  @override
+  String compXpOf(int xp, int need) {
+    return '$xp / $need';
+  }
+
+  @override
+  String get compStatStreak => 'يوم ورا بعض';
+
+  @override
+  String get compStatSeeds => 'بذرة';
+
+  @override
+  String get compStatToday => 'نقاط النهارده';
+
+  @override
+  String get compMissionsTitle => 'مهام النهارده';
+
+  @override
+  String get compMissionLog => 'سجّل مصروف أو دخل';
+
+  @override
+  String get compMissionHome => 'حدّث المخزن أو قائمة التسوق';
+
+  @override
+  String get compMissionScan => 'صوّر فاتورة';
+
+  @override
+  String compXpGain(int n) {
+    return '+$n';
+  }
+
+  @override
+  String compMissionsAllDone(int n) {
+    return 'خلّصت التلاتة! خدت $n بذرة النهارده.';
+  }
+
+  @override
+  String compMissionsReward(int n) {
+    return 'خلّص التلاتة وخد $n بذرة هدية.';
+  }
+
+  @override
+  String get compWeekTitle => 'تحدي الأسبوع';
+
+  @override
+  String compWeekDone(int days) {
+    return 'خلّصته! سجّلت $days أيام الأسبوع ده';
+  }
+
+  @override
+  String compWeekLeft(int goal, int left) {
+    return 'سجّل مصروف في $goal أيام من ٧ — فاضلك $left.';
+  }
+
+  @override
+  String compJourney(String name) {
+    return 'رحلة $name';
+  }
+
+  @override
+  String compMaxStage(String name) {
+    return '$name وصل لأعلى مرحلة: حكيم البيت.';
+  }
+
+  @override
+  String compSoon(String next) {
+    return 'هيكبر ويبقى $next قريب جداً!';
+  }
+
+  @override
+  String compNeeds(String next, String what) {
+    return 'عشان يبقى $next: $what.';
+  }
+
+  @override
+  String compNeedLevel(int n) {
+    return 'لفل $n';
+  }
+
+  @override
+  String compNeedAge(int n, int left) {
+    return 'عمره $n يوم (فاضل $left)';
+  }
+
+  @override
+  String get compNeedJoin => ' و';
+
+  @override
+  String get compWardrobe => 'الدولاب';
+
+  @override
+  String get compTabPersona => 'الشخصيات';
+
+  @override
+  String get compTabOutfit => 'اللبس';
+
+  @override
+  String get compTabBackground => 'الخلفيات';
+
+  @override
+  String compTakeOff(String outfit) {
+    return 'اقلع $outfit';
+  }
+
+  @override
+  String get compWorn => 'لابسه';
+
+  @override
+  String get compWear => 'البسه';
+
+  @override
+  String get compLocked => 'مقفول';
+
+  @override
+  String compOrUsd(String price) {
+    return 'أو $price';
+  }
+
+  @override
+  String compBuyTitle(String name) {
+    return 'تاخد $name؟';
+  }
+
+  @override
+  String compBuyBody(int price) {
+    return 'هيتخصم $price بذرة من بذورك، ويفضل معاك على طول.';
+  }
+
+  @override
+  String get compBuyNo => 'مش دلوقتي';
+
+  @override
+  String get compBuyYes => 'خده';
+
+  @override
+  String compBought(String name) {
+    return 'مبروك! $name بقى بتاعك';
+  }
+
+  @override
+  String compMissing(String n) {
+    return 'ناقصك $n بذرة — كمّل مهام اليوم وهتوصل.';
+  }
+
+  @override
+  String get compCodeTitle => 'كود صاحبك';
+
+  @override
+  String get compCancel => 'إلغاء';
+
+  @override
+  String get compConfirm => 'تأكيد';
+
+  @override
+  String get compEnterCode => 'عندك كود صاحبك؟ اكتبه هنا';
+
+  @override
+  String get compCodeOk => 'تمام! سجّل أول مصروف وانت وصاحبك هتاخدوا بذور';
+
+  @override
+  String get compReasonNotOwned => 'لسه مش معاك — افتحه الأول.';
+
+  @override
+  String get compReasonOwned => 'ده معاك بالفعل.';
+
+  @override
+  String get compReasonSeason => 'ده بيظهر في موسمه بس.';
+
+  @override
+  String get compReasonNotForSeeds => 'ده مش للبيع بالبذور.';
+
+  @override
+  String get compReasonWrongCode => 'الكود ده مش مظبوط، راجعه تاني.';
+
+  @override
+  String get compReasonClaimed => 'انت كتبت كود صاحب قبل كده.';
+
+  @override
+  String get compReasonTooLate => 'كود الصاحب بيتكتب في أول ١٤ يوم بس.';
+
+  @override
+  String get compReasonTooMany => 'محاولات كتير — جرّب بعد ساعة.';
+
+  @override
+  String get compReasonOffline => 'مفيش اتصال دلوقتي — جرّب تاني.';
+
+  @override
+  String get compPlayUnavailable => 'Google Play مش متاح على الموبايل ده.';
+
+  @override
+  String get compPlayNotOnPlay =>
+      'ده لسه مش متاح على Google Play — جرّب بالبذور.';
+
+  @override
+  String get compPlayFailed => 'الشراء ماتمّش — جرّب تاني.';
+
+  @override
+  String get compSeedShopTitle => 'مستعجل؟ اشحن بذور';
+
+  @override
+  String get compSeedShopBody =>
+      'البذور بتتجمع ببلاش من عاداتك، وده للي مش عايز يستنى.';
+
+  @override
+  String compAllCharacters(String price) {
+    return 'كل الشخصيات مرة واحدة · $price';
+  }
+
+  @override
+  String get compInviteTitle => 'ادعي صحابك';
+
+  @override
+  String get compInviteBody =>
+      'كل صاحب يسجّل أول مصروف = ٢٠٠ بذرة ليك و١٠٠ ليه. صاحب واحد يفتح «فلة»، وتلاتة يفتحوا طاقية التخرج وخلفية «الشلة».';
+
+  @override
+  String get compInviteCopy => 'انسخ الكود';
+
+  @override
+  String get compInviteCopied => 'اتنسخ الكود';
+
+  @override
+  String get compInviteSend => 'ابعته';
+
+  @override
+  String get compInviteSubject => 'جرّب زاد';
+
+  @override
+  String compInviteCount(int n) {
+    return 'سجّلوا: $n';
+  }
+
+  @override
+  String compInvitePending(int n) {
+    return 'مستنيين أول مصروف: $n';
+  }
+
+  @override
+  String get compHowTitle => 'الرفيق بيكبر إزاي؟';
+
+  @override
+  String get compHowXp =>
+      'النقاط بتيجي من عاداتك بس: مصروف +١٠، فاتورة +٢٠، المخزن أو القائمة +٥، يوم في السلسلة +٢٥، فرد عيلة جديد +٢٠٠.';
+
+  @override
+  String get compHowSeeds =>
+      'البذور: كل لفل جديد +٥٠، مهام اليوم التلاتة +٣٠، ٧ أيام ورا بعض +١٠٠، و٣٠ يوم +٣٠٠.';
+
+  @override
+  String get compHowAi =>
+      'البذور للدولاب بس — مش بتتحول لمحاولات ذكاء اصطناعي.';
+
+  @override
+  String get compHowSleep =>
+      'لو غبت يومين بينام. ارجع وهيصحى فرحان ومعاه هدية.';
+
+  @override
+  String get compHowKind => 'عمره ما يزعل منك ولا ينزل لفل.';
+
+  @override
+  String get gamesWorldEmpty => 'لسه ما لعبتش النهارده';
+
+  @override
+  String get gamesWorldEmptyHint =>
+      'ابدأ بأي لعبة — أول جولة بتبدأ سلسلتك وبتكسب بذور.';
 }
 
 /// The translations for Arabic, as used in Saudi Arabia (`ar_SA`).
@@ -8947,4 +9256,79 @@ class ZadL10nArSa extends ZadL10nAr {
 
   @override
   String get settingsAdsUnavailable => 'ما فيه اختيارات خصوصية متاحة الحين';
+
+  @override
+  String compStateMissions(int n) {
+    return 'باقي $n من مهام اليوم';
+  }
+
+  @override
+  String compStateAllDone(String name) {
+    return '$name مبسوط — خلّصت مهام اليوم';
+  }
+
+  @override
+  String get compUnreachableTitle => 'ما قدرنا نوصل للرفيق';
+
+  @override
+  String get compStatToday => 'نقاط اليوم';
+
+  @override
+  String get compMissionsTitle => 'مهام اليوم';
+
+  @override
+  String compMissionsAllDone(int n) {
+    return 'خلّصت الثلاث! أخذت $n بذرة اليوم.';
+  }
+
+  @override
+  String compWeekDone(int days) {
+    return 'خلّصته! سجّلت $days أيام هذا الأسبوع';
+  }
+
+  @override
+  String get compBuyNo => 'مو الحين';
+
+  @override
+  String compBought(String name) {
+    return 'مبروك! $name صار لك';
+  }
+
+  @override
+  String get compReasonNotOwned => 'للحين ما عندك — افتحه أول.';
+
+  @override
+  String get compReasonOwned => 'هذا عندك من قبل.';
+
+  @override
+  String get compReasonSeason => 'هذا يطلع في موسمه بس.';
+
+  @override
+  String get compReasonNotForSeeds => 'هذا ما يُباع بالبذور.';
+
+  @override
+  String get compReasonWrongCode => 'الكود هذا مو صحيح، راجعه مرة ثانية.';
+
+  @override
+  String get compReasonClaimed => 'أنت كتبت كود صديق من قبل.';
+
+  @override
+  String get compReasonOffline => 'ما فيه اتصال الحين — حاول مرة ثانية.';
+
+  @override
+  String get compPlayUnavailable => 'Google Play غير متاح على هذا الجوال.';
+
+  @override
+  String get compPlayNotOnPlay =>
+      'هذا للحين مو متاح على Google Play — جرّب بالبذور.';
+
+  @override
+  String get compSeedShopBody =>
+      'البذور تتجمع مجاناً من عاداتك، وهذا لمن ما يبي ينتظر.';
+
+  @override
+  String get compHowAi => 'البذور للدولاب بس — ما تتحول لمحاولات ذكاء اصطناعي.';
+
+  @override
+  String get gamesWorldEmpty => 'للحين ما لعبت اليوم';
 }

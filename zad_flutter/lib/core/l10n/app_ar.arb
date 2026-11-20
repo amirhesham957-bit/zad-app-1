@@ -5996,5 +5996,480 @@
   "settingsAdsBody": "مخصّصة ليك؟ تقدر تغيّر اختيارك في أي وقت",
   "settingsAdsUnavailable": "مفيش اختيارات خصوصية متاحة دلوقتي",
   "settingsTermsTitle": "الشروط والأحكام",
-  "settingsTermsBody": "سياسة الاستخدام والخصوصية"
+  "settingsTermsBody": "سياسة الاستخدام والخصوصية",
+  "compEyebrow": "المستوى {level}",
+  "@compEyebrow": {
+    "description": "World text.",
+    "placeholders": {
+      "level": {
+        "type": "int"
+      }
+    }
+  },
+  "compStateAsleep": "{name} نايم — ربّت عليه يصحى",
+  "@compStateAsleep": {
+    "description": "World text.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "compStateMissions": "فاضل {n} من مهام النهارده",
+  "@compStateMissions": {
+    "description": "World text.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "compStateAllDone": "{name} فرحان — خلّصت مهام النهارده",
+  "@compStateAllDone": {
+    "description": "World text.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "compAsleepLine": "زززز… ربّت عليّ أصحى.",
+  "@compAsleepLine": {
+    "description": "World text."
+  },
+  "compPet": "ربّت على {name}",
+  "@compPet": {
+    "description": "World text.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "compUnreachableTitle": "الرفيق مش قادر يوصل",
+  "@compUnreachableTitle": {
+    "description": "World text."
+  },
+  "compUnreachableMsg": "اتأكد إنك مسجل دخول وفيه نت، وبعدين ارجع هنا.",
+  "@compUnreachableMsg": {
+    "description": "World text."
+  },
+  "compRetry": "جرّب تاني",
+  "@compRetry": {
+    "description": "World text."
+  },
+  "compLevel": "لفل {level}",
+  "@compLevel": {
+    "description": "World text.",
+    "placeholders": {
+      "level": {
+        "type": "int"
+      }
+    }
+  },
+  "compXpOf": "{xp} / {need}",
+  "@compXpOf": {
+    "description": "World text.",
+    "placeholders": {
+      "xp": {
+        "type": "int"
+      },
+      "need": {
+        "type": "int"
+      }
+    }
+  },
+  "compStatStreak": "يوم ورا بعض",
+  "@compStatStreak": {
+    "description": "World text."
+  },
+  "compStatSeeds": "بذرة",
+  "@compStatSeeds": {
+    "description": "World text."
+  },
+  "compStatToday": "نقاط النهارده",
+  "@compStatToday": {
+    "description": "World text."
+  },
+  "compMissionsTitle": "مهام النهارده",
+  "@compMissionsTitle": {
+    "description": "World text."
+  },
+  "compMissionLog": "سجّل مصروف أو دخل",
+  "@compMissionLog": {
+    "description": "World text."
+  },
+  "compMissionHome": "حدّث المخزن أو قائمة التسوق",
+  "@compMissionHome": {
+    "description": "World text."
+  },
+  "compMissionScan": "صوّر فاتورة",
+  "@compMissionScan": {
+    "description": "World text."
+  },
+  "compXpGain": "+{n}",
+  "@compXpGain": {
+    "description": "World text.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "compMissionsAllDone": "خلّصت التلاتة! خدت {n} بذرة النهارده.",
+  "@compMissionsAllDone": {
+    "description": "World text.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "compMissionsReward": "خلّص التلاتة وخد {n} بذرة هدية.",
+  "@compMissionsReward": {
+    "description": "World text.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "compWeekTitle": "تحدي الأسبوع",
+  "@compWeekTitle": {
+    "description": "World text."
+  },
+  "compWeekDone": "خلّصته! سجّلت {days} أيام الأسبوع ده",
+  "@compWeekDone": {
+    "description": "World text.",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "compWeekLeft": "سجّل مصروف في {goal} أيام من ٧ — فاضلك {left}.",
+  "@compWeekLeft": {
+    "description": "World text.",
+    "placeholders": {
+      "goal": {
+        "type": "int"
+      },
+      "left": {
+        "type": "int"
+      }
+    }
+  },
+  "compJourney": "رحلة {name}",
+  "@compJourney": {
+    "description": "World text.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "compMaxStage": "{name} وصل لأعلى مرحلة: حكيم البيت.",
+  "@compMaxStage": {
+    "description": "World text.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "compSoon": "هيكبر ويبقى {next} قريب جداً!",
+  "@compSoon": {
+    "description": "World text.",
+    "placeholders": {
+      "next": {
+        "type": "String"
+      }
+    }
+  },
+  "compNeeds": "عشان يبقى {next}: {what}.",
+  "@compNeeds": {
+    "description": "World text.",
+    "placeholders": {
+      "next": {
+        "type": "String"
+      },
+      "what": {
+        "type": "String"
+      }
+    }
+  },
+  "compNeedLevel": "لفل {n}",
+  "@compNeedLevel": {
+    "description": "World text.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "compNeedAge": "عمره {n} يوم (فاضل {left})",
+  "@compNeedAge": {
+    "description": "World text.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "left": {
+        "type": "int"
+      }
+    }
+  },
+  "compNeedJoin": " و",
+  "@compNeedJoin": {
+    "description": "World text."
+  },
+  "compWardrobe": "الدولاب",
+  "@compWardrobe": {
+    "description": "World text."
+  },
+  "compTabPersona": "الشخصيات",
+  "@compTabPersona": {
+    "description": "World text."
+  },
+  "compTabOutfit": "اللبس",
+  "@compTabOutfit": {
+    "description": "World text."
+  },
+  "compTabBackground": "الخلفيات",
+  "@compTabBackground": {
+    "description": "World text."
+  },
+  "compTakeOff": "اقلع {outfit}",
+  "@compTakeOff": {
+    "description": "World text.",
+    "placeholders": {
+      "outfit": {
+        "type": "String"
+      }
+    }
+  },
+  "compWorn": "لابسه",
+  "@compWorn": {
+    "description": "World text."
+  },
+  "compWear": "البسه",
+  "@compWear": {
+    "description": "World text."
+  },
+  "compLocked": "مقفول",
+  "@compLocked": {
+    "description": "World text."
+  },
+  "compOrUsd": "أو {price}",
+  "@compOrUsd": {
+    "description": "World text.",
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "compBuyTitle": "تاخد {name}؟",
+  "@compBuyTitle": {
+    "description": "World text.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "compBuyBody": "هيتخصم {price} بذرة من بذورك، ويفضل معاك على طول.",
+  "@compBuyBody": {
+    "description": "World text.",
+    "placeholders": {
+      "price": {
+        "type": "int"
+      }
+    }
+  },
+  "compBuyNo": "مش دلوقتي",
+  "@compBuyNo": {
+    "description": "World text."
+  },
+  "compBuyYes": "خده",
+  "@compBuyYes": {
+    "description": "World text."
+  },
+  "compBought": "مبروك! {name} بقى بتاعك",
+  "@compBought": {
+    "description": "World text.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "compMissing": "ناقصك {n} بذرة — كمّل مهام اليوم وهتوصل.",
+  "@compMissing": {
+    "description": "World text.",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "compCodeTitle": "كود صاحبك",
+  "@compCodeTitle": {
+    "description": "World text."
+  },
+  "compCancel": "إلغاء",
+  "@compCancel": {
+    "description": "World text."
+  },
+  "compConfirm": "تأكيد",
+  "@compConfirm": {
+    "description": "World text."
+  },
+  "compEnterCode": "عندك كود صاحبك؟ اكتبه هنا",
+  "@compEnterCode": {
+    "description": "World text."
+  },
+  "compCodeOk": "تمام! سجّل أول مصروف وانت وصاحبك هتاخدوا بذور",
+  "@compCodeOk": {
+    "description": "World text."
+  },
+  "compReasonNotOwned": "لسه مش معاك — افتحه الأول.",
+  "@compReasonNotOwned": {
+    "description": "World text."
+  },
+  "compReasonOwned": "ده معاك بالفعل.",
+  "@compReasonOwned": {
+    "description": "World text."
+  },
+  "compReasonSeason": "ده بيظهر في موسمه بس.",
+  "@compReasonSeason": {
+    "description": "World text."
+  },
+  "compReasonNotForSeeds": "ده مش للبيع بالبذور.",
+  "@compReasonNotForSeeds": {
+    "description": "World text."
+  },
+  "compReasonWrongCode": "الكود ده مش مظبوط، راجعه تاني.",
+  "@compReasonWrongCode": {
+    "description": "World text."
+  },
+  "compReasonClaimed": "انت كتبت كود صاحب قبل كده.",
+  "@compReasonClaimed": {
+    "description": "World text."
+  },
+  "compReasonTooLate": "كود الصاحب بيتكتب في أول ١٤ يوم بس.",
+  "@compReasonTooLate": {
+    "description": "World text."
+  },
+  "compReasonTooMany": "محاولات كتير — جرّب بعد ساعة.",
+  "@compReasonTooMany": {
+    "description": "World text."
+  },
+  "compReasonOffline": "مفيش اتصال دلوقتي — جرّب تاني.",
+  "@compReasonOffline": {
+    "description": "World text."
+  },
+  "compPlayUnavailable": "Google Play مش متاح على الموبايل ده.",
+  "@compPlayUnavailable": {
+    "description": "World text."
+  },
+  "compPlayNotOnPlay": "ده لسه مش متاح على Google Play — جرّب بالبذور.",
+  "@compPlayNotOnPlay": {
+    "description": "World text."
+  },
+  "compPlayFailed": "الشراء ماتمّش — جرّب تاني.",
+  "@compPlayFailed": {
+    "description": "World text."
+  },
+  "compSeedShopTitle": "مستعجل؟ اشحن بذور",
+  "@compSeedShopTitle": {
+    "description": "World text."
+  },
+  "compSeedShopBody": "البذور بتتجمع ببلاش من عاداتك، وده للي مش عايز يستنى.",
+  "@compSeedShopBody": {
+    "description": "World text."
+  },
+  "compAllCharacters": "كل الشخصيات مرة واحدة · {price}",
+  "@compAllCharacters": {
+    "description": "World text.",
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "compInviteTitle": "ادعي صحابك",
+  "@compInviteTitle": {
+    "description": "World text."
+  },
+  "compInviteBody": "كل صاحب يسجّل أول مصروف = ٢٠٠ بذرة ليك و١٠٠ ليه. صاحب واحد يفتح «فلة»، وتلاتة يفتحوا طاقية التخرج وخلفية «الشلة».",
+  "@compInviteBody": {
+    "description": "World text."
+  },
+  "compInviteCopy": "انسخ الكود",
+  "@compInviteCopy": {
+    "description": "World text."
+  },
+  "compInviteCopied": "اتنسخ الكود",
+  "@compInviteCopied": {
+    "description": "World text."
+  },
+  "compInviteSend": "ابعته",
+  "@compInviteSend": {
+    "description": "World text."
+  },
+  "compInviteSubject": "جرّب زاد",
+  "@compInviteSubject": {
+    "description": "World text."
+  },
+  "compInviteCount": "سجّلوا: {n}",
+  "@compInviteCount": {
+    "description": "World text.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "compInvitePending": "مستنيين أول مصروف: {n}",
+  "@compInvitePending": {
+    "description": "World text.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "compHowTitle": "الرفيق بيكبر إزاي؟",
+  "@compHowTitle": {
+    "description": "World text."
+  },
+  "compHowXp": "النقاط بتيجي من عاداتك بس: مصروف +١٠، فاتورة +٢٠، المخزن أو القائمة +٥، يوم في السلسلة +٢٥، فرد عيلة جديد +٢٠٠.",
+  "@compHowXp": {
+    "description": "World text."
+  },
+  "compHowSeeds": "البذور: كل لفل جديد +٥٠، مهام اليوم التلاتة +٣٠، ٧ أيام ورا بعض +١٠٠، و٣٠ يوم +٣٠٠.",
+  "@compHowSeeds": {
+    "description": "World text."
+  },
+  "compHowAi": "البذور للدولاب بس — مش بتتحول لمحاولات ذكاء اصطناعي.",
+  "@compHowAi": {
+    "description": "World text."
+  },
+  "compHowSleep": "لو غبت يومين بينام. ارجع وهيصحى فرحان ومعاه هدية.",
+  "@compHowSleep": {
+    "description": "World text."
+  },
+  "compHowKind": "عمره ما يزعل منك ولا ينزل لفل.",
+  "@compHowKind": {
+    "description": "World text."
+  },
+  "gamesWorldEmpty": "لسه ما لعبتش النهارده",
+  "@gamesWorldEmpty": {
+    "description": "World text."
+  },
+  "gamesWorldEmptyHint": "ابدأ بأي لعبة — أول جولة بتبدأ سلسلتك وبتكسب بذور.",
+  "@gamesWorldEmptyHint": {
+    "description": "World text."
+  }
 }
