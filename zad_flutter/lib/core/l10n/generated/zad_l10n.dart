@@ -1502,6 +1502,12 @@ abstract class ZadL10n {
   /// **'قرب يخلص'**
   String get amazonLow;
 
+  /// No description provided for @amazonShopEmoji.
+  ///
+  /// In ar, this message translates to:
+  /// **'🛍️ تسوق من أمازون'**
+  String get amazonShopEmoji;
+
   /// No description provided for @amazonNoNeeds.
   ///
   /// In ar, this message translates to:
@@ -7718,6 +7724,12 @@ abstract class ZadL10n {
   /// **'بياناتي من زاد'**
   String get profileExportSubject;
 
+  /// No description provided for @homeCareTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'اشتراكاتك وأدويتك'**
+  String get homeCareTitle;
+
   /// No description provided for @homeCareRenewsToday.
   ///
   /// In ar, this message translates to:
@@ -10802,137 +10814,497 @@ abstract class ZadL10n {
   /// **'سياسة الاستخدام والخصوصية'**
   String get settingsTermsBody;
 
-  /// No description provided for @worldLabelHome.
+  /// World text.
   ///
   /// In ar, this message translates to:
-  /// **'الرئيسية'**
-  String get worldLabelHome;
+  /// **'المستوى {level}'**
+  String compEyebrow(int level);
 
-  /// No description provided for @homeGreetDawn.
+  /// World text.
   ///
   /// In ar, this message translates to:
-  /// **'صباح الخير يا {name}'**
-  String homeGreetDawn(String name);
+  /// **'{name} نايم — ربّت عليه يصحى'**
+  String compStateAsleep(String name);
 
-  /// No description provided for @homeGreetMorning.
+  /// World text.
   ///
   /// In ar, this message translates to:
-  /// **'أهلاً يا {name}'**
-  String homeGreetMorning(String name);
+  /// **'فاضل {n} من مهام النهارده'**
+  String compStateMissions(int n);
 
-  /// No description provided for @homeGreetNoon.
+  /// World text.
   ///
   /// In ar, this message translates to:
-  /// **'نهارك سعيد يا {name}'**
-  String homeGreetNoon(String name);
+  /// **'{name} فرحان — خلّصت مهام النهارده'**
+  String compStateAllDone(String name);
 
-  /// No description provided for @homeGreetEvening.
+  /// World text.
   ///
   /// In ar, this message translates to:
-  /// **'مساء الخير يا {name}'**
-  String homeGreetEvening(String name);
+  /// **'زززز… ربّت عليّ أصحى.'**
+  String get compAsleepLine;
 
-  /// No description provided for @homeGreetNight.
+  /// World text.
   ///
   /// In ar, this message translates to:
-  /// **'ليلة هادية يا {name}'**
-  String homeGreetNight(String name);
+  /// **'ربّت على {name}'**
+  String compPet(String name);
 
-  /// No description provided for @homeStateMoney.
+  /// World text.
   ///
   /// In ar, this message translates to:
-  /// **'متاح {amount} {currency} · {days}'**
-  String homeStateMoney(String amount, String currency, String days);
+  /// **'الرفيق مش قادر يوصل'**
+  String get compUnreachableTitle;
 
-  /// No description provided for @homeStateIdle.
+  /// World text.
   ///
   /// In ar, this message translates to:
-  /// **'بيتك كله قدامك'**
-  String get homeStateIdle;
+  /// **'اتأكد إنك مسجل دخول وفيه نت، وبعدين ارجع هنا.'**
+  String get compUnreachableMsg;
 
-  /// No description provided for @homeWorldsTitle.
+  /// World text.
   ///
   /// In ar, this message translates to:
-  /// **'عوالمك'**
-  String get homeWorldsTitle;
+  /// **'جرّب تاني'**
+  String get compRetry;
 
-  /// No description provided for @homeWorldsHint.
+  /// World text.
   ///
   /// In ar, this message translates to:
-  /// **'كل جزء من بيتك في مكانه'**
-  String get homeWorldsHint;
+  /// **'لفل {level}'**
+  String compLevel(int level);
 
-  /// No description provided for @homeTodayTitle.
+  /// World text.
   ///
   /// In ar, this message translates to:
-  /// **'النهارده في بيتك'**
-  String get homeTodayTitle;
+  /// **'{xp} / {need}'**
+  String compXpOf(int xp, int need);
 
-  /// No description provided for @homeTodayEmpty.
+  /// World text.
   ///
   /// In ar, this message translates to:
-  /// **'مفيش نواقص ولا جرعات ولا تجديدات قريبة'**
-  String get homeTodayEmpty;
+  /// **'يوم ورا بعض'**
+  String get compStatStreak;
 
-  /// No description provided for @homeTodayEmptyHint.
+  /// World text.
   ///
   /// In ar, this message translates to:
-  /// **'اليوم هادي. أي حاجة تحتاج انتباهك هتظهر هنا.'**
-  String get homeTodayEmptyHint;
+  /// **'بذرة'**
+  String get compStatSeeds;
 
-  /// No description provided for @homeTodayShortTitle.
+  /// World text.
   ///
   /// In ar, this message translates to:
-  /// **'نواقص بتتجاب'**
-  String get homeTodayShortTitle;
+  /// **'نقاط النهارده'**
+  String get compStatToday;
 
-  /// No description provided for @homeTodayShortSub.
+  /// World text.
   ///
   /// In ar, this message translates to:
-  /// **'{count} صنف · أولهم {name}'**
-  String homeTodayShortSub(String name, int count);
+  /// **'مهام النهارده'**
+  String get compMissionsTitle;
 
-  /// No description provided for @homeGreetDawnAnon.
+  /// World text.
   ///
   /// In ar, this message translates to:
-  /// **'صباح الخير'**
-  String get homeGreetDawnAnon;
+  /// **'سجّل مصروف أو دخل'**
+  String get compMissionLog;
 
-  /// No description provided for @homeGreetMorningAnon.
+  /// World text.
   ///
   /// In ar, this message translates to:
-  /// **'أهلاً بيك'**
-  String get homeGreetMorningAnon;
+  /// **'حدّث المخزن أو قائمة التسوق'**
+  String get compMissionHome;
 
-  /// No description provided for @homeGreetNoonAnon.
+  /// World text.
   ///
   /// In ar, this message translates to:
-  /// **'نهارك سعيد'**
-  String get homeGreetNoonAnon;
+  /// **'صوّر فاتورة'**
+  String get compMissionScan;
 
-  /// No description provided for @homeGreetEveningAnon.
+  /// World text.
   ///
   /// In ar, this message translates to:
-  /// **'مساء الخير'**
-  String get homeGreetEveningAnon;
+  /// **'+{n}'**
+  String compXpGain(int n);
 
-  /// No description provided for @homeGreetNightAnon.
+  /// World text.
   ///
   /// In ar, this message translates to:
-  /// **'ليلة هادية'**
-  String get homeGreetNightAnon;
+  /// **'خلّصت التلاتة! خدت {n} بذرة النهارده.'**
+  String compMissionsAllDone(int n);
 
-  /// No description provided for @tasbihaHomeStart.
+  /// World text.
   ///
   /// In ar, this message translates to:
-  /// **'ابدأ بستانك بأول تسبيحة'**
-  String get tasbihaHomeStart;
+  /// **'خلّص التلاتة وخد {n} بذرة هدية.'**
+  String compMissionsReward(int n);
 
-  /// No description provided for @tasbihaHomeMature.
+  /// World text.
   ///
   /// In ar, this message translates to:
-  /// **'الشجرة كبرت · {score} تسبيحة'**
-  String tasbihaHomeMature(int score);
+  /// **'تحدي الأسبوع'**
+  String get compWeekTitle;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'خلّصته! سجّلت {days} أيام الأسبوع ده'**
+  String compWeekDone(int days);
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجّل مصروف في {goal} أيام من ٧ — فاضلك {left}.'**
+  String compWeekLeft(int goal, int left);
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'رحلة {name}'**
+  String compJourney(String name);
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'{name} وصل لأعلى مرحلة: حكيم البيت.'**
+  String compMaxStage(String name);
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'هيكبر ويبقى {next} قريب جداً!'**
+  String compSoon(String next);
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'عشان يبقى {next}: {what}.'**
+  String compNeeds(String next, String what);
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'لفل {n}'**
+  String compNeedLevel(int n);
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'عمره {n} يوم (فاضل {left})'**
+  String compNeedAge(int n, int left);
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **' و'**
+  String get compNeedJoin;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'الدولاب'**
+  String get compWardrobe;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'الشخصيات'**
+  String get compTabPersona;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'اللبس'**
+  String get compTabOutfit;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'الخلفيات'**
+  String get compTabBackground;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'اقلع {outfit}'**
+  String compTakeOff(String outfit);
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'لابسه'**
+  String get compWorn;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'البسه'**
+  String get compWear;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقفول'**
+  String get compLocked;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'أو {price}'**
+  String compOrUsd(String price);
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'تاخد {name}؟'**
+  String compBuyTitle(String name);
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'هيتخصم {price} بذرة من بذورك، ويفضل معاك على طول.'**
+  String compBuyBody(int price);
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش دلوقتي'**
+  String get compBuyNo;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'خده'**
+  String get compBuyYes;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'مبروك! {name} بقى بتاعك'**
+  String compBought(String name);
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'ناقصك {n} بذرة — كمّل مهام اليوم وهتوصل.'**
+  String compMissing(String n);
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'كود صاحبك'**
+  String get compCodeTitle;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلغاء'**
+  String get compCancel;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'تأكيد'**
+  String get compConfirm;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'عندك كود صاحبك؟ اكتبه هنا'**
+  String get compEnterCode;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'تمام! سجّل أول مصروف وانت وصاحبك هتاخدوا بذور'**
+  String get compCodeOk;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'لسه مش معاك — افتحه الأول.'**
+  String get compReasonNotOwned;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'ده معاك بالفعل.'**
+  String get compReasonOwned;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'ده بيظهر في موسمه بس.'**
+  String get compReasonSeason;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'ده مش للبيع بالبذور.'**
+  String get compReasonNotForSeeds;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكود ده مش مظبوط، راجعه تاني.'**
+  String get compReasonWrongCode;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'انت كتبت كود صاحب قبل كده.'**
+  String get compReasonClaimed;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'كود الصاحب بيتكتب في أول ١٤ يوم بس.'**
+  String get compReasonTooLate;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'محاولات كتير — جرّب بعد ساعة.'**
+  String get compReasonTooMany;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش اتصال دلوقتي — جرّب تاني.'**
+  String get compReasonOffline;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'Google Play مش متاح على الموبايل ده.'**
+  String get compPlayUnavailable;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'ده لسه مش متاح على Google Play — جرّب بالبذور.'**
+  String get compPlayNotOnPlay;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'الشراء ماتمّش — جرّب تاني.'**
+  String get compPlayFailed;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'مستعجل؟ اشحن بذور'**
+  String get compSeedShopTitle;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'البذور بتتجمع ببلاش من عاداتك، وده للي مش عايز يستنى.'**
+  String get compSeedShopBody;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل الشخصيات مرة واحدة · {price}'**
+  String compAllCharacters(String price);
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'ادعي صحابك'**
+  String get compInviteTitle;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل صاحب يسجّل أول مصروف = ٢٠٠ بذرة ليك و١٠٠ ليه. صاحب واحد يفتح «فلة»، وتلاتة يفتحوا طاقية التخرج وخلفية «الشلة».'**
+  String get compInviteBody;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'انسخ الكود'**
+  String get compInviteCopy;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتنسخ الكود'**
+  String get compInviteCopied;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابعته'**
+  String get compInviteSend;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'جرّب زاد'**
+  String get compInviteSubject;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجّلوا: {n}'**
+  String compInviteCount(int n);
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'مستنيين أول مصروف: {n}'**
+  String compInvitePending(int n);
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرفيق بيكبر إزاي؟'**
+  String get compHowTitle;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'النقاط بتيجي من عاداتك بس: مصروف +١٠، فاتورة +٢٠، المخزن أو القائمة +٥، يوم في السلسلة +٢٥، فرد عيلة جديد +٢٠٠.'**
+  String get compHowXp;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'البذور: كل لفل جديد +٥٠، مهام اليوم التلاتة +٣٠، ٧ أيام ورا بعض +١٠٠، و٣٠ يوم +٣٠٠.'**
+  String get compHowSeeds;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'البذور للدولاب بس — مش بتتحول لمحاولات ذكاء اصطناعي.'**
+  String get compHowAi;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'لو غبت يومين بينام. ارجع وهيصحى فرحان ومعاه هدية.'**
+  String get compHowSleep;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'عمره ما يزعل منك ولا ينزل لفل.'**
+  String get compHowKind;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'لسه ما لعبتش النهارده'**
+  String get gamesWorldEmpty;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابدأ بأي لعبة — أول جولة بتبدأ سلسلتك وبتكسب بذور.'**
+  String get gamesWorldEmptyHint;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

@@ -7,6 +7,8 @@ import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:timezone/data/latest.dart' as tzdata;
 import 'package:zad/core/data/local/boxes.dart';
 import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/design/zad_theme.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/ads/data/rewarded_ads.dart';
 import 'package:zad/shared/auth/application/session_controller.dart';
 import 'package:zad/shared/companion/application/pet_care_controller.dart';
@@ -153,8 +155,15 @@ Future<void> pumpGame(
   await tester.pumpWidget(
     UncontrolledProviderScope(
       container: c,
-      child: MaterialApp(
-        home: Directionality(textDirection: TextDirection.rtl, child: child),
+      child: MediaQuery(
+        data: const MediaQueryData(disableAnimations: true),
+        child: MaterialApp(
+          theme: ZadTheme.light(),
+          locale: const Locale('ar'),
+          supportedLocales: ZadL10n.supportedLocales,
+          localizationsDelegates: ZadL10n.localizationsDelegates,
+          home: Directionality(textDirection: TextDirection.rtl, child: child),
+        ),
       ),
     ),
   );

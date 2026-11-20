@@ -854,6 +854,9 @@ class ZadL10nEn extends ZadL10n {
   String get amazonLow => 'Running low';
 
   @override
+  String get amazonShopEmoji => '🛍️ Shop on Amazon';
+
+  @override
   String get amazonNoNeeds => 'Add what you\'re missing, or see today\'s deals';
 
   @override
@@ -4492,6 +4495,9 @@ class ZadL10nEn extends ZadL10n {
   String get profileExportSubject => 'My data from Zad';
 
   @override
+  String get homeCareTitle => 'Your subscriptions and medicines';
+
+  @override
   String get homeCareRenewsToday => 'Renews today';
 
   @override
@@ -6483,85 +6489,314 @@ class ZadL10nEn extends ZadL10n {
   String get settingsTermsBody => 'Usage and privacy policy';
 
   @override
-  String get worldLabelHome => 'Home';
-
-  @override
-  String homeGreetDawn(String name) {
-    return 'Good morning, $name';
+  String compEyebrow(int level) {
+    return 'Level $level';
   }
 
   @override
-  String homeGreetMorning(String name) {
-    return 'Hello, $name';
+  String compStateAsleep(String name) {
+    return '$name is asleep — pat to wake';
   }
 
   @override
-  String homeGreetNoon(String name) {
-    return 'Good day, $name';
+  String compStateMissions(int n) {
+    return '$n of today\'s tasks left';
   }
 
   @override
-  String homeGreetEvening(String name) {
-    return 'Good evening, $name';
+  String compStateAllDone(String name) {
+    return '$name is happy — all of today\'s tasks done';
   }
 
   @override
-  String homeGreetNight(String name) {
-    return 'A quiet night, $name';
+  String get compAsleepLine => 'Zzz… pat me to wake up.';
+
+  @override
+  String compPet(String name) {
+    return 'Pat $name';
   }
 
   @override
-  String homeStateMoney(String amount, String currency, String days) {
-    return '$amount $currency available · $days';
+  String get compUnreachableTitle => 'Your companion cannot be reached';
+
+  @override
+  String get compUnreachableMsg =>
+      'Make sure you are signed in and online, then come back.';
+
+  @override
+  String get compRetry => 'Try again';
+
+  @override
+  String compLevel(int level) {
+    return 'Level $level';
   }
 
   @override
-  String get homeStateIdle => 'Your whole home, in one place';
-
-  @override
-  String get homeWorldsTitle => 'Your worlds';
-
-  @override
-  String get homeWorldsHint => 'Every part of your home, in its place';
-
-  @override
-  String get homeTodayTitle => 'Today in your home';
-
-  @override
-  String get homeTodayEmpty => 'No shortages, doses or renewals coming up';
-
-  @override
-  String get homeTodayEmptyHint =>
-      'A calm day. Anything that needs you will show here.';
-
-  @override
-  String get homeTodayShortTitle => 'Running short';
-
-  @override
-  String homeTodayShortSub(String name, int count) {
-    return '$count items · first $name';
+  String compXpOf(int xp, int need) {
+    return '$xp / $need';
   }
 
   @override
-  String get homeGreetDawnAnon => 'Good morning';
+  String get compStatStreak => 'days in a row';
 
   @override
-  String get homeGreetMorningAnon => 'Hello';
+  String get compStatSeeds => 'seeds';
 
   @override
-  String get homeGreetNoonAnon => 'Good day';
+  String get compStatToday => 'points today';
 
   @override
-  String get homeGreetEveningAnon => 'Good evening';
+  String get compMissionsTitle => 'Today\'s tasks';
 
   @override
-  String get homeGreetNightAnon => 'A quiet night';
+  String get compMissionLog => 'Log an expense or income';
 
   @override
-  String get tasbihaHomeStart => 'Plant your garden with a first tasbih';
+  String get compMissionHome => 'Update the pantry or shopping list';
 
   @override
-  String tasbihaHomeMature(int score) {
-    return 'Fully grown · $score tasbihs';
+  String get compMissionScan => 'Scan a receipt';
+
+  @override
+  String compXpGain(int n) {
+    return '+$n';
   }
+
+  @override
+  String compMissionsAllDone(int n) {
+    return 'All three done! You earned $n seeds today.';
+  }
+
+  @override
+  String compMissionsReward(int n) {
+    return 'Finish all three and get $n seeds.';
+  }
+
+  @override
+  String get compWeekTitle => 'This week\'s challenge';
+
+  @override
+  String compWeekDone(int days) {
+    return 'Done! You logged on $days days this week';
+  }
+
+  @override
+  String compWeekLeft(int goal, int left) {
+    return 'Log an expense on $goal of 7 days — $left to go.';
+  }
+
+  @override
+  String compJourney(String name) {
+    return '$name\'s journey';
+  }
+
+  @override
+  String compMaxStage(String name) {
+    return '$name reached the top stage: the house sage.';
+  }
+
+  @override
+  String compSoon(String next) {
+    return 'Soon it will grow into $next!';
+  }
+
+  @override
+  String compNeeds(String next, String what) {
+    return 'To become $next: $what.';
+  }
+
+  @override
+  String compNeedLevel(int n) {
+    return 'level $n';
+  }
+
+  @override
+  String compNeedAge(int n, int left) {
+    return '$n days old ($left to go)';
+  }
+
+  @override
+  String get compNeedJoin => '  and ';
+
+  @override
+  String get compWardrobe => 'Wardrobe';
+
+  @override
+  String get compTabPersona => 'Characters';
+
+  @override
+  String get compTabOutfit => 'Outfits';
+
+  @override
+  String get compTabBackground => 'Backgrounds';
+
+  @override
+  String compTakeOff(String outfit) {
+    return 'Take off $outfit';
+  }
+
+  @override
+  String get compWorn => 'Wearing';
+
+  @override
+  String get compWear => 'Wear';
+
+  @override
+  String get compLocked => 'Locked';
+
+  @override
+  String compOrUsd(String price) {
+    return 'or $price';
+  }
+
+  @override
+  String compBuyTitle(String name) {
+    return 'Get $name?';
+  }
+
+  @override
+  String compBuyBody(int price) {
+    return '$price seeds will be spent, and it stays yours for good.';
+  }
+
+  @override
+  String get compBuyNo => 'Not now';
+
+  @override
+  String get compBuyYes => 'Get it';
+
+  @override
+  String compBought(String name) {
+    return 'Congratulations! $name is yours';
+  }
+
+  @override
+  String compMissing(String n) {
+    return 'You are $n seeds short — finish today\'s tasks to get there.';
+  }
+
+  @override
+  String get compCodeTitle => 'Your friend\'s code';
+
+  @override
+  String get compCancel => 'Cancel';
+
+  @override
+  String get compConfirm => 'Confirm';
+
+  @override
+  String get compEnterCode => 'Have a friend\'s code? Enter it here';
+
+  @override
+  String get compCodeOk =>
+      'Done! Log your first expense and you and your friend both get seeds';
+
+  @override
+  String get compReasonNotOwned => 'You do not own it yet — unlock it first.';
+
+  @override
+  String get compReasonOwned => 'You already own it.';
+
+  @override
+  String get compReasonSeason => 'It only shows up in its season.';
+
+  @override
+  String get compReasonNotForSeeds => 'It is not sold for seeds.';
+
+  @override
+  String get compReasonWrongCode => 'That code is not right — check it again.';
+
+  @override
+  String get compReasonClaimed => 'You already entered a friend\'s code.';
+
+  @override
+  String get compReasonTooLate =>
+      'A friend\'s code can only be entered in the first 14 days.';
+
+  @override
+  String get compReasonTooMany => 'Too many tries — try again in an hour.';
+
+  @override
+  String get compReasonOffline => 'No connection right now — try again.';
+
+  @override
+  String get compPlayUnavailable =>
+      'Google Play is not available on this phone.';
+
+  @override
+  String get compPlayNotOnPlay => 'Not on Google Play yet — try seeds.';
+
+  @override
+  String get compPlayFailed => 'The purchase did not go through — try again.';
+
+  @override
+  String get compSeedShopTitle => 'In a hurry? Top up seeds';
+
+  @override
+  String get compSeedShopBody =>
+      'Seeds are free from your habits; this is for those who do not want to wait.';
+
+  @override
+  String compAllCharacters(String price) {
+    return 'All characters at once · $price';
+  }
+
+  @override
+  String get compInviteTitle => 'Invite your friends';
+
+  @override
+  String get compInviteBody =>
+      'Each friend who logs a first expense = 200 seeds for you and 100 for them. One friend unlocks Felfool, three unlock the graduation cap and the crew background.';
+
+  @override
+  String get compInviteCopy => 'Copy the code';
+
+  @override
+  String get compInviteCopied => 'Code copied';
+
+  @override
+  String get compInviteSend => 'Send it';
+
+  @override
+  String get compInviteSubject => 'Try Zad';
+
+  @override
+  String compInviteCount(int n) {
+    return 'Signed up: $n';
+  }
+
+  @override
+  String compInvitePending(int n) {
+    return 'Waiting for a first expense: $n';
+  }
+
+  @override
+  String get compHowTitle => 'How does the companion grow?';
+
+  @override
+  String get compHowXp =>
+      'Points come from your habits only: expense +10, receipt +20, pantry or list +5, a streak day +25, a new family member +200.';
+
+  @override
+  String get compHowSeeds =>
+      'Seeds: each new level +50, the three daily tasks +30, 7 days in a row +100, and 30 days +300.';
+
+  @override
+  String get compHowAi =>
+      'Seeds are for the wardrobe only — they do not turn into AI attempts.';
+
+  @override
+  String get compHowSleep =>
+      'If you are away two days it sleeps. Come back and it wakes up happy with a gift.';
+
+  @override
+  String get compHowKind =>
+      'It never gets upset with you and never drops a level.';
+
+  @override
+  String get gamesWorldEmpty => 'You have not played yet';
+
+  @override
+  String get gamesWorldEmptyHint =>
+      'Start with any game — your first round begins your streak and earns seeds.';
 }
