@@ -127,12 +127,12 @@
   "paywallBasicPerkPriority": "مكانك محجوز وقت الزحمة، وزاد بيفتكر كلامكم أطول",
   "paywallBasicPerkTelegram": "صور وفويس في بوت تليجرام",
   "paywallPlusTitle": "المتقدمة (Plus)",
-  "paywallPlusBadge": "الأكثر شعبية ⭐",
+  "paywallPlusBadge": "الأكثر شعبية",
   "paywallAllBasicPerks": "كل مزايا الأساسية",
   "paywallPlusPerkAttempts": "1000 محاولة في الشهر (حوالي 33 في اليوم)",
   "paywallPlusPerkDaily": "تكفي مسح فواتير وتحليل عميق كل يوم",
   "paywallFamilyTitle": "العيلة (Family)",
-  "paywallFamilyBadge": "أكبر رصيد 👑",
+  "paywallFamilyBadge": "أكبر رصيد",
   "paywallFamilyPerkAttempts": "2500 محاولة في الشهر (حوالي 83 في اليوم)",
   "paywallFamilyPerkHeavy": "لأكتر حد بيعتمد على زاد في البيت",
   "paywallNoPlayTitle": "Google Play مش متاح",
@@ -177,6 +177,19 @@
         "type": "String"
       }
     }
+  },
+  "paywallStatePlan": "خطتك دلوقتي: {plan}",
+  "@paywallStatePlan": {
+    "description": "Premium world state line when the customer is on a paid plan.",
+    "placeholders": {
+      "plan": {
+        "type": "String"
+      }
+    }
+  },
+  "paywallStateInvite": "اختار الباقة اللي تناسب بيتك",
+  "@paywallStateInvite": {
+    "description": "Premium world state line on the free plan or when the plan is unknown."
   },
   "navHome": "الرئيسية",
   "navMoney": "فلوسي",

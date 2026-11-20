@@ -641,5 +641,7 @@
   "achLoadFailedHint": "تأكد من الاتصال وحاول مرة ثانية",
   "achRetry": "حاول مرة ثانية",
   "brainCardGraphBody": "الناس والأماكن والأشياء اللي يعرفها زاد وكيف تترابط — وصدّرها لأوبسيديان",
-  "docsEmptyTitle": "ما فيه مستندات مسجّلة"
+  "docsEmptyTitle": "ما فيه مستندات مسجّلة",
+  "paywallStatePlan": "خطتك الحين: {plan}",
+  "paywallStateInvite": "اختر الباقة اللي تناسب بيتك"
 }
