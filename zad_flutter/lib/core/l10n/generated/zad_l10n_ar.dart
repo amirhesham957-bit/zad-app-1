@@ -6028,11 +6028,11 @@ class ZadL10nArSa extends ZadL10nAr {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count شي قرب يخلص',
-      few: '$count أشياء قربت تخلص',
-      two: 'شيين قربوا يخلصون',
-      one: 'شي واحد قرب يخلص',
-      zero: 'ما فيه شي قرب يخلص',
+      other: '$count شي قرّب يخلص',
+      few: '$count أشياء قرّبت تخلص',
+      two: 'شيئين قرّبوا يخلصون',
+      one: 'شي واحد قرّب يخلص',
+      zero: 'ما فيه شي قرّب يخلص',
     );
     return '$_temp0';
   }
