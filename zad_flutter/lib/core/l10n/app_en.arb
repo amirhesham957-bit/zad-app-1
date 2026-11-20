@@ -1609,48 +1609,20 @@
   "pantryLegendLow": "{count} running out",
   "pantryLegendExpiring": "{count} expiring soon",
   "pantryLegendOk": "{count} fine",
-  "txWorldEyebrow": "{count, plural, =0{No transactions yet} =1{1 transaction} other{{count} transactions}}",
-  "txWorldState": "{count, plural, =0{Nothing logged itself today} =1{1 logged itself today} other{{count} logged themselves today}}",
-  "txSourceBank": "A bank message",
-  "txSourceBankNamed": "{bank} · message",
-  "txSourceReceipt": "A photographed receipt",
-  "txSourceVoice": "You said it",
-  "txSourceStatement": "From a statement",
-  "txSourcePharmacy": "Pharmacy refill",
-  "txSourceManual": "Typed by you",
-  "budgetWorldUntil": "Until day {day}",
-  "budgetWorldDaysLeft": "{count, plural, =0{Last day} =1{1 day left} other{{count} days left}}",
-  "budgetWorldState": "{amount} available · {perDay} a day",
-  "budgetWorldAvailable": "{amount} available",
-  "statementWorldStateLess": "You spent {pct}% less than the same days last month",
-  "statementWorldStateMore": "You spent {pct}% more than the same days last month",
-  "statementWorldStateSame": "Your spending is level with last month",
-  "statementWorldStateNone": "Import a statement to see where your money goes",
-  "statementWorldBreakdownTitle": "Where your money comes from and goes",
-  "statementWorldIn": "Income",
-  "statementWorldEmptyTitle": "Nothing this month yet",
-  "statementWorldEmptyBody": "Import a statement or log a transaction and your income and spending by category show up here.",
-  "statementPickBody": "Choose your statement: a PDF from your bank app, a photo, or a CSV file. Zad reads the entries and checks them against the statement balance, and nothing is saved until you review it.",
-  "statementReading": "Reading the statement… a long one takes a minute",
-  "statementPickButton": "Choose statement",
-  "statementMapIntro": "Say which column of the file is which — files differ from bank to bank",
-  "statementMapDate": "Date column",
-  "statementMapTitle": "Description column",
-  "statementMapAmount": "Amount column",
-  "statementMapCategory": "Category column (optional)",
-  "statementMapInvert": "Flip the amount sign (if negative means money in here)",
-  "statementMapContinue": "Continue to review",
-  "statementMapNone": "None",
-  "statementMapColumnN": "Column {n}",
-  "statementPreviewCount": "{rows} rows — {checked} selected to import",
-  "statementPreviewEmptyTitle": "No transactions found in the file",
-  "statementPreviewEmptyBody": "The file was read but has no rows I can import — make sure it is a statement in CSV or readable PDF form.",
-  "statementRowUnreadable": "The date or amount of this row could not be read",
-  "statementRowBalance": "The statement balance does not match this row — check the amount",
-  "statementCheckBalanced": "The numbers match the statement balance",
-  "statementCheckMismatch": "Some numbers do not match the statement balance — those rows are left unticked, review them",
-  "statementCheckUnknown": "The statement has no balance to check against — review every row before importing",
-  "statementDropped": "{text}. {n} rows could not be read.",
+  "shopWorldEyebrow": "{count, plural, =0{Nothing missing} =1{1 thing missing} other{{count} things missing}}",
+  "shopWorldStores": "{count, plural, =1{From 1 shop} other{From {count} shops}}",
+  "shopWorldAnyStore": "From any shop",
+  "shopWorldDone": "The list is empty",
+  "shopGroupAnyStore": "Any shop",
+  "shopPantryCount": "{count, plural, =0{The pantry is empty} =1{1 item in the pantry} other{{count} items in the pantry}}",
+  "apptWorldToday": "Today is {weekday}",
+  "apptWorldNext": "{title} {when}",
+  "apptWorldNone": "Nothing coming up",
+  "apptNextLabel": "Next up",
+  "apptInNow": "now",
+  "apptInMinutes": "{count, plural, =1{in 1 minute} other{in {count} minutes}}",
+  "apptInHours": "{count, plural, =1{in 1 hour} other{in {count} hours}}",
+  "apptInDays": "{count, plural, =1{in 1 day} other{in {count} days}}",
   "phEyebrowCount": "{count, plural, =1{1 medicine} other{{count} medicines}}",
   "phFamilyEyebrow": "Family pharmacy",
   "phMemberState": "{name}'s schedule",
@@ -1771,18 +1743,159 @@
   "phErrNotFound": "That medicine is no longer there — refresh the page.",
   "phErrDuplicate": "This member already has a medicine with that name.",
   "phErrRejected": "The server refused to save. Try again.",
-  "shopWorldEyebrow": "{count, plural, =0{Nothing missing} =1{1 thing missing} other{{count} things missing}}",
-  "shopWorldStores": "{count, plural, =1{From 1 shop} other{From {count} shops}}",
-  "shopWorldAnyStore": "From any shop",
-  "shopWorldDone": "The list is empty",
-  "shopGroupAnyStore": "Any shop",
-  "shopPantryCount": "{count, plural, =0{The pantry is empty} =1{1 item in the pantry} other{{count} items in the pantry}}",
-  "apptWorldToday": "Today is {weekday}",
-  "apptWorldNext": "{title} {when}",
-  "apptWorldNone": "Nothing coming up",
-  "apptNextLabel": "Next up",
-  "apptInNow": "now",
-  "apptInMinutes": "{count, plural, =1{in 1 minute} other{in {count} minutes}}",
-  "apptInHours": "{count, plural, =1{in 1 hour} other{in {count} hours}}",
-  "apptInDays": "{count, plural, =1{in 1 day} other{in {count} days}}"
+  "tasEyebrow": "A flower every 33 · a new tree stage every 99",
+  "tasStateLine": "{count} tasbih · {flowers} flowers",
+  "@tasStateLine": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "flowers": {
+        "type": "int"
+      }
+    }
+  },
+  "tasStateEmpty": "Say your first tasbih and flowers will bloom",
+  "tasTabMine": "My garden",
+  "tasTabFamily": "Family trees",
+  "tasTabChallenges": "Challenges",
+  "tasStage1": "Seed",
+  "tasStage2": "Sprout",
+  "tasStage3": "Sapling",
+  "tasStage4": "Tree",
+  "tasStage5": "Fruiting tree",
+  "tasStatLevel": "Stage",
+  "tasStatLevelValue": "{level}/5",
+  "@tasStatLevelValue": {
+    "placeholders": {
+      "level": {
+        "type": "int"
+      }
+    }
+  },
+  "tasStatTotal": "All-time",
+  "tasStatStreak": "Streak",
+  "tasStatFlowers": "Flowers",
+  "tasStatSession": "This session",
+  "tasNext": "{score} / {next} to the next stage",
+  "@tasNext": {
+    "placeholders": {
+      "score": {
+        "type": "int"
+      },
+      "next": {
+        "type": "int"
+      }
+    }
+  },
+  "tasComplete": "Complete!",
+  "tasStreakDays": "{days} days in a row",
+  "@tasStreakDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "tasTapLabel": "Count",
+  "tasReset": "Reset",
+  "tasCycle": "Cycle",
+  "tasLevelUp": "Your tree grew!",
+  "tasBloom": "A new flower bloomed!",
+  "tasSeedsGranted": "+{seeds} seeds",
+  "@tasSeedsGranted": {
+    "placeholders": {
+      "seeds": {
+        "type": "int"
+      }
+    }
+  },
+  "tasMyTrees": "My trees ({count})",
+  "@tasMyTrees": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tasNewTree": "New tree",
+  "tasNoTreeTitle": "No tree yet",
+  "tasNoTreeMsg": "Plant your first tree and start counting.",
+  "tasTreeNameLabel": "Tree name",
+  "tasRenameTitle": "Name the tree",
+  "tasNewTreeHint": "Add a new tree to your garden!",
+  "tasTreeNameExample": "e.g. the apple tree",
+  "tasCancel": "Cancel",
+  "tasSave": "Save",
+  "tasAdd": "Add",
+  "tasLeaderboard": "Leaderboard",
+  "tasShare": "Share the ranking",
+  "tasNoTreesTitle": "No trees yet",
+  "tasNoTreesMsg": "As soon as someone in the family counts, their tree shows up here.",
+  "tasMemberTrees": "{trees} trees | {mature} fruiting",
+  "@tasMemberTrees": {
+    "placeholders": {
+      "trees": {
+        "type": "int"
+      },
+      "mature": {
+        "type": "int"
+      }
+    }
+  },
+  "tasUnit": "tasbih",
+  "tasChallengesTitle": "Family challenges",
+  "tasChallengesTagline": "Challenge your family to count!",
+  "tasNewChallenge": "New challenge",
+  "tasNoChallengesTitle": "No challenges right now",
+  "tasNoChallengesAdmin": "Tap + to start the family's first challenge.",
+  "tasNoChallengesMember": "Ask the admin to start a new challenge!",
+  "tasOngoing": "Ongoing",
+  "tasChallengeTitleLabel": "Challenge title",
+  "tasChallengeDescLabel": "Description (optional)",
+  "tasChallengeTargetLabel": "Goal (number of tasbih)",
+  "tasNightSky": "The garden at night",
+  "tasDaySky": "The garden by day",
+  "txWorldEyebrow": "{count, plural, =0{No transactions yet} =1{1 transaction} other{{count} transactions}}",
+  "txWorldState": "{count, plural, =0{Nothing logged itself today} =1{1 logged itself today} other{{count} logged themselves today}}",
+  "txSourceBank": "A bank message",
+  "txSourceBankNamed": "{bank} · message",
+  "txSourceReceipt": "A photographed receipt",
+  "txSourceVoice": "You said it",
+  "txSourceStatement": "From a statement",
+  "txSourcePharmacy": "Pharmacy refill",
+  "txSourceManual": "Typed by you",
+  "budgetWorldUntil": "Until day {day}",
+  "budgetWorldDaysLeft": "{count, plural, =0{Last day} =1{1 day left} other{{count} days left}}",
+  "budgetWorldState": "{amount} available · {perDay} a day",
+  "budgetWorldAvailable": "{amount} available",
+  "statementWorldStateLess": "You spent {pct}% less than the same days last month",
+  "statementWorldStateMore": "You spent {pct}% more than the same days last month",
+  "statementWorldStateSame": "Your spending is level with last month",
+  "statementWorldStateNone": "Import a statement to see where your money goes",
+  "statementWorldBreakdownTitle": "Where your money comes from and goes",
+  "statementWorldIn": "Income",
+  "statementWorldEmptyTitle": "Nothing this month yet",
+  "statementWorldEmptyBody": "Import a statement or log a transaction and your income and spending by category show up here.",
+  "statementPickBody": "Choose your statement: a PDF from your bank app, a photo, or a CSV file. Zad reads the entries and checks them against the statement balance, and nothing is saved until you review it.",
+  "statementReading": "Reading the statement… a long one takes a minute",
+  "statementPickButton": "Choose statement",
+  "statementMapIntro": "Say which column of the file is which — files differ from bank to bank",
+  "statementMapDate": "Date column",
+  "statementMapTitle": "Description column",
+  "statementMapAmount": "Amount column",
+  "statementMapCategory": "Category column (optional)",
+  "statementMapInvert": "Flip the amount sign (if negative means money in here)",
+  "statementMapContinue": "Continue to review",
+  "statementMapNone": "None",
+  "statementMapColumnN": "Column {n}",
+  "statementPreviewCount": "{rows} rows — {checked} selected to import",
+  "statementPreviewEmptyTitle": "No transactions found in the file",
+  "statementPreviewEmptyBody": "The file was read but has no rows I can import — make sure it is a statement in CSV or readable PDF form.",
+  "statementRowUnreadable": "The date or amount of this row could not be read",
+  "statementRowBalance": "The statement balance does not match this row — check the amount",
+  "statementCheckBalanced": "The numbers match the statement balance",
+  "statementCheckMismatch": "Some numbers do not match the statement balance — those rows are left unticked, review them",
+  "statementCheckUnknown": "The statement has no balance to check against — review every row before importing",
+  "statementDropped": "{text}. {n} rows could not be read."
 }
