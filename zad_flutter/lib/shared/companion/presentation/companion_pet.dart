@@ -991,6 +991,16 @@ class _CompanionCareSheetState extends ConsumerState<CompanionCareSheet> {
               },
               child: const Text('⚽ العب معاه'),
             ),
+            const SizedBox(height: ZadSpacing.sm),
+            OutlinedButton.icon(
+              key: const ValueKey<String>('pet-games'),
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size.fromHeight(48),
+              ),
+              onPressed: () => ZadScreens.showGamesHub(context),
+              icon: const Icon(Icons.sports_esports_outlined),
+              label: Text(context.l10n.gamesHubButton),
+            ),
             TextButton(
               style: TextButton.styleFrom(minimumSize: const Size(0, 44)),
               onPressed: () {

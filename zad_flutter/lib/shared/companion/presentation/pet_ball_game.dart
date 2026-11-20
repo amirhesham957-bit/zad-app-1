@@ -3,8 +3,10 @@
 /// catch is a point, and a missed ball moves on. The pet cheers every
 /// catch, and the game ends with a pat — joy, the same as petting it.
 ///
-/// Like the rest of the care it grants nothing: no XP, no seeds
-/// (ZAD_COMPANION.md — only the server grants those).
+/// Catches in a row build a combo (more points per catch) and every few
+/// catches a level makes the ball wait less (`BallRun`). The round ends
+/// through the games' shared loop (`GameRound`, `GameEndCard`): the server
+/// grants the seeds (ZAD_COMPANION.md — only the server grants those).
 library;
 
 import 'dart:async';
@@ -17,7 +19,15 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_motion.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
+import 'package:zad/shared/ads/application/ads_policy.dart';
+import 'package:zad/shared/companion/application/game_round.dart';
+import 'package:zad/shared/companion/application/game_stats_controller.dart';
 import 'package:zad/shared/companion/application/pet_care_controller.dart';
+import 'package:zad/shared/companion/domain/ball_run.dart';
+import 'package:zad/shared/companion/domain/zad_game.dart';
+import 'package:zad/shared/companion/presentation/game_end_card.dart';
+import 'package:zad/shared/companion/presentation/game_pause.dart';
 import 'package:zad/shared/orb/application/pet_sound.dart';
 import 'package:zad/shared/orb/domain/companion_state.dart';
 import 'package:zad/shared/orb/presentation/companion_orb.dart';
@@ -54,7 +64,10 @@ class _PetBallGameState extends ConsumerState<PetBallGame> {
   Timer? _clock;
   Timer? _next;
   int _left = PetBallGame.seconds;
-  int _score = 0;
+  final BallRun _run = BallRun();
+  late final GameRound _round = GameRound(ref.read, ZadGame.ball);
+  bool _newBest = false;
+  int _bestBefore = 0;
   int _ball = 0;
   Offset _at = const Offset(0.5, 0.4);
   CompanionState _mood = CompanionState.happy;
@@ -65,6 +78,7 @@ class _PetBallGameState extends ConsumerState<PetBallGame> {
   @override
   void initState() {
     super.initState();
+    _bestBefore = ref.read(gameStatsProvider(ZadGame.ball.id)).best;
     _clock = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!mounted) return;
       setState(() => _left--);
@@ -77,6 +91,7 @@ class _PetBallGameState extends ConsumerState<PetBallGame> {
   void dispose() {
     _clock?.cancel();
     _next?.cancel();
+    _round.dispose();
     super.dispose();
   }
 
@@ -90,10 +105,11 @@ class _PetBallGameState extends ConsumerState<PetBallGame> {
         0.05 + _rng.nextDouble() * 0.7,
       );
     });
-    // Faster as the score climbs, never below 0.7s.
-    final ms = math.max(700, 1500 - _score * 40);
-    _next = Timer(Duration(milliseconds: ms), () {
-      if (mounted && !_over) _drop();
+    // Each level waits less, never under 0.7s.
+    _next = Timer(Duration(milliseconds: _run.ballMillis), () {
+      if (!mounted || _over) return;
+      setState(_run.miss); // it got away: the combo starts again
+      _drop();
     });
   }
 
@@ -102,7 +118,7 @@ class _PetBallGameState extends ConsumerState<PetBallGame> {
     unawaited(HapticFeedback.lightImpact());
     playPetSound(PetSound.cuteSqueak);
     setState(() {
-      _score++;
+      _run.hit();
       _mood = CompanionState.celebrating;
     });
     Timer(const Duration(milliseconds: 500), () {
@@ -117,13 +133,16 @@ class _PetBallGameState extends ConsumerState<PetBallGame> {
     _next?.cancel();
     ref.read(petCareProvider.notifier).pet();
     playPetSound(PetSound.purr);
+    _round.end(_run.score);
+    unawaited(_round.claim());
+    _newBest = ref.read(gameStatsProvider(ZadGame.ball.id)).best > _bestBefore;
     setState(() {
       _over = true;
       _mood = CompanionState.celebrating;
     });
   }
 
-  String get _verdict => switch (_score) {
+  String get _verdict => switch (_run.score) {
     0 => '${widget.name} مستني تلعب معاه تاني 🥺',
     < 8 => 'حلو! ${widget.name} اتبسط 😊',
     < 15 => 'برافو! ${widget.name} طاير من الفرحة 🤩',
@@ -148,107 +167,105 @@ class _PetBallGameState extends ConsumerState<PetBallGame> {
         ),
       ],
     ),
-    body: SafeArea(
-      child: Column(
-        children: <Widget>[
-          const SizedBox(height: ZadSpacing.sm),
-          Text(
-            'النقط: $_score',
-            key: const ValueKey<String>('pet-game-score'),
-            style: ZadType.headlineMedium.copyWith(
-              fontWeight: FontWeight.w800,
-              color: ZadColors.forestEmerald,
-            ),
-          ),
-          const SizedBox(height: ZadSpacing.xs),
-          Text(
-            _over ? _verdict : 'اصطاد الكورة قبل ما تهرب!',
-            textAlign: TextAlign.center,
-            style: ZadType.bodyMedium.copyWith(color: ZadColors.textTertiary),
-          ),
-          Expanded(
-            child: LayoutBuilder(
-              builder: (_, c) => Stack(
-                children: <Widget>[
-                  Align(
-                    alignment: Alignment.bottomCenter,
-                    child: Padding(
-                      padding: const EdgeInsets.only(bottom: ZadSpacing.lg),
-                      child: CompanionOrb(state: _mood, size: 120),
-                    ),
-                  ),
-                  if (!_over)
-                    AnimatedPositioned(
-                      key: const ValueKey<String>('pet-game-ball'),
-                      duration: ZadDuration.quick,
-                      curve: ZadCurves.springy,
-                      left: _at.dx * (c.maxWidth - 64),
-                      top: _at.dy * (c.maxHeight - 200),
-                      child: GestureDetector(
-                        onTap: _catch,
-                        child: TweenAnimationBuilder<double>(
-                          key: ValueKey<int>(_ball),
-                          tween: Tween<double>(begin: 0.3, end: 1),
+    body: Stack(
+      children: <Widget>[
+        SafeArea(
+          child: Column(
+            children: <Widget>[
+              const SizedBox(height: ZadSpacing.sm),
+              Text(
+                'النقط: ${_run.score}',
+                key: const ValueKey<String>('pet-game-score'),
+                style: ZadType.headlineMedium.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: ZadColors.forestEmerald,
+                ),
+              ),
+              Text(
+                _run.combo > 1
+                    ? '${context.l10n.gameLevel(_run.level)} · '
+                          '${context.l10n.gameCombo(_run.combo)}'
+                    : context.l10n.gameLevel(_run.level),
+                key: const ValueKey<String>('pet-game-combo'),
+                style: ZadType.titleSmall,
+              ),
+              const SizedBox(height: ZadSpacing.xs),
+              Text(
+                _over ? _verdict : 'اصطاد الكورة قبل ما تهرب!',
+                textAlign: TextAlign.center,
+                style: ZadType.bodyMedium.copyWith(
+                  color: ZadColors.textTertiary,
+                ),
+              ),
+              Expanded(
+                child: LayoutBuilder(
+                  builder: (_, c) => Stack(
+                    children: <Widget>[
+                      Align(
+                        alignment: Alignment.bottomCenter,
+                        child: Padding(
+                          padding: const EdgeInsets.only(bottom: ZadSpacing.lg),
+                          child: CompanionOrb(state: _mood, size: 120),
+                        ),
+                      ),
+                      if (!_over)
+                        AnimatedPositioned(
+                          key: const ValueKey<String>('pet-game-ball'),
                           duration: ZadDuration.quick,
                           curve: ZadCurves.springy,
-                          builder: (_, s, child) =>
-                              Transform.scale(scale: s, child: child),
-                          child: SizedBox.square(
-                            dimension: 64,
-                            child: Center(
-                              child: Text(
-                                _balls[_ball % _balls.length],
-                                style: ZadType.displayMedium,
+                          left: _at.dx * (c.maxWidth - 64),
+                          top: _at.dy * (c.maxHeight - 200),
+                          child: GestureDetector(
+                            onTap: _catch,
+                            child: TweenAnimationBuilder<double>(
+                              key: ValueKey<int>(_ball),
+                              tween: Tween<double>(begin: 0.3, end: 1),
+                              duration: ZadDuration.quick,
+                              curve: ZadCurves.springy,
+                              builder: (_, s, child) =>
+                                  Transform.scale(scale: s, child: child),
+                              child: SizedBox.square(
+                                dimension: 64,
+                                child: Center(
+                                  child: Text(
+                                    _balls[_ball % _balls.length],
+                                    style: ZadType.displayMedium,
+                                  ),
+                                ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                    ),
-                ],
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (_over)
+          Positioned.fill(
+            child: GameScrim(
+              child: GameEndCard(
+                round: _round,
+                stats: ref.watch(gameStatsProvider(ZadGame.ball.id)),
+                today: ref
+                    .read(gameStatsProvider(ZadGame.ball.id).notifier)
+                    .today(),
+                title: _verdict,
+                newBest: _newBest,
+                adsAllowed: ref.watch(adsAllowedProvider),
+                onAgain: () => Navigator.of(context).pushReplacement(
+                  MaterialPageRoute<int>(
+                    fullscreenDialog: true,
+                    builder: (_) => PetBallGame(name: widget.name),
+                  ),
+                ),
+                onLeave: () => Navigator.of(context).pop(_run.score),
               ),
             ),
           ),
-          if (_over)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                ZadSpacing.xl,
-                0,
-                ZadSpacing.xl,
-                ZadSpacing.lg,
-              ),
-              child: Row(
-                children: <Widget>[
-                  Expanded(
-                    child: FilledButton(
-                      key: const ValueKey<String>('pet-game-again'),
-                      style: FilledButton.styleFrom(
-                        minimumSize: const Size.fromHeight(52),
-                      ),
-                      onPressed: () => Navigator.of(context).pushReplacement(
-                        MaterialPageRoute<int>(
-                          fullscreenDialog: true,
-                          builder: (_) => PetBallGame(name: widget.name),
-                        ),
-                      ),
-                      child: const Text('🔁 تاني'),
-                    ),
-                  ),
-                  const SizedBox(width: ZadSpacing.md),
-                  Expanded(
-                    child: OutlinedButton(
-                      style: OutlinedButton.styleFrom(
-                        minimumSize: const Size.fromHeight(52),
-                      ),
-                      onPressed: () => Navigator.of(context).pop(_score),
-                      child: const Text('خلصت'),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-        ],
-      ),
+      ],
     ),
   );
 }

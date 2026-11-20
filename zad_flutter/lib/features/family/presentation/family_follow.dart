@@ -260,10 +260,18 @@ class FamilyFollowRequestsCard extends ConsumerWidget {
 /// and what the member agreed to share.
 class MemberFollowSection extends ConsumerWidget {
   /// Creates the section.
-  const new({required this.ownerId, required this.currency, super.key});
+  const new({
+    required this.ownerId,
+    required this.currency,
+    super.key,
+    this.kidsGeofencing = ZadEnv.kidsGeofencing,
+  });
 
   /// The member.
   final String ownerId;
+
+  /// Whether this build offers children's zones ([ZadEnv.kidsGeofencing]).
+  final bool kidsGeofencing;
 
   /// For the spending figures.
   final String currency;
@@ -274,7 +282,7 @@ class MemberFollowSection extends ConsumerWidget {
     FollowedMember view,
   ) async {
     final askable = <FamilyShareScope>{
-      for (final s in view.followable)
+      for (final s in view.followableIn(kidsGeofencing: kidsGeofencing))
         if (view.statusOf(s) case final st when st == null || st.canAskAgain) s,
     };
     final chosen = await showModalBottomSheet<Set<FamilyShareScope>>(
@@ -320,7 +328,9 @@ class MemberFollowSection extends ConsumerWidget {
             spacing: ZadSpacing.sm,
             runSpacing: ZadSpacing.xs,
             children: <Widget>[
-              for (final scope in view.followable)
+              for (final scope in view.followableIn(
+                kidsGeofencing: kidsGeofencing,
+              ))
                 Chip(
                   label: Text(
                     '${scope.label}: ${switch (view.statusOf(scope)) {
@@ -335,9 +345,12 @@ class MemberFollowSection extends ConsumerWidget {
                 ),
             ],
           ),
-          if (view.followable.any(
-            (s) => view.statusOf(s) == null || view.statusOf(s)!.canAskAgain,
-          ))
+          if (view
+              .followableIn(kidsGeofencing: kidsGeofencing)
+              .any(
+                (s) =>
+                    view.statusOf(s) == null || view.statusOf(s)!.canAskAgain,
+              ))
             Align(
               alignment: AlignmentDirectional.centerStart,
               child: TextButton.icon(

@@ -2900,16 +2900,104 @@ class ZadL10nAr extends ZadL10n {
   }
 
   @override
-  String get homeBankOffBanner =>
-      '⚠️ قراءة رسائل البنك متوقفة.. اضغط هنا لإعادة تفعيلها لتحديث رصيدك ومصاريفك تلقائياً';
+  String get zadStatusTitle => 'حالة زاد';
 
   @override
-  String get homeBankStalledHint =>
-      'لو هي مفعّلة: اطفيها وشغّلها تاني من الصفحة اللي هتفتح.';
+  String get zadStatusAllGood => 'زاد شغال وبيتابع';
 
   @override
-  String get homeLocationOffBanner =>
-      '📍 موقعك غير مفعّل.. فعّل اللوكيشن عشان زاد يربط عروض السوبرماركت والمحلات القريبة منك ويقوم بمهامه صح';
+  String get zadStatusNeedsFix => 'في حاجة واقفة ومحتاجة منك خطوة';
+
+  @override
+  String zadStatusAllButOne(String what) {
+    return 'كله شغال ما عدا: $what';
+  }
+
+  @override
+  String get zadStatusWorking => 'شغال';
+
+  @override
+  String get zadStatusStopped => 'واقف';
+
+  @override
+  String get zadStatusMaybe => 'ممكن يقف';
+
+  @override
+  String get zadStatusBank => 'قراءة رسائل البنك';
+
+  @override
+  String get zadStatusBankOk => 'زاد بيقرا رسائل البنك ويسجّلها.';
+
+  @override
+  String get zadStatusBankOff =>
+      'قراءة رسائل البنك متوقفة. شغّلها عشان رصيدك ومصاريفك تتحدّث لوحدها.';
+
+  @override
+  String get zadStatusBankStalled =>
+      'الخدمة مابقتش بتشوف إشعارات من فترة. لو هي مفعّلة: اطفيها وشغّلها تاني من الصفحة اللي هتفتح.';
+
+  @override
+  String get zadStatusBankSilent =>
+      'مفعّلة، بس لسه ماجاتش ولا رسالة. لو مستني رسالة من البنك ومجتش: اطفيها وشغّلها تاني.';
+
+  @override
+  String get zadStatusNotifications => 'الإشعارات';
+
+  @override
+  String get zadStatusNotificationsOk =>
+      'تنبيهات الجرعات والفواتير والميزانية بتوصلك.';
+
+  @override
+  String get zadStatusNotificationsOff =>
+      'الإشعارات مقفولة، فتنبيهات الجرعات والفواتير مش هتوصلك.';
+
+  @override
+  String get zadStatusLocation => 'الموقع';
+
+  @override
+  String get zadStatusLocationOk =>
+      'الموقع شغال، والعروض والمحلات القريبة بتتحسب من مكانك.';
+
+  @override
+  String get zadStatusLocationServiceOff =>
+      'الموقع مقفول في الموبايل، فالقراءات مش هتبقى من مكانك الحقيقي.';
+
+  @override
+  String get zadStatusLocationDenied =>
+      'زاد مش مسموحله يعرف مكانك، فالعروض والمحلات القريبة مش هتشتغل.';
+
+  @override
+  String get zadStatusBackground => 'الموقع طول الوقت';
+
+  @override
+  String get zadStatusBackgroundOk =>
+      'تنبيهات الطريق شغالة حتى والتطبيق مقفول.';
+
+  @override
+  String get zadStatusBackgroundOff =>
+      'من غير «طول الوقت» تنبيهات الطريق مش هتشتغل والتطبيق مقفول.';
+
+  @override
+  String get zadStatusBattery => 'توفير البطارية';
+
+  @override
+  String get zadStatusBatteryOk => 'الموبايل مش بيقيّد زاد في الخلفية.';
+
+  @override
+  String get zadStatusBatteryWarn =>
+      'الموبايل ممكن يوقف زاد في الخلفية. اختار «بدون قيود» عشان القراءة ماتقطعش.';
+
+  @override
+  String get zadStatusFixOpenSettings => 'افتح الإعدادات';
+
+  @override
+  String get zadStatusFixAllow => 'اسمح';
+
+  @override
+  String get zadStatusFixLocationOn => 'شغّل الموقع';
+
+  @override
+  String get zadStatusFixBattery => 'فكّ القيود';
 
   @override
   String get homeLocationLater => 'مش دلوقتي';
@@ -4163,28 +4251,6 @@ class ZadL10nAr extends ZadL10n {
   String get profileExportSubject => 'بياناتي من زاد';
 
   @override
-  String get homeCareTitle => 'اشتراكاتك وأدويتك';
-
-  @override
-  String get homeCareRenewsToday => 'بيتجدد النهارده';
-
-  @override
-  String get homeCareRenewsTomorrow => 'بيتجدد بكرة';
-
-  @override
-  String homeCareRenewsInDays(Object days) {
-    return 'بيتجدد بعد $days يوم';
-  }
-
-  @override
-  String homeCareDoseAt(Object time) {
-    return 'الجرعة $time';
-  }
-
-  @override
-  String get homeCareDoseNow => 'جرعتها دلوقتي';
-
-  @override
   String get introSayPantry => 'التلاجة دي بتاعتي!';
 
   @override
@@ -4277,6 +4343,257 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get consentTermsUpdated => 'نوفمبر ٢٠٢٦';
+
+  @override
+  String get gamesHubButton => 'ألعاب زادو';
+
+  @override
+  String get gamesHubTitle => 'ألعاب زادو';
+
+  @override
+  String get gamesBackTooltip => 'رجوع';
+
+  @override
+  String get gamesHubIntro => 'العب، كمّل السلسلة، اكسب بذور';
+
+  @override
+  String gamesHubToday(int target, String game) {
+    return 'تحدي النهارده: $target نقطة في «$game»';
+  }
+
+  @override
+  String gamesHubWeekly(int days, int goal) {
+    return 'صندوق الأسبوع: $days من $goal أيام ورا بعض';
+  }
+
+  @override
+  String gamesHubStreak(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count أيام ورا بعض',
+      one: 'يوم واحد',
+      zero: 'ابدأ سلسلتك النهارده',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String gamesHubBest(int score) {
+    return 'أحسن نتيجة: $score';
+  }
+
+  @override
+  String get gamesHubNotPlayed => 'لسه ما لعبتش';
+
+  @override
+  String get gamesHubPlay => 'العب';
+
+  @override
+  String get gamesHubChallengeDone => 'تحدي النهارده خلص';
+
+  @override
+  String get gameNameBall => 'اصطاد الكورة';
+
+  @override
+  String get gameNameRun => 'نطّة زادو';
+
+  @override
+  String get gameNameSort => 'زادو بيرتّب';
+
+  @override
+  String get gameNameStar => 'اصطاد النجوم';
+
+  @override
+  String get gameBlurbBall => 'كورة بتهرب، اصطادها بسرعة وكوّن كومبو';
+
+  @override
+  String get gameBlurbRun => 'انط فوق الصناديق وخد البذور والسرعة بتزيد';
+
+  @override
+  String get gameBlurbSort => 'ادمج البذور المتشابهة، ولغز جديد كل يوم';
+
+  @override
+  String get gameBlurbStar => 'حرّك زادو وامسك النجوم قبل ما تقع';
+
+  @override
+  String gameBest(int score) {
+    return 'أحسن نتيجة: $score';
+  }
+
+  @override
+  String get gameNewBest => 'رقم قياسي جديد!';
+
+  @override
+  String get gameEndTitle => 'خلصت الجولة';
+
+  @override
+  String gameEndScore(int score) {
+    return '$score نقطة';
+  }
+
+  @override
+  String gameChallenge(int target) {
+    return 'تحدي النهارده: اوصل $target نقطة';
+  }
+
+  @override
+  String gameChallengeProgress(int done, int target) {
+    return '$done من $target';
+  }
+
+  @override
+  String get gameChallengeDone => 'خلصت التحدي النهارده، برافو!';
+
+  @override
+  String gameSeedsGranted(int count) {
+    return '+$count بذور';
+  }
+
+  @override
+  String gameSeedsLeft(int count) {
+    return 'باقي $count بذور النهارده';
+  }
+
+  @override
+  String get gameSeedsCapped => 'وصلت للحد اليومي للبذور';
+
+  @override
+  String get gameDouble => 'ضاعف البذور';
+
+  @override
+  String get gameDoubleHint => 'بإعلان قصير';
+
+  @override
+  String get gameContinue => 'كمّل من مكانك';
+
+  @override
+  String get gameContinueHint => 'بإعلان قصير، مرة واحدة في الجولة';
+
+  @override
+  String get gameAdUnavailable => 'مفيش إعلان متاح دلوقتي';
+
+  @override
+  String get gameAgain => 'جولة تانية';
+
+  @override
+  String get gameDone => 'خلصت';
+
+  @override
+  String get gamePaused => 'اللعبة واقفة';
+
+  @override
+  String get gameResume => 'كمّل';
+
+  @override
+  String gameScoreSemantics(int score) {
+    return 'النقط $score';
+  }
+
+  @override
+  String gameCombo(int n) {
+    return 'كومبو ×$n';
+  }
+
+  @override
+  String gameLevel(int n) {
+    return 'مستوى $n';
+  }
+
+  @override
+  String gameLives(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count محاولات',
+      one: 'محاولة واحدة',
+      zero: 'مفيش محاولات',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String runGameTitle(String name) {
+    return 'نطّة $name';
+  }
+
+  @override
+  String runGameHint(String name) {
+    return 'المس الشاشة عشان $name ينط';
+  }
+
+  @override
+  String runGameHit(String name) {
+    return '$name خبط!';
+  }
+
+  @override
+  String runGameSeedsSemantics(int count) {
+    return 'بذور $count';
+  }
+
+  @override
+  String get sortGameTitle => 'زادو بيرتّب';
+
+  @override
+  String get sortGameHint =>
+      'اسحب في أي اتجاه أو استخدم الأسهم، وادمج البذور المتشابهة';
+
+  @override
+  String get sortGameDaily => 'لغز النهارده';
+
+  @override
+  String get sortGameStuck => 'مفيش حركات تانية';
+
+  @override
+  String get sortGameLeft => 'يسار';
+
+  @override
+  String get sortGameRight => 'يمين';
+
+  @override
+  String get sortGameUp => 'فوق';
+
+  @override
+  String get sortGameDown => 'تحت';
+
+  @override
+  String sortGameTile(int value) {
+    return 'بذرة بمستوى $value';
+  }
+
+  @override
+  String get starGameTitle => 'اصطاد النجوم';
+
+  @override
+  String starGameHint(String name) {
+    return 'اسحب $name يمين وشمال عشان يمسك النجوم';
+  }
+
+  @override
+  String get starGameOver => 'النجوم خلصت منك';
+
+  @override
+  String get homeCareTitle => 'اشتراكاتك وأدويتك';
+
+  @override
+  String get homeCareRenewsToday => 'بيتجدد النهارده';
+
+  @override
+  String get homeCareRenewsTomorrow => 'بيتجدد بكرة';
+
+  @override
+  String homeCareRenewsInDays(Object days) {
+    return 'بيتجدد بعد $days يوم';
+  }
+
+  @override
+  String homeCareDoseAt(Object time) {
+    return 'الجرعة $time';
+  }
+
+  @override
+  String get homeCareDoseNow => 'جرعتها دلوقتي';
 
   @override
   String get worldLabelBrain => 'عقل زاد';
@@ -4397,6 +4714,114 @@ class ZadL10nAr extends ZadL10n {
   @override
   String pantryLegendOk(int count) {
     return '$count تمام';
+  }
+
+  @override
+  String shopWorldEyebrow(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count حاجة ناقصة',
+      few: '$count حاجات ناقصة',
+      two: 'حاجتين ناقصين',
+      one: 'حاجة واحدة ناقصة',
+      zero: 'مفيش حاجة ناقصة',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String shopWorldStores(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'من $count محل',
+      few: 'من $count محلات',
+      two: 'من محلين',
+      one: 'من محل واحد',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get shopWorldAnyStore => 'من أي محل';
+
+  @override
+  String get shopWorldDone => 'القايمة فاضية';
+
+  @override
+  String get shopGroupAnyStore => 'أي محل';
+
+  @override
+  String shopPantryCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'في المخزن $count صنف',
+      few: 'في المخزن $count أصناف',
+      two: 'في المخزن صنفين',
+      one: 'في المخزن صنف واحد',
+      zero: 'المخزن فاضي',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String apptWorldToday(String weekday) {
+    return 'النهارده $weekday';
+  }
+
+  @override
+  String apptWorldNext(String title, String when) {
+    return '$title $when';
+  }
+
+  @override
+  String get apptWorldNone => 'مفيش مواعيد جاية';
+
+  @override
+  String get apptNextLabel => 'الميعاد الجاي';
+
+  @override
+  String get apptInNow => 'دلوقتي';
+
+  @override
+  String apptInMinutes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'بعد $count دقيقة',
+      few: 'بعد $count دقايق',
+      two: 'بعد دقيقتين',
+      one: 'بعد دقيقة',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String apptInHours(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'بعد $count ساعة',
+      few: 'بعد $count ساعات',
+      two: 'بعد ساعتين',
+      one: 'بعد ساعة',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String apptInDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'بعد $count يوم',
+      few: 'بعد $count أيام',
+      two: 'بعد يومين',
+      one: 'بعد يوم',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -5734,12 +6159,104 @@ class ZadL10nArSa extends ZadL10nAr {
   }
 
   @override
-  String get homeBankStalledHint =>
-      'إذا كانت مفعّلة: طفّها وشغّلها مرة ثانية من الصفحة اللي بتفتح.';
+  String get zadStatusTitle => 'حالة زاد';
 
   @override
-  String get homeLocationOffBanner =>
-      '📍 موقعك مو مفعّل.. فعّل الموقع عشان زاد يربط عروض السوبرماركت والمحلات القريبة منك ويسوّي شغله صح';
+  String get zadStatusAllGood => 'زاد شغّال ويتابع';
+
+  @override
+  String get zadStatusNeedsFix => 'فيه شي واقف ويحتاج منك خطوة';
+
+  @override
+  String zadStatusAllButOne(String what) {
+    return 'كله شغّال ما عدا: $what';
+  }
+
+  @override
+  String get zadStatusWorking => 'شغال';
+
+  @override
+  String get zadStatusStopped => 'واقف';
+
+  @override
+  String get zadStatusMaybe => 'ممكن يقف';
+
+  @override
+  String get zadStatusBank => 'قراءة رسائل البنك';
+
+  @override
+  String get zadStatusBankOk => 'زاد بيقرا رسائل البنك ويسجّلها.';
+
+  @override
+  String get zadStatusBankOff =>
+      'قراءة رسائل البنك متوقفة. شغّلها عشان رصيدك ومصاريفك تتحدّث لحالها.';
+
+  @override
+  String get zadStatusBankStalled =>
+      'الخدمة ما عادت تشوف إشعارات من فترة. إذا كانت مفعّلة: طفّها وشغّلها مرة ثانية من الصفحة اللي بتفتح.';
+
+  @override
+  String get zadStatusBankSilent =>
+      'مفعّلة، بس للحين ما وصلت ولا رسالة. إذا تنتظر رسالة من البنك وما وصلت: طفّها وشغّلها مرة ثانية.';
+
+  @override
+  String get zadStatusNotifications => 'الإشعارات';
+
+  @override
+  String get zadStatusNotificationsOk =>
+      'تنبيهات الجرعات والفواتير والميزانية بتوصلك.';
+
+  @override
+  String get zadStatusNotificationsOff =>
+      'الإشعارات مقفولة، فتنبيهات الجرعات والفواتير ما بتوصلك.';
+
+  @override
+  String get zadStatusLocation => 'الموقع';
+
+  @override
+  String get zadStatusLocationOk =>
+      'الموقع شغّال، والعروض والمحلات القريبة تنحسب من مكانك.';
+
+  @override
+  String get zadStatusLocationServiceOff =>
+      'الموقع مقفول في الجوال، فالقراءات ما بتكون من مكانك الحقيقي.';
+
+  @override
+  String get zadStatusLocationDenied =>
+      'زاد ما هو مسموح له يعرف مكانك، فالعروض والمحلات القريبة ما بتشتغل.';
+
+  @override
+  String get zadStatusBackground => 'الموقع طول الوقت';
+
+  @override
+  String get zadStatusBackgroundOk =>
+      'تنبيهات الطريق شغالة حتى والتطبيق مقفول.';
+
+  @override
+  String get zadStatusBackgroundOff =>
+      'بدون «طوال الوقت» تنبيهات الطريق ما بتشتغل والتطبيق مقفول.';
+
+  @override
+  String get zadStatusBattery => 'توفير البطارية';
+
+  @override
+  String get zadStatusBatteryOk => 'الجوال ما يقيّد زاد في الخلفية.';
+
+  @override
+  String get zadStatusBatteryWarn =>
+      'الجوال ممكن يوقف زاد في الخلفية. اختر «بدون قيود» عشان القراءة ما تنقطع.';
+
+  @override
+  String get zadStatusFixOpenSettings => 'افتح الإعدادات';
+
+  @override
+  String get zadStatusFixAllow => 'اسمح';
+
+  @override
+  String get zadStatusFixLocationOn => 'شغّل الموقع';
+
+  @override
+  String get zadStatusFixBattery => 'فكّ القيود';
 
   @override
   String get homeLocationLater => 'مو الحين';
@@ -6153,20 +6670,6 @@ class ZadL10nArSa extends ZadL10nAr {
   String get profileTelegramSubtitle => 'اربط حسابك وخلّ التذكيرات توصلك';
 
   @override
-  String get homeCareRenewsToday => 'يتجدد اليوم';
-
-  @override
-  String get homeCareRenewsTomorrow => 'يتجدد بكرة';
-
-  @override
-  String homeCareRenewsInDays(Object days) {
-    return 'يتجدد بعد $days يوم';
-  }
-
-  @override
-  String get homeCareDoseNow => 'جرعتها الحين';
-
-  @override
   String get introSayPantry => 'الثلاجة هذي حقتي!';
 
   @override
@@ -6181,6 +6684,85 @@ class ZadL10nArSa extends ZadL10nAr {
   @override
   String get consentPoint4Body =>
       'راجع الأرقام قبل أي قرار؛ زاد مو بنك ولا مستشار مالي.';
+
+  @override
+  String get gamesHubIntro => 'العب، كمّل السلسلة، واكسب بذور';
+
+  @override
+  String gamesHubToday(int target, String game) {
+    return 'تحدي اليوم: $target نقطة في «$game»';
+  }
+
+  @override
+  String gamesHubStreak(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count أيام ورا بعض',
+      one: 'يوم واحد',
+      zero: 'ابدأ سلسلتك اليوم',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get gamesHubNotPlayed => 'ما لعبت للحين';
+
+  @override
+  String get gamesHubChallengeDone => 'تحدي اليوم خلص';
+
+  @override
+  String gameChallenge(int target) {
+    return 'تحدي اليوم: وصّل $target نقطة';
+  }
+
+  @override
+  String get gameChallengeDone => 'خلصت التحدي اليوم، برافو!';
+
+  @override
+  String gameSeedsLeft(int count) {
+    return 'باقي $count بذور اليوم';
+  }
+
+  @override
+  String get gameAdUnavailable => 'ما فيه إعلان متاح الحين';
+
+  @override
+  String gameLives(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count محاولات',
+      one: 'محاولة واحدة',
+      zero: 'ما فيه محاولات',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String runGameHint(String name) {
+    return 'المس الشاشة عشان $name يقفز';
+  }
+
+  @override
+  String get sortGameDaily => 'لغز اليوم';
+
+  @override
+  String get sortGameStuck => 'ما فيه حركات ثانية';
+
+  @override
+  String get homeCareRenewsToday => 'يتجدد اليوم';
+
+  @override
+  String get homeCareRenewsTomorrow => 'يتجدد بكرة';
+
+  @override
+  String homeCareRenewsInDays(Object days) {
+    return 'يتجدد بعد $days يوم';
+  }
+
+  @override
+  String get homeCareDoseNow => 'جرعتها الحين';
 
   @override
   String get worldLabelPrices => 'أسعار اليوم';
@@ -6212,6 +6794,114 @@ class ZadL10nArSa extends ZadL10nAr {
       two: 'شيئين قرّبوا يخلصون',
       one: 'شي واحد قرّب يخلص',
       zero: 'ما فيه شي قرّب يخلص',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String shopWorldEyebrow(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count شي ناقص',
+      few: '$count أشياء ناقصة',
+      two: 'شيئين ناقصين',
+      one: 'شي واحد ناقص',
+      zero: 'ما فيه شي ناقص',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String shopWorldStores(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'من $count محل',
+      few: 'من $count محلات',
+      two: 'من محلين',
+      one: 'من محل واحد',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get shopWorldAnyStore => 'من أي محل';
+
+  @override
+  String get shopWorldDone => 'القائمة فاضية';
+
+  @override
+  String get shopGroupAnyStore => 'أي محل';
+
+  @override
+  String shopPantryCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'في المخزن $count صنف',
+      few: 'في المخزن $count أصناف',
+      two: 'في المخزن صنفين',
+      one: 'في المخزن صنف واحد',
+      zero: 'المخزن فاضي',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String apptWorldToday(String weekday) {
+    return 'اليوم $weekday';
+  }
+
+  @override
+  String apptWorldNext(String title, String when) {
+    return '$title $when';
+  }
+
+  @override
+  String get apptWorldNone => 'ما فيه مواعيد جاية';
+
+  @override
+  String get apptNextLabel => 'الموعد القادم';
+
+  @override
+  String get apptInNow => 'الحين';
+
+  @override
+  String apptInMinutes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'بعد $count دقيقة',
+      few: 'بعد $count دقائق',
+      two: 'بعد دقيقتين',
+      one: 'بعد دقيقة',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String apptInHours(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'بعد $count ساعة',
+      few: 'بعد $count ساعات',
+      two: 'بعد ساعتين',
+      one: 'بعد ساعة',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String apptInDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'بعد $count يوم',
+      few: 'بعد $count أيام',
+      two: 'بعد يومين',
+      one: 'بعد يوم',
     );
     return '$_temp0';
   }

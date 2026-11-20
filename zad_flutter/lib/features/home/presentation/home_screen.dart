@@ -41,7 +41,6 @@ import 'package:zad/features/home/presentation/home_glance_widgets.dart';
 import 'package:zad/features/home/presentation/inventory_check_in_card.dart';
 import 'package:zad/features/home/presentation/metrics_duo.dart';
 import 'package:zad/features/home/presentation/occasion_card.dart';
-import 'package:zad/features/home/presentation/permission_banners.dart';
 import 'package:zad/features/home/presentation/quiet_banner.dart';
 import 'package:zad/features/home/presentation/sections_grid.dart';
 import 'package:zad/features/home/presentation/subscribe_pulse_card.dart';
@@ -49,6 +48,7 @@ import 'package:zad/features/home/presentation/tasbiha_home_widget.dart';
 import 'package:zad/features/home/presentation/travel_banner.dart';
 import 'package:zad/features/home/presentation/urgent_recipe_card.dart';
 import 'package:zad/features/home/presentation/who_are_you_card.dart';
+import 'package:zad/features/home/presentation/zad_status_card.dart';
 import 'package:zad/shared/ads/presentation/native_ad.dart';
 import 'package:zad/shared/brain/data/home_signals_controller.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
@@ -116,9 +116,10 @@ class HomeScreen extends ConsumerWidget {
           const TravelBannerSlot(),
           const GroceryPurchasePromptHost(),
           const HomeOfflineBanner(),
-          // «قراءة رسائل البنك متوقفة» / «موقعك غير مفعّل» (owner 7/11): at
-          // the top, each one tap from the screen that fixes it.
-          const PermissionBanners(),
+          // «حالة زاد» (owner 20/11): every permission and whether it works
+          // now, each broken one with its fix; one green line when all is
+          // well. Replaced the bank / location banners (owner 7/11).
+          const ZadStatusCard(),
           // Live prices at the top (owner, 2026-11-09).
           ZadAppearOnEntry(child: ZadSlots.liveMarketTickerSlot()),
           ZadAppearOnEntry(
