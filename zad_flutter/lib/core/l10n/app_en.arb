@@ -531,7 +531,7 @@
   "subsExpiredAgo": "Ended {days} days ago",
   "subsRenewsIn": "Renews in {days} days",
   "subsPerYear": "≈ {amount}/year",
-  "subsPaidMark": "Paid ✓",
+  "subsPaidMark": "Paid",
   "subsToggleAuto": "Turn auto-debit on or off",
   "subsDisable": "Disable",
   "subsEnable": "Enable",

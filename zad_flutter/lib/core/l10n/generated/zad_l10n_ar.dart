@@ -1855,7 +1855,7 @@ class ZadL10nAr extends ZadL10n {
   }
 
   @override
-  String get subsPaidMark => 'تم الدفع ✓';
+  String get subsPaidMark => 'تم الدفع';
 
   @override
   String get subsToggleAuto => 'تفعيل/إيقاف الخصم التلقائي';

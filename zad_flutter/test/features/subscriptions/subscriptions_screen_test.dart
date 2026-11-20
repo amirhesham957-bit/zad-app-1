@@ -262,7 +262,7 @@ void main() {
       _sub('a', 'Netflix', renewalDate: '2026-09-25'),
     ]);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('تم الدفع ✓'));
+    await tester.tap(find.text('تم الدفع'));
     await tester.pump();
     expect(subs.calls, <String>['paid:a']);
   });
@@ -279,7 +279,7 @@ void main() {
     ]);
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(
-      find.text('تم الدفع ✓'),
+      find.text('تم الدفع'),
       200,
       scrollable: find.byType(Scrollable).first,
     );
@@ -297,7 +297,7 @@ void main() {
     }
     final paid = tester.getSize(
       find
-          .ancestor(of: find.text('تم الدفع ✓'), matching: find.byType(InkWell))
+          .ancestor(of: find.text('تم الدفع'), matching: find.byType(InkWell))
           .first,
     );
     expect(paid.height, greaterThanOrEqualTo(44));
@@ -310,7 +310,7 @@ void main() {
     ]);
     await tester.tap(find.widgetWithText(FilterChip, 'الكل'));
     await tester.pumpAndSettle();
-    expect(find.text('تم الدفع ✓'), findsNothing);
+    expect(find.text('تم الدفع'), findsNothing);
     await tester.tap(find.byTooltip('تفعيل'));
     await tester.pump();
     expect(subs.calls, <String>['active:b:true']);

@@ -1902,7 +1902,7 @@ class ZadL10nEn extends ZadL10n {
   }
 
   @override
-  String get subsPaidMark => 'Paid ✓';
+  String get subsPaidMark => 'Paid';
 
   @override
   String get subsToggleAuto => 'Turn auto-debit on or off';

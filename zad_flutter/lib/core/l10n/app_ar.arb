@@ -1226,7 +1226,7 @@
       }
     }
   },
-  "subsPaidMark": "تم الدفع ✓",
+  "subsPaidMark": "تم الدفع",
   "subsToggleAuto": "تفعيل/إيقاف الخصم التلقائي",
   "subsDisable": "تعطيل",
   "subsEnable": "تفعيل",

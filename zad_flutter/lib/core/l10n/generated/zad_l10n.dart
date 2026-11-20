@@ -3287,7 +3287,7 @@ abstract class ZadL10n {
   /// No description provided for @subsPaidMark.
   ///
   /// In ar, this message translates to:
-  /// **'تم الدفع ✓'**
+  /// **'تم الدفع'**
   String get subsPaidMark;
 
   /// No description provided for @subsToggleAuto.
