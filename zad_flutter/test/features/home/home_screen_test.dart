@@ -23,8 +23,10 @@ import 'package:zad/core/data/sync/outbox.dart';
 import 'package:zad/core/design/components/zad_balance_card.dart';
 import 'package:zad/core/design/zad_theme.dart';
 import 'package:zad/features/home/presentation/home_care_bar.dart';
-import 'package:zad/features/home/presentation/home_glance_widgets.dart';
 import 'package:zad/features/home/presentation/home_screen.dart';
+import 'package:zad/features/home/presentation/home_today_card.dart';
+import 'package:zad/features/home/presentation/home_world_scene.dart';
+import 'package:zad/shared/worlds/world_scene.dart' show ScaledScene;
 import 'package:zad/features/home/presentation/metrics_duo.dart';
 import 'package:zad/features/home/presentation/tasbiha_home_widget.dart';
 import 'package:zad/features/settings/presentation/monthly_limit_sheet.dart';
@@ -239,7 +241,7 @@ void main() {
     await dir.delete(recursive: true);
   });
 
-  ProviderContainer containerWith() {
+  ProviderContainer containerWith({DateTime? at}) {
     late TransactionsRepository txns;
     final outbox = Outbox(
       box: outboxBox,
@@ -274,7 +276,7 @@ void main() {
             device: subsBox,
           ),
         ),
-        nowProvider.overrideWithValue(() => now),
+        nowProvider.overrideWithValue(() => at ?? now),
         transactionsRepositoryProvider.overrideWithValue(txns),
         insightsRepositoryProvider.overrideWithValue(
           InsightsRepository(
@@ -365,57 +367,110 @@ void main() {
     expect(find.text('المتاح في دورة الراتب'), findsOneWidget);
   });
 
-  testWidgets('the tasbih follows the glance tiles, rewards follow the chef', (
+  testWidgets(
+    'the tasbih follows «النهارده في بيتك», rewards follow the chef',
+    (tester) async {
+      final chef = ZadSlots.homeChefSection;
+      ZadSlots.homeChefSection = () =>
+          const SizedBox(key: ValueKey<String>('chef'), height: 20);
+      addTearDown(() => ZadSlots.homeChefSection = chef);
+      final container = containerWith();
+      addTearDown(container.dispose);
+
+      await tester.binding.setSurfaceSize(const Size(412, 6000));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp(
+            theme: ZadTheme.light(),
+            home: const Directionality(
+              textDirection: TextDirection.rtl,
+              child: Scaffold(body: HomeScreen()),
+            ),
+          ),
+        ),
+      );
+      await tester.pump(Duration.zero);
+      // Past every entrance slide, so positions are the settled ones.
+      // (The timers fire in the first pump, the slides run in the second.)
+      await tester.pump(const Duration(milliseconds: 800));
+      await tester.pump(const Duration(milliseconds: 800));
+
+      double top(Finder f) => tester.getTopLeft(f).dy;
+      expect(find.byType(TasbihaHomeSlot), findsOneWidget);
+      expect(
+        top(find.byType(TasbihaHomeSlot)),
+        greaterThan(top(find.byType(HomeTodayCard))),
+      );
+      final rewards = find.byKey(const ValueKey<String>('rewards-card'));
+      expect(rewards, findsOneWidget);
+      expect(
+        top(rewards),
+        greaterThan(top(find.byKey(const ValueKey('chef')))),
+      );
+      // The care bar sits under the money, above the day's card, and the one
+      // native ad sits right before the chef, away from the reward buttons.
+      expect(find.byType(HomeCareBar), findsOneWidget);
+      expect(
+        top(find.byType(HomeCareBar)),
+        lessThan(top(find.byType(HomeTodayCard))),
+      );
+      expect(find.byType(ZadNativeAd), findsOneWidget);
+      expect(
+        top(find.byType(ZadNativeAd)),
+        lessThanOrEqualTo(top(find.byKey(const ValueKey('chef')))),
+      );
+    },
+  );
+
+  HomeDayPhase? scenePhase(WidgetTester tester) {
+    for (final p in tester.widgetList<CustomPaint>(find.byType(CustomPaint))) {
+      final painter = p.painter;
+      if (painter is ScaledScene && painter.inner is HomeWorldScene) {
+        return (painter.inner as HomeWorldScene).phase;
+      }
+    }
+    return null;
+  }
+
+  testWidgets('home is a world: noon sky, greeting, money line, empty day', (
     tester,
   ) async {
-    final chef = ZadSlots.homeChefSection;
-    ZadSlots.homeChefSection = () =>
-        const SizedBox(key: ValueKey<String>('chef'), height: 20);
-    addTearDown(() => ZadSlots.homeChefSection = chef);
     final container = containerWith();
     addTearDown(container.dispose);
 
-    await tester.binding.setSurfaceSize(const Size(412, 6000));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
-    await tester.pumpWidget(
-      UncontrolledProviderScope(
-        container: container,
-        child: MaterialApp(
-          theme: ZadTheme.light(),
-          home: const Directionality(
-            textDirection: TextDirection.rtl,
-            child: Scaffold(body: HomeScreen()),
-          ),
-        ),
-      ),
-    );
-    await tester.pump(Duration.zero);
-    // Past every entrance slide, so positions are the settled ones.
-    // (The timers fire in the first pump, the slides run in the second.)
-    await tester.pump(const Duration(milliseconds: 800));
-    await tester.pump(const Duration(milliseconds: 800));
+    await pumpHome(tester, container);
 
-    double top(Finder f) => tester.getTopLeft(f).dy;
-    expect(find.byType(TasbihaHomeSlot), findsOneWidget);
-    expect(
-      top(find.byType(TasbihaHomeSlot)),
-      greaterThan(top(find.byType(HomeGlanceWidgets))),
-    );
-    final rewards = find.byKey(const ValueKey<String>('rewards-card'));
-    expect(rewards, findsOneWidget);
-    expect(top(rewards), greaterThan(top(find.byKey(const ValueKey('chef')))));
-    // The care bar sits between the tiles and the tasbih, and the one
-    // native ad sits right before the chef, away from the reward buttons.
-    expect(find.byType(HomeCareBar), findsOneWidget);
-    expect(
-      top(find.byType(HomeCareBar)),
-      greaterThan(top(find.byType(HomeGlanceWidgets))),
-    );
-    expect(find.byType(ZadNativeAd), findsOneWidget);
-    expect(
-      top(find.byType(ZadNativeAd)),
-      lessThanOrEqualTo(top(find.byKey(const ValueKey('chef')))),
-    );
+    // 12:00 UTC is 15:00 in the account's zone (Cairo): the noon sky.
+    expect(scenePhase(tester), HomeDayPhase.noon);
+    expect(find.textContaining('نهارك سعيد يا'), findsOneWidget);
+    expect(find.textContaining('متاح'), findsWidgets);
+    // Nothing short, no dose, no renewal: the card says so.
+    expect(find.text('النهارده في بيتك'), findsOneWidget);
+    expect(find.text('مفيش نواقص ولا جرعات ولا تجديدات قريبة'), findsOneWidget);
+  });
+
+  testWidgets('the sky follows the account zone: 23:00 is night', (
+    tester,
+  ) async {
+    // 20:00 UTC is 23:00 in Cairo, whatever the device zone says.
+    final container = containerWith(at: DateTime.parse('2026-09-19T20:00:00Z'));
+    addTearDown(container.dispose);
+
+    await pumpHome(tester, container);
+
+    expect(scenePhase(tester), HomeDayPhase.night);
+    expect(find.textContaining('ليلة هادية يا'), findsOneWidget);
+  });
+
+  test('the hours fall into the five skies', () {
+    expect(homeDayPhaseOf(5), HomeDayPhase.dawn);
+    expect(homeDayPhaseOf(9), HomeDayPhase.morning);
+    expect(homeDayPhaseOf(13), HomeDayPhase.noon);
+    expect(homeDayPhaseOf(17), HomeDayPhase.evening);
+    expect(homeDayPhaseOf(23), HomeDayPhase.night);
+    expect(homeDayPhaseOf(3), HomeDayPhase.night);
   });
 
   testWidgets('the two small cards sit under the green one', (tester) async {
