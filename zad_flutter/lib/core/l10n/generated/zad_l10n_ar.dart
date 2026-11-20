@@ -8622,4 +8622,7 @@ class ZadL10nArSa extends ZadL10nAr {
 
   @override
   String get achRetry => 'حاول مرة ثانية';
+
+  @override
+  String get settingsAdsUnavailable => 'ما فيه اختيارات خصوصية متاحة الحين';
 }
