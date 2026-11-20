@@ -29,7 +29,7 @@
   "features/brain/presentation/why_changed_sheet.dart": 7,
   "features/brain_family/presentation/brain_family_screen.dart": 11,
   "features/companion/presentation/companion_studio_screen.dart": 84,
-  "features/documents/presentation/documents_screen.dart": 33,
+  "features/documents/presentation/documents_screen.dart": 18,
   "features/family/presentation/family_chat_tab.dart": 31,
   "features/family/presentation/family_dialogs.dart": 75,
   "features/family/presentation/family_follow.dart": 118,

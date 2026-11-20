@@ -5567,4 +5567,63 @@ class ZadL10nEn extends ZadL10n {
     );
     return '$_temp0';
   }
+
+  @override
+  String docsEyebrowCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count documents',
+      one: '1 document',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get docsStateEmpty => 'The drawer is empty — add your first document';
+
+  @override
+  String docsStateNearest(String name, String status) {
+    return 'Nearest: $name — $status';
+  }
+
+  @override
+  String get docsPrivacy =>
+      'Zad keeps only the kind of document and its expiry date — no number, no photo — and reminds you ahead.';
+
+  @override
+  String get docsDueOne => 'One document needs renewing soon';
+
+  @override
+  String docsDueMany(int count) {
+    return '$count documents need renewing soon';
+  }
+
+  @override
+  String get docsEmptyTitle => 'No documents yet';
+
+  @override
+  String get docsEmptyMessage =>
+      'Add your passport, ID or licence with its expiry date and Zad reminds you in good time to renew. Or tell Zad in chat: \"my passport expires 15 March 2027\".';
+
+  @override
+  String get docsAdd => 'Add a document';
+
+  @override
+  String get docsDelete => 'Delete';
+
+  @override
+  String docsExpires(String date) {
+    return 'Expires $date';
+  }
+
+  @override
+  String get docsSaveFailedEdit =>
+      'Not saved — a document with the same kind and name may exist, or you are offline.';
+
+  @override
+  String get docsSaveFailedAdd => 'Not saved — check your connection.';
+
+  @override
+  String get docsDeleteFailed => 'Not removed — check your connection.';
 }

@@ -9319,6 +9319,90 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'{count, plural, =1{بعد يوم} =2{بعد يومين} few{بعد {count} أيام} other{بعد {count} يوم}}'**
   String apptInDays(int count);
+
+  /// Documents world: the count above the title.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{مستند واحد} =2{مستندين} few{{count} مستندات} other{{count} مستند}}'**
+  String docsEyebrowCount(int count);
+
+  /// Documents world state line with no documents.
+  ///
+  /// In ar, this message translates to:
+  /// **'الدرج فاضي — ضيف أول مستند'**
+  String get docsStateEmpty;
+
+  /// Documents world state line: the document that expires first.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأقرب: {name} — {status}'**
+  String docsStateNearest(String name, String status);
+
+  /// Documents world: what is stored.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد بيحفظ نوع المستند وتاريخ انتهائه بس — من غير رقم ولا صورة — ويفكّرك قبلها.'**
+  String get docsPrivacy;
+
+  /// Documents world: how many are near expiry.
+  ///
+  /// In ar, this message translates to:
+  /// **'مستند واحد محتاج تجديد قريب'**
+  String get docsDueOne;
+
+  /// Documents world: how many are near expiry.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} مستندات محتاجة تجديد قريب'**
+  String docsDueMany(int count);
+
+  /// Documents world empty state title.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش مستندات متسجلة'**
+  String get docsEmptyTitle;
+
+  /// Documents world empty state guidance.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضيف الجواز أو البطاقة أو الرخصة بتاريخ انتهائها، وزاد يفكّرك قبلها بوقت كفاية للتجديد. أو قول لزاد في الشات: «جوازي بينتهي ١٥ مارس ٢٠٢٧».'**
+  String get docsEmptyMessage;
+
+  /// Documents world: the docked add button.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة مستند'**
+  String get docsAdd;
+
+  /// Tooltip of a delete button.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف'**
+  String get docsDelete;
+
+  /// A document's expiry date.
+  ///
+  /// In ar, this message translates to:
+  /// **'بينتهي {date}'**
+  String docsExpires(String date);
+
+  /// Snackbar when an edit fails.
+  ///
+  /// In ar, this message translates to:
+  /// **'ماتحفظش — يمكن فيه مستند بنفس النوع والاسم، أو النت مقطوع.'**
+  String get docsSaveFailedEdit;
+
+  /// Snackbar when an add fails.
+  ///
+  /// In ar, this message translates to:
+  /// **'ماتحفظش — اتأكد من النت.'**
+  String get docsSaveFailedAdd;
+
+  /// Snackbar when a delete fails.
+  ///
+  /// In ar, this message translates to:
+  /// **'ماتشالش — اتأكد من النت.'**
+  String get docsDeleteFailed;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

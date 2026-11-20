@@ -5169,5 +5169,84 @@
         "type": "int"
       }
     }
+  },
+  "docsEyebrowCount": "{count, plural, =1{مستند واحد} =2{مستندين} few{{count} مستندات} other{{count} مستند}}",
+  "@docsEyebrowCount": {
+    "description": "Documents world: the count above the title.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "docsStateEmpty": "الدرج فاضي — ضيف أول مستند",
+  "@docsStateEmpty": {
+    "description": "Documents world state line with no documents."
+  },
+  "docsStateNearest": "الأقرب: {name} — {status}",
+  "@docsStateNearest": {
+    "description": "Documents world state line: the document that expires first.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "docsPrivacy": "زاد بيحفظ نوع المستند وتاريخ انتهائه بس — من غير رقم ولا صورة — ويفكّرك قبلها.",
+  "@docsPrivacy": {
+    "description": "Documents world: what is stored."
+  },
+  "docsDueOne": "مستند واحد محتاج تجديد قريب",
+  "@docsDueOne": {
+    "description": "Documents world: how many are near expiry."
+  },
+  "docsDueMany": "{count} مستندات محتاجة تجديد قريب",
+  "@docsDueMany": {
+    "description": "Documents world: how many are near expiry.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "docsEmptyTitle": "مفيش مستندات متسجلة",
+  "@docsEmptyTitle": {
+    "description": "Documents world empty state title."
+  },
+  "docsEmptyMessage": "ضيف الجواز أو البطاقة أو الرخصة بتاريخ انتهائها، وزاد يفكّرك قبلها بوقت كفاية للتجديد. أو قول لزاد في الشات: «جوازي بينتهي ١٥ مارس ٢٠٢٧».",
+  "@docsEmptyMessage": {
+    "description": "Documents world empty state guidance."
+  },
+  "docsAdd": "إضافة مستند",
+  "@docsAdd": {
+    "description": "Documents world: the docked add button."
+  },
+  "docsDelete": "حذف",
+  "@docsDelete": {
+    "description": "Tooltip of a delete button."
+  },
+  "docsExpires": "بينتهي {date}",
+  "@docsExpires": {
+    "description": "A document's expiry date.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "docsSaveFailedEdit": "ماتحفظش — يمكن فيه مستند بنفس النوع والاسم، أو النت مقطوع.",
+  "@docsSaveFailedEdit": {
+    "description": "Snackbar when an edit fails."
+  },
+  "docsSaveFailedAdd": "ماتحفظش — اتأكد من النت.",
+  "@docsSaveFailedAdd": {
+    "description": "Snackbar when an add fails."
+  },
+  "docsDeleteFailed": "ماتشالش — اتأكد من النت.",
+  "@docsDeleteFailed": {
+    "description": "Snackbar when a delete fails."
   }
 }

@@ -1784,5 +1784,19 @@
   "apptInNow": "now",
   "apptInMinutes": "{count, plural, =1{in 1 minute} other{in {count} minutes}}",
   "apptInHours": "{count, plural, =1{in 1 hour} other{in {count} hours}}",
-  "apptInDays": "{count, plural, =1{in 1 day} other{in {count} days}}"
+  "apptInDays": "{count, plural, =1{in 1 day} other{in {count} days}}",
+  "docsEyebrowCount": "{count, plural, =1{1 document} other{{count} documents}}",
+  "docsStateEmpty": "The drawer is empty — add your first document",
+  "docsStateNearest": "Nearest: {name} — {status}",
+  "docsPrivacy": "Zad keeps only the kind of document and its expiry date — no number, no photo — and reminds you ahead.",
+  "docsDueOne": "One document needs renewing soon",
+  "docsDueMany": "{count} documents need renewing soon",
+  "docsEmptyTitle": "No documents yet",
+  "docsEmptyMessage": "Add your passport, ID or licence with its expiry date and Zad reminds you in good time to renew. Or tell Zad in chat: \"my passport expires 15 March 2027\".",
+  "docsAdd": "Add a document",
+  "docsDelete": "Delete",
+  "docsExpires": "Expires {date}",
+  "docsSaveFailedEdit": "Not saved — a document with the same kind and name may exist, or you are offline.",
+  "docsSaveFailedAdd": "Not saved — check your connection.",
+  "docsDeleteFailed": "Not removed — check your connection."
 }

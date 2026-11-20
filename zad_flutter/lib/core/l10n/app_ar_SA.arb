@@ -544,5 +544,9 @@
   "apptInNow": "الحين",
   "apptInMinutes": "{count, plural, =1{بعد دقيقة} =2{بعد دقيقتين} few{بعد {count} دقائق} other{بعد {count} دقيقة}}",
   "apptInHours": "{count, plural, =1{بعد ساعة} =2{بعد ساعتين} few{بعد {count} ساعات} other{بعد {count} ساعة}}",
-  "apptInDays": "{count, plural, =1{بعد يوم} =2{بعد يومين} few{بعد {count} أيام} other{بعد {count} يوم}}"
+  "apptInDays": "{count, plural, =1{بعد يوم} =2{بعد يومين} few{بعد {count} أيام} other{بعد {count} يوم}}",
+  "docsPrivacy": "زاد يحفظ نوع المستند وتاريخ انتهائه بس — بدون رقم ولا صورة — ويذكّرك قبلها.",
+  "docsSaveFailedEdit": "ما انحفظ — يمكن فيه مستند بنفس النوع والاسم، أو ما فيه نت.",
+  "docsSaveFailedAdd": "ما انحفظ — تأكد من النت.",
+  "docsDeleteFailed": "ما انحذف — تأكد من النت."
 }

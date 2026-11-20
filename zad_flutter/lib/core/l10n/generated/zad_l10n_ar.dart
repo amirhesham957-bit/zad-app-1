@@ -5473,6 +5473,67 @@ class ZadL10nAr extends ZadL10n {
     );
     return '$_temp0';
   }
+
+  @override
+  String docsEyebrowCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count مستند',
+      few: '$count مستندات',
+      two: 'مستندين',
+      one: 'مستند واحد',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get docsStateEmpty => 'الدرج فاضي — ضيف أول مستند';
+
+  @override
+  String docsStateNearest(String name, String status) {
+    return 'الأقرب: $name — $status';
+  }
+
+  @override
+  String get docsPrivacy =>
+      'زاد بيحفظ نوع المستند وتاريخ انتهائه بس — من غير رقم ولا صورة — ويفكّرك قبلها.';
+
+  @override
+  String get docsDueOne => 'مستند واحد محتاج تجديد قريب';
+
+  @override
+  String docsDueMany(int count) {
+    return '$count مستندات محتاجة تجديد قريب';
+  }
+
+  @override
+  String get docsEmptyTitle => 'مفيش مستندات متسجلة';
+
+  @override
+  String get docsEmptyMessage =>
+      'ضيف الجواز أو البطاقة أو الرخصة بتاريخ انتهائها، وزاد يفكّرك قبلها بوقت كفاية للتجديد. أو قول لزاد في الشات: «جوازي بينتهي ١٥ مارس ٢٠٢٧».';
+
+  @override
+  String get docsAdd => 'إضافة مستند';
+
+  @override
+  String get docsDelete => 'حذف';
+
+  @override
+  String docsExpires(String date) {
+    return 'بينتهي $date';
+  }
+
+  @override
+  String get docsSaveFailedEdit =>
+      'ماتحفظش — يمكن فيه مستند بنفس النوع والاسم، أو النت مقطوع.';
+
+  @override
+  String get docsSaveFailedAdd => 'ماتحفظش — اتأكد من النت.';
+
+  @override
+  String get docsDeleteFailed => 'ماتشالش — اتأكد من النت.';
 }
 
 /// The translations for Arabic, as used in Saudi Arabia (`ar_SA`).
@@ -7562,4 +7623,18 @@ class ZadL10nArSa extends ZadL10nAr {
     );
     return '$_temp0';
   }
+
+  @override
+  String get docsPrivacy =>
+      'زاد يحفظ نوع المستند وتاريخ انتهائه بس — بدون رقم ولا صورة — ويذكّرك قبلها.';
+
+  @override
+  String get docsSaveFailedEdit =>
+      'ما انحفظ — يمكن فيه مستند بنفس النوع والاسم، أو ما فيه نت.';
+
+  @override
+  String get docsSaveFailedAdd => 'ما انحفظ — تأكد من النت.';
+
+  @override
+  String get docsDeleteFailed => 'ما انحذف — تأكد من النت.';
 }
