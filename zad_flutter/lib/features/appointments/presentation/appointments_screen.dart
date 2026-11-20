@@ -26,13 +26,21 @@ import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_motion.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/design/tokens/zad_world_colors.dart';
 import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/appointments/data/appointments_repository.dart';
 import 'package:zad/features/appointments/data/booking_guard.dart';
 import 'package:zad/features/appointments/domain/appointments.dart';
+import 'package:zad/features/appointments/presentation/appointments_world_scene.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/navigation/shell_navigation.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
+import 'package:zad/shared/orb/domain/companion_state.dart';
+import 'package:zad/shared/worlds/art/art.dart';
+import 'package:zad/shared/worlds/world_card.dart';
+import 'package:zad/shared/worlds/world_row.dart';
+import 'package:zad/shared/worlds/world_scaffold.dart';
+import 'package:zad/shared/worlds/zad_world.dart';
 
 /// Opens the screen.
 Future<void> showAppointmentsScreen(BuildContext context) =>
@@ -95,14 +103,16 @@ class _AppointmentsState extends ConsumerState<AppointmentsScreen> {
     setState(() => _loading = true);
     final client = ref.read(supabaseClientProvider);
     final userId = client.auth.currentUser?.id;
+    final repo = ref.read(appointmentsRepositoryProvider);
     if (userId == null) {
+      final local = repo.view();
       setState(() {
+        _items = local;
         _loading = false;
-        _failed = true;
+        _failed = local == null;
       });
       return;
     }
-    final repo = ref.read(appointmentsRepositoryProvider);
     // Last time's list and anything still queued first; the server's answer
     // replaces it.
     if (repo.view() case final local?) {
@@ -241,235 +251,260 @@ class _AppointmentsState extends ConsumerState<AppointmentsScreen> {
     ref.read(shellNavigationProvider.notifier).open(ShellTab.chat);
   }
 
+  /// «بعد ساعتين»: how far [at] is from [nowLocal], in the biggest unit that
+  /// is at least one.
+  String _countdown(DateTime at, DateTime nowLocal) {
+    final l = context.l10n;
+    final minutes = at.difference(nowLocal).inMinutes;
+    if (minutes < 1) return l.apptInNow;
+    if (minutes < 60) return l.apptInMinutes(minutes);
+    if (minutes < 60 * 24) return l.apptInHours(minutes ~/ 60);
+    return l.apptInDays(minutes ~/ (60 * 24));
+  }
+
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     final items = _items;
     final nowLocal = _local(ref.read(nowProvider)());
     final groups = groupAppointments(items ?? const [], nowLocal, _local);
     final hasUpcoming = groups.any((g) => g.$1 != AppointmentGroup.past);
-    return DecoratedBox(
-      decoration: BoxDecoration(gradient: ZadColors.canvas),
-      child: ZadScrollAwayScope(
-        child: Scaffold(
-          backgroundColor: Colors.transparent,
-          appBar: AppBar(title: const Text('مواعيدي')),
-          floatingActionButton: ZadStepsAside(
-            child: FloatingActionButton.extended(
-              onPressed: () => unawaited(_add()),
-              icon: const Icon(ZadIcons.add),
-              label: const Text('ميعاد جديد'),
+    // The next one: it sits on top with its countdown, not again in its
+    // group.
+    final upcoming = <Appointment>[
+      for (final (g, list) in groups)
+        if (g != AppointmentGroup.past) ...list,
+    ];
+    final next = upcoming.isEmpty ? null : upcoming.first;
+    final nextAt = next?.startsAt == null ? null : _local(next!.startsAt!);
+    final weekday = DateFormat('EEEE', 'ar').format(nowLocal);
+    final month = DateFormat('MMMM', 'ar').format(nowLocal);
+    final dayNumber = DateFormat.d('ar').format(nowLocal);
+
+    return Scaffold(
+      backgroundColor: ZadWorldColors.tint(ZadWorld.appt.color),
+      body: SafeArea(
+        bottom: false,
+        child: ZadWorldScaffold(
+          world: ZadWorld.appt,
+          eyebrow: l.apptWorldToday(weekday),
+          title: l.worldLabelAppt,
+          stateLine: next == null || nextAt == null
+              ? l.apptWorldNone
+              : l.apptWorldNext(next.title, _countdown(nextAt, nowLocal)),
+          scene: (loop) =>
+              AppointmentsWorldScene(loop, day: dayNumber, month: month),
+          zado: ZadWorldZado(
+            left: 0,
+            top: 60,
+            size: 120,
+            state: next == null ? CompanionState.idle : CompanionState.happy,
+          ),
+          onRefresh: _load,
+          // «ميعاد جديد» docks under the list (the thumb zone), so it never
+          // covers a row.
+          dockHeight: 80,
+          overlay: Positioned(
+            right: 16,
+            bottom: 12,
+            child: ZadStepsAside(
+              child: FloatingActionButton.extended(
+                onPressed: () => unawaited(_add()),
+                icon: const Icon(ZadIcons.add),
+                label: const Text('ميعاد جديد'),
+              ),
             ),
           ),
-          body: RefreshIndicator(
-            onRefresh: _load,
-            child: ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(
-                ZadSpacing.lg,
-                ZadSpacing.sm,
-                ZadSpacing.lg,
-                120,
+          slivers: <Widget>[
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: ZadSpacing.gutter,
               ),
-              // The appointments come first — they are what the page is for.
-              // The helpers (say it by voice, places, money obligations) used
-              // to sit above them and push the list below the fold (owner,
-              // 2026-09-28: «صفحة المواعيد غير منظمة»).
-              children: <Widget>[
-                if (_loading && items == null)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 48),
-                    child: Center(child: CircularProgressIndicator()),
-                  )
-                else if (_failed && items == null)
-                  ZadEmptyState(
-                    icon: ZadIcons.pending,
-                    title: 'مقدرناش نجيب مواعيدك دلوقتي',
-                    message: 'اتأكد من النت وجرّب تاني.',
-                    action: OutlinedButton(
-                      onPressed: () => unawaited(_load()),
-                      child: const Text('جرّب تاني'),
+              sliver: SliverList.list(
+                // The appointments come first — they are what the page is
+                // for. The helpers (say it by voice, places, money
+                // obligations) sit under them (owner, 2026-09-28:
+                // «صفحة المواعيد غير منظمة»).
+                children: <Widget>[
+                  if (_loading && items == null)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 48),
+                      child: Center(child: CircularProgressIndicator()),
+                    )
+                  else if (_failed && items == null)
+                    ZadEmptyState(
+                      icon: ZadIcons.pending,
+                      title: 'مقدرناش نجيب مواعيدك دلوقتي',
+                      message: 'اتأكد من النت وجرّب تاني.',
+                      action: OutlinedButton(
+                        onPressed: () => unawaited(_load()),
+                        child: const Text('جرّب تاني'),
+                      ),
+                    )
+                  else if (!hasUpcoming)
+                    const ZadEmptyState(
+                      icon: ZadIcons.paid,
+                      title: 'مفيش مواعيد جاية',
+                      message:
+                          'سجّل ميعاد أو مشوار، أو قولها لزاد بصوتك — وهي '
+                          'هتفكّرك قبلها.',
                     ),
-                  )
-                else if (!hasUpcoming)
-                  ZadEmptyState(
-                    icon: ZadIcons.paid,
-                    title: 'مفيش مواعيد جاية',
-                    message:
-                        'سجّل ميعاد أو مشوار، أو قولها لزاد بصوتك — وهي '
-                        'هتفكّرك قبلها.',
-                    action: FilledButton.icon(
-                      onPressed: () => unawaited(_add()),
-                      icon: const Icon(ZadIcons.add, size: 18),
-                      label: const Text('ميعاد جديد'),
+                  if (next != null && nextAt != null) ...<Widget>[
+                    _NextCard(
+                      appointment: next,
+                      when: _when(next),
+                      countdown: _countdown(nextAt, nowLocal),
+                      onTap: () => unawaited(_actions(next)),
+                      onDone: () => unawaited(_setStatus(next, 'done')),
                     ),
-                  ),
-                for (final (group, list) in groups)
-                  if (group == AppointmentGroup.past) ...<Widget>[
-                    _PastHeader(
-                      count: list.length,
-                      expanded: _showPast,
-                      onToggle: () => setState(() => _showPast = !_showPast),
-                    ),
-                    AnimatedSize(
-                      duration: ZadDuration.enter,
-                      curve: ZadCurves.standard,
-                      child: _showPast
-                          ? Column(
-                              children: <Widget>[
+                    const SizedBox(height: ZadSpacing.md),
+                  ],
+                  for (final (group, list) in groups)
+                    if (group == AppointmentGroup.past) ...<Widget>[
+                      _PastHeader(
+                        count: list.length,
+                        expanded: _showPast,
+                        onToggle: () => setState(() => _showPast = !_showPast),
+                      ),
+                      AnimatedSize(
+                        duration: ZadDuration.enter,
+                        curve: ZadCurves.standard,
+                        child: _showPast
+                            ? ZadWorldCard(
+                                child: Column(
+                                  children: <Widget>[
+                                    for (final (i, a) in list.indexed)
+                                      ..._rowInCard(
+                                        i,
+                                        _Row(
+                                          appointment: a,
+                                          when: _when(a),
+                                          clock: _clockLabel(a),
+                                          past: true,
+                                          onTap: () => unawaited(_actions(a)),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              )
+                            : const SizedBox(width: double.infinity),
+                      ),
+                      const SizedBox(height: ZadSpacing.md),
+                    ] else ...<Widget>[
+                      if ([
+                        for (final a in list)
+                          if (a != next) a,
+                      ].isNotEmpty) ...<Widget>[
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: ZadSpacing.sm),
+                          child: Text(
+                            group.label,
+                            style: ZadType.labelMedium.copyWith(
+                              color: ZadWorld.appt.color,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                        ZadWorldCard(
+                          child: Column(
+                            children: <Widget>[
+                              for (final (i, a) in <Appointment>[
                                 for (final a in list)
+                                  if (a != next) a,
+                              ].indexed)
+                                ..._rowInCard(
+                                  i,
                                   _Row(
                                     appointment: a,
                                     when: _when(a),
-                                    past: true,
+                                    clock: _clockLabel(a),
+                                    past: false,
                                     onTap: () => unawaited(_actions(a)),
+                                    onDone: () =>
+                                        unawaited(_setStatus(a, 'done')),
                                   ),
-                              ],
-                            )
-                          : const SizedBox(width: double.infinity),
-                    ),
-                  ] else ...<Widget>[
+                                ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: ZadSpacing.md),
+                      ],
+                    ],
+                  if (_agentReminders.isNotEmpty) ...<Widget>[
                     Padding(
-                      padding: const EdgeInsets.only(
-                        top: ZadSpacing.sm,
-                        bottom: ZadSpacing.sm,
-                      ),
+                      padding: const EdgeInsets.only(bottom: ZadSpacing.sm),
                       child: Text(
-                        group.label,
-                        style: ZadType.titleSmall.copyWith(
-                          fontWeight: FontWeight.w700,
+                        'تذكيرات زاد',
+                        style: ZadType.labelMedium.copyWith(
+                          color: ZadWorld.appt.color,
+                          fontWeight: FontWeight.w800,
                         ),
                       ),
                     ),
-                    for (final a in list)
-                      _Row(
-                        appointment: a,
-                        when: _when(a),
-                        past: false,
-                        onTap: () => unawaited(_actions(a)),
-                        onDone: () => unawaited(_setStatus(a, 'done')),
-                      ),
-                  ],
-                if (_agentReminders.isNotEmpty) ...<Widget>[
-                  Padding(
-                    padding: const EdgeInsets.only(
-                      top: ZadSpacing.lg,
-                      bottom: ZadSpacing.sm,
-                    ),
-                    child: Text(
-                      'تذكيرات زاد',
-                      style: ZadType.titleSmall.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                  for (final r in _agentReminders)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: ZadSpacing.sm),
-                      child: Row(
+                    ZadWorldCard(
+                      child: Column(
                         children: <Widget>[
-                          const Icon(
-                            Icons.alarm,
-                            size: 20,
-                            color: ZadColors.green700,
-                          ),
-                          const SizedBox(width: ZadSpacing.md),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: <Widget>[
-                                Text(
-                                  r.text,
-                                  maxLines: 3,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: ZadType.bodyMedium,
+                          for (final (i, r) in _agentReminders.indexed)
+                            ..._rowInCard(
+                              i,
+                              ZadWorldRow(
+                                leading: ZadWorldTile(
+                                  color: ZadWorld.appt.color,
+                                  child: ZadArt.icon(ZadIconArt.bell, size: 28),
                                 ),
-                                if (r.at case final at?)
-                                  Text(
-                                    DateFormat(
-                                      'EEEE d MMM · h:mm a',
-                                      'ar',
-                                    ).format(_local(at)),
-                                    style: ZadType.bodySmall.copyWith(
-                                      color: ZadColors.inkMuted,
-                                    ),
-                                  ),
-                              ],
+                                title: r.text,
+                                subtitle: r.at == null
+                                    ? null
+                                    : DateFormat(
+                                        'EEEE d MMM · h:mm a',
+                                        'ar',
+                                      ).format(_local(r.at!)),
+                              ),
                             ),
-                          ),
                         ],
                       ),
                     ),
-                ],
-                const SizedBox(height: ZadSpacing.lg),
-                _VoiceHint(onTap: _openVoice),
-                const SizedBox(height: ZadSpacing.md),
-                // «لما توصل مكان» moved to «أماكني» (owner, 2026-09-30:
-                // location is the brain's, not the appointments page's).
-                _LinkRow(
-                  icon: Icons.place,
-                  label: 'أماكني: تذكيرات لما توصل مكان، وخروجاتك',
-                  onTap: () => unawaited(ZadScreens.showMyPlaces(context)),
-                ),
-                const SizedBox(height: ZadSpacing.md),
-                _LinkRow(
-                  icon: ZadIcons.obligation,
-                  label: 'التزاماتك المالية (إيجار، أقساط، فواتير)',
-                  onTap: () => unawaited(
-                    ZadScreens.showFinancesScreen(context, initialTab: 1),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _VoiceHint extends StatelessWidget {
-  const new({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) => Material(
-    color: ZadColors.mint100,
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-    clipBehavior: Clip.antiAlias,
-    child: InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.all(ZadSpacing.lg),
-        child: Row(
-          children: <Widget>[
-            Container(
-              width: 48,
-              height: 48,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: ZadColors.green700,
-              ),
-              child: const Icon(ZadIcons.voice, color: Colors.white),
-            ),
-            const SizedBox(width: ZadSpacing.lg),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    'قولها لزاد وهي تسجّل وتفكّرك',
-                    style: ZadType.titleSmall.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: ZadColors.green800,
+                    const SizedBox(height: ZadSpacing.md),
+                  ],
+                  ZadWorldCard(
+                    onTap: _openVoice,
+                    child: ZadWorldRow(
+                      leading: ZadWorldTile(
+                        color: ZadWorld.appt.color,
+                        child: ZadArt.icon(ZadIconArt.mic, size: 28),
+                      ),
+                      title: 'قولها لزاد وهي تسجّل وتفكّرك',
+                      subtitle:
+                          '«فكّريني بكرة الساعة ٥ أروح البنك» — وهتفكّرك '
+                          'بصوتها قبلها',
                     ),
                   ),
-                  const SizedBox(height: ZadSpacing.xs),
-                  Text(
-                    '«فكّريني بكرة الساعة ٥ أروح البنك» — وهتفكّرك بصوتها '
-                    'قبلها',
-                    style: ZadType.bodySmall.copyWith(
-                      color: ZadColors.green800,
+                  const SizedBox(height: ZadSpacing.md),
+                  // «لما توصل مكان» moved to «أماكني» (owner, 2026-09-30:
+                  // location is the brain's, not the appointments page's).
+                  ZadWorldCard(
+                    onTap: () => unawaited(ZadScreens.showMyPlaces(context)),
+                    child: ZadWorldRow(
+                      leading: ZadWorldTile(
+                        color: ZadWorld.places.color,
+                        child: ZadArt.icon(ZadIconArt.pin, size: 28),
+                      ),
+                      title: 'أماكني: تذكيرات لما توصل مكان، وخروجاتك',
+                      trailing: Icon(ZadIcons.back, color: ZadColors.inkMuted),
+                    ),
+                  ),
+                  const SizedBox(height: ZadSpacing.md),
+                  ZadWorldCard(
+                    onTap: () => unawaited(
+                      ZadScreens.showFinancesScreen(context, initialTab: 1),
+                    ),
+                    child: ZadWorldRow(
+                      leading: ZadWorldTile(
+                        color: ZadWorld.budget.color,
+                        child: ZadArt.icon(ZadIconArt.coin, size: 28),
+                      ),
+                      title: 'التزاماتك المالية (إيجار، أقساط، فواتير)',
+                      trailing: Icon(ZadIcons.back, color: ZadColors.inkMuted),
                     ),
                   ),
                 ],
@@ -478,46 +513,103 @@ class _VoiceHint extends StatelessWidget {
           ],
         ),
       ),
-    ),
-  );
+    );
+  }
+
+  /// The time of day (or the weekday, for something further than a week):
+  /// what the row's tile says.
+  String _clockLabel(Appointment a) {
+    final at = a.startsAt;
+    if (at == null) return '';
+    final local = _local(at);
+    final today = _local(ref.read(nowProvider)());
+    final sameDay =
+        local.year == today.year &&
+        local.month == today.month &&
+        local.day == today.day;
+    return sameDay
+        ? DateFormat.jm('ar').format(local)
+        : DateFormat('EEE', 'ar').format(local);
+  }
 }
 
-class _LinkRow extends StatelessWidget {
-  const new({required this.icon, required this.label, required this.onTap});
+/// A row inside a world card, with a hairline above all but the first.
+List<Widget> _rowInCard(int index, Widget row) => <Widget>[
+  if (index > 0) const ZadWorldDivider(),
+  row,
+];
 
-  final IconData icon;
-  final String label;
+/// The next appointment, on top, with how long is left.
+class _NextCard extends StatelessWidget {
+  const new({
+    required this.appointment,
+    required this.when,
+    required this.countdown,
+    required this.onTap,
+    required this.onDone,
+  });
+
+  final Appointment appointment;
+  final String when;
+  final String countdown;
   final VoidCallback onTap;
+  final VoidCallback onDone;
 
   @override
-  Widget build(BuildContext context) => Material(
-    color: Colors.transparent,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(16),
-      side: BorderSide(color: ZadColors.outlineVariant),
-    ),
-    clipBehavior: Clip.antiAlias,
-    child: InkWell(
+  Widget build(BuildContext context) {
+    final accent = _kindAccent(appointment.kind);
+    return ZadWorldCard(
       onTap: onTap,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 44),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: ZadSpacing.lg,
-            vertical: ZadSpacing.md,
+      child: Row(
+        children: <Widget>[
+          ZadWorldTile(
+            color: accent,
+            child: Icon(_kindIcon(appointment.kind), size: 22, color: accent),
           ),
-          child: Row(
-            children: <Widget>[
-              Icon(icon, size: 20, color: ZadColors.inkMuted),
-              const SizedBox(width: ZadSpacing.md),
-              Expanded(child: Text(label, style: ZadType.bodyMedium)),
-              Icon(ZadIcons.back, color: ZadColors.inkMuted),
-            ],
+          const SizedBox(width: ZadSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  context.l10n.apptNextLabel,
+                  style: ZadType.labelSmall.copyWith(
+                    color: ZadWorld.appt.color,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                Text(
+                  appointment.title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: ZadType.titleSmall,
+                ),
+                Text(
+                  when,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: ZadType.labelSmall.copyWith(color: ZadColors.inkMuted),
+                ),
+                const SizedBox(height: ZadSpacing.xs),
+                Text(
+                  countdown,
+                  style: ZadType.titleMedium.copyWith(
+                    color: ZadWorld.appt.color,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
+          IconButton(
+            tooltip: 'خلص',
+            onPressed: onDone,
+            icon: const Icon(Icons.check_circle, color: ZadColors.green700),
+          ),
+        ],
       ),
-    ),
-  );
+    );
+  }
 }
 
 class _PastHeader extends StatelessWidget {
@@ -537,26 +629,23 @@ class _PastHeader extends StatelessWidget {
     borderRadius: BorderRadius.circular(12),
     child: ConstrainedBox(
       constraints: const BoxConstraints(minHeight: 44),
-      child: Padding(
-        padding: const EdgeInsets.only(top: ZadSpacing.sm),
-        child: Row(
-          children: <Widget>[
-            Expanded(
-              child: Text(
-                'اللي فات ($count)',
-                style: ZadType.titleSmall.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: ZadColors.inkMuted,
-                ),
+      child: Row(
+        children: <Widget>[
+          Expanded(
+            child: Text(
+              'اللي فات ($count)',
+              style: ZadType.labelMedium.copyWith(
+                fontWeight: FontWeight.w800,
+                color: ZadColors.inkMuted,
               ),
             ),
-            AnimatedRotation(
-              turns: expanded ? 0.5 : 0,
-              duration: ZadDuration.quick,
-              child: Icon(ZadIcons.expand, color: ZadColors.inkMuted),
-            ),
-          ],
-        ),
+          ),
+          AnimatedRotation(
+            turns: expanded ? 0.5 : 0,
+            duration: ZadDuration.quick,
+            child: Icon(ZadIcons.expand, color: ZadColors.inkMuted),
+          ),
+        ],
       ),
     ),
   );
@@ -566,6 +655,7 @@ class _Row extends StatelessWidget {
   const new({
     required this.appointment,
     required this.when,
+    required this.clock,
     required this.past,
     required this.onTap,
     this.onDone,
@@ -573,6 +663,9 @@ class _Row extends StatelessWidget {
 
   final Appointment appointment;
   final String when;
+
+  /// What the tile says: the time, or the weekday.
+  final String clock;
   final bool past;
   final VoidCallback onTap;
   final VoidCallback? onDone;
@@ -580,80 +673,43 @@ class _Row extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final accent = _kindAccent(appointment.kind);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: ZadSpacing.sm),
-      child: Material(
-        color: ZadColors.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: ZadColors.outlineVariant),
+    return ZadWorldRow(
+      onTap: onTap,
+      leading: Container(
+        width: 44,
+        height: 44,
+        padding: const EdgeInsets.symmetric(horizontal: 2),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: past ? accent.withValues(alpha: 0.5) : accent,
+          borderRadius: BorderRadius.circular(ZadRadii.chip),
         ),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.all(ZadSpacing.md),
-            child: Row(
-              children: <Widget>[
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: accent.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    _kindIcon(appointment.kind),
-                    size: 22,
-                    color: accent,
+        child: clock.isEmpty
+            ? Icon(_kindIcon(appointment.kind), size: 22, color: Colors.white)
+            : FittedBox(
+                child: Text(
+                  clock,
+                  style: ZadType.labelSmall.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w900,
                   ),
                 ),
-                const SizedBox(width: ZadSpacing.md),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(
-                        appointment.title,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: ZadType.bodyLarge.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: past ? ZadColors.inkMuted : ZadColors.ink,
-                        ),
-                      ),
-                      const SizedBox(height: ZadSpacing.xs),
-                      Text(
-                        when,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: ZadType.bodySmall.copyWith(
-                          color: ZadColors.inkMuted,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                if (onDone != null)
-                  IconButton(
-                    tooltip: 'خلص',
-                    onPressed: onDone,
-                    icon: const Icon(
-                      Icons.check_circle,
-                      color: ZadColors.green700,
-                    ),
-                  )
-                else if (appointment.status == 'done')
-                  const Icon(
-                    ZadIcons.selected,
-                    size: 24,
-                    color: ZadColors.green700,
-                  ),
-              ],
-            ),
-          ),
-        ),
+              ),
       ),
+      title: appointment.title,
+      titleStyle: ZadType.titleSmall.copyWith(
+        color: past ? ZadColors.inkMuted : ZadColors.ink,
+      ),
+      subtitle: when,
+      trailing: onDone != null
+          ? IconButton(
+              tooltip: 'خلص',
+              onPressed: onDone,
+              icon: const Icon(Icons.check_circle, color: ZadColors.green700),
+            )
+          : appointment.status == 'done'
+          ? const Icon(ZadIcons.selected, size: 24, color: ZadColors.green700)
+          : null,
     );
   }
 }

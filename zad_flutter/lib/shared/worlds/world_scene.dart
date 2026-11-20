@@ -5,6 +5,7 @@ library;
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
+import 'package:zad/core/design/tokens/zad_typography.dart';
 
 /// The scene's design size.
 const Size kWorldSceneSize = Size(430, 230);
@@ -15,6 +16,31 @@ void paintWorldGround(Canvas canvas, Color color) {
     Rect.fromCenter(center: const Offset(215, 214), width: 360, height: 28),
     Paint()..color = color.withValues(alpha: 0.18),
   );
+}
+
+/// Draws [text] centred on [center] — a number or a word the scene shows
+/// (a calendar's day). The text is real data, never a drawn label.
+void paintWorldText(
+  Canvas canvas,
+  String text,
+  Offset center, {
+  required double size,
+  required Color color,
+}) {
+  final tp = TextPainter(
+    text: TextSpan(
+      text: text,
+      style: TextStyle(
+        fontFamily: kZadArabicFont,
+        fontSize: size,
+        fontWeight: FontWeight.w900,
+        color: color,
+      ),
+    ),
+    textDirection: TextDirection.rtl,
+    maxLines: 1,
+  )..layout(maxWidth: 140);
+  tp.paint(canvas, center - Offset(tp.width / 2, tp.height / 2));
 }
 
 /// A slow vertical bob of ±[amplitude] over the loop (one period per loop).

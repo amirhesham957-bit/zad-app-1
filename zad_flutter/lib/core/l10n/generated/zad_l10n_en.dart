@@ -4509,6 +4509,102 @@ class ZadL10nEn extends ZadL10n {
   }
 
   @override
+  String shopWorldEyebrow(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count things missing',
+      one: '1 thing missing',
+      zero: 'Nothing missing',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String shopWorldStores(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'From $count shops',
+      one: 'From 1 shop',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get shopWorldAnyStore => 'From any shop';
+
+  @override
+  String get shopWorldDone => 'The list is empty';
+
+  @override
+  String get shopGroupAnyStore => 'Any shop';
+
+  @override
+  String shopPantryCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count items in the pantry',
+      one: '1 item in the pantry',
+      zero: 'The pantry is empty',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String apptWorldToday(String weekday) {
+    return 'Today is $weekday';
+  }
+
+  @override
+  String apptWorldNext(String title, String when) {
+    return '$title $when';
+  }
+
+  @override
+  String get apptWorldNone => 'Nothing coming up';
+
+  @override
+  String get apptNextLabel => 'Next up';
+
+  @override
+  String get apptInNow => 'now';
+
+  @override
+  String apptInMinutes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'in $count minutes',
+      one: 'in 1 minute',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String apptInHours(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'in $count hours',
+      one: 'in 1 hour',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String apptInDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'in $count days',
+      one: 'in 1 day',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String phEyebrowCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
