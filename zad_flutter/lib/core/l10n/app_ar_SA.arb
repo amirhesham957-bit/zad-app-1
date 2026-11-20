@@ -569,5 +569,15 @@
   "statementCheckBalanced": "الأرقام متطابقة مع رصيد الكشف",
   "statementCheckMismatch": "فيه أرقام مو متطابقة مع رصيد الكشف — الصفوف هذي غير معلّمة، راجعها",
   "statementCheckUnknown": "الكشف ما فيه رصيد أراجع عليه — راجع كل صف قبل الاستيراد",
-  "statementDropped": "{text}. وفيه {n} صف ما قدرت أقراه."
+  "statementDropped": "{text}. وفيه {n} صف ما قدرت أقراه.",
+  "tasStateEmpty": "ابدأ أول تسبيحة والورد بيتفتح",
+  "tasTabFamily": "أشجار العائلة",
+  "tasStatSession": "في هذي الجلسة",
+  "tasStreakDays": "{days} يوم متتالي",
+  "tasBloom": "تفتّحت وردة جديدة!",
+  "tasNoTreesMsg": "أول ما أحد من العائلة يسبّح تظهر شجرته هنا.",
+  "tasChallengesTitle": "التحديات العائلية",
+  "tasNoChallengesAdmin": "اضغط + وابدأ أول تحدي للعائلة.",
+  "tasNoChallengesMember": "اطلب من المدير ينشئ تحدي جديد!",
+  "tasNoTreeTitle": "للحين ما فيه شجرة"
 }

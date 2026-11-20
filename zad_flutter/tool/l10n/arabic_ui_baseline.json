@@ -87,7 +87,6 @@
   "features/support/presentation/help_support_screen.dart": 31,
   "features/support/presentation/terms_screen.dart": 62,
   "features/tasbiha/presentation/leaderboard_share.dart": 7,
-  "features/tasbiha/presentation/tasbiha_screen.dart": 59,
   "features/telegram/presentation/telegram_binding.dart": 35,
   "shared/ads/presentation/watch_ad_button.dart": 5,
   "shared/affiliate/domain/affiliate.dart": 6,
