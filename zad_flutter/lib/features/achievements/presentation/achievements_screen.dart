@@ -1,17 +1,29 @@
-/// Kotlin's `AchievementsRoute`/`AchievementsScreen`: the emerald level card,
-/// three mini stats, the next achievement, and the catalogue as a 3-column
-/// grid. Two direct reads, no model call — the same as Kotlin.
+/// Kotlin's `AchievementsRoute`/`AchievementsScreen` as a world: the trophy
+/// shelf, the level and its points, the next achievement, and the catalogue
+/// — earned in colour with their date, the rest as grey silhouettes. Two
+/// direct reads, no model call — the same as Kotlin.
 library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart' show DateFormat;
 import 'package:lottie/lottie.dart';
+import 'package:timezone/timezone.dart' as tz;
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/components/zad_empty_state.dart';
-import 'package:zad/core/design/foundation/squircle.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
+import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/achievements/domain/achievements.dart';
+import 'package:zad/features/achievements/presentation/achievements_world_scene.dart';
+import 'package:zad/shared/market/application/account_time_zone.dart';
+import 'package:zad/shared/orb/domain/companion_state.dart';
+import 'package:zad/shared/worlds/art/art.dart';
+import 'package:zad/shared/worlds/world_card.dart';
+import 'package:zad/shared/worlds/world_row.dart';
+import 'package:zad/shared/worlds/world_scaffold.dart';
+import 'package:zad/shared/worlds/zad_world.dart';
 
 /// Opens the achievements.
 Future<void> showAchievementsScreen(BuildContext context) =>
@@ -19,13 +31,15 @@ Future<void> showAchievementsScreen(BuildContext context) =>
       MaterialPageRoute<void>(builder: (_) => const AchievementsScreen()),
     );
 
-const Color _ink = Color(0xFF0F172A);
-const Color _slate = Color(0xFF475569);
-
 /// The achievements.
 class AchievementsScreen extends ConsumerStatefulWidget {
   /// Creates the screen.
-  const new({super.key});
+  const new({super.key, this.loadForTest});
+
+  /// A test supplies the data instead of the two reads.
+  @visibleForTesting
+  final Future<(AchievementStats, List<AchievementView>)> Function()?
+  loadForTest;
 
   @override
   ConsumerState<AchievementsScreen> createState() => _AchievementsState();
@@ -35,6 +49,7 @@ class _AchievementsState extends ConsumerState<AchievementsScreen> {
   late Future<(AchievementStats, List<AchievementView>)> _load = _fetch();
 
   Future<(AchievementStats, List<AchievementView>)> _fetch() async {
+    if (widget.loadForTest case final test?) return await test();
     final client = ref.read(supabaseClientProvider);
     final userId = client.auth.currentUser?.id;
     if (userId == null) {
@@ -46,7 +61,7 @@ class _AchievementsState extends ConsumerState<AchievementsScreen> {
     }
     final rows = await client
         .from('user_achievements')
-        .select('achievement_id, points_earned')
+        .select('achievement_id, points_earned, unlocked_at')
         .eq('user_id', userId);
     final stamps = await client
         .from('price_index')
@@ -65,371 +80,241 @@ class _AchievementsState extends ConsumerState<AchievementsScreen> {
             points: (r['points_earned'] as num?)?.toInt() ?? 0,
           ),
       ],
+      unlockedAt: <String, DateTime>{
+        for (final r in rows)
+          '${r['achievement_id']}': ?DateTime.tryParse('${r['unlocked_at']}'),
+      },
       contributions: stamps.length,
       streak: contributionStreak(last, ref.read(nowProvider)()),
     );
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    backgroundColor: ZadColors.canvasMid,
-    appBar: AppBar(
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    return Scaffold(
       backgroundColor: ZadColors.canvasMid,
-      title: const Text('الإنجازات والرتب'),
-    ),
-    body: FutureBuilder<(AchievementStats, List<AchievementView>)>(
-      future: _load,
-      builder: (context, snap) {
-        if (snap.connectionState != ConnectionState.done) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        final data = snap.data;
-        if (snap.hasError || data == null) {
-          return ZadEmptyState(
-            icon: Icons.cloud_off,
-            title: 'تعذر حفظ التغييرات',
-            message: 'تحقق من الاتصال وحاول مرة أخرى',
-            action: FilledButton(
-              onPressed: () => setState(() => _load = _fetch()),
-              child: const Text('إعادة المحاولة'),
+      body: SafeArea(
+        bottom: false,
+        child: FutureBuilder<(AchievementStats, List<AchievementView>)>(
+          future: _load,
+          builder: (context, snap) {
+            final data = snap.data;
+            final done = snap.connectionState == ConnectionState.done;
+            final failed = done && (snap.hasError || data == null);
+            final ready = done && !failed;
+            return ZadWorldScaffold(
+              world: ZadWorld.ach,
+              title: l.worldLabelAch,
+              stateLine: ready
+                  ? l.achWorldState(
+                      data!.$1.unlocked,
+                      kAchievementCatalog.length,
+                    )
+                  : null,
+              scene: (loop) => AchievementsWorldScene(
+                loop,
+                unlocked: ready ? data!.$1.unlocked : 0,
+                total: kAchievementCatalog.length,
+              ),
+              zado: ZadWorldZado(
+                state: ready && data!.$1.unlocked > 0
+                    ? CompanionState.happy
+                    : CompanionState.idle,
+              ),
+              slivers: <Widget>[
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: ZadSpacing.gutter,
+                  ),
+                  sliver: SliverList.list(
+                    children: <Widget>[
+                      if (!done)
+                        const Padding(
+                          padding: EdgeInsets.all(ZadSpacing.xl),
+                          child: Center(child: CircularProgressIndicator()),
+                        )
+                      else if (failed)
+                        ZadEmptyState(
+                          icon: Icons.cloud_off,
+                          title: l.achLoadFailed,
+                          message: l.achLoadFailedHint,
+                          action: FilledButton(
+                            onPressed: () => setState(() {
+                              _load = _fetch();
+                            }),
+                            child: Text(l.achRetry),
+                          ),
+                        )
+                      else
+                        ..._body(context, data!.$1, data.$2),
+                    ],
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _body(
+    BuildContext context,
+    AchievementStats stats,
+    List<AchievementView> items,
+  ) {
+    final l = context.l10n;
+    final gold = ZadWorld.ach.color;
+    final zone = tz.getLocation(ref.watch(accountTimeZoneProvider));
+    final lang = Localizations.localeOf(context).languageCode;
+    String dateOf(DateTime at) => DateFormat(
+      'd MMMM y',
+      lang,
+    ).format(tz.TZDateTime.from(at.toUtc(), zone));
+    return <Widget>[
+      ZadWorldCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            ZadWorldRow(
+              leading: ZadWorldTile(
+                color: gold,
+                child: ZadArt.icon(ZadIconArt.star, size: 28),
+              ),
+              title: l.achLevel(stats.level),
+              subtitle: l.achLevelPoints(stats.totalPoints, stats.level * 100),
+              stateColor: gold,
+              progress: (stats.totalPoints % 100) / 100,
             ),
-          );
-        }
-        return _Body(stats: data.$1, achievements: data.$2);
-      },
-    ),
-  );
-}
-
-class _Body extends StatelessWidget {
-  const new({required this.stats, required this.achievements});
-
-  final AchievementStats stats;
-  final List<AchievementView> achievements;
-
-  @override
-  Widget build(BuildContext context) => ListView(
-    padding: const EdgeInsets.fromLTRB(
-      ZadSpacing.lg,
-      ZadSpacing.sm,
-      ZadSpacing.lg,
-      96,
-    ),
-    children: <Widget>[
-      _LevelCard(stats),
-      const SizedBox(height: ZadSpacing.lg),
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: ZadSpacing.sm),
+            const SizedBox(height: ZadSpacing.sm),
+            Text(
+              l.achOnTrack,
+              style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
+            ),
+          ],
+        ),
+      ),
+      const SizedBox(height: ZadSpacing.md),
+      ZadWorldCard(
         child: Row(
           children: <Widget>[
-            Expanded(
-              child: _MiniStat('المساهمات', '${stats.contributions}', '📊'),
-            ),
-            const SizedBox(width: ZadSpacing.md),
-            Expanded(child: _MiniStat('التسلسل', '${stats.streak}🔥', '⚡')),
-            const SizedBox(width: ZadSpacing.md),
-            Expanded(child: _MiniStat('الإنجازات', '${stats.unlocked}', '🏆')),
+            _Stat(l.achContributions, '${stats.contributions}'),
+            _Stat(l.achStreak, '${stats.streak}'),
+            _Stat(l.achShelf, '${stats.unlocked}'),
           ],
         ),
       ),
       if (stats.nextName != null && stats.nextProgress != null) ...<Widget>[
-        const SizedBox(height: ZadSpacing.lg),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: ZadSpacing.sm),
-          child: DecoratedBox(
-            decoration: ShapeDecoration(
-              color: ZadColors.mustardOchre.withValues(alpha: 0.1),
-              shape: zadSquircle(
-                ZadRadii.card,
-                side: BorderSide(
-                  width: 0.5,
-                  color: ZadColors.mustardOchre.withValues(alpha: 0.3),
-                ),
-              ),
+        const SizedBox(height: ZadSpacing.md),
+        ZadWorldCard(
+          child: ZadWorldRow(
+            leading: ZadWorldTile(
+              color: gold,
+              child: ZadArt.icon(ZadIconArt.star, size: 28),
             ),
-            child: Padding(
-              padding: const EdgeInsets.all(ZadSpacing.md),
-              child: Row(
-                children: <Widget>[
-                  Icon(
-                    Icons.emoji_events,
-                    size: 24,
-                    color: ZadColors.mustardOchre,
-                  ),
-                  const SizedBox(width: ZadSpacing.md),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Text(
-                          'الإنجاز التالي',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: ZadColors.mustardOchre,
-                          ),
-                        ),
-                        Text(
-                          stats.nextName!,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: _ink,
-                          ),
-                        ),
-                        Text(
-                          stats.nextProgress!,
-                          style: const TextStyle(fontSize: 12, color: _slate),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            title: stats.nextName!,
+            subtitle: '${l.achNext} · ${stats.nextProgress!}',
+            stateColor: ZadColors.inkMuted,
           ),
         ),
       ],
       const SizedBox(height: ZadSpacing.lg),
-      const Padding(
-        padding: EdgeInsets.symmetric(horizontal: ZadSpacing.sm),
+      Padding(
+        padding: const EdgeInsets.only(bottom: ZadSpacing.sm),
         child: Text(
-          'الإنجازات',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-            color: _ink,
+          l.achShelf,
+          style: ZadType.titleMedium.copyWith(
+            fontWeight: FontWeight.w800,
+            color: ZadColors.ink,
           ),
         ),
       ),
-      const SizedBox(height: ZadSpacing.lg),
-      GridView.count(
-        crossAxisCount: 3,
-        mainAxisSpacing: ZadSpacing.md,
-        crossAxisSpacing: ZadSpacing.md,
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        children: <Widget>[for (final a in achievements) _AchievementCard(a)],
-      ),
-    ],
-  );
-}
-
-class _LevelCard extends StatelessWidget {
-  const new(this.stats);
-
-  final AchievementStats stats;
-
-  @override
-  Widget build(BuildContext context) => DecoratedBox(
-    decoration: ShapeDecoration(
-      color: ZadColors.forestEmerald,
-      shape: zadSquircle(ZadRadii.card),
-    ),
-    child: Padding(
-      padding: const EdgeInsets.all(20),
-      child: Row(
-        children: <Widget>[
-          SizedBox.square(
-            dimension: 80,
-            // A fixed 80dp square: scaled down at large text, not cut.
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.topCenter,
-              child: Column(
-                children: <Widget>[
-                  Text(
-                    'المستوى',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: Colors.white.withValues(alpha: 0.8),
-                    ),
-                  ),
-                  Text(
-                    '${stats.level}',
-                    style: const TextStyle(
-                      fontSize: 36,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(width: ZadSpacing.lg),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                const Text(
-                  'أنت على الطريق الصحيح!',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: ZadSpacing.sm),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: TweenAnimationBuilder<double>(
-                    tween: Tween<double>(
-                      begin: 0,
-                      end: ((stats.totalPoints % 100) / 100).clamp(0, 1),
-                    ),
-                    duration: const Duration(milliseconds: 800),
-                    curve: Curves.easeOutCubic,
-                    builder: (context, v, _) => LinearProgressIndicator(
-                      value: v,
-                      minHeight: 8,
-                      color: Colors.white,
-                      backgroundColor: Colors.white.withValues(alpha: 0.3),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: ZadSpacing.sm),
-                Text(
-                  '${stats.totalPoints} من ${stats.level * 100} نقطة',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.white.withValues(alpha: 0.9),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
-class _MiniStat extends StatelessWidget {
-  const new(this.label, this.value, this.icon);
-
-  final String label;
-  final String value;
-  final String icon;
-
-  @override
-  Widget build(BuildContext context) => SizedBox(
-    height: 80,
-    child: DecoratedBox(
-      decoration: ShapeDecoration(
-        color: ZadColors.surface,
-        shape: zadSquircle(
-          ZadRadii.card,
-          side: const BorderSide(width: 0.5, color: ZadColors.hairline),
-        ),
-      ),
-      // Scaled down rather than cut: the box is a fixed 80dp, and at 1.5×
-      // text its three lines overflowed it.
-      child: FittedBox(
-        fit: BoxFit.scaleDown,
+      ZadWorldCard(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Text(icon, style: const TextStyle(fontSize: 20)),
-            const SizedBox(height: ZadSpacing.xs),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: ZadColors.forestEmerald,
+            for (final (i, a) in items.indexed) ...<Widget>[
+              if (i > 0) const ZadWorldDivider(),
+              _AchievementRow(
+                item: a,
+                subtitle: a.unlocked
+                    ? (a.at == null ? a.def.description : dateOf(a.at!))
+                    : l.achLocked,
               ),
-            ),
-            Text(label, style: const TextStyle(fontSize: 10, color: _slate)),
+            ],
           ],
         ),
       ),
-    ),
-  );
+    ];
+  }
 }
 
-class _AchievementCard extends StatelessWidget {
-  const new(this.item);
+class _Stat extends StatelessWidget {
+  const new(this.label, this.value);
 
-  final AchievementView item;
+  final String label;
+  final String value;
 
   @override
-  Widget build(BuildContext context) => Tooltip(
-    message: item.def.description,
-    child: DecoratedBox(
-      decoration: ShapeDecoration(
-        color: item.unlocked ? ZadColors.surface : const Color(0xFFF1F5F9),
-        shape: zadSquircle(
-          ZadRadii.card,
-          side: item.unlocked
-              ? BorderSide(width: 2, color: ZadColors.mustardOchre)
-              : const BorderSide(width: 0.5, color: ZadColors.hairline),
+  Widget build(BuildContext context) => Expanded(
+    child: Column(
+      children: <Widget>[
+        Text(value, style: ZadType.titleLarge),
+        Text(
+          label,
+          textAlign: TextAlign.center,
+          style: ZadType.labelSmall.copyWith(color: ZadColors.inkMuted),
         ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(ZadSpacing.md),
-        // The grid gives each card a fixed cell; at 1.5× text the column
-        // overflowed it. The column keeps the cell's width, so the name still
-        // wraps to two lines, and only shrinks when it cannot fit.
-        child: LayoutBuilder(
-          builder: (context, cell) => FittedBox(
-            fit: BoxFit.scaleDown,
-            child: SizedBox(
-              width: cell.maxWidth,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: ZadSpacing.xs),
-                    child: AchievementBadge(
-                      def: item.def,
-                      unlocked: item.unlocked,
-                    ),
-                  ),
-                  Text(
-                    item.def.name,
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: _ink,
-                    ),
-                  ),
-                  const SizedBox(height: ZadSpacing.xs),
-                  Text(
-                    item.unlocked ? '+${item.def.points}' : 'مقفول',
-                    style: TextStyle(
-                      fontSize: item.unlocked ? 10 : 9,
-                      fontWeight: item.unlocked
-                          ? FontWeight.w600
-                          : FontWeight.w400,
-                      color: item.unlocked
-                          ? ZadColors.mustardOchre
-                          : const Color(0xFFA1A5AB),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
+      ],
     ),
   );
 }
 
-/// Greyscale by luminance, for a badge not yet earned.
-const ColorFilter _greyscale = ColorFilter.matrix(<double>[
-  0.2126, 0.7152, 0.0722, 0, 0, //
-  0.2126, 0.7152, 0.0722, 0, 0, //
-  0.2126, 0.7152, 0.0722, 0, 0, //
-  0, 0, 0, 1, 0, //
-]);
+/// One catalogue entry: its badge, its name and what it says (the date when
+/// earned, «مقفول» when not), and its points.
+class _AchievementRow extends StatelessWidget {
+  const new({required this.item, required this.subtitle});
+
+  final AchievementView item;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    final gold = ZadWorld.ach.color;
+    return Tooltip(
+      message: item.def.description,
+      child: ZadWorldRow(
+        leading: ZadWorldTile(
+          color: item.unlocked ? gold : ZadColors.inkMuted,
+          size: 52,
+          child: AchievementBadge(def: item.def, unlocked: item.unlocked),
+        ),
+        title: item.def.name,
+        subtitle: subtitle,
+        stateColor: item.unlocked ? ZadColors.ink : ZadColors.inkMuted,
+        trailing: item.unlocked
+            ? Text(
+                '+${item.def.points}',
+                style: ZadType.labelMedium.copyWith(
+                  color: ZadColors.inkMuted,
+                  fontWeight: FontWeight.w800,
+                ),
+              )
+            : null,
+      ),
+    );
+  }
+}
+
+/// A flat grey silhouette, for a badge not yet earned.
+const ColorFilter _silhouette = ColorFilter.mode(
+  Color(0xFFADB5BF),
+  BlendMode.srcIn,
+);
 
 /// A badge's picture: its Lottie looping once earned, held on its first frame
-/// and greyed while locked, and the catalogue's emoji if the file cannot load.
+/// and a grey silhouette while locked, and the catalogue's emoji if the file
+/// cannot load.
 /// Still whenever the system asks for reduced motion.
 class AchievementBadge extends StatelessWidget {
   /// Creates the badge.
@@ -452,9 +337,6 @@ class AchievementBadge extends StatelessWidget {
           Text(def.icon, style: const TextStyle(fontSize: 32)),
     );
     if (unlocked) return picture;
-    return Opacity(
-      opacity: 0.45,
-      child: ColorFiltered(colorFilter: _greyscale, child: picture),
-    );
+    return ColorFiltered(colorFilter: _silhouette, child: picture);
   }
 }
