@@ -6065,4 +6065,201 @@ class ZadL10nEn extends ZadL10n {
     });
     return '$_temp0 · $_temp1';
   }
+
+  @override
+  String docsEyebrowCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count documents',
+      one: '1 document',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get docsStateEmpty => 'The drawer is empty — add your first document';
+
+  @override
+  String docsStateNearest(String name, String status) {
+    return 'Nearest: $name — $status';
+  }
+
+  @override
+  String get docsPrivacy =>
+      'Zad keeps only the kind of document and its expiry date — no number, no photo — and reminds you ahead.';
+
+  @override
+  String get docsDueOne => 'One document needs renewing soon';
+
+  @override
+  String docsDueMany(int count) {
+    return '$count documents need renewing soon';
+  }
+
+  @override
+  String get docsEmptyTitle => 'No documents yet';
+
+  @override
+  String get docsEmptyMessage =>
+      'Add your passport, ID or licence with its expiry date and Zad reminds you in good time to renew. Or tell Zad in chat: \"my passport expires 15 March 2027\".';
+
+  @override
+  String get docsAdd => 'Add a document';
+
+  @override
+  String get docsDelete => 'Delete';
+
+  @override
+  String docsExpires(String date) {
+    return 'Expires $date';
+  }
+
+  @override
+  String get docsSaveFailedEdit =>
+      'Not saved — a document with the same kind and name may exist, or you are offline.';
+
+  @override
+  String get docsSaveFailedAdd => 'Not saved — check your connection.';
+
+  @override
+  String get docsDeleteFailed => 'Not removed — check your connection.';
+
+  @override
+  String maintEyebrowCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count appliances',
+      one: '1 appliance',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get maintStateNone => 'Nothing registered yet';
+
+  @override
+  String get maintStateNoSchedule =>
+      'Set a service interval and Zad reminds you';
+
+  @override
+  String maintStateNext(String name, String status) {
+    return 'Next: $name — $status';
+  }
+
+  @override
+  String maintStateOverdue(String name, int days) {
+    return '$name is $days days late';
+  }
+
+  @override
+  String maintServiceOverdue(int days) {
+    return '$days days late';
+  }
+
+  @override
+  String maintServiceIn(int days) {
+    return 'Service in $days days';
+  }
+
+  @override
+  String get maintServiceSoon => 'Service soon';
+
+  @override
+  String get maintWarrantyEnded => 'Warranty ended';
+
+  @override
+  String maintWarrantyIn(int days) {
+    return 'Warranty ends in $days days';
+  }
+
+  @override
+  String get maintStatDevices => 'Appliances';
+
+  @override
+  String get maintStatSoon => 'Service soon';
+
+  @override
+  String get maintStatWarranty => 'Warranty ending';
+
+  @override
+  String maintOverdueBanner(int count) {
+    return '$count appliances are past their service date';
+  }
+
+  @override
+  String get maintEmptyTitle => 'No appliances yet';
+
+  @override
+  String get maintEmptyMessage =>
+      'Add the AC, the water heater or the car and Zad reminds you of its service and warranty.';
+
+  @override
+  String get maintAdd => 'Add an appliance';
+
+  @override
+  String get maintServicedToday => 'Serviced today';
+
+  @override
+  String get maintDelete => 'Delete';
+
+  @override
+  String get maintTechnicians => 'Technicians I trust';
+
+  @override
+  String get maintTechniciansHint =>
+      'Call or WhatsApp a technician you have tried';
+
+  @override
+  String get maintAddFailed =>
+      'The appliance was not saved — check your connection.';
+
+  @override
+  String get notifMarkAllRead => 'Mark all read';
+
+  @override
+  String get notifAllRead => 'All read';
+
+  @override
+  String achWorldState(int done, int total) {
+    return '$done of $total achievements';
+  }
+
+  @override
+  String achLevel(int level) {
+    return 'Level $level';
+  }
+
+  @override
+  String achLevelPoints(int points, int next) {
+    return '$points of $next points';
+  }
+
+  @override
+  String get achOnTrack => 'You are on the right track!';
+
+  @override
+  String get achContributions => 'Contributions';
+
+  @override
+  String get achStreak => 'Streak';
+
+  @override
+  String get achShelf => 'Achievements';
+
+  @override
+  String get achNext => 'Next achievement';
+
+  @override
+  String get achLocked => 'Locked';
+
+  @override
+  String get achLoadFailed => 'Could not load the achievements';
+
+  @override
+  String get achLoadFailedHint => 'Check your connection and try again';
+
+  @override
+  String get achRetry => 'Try again';
 }
