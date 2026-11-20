@@ -4506,6 +4506,470 @@ class ZadL10nAr extends ZadL10n {
     );
     return '$_temp0';
   }
+
+  @override
+  String phEyebrowCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count دواء',
+      few: '$count أدوية',
+      two: 'دواءين',
+      one: 'دوا واحد',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get phFamilyEyebrow => 'صيدلية العيلة';
+
+  @override
+  String phMemberState(String name) {
+    return 'جدول $name';
+  }
+
+  @override
+  String get phNoDosesToday => 'مفيش جرعات النهارده';
+
+  @override
+  String phDoseDueNow(String name) {
+    return 'جرعة $name وقتها دلوقتي';
+  }
+
+  @override
+  String phNextDose(String when) {
+    return 'الجرعة الجاية $when';
+  }
+
+  @override
+  String phDoseMissedLine(String name) {
+    return 'فاتتك جرعة $name';
+  }
+
+  @override
+  String get phDosesDone => 'خلصت جرعات النهارده';
+
+  @override
+  String get phPeriodMorning => 'الصبح';
+
+  @override
+  String get phPeriodNoon => 'الضهر';
+
+  @override
+  String get phPeriodAfternoon => 'العصر';
+
+  @override
+  String get phPeriodNight => 'بالليل';
+
+  @override
+  String phClockWords(String hour, String minutes, String period) {
+    return '$hour$minutes $period';
+  }
+
+  @override
+  String get phDoseTaken => 'اتاخدت';
+
+  @override
+  String get phDoseDue => 'وقتها دلوقتي';
+
+  @override
+  String get phDoseMissed => 'فاتت';
+
+  @override
+  String get phDoseUpcoming => 'جاية';
+
+  @override
+  String get phDoseSnoozed => 'اتأجلت شوية';
+
+  @override
+  String get phDosePassed => 'الميعاد عدّى';
+
+  @override
+  String get phSnooze => 'بعدين';
+
+  @override
+  String get phTake => 'خدته';
+
+  @override
+  String get phTakeFor => 'خدها';
+
+  @override
+  String phForPerson(String name) {
+    return 'لـ$name';
+  }
+
+  @override
+  String get phCourseDone => 'الكورس خلص';
+
+  @override
+  String phExpiredAgo(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'منتهي من $count يوم',
+      few: 'منتهي من $count أيام',
+      two: 'منتهي من يومين',
+      one: 'منتهي من يوم',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String phExpiresIn(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'تنتهي خلال $count يوم',
+      few: 'تنتهي خلال $count أيام',
+      two: 'تنتهي خلال يومين',
+      one: 'تنتهي خلال يوم',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String phRemaining(int count, String unit) {
+    return 'متبقي $count $unit';
+  }
+
+  @override
+  String phSupplyDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'يكفي $count يوم',
+      few: 'يكفي $count أيام',
+      two: 'يكفي يومين',
+      one: 'يكفي يوم',
+      zero: 'يكفي أقل من يوم',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get phDelete => 'حذف';
+
+  @override
+  String get phBadDoseTime => 'وقت جرعة مش مفهوم — عدّله';
+
+  @override
+  String get phNoSchedule => 'مالوش مواعيد — مش هفكّرك بيه';
+
+  @override
+  String get phSetTimes => 'حدد مواعيده';
+
+  @override
+  String get phConfirmQtyBadge => 'الكمية محتاجة تأكيد';
+
+  @override
+  String get phTakeDose => 'تناول جرعة';
+
+  @override
+  String get phRefill => 'تجديد الطلب';
+
+  @override
+  String get phToShopping => 'ضيفه للتسوق';
+
+  @override
+  String get phHowMuchLeft => 'فاضل قد إيه فعلاً؟';
+
+  @override
+  String phAddedToShopping(String name) {
+    return 'ضفت $name لقايمة التسوق';
+  }
+
+  @override
+  String get phDosesToday => 'جرعات النهارده';
+
+  @override
+  String get phNoDosesLeft => 'مفيش جرعات فاضلة النهارده.';
+
+  @override
+  String get phNoTimesYet =>
+      'ولا دوا ليه مواعيد لسه — حدد مواعيد أي دوا تحت عشان أفكّرك بيه.';
+
+  @override
+  String get phLoadFailed => 'مقدرتش أجيب الأدوية';
+
+  @override
+  String get phEmptyTitle => 'لا توجد أدوية مسجلة بعد';
+
+  @override
+  String get phPullRetry => 'اسحب لتحت نجرب تاني.';
+
+  @override
+  String get phEmptyGuide =>
+      'ضيفه بالزرار، أو صوّر العلبة، أو قول لزاد: \"باخد كونكور قرص الصبح وبالليل\" وهو يسجّله بمواعيده.';
+
+  @override
+  String get phMedicines => 'الأدوية';
+
+  @override
+  String phTimesTitle(String name) {
+    return 'مواعيد $name';
+  }
+
+  @override
+  String get phTimesHint => 'هفكّرك في كل ميعاد، وتقدر تسجّل الجرعة بضغطة.';
+
+  @override
+  String get phSaveTimes => 'احفظ المواعيد';
+
+  @override
+  String get phAdherence => 'الالتزام بالجرعات';
+
+  @override
+  String get phAdherenceWaiting => 'في انتظار أول جرعة';
+
+  @override
+  String get phCountTotal => 'إجمالي الأدوية';
+
+  @override
+  String get phCountExpiring => 'قرب الانتهاء';
+
+  @override
+  String get phCountLow => 'مخزون منخفض';
+
+  @override
+  String phExpiredBanner(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count دواء منتهي الصلاحية — تخلص منه بأمان',
+      few: '$count أدوية منتهية الصلاحية — تخلص منها بأمان',
+      two: 'دواءين منتهيين الصلاحية — تخلص منهم بأمان',
+      one: 'دواء منتهي الصلاحية — تخلص منه بأمان',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get phExpiringHeading => 'قرب الانتهاء — تخلص منها بأمان';
+
+  @override
+  String get phCostSpending => 'صرف الصحة الشهر ده';
+
+  @override
+  String get phCostBoxes => 'أسعار علب الأدوية';
+
+  @override
+  String get phTabMe => 'أنا';
+
+  @override
+  String get phTabMember => 'عضو';
+
+  @override
+  String get phMemberFallback => 'العضو';
+
+  @override
+  String phHeadNote(String name) {
+    return 'إنت رب الأسرة — بتشوف جدول $name وتعدّل فيه وتعلّم الجرعة لو ساعدته';
+  }
+
+  @override
+  String phReadOnlyNote(String name) {
+    return 'جدول $name للمتابعة بس — رب الأسرة هو اللي يعدّل';
+  }
+
+  @override
+  String phAddFor(String name) {
+    return 'دوا لـ$name';
+  }
+
+  @override
+  String phMemberLoadFailed(String name) {
+    return 'مقدرتش أجيب أدوية $name';
+  }
+
+  @override
+  String get phMemberEmptyTitle => 'لسه مفيش أدوية تقدر تشوفها';
+
+  @override
+  String get phMemberEmptyGuide =>
+      'أدوية كل فرد بتظهر هنا بعد ما يوافق — اطلب المتابعة من صفحته في «عيلتي»';
+
+  @override
+  String phMemberDoses(String name) {
+    return 'جرعات $name النهارده';
+  }
+
+  @override
+  String get phEdit => 'تعديل';
+
+  @override
+  String phEditTitle(String name) {
+    return 'تعديل $name';
+  }
+
+  @override
+  String get phPhoto => 'صوّر الدوا';
+
+  @override
+  String get phAdd => 'إضافة';
+
+  @override
+  String get phScanUnclear =>
+      'تعذر قراءة العلبة بدقة، يرجى المحاولة بزاوية أوضح';
+
+  @override
+  String get phScanOk => 'تم استخراج بيانات الدواء بنجاح';
+
+  @override
+  String get phScanReading => 'جاري قراءة علبة الدواء بالذكاء الاصطناعي...';
+
+  @override
+  String get phScanBtn => 'مسح العبوة بالكاميرا';
+
+  @override
+  String get phAddTitle => 'إضافة دواء';
+
+  @override
+  String get phReviewTitle => 'راجع الدواء';
+
+  @override
+  String get phReadFromBox =>
+      'قريت ده من العلبة — عدّل أي حاجة غلط قبل ما تحفظ.';
+
+  @override
+  String get phFieldName => 'اسم الدواء';
+
+  @override
+  String get phFieldForWhom => 'لمين؟ (سيبها فاضية لو ليك)';
+
+  @override
+  String get phHintPeople => 'ماما، بابا، يوسف…';
+
+  @override
+  String get phFieldDosageNote => 'الجرعة (مثال: بعد الأكل)';
+
+  @override
+  String get phFieldTimesOptional => 'مواعيد الجرعة (اختياري)';
+
+  @override
+  String phTimesSuggested(String times) {
+    return 'لسه مفيش مواعيد مضافة — مقترح: $times';
+  }
+
+  @override
+  String get phFieldAmount => 'المبلغ';
+
+  @override
+  String phFieldAmountCur(String currency) {
+    return 'المبلغ ($currency)';
+  }
+
+  @override
+  String get phMoreDetails => 'تفاصيل إضافية (اختياري)';
+
+  @override
+  String get phSave => 'حفظ';
+
+  @override
+  String get phCancel => 'إلغاء';
+
+  @override
+  String get phConfirm => 'تأكيد';
+
+  @override
+  String get phPickTime => 'اختر ميعاد الجرعة';
+
+  @override
+  String get phAddTime => 'إضافة ميعاد';
+
+  @override
+  String get phPickExpiry => 'تاريخ الانتهاء — اضغط لاختيار التاريخ';
+
+  @override
+  String get phFieldQty => 'الكمية المتبقية';
+
+  @override
+  String get phFieldUnit => 'الوحدة';
+
+  @override
+  String get phFieldDailyCount => 'جرعات اليوم';
+
+  @override
+  String phFieldPerDose(String unit) {
+    return 'الجرعة الواحدة كام $unit؟';
+  }
+
+  @override
+  String get phPresetMorning => 'صباحاً';
+
+  @override
+  String get phPresetNoon => 'ظهراً';
+
+  @override
+  String get phPresetEvening => 'مساءً';
+
+  @override
+  String get phPresetBed => 'قبل النوم';
+
+  @override
+  String get phFieldIngredient => 'المادة الفعالة';
+
+  @override
+  String get phFieldDosageFreq => 'الجرعة (مثال: قرص كل 8 ساعات)';
+
+  @override
+  String get phChronic => 'دواء مزمن / روشتة متجددة شهرياً';
+
+  @override
+  String get phForFamilyMember => 'لمين في العائلة';
+
+  @override
+  String get phNone => 'بدون';
+
+  @override
+  String phDeleteBody(String name) {
+    return 'حذف «$name» من الصيدلية؟';
+  }
+
+  @override
+  String phQtyCurrent(String name, int count, String unit) {
+    return '$name — الكمية الحالية المسجلة: $count $unit';
+  }
+
+  @override
+  String get phPerDoseHelp =>
+      'من غير الرقم ده مقدرش أحسب المخزون هيكفي كام يوم';
+
+  @override
+  String phRefillTitle(String name) {
+    return 'تجديد طلب $name';
+  }
+
+  @override
+  String phAddedQty(String unit) {
+    return 'الكمية المضافة ($unit)';
+  }
+
+  @override
+  String get phPrice => 'السعر';
+
+  @override
+  String get phExpiryDate => 'تاريخ الانتهاء';
+
+  @override
+  String get phAlarmHint =>
+      'فعّل \"المنبهات الدقيقة\" من الإعدادات عشان تنبيهات مواعيد الدواء تشتغل بدقة';
+
+  @override
+  String get phErrNotHead => 'بس رب الأسرة يقدر يعدّل أدوية حد من العيلة.';
+
+  @override
+  String get phErrOffline =>
+      'مفيش نت دلوقتي — ما اتحفظش حاجة. جرّب تاني لما يرجع.';
+
+  @override
+  String get phErrNotFound =>
+      'الدوا ده مش موجود عند العضو دلوقتي — حدّث الصفحة.';
+
+  @override
+  String get phErrDuplicate => 'العضو عنده دوا بنفس الاسم ده.';
+
+  @override
+  String get phErrRejected => 'السيرفر رفض الحفظ. جرّب تاني.';
 }
 
 /// The translations for Arabic, as used in Saudi Arabia (`ar_SA`).
@@ -5788,4 +6252,468 @@ class ZadL10nArSa extends ZadL10nAr {
     );
     return '$_temp0';
   }
+
+  @override
+  String phEyebrowCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count دواء',
+      few: '$count أدوية',
+      two: 'دواءين',
+      one: 'دواء واحد',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get phFamilyEyebrow => 'صيدلية العائلة';
+
+  @override
+  String phMemberState(String name) {
+    return 'جدول $name';
+  }
+
+  @override
+  String get phNoDosesToday => 'ما فيه جرعات اليوم';
+
+  @override
+  String phDoseDueNow(String name) {
+    return 'جرعة $name وقتها الحين';
+  }
+
+  @override
+  String phNextDose(String when) {
+    return 'الجرعة القادمة $when';
+  }
+
+  @override
+  String phDoseMissedLine(String name) {
+    return 'فاتتك جرعة $name';
+  }
+
+  @override
+  String get phDosesDone => 'خلصت جرعات اليوم';
+
+  @override
+  String get phPeriodMorning => 'الصباح';
+
+  @override
+  String get phPeriodNoon => 'الظهر';
+
+  @override
+  String get phPeriodAfternoon => 'العصر';
+
+  @override
+  String get phPeriodNight => 'بالليل';
+
+  @override
+  String phClockWords(String hour, String minutes, String period) {
+    return '$hour$minutes $period';
+  }
+
+  @override
+  String get phDoseTaken => 'انأخذت';
+
+  @override
+  String get phDoseDue => 'وقتها الحين';
+
+  @override
+  String get phDoseMissed => 'فاتت';
+
+  @override
+  String get phDoseUpcoming => 'قادمة';
+
+  @override
+  String get phDoseSnoozed => 'تأجلت شوي';
+
+  @override
+  String get phDosePassed => 'عدّى وقتها';
+
+  @override
+  String get phSnooze => 'بعدين';
+
+  @override
+  String get phTake => 'أخذته';
+
+  @override
+  String get phTakeFor => 'أخذتها';
+
+  @override
+  String phForPerson(String name) {
+    return 'لـ$name';
+  }
+
+  @override
+  String get phCourseDone => 'انتهى الكورس';
+
+  @override
+  String phExpiredAgo(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'منتهي من $count يوم',
+      few: 'منتهي من $count أيام',
+      two: 'منتهي من يومين',
+      one: 'منتهي من يوم',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String phExpiresIn(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'تنتهي خلال $count يوم',
+      few: 'تنتهي خلال $count أيام',
+      two: 'تنتهي خلال يومين',
+      one: 'تنتهي خلال يوم',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String phRemaining(int count, String unit) {
+    return 'متبقي $count $unit';
+  }
+
+  @override
+  String phSupplyDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'يكفي $count يوم',
+      few: 'يكفي $count أيام',
+      two: 'يكفي يومين',
+      one: 'يكفي يوم',
+      zero: 'يكفي أقل من يوم',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get phDelete => 'حذف';
+
+  @override
+  String get phBadDoseTime => 'وقت جرعة غير مفهوم — عدّله';
+
+  @override
+  String get phNoSchedule => 'ما له مواعيد — ما راح أذكّرك فيه';
+
+  @override
+  String get phSetTimes => 'حدد مواعيده';
+
+  @override
+  String get phConfirmQtyBadge => 'الكمية تحتاج تأكيد';
+
+  @override
+  String get phTakeDose => 'تناول جرعة';
+
+  @override
+  String get phRefill => 'تجديد الطلب';
+
+  @override
+  String get phToShopping => 'أضفه للتسوق';
+
+  @override
+  String get phHowMuchLeft => 'كم باقي فعلاً؟';
+
+  @override
+  String phAddedToShopping(String name) {
+    return 'أضفت $name لقائمة التسوق';
+  }
+
+  @override
+  String get phDosesToday => 'جرعات اليوم';
+
+  @override
+  String get phNoDosesLeft => 'ما فيه جرعات باقية اليوم.';
+
+  @override
+  String get phNoTimesYet =>
+      'ما فيه دواء له مواعيد للحين — حدد مواعيد أي دواء تحت عشان أذكّرك فيه.';
+
+  @override
+  String get phLoadFailed => 'ما قدرت أجيب الأدوية';
+
+  @override
+  String get phEmptyTitle => 'لا توجد أدوية مسجلة بعد';
+
+  @override
+  String get phPullRetry => 'اسحب لتحت ونجرب مرة ثانية.';
+
+  @override
+  String get phEmptyGuide =>
+      'أضفه بالزر، أو صوّر العلبة، أو قل لزاد: \"آخذ كونكور قرص الصباح والليل\" وهو يسجّله بمواعيده.';
+
+  @override
+  String get phMedicines => 'الأدوية';
+
+  @override
+  String phTimesTitle(String name) {
+    return 'مواعيد $name';
+  }
+
+  @override
+  String get phTimesHint => 'بذكّرك في كل ميعاد، وتقدر تسجّل الجرعة بضغطة.';
+
+  @override
+  String get phSaveTimes => 'احفظ المواعيد';
+
+  @override
+  String get phAdherence => 'الالتزام بالجرعات';
+
+  @override
+  String get phAdherenceWaiting => 'في انتظار أول جرعة';
+
+  @override
+  String get phCountTotal => 'إجمالي الأدوية';
+
+  @override
+  String get phCountExpiring => 'قريبة الانتهاء';
+
+  @override
+  String get phCountLow => 'مخزون منخفض';
+
+  @override
+  String phExpiredBanner(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count دواء منتهي الصلاحية — تخلص منه بأمان',
+      few: '$count أدوية منتهية الصلاحية — تخلص منها بأمان',
+      two: 'دواءين منتهيين الصلاحية — تخلص منهم بأمان',
+      one: 'دواء منتهي الصلاحية — تخلص منه بأمان',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get phExpiringHeading => 'قريبة الانتهاء — تخلص منها بأمان';
+
+  @override
+  String get phCostSpending => 'صرف الصحة هذا الشهر';
+
+  @override
+  String get phCostBoxes => 'أسعار علب الأدوية';
+
+  @override
+  String get phTabMe => 'أنا';
+
+  @override
+  String get phTabMember => 'عضو';
+
+  @override
+  String get phMemberFallback => 'العضو';
+
+  @override
+  String phHeadNote(String name) {
+    return 'أنت رب الأسرة — تشوف جدول $name وتعدّل عليه وتعلّم الجرعة لو ساعدته';
+  }
+
+  @override
+  String phReadOnlyNote(String name) {
+    return 'جدول $name للمتابعة فقط — رب الأسرة هو اللي يعدّل';
+  }
+
+  @override
+  String phAddFor(String name) {
+    return 'دواء لـ$name';
+  }
+
+  @override
+  String phMemberLoadFailed(String name) {
+    return 'ما قدرت أجيب أدوية $name';
+  }
+
+  @override
+  String get phMemberEmptyTitle => 'للحين ما فيه أدوية تقدر تشوفها';
+
+  @override
+  String get phMemberEmptyGuide =>
+      'أدوية كل فرد تظهر هنا بعد ما يوافق — اطلب المتابعة من صفحته في «عيلتي»';
+
+  @override
+  String phMemberDoses(String name) {
+    return 'جرعات $name اليوم';
+  }
+
+  @override
+  String get phEdit => 'تعديل';
+
+  @override
+  String phEditTitle(String name) {
+    return 'تعديل $name';
+  }
+
+  @override
+  String get phPhoto => 'صوّر الدواء';
+
+  @override
+  String get phAdd => 'إضافة';
+
+  @override
+  String get phScanUnclear =>
+      'تعذر قراءة العلبة بدقة، يرجى المحاولة بزاوية أوضح';
+
+  @override
+  String get phScanOk => 'تم استخراج بيانات الدواء بنجاح';
+
+  @override
+  String get phScanReading => 'جاري قراءة علبة الدواء بالذكاء الاصطناعي...';
+
+  @override
+  String get phScanBtn => 'مسح العبوة بالكاميرا';
+
+  @override
+  String get phAddTitle => 'إضافة دواء';
+
+  @override
+  String get phReviewTitle => 'راجع الدواء';
+
+  @override
+  String get phReadFromBox =>
+      'قرأت هذا من العلبة — عدّل أي شي غلط قبل ما تحفظ.';
+
+  @override
+  String get phFieldName => 'اسم الدواء';
+
+  @override
+  String get phFieldForWhom => 'لمن؟ (خلها فاضية لو لك)';
+
+  @override
+  String get phHintPeople => 'ماما، بابا، يوسف…';
+
+  @override
+  String get phFieldDosageNote => 'الجرعة (مثال: بعد الأكل)';
+
+  @override
+  String get phFieldTimesOptional => 'مواعيد الجرعة (اختياري)';
+
+  @override
+  String phTimesSuggested(String times) {
+    return 'للحين ما فيه مواعيد مضافة — المقترح: $times';
+  }
+
+  @override
+  String get phFieldAmount => 'المبلغ';
+
+  @override
+  String phFieldAmountCur(String currency) {
+    return 'المبلغ ($currency)';
+  }
+
+  @override
+  String get phMoreDetails => 'تفاصيل إضافية (اختياري)';
+
+  @override
+  String get phSave => 'حفظ';
+
+  @override
+  String get phCancel => 'إلغاء';
+
+  @override
+  String get phConfirm => 'تأكيد';
+
+  @override
+  String get phPickTime => 'اختر ميعاد الجرعة';
+
+  @override
+  String get phAddTime => 'إضافة ميعاد';
+
+  @override
+  String get phPickExpiry => 'تاريخ الانتهاء — اضغط لاختيار التاريخ';
+
+  @override
+  String get phFieldQty => 'الكمية المتبقية';
+
+  @override
+  String get phFieldUnit => 'الوحدة';
+
+  @override
+  String get phFieldDailyCount => 'جرعات اليوم';
+
+  @override
+  String phFieldPerDose(String unit) {
+    return 'كم $unit في الجرعة الواحدة؟';
+  }
+
+  @override
+  String get phPresetMorning => 'صباحاً';
+
+  @override
+  String get phPresetNoon => 'ظهراً';
+
+  @override
+  String get phPresetEvening => 'مساءً';
+
+  @override
+  String get phPresetBed => 'قبل النوم';
+
+  @override
+  String get phFieldIngredient => 'المادة الفعالة';
+
+  @override
+  String get phFieldDosageFreq => 'الجرعة (مثال: قرص كل 8 ساعات)';
+
+  @override
+  String get phChronic => 'دواء مزمن / روشتة متجددة شهرياً';
+
+  @override
+  String get phForFamilyMember => 'لمن في العائلة';
+
+  @override
+  String get phNone => 'بدون';
+
+  @override
+  String phDeleteBody(String name) {
+    return 'حذف «$name» من الصيدلية؟';
+  }
+
+  @override
+  String phQtyCurrent(String name, int count, String unit) {
+    return '$name — الكمية الحالية المسجلة: $count $unit';
+  }
+
+  @override
+  String get phPerDoseHelp =>
+      'من غير هذا الرقم ما أقدر أحسب المخزون يكفي كم يوم';
+
+  @override
+  String phRefillTitle(String name) {
+    return 'تجديد طلب $name';
+  }
+
+  @override
+  String phAddedQty(String unit) {
+    return 'الكمية المضافة ($unit)';
+  }
+
+  @override
+  String get phPrice => 'السعر';
+
+  @override
+  String get phExpiryDate => 'تاريخ الانتهاء';
+
+  @override
+  String get phAlarmHint =>
+      'فعّل \"المنبهات الدقيقة\" من الإعدادات عشان تشتغل تنبيهات مواعيد الدواء بدقة';
+
+  @override
+  String get phErrNotHead => 'فقط رب الأسرة يقدر يعدّل أدوية أحد من العائلة.';
+
+  @override
+  String get phErrOffline =>
+      'ما فيه نت الحين — ما انحفظ شي. جرّب مرة ثانية لما يرجع.';
+
+  @override
+  String get phErrNotFound =>
+      'هذا الدواء مو موجود عند العضو الحين — حدّث الصفحة.';
+
+  @override
+  String get phErrDuplicate => 'العضو عنده دواء بنفس هذا الاسم.';
+
+  @override
+  String get phErrRejected => 'السيرفر رفض الحفظ. جرّب مرة ثانية.';
 }
