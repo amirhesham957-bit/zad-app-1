@@ -8,8 +8,11 @@
 /// * **The OS's last fix first.** `lastKnown` reads a position the system
 ///   already has, from any app; it wakes no radio. It is used on open, and
 ///   only when it is recent.
-/// * **Medium accuracy.** A shop list needs about 100 m, which Wi-Fi and cell
-///   towers give; GPS is not switched on for it.
+/// * **High accuracy, on a tap only.** Medium (Wi-Fi and cell towers) came
+///   back hundreds of metres from the customer (owner, 2026-11-20), so the one
+///   fix a tap asks for uses GPS. What leaves the phone is still coarsened
+///   before it is sent (`GeoPoint.coarse`); only the on-device fix is
+///   precise.
 library;
 
 import 'dart:async';
@@ -33,6 +36,10 @@ enum LocationAccess {
   /// Allowed, but location is switched off on the phone.
   serviceOff,
 }
+
+/// How old the OS's last fix may be and still stand in for a new one. Older
+/// is "far from the customer", not a position.
+const Duration kLastKnownFor = Duration(minutes: 30);
 
 /// A position and when the phone took it.
 typedef Fix = ({GeoPoint at, DateTime takenAt});
@@ -62,6 +69,9 @@ abstract interface class LocationSource {
 class GeolocatorSource implements LocationSource {
   /// Creates the source.
   const new();
+
+  /// What [current] asks for: GPS, not Wi-Fi and cell towers.
+  static const LocationAccuracy accuracy = LocationAccuracy.high;
 
   /// How long a fix may take before giving up.
   static const Duration timeLimit = Duration(seconds: 10);
@@ -93,7 +103,7 @@ class GeolocatorSource implements LocationSource {
     try {
       final p = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.medium,
+          accuracy: accuracy,
           timeLimit: timeLimit,
         ),
       );

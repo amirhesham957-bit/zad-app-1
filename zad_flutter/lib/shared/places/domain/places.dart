@@ -232,6 +232,7 @@ class PlaceState {
     this.nights = const <NightSample>[],
     this.leftAt,
     this.refreshedAt,
+    this.registeredAt,
     this.center,
     this.shopFences = const <Fence>[],
     this.zones = const <String, ChildZone>{},
@@ -320,6 +321,7 @@ class PlaceState {
       nights: nights,
       leftAt: time(json['left_at']),
       refreshedAt: time(json['refreshed_at']),
+      registeredAt: time(json['registered_at']),
       center: point(json['center']),
       shopFences: <Fence>[
         for (final f in (json['shop_fences'] as List<dynamic>?) ?? const [])
@@ -371,6 +373,11 @@ class PlaceState {
   /// When the shops were last looked up.
   final DateTime? refreshedAt;
 
+  /// When the fences were last handed to Android, a fresh look-up or the
+  /// same ones again on a return to the app. Only the registration echo reads
+  /// it; [refreshedAt] keeps meaning "the shops were looked up".
+  final DateTime? registeredAt;
+
   /// Where they were looked up from.
   final GeoPoint? center;
 
@@ -405,6 +412,7 @@ class PlaceState {
     DateTime? leftAt,
     bool clearLeftAt = false,
     DateTime? refreshedAt,
+    DateTime? registeredAt,
     GeoPoint? center,
     List<Fence>? shopFences,
     Map<String, ChildZone>? zones,
@@ -421,6 +429,7 @@ class PlaceState {
     nights: nights ?? this.nights,
     leftAt: clearLeftAt ? null : (leftAt ?? this.leftAt),
     refreshedAt: refreshedAt ?? this.refreshedAt,
+    registeredAt: registeredAt ?? this.registeredAt,
     center: center ?? this.center,
     shopFences: shopFences ?? this.shopFences,
     zones: zones ?? this.zones,
@@ -455,6 +464,7 @@ class PlaceState {
       ],
       'left_at': ?leftAt?.millisecondsSinceEpoch,
       'refreshed_at': ?refreshedAt?.millisecondsSinceEpoch,
+      'registered_at': ?registeredAt?.millisecondsSinceEpoch,
       if (center != null) 'center': point(center),
       'shop_fences': <Object>[for (final f in shopFences) f.toJson()],
       'commute_on': commuteOn,

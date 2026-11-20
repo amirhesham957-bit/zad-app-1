@@ -182,6 +182,54 @@ void main() {
     expect(host.night, DateTime.utc(2026, 9, 2));
   });
 
+  group('re-registering on a return to the app', () {
+    test(
+      'hands the stored fences over again without looking shops up',
+      () async {
+        await engine.enable(at: home, zone: 'Africa/Cairo');
+        final first = host.registered!.map((f) => f.id).toList();
+        host.registered = null; // Android dropped them (location was off).
+        lookedUp.clear();
+
+        expect(await engine.reregister(), isTrue);
+
+        expect(host.registered!.map((f) => f.id).toList(), first);
+        expect(lookedUp, isEmpty);
+        expect(host.state.registeredAt, now);
+      },
+    );
+
+    test('twice leaves the same fences: same ids replace', () async {
+      await engine.enable(at: home, zone: 'Africa/Cairo');
+      await engine.reregister();
+      final once = host.registered!.map((f) => f.id).toList();
+      await engine.reregister();
+      expect(host.registered!.map((f) => f.id).toList(), once);
+    });
+
+    test('nothing to watch registers nothing', () async {
+      expect(await engine.reregister(), isFalse);
+      expect(host.registered, isNull);
+    });
+
+    test('the enter Android reports after it is not an arrival', () async {
+      seed(
+        fresh.copyWith(registeredAt: now.subtract(const Duration(seconds: 5))),
+      );
+      expect(
+        isRegistrationEcho(host.state, now),
+        isTrue,
+        reason: 'a re-registration stamps the echo window too',
+      );
+    });
+
+    test('a refusal surfaces', () async {
+      await engine.enable(at: home, zone: 'Africa/Cairo');
+      host.refuse = true;
+      expect(engine.reregister(), throwsStateError);
+    });
+  });
+
   test('entering a shop asks the server and shows its answer', () async {
     seed(fresh);
     host.events.add(event('supermarket_0', PlaceTransition.enter, now));

@@ -3133,16 +3133,107 @@ class ZadL10nEn extends ZadL10n {
   }
 
   @override
-  String get homeBankOffBanner =>
-      '⚠️ Bank message reading has stopped. Tap here to turn it back on so your balance and spending update by themselves.';
+  String get zadStatusTitle => 'Zad status';
 
   @override
-  String get homeBankStalledHint =>
-      'If it is already on: switch it off and on again on the screen that opens.';
+  String get zadStatusAllGood => 'Zad is working and watching';
 
   @override
-  String get homeLocationOffBanner =>
-      '📍 Your location is off. Turn it on so Zad can match supermarket deals and nearby shops and do its job properly.';
+  String get zadStatusNeedsFix =>
+      'Something has stopped and needs one step from you';
+
+  @override
+  String zadStatusAllButOne(String what) {
+    return 'All working except: $what';
+  }
+
+  @override
+  String get zadStatusWorking => 'Working';
+
+  @override
+  String get zadStatusStopped => 'Stopped';
+
+  @override
+  String get zadStatusMaybe => 'May stop';
+
+  @override
+  String get zadStatusBank => 'Bank message reading';
+
+  @override
+  String get zadStatusBankOk =>
+      'Zad is reading your bank messages and logging them.';
+
+  @override
+  String get zadStatusBankOff =>
+      'Bank message reading is off. Turn it on so your balance and spending update by themselves.';
+
+  @override
+  String get zadStatusBankStalled =>
+      'The service has not seen a notification for a while. If it is on: switch it off and on again on the screen that opens.';
+
+  @override
+  String get zadStatusBankSilent =>
+      'On, but no message has arrived yet. If you expect a bank message and it did not come: switch it off and on again.';
+
+  @override
+  String get zadStatusNotifications => 'Notifications';
+
+  @override
+  String get zadStatusNotificationsOk =>
+      'Dose, bill and budget alerts reach you.';
+
+  @override
+  String get zadStatusNotificationsOff =>
+      'Notifications are off, so dose and bill alerts will not reach you.';
+
+  @override
+  String get zadStatusLocation => 'Location';
+
+  @override
+  String get zadStatusLocationOk =>
+      'Location is on; deals and nearby shops are worked out from where you are.';
+
+  @override
+  String get zadStatusLocationServiceOff =>
+      'Location is switched off on the phone, so readings will not be from where you really are.';
+
+  @override
+  String get zadStatusLocationDenied =>
+      'Zad is not allowed to know where you are, so deals and nearby shops will not work.';
+
+  @override
+  String get zadStatusBackground => 'Location all the time';
+
+  @override
+  String get zadStatusBackgroundOk =>
+      'Street alerts work even with the app closed.';
+
+  @override
+  String get zadStatusBackgroundOff =>
+      'Without \"all the time\", street alerts will not work while the app is closed.';
+
+  @override
+  String get zadStatusBattery => 'Battery saver';
+
+  @override
+  String get zadStatusBatteryOk =>
+      'The phone is not restricting Zad in the background.';
+
+  @override
+  String get zadStatusBatteryWarn =>
+      'The phone may stop Zad in the background. Choose \"Unrestricted\" so reading does not cut out.';
+
+  @override
+  String get zadStatusFixOpenSettings => 'Open settings';
+
+  @override
+  String get zadStatusFixAllow => 'Allow';
+
+  @override
+  String get zadStatusFixLocationOn => 'Turn location on';
+
+  @override
+  String get zadStatusFixBattery => 'Remove limits';
 
   @override
   String get homeLocationLater => 'Not now';
@@ -4440,28 +4531,6 @@ class ZadL10nEn extends ZadL10n {
   String get profileExportSubject => 'My data from Zad';
 
   @override
-  String get homeCareTitle => 'Your subscriptions and medicines';
-
-  @override
-  String get homeCareRenewsToday => 'Renews today';
-
-  @override
-  String get homeCareRenewsTomorrow => 'Renews tomorrow';
-
-  @override
-  String homeCareRenewsInDays(Object days) {
-    return 'Renews in $days days';
-  }
-
-  @override
-  String homeCareDoseAt(Object time) {
-    return 'Dose at $time';
-  }
-
-  @override
-  String get homeCareDoseNow => 'Dose due now';
-
-  @override
   String get introSayPantry => 'This fridge is mine!';
 
   @override
@@ -4556,6 +4625,259 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get consentTermsUpdated => 'November 2026';
+
+  @override
+  String get gamesHubButton => 'Zado\'s games';
+
+  @override
+  String get gamesHubTitle => 'Zado\'s games';
+
+  @override
+  String get gamesBackTooltip => 'Back';
+
+  @override
+  String get gamesHubIntro => 'Play, keep the streak, earn seeds';
+
+  @override
+  String gamesHubToday(int target, String game) {
+    return 'Today\'s challenge: $target points in \"$game\"';
+  }
+
+  @override
+  String gamesHubWeekly(int days, int goal) {
+    return 'Weekly box: $days of $goal days in a row';
+  }
+
+  @override
+  String gamesHubStreak(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count days in a row',
+      one: '1 day',
+      zero: 'Start your streak today',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String gamesHubBest(int score) {
+    return 'Best: $score';
+  }
+
+  @override
+  String get gamesHubNotPlayed => 'Not played yet';
+
+  @override
+  String get gamesHubPlay => 'Play';
+
+  @override
+  String get gamesHubChallengeDone => 'Today\'s challenge done';
+
+  @override
+  String get gameNameBall => 'Catch the ball';
+
+  @override
+  String get gameNameRun => 'Zado\'s Hop';
+
+  @override
+  String get gameNameSort => 'Zado Sorts';
+
+  @override
+  String get gameNameStar => 'Catch the Stars';
+
+  @override
+  String get gameBlurbBall =>
+      'A ball keeps dodging: catch it fast and build a combo';
+
+  @override
+  String get gameBlurbRun =>
+      'Jump the crates, grab seeds, the pace keeps rising';
+
+  @override
+  String get gameBlurbSort => 'Merge matching seeds, a new puzzle every day';
+
+  @override
+  String get gameBlurbStar => 'Move Zado and catch the stars before they land';
+
+  @override
+  String gameBest(int score) {
+    return 'Best: $score';
+  }
+
+  @override
+  String get gameNewBest => 'New best!';
+
+  @override
+  String get gameEndTitle => 'Round over';
+
+  @override
+  String gameEndScore(int score) {
+    return '$score points';
+  }
+
+  @override
+  String gameChallenge(int target) {
+    return 'Today\'s challenge: reach $target points';
+  }
+
+  @override
+  String gameChallengeProgress(int done, int target) {
+    return '$done of $target';
+  }
+
+  @override
+  String get gameChallengeDone => 'Challenge done today, well played!';
+
+  @override
+  String gameSeedsGranted(int count) {
+    return '+$count seeds';
+  }
+
+  @override
+  String gameSeedsLeft(int count) {
+    return '$count seeds left today';
+  }
+
+  @override
+  String get gameSeedsCapped => 'Daily seed limit reached';
+
+  @override
+  String get gameDouble => 'Double the seeds';
+
+  @override
+  String get gameDoubleHint => 'With a short ad';
+
+  @override
+  String get gameContinue => 'Continue from here';
+
+  @override
+  String get gameContinueHint => 'With a short ad, once per round';
+
+  @override
+  String get gameAdUnavailable => 'No ad available right now';
+
+  @override
+  String get gameAgain => 'Play again';
+
+  @override
+  String get gameDone => 'Done';
+
+  @override
+  String get gamePaused => 'Game paused';
+
+  @override
+  String get gameResume => 'Resume';
+
+  @override
+  String gameScoreSemantics(int score) {
+    return 'Score $score';
+  }
+
+  @override
+  String gameCombo(int n) {
+    return 'Combo ×$n';
+  }
+
+  @override
+  String gameLevel(int n) {
+    return 'Level $n';
+  }
+
+  @override
+  String gameLives(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count lives',
+      one: '1 life',
+      zero: 'No lives left',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String runGameTitle(String name) {
+    return '$name\'s Hop';
+  }
+
+  @override
+  String runGameHint(String name) {
+    return 'Tap the screen to make $name jump';
+  }
+
+  @override
+  String runGameHit(String name) {
+    return '$name bumped!';
+  }
+
+  @override
+  String runGameSeedsSemantics(int count) {
+    return 'Seeds $count';
+  }
+
+  @override
+  String get sortGameTitle => 'Zado Sorts';
+
+  @override
+  String get sortGameHint =>
+      'Swipe any way or use the arrows, and merge matching seeds';
+
+  @override
+  String get sortGameDaily => 'Today\'s puzzle';
+
+  @override
+  String get sortGameStuck => 'No moves left';
+
+  @override
+  String get sortGameLeft => 'Left';
+
+  @override
+  String get sortGameRight => 'Right';
+
+  @override
+  String get sortGameUp => 'Up';
+
+  @override
+  String get sortGameDown => 'Down';
+
+  @override
+  String sortGameTile(int value) {
+    return 'Seed of level $value';
+  }
+
+  @override
+  String get starGameTitle => 'Catch the Stars';
+
+  @override
+  String starGameHint(String name) {
+    return 'Drag $name left and right to catch the stars';
+  }
+
+  @override
+  String get starGameOver => 'The stars got away';
+
+  @override
+  String get homeCareTitle => 'Your subscriptions and medicines';
+
+  @override
+  String get homeCareRenewsToday => 'Renews today';
+
+  @override
+  String get homeCareRenewsTomorrow => 'Renews tomorrow';
+
+  @override
+  String homeCareRenewsInDays(Object days) {
+    return 'Renews in $days days';
+  }
+
+  @override
+  String homeCareDoseAt(Object time) {
+    return 'Dose at $time';
+  }
+
+  @override
+  String get homeCareDoseNow => 'Dose due now';
 
   @override
   String get worldLabelBrain => 'Zad\'s brain';
@@ -4675,99 +4997,188 @@ class ZadL10nEn extends ZadL10n {
   }
 
   @override
-  String shopWorldEyebrow(int count) {
+  String txWorldEyebrow(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count things missing',
-      one: '1 thing missing',
-      zero: 'Nothing missing',
+      other: '$count transactions',
+      one: '1 transaction',
+      zero: 'No transactions yet',
     );
     return '$_temp0';
   }
 
   @override
-  String shopWorldStores(int count) {
+  String txWorldState(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'From $count shops',
-      one: 'From 1 shop',
+      other: '$count logged themselves today',
+      one: '1 logged itself today',
+      zero: 'Nothing logged itself today',
     );
     return '$_temp0';
   }
 
   @override
-  String get shopWorldAnyStore => 'From any shop';
+  String get txSourceBank => 'A bank message';
 
   @override
-  String get shopWorldDone => 'The list is empty';
+  String txSourceBankNamed(String bank) {
+    return '$bank · message';
+  }
 
   @override
-  String get shopGroupAnyStore => 'Any shop';
+  String get txSourceReceipt => 'A photographed receipt';
 
   @override
-  String shopPantryCount(int count) {
+  String get txSourceVoice => 'You said it';
+
+  @override
+  String get txSourceStatement => 'From a statement';
+
+  @override
+  String get txSourcePharmacy => 'Pharmacy refill';
+
+  @override
+  String get txSourceManual => 'Typed by you';
+
+  @override
+  String budgetWorldUntil(int day) {
+    return 'Until day $day';
+  }
+
+  @override
+  String budgetWorldDaysLeft(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count items in the pantry',
-      one: '1 item in the pantry',
-      zero: 'The pantry is empty',
+      other: '$count days left',
+      one: '1 day left',
+      zero: 'Last day',
     );
     return '$_temp0';
   }
 
   @override
-  String apptWorldToday(String weekday) {
-    return 'Today is $weekday';
+  String budgetWorldState(String amount, String perDay) {
+    return '$amount available · $perDay a day';
   }
 
   @override
-  String apptWorldNext(String title, String when) {
-    return '$title $when';
+  String budgetWorldAvailable(String amount) {
+    return '$amount available';
   }
 
   @override
-  String get apptWorldNone => 'Nothing coming up';
-
-  @override
-  String get apptNextLabel => 'Next up';
-
-  @override
-  String get apptInNow => 'now';
-
-  @override
-  String apptInMinutes(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'in $count minutes',
-      one: 'in 1 minute',
-    );
-    return '$_temp0';
+  String statementWorldStateLess(int pct) {
+    return 'You spent $pct% less than the same days last month';
   }
 
   @override
-  String apptInHours(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'in $count hours',
-      one: 'in 1 hour',
-    );
-    return '$_temp0';
+  String statementWorldStateMore(int pct) {
+    return 'You spent $pct% more than the same days last month';
   }
 
   @override
-  String apptInDays(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'in $count days',
-      one: 'in 1 day',
-    );
-    return '$_temp0';
+  String get statementWorldStateSame =>
+      'Your spending is level with last month';
+
+  @override
+  String get statementWorldStateNone =>
+      'Import a statement to see where your money goes';
+
+  @override
+  String get statementWorldBreakdownTitle =>
+      'Where your money comes from and goes';
+
+  @override
+  String get statementWorldIn => 'Income';
+
+  @override
+  String get statementWorldEmptyTitle => 'Nothing this month yet';
+
+  @override
+  String get statementWorldEmptyBody =>
+      'Import a statement or log a transaction and your income and spending by category show up here.';
+
+  @override
+  String get statementPickBody =>
+      'Choose your statement: a PDF from your bank app, a photo, or a CSV file. Zad reads the entries and checks them against the statement balance, and nothing is saved until you review it.';
+
+  @override
+  String get statementReading =>
+      'Reading the statement… a long one takes a minute';
+
+  @override
+  String get statementPickButton => 'Choose statement';
+
+  @override
+  String get statementMapIntro =>
+      'Say which column of the file is which — files differ from bank to bank';
+
+  @override
+  String get statementMapDate => 'Date column';
+
+  @override
+  String get statementMapTitle => 'Description column';
+
+  @override
+  String get statementMapAmount => 'Amount column';
+
+  @override
+  String get statementMapCategory => 'Category column (optional)';
+
+  @override
+  String get statementMapInvert =>
+      'Flip the amount sign (if negative means money in here)';
+
+  @override
+  String get statementMapContinue => 'Continue to review';
+
+  @override
+  String get statementMapNone => 'None';
+
+  @override
+  String statementMapColumnN(int n) {
+    return 'Column $n';
+  }
+
+  @override
+  String statementPreviewCount(int rows, int checked) {
+    return '$rows rows — $checked selected to import';
+  }
+
+  @override
+  String get statementPreviewEmptyTitle => 'No transactions found in the file';
+
+  @override
+  String get statementPreviewEmptyBody =>
+      'The file was read but has no rows I can import — make sure it is a statement in CSV or readable PDF form.';
+
+  @override
+  String get statementRowUnreadable =>
+      'The date or amount of this row could not be read';
+
+  @override
+  String get statementRowBalance =>
+      'The statement balance does not match this row — check the amount';
+
+  @override
+  String get statementCheckBalanced =>
+      'The numbers match the statement balance';
+
+  @override
+  String get statementCheckMismatch =>
+      'Some numbers do not match the statement balance — those rows are left unticked, review them';
+
+  @override
+  String get statementCheckUnknown =>
+      'The statement has no balance to check against — review every row before importing';
+
+  @override
+  String statementDropped(String text, int n) {
+    return '$text. $n rows could not be read.';
   }
 
   @override
@@ -5226,4 +5637,100 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get phErrRejected => 'The server refused to save. Try again.';
+
+  @override
+  String shopWorldEyebrow(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count things missing',
+      one: '1 thing missing',
+      zero: 'Nothing missing',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String shopWorldStores(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'From $count shops',
+      one: 'From 1 shop',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get shopWorldAnyStore => 'From any shop';
+
+  @override
+  String get shopWorldDone => 'The list is empty';
+
+  @override
+  String get shopGroupAnyStore => 'Any shop';
+
+  @override
+  String shopPantryCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count items in the pantry',
+      one: '1 item in the pantry',
+      zero: 'The pantry is empty',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String apptWorldToday(String weekday) {
+    return 'Today is $weekday';
+  }
+
+  @override
+  String apptWorldNext(String title, String when) {
+    return '$title $when';
+  }
+
+  @override
+  String get apptWorldNone => 'Nothing coming up';
+
+  @override
+  String get apptNextLabel => 'Next up';
+
+  @override
+  String get apptInNow => 'now';
+
+  @override
+  String apptInMinutes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'in $count minutes',
+      one: 'in 1 minute',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String apptInHours(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'in $count hours',
+      one: 'in 1 hour',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String apptInDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'in $count days',
+      one: 'in 1 day',
+    );
+    return '$_temp0';
+  }
 }

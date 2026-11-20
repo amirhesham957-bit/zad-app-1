@@ -37,11 +37,7 @@ class ZadNativeAd extends ConsumerStatefulWidget {
   /// Creates it. [templateType] picks Google's template (the medium one
   /// carries a video MediaView); [onFailed] hears a failed load, and when it
   /// is given the caller owns the logging.
-  const new({
-    super.key,
-    this.templateType = TemplateType.small,
-    this.onFailed,
-  });
+  const new({super.key, this.templateType = TemplateType.small, this.onFailed});
 
   /// Google's template the ad is drawn with.
   final TemplateType templateType;
