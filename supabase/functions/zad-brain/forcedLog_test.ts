@@ -43,6 +43,17 @@ Deno.test("never a question, a transfer, a scam, a loan, an obligation, a delete
   ]) {
     assertEquals(wantsForcedLog(m, offer), false, m);
   }
+  // نية مش مصروف (فحص القبول ٢١/١١): المستقبل والنية بيرد عليهم الموديل، مش كارت «أكّد».
+  for (const m of [
+    "هشتري موبايل جديد بـ20 ألف جنيه النهارده كاش",
+    "هدفع 500 فاتورة الكهرباء بكرة",
+    "ناوي اجيب لابتوب ب 30000",
+    "بفكر احجز رحلة ب 8000 جنيه",
+  ]) {
+    assertEquals(wantsForcedLog(m, offer), false, m);
+  }
+  // الماضي لسه تسجيل.
+  assertEquals(wantsForcedLog("اشتريت موبايل ب 20000", offer), true);
   // من غير مبلغ، أو الرد مابيعرضش تسجيل والرسالة مالهاش فعل فلوس.
   assertEquals(wantsForcedLog("عشيت برا", offer), false);
   assertEquals(wantsForcedLog("الساعة 9 عندي ميعاد", "تمام هفكرك"), false);
