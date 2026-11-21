@@ -109,6 +109,7 @@ import { seasonFor, seasonInstruction, upcomingSeason, upcomingSeasonInstruction
 import { SEASON_PLAN_DAYS, seasonPlanInstruction, upcomingCalendarSeasons } from "../_shared/seasonCalendar.ts";
 import { type FastIntent, formatBalanceReply, parseFastPath } from "./fastPath.ts";
 import { AgentSource, AuditScope, recordAction, writeRows } from "./audit.ts";
+import { commitIntent, DUPLICATE_REPLY, refusalText } from "./commitIntent.ts";
 import { redactNotificationText } from "./redact.ts";
 import { type LearnedFormat, learnedCases, learnedSenders, senderKnown } from "./learnedFormats.ts";
 import { classifyMessage, consume as consumeEntitlement, lockedReply, quotaExempt } from "./entitlement.ts";
@@ -2464,17 +2465,17 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
         }
         input = { ...input, new_qty: qty };
       }
-      const w = await writeRows(
-        sb.from("zad_inventory").update({ quantity: input.new_qty })
-          .eq("id", before.id).select("id,quantity"),
-        "تعديل الكمية",
-      );
-      if (!w.ok) return `مرفوض: ${w.reason}`;
+      // الكتابة من الباب الوحيد (م٢.٥): القيود والحدث والصف مع بعض، أو رفض بسبب في zad_guard_events.
+      const set = await commitIntent(sb, userId, scope, name, input, "inventory.quantity_set", {
+        item_id: before.id, quantity: input.new_qty,
+      });
+      if (!set.ok) return refusalText(set.reason);
+      if (set.duplicate) return DUPLICATE_REPLY;
       ctx.mutationCount++;
-      ctx.mutations.push({ tool: name, old: before.quantity, new: input.new_qty });
+      ctx.mutations.push({ tool: name, old: before.quantity, new: set.after });
       await recordAction(sb, userId, scope, {
         tool: name, input, table: "zad_inventory", targetId: before.id,
-        previous: { quantity: before.quantity }, next: w.rows[0],
+        previous: { quantity: before.quantity }, next: { id: before.id, quantity: set.after },
       });
 
       // Task 18 Fault B: the quantity write alone left the item in stock_unknown forever, so
@@ -2957,18 +2958,21 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       // قرار المالك ١٤/١١: العلبة المفتوحة لسه في التلاجة وبتتعد — الفتح لوحده مابينقصش العدد. الموديل كان بيبعت
       // amount 1 لـ«فتحنا علبة لبن»، فلو الرسالة فتح من غير فعل استعمال الكمية صفر مهما بعت.
       const used = opened && openOnly(ctx.said) ? 0 : usedInRowUnits(Number(input.amount) || 0, input.unit, row.item_name);
-      const after = quantityAfter(before, used);
-      const w = await writeRows(
-        sb.from("zad_inventory").update(opened ? { quantity: after, opened_at: new Date().toISOString() } : { quantity: after })
-          .eq("id", row.id).select("id,quantity,opened_at,opened_life_days"),
-        "تسجيل الاستهلاك",
-      );
-      if (!w.ok) return `مرفوض: ${w.reason}`;
+      // الطرح نفسه في الباب (م٢.٥): بيقف عند صفر على الكمية المقفولة وقت الكتابة، مش على اللي اتقرت فوق.
+      const done = await commitIntent(sb, userId, scope, name, input, "inventory.consumed", {
+        item_id: row.id, amount: used, ...(opened ? { opened: true } : {}),
+      });
+      if (!done.ok) return refusalText(done.reason);
+      if (done.duplicate) return DUPLICATE_REPLY;
+      const after = done.after ?? quantityAfter(before, used);
+      // عمر العلبة بعد الفتح بيتحسب في التريجر، فبيتقري بعد الكتابة.
+      const { data: written } = await sb.from("zad_inventory").select("id,quantity,opened_at,opened_life_days")
+        .eq("id", row.id).maybeSingle();
       ctx.mutationCount++;
       ctx.mutations.push({ tool: name, old: before, new: { item: row.item_name, qty: after } });
       await recordAction(sb, userId, scope, {
         tool: name, input, table: "zad_inventory", targetId: row.id,
-        previous: { quantity: row.quantity }, next: w.rows[0],
+        previous: { quantity: row.quantity }, next: written ?? { id: row.id, quantity: after },
       });
       // المعدل متربط بصاحب الصف (نفس add_inventory_item)، فالقراية باسمه حتى لو اللي استهلك فرد تاني.
       // فتح من غير استعمال مش قراية جديدة.
@@ -2983,7 +2987,7 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
           samples: (obs as any)?.samples ?? 0, rateKnown: (obs as any)?.rate_known === true,
         });
       }
-      const lifeRaw = Number((w.rows[0] as { opened_life_days?: number | null })?.opened_life_days);
+      const lifeRaw = Number((written as { opened_life_days?: number | null } | null)?.opened_life_days);
       const life = Number.isFinite(lifeRaw) && lifeRaw > 0 ? lifeRaw : null;
       if (opened && used <= 0) return openedOnlyReply(row.item_name, row.unit, after, life);
       const reply = consumeReply(row.item_name, row.unit, before, after, input.dish ? String(input.dish).trim() : null);
@@ -3005,22 +3009,25 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       const existing = pickPantryMatch(houseRows.filter((r) => r.user_id === userId), itemName, unit) ??
         pickPantryMatch(houseRows, itemName, unit);
       if (existing) {
-        const total = Math.max(existing.quantity ?? 0, 0) + Number(input.quantity);
         const previous = { quantity: existing.quantity, category: existing.category, expiry_date: existing.expiry_date };
-        const w = await writeRows(
-          sb.from("zad_inventory").update({
-            quantity: total,
-            category: existing.category ?? (input.category ? String(input.category).trim() : null),
-            expiry_date: input.expiry_date ?? existing.expiry_date,
-          }).eq("id", existing.id).select("id,item_name,quantity,category,expiry_date"),
-          "تزويد الصنف",
-        );
-        if (!w.ok) return `مرفوض: ${w.reason}`;
+        // التزويد من الباب (م٢.٥): inventory.added على نفس الصف بـitem_id، والجمع على الكمية المقفولة وقت الكتابة.
+        const merged = await commitIntent(sb, userId, scope, name, input, "inventory.added", {
+          item_id: existing.id, item_name: existing.item_name, quantity: Number(input.quantity),
+          category: input.category ? String(input.category).trim() : null,
+          ...(input.expiry_date ? { expiry_date: input.expiry_date } : {}),
+        });
+        if (!merged.ok) return refusalText(merged.reason);
+        if (merged.duplicate) return DUPLICATE_REPLY;
+        const total = merged.after ?? Math.max(existing.quantity ?? 0, 0) + Number(input.quantity);
         ctx.mutationCount++;
         ctx.mutations.push({ tool: name, old: existing.quantity, new: { item: existing.item_name, qty: total } });
         await recordAction(sb, userId, scope, {
           tool: name, input, table: "zad_inventory", targetId: existing.id,
-          previous, next: w.rows[0],
+          previous, next: {
+            id: existing.id, item_name: existing.item_name, quantity: total,
+            category: existing.category ?? (input.category ? String(input.category).trim() : null),
+            expiry_date: input.expiry_date ?? existing.expiry_date,
+          },
         });
         // معدل الاستهلاك متربط بصاحب الصف (zad_consumption.user_id = zad_inventory.user_id في
         // «هيخلص إمتى؟»)، فالملاحظة باسم صاحب الصف حتى لو اللي اشترى فرد تاني.
@@ -3032,19 +3039,15 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
         return `"${existing.item_name}" كان موجود في المخزون — زوّدته ${input.quantity}، بقى ${total}${existing.unit ? ` ${existing.unit}` : ""}` +
           (tickedMerge ? ` — واتشطب "${tickedMerge}" من قايمة التسوق` : "");
       }
-      const w = await writeRows(
-        sb.from("zad_inventory").insert({
-          user_id: userId,
-          item_name: itemName,
-          quantity: input.quantity,
-          unit: unit ?? "حبة",
-          category: input.category ? String(input.category).trim() : null,
-          expiry_date: input.expiry_date ?? null,
-        }).select("id,item_name,quantity"),
-        "إضافة الصنف",
-      );
-      if (!w.ok) return `مرفوض: ${w.reason}`;
-      const newRow = w.rows[0] as any;
+      // صف جديد من الباب (م٢.٥).
+      const added = await commitIntent(sb, userId, scope, name, input, "inventory.added", {
+        item_name: itemName, quantity: input.quantity, unit: unit ?? "حبة",
+        category: input.category ? String(input.category).trim() : null,
+        ...(input.expiry_date ? { expiry_date: input.expiry_date } : {}),
+      });
+      if (!added.ok) return refusalText(added.reason);
+      if (added.duplicate) return DUPLICATE_REPLY;
+      const newRow = { id: added.rowId, item_name: itemName, quantity: added.after ?? input.quantity };
       ctx.mutationCount++;
       ctx.mutations.push({ tool: name, old: null, new: { item: itemName, qty: input.quantity } });
       await recordAction(sb, userId, scope, {
@@ -9006,7 +9009,9 @@ async function handleAgentExecute(sb: SupabaseClient, userId: string, body: any)
   const snap = NO_SNAPSHOT_INGRESS_TOOLS.has(tool) ? {} : await buildSnapshot(sb, userId);
   const ctx = freshContext(userId);
   const source: AgentSource = body.source === "telegram" ? "telegram" : body.source === "voice" ? "voice" : "event";
-  const result = await runTool(sb, userId, tool, body.input ?? {}, snap, ctx, { source, runId: null });
+  // زرار اتداس مرتين = نداء واحد لو اللي نادى بعت مفتاح (commitIntent.ts).
+  const eventKey = typeof body.client_event_id === "string" ? body.client_event_id.slice(0, 80) : null;
+  const result = await runTool(sb, userId, tool, body.input ?? {}, snap, ctx, { source, runId: null, eventKey });
   const rejected = result.startsWith("مرفوض:");
   return new Response(JSON.stringify({ ok: !rejected, summary: result, mutations: ctx.mutations, observations: ctx.observations }), {
     headers: CORS_HEADERS,
