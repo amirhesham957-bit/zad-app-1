@@ -17,7 +17,15 @@ function fakeDb() {
     };
     return b;
   };
-  return { sb: { from, rpc: () => Promise.resolve({ data: null, error: null }) } as any, inserts };
+  // log_transaction writes through the one door (zad_commit_intent, M2.5): the row it asks for is the intent's payload.
+  const rpc = (fn: string, args: { p_intent?: { kind?: string; payload?: Record<string, unknown> } }) => {
+    if (fn === "zad_commit_intent" && args.p_intent?.kind === "money.logged") {
+      inserts.push({ table: "zad_transactions", row: args.p_intent.payload ?? {} });
+      return Promise.resolve({ data: { ok: true, duplicate: false, row_id: "t1", payload: { after: { id: "t1" } } }, error: null });
+    }
+    return Promise.resolve({ data: null, error: null });
+  };
+  return { sb: { from, rpc } as any, inserts };
 }
 
 const BASE = { amount: 480, title: "كارفور", category: "البقالة", txn_kind: "expense" };

@@ -14,6 +14,12 @@ returns jsonb language plpgsql as $$ begin
   insert into public.zad_inventory_observations (user_id, item_name, qty, source) values (p_user, p_item, p_qty, p_source);
   return jsonb_build_object('samples', 1, 'rate_known', false); end $$;
 create or replace function public.zad_product_canonical(p_user uuid, p_name text) returns text language sql as $$ select p_name $$;
+-- الفلوس: صف البنك التوأم مش موجود، ورصيد الكاش = الكاش اللي داخل ناقص المصروف كاش (نفس معنى zad_cash_balance).
+create or replace function public.zad_bank_twin_service(p_user uuid, p_amount numeric) returns uuid language sql as $$ select null::uuid $$;
+create or replace function public.zad_cash_balance(p_user uuid) returns numeric language sql as $$
+  select coalesce(sum(case when txn_kind = 'transfer' and transfer_to = 'cash' then amount
+                           when txn_kind = 'expense' and wallet = 'cash' then -amount else 0 end), 0)::numeric
+    from public.zad_transactions where user_id = p_user $$;
 do $$ begin create role authenticator noinherit login password 'pg'; exception when duplicate_object then null; end $$;
 grant anon, authenticated, service_role to authenticator;
 grant all on all tables in schema public to service_role;

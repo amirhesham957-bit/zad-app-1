@@ -2538,17 +2538,16 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
     case "set_transaction_category": {
       const { data: before } = await sb.from("zad_transactions").select("category,title,merchant_name").eq("id", input.transaction_id).eq("user_id", userId).maybeSingle();
       if (!before) return "مرفوض: المعاملة مش بتاعت العميل ده — عدّل وحاول تاني.";
-      const w = await writeRows(
-        sb.from("zad_transactions").update({ category: input.category })
-          .eq("id", input.transaction_id).eq("user_id", userId).select("category"),
-        "التصنيف",
-      );
-      if (!w.ok) return `مرفوض: ${w.reason}`;
+      const w = await commitIntent(sb, userId, scope, name, input, "money.updated", {
+        item_id: input.transaction_id, patch: { category: input.category },
+      });
+      if (!w.ok) return refusalText(w.reason);
+      if (w.duplicate) return DUPLICATE_REPLY;
       ctx.mutationCount++;
       ctx.mutations.push({ tool: name, old: before.category, new: input.category });
       await recordAction(sb, userId, scope, {
         tool: name, input, table: "zad_transactions", targetId: input.transaction_id,
-        previous: { category: before.category }, next: w.rows[0],
+        previous: { category: before.category }, next: { category: input.category },
       });
       // ٣.١١: تصحيح الفئة من الشات بيبقى درس (zad_corrections). فشل التسجيل مايلغيش التصحيح.
       const { error: lessonErr } = await sb.rpc("zad_record_correction", {
@@ -2571,11 +2570,10 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
     case "merge_duplicate_expense": {
       const { data: dropped } = await sb.from("zad_transactions").select("*").eq("id", input.drop_id).eq("user_id", userId).maybeSingle();
       if (!dropped) return "مرفوض: المعاملة المطلوب حذفها مش بتاعت العميل ده — عدّل وحاول تاني.";
-      const w = await writeRows(
-        sb.from("zad_transactions").delete().eq("id", input.drop_id).eq("user_id", userId).select("id"),
-        "الدمج",
-      );
-      if (!w.ok) return `مرفوض: ${w.reason}`;
+      // من الباب (م٢.٥): الصف كامل في الحدث، وzad_trash بيحفظه للتراجع.
+      const merged = await commitIntent(sb, userId, scope, name, input, "money.deleted", { item_id: input.drop_id });
+      if (!merged.ok) return refusalText(merged.reason);
+      if (merged.duplicate) return DUPLICATE_REPLY;
       ctx.mutationCount++;
       ctx.mutations.push({ tool: name, old: input.drop_id, new: input.keep_id });
       await recordAction(sb, userId, scope, {
@@ -2597,25 +2595,22 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       const delta = input.reported_amount - current;
       if (Math.abs(delta) < 0.01) return "الرصيد اللي قاله العميل مطابق للمحسوب فعلاً — مفيش تصحيح لازم";
       const isIncrease = delta > 0;
-      const w = await writeRows(
-        sb.from("zad_transactions").insert({
-          user_id: userId,
-          amount: Math.round(Math.abs(delta) * 100) / 100,
-          title: "تسوية كاش أسبوعية (تقريبية)",
-          category: isIncrease ? "تحويلات" : "أخرى",
-          is_expense: true,
-          txn_kind: isIncrease ? "transfer" : "expense",
-          transfer_to: isIncrease ? "cash" : null,
-          wallet: "cash",
-        }).select("id,amount"),
-        "تسجيل التسوية",
-      );
-      if (!w.ok) return `مرفوض: ${w.reason}`;
+      // من الباب (م٢.٥). المفتاح فيه الرصيد المحسوب، فنفس الإجابة بعد ما الرصيد اتغير تسوية جديدة مش تكرار.
+      const settled = await commitIntent(sb, userId, scope, name, { ...input, current }, "money.logged", {
+        amount: Math.round(Math.abs(delta) * 100) / 100,
+        title: "تسوية كاش أسبوعية (تقريبية)",
+        category: isIncrease ? "تحويلات" : "أخرى",
+        txn_kind: isIncrease ? "transfer" : "expense",
+        ...(isIncrease ? { transfer_to: "cash" } : {}),
+        wallet: "cash",
+      });
+      if (!settled.ok) return refusalText(settled.reason);
+      if (settled.duplicate) return DUPLICATE_REPLY;
       ctx.mutationCount++;
       ctx.mutations.push({ tool: name, old: current, new: input.reported_amount });
       await recordAction(sb, userId, scope, {
-        tool: name, input, table: "zad_transactions", targetId: (w.rows[0] as any).id,
-        previous: null, next: w.rows[0],
+        tool: name, input, table: "zad_transactions", targetId: settled.rowId,
+        previous: null, next: { id: settled.rowId, amount: Math.round(Math.abs(delta) * 100) / 100 },
       });
       return `اتسجل تصحيح ${Math.abs(delta).toFixed(2)} (${isIncrease ? "زيادة" : "نقصان"}) عشان الكاش يطابق الرصيد الفعلي`;
     }
@@ -2690,18 +2685,17 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       }
 
       const counts = input.counts === true;
-      const w = await writeRows(
-        sb.from("zad_transactions").update({ counts_toward_budget: counts })
-          .eq("id", row.id).eq("user_id", userId)
-          .select("id,title,amount,counts_toward_budget"),
-        "تخصيص الإيداع",
-      );
-      if (!w.ok) return `مرفوض: ${w.reason}`;
+      const alloc = await commitIntent(sb, userId, scope, name, input, "money.updated", {
+        item_id: row.id, patch: { counts_toward_budget: counts },
+      });
+      if (!alloc.ok) return refusalText(alloc.reason);
+      if (alloc.duplicate) return DUPLICATE_REPLY;
       ctx.mutationCount++;
       ctx.mutations.push({ tool: name, old: row.counts_toward_budget, new: counts });
       await recordAction(sb, userId, scope, {
         tool: name, input, table: "zad_transactions", targetId: row.id,
-        previous: { counts_toward_budget: row.counts_toward_budget }, next: w.rows[0],
+        previous: { counts_toward_budget: row.counts_toward_budget },
+        next: { id: row.id, title: row.title, amount: row.amount, counts_toward_budget: counts },
       });
       // مهم: الرقم **مابيتغيّرش** في الحالتين. بعد الدفتر كل إيداع بيدخل الرصيد ساعة ما
       // يوصل، والعمود ده بقى تسجيل لنية العميل عشان النصيحة تفرّق بين فلوس البيت وفلوس
@@ -2753,16 +2747,14 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
             if (input.merchant_name) patch.merchant_name = String(input.merchant_name).trim().slice(0, 80) || null;
             const forPerson = normalizeForPerson(input.for_person);
             if (forPerson) patch.for_person = forPerson;
-            const w = await writeRows(
-              sb.from("zad_transactions").update(patch).eq("id", twinId).eq("user_id", userId)
-                .select("id,amount,title,category,txn_kind,for_person"),
-              "تسجيل المعاملة",
-            );
-            if (!w.ok) return `مرفوض: ${w.reason}`;
+            // من الباب (م٢.٥): تعديل على صف البنك.
+            const w = await commitIntent(sb, userId, scope, name, input, "money.updated", { item_id: twinId, patch });
+            if (!w.ok) return refusalText(w.reason);
+            if (w.duplicate) return DUPLICATE_REPLY;
             ctx.mutationCount++;
             ctx.mutations.push({ tool: name, old: { title: before.title, category: before.category }, new: patch });
             await recordAction(sb, userId, scope, {
-              tool: name, input, table: "zad_transactions", targetId: twinId, previous: before, next: w.rows[0],
+              tool: name, input, table: "zad_transactions", targetId: twinId, previous: before, next: w.payload.after ?? patch,
             });
             return bankTwinMergedReply(String(before.title ?? ""), Number(before.amount), title, String(before.created_at));
           }
@@ -2798,9 +2790,9 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       if (purchaseLines.length > 0) {
         const amount = Math.round(input.amount * 100) / 100;
         const title = String(input.title).trim().slice(0, 80);
-        const { data: bought, error: buyErr } = await sb.rpc("zad_record_purchase_service", {
-          p_user: userId,
-          p_purchase: {
+        // من الباب (م٢.٥)، والباب بينادي باب الشرا (zad_record_purchase_service) جوه نفس الترانزاكشن.
+        const buy = await commitIntent(sb, userId, scope, name, input, "money.purchase", {
+          purchase: {
             id: crypto.randomUUID(), amount, title,
             category: input.category ? String(input.category).trim().slice(0, 40) : null,
             wallet: input.wallet === "cash" ? "cash" : "card",
@@ -2810,18 +2802,28 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
             lines: purchaseLines,
           },
         });
-        if (buyErr) {
-          console.error("[log_transaction] purchase door failed:", buyErr.message);
-          return "مرفوض: الشرا ماتسجلش دلوقتي — ولا حاجة اتكتبت. جرب تاني.";
+        if (!buy.ok) {
+          // رفض باب الشرا نفسه (زي «فيه مصروف بنفس المبلغ») بيرجع بتفاصيله، والرد زي ما كان.
+          if (buy.reason.startsWith("purchase_") && buy.detail) {
+            return purchaseToolReply(buy.detail, { title, amount }).text;
+          }
+          if (buy.reason.startsWith("rpc:")) {
+            console.error("[log_transaction] purchase door failed:", buy.reason);
+            return "مرفوض: الشرا ماتسجلش دلوقتي — ولا حاجة اتكتبت. جرب تاني.";
+          }
+          return refusalText(buy.reason);
         }
-        const reply = purchaseToolReply(bought as Record<string, unknown> | null, { title, amount });
+        if (buy.duplicate) return DUPLICATE_REPLY;
+        const bought = buy.payload.after as Record<string, unknown> | null;
+        const reply = purchaseToolReply(bought, { title, amount });
         if (!reply.ok) return reply.text;
-        // باب الشرا (zad_record_purchase_service) مابيعرفش «لمين؟»، فبتتكتب على المعاملة بعده.
+        // باب الشرا (zad_record_purchase_service) مابيعرفش «لمين؟»، فبتتكتب على المعاملة بعده، من الباب برضه.
         const purchaseFor = normalizeForPerson(input.for_person);
         if (purchaseFor && reply.transactionId) {
-          const { error: forErr } = await sb.from("zad_transactions").update({ for_person: purchaseFor })
-            .eq("id", reply.transactionId).eq("user_id", userId);
-          if (forErr) console.error("[log_transaction] for_person not set:", forErr.message);
+          const forSet = await commitIntent(sb, userId, scope, name, { input, for_person: purchaseFor }, "money.updated", {
+            item_id: reply.transactionId, patch: { for_person: purchaseFor },
+          });
+          if (!forSet.ok) console.error("[log_transaction] for_person not set:", forSet.reason);
         }
         ctx.mutationCount++;
         ctx.mutations.push({ tool: name, old: null, new: { amount: input.amount, title: input.title, lines: purchaseLines.length } });
@@ -2832,33 +2834,29 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
         return reply.text;
       }
 
-      const w = await writeRows(
-        sb.from("zad_transactions").insert({
-          user_id: userId,
-          amount: Math.round(input.amount * 100) / 100,
-          title: String(input.title).trim().slice(0, 80),
-          category: input.category ? String(input.category).trim().slice(0, 40) : null,
-          // العمودين الاتنين مع بعض دايماً: الكلاينت بيقرا is_expense والـ edge functions
-          // بتقرا txn_kind، فكتابة واحد من غير التاني بتسيب المعاملة متناقضة مع نفسها.
-          is_expense: isExpense,
-          txn_kind: input.txn_kind,
-          wallet: input.wallet === "cash" ? "cash" : "card",
-          // جت منين (provenance.ts): «receipt» لو اللي نادى قال إنها فاتورة، وإلا القناة.
-          source_type: txnSourceType(input.source_type, scope.source),
-          // اسم المحل من الفاتورة (تليجرام)، عشان «أرخص هنا» وعادات المحلات يشوفوه.
-          merchant_name: input.merchant_name ? String(input.merchant_name).trim().slice(0, 80) || null : null,
-          // لمين في البيت (ZAD_PLAN ٥.٣) — مصروف بس.
-          for_person: isExpense ? normalizeForPerson(input.for_person) : null,
-          ...(occurredAt ? { created_at: occurredAt } : {}),
-        }).select("id,amount,title,category,txn_kind,for_person"),
-        "تسجيل المعاملة",
-      );
-      if (!w.ok) return `مرفوض: ${w.reason}`;
+      // من الباب (م٢.٥). الباب بيكتب العمودين is_expense وtxn_kind مع بعض دايماً (الكلاينت بيقرا الأول والسيرفر
+      // التاني)، و«لمين» على المصروف بس.
+      const logged = await commitIntent(sb, userId, scope, name, input, "money.logged", {
+        amount: Math.round(input.amount * 100) / 100,
+        title: String(input.title).trim().slice(0, 80),
+        category: input.category ? String(input.category).trim().slice(0, 40) : null,
+        txn_kind: input.txn_kind,
+        wallet: input.wallet === "cash" ? "cash" : "card",
+        // جت منين (provenance.ts): «receipt» لو اللي نادى قال إنها فاتورة، وإلا القناة.
+        source_type: txnSourceType(input.source_type, scope.source),
+        // اسم المحل من الفاتورة (تليجرام)، عشان «أرخص هنا» وعادات المحلات يشوفوه.
+        merchant_name: input.merchant_name ? String(input.merchant_name).trim().slice(0, 80) || null : null,
+        // لمين في البيت (ZAD_PLAN ٥.٣).
+        for_person: isExpense ? normalizeForPerson(input.for_person) : null,
+        ...(occurredAt ? { created_at: occurredAt } : {}),
+      });
+      if (!logged.ok) return refusalText(logged.reason);
+      if (logged.duplicate) return DUPLICATE_REPLY;
       ctx.mutationCount++;
       ctx.mutations.push({ tool: name, old: null, new: { amount: input.amount, title: input.title } });
       await recordAction(sb, userId, scope, {
-        tool: name, input, table: "zad_transactions", targetId: (w.rows[0] as any).id,
-        previous: null, next: w.rows[0],
+        tool: name, input, table: "zad_transactions", targetId: logged.rowId,
+        previous: null, next: logged.payload.after ?? { id: logged.rowId },
       });
       return `اتسجلت المعاملة: ${input.title} — ${input.amount}` +
         (occurredAt ? ` بتاريخ ${String(input.occurred_on)} (اتحسبت في شهرها، مش الشهر ده)` : "");
@@ -2876,17 +2874,16 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
         patch.txn_kind = input.txn_kind;
         patch.is_expense = input.txn_kind === "expense";
       }
-      const w = await writeRows(
-        sb.from("zad_transactions").update(patch)
-          .eq("id", input.transaction_id).eq("user_id", userId).select("amount,title,category,txn_kind,for_person"),
-        "تعديل المعاملة",
-      );
-      if (!w.ok) return `مرفوض: ${w.reason}`;
+      // من الباب (م٢.٥). is_expense بيمشي مع النوع هناك.
+      delete patch.is_expense;
+      const w = await commitIntent(sb, userId, scope, name, input, "money.updated", { item_id: input.transaction_id, patch });
+      if (!w.ok) return refusalText(w.reason);
+      if (w.duplicate) return DUPLICATE_REPLY;
       ctx.mutationCount++;
       ctx.mutations.push({ tool: name, old: before, new: patch });
       await recordAction(sb, userId, scope, {
         tool: name, input, table: "zad_transactions", targetId: input.transaction_id,
-        previous: before, next: w.rows[0],
+        previous: before, next: w.payload.after ?? patch,
       });
       return "اتعدلت المعاملة";
     }
@@ -2896,11 +2893,10 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       const { data: before } = await sb.from("zad_transactions")
         .select("*").eq("id", input.transaction_id).eq("user_id", userId).maybeSingle();
       if (!before) return "مرفوض: المعاملة مش بتاعت العميل ده — عدّل وحاول تاني.";
-      const w = await writeRows(
-        sb.from("zad_transactions").delete().eq("id", input.transaction_id).eq("user_id", userId).select("id"),
-        "حذف المعاملة",
-      );
-      if (!w.ok) return `مرفوض: ${w.reason}`;
+      // من الباب (م٢.٥): الصف كامل في الحدث، وzad_trash بيحفظه للتراجع.
+      const gone = await commitIntent(sb, userId, scope, name, input, "money.deleted", { item_id: input.transaction_id });
+      if (!gone.ok) return refusalText(gone.reason);
+      if (gone.duplicate) return DUPLICATE_REPLY;
       ctx.mutationCount++;
       ctx.mutations.push({ tool: name, old: before, new: null });
       await recordAction(sb, userId, scope, {

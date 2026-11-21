@@ -12,7 +12,8 @@ import type { AuditScope } from "./audit.ts";
 export type IntentKind =
   | "inventory.added" | "inventory.consumed" | "inventory.quantity_set" | "inventory.deleted" | "inventory.restock_mode_set"
   | "shopping.added" | "shopping.completed" | "shopping.deleted"
-  | "pharmacy.added" | "pharmacy.updated" | "pharmacy.deleted" | "pharmacy.dose_taken";
+  | "pharmacy.added" | "pharmacy.updated" | "pharmacy.deleted" | "pharmacy.dose_taken"
+  | "money.logged" | "money.updated" | "money.deleted" | "money.purchase";
 export type IntentSource = "manual" | "receipt" | "bank" | "model" | "cron";
 
 export type CommitResult =
@@ -21,7 +22,7 @@ export type CommitResult =
     /** الـpayload اللي اتكتب في الحدث (الصيدلية بتقرا منه نتيجة الجرعة). فاضي في التكرار. */
     payload: Record<string, unknown>;
   }
-  | { ok: false; reason: string };
+  | { ok: false; reason: string; detail?: Record<string, unknown> | null };
 
 /** JSON بترتيب مفاتيح ثابت، عشان نفس المدخل يدّي نفس المفتاح. */
 function stable(v: unknown): string {
@@ -62,7 +63,10 @@ export async function commitIntent(
   const { data, error } = await sb.rpc("zad_commit_intent", { p_intent: intent });
   if (error) return { ok: false, reason: `rpc: ${error.message}` };
   const r = (data ?? {}) as Record<string, unknown>;
-  if (r.ok !== true) return { ok: false, reason: String(r.reason ?? "refused") };
+  if (r.ok !== true) {
+    const detail = r.detail && typeof r.detail === "object" ? r.detail as Record<string, unknown> : null;
+    return { ok: false, reason: String(r.reason ?? "refused"), detail };
+  }
   const num = (v: unknown) => (v === null || v === undefined || !Number.isFinite(Number(v)) ? null : Number(v));
   return {
     ok: true, duplicate: r.duplicate === true, rowId: typeof r.row_id === "string" ? r.row_id : null,
@@ -92,6 +96,17 @@ const REASONS: Record<string, string> = {
   qty_invalid: "الكمية لازم تكون رقم صحيح من ٠ لـ١٠٠٠٠",
   dosage_too_long: "الجرعة مكتوبة طويلة أوي",
   dose_already_logged: "الجرعة دي متسجلة قبل كده — الكمية ماتخصمتش تاني",
+  amount_not_positive: "المبلغ لازم يكون رقم موجب",
+  amount_over_cap: "المبلغ ده كبير بشكل غير منطقي — تأكد منه",
+  title_invalid: "اكتب وصف قصير للمعاملة (لحد ٨٠ حرف)",
+  title_guessed: "الوصف ده تخمين — اسأل العميل الفلوس دي راحت على إيه قبل ما تسجلها",
+  txn_kind_unknown: "النوع يا expense يا income",
+  wallet_unknown: "المحفظة يا cash يا card يا bank",
+  transfer_to_missing: "التحويل لازم يقول رايح فين",
+  transfer_change_unsupported: "التحويل مايتعملش بالتعديل — سجّله معاملة جديدة",
+  text_too_long: "الفئة أو اسم المحل طويل أوي",
+  for_person_invalid: "«لمين» لازم يكون من ١ لـ٤٠ حرف",
+  date_invalid: "تاريخ العملية مش مفهوم أو في المستقبل أو أقدم من سنة",
 };
 
 /** سبب الرفض بالعربي للموديل (والكود الأصلي بين قوسين للتشخيص). */
