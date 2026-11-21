@@ -888,12 +888,105 @@ async function buildDriftLessons(sb: SupabaseClient, userId: string): Promise<st
   }
 }
 
+/**
+ * يبدأ استعلام دلوقتي (بناة supabase كسالى: مابيتبعتوش غير لما حد يعمل then)، ويعلّم الرفض إنه متعامل معاه عشان
+ * لو خطوة قبله وقعت، Deno مايطلعش «Uncaught (in promise)». اللي بيستنى الوعد بيشوف الرفض زي ما هو.
+ */
+export function prefetch<T>(query: PromiseLike<T>): Promise<T> {
+  const started = Promise.resolve(query);
+  started.catch(() => {});
+  return started;
+}
+
 async function buildSnapshot(sb: SupabaseClient, userId: string) {
   const snapshotStartedMs = Date.now();
   const cashKey = isoWeekKey(new Date());
   // المخزن والقايمة للبيت كله (قرار المالك ٢٠٢٦-١٠-١١): من غير ده العقل كان بيقول للأب «اللبن
   // خلص» واللبن اللي الأم ضافته قدامه في التطبيق.
   const householdFamily = await householdFamilyId(sb, userId);
+  // ZAD_OR_PLAN م٤ (٢١/١١، «الرد بطيء جداً»): اللقطة كانت ٢٨ نداء داتابيز ورا بعض، p50 ٦٫٨ ثانية من لفة ٩٫٩
+  // (prompt_sizes.timings.snapshot_ms). كل الاستعلامات دي بتعتمد على userId وhouseholdFamily والساعة بس، فبتبدأ كلها
+  // هنا مع المجموعة الكبيرة تحت، وكل موضع تحت بيستنى نتيجته الجاهزة. نفس الاستعلامات بالحرف، الترتيب بس اللي اتغير.
+  const early = {
+    lifeGoals: prefetch(sb.from("agent_goals")
+      .select("id,title,metric,target_value,current_value,deadline_date,status,last_reviewed_at,created_at,progress_kind")
+      .eq("user_id", userId).in("status", ["active", "stalled"]).order("created_at", { ascending: false }).limit(10)),
+    pharmacyDoses: prefetch(sb.from("zad_pharmacy_doses").select("status,scheduled_at")
+      .eq("user_id", userId).gte("scheduled_at", new Date(Date.now() - 14 * 86400000).toISOString())),
+    restock: prefetch(loadRestockVerdicts(sb, userId, householdFamily).catch(() => null)),
+    prior: prefetch(sb.rpc("zad_pantry_prior_days_for", { p_user: userId })),
+    appointments: prefetch(sb.from("zad_appointments")
+      .select("id,title,kind,starts_at,place_label,remind_minutes_before,recurrence,for_person,expected_cost")
+      .eq("user_id", userId).eq("status", "upcoming")
+      .gte("starts_at", new Date(Date.now() - 2 * 3600000).toISOString())
+      .lte("starts_at", new Date(Date.now() + 14 * 86400000).toISOString())
+      .order("starts_at", { ascending: true }).limit(30)),
+    technicians: prefetch(sb.from("zad_trusted_technicians")
+      .select("name,trade").eq("user_id", userId).order("created_at").limit(20)),
+    campaigns: prefetch(Promise.all([
+      sb.from("app_campaigns").select("id,event_key,event_name,target_country,dialect,from_md,to_md,season_slug,banner_title,banner_body,cta_text,priority,is_active")
+        .eq("is_active", true).limit(200),
+      sb.from("seasonal_event_windows").select("start_date,end_date,seasonal_events(slug,family_id)").limit(200),
+      sb.from("zad_recipe_feedback").select("recipe_name,liked").eq("user_id", userId)
+        .order("created_at", { ascending: false }).limit(40),
+    ])),
+    foodPrefs: prefetch(Promise.all([
+      sb.from("zad_item_preferences").select("item_name,kind,brand").or(householdFilter(userId, householdFamily)).limit(60),
+      loadAffinity(sb, userId),
+    ])),
+    profile: prefetch(Promise.all([
+      sb.from("zad_customer_profile")
+        .select("preferred_name,gender,household_role,age_range,occupation,work_schedule,pay_day,pay_frequency,income_source,household_size,kids_count,city,dialect,dialect_region,interests,notes,cares_for,zad_voice")
+        .eq("user_id", userId).maybeSingle(),
+      sb.from("zad_users").select("name").eq("id", userId).maybeSingle(),
+    ])),
+    homePoint: prefetch(loadHomePoint(sb, userId)),
+    broke: prefetch(sb.from("zad_broke_mode")
+      .select("started_at,ends_at,ended_at,cash_left,daily_cap,currency")
+      .eq("user_id", userId).maybeSingle()),
+    challenge: prefetch(sb.from("zad_savings_challenges")
+      .select("id,started_on,length_days,daily_cap,currency,streak,best_streak,days_won,days_lost,last_evaluated_on")
+      .eq("user_id", userId).eq("status", "active").maybeSingle()),
+    placeReminders: prefetch(sb.from("zad_place_reminders")
+      .select("id,place,note,created_at")
+      .eq("user_id", userId).eq("status", "open")
+      .order("created_at", { ascending: true }).limit(20)),
+    outings: prefetch(sb.from("zad_place_visits")
+      .select("left_at,returned_at,spent_total,currency,merchants,stores")
+      .eq("user_id", userId).gte("returned_at", new Date(Date.now() - 7 * 86400000).toISOString())
+      .order("returned_at", { ascending: false }).limit(10)),
+    commute: prefetch(sb.from("zad_memory").select("note").eq("user_id", userId).eq("scope", COMMUTE_SCOPE).limit(1).maybeSingle()
+      .then((r) => r, () => ({ data: null }))),
+    fuel: prefetch(sb.from("zad_transactions").select("amount,title,merchant_name,category,created_at").eq("user_id", userId)
+      .eq("txn_kind", "expense").gte("created_at", new Date(Date.now() - 90 * 86_400_000).toISOString()).limit(400)
+      .then((r) => r, () => ({ data: null }))),
+    morning: prefetch(sb.from("zad_voice_moments")
+      .select("facts,sent_at")
+      .eq("user_id", userId).in("moment", ["morning_greeting", NEWCOMER_MOMENT]).eq("status", "sent")
+      .gte("sent_at", new Date(Date.now() - ASKED_RELEVANT_MS).toISOString())
+      .order("sent_at", { ascending: false }).limit(1).maybeSingle()),
+    pendingMemory: prefetch(sb.from("zad_memory_pending")
+      .select("id,note,created_at")
+      .eq("user_id", userId).is("resolved_at", null)
+      .gte("created_at", new Date(Date.now() - PENDING_TTL_MS).toISOString())
+      .order("created_at", { ascending: false }).limit(3)),
+    decisions: prefetch(sb.from("zad_decision_log")
+      .select("label,decided_at,reviews,outcome").eq("user_id", userId)
+      .gte("decided_at", new Date(Date.now() - 120 * 86_400_000).toISOString())
+      .order("decided_at", { ascending: false }).limit(5)),
+    circumstance: prefetch(loadCircumstance(sb, userId)),
+    shifts: prefetch(sb.from("zad_life_circumstances")
+      .select("kind,started_at,ends_at,ended_at,confirmed,detail").eq("user_id", userId).like("kind", "shift_%")
+      .gt("ends_at", new Date().toISOString()).order("started_at", { ascending: false }).limit(10)),
+    timetable: prefetch(sb.from("zad_school_timetable")
+      .select("person,weekday,period,starts,subject").eq("user_id", userId).limit(300)),
+    insightHistory: prefetch(sb.from("zad_insights")
+      .select("dedupe_key,title,status,kind,priority,surface,created_at,expires_at,seen_at").eq("user_id", userId)
+      .gte("created_at", new Date(Date.now() - ENGAGEMENT_WINDOW_DAYS * 86_400_000).toISOString())
+      .order("created_at", { ascending: false }).limit(200)),
+    telegram: prefetch(sb.from("telegram_bindings")
+      .select("user_id", { count: "exact", head: true }).eq("user_id", userId).not("bound_at", "is", null)),
+  };
   const [userRes, txRes, invRes, subRes, pharmRes, shopRes, consRes, memRes, dismissedRes, selfReviewRes, askedRes, selfMemRes, cashBalRes, cashAskedRes, obligRes, debtRes, maintRes, behaviorRes, notifRes, doseRes, budgetRes, obsRes, lifeRes, famRes, docsRes, forecastRes, runsOutRes] =
     await Promise.all([
       sb.from("zad_users").select("monthly_limit,cycle_start_day,cycle_anchor,currency,country,gender,travel_country,travel_since,sleep_bed,sleep_wake,sleep_source,sleep_nights").eq("id", userId).maybeSingle(),
@@ -1163,9 +1256,7 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
   }
 
   // ─── أهداف حياة العميل (حلقة الأهداف) — العقل لازم يعرفها دايماً عشان يتابع تقدمها ───
-  const lifeGoalsRes = await sb.from("agent_goals")
-    .select("id,title,metric,target_value,current_value,deadline_date,status,last_reviewed_at,created_at,progress_kind")
-    .eq("user_id", userId).in("status", ["active", "stalled"]).order("created_at", { ascending: false }).limit(10);
+  const lifeGoalsRes = await early.lifeGoals;
   if ((lifeGoalsRes as any).error) {
     console.error(`[zad-brain] SNAPSHOT SOURCE FAILED: agent_goals — ${String((lifeGoalsRes as any).error.message ?? "")}`);
     dataErrors.push({ source: "أهدافك الحياتية" });
@@ -1179,8 +1270,7 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
   const transactions = txRes.data ?? [];
   const now = new Date();
   // كل تسجيل الجرعات الحالي هنا، مش في zad_dose_log (doseAdherence في shared.ts).
-  const pharmacyDosesRes = await sb.from("zad_pharmacy_doses").select("status,scheduled_at")
-    .eq("user_id", userId).gte("scheduled_at", new Date(Date.now() - 14 * 86400000).toISOString());
+  const pharmacyDosesRes = await early.pharmacyDoses;
   if (pharmacyDosesRes.error) console.error("[snapshot] zad_pharmacy_doses failed:", pharmacyDosesRes.error.message);
 
   // Phase 0 — the money figures are read, not computed. zad_budget_state() is the single
@@ -1306,10 +1396,10 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
   // فـstock_unknown تحت لسه بيشمل التقريبي عشان العقل يقدر يسأل ويأكده.
   // من غير معدل من زرار «−» (أغلب الأصناف): دورة شرا البيت (restockCycle.ts) — «الزيت بيتشرى كل ~٣٠ يوم، واتشرى من
   // ٢٥» ⇒ فاضل حوالي ٥ أيام. confidence = "cycle" فبيتقال «تقريباً» زي التقريبي (الملف السلوكي، المرحلة ٣).
-  const restockOf = await loadRestockVerdicts(sb, userId, householdFamily).catch(() => null);
+  const restockOf = await early.restock;
   // المعدل المبدئي (خطة المخزن ١، 20261114200000): أفراد البيت × استهلاك الفرد ÷ العبوة، للصنف اللي مالوش معدل ولا عادة
   // شرا — قبل دورة نوعه، زي zad_pantry_learning. من هنا بيوصل «هيخلص خلال أسبوع» في zad_home_state وعروض الصبح (خطوة ٦).
-  const { data: priorRows, error: priorErr } = await sb.rpc("zad_pantry_prior_days_for", { p_user: userId });
+  const { data: priorRows, error: priorErr } = await early.prior;
   if (priorErr) console.error("[snapshot] zad_pantry_prior_days_for failed:", priorErr.message);
   const priorDays = new Map(
     (Array.isArray(priorRows) ? priorRows as Array<{ item_name: string; days_left: number | string | null }> : [])
@@ -1360,30 +1450,15 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
 
   // مواعيد العميل الجاية (٢٠٢٦-٠٩-١٤) — العقل كان أعمى عنها لأنها ماكانتش موجودة أصلاً.
   // استعلام منفصل مش جوه Promise.all فوق: التفكيك هناك بالترتيب وأي إدخال بيزحلق الباقي.
-  const { data: apptRows, error: apptErr } = await sb.from("zad_appointments")
-    .select("id,title,kind,starts_at,place_label,remind_minutes_before,recurrence,for_person,expected_cost")
-    .eq("user_id", userId).eq("status", "upcoming")
-    .gte("starts_at", new Date(Date.now() - 2 * 3600000).toISOString())
-    .lte("starts_at", new Date(Date.now() + 14 * 86400000).toISOString())
-    .order("starts_at", { ascending: true }).limit(30);
+  const { data: apptRows, error: apptErr } = await early.appointments;
   // الفنيين اللي بيثق فيهم (الشريحة ٤٣): الاسم والصنعة بس بيوصلوا للموديل (techniciansForSnapshot).
-  const { data: technicianRows, error: technicianErr } = await sb.from("zad_trusted_technicians")
-    .select("name,trade").eq("user_id", userId).order("created_at").limit(20);
+  const { data: technicianRows, error: technicianErr } = await early.technicians;
   if (technicianErr) console.error("[snapshot] zad_trusted_technicians failed:", technicianErr.message);
   // الحملة اللي على الرئيسية وذوقه في الوصفات (campaigns.ts، §١١ح). فشل = من غيرهم، مش عطل.
-  const [{ data: campaignRows, error: campaignErr }, { data: seasonRows }, { data: tasteRows }] = await Promise.all([
-    sb.from("app_campaigns").select("id,event_key,event_name,target_country,dialect,from_md,to_md,season_slug,banner_title,banner_body,cta_text,priority,is_active")
-      .eq("is_active", true).limit(200),
-    sb.from("seasonal_event_windows").select("start_date,end_date,seasonal_events(slug,family_id)").limit(200),
-    sb.from("zad_recipe_feedback").select("recipe_name,liked").eq("user_id", userId)
-      .order("created_at", { ascending: false }).limit(40),
-  ]);
+  const [{ data: campaignRows, error: campaignErr }, { data: seasonRows }, { data: tasteRows }] = await early.campaigns;
   if (campaignErr) console.error("[snapshot] app_campaigns failed:", campaignErr.message);
   // ملف أكل البيت (foodProfile.ts): البراندات للبيت كله، والتفضيلات من الشات. فشل = من غيرهم.
-  const [{ data: foodPrefRows, error: foodPrefErr }, foodAffinity] = await Promise.all([
-    sb.from("zad_item_preferences").select("item_name,kind,brand").or(householdFilter(userId, householdFamily)).limit(60),
-    loadAffinity(sb, userId),
-  ]);
+  const [{ data: foodPrefRows, error: foodPrefErr }, foodAffinity] = await early.foodPrefs;
   if (foodPrefErr) console.error("[snapshot] zad_item_preferences failed:", foodPrefErr.message);
   if (apptErr) {
     console.error("[snapshot] zad_appointments failed:", apptErr.message);
@@ -1392,17 +1467,12 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
 
   // ملف العميل (20260914012000): إنت مين — الاسم والنوع ودوره في البيت وشغله وميعاد قبضه. كان
   // النوع بيتقري ومابيتحطش في السياق، والاسم مابيتقراش خالص.
-  const [{ data: profileRow, error: profileErr }, { data: nameRow }] = await Promise.all([
-    sb.from("zad_customer_profile")
-      .select("preferred_name,gender,household_role,age_range,occupation,work_schedule,pay_day,pay_frequency,income_source,household_size,kids_count,city,dialect,dialect_region,interests,notes,cares_for,zad_voice")
-      .eq("user_id", userId).maybeSingle(),
-    sb.from("zad_users").select("name").eq("id", userId).maybeSingle(),
-  ]);
+  const [{ data: profileRow, error: profileErr }, { data: nameRow }] = await early.profile;
   // الجو (weather.ts، الموجة ٤): مدينة الملف وإلا عاصمة البلد — من الكاش ٣ ساعات. null = مش عارفين.
   const weatherFacts = await loadWeather(sb, {
     country: userRes.data?.country,
     city: (profileRow as { city?: string | null } | null)?.city ?? null,
-    point: await loadHomePoint(sb, userId),
+    point: await early.homePoint,
     timeZone: budgetState.timezone ?? "UTC",
   });
   if (profileErr) {
@@ -1411,87 +1481,56 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
   }
 
   // وضع الطوارئ «مفلس باقي الشهر» — العقل لازم يعرفه عشان مايقترحش شراء ولا أكل من برّه.
-  const { data: brokeRow, error: brokeErr } = await sb.from("zad_broke_mode")
-    .select("started_at,ends_at,ended_at,cash_left,daily_cap,currency")
-    .eq("user_id", userId).maybeSingle();
+  const { data: brokeRow, error: brokeErr } = await early.broke;
   if (brokeErr) console.error("[snapshot] zad_broke_mode failed:", brokeErr.message);
   const brokeActive = isBrokeModeActive(brokeRow as { ends_at?: string; ended_at?: string } | null, Date.now());
 
   // تحدي التوفير الشغال — العقل يشجّع ويعرف السقف اليومي والسلسلة.
-  const { data: challengeRow } = await sb.from("zad_savings_challenges")
-    .select("id,started_on,length_days,daily_cap,currency,streak,best_streak,days_won,days_lost,last_evaluated_on")
-    .eq("user_id", userId).eq("status", "active").maybeSingle();
+  const { data: challengeRow } = await early.challenge;
 
   // تذكيرات المكان المفتوحة — عشان «فكّرتني بإيه لما أروح الصيدلية؟» و«شيل تذكير البنادول».
-  const { data: placeReminderRows, error: placeRemErr } = await sb.from("zad_place_reminders")
-    .select("id,place,note,created_at")
-    .eq("user_id", userId).eq("status", "open")
-    .order("created_at", { ascending: true }).limit(20);
+  const { data: placeReminderRows, error: placeRemErr } = await early.placeReminders;
   if (placeRemErr) {
     console.error("[snapshot] zad_place_reminders failed:", placeRemErr.message);
     dataErrors.push({ source: "تذكيرات المكان" });
   }
 
   // خروجات آخر ٧ أيام (من غير إحداثيات) — العقل يعرف "خرج امبارح وصرف ٣٥٠ في كارفور".
-  const { data: outingRows } = await sb.from("zad_place_visits")
-    .select("left_at,returned_at,spent_total,currency,merchants,stores")
-    .eq("user_id", userId).gte("returned_at", new Date(Date.now() - 7 * 86400000).toISOString())
-    .order("returned_at", { ascending: false }).limit(10);
+  const { data: outingRows } = await early.outings;
 
   // سؤال صباح الخير اللي اتبعت (ملف أو فضول — curiosity.ts): الجواب بيوصل لفة عادية. ومعاها سؤال
   // بعد الضهر في أول ٧٢ ساعة (newcomer.ts) — الأحدث هو اللي العميل بيجاوب عليه.
-  const { data: commuteRow } = await sb.from("zad_memory").select("note").eq("user_id", userId).eq("scope", COMMUTE_SCOPE).limit(1).maybeSingle()
-    .then((r) => r, () => ({ data: null }));
+  const { data: commuteRow } = await early.commute;
   // البنزين (fuelForecast.ts): عشان الشات يقدر يتكلم عنه. فشل القراية = من غير توقع.
-  const { data: fuelTxns } = await sb.from("zad_transactions").select("amount,title,merchant_name,category,created_at").eq("user_id", userId)
-    .eq("txn_kind", "expense").gte("created_at", new Date(Date.now() - 90 * 86_400_000).toISOString()).limit(400)
-    .then((r) => r, () => ({ data: null }));
+  const { data: fuelTxns } = await early.fuel;
   const fuelLine = fuelForecastLine(fuelForecast((fuelTxns ?? []) as FuelTxn[], Date.parse(`${localNowContext(budgetState.timezone ?? "UTC").date}T00:00:00Z`)));
 
-  const { data: morningRow } = await sb.from("zad_voice_moments")
-    .select("facts,sent_at")
-    .eq("user_id", userId).in("moment", ["morning_greeting", NEWCOMER_MOMENT]).eq("status", "sent")
-    .gte("sent_at", new Date(Date.now() - ASKED_RELEVANT_MS).toISOString())
-    .order("sent_at", { ascending: false }).limit(1).maybeSingle();
+  const { data: morningRow } = await early.morning;
 
   // ملاحظات حساسة مستنية «صح؟» (ZAD_PLAN ٥.٣): رسالة الأداة بالـid مابتوصلش اللفة الجاية، فاللقطة بتشيلها.
-  const { data: pendingMemory } = await sb.from("zad_memory_pending")
-    .select("id,note,created_at")
-    .eq("user_id", userId).is("resolved_at", null)
-    .gte("created_at", new Date(Date.now() - PENDING_TTL_MS).toISOString())
-    .order("created_at", { ascending: false }).limit(3);
+  const { data: pendingMemory } = await early.pendingMemory;
 
   // القرارات الكبيرة اللي اتسجّلت (الشريحة ٢٦) — عشان مايتسجّلش نفس القرار مرتين، ولو العميل سأل «قرار العربية طلع إزاي؟».
-  const { data: decisionRows } = await sb.from("zad_decision_log")
-    .select("label,decided_at,reviews,outcome").eq("user_id", userId)
-    .gte("decided_at", new Date(Date.now() - 120 * 86_400_000).toISOString())
-    .order("decided_at", { ascending: false }).limit(5);
+  const { data: decisionRows } = await early.decisions;
 
   // حالة البيت (circumstances.ts، الشريحة ٢٩): ظرف طارئ، امتحانات، استغاثة، أو تعافي بعدهم — زاد بيتكلم أقل.
-  const circumstance = await loadCircumstance(sb, userId);
+  const circumstance = await early.circumstance;
   // ZAD_PLAN ٥.٦ — الظرف الطارئ اللي العميل قاله: المتاح ساعته والتكلفة، عشان الباقي يتوزع على الأيام.
   const { data: circumstanceRow } = circumstance.mode === "exceptional" && circumstance.reason === "exceptional" && circumstance.id
     ? await sb.from("zad_life_circumstances").select("detail").eq("id", circumstance.id).eq("user_id", userId).maybeSingle()
     : { data: null };
   // التحول السلوكي القايم (lifeShift.ts، الشريحة ٣٠): الطبيعي الجديد اللي الحسابات بتقيس عليه.
-  const { data: shiftRows } = await sb.from("zad_life_circumstances")
-    .select("kind,started_at,ends_at,ended_at,confirmed,detail").eq("user_id", userId).like("kind", "shift_%")
-    .gt("ends_at", new Date().toISOString()).order("started_at", { ascending: false }).limit(10);
+  const { data: shiftRows } = await early.shifts;
   const liveShifts = activeShifts((shiftRows ?? []) as ShiftRow[], Date.now()).slice(0, 3);
 
   // جدول الحصص (school.ts، الشريحة ٢١): مين عنده إيه النهارده وبكرة.
-  const { data: timetableRows } = await sb.from("zad_school_timetable")
-    .select("person,weekday,period,starts,subject").eq("user_id", userId).limit(300);
+  const { data: timetableRows } = await early.timetable;
 
   // رد فعل العميل على الرؤى (engagement.ts): اللي اتجاهل ٣ مرات ورا بعض بيسكت.
-  const { data: insightHistory, error: insightHistErr } = await sb.from("zad_insights")
-    .select("dedupe_key,title,status,kind,priority,surface,created_at,expires_at,seen_at").eq("user_id", userId)
-    .gte("created_at", new Date(Date.now() - ENGAGEMENT_WINDOW_DAYS * 86_400_000).toISOString())
-    .order("created_at", { ascending: false }).limit(200);
+  const { data: insightHistory, error: insightHistErr } = await early.insightHistory;
   if (insightHistErr) console.error("[snapshot] insight history failed:", insightHistErr.message);
   // السؤال والحرج بيتبعتوا تليجرام لحظة كتابتهم لو الحساب مربوط — ظهروا حتى لو التطبيق مقفول.
-  const { count: telegramBound } = await sb.from("telegram_bindings")
-    .select("user_id", { count: "exact", head: true }).eq("user_id", userId).not("bound_at", "is", null);
+  const { count: telegramBound } = await early.telegram;
 
 
   const upcoming: Array<{ type: string; name: string; when: string }> = [];
