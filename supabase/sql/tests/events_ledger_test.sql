@@ -17,6 +17,10 @@ insert into zad_users values ('33333333-3333-3333-3333-333333333333', 'سارة'
 select pg_temp.check((select count(*) from zad_household_members where user_id = '33333333-3333-3333-3333-333333333333') = 1, 'new account: one self row');
 select pg_temp.check(zad_self_member('33333333-3333-3333-3333-333333333333') = (select id from zad_household_members where user_id = '33333333-3333-3333-3333-333333333333'), 'zad_self_member is idempotent');
 select pg_temp.fails($$insert into zad_household_members (user_id, display_name, kind) values ('33333333-3333-3333-3333-333333333333', 'تاني', 'self')$$, 'second self row');
+-- اسم أطول من ٦٠ مايوقّعش تسجيل الحساب.
+insert into auth.users values ('44444444-4444-4444-4444-444444444444');
+insert into zad_users values ('44444444-4444-4444-4444-444444444444', repeat('ا', 80));
+select pg_temp.check((select length(display_name) from zad_household_members where user_id = '44444444-4444-4444-4444-444444444444') = 60, 'long name trimmed, signup not broken');
 
 -- ٢) حدث بفرد من نفس البيت: ماشي. بفرد من بيت تاني: مرفوض.
 insert into zad_events (user_id, member_id, client_event_id, kind, payload, occurred_at, source, confidence)

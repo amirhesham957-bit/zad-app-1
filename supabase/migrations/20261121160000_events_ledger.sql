@@ -102,7 +102,8 @@ begin
     return v_id;
   end if;
   insert into public.zad_household_members (user_id, display_name, kind)
-  values (p_user, coalesce(nullif(btrim((select name from public.zad_users where id = p_user)), ''), 'أنا'), 'self')
+  -- الاسم بيتقص لـ٦٠: اسم أطول كان هيوقّع التريجر، والتريجر كان هيوقّع تسجيل الحساب نفسه.
+  values (p_user, coalesce(nullif(left(btrim((select name from public.zad_users where id = p_user)), 60), ''), 'أنا'), 'self')
   on conflict (user_id) where kind = 'self' do nothing;
   select id into v_id from public.zad_household_members where user_id = p_user and kind = 'self';
   return v_id;
