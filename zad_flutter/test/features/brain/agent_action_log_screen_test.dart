@@ -118,7 +118,7 @@ void main() {
   testWidgets('undo only where the server can undo', (tester) async {
     await pump(tester, <AgentAction>[
       _a('1', 'log_transaction'),
-      _a('2', 'add_appointment', table: 'zad_appointments'),
+      _a('2', 'set_life_goal', table: 'agent_goals'),
       _a('3', 'log_transaction', status: 'undone'),
     ]);
 
