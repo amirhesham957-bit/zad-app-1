@@ -30,6 +30,8 @@ export interface AuditScope {
   source: AgentSource;
   /** الـ run في zad_brain_runs اللي الفعل ده حصل جواه، لو موجود. */
   runId?: string | null;
+  /** مفتاح تكرار من اللي نادى (agent_execute.client_event_id) لما مفيش لفة — commitIntent.ts. */
+  eventKey?: string | null;
 }
 
 export interface ActionRecord {
