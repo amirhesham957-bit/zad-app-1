@@ -166,6 +166,7 @@ import {
 } from "./moneySafety.ts";
 import { type BookingConflict, bookingConflicts, bookingQuestion, CLASH_WINDOW_MINUTES, type ScheduledLike } from "./scheduleGuard.ts";
 import { eventDayBudget, eventDayBudgetRule } from "./eventDayBudget.ts";
+import { paydayOdds, paydayOddsRule, type SpendRow } from "./paydayOdds.ts";
 import { budgetAtStart, circumstanceBudget, circumstanceBudgetLine, circumstanceBudgetRule, circumstanceCost } from "./circumstanceBudget.ts";
 import { homeEmergencyRule, technicianFollowUp, techniciansForSnapshot } from "./homeEmergency.ts";
 import { loadWhileAway, whileAwayBlock } from "./whileAway.ts";
@@ -1001,7 +1002,7 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
       // الـ٢٠٠ صف كانت بتخلص قبل ما توصل ٩٠ يوم فعلياً، فـ"آخر شهرين/تلاتة للتحليل والتنبؤ"
       // كان بيتقصر بصمت من غير ما حد يلاحظ. ١٢٠ يوم عشان يغطي أطول نافذة مستخدمة (اكتشاف
       // دورة الراتب/الالتزام الثابت)، مش بس أقصر نافذة (الشذوذ).
-      sb.from("zad_transactions").select("id,amount,title,category,is_expense,txn_kind,created_at,merchant_name,bank_name,for_person")
+      sb.from("zad_transactions").select("id,amount,title,category,is_expense,txn_kind,created_at,merchant_name,bank_name,for_person,linked_obligation_id")
         .eq("user_id", userId).gte("created_at", new Date(Date.now() - 120 * 86400000).toISOString())
         .order("created_at", { ascending: false }).limit(600),
       sb.from("zad_inventory").select("item_name,category,quantity,unit,expiry_date,low_stock_threshold,created_at,restock_mode,restock_cycle_days,opened_at,opened_life_days")
@@ -1834,6 +1835,8 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
       appointments: (apptRows ?? []) as Array<Record<string, string | null>>,
       timeZone: budgetState.timezone ?? "UTC",
     }),
+    // م٣.٥ (paydayOdds.ts): «تقريباً» قبل ١٤ يوم صرف، وبعدها احتمال الوصول للقبض. المتاح والأيام من zad_budget_state.
+    payday_odds: paydayOdds(available, daysLeftInCycle, transactions as SpendRow[], localNowContext(budgetState.timezone ?? "UTC").date, budgetState.timezone ?? "UTC"),
     // تحدي ٣٠ يوم توفير: null = مفيش. day = اليوم رقم كام بالتاريخ المحلي.
     savings_challenge: challengeRow
       ? { ...(challengeRow as Record<string, unknown>), day: challengeDayIndex(String((challengeRow as { started_on: string }).started_on), localNowContext(budgetState.timezone ?? "UTC").date) }
@@ -9763,7 +9766,7 @@ ${Array.isArray(snap?.stock_totals) && snap.stock_totals.length > 0 ? `   - **st
 3. **الإحساس والكتابة**:
    - حالته من كلامه بس (متقولش إنك سمعت نبرة): مستعجل ⇒ اختصر، مضغوط ⇒ هدوء. إحساسك من SOUL مسموح؛ جسد أو حياة برّه البيت لأ.
    - **اكتب زي ما بني آدم بيكتب في الشات** (المكالمة ليها قواعدها): ابدأ برد فعل على كلامه («يا خبر!») — سؤال معلومة أو سعر: الإجابة أول جملة؛ سطر لـ٣ من غير عناوين ولا نقط ولا Bold (القوايم لما يطلب تفاصيل أو أكتر من ٣ أرقام)؛ سؤال واحد بالكتير؛ متقفلش بـ«تحب أساعدك في حاجة تانية؟»؛ متعيدش كلامه؛ متبدأش ردين بنفس الكلمة؛ راجع بعد غياب ⇒ زي صاحب فاكره («بقالك يومين 😄»).
-${ruleLines(householdLoadRule(snap), toneRule(snap), eventDayBudgetRule(snap), circumstanceBudgetRule(snap), homeEmergencyRule(snap))}${campaignAndTasteRules(snap)}${weatherRule(snap)}${ruleLines(replyCadenceRule(snap))}
+${ruleLines(householdLoadRule(snap), toneRule(snap), eventDayBudgetRule(snap), paydayOddsRule(snap), circumstanceBudgetRule(snap), homeEmergencyRule(snap))}${campaignAndTasteRules(snap)}${weatherRule(snap)}${ruleLines(replyCadenceRule(snap))}
 4. **التنفيذ الفوري**: طلب مهمة أو ميعاد أو مصروف أو دوا أو مخزون ⇒ **نفّذ الأمر فوراً** بالأداة، وأكّد باقتضاب بلهجته. ممنوع تقول "سجلت" أو "ضفت" أو "عدّلت" من غير ما تنادي الأداة في نفس الرد.
 5. **الحضور والهوية** (فوق SOUL): مفيش هزار لو بيكرر طلب.
    - لو سأل العميل هل أنت إنسان، قل بوضوح وبخفة إنك مساعد ذكاء اصطناعي داخل زاد. لا خداع ولا غموض يصنع تعلق أو ضغط نفسي.
