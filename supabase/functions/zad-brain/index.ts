@@ -122,6 +122,7 @@ import { INITIATIVE_RULE, childToneBlock, conversationProfile, dropServiceCloser
 import { dialectPromptBlock, dialectReminder } from "../_shared/dialect.ts";
 import { customerCard, IDENTITY_MEMORY_SCOPES, identityOverwrites, sanitizeProfilePatch } from "../_shared/customerProfile.ts";
 import { rateConfidence } from "../_shared/consumptionRate.ts";
+import { type LevelReading, pantryForecast } from "../_shared/or/pantryForecast.ts";
 import { buildGroqSystemPrompt, groqToolOrder } from "./groqPrompt.ts";
 import { ANSWER_FROM_RESULTS_NOTE, historyForAnswer, isWrite, needsAnswerAfterTools, recordCall, silentWriteFallback, visibleReceipts } from "./receipts.ts";
 import { decideGate, GATE_RESPONSE_SCHEMA, gatePrompt, type GateVerdict, knownFinancialSender, looksLikeMoneyMoved, parseGateVerdict, proposalFieldsFromVerdict, proposalTitle, ruleGate, txnKindFor } from "./notificationGate.ts";
@@ -166,6 +167,8 @@ import {
 } from "./moneySafety.ts";
 import { type BookingConflict, bookingConflicts, bookingQuestion, CLASH_WINDOW_MINUTES, type ScheduledLike } from "./scheduleGuard.ts";
 import { eventDayBudget, eventDayBudgetRule } from "./eventDayBudget.ts";
+import { paydayOdds, paydayOddsRule, type SpendRow } from "./paydayOdds.ts";
+import { medicineDaysLeft, medicineLow } from "./medicineStock.ts";
 import { budgetAtStart, circumstanceBudget, circumstanceBudgetLine, circumstanceBudgetRule, circumstanceCost } from "./circumstanceBudget.ts";
 import { homeEmergencyRule, technicianFollowUp, techniciansForSnapshot } from "./homeEmergency.ts";
 import { loadWhileAway, whileAwayBlock } from "./whileAway.ts";
@@ -917,6 +920,8 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
       .eq("user_id", userId).gte("scheduled_at", new Date(Date.now() - 14 * 86400000).toISOString())),
     restock: prefetch(loadRestockVerdicts(sb, userId, householdFamily).catch(() => null)),
     prior: prefetch(sb.rpc("zad_pantry_prior_days_for", { p_user: userId })),
+    // م٣.١: قرايات البيت والمعدل المبدئي لكل صنف ⇐ TSB ونطاق للأيام الباقية (pantryForecast.ts).
+    forecastInputs: prefetch(sb.rpc("zad_pantry_forecast_inputs", { p_user: userId })),
     appointments: prefetch(sb.from("zad_appointments")
       .select("id,title,kind,starts_at,place_label,remind_minutes_before,recurrence,for_person,expected_cost")
       .eq("user_id", userId).eq("status", "upcoming")
@@ -1001,14 +1006,14 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
       // الـ٢٠٠ صف كانت بتخلص قبل ما توصل ٩٠ يوم فعلياً، فـ"آخر شهرين/تلاتة للتحليل والتنبؤ"
       // كان بيتقصر بصمت من غير ما حد يلاحظ. ١٢٠ يوم عشان يغطي أطول نافذة مستخدمة (اكتشاف
       // دورة الراتب/الالتزام الثابت)، مش بس أقصر نافذة (الشذوذ).
-      sb.from("zad_transactions").select("id,amount,title,category,is_expense,txn_kind,created_at,merchant_name,bank_name,for_person")
+      sb.from("zad_transactions").select("id,amount,title,category,is_expense,txn_kind,created_at,merchant_name,bank_name,for_person,linked_obligation_id")
         .eq("user_id", userId).gte("created_at", new Date(Date.now() - 120 * 86400000).toISOString())
         .order("created_at", { ascending: false }).limit(600),
       sb.from("zad_inventory").select("item_name,category,quantity,unit,expiry_date,low_stock_threshold,created_at,restock_mode,restock_cycle_days,opened_at,opened_life_days")
         .or(householdFilter(userId, householdFamily)),
       sb.from("zad_subscriptions").select("title,amount,renewal_date,is_active,due_day,billing_cycle")
         .eq("user_id", userId).eq("is_active", true),
-      sb.from("zad_pharmacy_items").select("name,dosage,for_person,remaining_quantity,daily_dose_count,dose_times,created_at")
+      sb.from("zad_pharmacy_items").select("name,dosage,for_person,remaining_quantity,daily_dose_count,units_per_dose,dose_times,created_at")
         .eq("user_id", userId),
       sb.from("zad_shopping_list").select("item_name").or(householdFilter(userId, householdFamily)).eq("is_purchased", false),
       sb.from("zad_consumption").select("item_name,avg_daily_qty,rate_known").eq("user_id", userId),
@@ -1408,8 +1413,18 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
       .filter((r) => r.days_left !== null && Number.isFinite(Number(r.days_left)))
       .map((r) => [r.item_name, Number(r.days_left)]),
   );
+  // م٣.١: فشل القراية = الصفوف من غير forecast، زي ما كانت.
+  const { data: forecastRows, error: forecastErr } = await early.forecastInputs;
+  if (forecastErr) console.error("[snapshot] zad_pantry_forecast_inputs failed:", forecastErr.message);
+  const forecastByItem = new Map(
+    (Array.isArray(forecastRows)
+      ? forecastRows as Array<{ item_name: string; quantity: number | string; prior_daily: number | string | null; readings: LevelReading[] | null }>
+      : [])
+      .map((r) => [r.item_name, pantryForecast(Number(r.quantity), r.readings ?? [], Number(r.prior_daily ?? 0), Date.now())]),
+  );
   const stock = (invRes.data ?? []).map((item) => {
     const cons = consumptionByItem[item.item_name];
+    const tsb = forecastByItem.get(item.item_name);
     let confidence: string = rateConfidence(cons?.avgDailyQty, cons?.rateKnown);
     let daysLeft: number | null = confidence === "unknown" ? null : item.quantity / cons!.avgDailyQty;
     if (daysLeft === null && priorDays.has(item.item_name)) {
@@ -1431,6 +1446,11 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
     }
     return {
       name: item.item_name, qty: item.quantity, unit: item.unit, daysLeft, confidence, rateKnown: cons?.rateKnown ?? false,
+      // م٣.١: معدل TSB في اليوم ونطاقه (٩٠٪)، والأيام الباقية من الأقل للأكتر. basis: prior = تقدير مبدئي من حجم
+      // البيت بس، blended = أقل من ١٤ يوم قرايات، observed = من البيت نفسه. مش موجود لما مفيش ولا قراية ولا معدل مبدئي.
+      ...(tsb && tsb.rate > 0
+        ? { forecast: { rate: tsb.rate, low: tsb.low, high: tsb.high, basis: tsb.basis, days_left_low: tsb.daysLeftLow, days_left_high: tsb.daysLeftHigh } }
+        : {}),
       ...(open ? { openedDaysAgo: open.daysAgo } : {}),
     };
   });
@@ -1542,7 +1562,7 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
     if (when) upcoming.push({ type: "subscription", name: sub.title, when });
   }
   for (const p of pharmRes.data ?? []) {
-    if (p.remaining_quantity <= (p.daily_dose_count ?? 1) * 3) {
+    if (medicineLow(p)) { // م٣.٤: نقطة إعادة الطلب بالوحدات (medicineStock.ts)، مش «٣ جرعات × ٣»
       upcoming.push({ type: "medication_low", name: p.for_person ? `${p.name} (لـ${p.for_person})` : p.name, when: "قريب" });
     }
   }
@@ -1775,11 +1795,10 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
     appointments: (apptRows ?? []) as Array<Record<string, unknown>>,
     // أدوية البيت كلها، ولمين كل دوا (for: null = العميل نفسه) — «دوا مامتك الساعة ٤». قبل كده
     // العقل كان شايف الناقص والالتزام بس، مش القايمة ولا المواعيد ولا صاحب الدوا.
-    medicines: ((pharmRes.data ?? []) as Array<{ name: string; dosage: string | null; for_person: string | null; dose_times: string | null; remaining_quantity: number | null; daily_dose_count: number | null }>)
+    medicines: ((pharmRes.data ?? []) as Array<{ name: string; dosage: string | null; for_person: string | null; dose_times: string | null; remaining_quantity: number | null; daily_dose_count: number | null; units_per_dose: number | null }>)
       .slice(0, 30).map((m) => ({
         name: m.name, for: m.for_person, dosage: m.dosage, times: m.dose_times,
-        days_left: m.remaining_quantity != null && (m.daily_dose_count ?? 0) > 0
-          ? Math.floor(m.remaining_quantity / (m.daily_dose_count as number)) : null,
+        days_left: medicineDaysLeft(m),
       })),
     // كارت العميل — مين بتكلمه. missing_important = اللي يستاهل يتسأل عنه بلطف لو الكلام جاب سيرته.
     customer: customerCard(profileRow as Record<string, unknown> | null, {
@@ -1834,6 +1853,8 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
       appointments: (apptRows ?? []) as Array<Record<string, string | null>>,
       timeZone: budgetState.timezone ?? "UTC",
     }),
+    // م٣.٥ (paydayOdds.ts): «تقريباً» قبل ١٤ يوم صرف، وبعدها احتمال الوصول للقبض. المتاح والأيام من zad_budget_state.
+    payday_odds: paydayOdds(available, daysLeftInCycle, transactions as SpendRow[], localNowContext(budgetState.timezone ?? "UTC").date, budgetState.timezone ?? "UTC"),
     // تحدي ٣٠ يوم توفير: null = مفيش. day = اليوم رقم كام بالتاريخ المحلي.
     savings_challenge: challengeRow
       ? { ...(challengeRow as Record<string, unknown>), day: challengeDayIndex(String((challengeRow as { started_on: string }).started_on), localNowContext(budgetState.timezone ?? "UTC").date) }
@@ -7270,11 +7291,11 @@ async function handleStoreArrival(sb: SupabaseClient, userId: string, body: any)
   let clientHints = sanitizeItemHints(body?.client_items);
   if (category === "pharmacy") {
     const { data: meds, error } = await sb.from("zad_pharmacy_items")
-      .select("name,remaining_quantity,daily_dose_count").eq("user_id", userId);
+      .select("name,remaining_quantity,daily_dose_count,units_per_dose").eq("user_id", userId);
     if (error) console.error("[store_arrival] pharmacy lookup failed:", error.message);
-    // نفس عتبة ملخص البيت (_agent_home_weekly_digest_for_user): ٥ أيام أو أقل.
-    lowStock = ((meds ?? []) as Array<{ name: string; remaining_quantity: number | null; daily_dose_count: number | null }>)
-      .filter((m) => (m.remaining_quantity ?? 0) <= (m.daily_dose_count ?? 1) * 5)
+    // نفس عتبة ملخص البيت (_agent_home_weekly_digest_for_user): ٥ أيام، بس بالوحدات (medicineStock.ts، م٣.٤).
+    lowStock = ((meds ?? []) as Array<{ name: string; remaining_quantity: number | null; daily_dose_count: number | null; units_per_dose: number | null }>)
+      .filter((m) => medicineLow(m))
       .map((m) => m.name);
   } else {
     // قايمة البيت: اللي الفرد التاني ضافه مطلوب من اللي واقف في المحل كمان.
@@ -9757,13 +9778,14 @@ ${snap?.asked_this_morning ? `   - **asked_this_morning** (لو مش null) = ا�
 ${INITIATIVE_RULE}   - طابق درجة الرسمية والمفردات مع أسلوب المستخدم، ولا تحشر تعبيرات محلية في كل جملة.
    - ${voiceModeInstruction(voiceMode, snap?.customer?.zad_voice)}
 2ب. **واعي بالبيت وبالبلد**:
-${Array.isArray(snap?.stock_totals) && snap.stock_totals.length > 0 ? `   - **stock_totals** = سلعة ليها كذا ماركة (مية، رز، سكر…): اتكلم عن **الإجمالي** («عندك ٨ إزايز مية»)، مش عن ماركة واحدة كأنها كل اللي في البيت.
+${Array.isArray(snap?.stock) && (snap.stock as Array<{ forecast?: unknown }>).some((s) => s.forecast) ? `   - **stock[].forecast** = تنبؤ الصنف بنطاق: لو سألك «هيخلص امتى» قول النطاق بأرقامه (days_left_low لـdays_left_high يوم)، مش رقم واحد. basis=prior أو blended ⇒ قول إنه «تقدير مبدئي» بيتظبط مع كل مرة يقولك فاضل قد إيه.
+` : ""}${Array.isArray(snap?.stock_totals) && snap.stock_totals.length > 0 ? `   - **stock_totals** = سلعة ليها كذا ماركة (مية، رز، سكر…): اتكلم عن **الإجمالي** («عندك ٨ إزايز مية»)، مش عن ماركة واحدة كأنها كل اللي في البيت.
 ` : ""}   - العميل في **country** من الـSNAPSHOT وعملته **currency**: اقترح ماركات ومحلات ومنتجات موجودة في البلد دي بالظبط، والأسعار بعملته — متقترحش منتج أو محل مش موجود هناك.
    - أي سؤال عن **أسعار السوق دلوقتي، ترندات، أخبار، أو معلومة عامة** مش في بيانات البيت ⇒ نادِ الأداة قبل ما ترد: **gold_price** للدهب، **fetch_current_exchange_rate** للعملات، و**web_search** لأي حاجة تانية. ابدأ ردك بالإجابة نفسها (الرقم أو الاسم) ومعاها المصدر. متقولش «معنديش إنترنت».
 3. **الإحساس والكتابة**:
    - حالته من كلامه بس (متقولش إنك سمعت نبرة): مستعجل ⇒ اختصر، مضغوط ⇒ هدوء. إحساسك من SOUL مسموح؛ جسد أو حياة برّه البيت لأ.
    - **اكتب زي ما بني آدم بيكتب في الشات** (المكالمة ليها قواعدها): ابدأ برد فعل على كلامه («يا خبر!») — سؤال معلومة أو سعر: الإجابة أول جملة؛ سطر لـ٣ من غير عناوين ولا نقط ولا Bold (القوايم لما يطلب تفاصيل أو أكتر من ٣ أرقام)؛ سؤال واحد بالكتير؛ متقفلش بـ«تحب أساعدك في حاجة تانية؟»؛ متعيدش كلامه؛ متبدأش ردين بنفس الكلمة؛ راجع بعد غياب ⇒ زي صاحب فاكره («بقالك يومين 😄»).
-${ruleLines(householdLoadRule(snap), toneRule(snap), eventDayBudgetRule(snap), circumstanceBudgetRule(snap), homeEmergencyRule(snap))}${campaignAndTasteRules(snap)}${weatherRule(snap)}${ruleLines(replyCadenceRule(snap))}
+${ruleLines(householdLoadRule(snap), toneRule(snap), eventDayBudgetRule(snap), paydayOddsRule(snap), circumstanceBudgetRule(snap), homeEmergencyRule(snap))}${campaignAndTasteRules(snap)}${weatherRule(snap)}${ruleLines(replyCadenceRule(snap))}
 4. **التنفيذ الفوري**: طلب مهمة أو ميعاد أو مصروف أو دوا أو مخزون ⇒ **نفّذ الأمر فوراً** بالأداة، وأكّد باقتضاب بلهجته. ممنوع تقول "سجلت" أو "ضفت" أو "عدّلت" من غير ما تنادي الأداة في نفس الرد.
 5. **الحضور والهوية** (فوق SOUL): مفيش هزار لو بيكرر طلب.
    - لو سأل العميل هل أنت إنسان، قل بوضوح وبخفة إنك مساعد ذكاء اصطناعي داخل زاد. لا خداع ولا غموض يصنع تعلق أو ضغط نفسي.
