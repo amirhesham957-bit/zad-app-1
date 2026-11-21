@@ -12,8 +12,17 @@ import type { AuditScope } from "./audit.ts";
 export type IntentKind =
   | "inventory.added" | "inventory.consumed" | "inventory.quantity_set" | "inventory.deleted" | "inventory.restock_mode_set"
   | "shopping.added" | "shopping.completed" | "shopping.deleted"
-  | "pharmacy.added" | "pharmacy.updated" | "pharmacy.deleted" | "pharmacy.dose_taken"
-  | "money.logged" | "money.updated" | "money.deleted" | "money.purchase" | "money.limit_set" | "money.category_budget_set";
+  | "pharmacy.added" | "pharmacy.updated" | "pharmacy.deleted" | "pharmacy.dose_taken" | "pharmacy.dose_snoozed" | "pharmacy.dose_skipped"
+  | "money.logged" | "money.updated" | "money.deleted" | "money.purchase" | "money.limit_set" | "money.category_budget_set"
+  | "subscription.added" | "subscription.updated" | "subscription.deleted"
+  | "debt.added" | "debt.updated" | "debt.deleted"
+  | "obligation.added" | "obligation.updated" | "obligation.deactivated"
+  | "maintenance.added" | "maintenance.updated" | "maintenance.deleted"
+  | "document.saved" | "document.deleted"
+  | "appointment.added" | "appointment.updated" | "appointment.deleted"
+  | "settings.cycle_start_set" | "settings.market_set" | "settings.emergency_fund_set" | "settings.sleep_set"
+  | "settings.sleep_cleared" | "settings.app_flag_set"
+  | "goal.set" | "goal.cancelled" | "goal.progress" | "goal.challenge_started" | "goal.challenge_stopped";
 export type IntentSource = "manual" | "receipt" | "bank" | "model" | "cron";
 
 export type CommitResult =
@@ -76,7 +85,7 @@ export async function commitIntent(
 }
 
 const REASONS: Record<string, string> = {
-  item_not_found: "الصنف مش في مخزن البيت ده",
+  item_not_found: "السجل ده مش موجود عندك",
   name_invalid: "اسم الصنف لازم يكون من ٢ لـ١٢٠ حرف",
   qty_not_positive: "الكمية لازم تكون أكبر من صفر",
   qty_too_large: "الكمية كبيرة بشكل مش منطقي — اتأكد من العميل",
@@ -109,6 +118,61 @@ const REASONS: Record<string, string> = {
   date_invalid: "تاريخ العملية مش مفهوم أو في المستقبل أو أقدم من سنة",
   category_invalid: "اسم الفئة لازم يكون من ٢ لـ٤٠ حرف",
   no_category_budget: "مفيش سقف على الفئة دي أصلاً",
+  subscription_title_invalid: "اسم الاشتراك لازم يكون من ٢ لـ١٢٠ حرف",
+  renewal_date_invalid: "تاريخ التجديد لازم يكون تاريخ حقيقي بصيغة YYYY-MM-DD",
+  billing_cycle_invalid: "دورة الدفع يا MONTHLY يا YEARLY",
+  due_day_invalid: "يوم الاستحقاق لازم يكون من ١ لـ٣١",
+  is_active_invalid: "التفعيل لازم يكون true أو false",
+  debt_name_invalid: "اسم الدين لازم يكون من ٢ لـ١٢٠ حرف",
+  minimum_invalid: "الحد الأدنى الشهري لازم يكون رقم مش سالب",
+  interest_invalid: "نسبة الفايدة لازم تكون من ٠ لـ١٠٠٠",
+  balance_negative: "الرصيد المتبقي مينفعش يبقى بالسالب",
+  obligation_title_invalid: "اسم الالتزام لازم يكون من ٢ لـ١٢٠ حرف",
+  obligation_kind_invalid: "نوع الالتزام يا rent يا installment يا tuition يا utility يا other",
+  recurrence_invalid: "التكرار يا monthly يا quarterly يا yearly يا once",
+  installments_invalid: "عدد الأقساط لازم يكون رقم صحيح من ١ لـ٦٠٠",
+  already_inactive: "الالتزام ده اتلغى قبل كده",
+  device_name_invalid: "اسم الجهاز لازم يكون من ٢ لـ١٢٠ حرف",
+  device_category_invalid: "فئة الجهاز طويلة أوي (٦٠ حرف بالكتير)",
+  day_invalid: "التاريخ لازم يوم حقيقي بصيغة YYYY-MM-DD",
+  interval_invalid: "الفاصل بين الصيانات لازم عدد أيام صحيح موجب",
+  cost_invalid: "التكلفة لازم رقم موجب في الحدود المنطقية",
+  kind_invalid: "النوع مش من الأنواع المعروفة",
+  holder_invalid: "اسم صاحب المستند لازم يكون من غير مسافات زيادة ولحد ٤٠ حرف",
+  label_invalid: "اسم المستند لازم يكون من غير مسافات زيادة ولحد ٤٠ حرف",
+  label_required: "مستند «other» محتاج اسم",
+  date_out_of_range: "تاريخ الانتهاء مش معقول (بين ٢٠٠٠ و٢١٠٠)",
+  appt_title_invalid: "اسم الميعاد لازم من ٢ لـ١٦٠ حرف",
+  starts_at_invalid: "وقت الميعاد مش مفهوم",
+  appt_recurrence_invalid: "التكرار لازم once أو hourly أو daily أو weekly أو monthly",
+  source_invalid: "مصدر الميعاد مش معروف",
+  remind_invalid: "التذكير قبلها لازم دقايق صحيحة من ٠ لـ١٠٠٨٠",
+  place_too_long: "اسم المكان طويل أوي (١٢٠ حرف بالكتير)",
+  status_invalid: "الحالة لازم upcoming أو done أو cancelled",
+  user_not_found: "حساب العميل مش موجود",
+  cycle_day_invalid: "يوم بداية الدورة رقم صحيح من ١ لـ٣١",
+  currency_invalid: "العملة كود ISO من ٣ حروف كابيتال (مثل EGP) — والتحدي عملته لحد ١٠ حروف",
+  country_invalid: "البلد كود ISO من حرفين كابيتال (مثل EG)",
+  balance_invalid: "الرصيد لازم يكون رقم غير سالب",
+  sleep_time_invalid: "المواعيد بصيغة HH:MM (٢٤ ساعة)",
+  sleep_bed_out_of_range: "النوم من ٢٠:٠٠ لـ٠٣:٠٠ — شغل ليلي؟ اسأله وماتحفظش",
+  sleep_wake_out_of_range: "الصحيان من ٠٤:٠٠ لـ١٢:٠٠",
+  setting_unknown: "الإعداد ده يا pet_calls يا food_pattern",
+  goal_title_invalid: "عنوان الهدف من ٤ لـ٢٠٠ حرف",
+  metric_too_long: "وصف المقياس طويل أوي",
+  target_invalid: "المبلغ المستهدف لازم رقم موجب منطقي",
+  deadline_invalid: "تاريخ الهدف مش مفهوم",
+  unit_invalid: "unit يا money يا count",
+  goal_not_found: "مفيش هدف بالاسم ده عند العميل",
+  goal_amount_invalid: "المبلغ لازم رقم مش صفر وبحدود المنطق",
+  goal_not_amount: "الهدف ده بيتعد بالمهام مش بالفلوس — تقدمه بيتحسب لوحده.",
+  challenge_already_active: "عنده تحدي شغال بالفعل — شجّعه يكمّله أو اسأله لو عايز يقفله الأول (stop_savings_challenge).",
+  no_active_challenge: "مفيش تحدي شغال أصلاً",
+  challenge_cap_invalid: "السقف اليومي لازم رقم موجب منطقي",
+  challenge_length_invalid: "مدة التحدي من ٧ لـ٩٠ يوم",
+  challenge_date_invalid: "تاريخ بداية التحدي مش مفهوم",
+  dose_slot_invalid: "ميعاد الجرعة مش تاريخ مفهوم",
+  snooze_minutes_invalid: "التأجيل من ٥ لـ٢٤٠ دقيقة",
 };
 
 /** سبب الرفض بالعربي للموديل (والكود الأصلي بين قوسين للتشخيص). */

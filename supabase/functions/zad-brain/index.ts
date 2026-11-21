@@ -2061,7 +2061,7 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
     case "answer_dose_reminder": {
       const momentId = String(input.moment_id ?? "");
       if (!/^[0-9a-fA-F-]{36}$/.test(momentId) || !isDoseAction(input.action)) return "مرفوض: تذكير أو رد مش مفهوم";
-      return await settleDoseReminder(sb, userId, momentId, input.action);
+      return await settleDoseReminder(sb, userId, momentId, input.action, scope);
     }
 
     case "mute_checkin": {
@@ -2620,16 +2620,15 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       // anchor، وده مقصود يفضل بسيط. الحدود نفسها بتتحسب في zad_cycle_bounds() في
       // Postgres، واللي بتحترم last_working_day لو العميل ظبطه من الإعدادات.
       const { data: cycleBefore } = await sb.from("zad_users").select("cycle_start_day").eq("id", userId).maybeSingle();
-      const w = await writeRows(
-        sb.from("zad_users").update({ cycle_start_day: input.cycle_start_day }).eq("id", userId).select("cycle_start_day"),
-        "حفظ دورة الراتب",
-      );
-      if (!w.ok) return `مرفوض: ${w.reason}`;
+      // من الباب (م٢.٥).
+      const w = await commitIntent(sb, userId, scope, name, input, "settings.cycle_start_set", { day: input.cycle_start_day });
+      if (!w.ok) return refusalText(w.reason);
+      if (w.duplicate) return DUPLICATE_REPLY;
       ctx.mutationCount++;
       ctx.mutations.push({ tool: name, old: cycleBefore?.cycle_start_day ?? null, new: input.cycle_start_day });
       await recordAction(sb, userId, scope, {
         tool: name, input, table: "zad_users", targetId: userId,
-        previous: { cycle_start_day: cycleBefore?.cycle_start_day ?? null }, next: w.rows[0],
+        previous: { cycle_start_day: cycleBefore?.cycle_start_day ?? null }, next: { cycle_start_day: input.cycle_start_day },
       });
       return `اتظبطت دورة الراتب على يوم ${input.cycle_start_day} — كل حساب "متبقي"/"متاح" هيبقى على أساسها من دلوقتي`;
     }
@@ -2648,20 +2647,18 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       const totalInstallments = det.provider && Number.isFinite(input.total_installments) && input.total_installments > 0
         ? Math.round(input.total_installments)
         : null;
-      const w = await writeRows(
-        sb.from("zad_obligations").insert({
-          user_id: userId, title: det.title, amount: det.amount, kind: input.kind,
-          due_day: det.due_day, recurrence: "monthly", auto_detected: true, confirmed: true, active: true,
-          provider: det.provider, total_installments: totalInstallments, remaining_installments: totalInstallments,
-        }).select("id,title,amount,kind"),
-        "حفظ الالتزام",
-      );
-      if (!w.ok) return `مرفوض: ${w.reason}`;
+      const w = await commitIntent(sb, userId, scope, name, input, "obligation.added", {
+        title: det.title, amount: det.amount, kind: input.kind,
+        due_day: det.due_day, recurrence: "monthly", auto_detected: true, confirmed: true,
+        provider: det.provider, total_installments: totalInstallments,
+      });
+      if (!w.ok) return refusalText(w.reason);
+      if (w.duplicate) return DUPLICATE_REPLY;
       ctx.mutationCount++;
       ctx.mutations.push({ tool: name, old: null, new: { title: det.title, amount: det.amount, kind: input.kind } });
       await recordAction(sb, userId, scope, {
-        tool: name, input, table: "zad_obligations", targetId: (w.rows[0] as any).id,
-        previous: null, next: w.rows[0],
+        tool: name, input, table: "zad_obligations", targetId: w.rowId,
+        previous: null, next: w.payload.after,
       });
       return `اتسجل الالتزام "${det.title}" (${det.amount}) كـ${input.kind} — هيتحسب في "المتاح" من دلوقتي`;
     }
@@ -3272,18 +3269,15 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       return `اتحذف "${itemName}" من قائمة التسوق`;
     }
     case "set_market": {
-      const w = await writeRows(
-        sb.from("zad_users").update({
-          currency: input.currency, country: input.country,
-        }).eq("id", userId).select("currency,country"),
-        "حفظ البلد والعملة",
-      );
-      if (!w.ok) return `مرفوض: ${w.reason}`;
+      // من الباب (م٢.٥).
+      const w = await commitIntent(sb, userId, scope, name, input, "settings.market_set", { currency: input.currency, country: input.country });
+      if (!w.ok) return refusalText(w.reason);
+      if (w.duplicate) return DUPLICATE_REPLY;
       ctx.mutationCount++;
       ctx.mutations.push({ tool: name, old: { currency: snap.currency, country: snap.country }, new: { currency: input.currency, country: input.country } });
       await recordAction(sb, userId, scope, {
         tool: name, input, table: "zad_users", targetId: userId,
-        previous: { currency: snap.currency, country: snap.country }, next: w.rows[0],
+        previous: { currency: snap.currency, country: snap.country }, next: { currency: input.currency, country: input.country },
       });
       return `اتسجل: البلد ${input.country} والعملة ${input.currency}`;
     }
@@ -3368,20 +3362,17 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
     }
     case "add_subscription": {
       const title = String(input.title).trim();
-      const w = await writeRows(
-        sb.from("zad_subscriptions").insert({
-          user_id: userId,
-          title,
-          amount: Math.round(input.amount * 100) / 100,
-          renewal_date: input.renewal_date ?? null,
-          category: input.category ? String(input.category).trim() : null,
-          billing_cycle: input.billing_cycle ?? "MONTHLY",
-          is_active: true,
-        }).select("id,title,amount"),
-        "إضافة الاشتراك",
-      );
-      if (!w.ok) return `مرفوض: ${w.reason}`;
-      const newRow = w.rows[0] as any;
+      // من الباب (م٢.٥): القيود في SQL، والحدث والصف مع بعض.
+      const w = await commitIntent(sb, userId, scope, name, input, "subscription.added", {
+        title,
+        amount: Math.round(input.amount * 100) / 100,
+        renewal_date: input.renewal_date ?? null,
+        category: input.category ? String(input.category).trim() : null,
+        billing_cycle: input.billing_cycle ?? "MONTHLY",
+      });
+      if (!w.ok) return refusalText(w.reason);
+      if (w.duplicate) return DUPLICATE_REPLY;
+      const newRow = w.payload.after as any;
       ctx.mutationCount++;
       ctx.mutations.push({ tool: name, old: null, new: { title, amount: input.amount } });
       await recordAction(sb, userId, scope, {
@@ -3407,16 +3398,14 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       if (input.new_renewal_date !== undefined) patch.renewal_date = input.new_renewal_date;
       if (input.is_active !== undefined) patch.is_active = input.is_active;
       if (Object.keys(patch).length === 0) return "مرفوض: مفيش حاجة تتعدل — حدد المبلغ أو تاريخ التجديد أو التفعيل.";
-      const w = await writeRows(
-        sb.from("zad_subscriptions").update(patch).eq("id", match.id).eq("user_id", userId).select("id,title,amount"),
-        "تعديل الاشتراك",
-      );
-      if (!w.ok) return `مرفوض: ${w.reason}`;
+      const w = await commitIntent(sb, userId, scope, name, input, "subscription.updated", { item_id: match.id, patch });
+      if (!w.ok) return refusalText(w.reason);
+      if (w.duplicate) return DUPLICATE_REPLY;
       ctx.mutationCount++;
       ctx.mutations.push({ tool: name, old: match, new: patch });
       await recordAction(sb, userId, scope, {
         tool: name, input, table: "zad_subscriptions", targetId: match.id,
-        previous: match, next: w.rows[0],
+        previous: match, next: w.payload.after,
       });
       return `اتعدل اشتراك "${match.title}"`;
     }
@@ -3430,11 +3419,9 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
         return a.includes(b) || b.includes(a);
       });
       if (!match) return `مرفوض: مفيش اشتراك اسمه "${spoken}" عند العميل — عدّل وحاول تاني.`;
-      const w = await writeRows(
-        sb.from("zad_subscriptions").delete().eq("id", match.id).eq("user_id", userId).select("id"),
-        "حذف الاشتراك",
-      );
-      if (!w.ok) return `مرفوض: ${w.reason}`;
+      const w = await commitIntent(sb, userId, scope, name, input, "subscription.deleted", { item_id: match.id });
+      if (!w.ok) return refusalText(w.reason);
+      if (w.duplicate) return DUPLICATE_REPLY;
       ctx.mutationCount++;
       ctx.mutations.push({ tool: name, old: match, new: null });
       await recordAction(sb, userId, scope, {
@@ -3445,21 +3432,16 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
     }
     case "add_debt": {
       const debtName = String(input.name).trim();
-      const w = await writeRows(
-        sb.from("zad_debts").insert({
-          user_id: userId,
-          name: debtName,
-          principal_amount: input.remaining_balance,
-          remaining_balance: input.remaining_balance,
-          minimum_payment: input.minimum_payment ?? 0,
-          interest_rate: input.interest_rate ?? 0,
-          due_day: input.due_day ?? null,
-          is_active: true,
-        }).select("id,name,remaining_balance"),
-        "إضافة الدين",
-      );
-      if (!w.ok) return `مرفوض: ${w.reason}`;
-      const newRow = w.rows[0] as any;
+      const w = await commitIntent(sb, userId, scope, name, input, "debt.added", {
+        name: debtName,
+        remaining_balance: input.remaining_balance,
+        minimum_payment: input.minimum_payment ?? 0,
+        interest_rate: input.interest_rate ?? 0,
+        due_day: input.due_day ?? null,
+      });
+      if (!w.ok) return refusalText(w.reason);
+      if (w.duplicate) return DUPLICATE_REPLY;
+      const newRow = w.payload.after as any;
       ctx.mutationCount++;
       ctx.mutations.push({ tool: name, old: null, new: { name: debtName, remaining_balance: input.remaining_balance } });
       await recordAction(sb, userId, scope, {
@@ -3484,16 +3466,14 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       if (Object.keys(patch).length === 0) return "مرفوض: مفيش حاجة تتعدل — حدد الرصيد المتبقي أو الحد الأدنى الشهري.";
       // رصيد صفر يبقى الدين خلص — يتقفل تلقائي بدل ما يفضل معلّق نشط برصيد صفر.
       if ((patch.remaining_balance as number | undefined) === 0) patch.is_active = false;
-      const w = await writeRows(
-        sb.from("zad_debts").update(patch).eq("id", match.id).eq("user_id", userId).select("id,name,remaining_balance"),
-        "تعديل الدين",
-      );
-      if (!w.ok) return `مرفوض: ${w.reason}`;
+      const w = await commitIntent(sb, userId, scope, name, input, "debt.updated", { item_id: match.id, patch });
+      if (!w.ok) return refusalText(w.reason);
+      if (w.duplicate) return DUPLICATE_REPLY;
       ctx.mutationCount++;
       ctx.mutations.push({ tool: name, old: match, new: patch });
       await recordAction(sb, userId, scope, {
         tool: name, input, table: "zad_debts", targetId: match.id,
-        previous: match, next: w.rows[0],
+        previous: match, next: w.payload.after,
       });
       return patch.is_active === false ? `تمام، دين "${match.name}" خلص وقُفل` : `اتعدل دين "${match.name}"`;
     }
@@ -3507,11 +3487,9 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
         return a.includes(b) || b.includes(a);
       });
       if (!match) return `مرفوض: مفيش دين اسمه "${spoken}" عند العميل — عدّل وحاول تاني.`;
-      const w = await writeRows(
-        sb.from("zad_debts").delete().eq("id", match.id).eq("user_id", userId).select("id"),
-        "حذف الدين",
-      );
-      if (!w.ok) return `مرفوض: ${w.reason}`;
+      const w = await commitIntent(sb, userId, scope, name, input, "debt.deleted", { item_id: match.id });
+      if (!w.ok) return refusalText(w.reason);
+      if (w.duplicate) return DUPLICATE_REPLY;
       ctx.mutationCount++;
       ctx.mutations.push({ tool: name, old: match, new: null });
       await recordAction(sb, userId, scope, {
@@ -3528,25 +3506,20 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       const totalInstallments = provider && Number.isFinite(input.total_installments) && input.total_installments > 0
         ? Math.round(input.total_installments)
         : null;
-      const w = await writeRows(
-        sb.from("zad_obligations").insert({
-          user_id: userId,
-          title,
-          amount: Math.round(input.amount * 100) / 100,
-          kind: input.kind,
-          recurrence: input.recurrence ?? "monthly",
-          due_day: input.due_day ?? null,
-          auto_detected: false,
-          confirmed: true,
-          active: true,
-          provider,
-          total_installments: totalInstallments,
-          remaining_installments: totalInstallments,
-        }).select("id,title,amount,kind"),
-        "إضافة الالتزام",
-      );
-      if (!w.ok) return `مرفوض: ${w.reason}`;
-      const newRow = w.rows[0] as any;
+      const w = await commitIntent(sb, userId, scope, name, input, "obligation.added", {
+        title,
+        amount: Math.round(input.amount * 100) / 100,
+        kind: input.kind,
+        recurrence: input.recurrence ?? "monthly",
+        due_day: input.due_day ?? null,
+        auto_detected: false,
+        confirmed: true,
+        provider,
+        total_installments: totalInstallments,
+      });
+      if (!w.ok) return refusalText(w.reason);
+      if (w.duplicate) return DUPLICATE_REPLY;
+      const newRow = w.payload.after as any;
       ctx.mutationCount++;
       ctx.mutations.push({ tool: name, old: null, new: { title, amount: input.amount, kind: input.kind } });
       await recordAction(sb, userId, scope, {
@@ -3569,16 +3542,14 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       if (input.new_amount !== undefined) patch.amount = Math.round(input.new_amount * 100) / 100;
       if (input.new_due_day !== undefined) patch.due_day = input.new_due_day;
       if (Object.keys(patch).length === 0) return "مرفوض: مفيش حاجة تتعدل — حدد المبلغ أو يوم الاستحقاق.";
-      const w = await writeRows(
-        sb.from("zad_obligations").update(patch).eq("id", match.id).eq("user_id", userId).select("id,title,amount"),
-        "تعديل الالتزام",
-      );
-      if (!w.ok) return `مرفوض: ${w.reason}`;
+      const w = await commitIntent(sb, userId, scope, name, input, "obligation.updated", { item_id: match.id, patch });
+      if (!w.ok) return refusalText(w.reason);
+      if (w.duplicate) return DUPLICATE_REPLY;
       ctx.mutationCount++;
       ctx.mutations.push({ tool: name, old: match, new: patch });
       await recordAction(sb, userId, scope, {
         tool: name, input, table: "zad_obligations", targetId: match.id,
-        previous: match, next: w.rows[0],
+        previous: match, next: w.payload.after,
       });
       return `اتعدل الالتزام "${match.title}"`;
     }
@@ -3592,11 +3563,9 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
         return a.includes(b) || b.includes(a);
       });
       if (!match) return `مرفوض: مفيش التزام اسمه "${spoken}" عند العميل — عدّل وحاول تاني.`;
-      const w = await writeRows(
-        sb.from("zad_obligations").update({ active: false }).eq("id", match.id).eq("user_id", userId).select("id"),
-        "حذف الالتزام",
-      );
-      if (!w.ok) return `مرفوض: ${w.reason}`;
+      const w = await commitIntent(sb, userId, scope, name, input, "obligation.deactivated", { item_id: match.id });
+      if (!w.ok) return refusalText(w.reason);
+      if (w.duplicate) return DUPLICATE_REPLY;
       ctx.mutationCount++;
       ctx.mutations.push({ tool: name, old: match, new: null });
       await recordAction(sb, userId, scope, {
@@ -3607,19 +3576,17 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
     }
     case "add_maintenance_item": {
       const itemName = String(input.name).trim();
-      const w = await writeRows(
-        sb.from("zad_maintenance_items").insert({
-          user_id: userId,
-          name: itemName,
-          category: input.category ? String(input.category).trim() : "عام",
-          warranty_expiry_date: input.warranty_expiry_date ?? null,
-          service_interval_days: input.service_interval_days ?? null,
-          estimated_cost: input.estimated_cost ?? 0,
-        }).select("id,name"),
-        "إضافة الجهاز",
-      );
-      if (!w.ok) return `مرفوض: ${w.reason}`;
-      const newRow = w.rows[0] as any;
+      // من الباب (م٢.٥).
+      const w = await commitIntent(sb, userId, scope, name, input, "maintenance.added", {
+        name: itemName,
+        category: input.category ? String(input.category).trim() : "عام",
+        warranty_expiry_date: input.warranty_expiry_date ?? null,
+        service_interval_days: input.service_interval_days ?? null,
+        estimated_cost: input.estimated_cost ?? 0,
+      });
+      if (!w.ok) return refusalText(w.reason);
+      if (w.duplicate) return DUPLICATE_REPLY;
+      const newRow = { id: w.rowId, name: itemName };
       ctx.mutationCount++;
       ctx.mutations.push({ tool: name, old: null, new: { name: itemName } });
       await recordAction(sb, userId, scope, {
@@ -3642,16 +3609,14 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       if (input.last_service_date !== undefined) patch.last_service_date = input.last_service_date;
       if (input.warranty_expiry_date !== undefined) patch.warranty_expiry_date = input.warranty_expiry_date;
       if (Object.keys(patch).length === 0) return "مرفوض: مفيش حاجة تتعدل — حدد تاريخ آخر صيانة أو تاريخ انتهاء الضمان.";
-      const w = await writeRows(
-        sb.from("zad_maintenance_items").update(patch).eq("id", match.id).eq("user_id", userId).select("id,name"),
-        "تعديل الجهاز",
-      );
-      if (!w.ok) return `مرفوض: ${w.reason}`;
+      const w = await commitIntent(sb, userId, scope, name, input, "maintenance.updated", { item_id: match.id, patch });
+      if (!w.ok) return refusalText(w.reason);
+      if (w.duplicate) return DUPLICATE_REPLY;
       ctx.mutationCount++;
       ctx.mutations.push({ tool: name, old: match, new: patch });
       await recordAction(sb, userId, scope, {
         tool: name, input, table: "zad_maintenance_items", targetId: match.id,
-        previous: match, next: w.rows[0],
+        previous: match, next: { id: match.id, name: match.name },
       });
       return `اتعدل "${match.name}"`;
     }
@@ -3665,11 +3630,9 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
         return a.includes(b) || b.includes(a);
       });
       if (!match) return `مرفوض: مفيش جهاز اسمه "${spoken}" عند العميل — عدّل وحاول تاني.`;
-      const w = await writeRows(
-        sb.from("zad_maintenance_items").delete().eq("id", match.id).eq("user_id", userId).select("id"),
-        "حذف الجهاز",
-      );
-      if (!w.ok) return `مرفوض: ${w.reason}`;
+      const w = await commitIntent(sb, userId, scope, name, input, "maintenance.deleted", { item_id: match.id });
+      if (!w.ok) return refusalText(w.reason);
+      if (w.duplicate) return DUPLICATE_REPLY;
       ctx.mutationCount++;
       ctx.mutations.push({ tool: name, old: match, new: null });
       await recordAction(sb, userId, scope, {
@@ -3687,14 +3650,14 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
         label: String(input.label ?? "").trim(),
         expires_on: String(input.expires_on),
       };
-      const { data: before } = await sb.from("zad_documents").select("*").eq("user_id", userId)
-        .eq("kind", row.kind).eq("holder", row.holder).eq("label", row.label).maybeSingle();
-      const w = await writeRows(
-        sb.from("zad_documents").upsert(row, { onConflict: "user_id,kind,holder,label" }).select("*"),
-        "حفظ المستند",
-      );
-      if (!w.ok) return `مرفوض: ${w.reason}`;
-      const saved = w.rows[0] as any;
+      // من الباب (م٢.٥): الصف القديم (لو موجود) بيرجع في before، والحفظ تاني بيعدّل التاريخ.
+      const w = await commitIntent(sb, userId, scope, name, input, "document.saved", {
+        kind: row.kind, holder: row.holder, label: row.label, expires_on: row.expires_on,
+      });
+      if (!w.ok) return refusalText(w.reason);
+      if (w.duplicate) return DUPLICATE_REPLY;
+      const before = (w.payload.before ?? null) as Record<string, unknown> | null;
+      const saved = (w.payload.after ?? { id: w.rowId, ...row }) as any;
       ctx.mutationCount++;
       ctx.mutations.push({ tool: name, old: before ?? null, new: { kind: row.kind, expires_on: row.expires_on } });
       await recordAction(sb, userId, scope, {
@@ -3716,11 +3679,9 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
         return `مرفوض: مش لاقي ${KIND_NAMES[kind]}${holder ? ` بتاع «${holder}»` : ""}. ` +
           (all.length ? `المسجّل: ${all.map((r) => documentName(r)).join("، ")} — اسأل العميل يقصد أنهي.` : "مفيش منه حاجة متسجلة.");
       }
-      const w = await writeRows(
-        sb.from("zad_documents").delete().eq("id", match.id).eq("user_id", userId).select("id"),
-        "حذف المستند",
-      );
-      if (!w.ok) return `مرفوض: ${w.reason}`;
+      const w = await commitIntent(sb, userId, scope, name, input, "document.deleted", { item_id: match.id });
+      if (!w.ok) return refusalText(w.reason);
+      if (w.duplicate) return DUPLICATE_REPLY;
       ctx.mutationCount++;
       ctx.mutations.push({ tool: name, old: match, new: null });
       await recordAction(sb, userId, scope, {
@@ -3731,17 +3692,15 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
     }
     case "update_emergency_fund_balance": {
       const { data: before } = await sb.from("zad_users").select("emergency_fund_balance").eq("id", userId).maybeSingle();
-      const w = await writeRows(
-        sb.from("zad_users").update({ emergency_fund_balance: input.new_balance })
-          .eq("id", userId).select("emergency_fund_balance"),
-        "تعديل رصيد الطوارئ",
-      );
-      if (!w.ok) return `مرفوض: ${w.reason}`;
+      // من الباب (م٢.٥): الباب بيقرّب لقرشين.
+      const w = await commitIntent(sb, userId, scope, name, input, "settings.emergency_fund_set", { balance: input.new_balance });
+      if (!w.ok) return refusalText(w.reason);
+      if (w.duplicate) return DUPLICATE_REPLY;
       ctx.mutationCount++;
       ctx.mutations.push({ tool: name, old: before?.emergency_fund_balance ?? null, new: input.new_balance });
       await recordAction(sb, userId, scope, {
         tool: name, input, table: "zad_users", targetId: userId,
-        previous: before ?? null, next: w.rows[0],
+        previous: before ?? null, next: { emergency_fund_balance: Math.round(input.new_balance * 100) / 100 },
       });
       return `اتظبط رصيد صندوق الطوارئ على ${input.new_balance}`;
     }
@@ -3807,9 +3766,8 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
         });
         if (conflicts.length) return bookingQuestion(conflicts);
       }
-      const w = await writeRows(
-        sb.from("zad_appointments").insert({
-          user_id: userId,
+      // من الباب (م٢.٥): الحساب (الوقت بتوقيت العميل، «لمين»، المصدر) هنا، والقيود والكتابة في الباب.
+      const w = await commitIntent(sb, userId, scope, name, input, "appointment.added", {
           title,
           kind: APPOINTMENT_KINDS.includes(String(input.kind)) ? String(input.kind) : "personal",
           starts_at: startsAt,
@@ -3821,11 +3779,14 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
           for_person: normalizeForPerson(input.for_person),
           // اللي العميل قاله بس (validateAddAppointment) — zad_budget_state بتحجزه لحد الميعاد.
           expected_cost: input.expected_cost == null ? null : Math.round(Number(input.expected_cost) * 100) / 100,
-        }).select("id,title,starts_at,expected_cost"),
-        "تسجيل الميعاد",
-      );
-      if (!w.ok) return `مرفوض: ${w.reason}`;
-      const row = w.rows[0] as { id: string; title: string; starts_at: string; expected_cost: number | null };
+      });
+      if (!w.ok) return refusalText(w.reason);
+      if (w.duplicate) return DUPLICATE_REPLY;
+      const after = (w.payload.after ?? {}) as { title?: string; starts_at?: string; expected_cost?: number | null };
+      const row = {
+        id: String(w.rowId), title: after.title ?? title, starts_at: after.starts_at ?? startsAt,
+        expected_cost: after.expected_cost ?? null,
+      };
       ctx.mutationCount++;
       ctx.mutations.push({ tool: name, old: null, new: { title, starts_at: startsAt } });
       await recordAction(sb, userId, scope, {
@@ -3877,17 +3838,19 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
         });
         if (conflicts.length) return bookingQuestion(conflicts, "update_appointment");
       }
-      const w = await writeRows(
-        sb.from("zad_appointments").update(patch).eq("id", id).eq("user_id", userId).select("id,title,starts_at,status,expected_cost"),
-        "تعديل الميعاد",
-      );
-      if (!w.ok) return `مرفوض: ${w.reason}`;
+      // updated_at بيحطه الباب.
+      const { updated_at: _stamp, ...doorPatch } = patch;
+      const w = await commitIntent(sb, userId, scope, name, input, "appointment.updated", { item_id: id, patch: doorPatch });
+      if (!w.ok) return refusalText(w.reason);
+      if (w.duplicate) return DUPLICATE_REPLY;
+      const a = (w.payload.after ?? {}) as Record<string, unknown>;
+      const changed = { id: a.id, title: a.title, starts_at: a.starts_at, status: a.status, expected_cost: a.expected_cost };
       ctx.mutationCount++;
       ctx.mutations.push({ tool: name, old: before, new: patch });
       await recordAction(sb, userId, scope, {
-        tool: name, input, table: "zad_appointments", targetId: id, previous: before, next: w.rows[0],
+        tool: name, input, table: "zad_appointments", targetId: id, previous: before, next: changed,
       });
-      const cost = (w.rows[0] as { expected_cost?: number | null }).expected_cost;
+      const cost = changed.expected_cost as number | null | undefined;
       const reserved = input.expected_cost === undefined ? "" : cost ? ` وحجزت ${cost} من المتاح لحد الميعاد.` : " وشلت الحجز.";
       return `تم تعديل الميعاد «${b.title}».${reserved}`;
     }
@@ -3896,11 +3859,9 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       const id = String(input.appointment_id).trim();
       const { data: before } = await sb.from("zad_appointments").select("*").eq("id", id).eq("user_id", userId).maybeSingle();
       if (!before) return "مرفوض: الميعاد ده مش موجود في مواعيد العميل — دوّر عليه بـfind_appointments وماتقولش إنك مسحته.";
-      const w = await writeRows(
-        sb.from("zad_appointments").delete().eq("id", id).eq("user_id", userId).select("id"),
-        "مسح الميعاد",
-      );
-      if (!w.ok) return `مرفوض: ${w.reason}`;
+      const w = await commitIntent(sb, userId, scope, name, input, "appointment.deleted", { item_id: id });
+      if (!w.ok) return refusalText(w.reason);
+      if (w.duplicate) return DUPLICATE_REPLY;
       ctx.mutationCount++;
       ctx.mutations.push({ tool: name, old: before, new: null });
       await recordAction(sb, userId, scope, {
@@ -3956,34 +3917,30 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       if (cap === null) return "مرفوض: مفيش صرف ولا رصيد أحسب منه سقف — اسأله «عايز تصرف كام في اليوم بالظبط؟»";
       const lengthDays = Number.isInteger(input.length_days) ? Number(input.length_days) : 30;
       const startedOn = String(snap?.now_local?.date ?? new Date().toISOString().slice(0, 10));
-      const w = await writeRows(
-        sb.from("zad_savings_challenges").insert({
-          user_id: userId, started_on: startedOn, length_days: lengthDays, daily_cap: cap,
-          currency: state.currency ?? null,
-          source: scope.source === "telegram" ? "telegram" : scope.source === "voice" ? "voice" : "chat",
-        }).select("id,started_on,daily_cap,length_days"),
-        "بدء تحدي التوفير",
-      );
-      if (!w.ok) return `مرفوض: ${w.reason}`;
-      const row = w.rows[0] as { id: string };
+      // من الباب (م٢.٥): تحدي نشط واحد بس، ورفضه بسببه.
+      const w = await commitIntent(sb, userId, scope, name, input, "goal.challenge_started", {
+        daily_cap: cap, length_days: lengthDays, started_on: startedOn, currency: state.currency ?? null,
+        source: scope.source === "telegram" ? "telegram" : scope.source === "voice" ? "voice" : "chat",
+      });
+      if (!w.ok) return refusalText(w.reason);
+      if (w.duplicate) return DUPLICATE_REPLY;
+      const row = { id: w.rowId, started_on: startedOn, daily_cap: cap, length_days: lengthDays };
       ctx.mutationCount++;
       ctx.mutations.push({ tool: name, old: null, new: { daily_cap: cap, length_days: lengthDays } });
-      await recordAction(sb, userId, scope, { tool: name, input, table: "zad_savings_challenges", targetId: row.id, previous: null, next: w.rows[0] });
+      await recordAction(sb, userId, scope, { tool: name, input, table: "zad_savings_challenges", targetId: row.id, previous: null, next: row });
       const cur = state.currency ? ` ${state.currency}` : "";
       return `تم — بدأ تحدي ${lengthDays} يوم توفير النهارده: السقف ${cap}${cur} في اليوم.`;
     }
     case "stop_savings_challenge": {
-      const w = await writeRows(
-        sb.from("zad_savings_challenges").update({ status: "abandoned", updated_at: new Date().toISOString() })
-          .eq("user_id", userId).eq("status", "active").select("id,days_won,best_streak"),
-        "إيقاف تحدي التوفير",
-      );
-      if (!w.ok) return `مرفوض: ${w.reason}`;
-      if (!w.rows.length) return "مفيش تحدي شغال أصلاً.";
-      const row = w.rows[0] as { id: string; days_won: number; best_streak: number };
+      // من الباب (م٢.٥): الصف قبل وبعد في الحدث، والعدادات مابتتلمسش.
+      const w = await commitIntent(sb, userId, scope, name, input, "goal.challenge_stopped", {});
+      if (!w.ok) return w.reason === "no_active_challenge" ? "مفيش تحدي شغال أصلاً." : refusalText(w.reason);
+      if (w.duplicate) return DUPLICATE_REPLY;
+      const after = (w.payload.after ?? {}) as { days_won?: number; best_streak?: number };
+      const row = { id: w.rowId, days_won: Number(after.days_won ?? 0), best_streak: Number(after.best_streak ?? 0) };
       ctx.mutationCount++;
       ctx.mutations.push({ tool: name, old: { status: "active" }, new: { status: "abandoned" } });
-      await recordAction(sb, userId, scope, { tool: name, input, table: "zad_savings_challenges", targetId: row.id, previous: null, next: w.rows[0] });
+      await recordAction(sb, userId, scope, { tool: name, input, table: "zad_savings_challenges", targetId: row.id, previous: null, next: row });
       return `تم إيقاف التحدي — كسب ${row.days_won} يوم وأطول سلسلة ${row.best_streak}.`;
     }
     case "update_customer_profile": {
@@ -4012,8 +3969,9 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       const payDay = Number((patch as { pay_day?: unknown }).pay_day);
       const frequency = (patch as { pay_frequency?: unknown }).pay_frequency ?? (before as { pay_frequency?: unknown } | null)?.pay_frequency;
       if (Number.isInteger(payDay) && payDay >= 1 && payDay <= 31 && (frequency == null || frequency === "monthly")) {
-        const { error: cycleErr } = await sb.from("zad_users").update({ cycle_start_day: payDay }).eq("id", userId);
-        if (cycleErr) console.error("[update_customer_profile] cycle_start_day sync failed:", cycleErr.message);
+        // من الباب (م٢.٥). مفتاحه لوحده (":cycle") عشان مايتصادمش مع كتابة الملف نفسها.
+        const cyc = await commitIntent(sb, userId, scope, `${name}:cycle`, input, "settings.cycle_start_set", { day: payDay });
+        if (!cyc.ok) console.error("[update_customer_profile] cycle_start_day sync refused:", cyc.reason);
       }
       return `status=saved fields=${Object.keys(patch).join(",")}`;
     }
@@ -4132,16 +4090,12 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       const { data: goal } = await sb.from("agent_goals").select("id,title,current_value,target_value,deadline_date,progress_kind")
         .eq("user_id", userId).eq("title", goalTitle).eq("status", "active").maybeSingle();
       if (!goal) return `مرفوض: مفيش هدف نشط اسمه «${goalTitle}».`;
-      const { data: res, error: progErr } = await sb.rpc("zad_goal_add_progress", {
-        p_user: userId, p_goal: (goal as { id: string }).id, p_amount: Number(input.amount),
+      // من الباب (م٢.٥)، وهو اللي بينادي zad_goal_add_progress.
+      const prog = await commitIntent(sb, userId, scope, name, input, "goal.progress", {
+        goal_id: (goal as { id: string }).id, amount: Number(input.amount),
       });
-      if (progErr) return `مرفوض: ${progErr.message}`;
-      const r = (res ?? {}) as { ok?: boolean; reason?: string };
-      if (!r.ok) {
-        return r.reason === "not_amount"
-          ? "مرفوض: الهدف ده بيتعد بالمهام مش بالفلوس — تقدمه بيتحسب لوحده."
-          : `مرفوض: ${r.reason ?? "سبب مش معروف"}`;
-      }
+      if (!prog.ok) return refusalText(prog.reason);
+      if (prog.duplicate) return DUPLICATE_REPLY;
       // new_state مقروء من الداتابيز بعد الكتابة (20260809180000).
       const { data: after } = await sb.from("agent_goals").select("id,title,current_value,target_value,deadline_date,progress_kind")
         .eq("id", (goal as { id: string }).id).eq("user_id", userId).maybeSingle();
@@ -4159,12 +4113,10 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       const title = String(input.title).trim();
       const action = String(input.action ?? "add");
       if (action === "cancel") {
-        const w = await writeRows(
-          sb.from("agent_goals").update({ status: "cancelled", updated_at: new Date().toISOString() })
-            .eq("user_id", userId).eq("title", title).select("id"),
-          "إلغاء الهدف",
-        );
-        if (!w.ok) return `مرفوض: ${w.reason}`;
+        // من الباب (م٢.٥).
+        const w = await commitIntent(sb, userId, scope, name, input, "goal.cancelled", { title });
+        if (!w.ok) return refusalText(w.reason);
+        if (w.duplicate) return DUPLICATE_REPLY;
         ctx.mutationCount++;
         ctx.mutations.push({ tool: name, old: { title, status: "active" }, new: { title, status: "cancelled" } });
         return `تمام، الهدف «${title}» اتلغى`;
@@ -4172,22 +4124,21 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       const deadline = input.deadline_date != null && String(input.deadline_date).trim() !== ""
         ? String(input.deadline_date).slice(0, 10)
         : null;
-      const w = await writeRows(
-        sb.from("agent_goals").upsert({
-          user_id: userId,
-          title,
-          metric: input.metric != null ? String(input.metric).trim() : null,
-          target_value: input.target_value != null ? Number(input.target_value) : null,
-          deadline_date: deadline,
-          status: "active",
-          updated_at: new Date().toISOString(),
-          // ١٠.٢(د): money = مبلغ بيتحرك بكلام العميل بس؛ count = عدد مهام. غايب = زي ما هو (والجديد tasks).
-          ...(input.unit === "money" ? { progress_kind: "amount" } : input.unit === "count" ? { progress_kind: "tasks" } : {}),
-        }, { onConflict: "user_id,title" }).select("id,current_value,target_value,deadline_date,progress_kind"),
-        "تسجيل الهدف",
-      );
-      if (!w.ok) return `مرفوض: ${w.reason}`;
-      const gRow = w.rows[0] as any;
+      // من الباب (م٢.٥). ١٠.٢(د): money = مبلغ بيتحرك بكلام العميل بس؛ count = عدد مهام. غايب = زي ما هو (والجديد tasks).
+      const w = await commitIntent(sb, userId, scope, name, input, "goal.set", {
+        title,
+        metric: input.metric != null ? String(input.metric).trim() : null,
+        target_value: input.target_value != null ? Number(input.target_value) : null,
+        deadline_date: deadline,
+        ...(input.unit === "money" || input.unit === "count" ? { unit: input.unit } : {}),
+      });
+      if (!w.ok) return refusalText(w.reason);
+      if (w.duplicate) return DUPLICATE_REPLY;
+      const goalAfter = (w.payload.after ?? {}) as Record<string, unknown>;
+      const gRow = {
+        id: w.rowId, current_value: goalAfter.current_value, target_value: goalAfter.target_value,
+        deadline_date: goalAfter.deadline_date, progress_kind: goalAfter.progress_kind,
+      } as any;
       ctx.mutationCount++;
       ctx.mutations.push({ tool: name, old: null, new: { title, metric: input.metric ?? null } });
       await recordAction(sb, userId, scope, {
@@ -4539,22 +4490,17 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
     case "set_sleep_window": {
       // إيقاع النوم يدوي (الشريحة ٣٧): نفس قواعد zad_set_sleep_window — اليدوي بيكسب المتعلّم، و«امسح» يرجّع ١١–٧.
       if (input?.clear === true) {
-        const w = await writeRows(
-          sb.from("zad_users").update({ sleep_bed: null, sleep_wake: null, sleep_nights: null, sleep_source: null, sleep_updated_at: new Date().toISOString() })
-            .eq("id", userId).select("id"),
-          "مسح مواعيد النوم",
-        );
-        if (!w.ok) return `مرفوض: ${w.reason}`;
+        // من الباب (م٢.٥).
+        const w = await commitIntent(sb, userId, scope, name, input, "settings.sleep_cleared", {});
+        if (!w.ok) return refusalText(w.reason);
+        if (w.duplicate) return DUPLICATE_REPLY;
         ctx.mutationCount++;
         return "اتمسحت مواعيد النوم — زاد هيسكت من ١١ بالليل لـ٧ الصبح، ولو التعلّم من قفل الشاشة شغال هيتعلّمها تاني.";
       }
       const bed = String(input.bed), wake = String(input.wake);
-      const w = await writeRows(
-        sb.from("zad_users").update({ sleep_bed: bed, sleep_wake: wake, sleep_nights: null, sleep_source: "manual", sleep_updated_at: new Date().toISOString() })
-          .eq("id", userId).select("id"),
-        "حفظ مواعيد النوم",
-      );
-      if (!w.ok) return `مرفوض: ${w.reason}`;
+      const w = await commitIntent(sb, userId, scope, name, input, "settings.sleep_set", { bed, wake });
+      if (!w.ok) return refusalText(w.reason);
+      if (w.duplicate) return DUPLICATE_REPLY;
       ctx.mutationCount++;
       ctx.mutations.push({ tool: name, old: snap?.sleep ?? null, new: { bed, wake } });
       return `تمام — زاد مش هيبعت تنبيهات مش ضرورية من ${bed} لـ${wake} (الجرعات والطوارئ زي ما هي).`;
@@ -4585,14 +4531,12 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       const patch: Record<string, unknown> = { title: paid.title };
       if (paid.next) { patch.renewal_date = paid.next; patch.due_day = Number(paid.next.slice(8, 10)); }
       if (!paid.stillRunning) patch.is_active = false;
-      const w = await writeRows(
-        sb.from("zad_subscriptions").update(patch).eq("id", sub.id).eq("user_id", userId).select("id,title,renewal_date,is_active"),
-        "تقديم تجديد الاشتراك",
-      );
-      if (!w.ok) return `الدفعة اتسجلت بس التجديد ماتحركش: ${w.reason}`;
+      const w = await commitIntent(sb, userId, scope, name, input, "subscription.updated", { item_id: sub.id, patch });
+      if (!w.ok) return `الدفعة اتسجلت بس التجديد ماتحركش: ${refusalText(w.reason)}`;
+      if (w.duplicate) return DUPLICATE_REPLY;
       ctx.mutationCount++;
-      ctx.mutations.push({ tool: name, old: sub, new: w.rows[0] });
-      await recordAction(sb, userId, scope, { tool: name, input, table: "zad_subscriptions", targetId: sub.id, previous: sub, next: w.rows[0] });
+      ctx.mutations.push({ tool: name, old: sub, new: w.payload.after });
+      await recordAction(sb, userId, scope, { tool: name, input, table: "zad_subscriptions", targetId: sub.id, previous: sub, next: w.payload.after });
       return `اتسجلت دفعة "${sub.title}" (${amount})` +
         (paid.stillRunning ? (paid.next ? `، والتجديد الجاي ${paid.next}` : "") : "، ودي كانت آخر قسط — الاشتراك اتقفل");
     }
@@ -4629,8 +4573,9 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       const slot = doseSlotToSnooze(item.dose_times, now, input.dose_time ? String(input.dose_time) : null);
       if (!slot) return `مرفوض: مفيش جرعة ${item.name} قريبة تتأجل (مواعيده: ${item.dose_times || "مش متسجلة"}) — اسأله أنهي ميعاد.`;
       const minutes = Number(input.minutes ?? DOSE_SNOOZE_MINUTES);
-      const r = await snoozeDose(sb, userId, item.id, slot, minutes);
-      if (!r.ok) return `مرفوض: ${r.reason}`;
+      const r = await snoozeDose(sb, userId, item.id, slot, minutes, scope);
+      if (!r.ok) return r.refusal ?? `مرفوض: ${r.reason}`;
+      if (r.duplicate) return DUPLICATE_REPLY;
       ctx.mutationCount++;
       ctx.mutations.push({ tool: name, old: null, new: { item: item.name, scheduled_at: slot, until: r.until } });
       await recordAction(sb, userId, scope, { tool: name, input, table: "zad_dose_snoozes", targetId: item.id, previous: null, next: { scheduled_at: slot, snooze_until: r.until } });
@@ -4704,11 +4649,10 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       const column = input.setting === "pet_calls" ? "pet_calls_enabled" : "food_pattern_enabled";
       const on = input.on === true;
       const { data: before } = await sb.from("zad_users").select(column).eq("id", userId).maybeSingle();
-      const w = await writeRows(
-        sb.from("zad_users").update({ [column]: on }).eq("id", userId).select("id"),
-        on ? "تشغيل الإعداد" : "إيقاف الإعداد",
-      );
-      if (!w.ok) return `مرفوض: ${w.reason}`;
+      // من الباب (م٢.٥).
+      const w = await commitIntent(sb, userId, scope, name, input, "settings.app_flag_set", { setting: input.setting, on });
+      if (!w.ok) return refusalText(w.reason);
+      if (w.duplicate) return DUPLICATE_REPLY;
       ctx.mutationCount++;
       ctx.mutations.push({ tool: name, old: before ?? null, new: { [column]: on } });
       await recordAction(sb, userId, scope, { tool: name, input, table: "zad_users", targetId: userId, previous: before ?? null, next: { [column]: on } });
@@ -7230,9 +7174,17 @@ interface Proposal {
 }
 
 /** وصف الاقتراح بلغة العميل — كل حقل هيتكتب، عشان أي سوء فهم يبان قبل الكتابة. */
-function describeProposal(tool: string, input: any, currency: string): string {
+function describeProposal(
+  tool: string, input: any, currency: string,
+  recent: ReadonlyArray<{ id: string; title: string | null; amount: number }> = [],
+): string {
   const money = (n: number) => currency === "غير معروف" ? `${n}` : `${n} ${currency}`;
   switch (tool) {
+    case "delete_transaction": {
+      // كان بيطلع «delete_transaction» نفسها في الكارت (تليجرام ٢١/١١).
+      const t = recent.find((r) => r.id === input.transaction_id);
+      return t ? `هامسح: ${t.title || "معاملة"} — ${money(Number(t.amount))}` : "هامسح المعاملة دي";
+    }
     case "log_transaction": {
       const lines = input.txn_kind === "income" ? [] : toolPurchaseLines(input.lines);
       return `${input.txn_kind === "income" ? "دخل" : "مصروف"}: ${money(input.amount)} — ${input.title}` +
@@ -8651,7 +8603,7 @@ async function handleAgentTurnInLane(
           continue;
         }
         ctx.counts[call.name] = (ctx.counts[call.name] ?? 0) + 1;
-        const summary = describeProposal(call.name, call.input, snap.currency ?? "غير معروف");
+        const summary = describeProposal(call.name, call.input, snap.currency ?? "غير معروف", snap.recent_transactions ?? []);
         proposals.push({ tool: call.name, input: call.input, summary });
         toolResults.push({
           id: call.id,
@@ -8698,7 +8650,7 @@ async function handleAgentTurnInLane(
       hintedTools: turnHints, confirmTools: CONFIRM_REQUIRED_TOOLS, totalProposals: proposals.length, message,
       calledBefore: history.flatMap((t) => "toolCalls" in t && Array.isArray(t.toolCalls) ? t.toolCalls.map((c) => c.name) : []),
     })) {
-      modelText = proposalsReply(proposals.map((p) => p.summary));
+      modelText = proposalsReply(proposals.map((p) => p.summary), proposals.map((p) => p.tool));
       calls.stopped++;
       break;
     }
@@ -8750,7 +8702,7 @@ async function handleAgentTurnInLane(
           const v = await validateTool(call.name, call.input, snap, ctx);
           if (v.ok) {
             ctx.counts[call.name] = (ctx.counts[call.name] ?? 0) + 1;
-            const summary = describeProposal(call.name, call.input, snap.currency ?? "غير معروف");
+            const summary = describeProposal(call.name, call.input, snap.currency ?? "غير معروف", snap.recent_transactions ?? []);
             proposals.push({ tool: call.name, input: call.input, summary });
             modelText = forcedLogReply(summary);
           }
@@ -11034,9 +10986,13 @@ async function handleRequest(req: Request): Promise<Response> {
             isDue,
           );
           if (toAdd.length) {
-            const { error: shopErr } = await sbDream.from("zad_shopping_list")
-              .insert(toAdd.map((item_name) => ({ user_id: u.id, item_name, quantity: 1 })));
-            if (shopErr) console.error(`[dream] low-stock insert failed for ${u.id}:`, shopErr.message);
+            // من الباب (م٢.٥)، مصدره cron. المفتاح ثابت لكل (ليلة، صنف) فإعادة نفس الليلة مابتضيفش حاجة مرتين.
+            const night = new Date().toISOString().slice(0, 10);
+            const dreamScope: AuditScope = { source: "daily", runId: `dream-${night}` };
+            const put = await addLinesThroughDoor(
+              sbDream, u.id, dreamScope, "nightly_dream", { night }, toAdd.map((item_name) => ({ item_name, quantity: 1 })),
+            );
+            if (put.refusal) console.error(`[dream] low-stock line refused for ${u.id}:`, put.refusal);
           }
 
           const { data: recentTxns } = await sbDream.from("zad_transactions").select("amount, category, created_at").eq("user_id", u.id).order("created_at", { ascending: false }).limit(20);
