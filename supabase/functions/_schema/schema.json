@@ -1361,6 +1361,19 @@
     "user_id",
     "wallet"
   ],
+  "zad_trash": [
+    "context",
+    "db_role",
+    "deleted_at",
+    "id",
+    "jwt_sub",
+    "request_path",
+    "restored_at",
+    "row_data",
+    "row_id",
+    "table_name",
+    "user_id"
+  ],
   "zad_transactions": [
     "amount",
     "bank_name",
