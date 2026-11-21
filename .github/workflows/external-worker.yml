@@ -1,0 +1,130 @@
+# عامل خارجي (opencode على NVIDIA أو Gemini) بيشتغل على GitHub بدل الكودسبيس.
+#
+# ليه: الكودسبيس بيموت بالشغل اللي مااترفعش (٢١/١١)، وجهازه ٨ جيجا. هنا كل شريحة job لوحدها، وممكن كذا واحدة
+# بالتوازي (dispatch لكل شريحة)، والنتيجة فرع `worker/<slice>` على GitHub مابيضيعش.
+# اللي مابيتغيرش: سرعة الموديل نفسه (NVIDIA حوالي ٤٠ ثانية للرد). العامل مابيدمجش ومابيلمسش main.
+# Claude بيراجع الفرع من الكودسبيس (diff، وتستات، وmutation) وبعدين يدمجه، زي external-workers/SKILL.md.
+#
+# محتاج secrets في الريبو (إيد المالك، الجلسة مالهاش صلاحية): ZAD_WORKER_NVIDIA_KEY و ZAD_WORKER_GEMINI_KEY.
+# دول مفاتيح العمّال، مش مفاتيح Supabase بتاعة الإنتاج.
+name: External worker
+
+on:
+  workflow_dispatch:
+    inputs:
+      slice:
+        description: "Slice name; the spec is .claude/worker-specs/<slice>.md"
+        required: true
+        type: string
+      model:
+        description: "opencode model"
+        required: true
+        default: "nvidia/moonshotai/kimi-k3.1-pro"
+        type: string
+      fallback:
+        description: "Model to try if the first fails or leaves no diff (empty = none)"
+        required: false
+        default: "nvidia/minimaxai/minimax-m3.1-flash"
+        type: string
+      base:
+        description: "Branch to start from"
+        required: false
+        default: "main"
+        type: string
+
+concurrency:
+  group: worker-${{ inputs.slice }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  work:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    env:
+      SLICE: ${{ inputs.slice }}
+      NVIDIA_API_KEY: ${{ secrets.ZAD_WORKER_NVIDIA_KEY }}
+      GEMINI_API_KEY: ${{ secrets.ZAD_WORKER_GEMINI_KEY }}
+      OPENCODE_CONFIG: ${{ github.workspace }}/.claude/skills/external-workers/opencode.workers.json
+    steps:
+      - name: Validate slice name
+        run: |
+          [[ "$SLICE" =~ ^[a-z0-9][a-z0-9-]{1,60}$ ]] || { echo "::error::bad slice name"; exit 1; }
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.base }}
+          fetch-depth: 0
+
+      - name: Spec exists
+        run: |
+          test -f ".claude/worker-specs/$SLICE.md" || { echo "::error::missing .claude/worker-specs/$SLICE.md"; exit 1; }
+          cp ".claude/worker-specs/$SLICE.md" TASK_WORKER.md
+          echo TASK_WORKER.md >> .git/info/exclude
+
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install opencode (pinned)
+        run: npm install -g opencode-ai@1.19.5
+
+      - name: Run worker (one fallback)
+        id: work
+        env:
+          MODEL: ${{ inputs.model }}
+          FALLBACK: ${{ inputs.fallback }}
+        run: |
+          prompt="Read TASK_WORKER.md in the repo root and do exactly what it says. Edit only the files it lists. Do not commit, push or merge. When finished, run the commands under 'Done means' and print their last lines."
+          changed() { [ -n "$(git status --porcelain)" ]; }
+          used=""
+          for m in "$MODEL" "$FALLBACK"; do
+            [ -z "$m" ] && continue
+            echo "### model=$m" | tee -a worker.log
+            timeout 1500 opencode run -m "$m" --title "$SLICE" "$prompt" >> worker.log 2>&1
+            rc=$?
+            echo "### exit=$rc" | tee -a worker.log
+            if [ $rc -eq 0 ] && changed; then used="$m"; break; fi
+            git checkout -- . && git clean -fdq -e worker.log
+          done
+          echo "used=$used" >> "$GITHUB_OUTPUT"
+          [ -n "$used" ] || { echo "::error::no model produced a change"; exit 1; }
+
+      - name: Check what the worker wrote
+        run: |
+          files=$(git status --porcelain | awk '{print $2}' | grep -E '\.ts$' || true)
+          [ -n "$files" ] || exit 0
+          deno check $files
+          tests=$(echo "$files" | grep -E '_test\.ts$' || true)
+          [ -z "$tests" ] || deno test -A $tests
+
+      - name: Push worker/${{ inputs.slice }}
+        if: always() && steps.work.outputs.used != ''
+        env:
+          USED: ${{ steps.work.outputs.used }}
+        run: |
+          git config user.name "zad-worker"
+          git config user.email "zad-worker@users.noreply.github.com"
+          git checkout -b "worker/$SLICE"
+          git add -A -- . ':!worker.log' ':!TASK_WORKER.md'
+          git commit -m "worker($SLICE): $USED — unreviewed, do not merge as is"
+          git push --force-with-lease origin "worker/$SLICE"
+
+      - name: Summary
+        if: always()
+        env:
+          USED: ${{ steps.work.outputs.used || 'none' }}
+        run: |
+          {
+            echo "### $SLICE"
+            echo "model: $USED"
+            echo '```'
+            tail -c 4000 worker.log 2>/dev/null | sed 's/\x1b\[[0-9;]*m//g'
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
