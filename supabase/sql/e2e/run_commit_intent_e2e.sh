@@ -15,7 +15,9 @@ for f in supabase/sql/tests/events_ledger_scaffold.sql supabase/migrations/20261
          supabase/migrations/20261122050000_commit_intent_debt.sql supabase/migrations/20261122060000_commit_intent_obligation.sql \
          supabase/sql/tests/commit_intent_home_scaffold.sql supabase/migrations/20261122070000_commit_intent_maintenance.sql \
          supabase/migrations/20261122080000_commit_intent_document.sql supabase/migrations/20261122090000_commit_intent_appointment.sql \
-         supabase/sql/e2e/commit_intent_e2e_scaffold.sql; do
+         supabase/sql/tests/commit_intent_self_scaffold.sql supabase/migrations/20261122100000_commit_intent_settings.sql \
+         supabase/migrations/20261122110000_commit_intent_goal.sql supabase/migrations/20261122120000_commit_intent_pharmacy_snooze.sql \
+         supabase/sql/e2e/commit_intent_e2e_scaffold.sql supabase/sql/e2e/commit_intent_e2e_self_scaffold.sql; do
   docker exec -i "$PG" psql -U postgres -d "$DB" -v ON_ERROR_STOP=1 -q < "$f" > /dev/null
 done
 docker rm -f $REST > /dev/null 2>&1 || true
