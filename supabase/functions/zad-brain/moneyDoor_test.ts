@@ -83,3 +83,14 @@ Deno.test("money tools: a door refusal reaches the model with its reason, and no
   assert(out.startsWith("مرفوض") && out.includes("title_guessed"), out);
   assertEquals(ctx.mutationCount, 0);
 });
+
+Deno.test("budget tools: the balance and the category caps go through the door", async () => {
+  const { sb, intents, directWrites } = fakeDb(okDoor);
+  await executeTool(sb, "u1", "set_monthly_limit", { monthly_limit: 8000 }, {}, freshContext("u1"), RUN);
+  await executeTool(sb, "u1", "set_category_budget", { category: "مطاعم", amount: 1500 }, {}, freshContext("u1"), RUN);
+  assertEquals(intents.map((i) => [i.kind, i.payload]), [
+    ["money.limit_set", { amount: 8000 }],
+    ["money.category_budget_set", { category: "مطاعم", amount: 1500 }],
+  ]);
+  assertEquals(directWrites.filter((w) => w.startsWith("zad_users") || w.startsWith("zad_category_budgets")), []);
+});
