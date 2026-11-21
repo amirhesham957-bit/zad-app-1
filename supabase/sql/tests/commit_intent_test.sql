@@ -48,6 +48,14 @@ select pg_temp.check(pg_temp.ci('{"user_id":"11111111-1111-1111-1111-11111111111
 select pg_temp.check(pg_temp.ci('{"user_id":"11111111-1111-1111-1111-111111111111","kind":"inventory.quantity_set","client_event_id":"n4","payload":{"item_id":"a0000000-0000-0000-0000-000000000001","quantity":"-Infinity"}}') ->> 'ok' = 'false', '-Infinity refused');
 select pg_temp.check(not exists (select 1 from zad_inventory where item_name = 'ملح'), 'nothing written');
 
+-- اللي ساب العيلة: صنف كتبه وهو فيها (family_id متسجل) مايتلمسش، زي RLS.
+insert into zad_inventory (id, user_id, item_name, quantity, family_id) values
+  ('a0000000-0000-0000-0000-000000000009', '33333333-3333-3333-3333-333333333333', 'عدس', 4, 'f0000000-0000-0000-0000-000000000001');
+select pg_temp.check(pg_temp.ci('{"user_id":"33333333-3333-3333-3333-333333333333","kind":"inventory.quantity_set","client_event_id":"x1","payload":{"item_id":"a0000000-0000-0000-0000-000000000009","quantity":0}}') ->> 'reason' = 'item_not_found', 'ex-member cannot touch the family row they wrote');
+select pg_temp.check((select quantity from zad_inventory where id = 'a0000000-0000-0000-0000-000000000009') = 4, 'family row untouched');
+-- كمية أصغر من دقة العمود بتتقرّب الأول.
+select pg_temp.check(pg_temp.ci('{"user_id":"11111111-1111-1111-1111-111111111111","kind":"inventory.added","client_event_id":"r1","payload":{"item_name":"زعفران","quantity":0.0004,"category":"البقالة"}}') ->> 'reason' = 'qty_not_positive', 'sub-precision quantity refused, not stored as 0');
+
 -- ٦) JWT عميل: user_id اللي في النية مابيتقراش. من غير sub = مرفوض.
 select set_config('request.jwt.claims', '{"role":"authenticated"}', false);
 select pg_temp.check(pg_temp.ci('{"user_id":"11111111-1111-1111-1111-111111111111","kind":"inventory.added","client_event_id":"e12","payload":{"item_name":"سكر","quantity":1,"category":"البقالة"}}') ->> 'reason' = 'not_authenticated', 'client JWT without sub refused');

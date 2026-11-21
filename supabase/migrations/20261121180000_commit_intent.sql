@@ -127,7 +127,10 @@ begin
     begin
       select * into v_row from public.zad_inventory i
        where i.id = (v_payload ->> 'item_id')::uuid
-         and (i.user_id = v_uid or i.family_id in (select m.family_id from public.family_members m where m.user_id = v_uid))
+         -- نفس سياسة RLS بتاعة zad_inventory بالحرف (zad_inventory_update): صف عيلة = عيلته الحالية بس، حتى لو هو اللي
+         -- كتبه. اللي ساب العيلة مايلمسش أصنافها (مراجعة الأمان ٢١/١١).
+         and ((i.family_id is null and i.user_id = v_uid)
+              or (i.family_id is not null and i.family_id in (select m.family_id from public.family_members m where m.user_id = v_uid)))
        for update;
     exception when others then
       v_row := null;
@@ -142,6 +145,8 @@ begin
     v_name := btrim(coalesce(v_payload ->> 'item_name', ''));
     begin
       v_qty := (v_payload ->> 'quantity')::numeric;
+      -- العمود numeric(12,3): 0.0004 كانت هتعدي «> 0» وتتخزن صفر.
+      v_qty := round(v_qty, 3);
     exception when others then
       v_qty := null;
     end;
@@ -171,6 +176,8 @@ begin
   elsif v_reason is null and v_kind = 'inventory.consumed' then
     begin
       v_qty := (v_payload ->> 'amount')::numeric;
+      -- العمود numeric(12,3): 0.0004 كانت هتعدي «> 0» وتتخزن صفر.
+      v_qty := round(v_qty, 3);
     exception when others then
       v_qty := null;
     end;
@@ -182,6 +189,8 @@ begin
   elsif v_reason is null and v_kind = 'inventory.quantity_set' then
     begin
       v_qty := (v_payload ->> 'quantity')::numeric;
+      -- العمود numeric(12,3): 0.0004 كانت هتعدي «> 0» وتتخزن صفر.
+      v_qty := round(v_qty, 3);
     exception when others then
       v_qty := null;
     end;
