@@ -836,6 +836,19 @@ export async function writeSingleCopyMemory(
   return { error: null };
 }
 
+/**
+ * ساعة اللفة: كل lap بيسجل الوقت من البداية لحد العلامة دي بالملي ثانية، وdone بيضيف الإجمالي.
+ * الأرقام بتتخزن في zad_brain_runs.prompt_sizes.timings، فالبطء بيتقاس بمراحله من الداتابيز.
+ */
+export function turnTimer(now: () => number = Date.now): { lap: (name: string) => void; done: () => Record<string, number> } {
+  const t0 = now();
+  const marks: Record<string, number> = {};
+  return {
+    lap: (name) => { marks[`${name}_ms`] = now() - t0; },
+    done: () => ({ ...marks, total_ms: now() - t0 }),
+  };
+}
+
 /** PostgREST بيرد PGRST202 لما الدالة مش موجودة، وPostgres بيرد 42883. */
 export function isMissingFunction(error: { code?: string } | null | undefined): boolean {
   return error?.code === "PGRST202" || error?.code === "42883";
@@ -8035,6 +8048,9 @@ async function handleAgentTurnInLane(
   if (!message) {
     return new Response(JSON.stringify({ error: "message required" }), { status: 400, headers: CORS_HEADERS });
   }
+  // الوقت في اللفة (ZAD_OR_PLAN م٤، المالك ٢١/١١: «الرد بطيء جداً»). zad_brain_runs بيبدأ بعد اللقطة، فالمقاس
+  // هناك (p50 ٢٫٢ ثانية) مش اللي العميل بيستناه (الدالة كلها p50 ٧٫٩ ثانية). ده بيقسم الوقت على مراحله.
+  const turnClock = turnTimer();
 
   // تصنيف عرضي بس (تسمية الفعل في agent_actions/سجل زاد) — مش أداة أمان. مصدره جسم
   // الطلب، فأي قيمة غير معروفة بترجع للافتراضي بدل ما تتقبل عمياني وتكسر الـ CHECK.
@@ -8162,6 +8178,7 @@ async function handleAgentTurnInLane(
   // message nobody answered is dropped (dropStaleUnanswered) on every channel alike.
   const sharedHistoryEarly = loadSharedHistory(sb, userId);
   const snap = await buildSnapshot(sb, userId);
+  turnClock.lap("snapshot");
   // النبرة (٥.١): اللي العميل قاله عن نفسه في الرسالة دي فوق نبرة الأرقام.
   snap.tone = toneWithMessage(snap.tone, message);
   // ٥.٨ (٣): «عايز أشتري جاكيت» بتتحفظ نية، وعرض الصبح بيدوّر لها. بقواعد ثابتة، من غير أداة ولا سطر برومبت.
@@ -8393,6 +8410,7 @@ async function handleAgentTurnInLane(
   const { data: runRow } = await sb.from("zad_brain_runs")
     .insert({ user_id: userId, trigger: "chat", status: "running", prompt_sizes: turnSizes }).select("id").single();
   const runId = (runRow as { id: string } | null)?.id;
+  turnClock.lap("run_started");
   const scope: AuditScope = { source: declaredSource, runId };
   // trace: مين عالج الرسالة دي — مثبت في الداتابيز مش ادعاء في اللوج.
   await recordSpecialistTrace(sb, runId, specialist, specialistConsult);
@@ -8420,7 +8438,10 @@ async function handleAgentTurnInLane(
       // ونفس الكلام لـ calls: finishRun بتتنادى بعد الحلقة أو جوه catch بتاعها بس.
       // ٣.٢ (٧/١١): الأدوات اللي اتنادت فعلاً في اللفة (اتحققت — قراية، كتابة، أو اقتراح فلوس). agent_actions بيسجّل الكتابة
       // اللي ليها تراجع بس، فـlog_transaction نفسه كان «صفر نداء في ٣٠ يوم» هناك — قص الأدوات لازم يتبني على ده.
-      prompt_sizes: { ...turnSizes, calls, tools_called: { ...ctx.counts }, prompt_version: CHAT_PROMPT_VERSION },
+      prompt_sizes: {
+        ...turnSizes, calls, tools_called: { ...ctx.counts }, prompt_version: CHAT_PROMPT_VERSION,
+        timings: turnClock.done(),
+      },
     }).eq("id", runId);
   };
 
