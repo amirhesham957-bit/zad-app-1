@@ -2913,19 +2913,15 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       // العمود اسمه monthly_limit لأسباب تاريخية بس — معناه بقى "الرصيد الابتدائي
       // للدورة" من migration 20260816010000. مش سقف صرف.
       const { data: limitBefore } = await sb.from("zad_users").select("monthly_limit,limit_confirmed_at").eq("id", userId).maybeSingle();
-      const w = await writeRows(
-        sb.from("zad_users").update({
-          monthly_limit: Math.round(input.monthly_limit * 100) / 100,
-          limit_confirmed_at: new Date().toISOString(),
-        }).eq("id", userId).select("monthly_limit,limit_confirmed_at"),
-        "حفظ الرصيد",
-      );
-      if (!w.ok) return `مرفوض: ${w.reason}`;
+      // من الباب (م٢.٥)، والباب بيكتب limit_confirmed_at معاه.
+      const w = await commitIntent(sb, userId, scope, name, input, "money.limit_set", { amount: input.monthly_limit });
+      if (!w.ok) return refusalText(w.reason);
+      if (w.duplicate) return DUPLICATE_REPLY;
       ctx.mutationCount++;
       ctx.mutations.push({ tool: name, old: snap.budget ?? null, new: input.monthly_limit });
       await recordAction(sb, userId, scope, {
         tool: name, input, table: "zad_users", targetId: userId,
-        previous: limitBefore ?? null, next: w.rows[0],
+        previous: limitBefore ?? null, next: { monthly_limit: Math.round(input.monthly_limit * 100) / 100 },
       });
       return `اتظبط الرصيد على ${input.monthly_limit}`;
     }
@@ -2935,11 +2931,10 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
         .select("id,category,amount").eq("user_id", userId).eq("category", category).maybeSingle();
       if (input.amount === 0) {
         if (!capBefore) return `مفيش سقف على ${category} أصلاً`;
-        const gone = await writeRows(
-          sb.from("zad_category_budgets").delete().eq("id", capBefore.id).select("id,category,amount"),
-          "شيل السقف",
-        );
-        if (!gone.ok) return `مرفوض: ${gone.reason}`;
+        // من الباب (م٢.٥): صفر بيشيل السقف.
+        const gone = await commitIntent(sb, userId, scope, name, input, "money.category_budget_set", { category, amount: 0 });
+        if (!gone.ok) return refusalText(gone.reason);
+        if (gone.duplicate) return DUPLICATE_REPLY;
         ctx.mutationCount++;
         ctx.mutations.push({ tool: name, old: capBefore, new: null });
         await recordAction(sb, userId, scope, {
@@ -2947,20 +2942,14 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
         });
         return `اتشال سقف ${category}`;
       }
-      const saved = await writeRows(
-        sb.from("zad_category_budgets").upsert({
-          user_id: userId,
-          category,
-          amount: Math.round(input.amount * 100) / 100,
-          updated_at: new Date().toISOString(),
-        }, { onConflict: "user_id,category" }).select("id,category,amount"),
-        "حفظ السقف",
-      );
-      if (!saved.ok) return `مرفوض: ${saved.reason}`;
+      const saved = await commitIntent(sb, userId, scope, name, input, "money.category_budget_set", { category, amount: input.amount });
+      if (!saved.ok) return refusalText(saved.reason);
+      if (saved.duplicate) return DUPLICATE_REPLY;
+      const cap = { id: saved.rowId, category, amount: Math.round(input.amount * 100) / 100 };
       ctx.mutationCount++;
-      ctx.mutations.push({ tool: name, old: capBefore ?? null, new: saved.rows[0] });
+      ctx.mutations.push({ tool: name, old: capBefore ?? null, new: cap });
       await recordAction(sb, userId, scope, {
-        tool: name, input, table: "zad_category_budgets", targetId: saved.rows[0].id, previous: capBefore ?? null, next: saved.rows[0],
+        tool: name, input, table: "zad_category_budgets", targetId: saved.rowId, previous: capBefore ?? null, next: cap,
       });
       return `اتحط سقف ${category} على ${input.amount}`;
     }

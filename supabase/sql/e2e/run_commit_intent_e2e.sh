@@ -9,7 +9,8 @@ for f in supabase/sql/tests/events_ledger_scaffold.sql supabase/migrations/20261
          supabase/migrations/20261121200000_commit_intent_merge.sql supabase/migrations/20261121220000_commit_intent_domains.sql supabase/sql/tests/commit_intent_shopping_scaffold.sql \
          supabase/migrations/20261121230000_commit_intent_shopping.sql supabase/sql/tests/commit_intent_pharmacy_scaffold.sql \
          supabase/migrations/20261122000000_commit_intent_pharmacy.sql supabase/sql/tests/commit_intent_money_scaffold.sql \
-         supabase/migrations/20261122010000_commit_intent_money.sql \
+         supabase/migrations/20261122010000_commit_intent_money.sql supabase/sql/tests/commit_intent_budgets_scaffold.sql \
+         supabase/migrations/20261122020000_commit_intent_money_budgets.sql \
          supabase/sql/e2e/commit_intent_e2e_scaffold.sql; do
   docker exec -i "$PG" psql -U postgres -d "$DB" -v ON_ERROR_STOP=1 -q < "$f" > /dev/null
 done

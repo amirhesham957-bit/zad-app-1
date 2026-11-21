@@ -182,5 +182,17 @@ const t9 = await runTool(sb, AMIR, "log_transaction", { amount: 100, title: "م�
 check(t9.startsWith("مرفوض") && (await txs("مصروف - مثلا صدقة؟")).length === 0, "money: guessed title refused", t9);
 check(await count("zad_guard_events", { user_id: AMIR }) === gM + 1, "money: refusal logged");
 
+// ١٣) الرصيد وسقف فئة.
+const u1 = await runTool(sb, AMIR, "set_monthly_limit", { monthly_limit: 9000 }, snapM, freshContext(AMIR), run7);
+const lim = (await sb.from("zad_users").select("monthly_limit,limit_confirmed_at").eq("id", AMIR).single()).data;
+check(u1.includes("9000") && Number(lim?.monthly_limit) === 9000 && !!lim?.limit_confirmed_at, "balance set and confirmed", [u1, lim]);
+const caps = async () => (await sb.from("zad_category_budgets").select("category,amount").eq("user_id", AMIR)).data ?? [];
+const u2 = await runTool(sb, AMIR, "set_category_budget", { category: "مطاعم", amount: 1500 }, snapM, freshContext(AMIR), run7);
+const u3 = await runTool(sb, AMIR, "set_category_budget", { category: "مطاعم", amount: 1200 }, snapM, freshContext(AMIR), { source: "app_chat", runId: crypto.randomUUID() });
+check(u2.includes("1500") && u3.includes("1200") && JSON.stringify(await caps()) === JSON.stringify([{ category: "مطاعم", amount: 1200 }]), "cap set then changed, one row", await caps());
+const u4 = await runTool(sb, AMIR, "set_category_budget", { category: "مطاعم", amount: 0 }, snapM, freshContext(AMIR), run7);
+check(u4.includes("اتشال") && (await caps()).length === 0, "cap removed", u4);
+check(await count("zad_events", { user_id: AMIR, kind: "money.category_budget_set" }) === 3, "cap events");
+
 console.log(failed === 0 ? "e2e: all checks passed" : `e2e: ${failed} FAILED`);
 Deno.exit(failed === 0 ? 0 : 1);

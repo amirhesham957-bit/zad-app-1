@@ -13,7 +13,7 @@ export type IntentKind =
   | "inventory.added" | "inventory.consumed" | "inventory.quantity_set" | "inventory.deleted" | "inventory.restock_mode_set"
   | "shopping.added" | "shopping.completed" | "shopping.deleted"
   | "pharmacy.added" | "pharmacy.updated" | "pharmacy.deleted" | "pharmacy.dose_taken"
-  | "money.logged" | "money.updated" | "money.deleted" | "money.purchase";
+  | "money.logged" | "money.updated" | "money.deleted" | "money.purchase" | "money.limit_set" | "money.category_budget_set";
 export type IntentSource = "manual" | "receipt" | "bank" | "model" | "cron";
 
 export type CommitResult =
@@ -107,6 +107,8 @@ const REASONS: Record<string, string> = {
   text_too_long: "الفئة أو اسم المحل طويل أوي",
   for_person_invalid: "«لمين» لازم يكون من ١ لـ٤٠ حرف",
   date_invalid: "تاريخ العملية مش مفهوم أو في المستقبل أو أقدم من سنة",
+  category_invalid: "اسم الفئة لازم يكون من ٢ لـ٤٠ حرف",
+  no_category_budget: "مفيش سقف على الفئة دي أصلاً",
 };
 
 /** سبب الرفض بالعربي للموديل (والكود الأصلي بين قوسين للتشخيص). */
