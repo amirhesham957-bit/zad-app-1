@@ -49,7 +49,15 @@ export function endsOnProposals(r: ProposalRound): boolean {
 }
 
 /** الرد من الاقتراحات بدل نداء الموديل. */
-export function proposalsReply(summaries: readonly string[]): string {
-  if (summaries.length === 1) return forcedLogReply(summaries[0]);
+export function proposalsReply(summaries: readonly string[], tools: readonly string[] = []): string {
+  // «رجع في» اتقال على التليجرام ٢١/١١ والكارت قال «وأنا أسجّله» وهو بيمسح.
+  if (summaries.length === 1) return forcedLogReply(summaries[0], proposalVerb(tools[0]));
   return `${summaries.join("، و")} — أكّد من الكروت وأنا أسجّلهم.`;
+}
+
+/** الفعل اللي بعد «أكّد من الكارت وأنا …» حسب الأداة. */
+export function proposalVerb(tool: string | undefined): string {
+  if (tool === "delete_transaction") return "أمسحها";
+  if (tool === "update_transaction") return "أعدّلها";
+  return "أسجّله";
 }

@@ -7230,9 +7230,17 @@ interface Proposal {
 }
 
 /** وصف الاقتراح بلغة العميل — كل حقل هيتكتب، عشان أي سوء فهم يبان قبل الكتابة. */
-function describeProposal(tool: string, input: any, currency: string): string {
+function describeProposal(
+  tool: string, input: any, currency: string,
+  recent: ReadonlyArray<{ id: string; title: string | null; amount: number }> = [],
+): string {
   const money = (n: number) => currency === "غير معروف" ? `${n}` : `${n} ${currency}`;
   switch (tool) {
+    case "delete_transaction": {
+      // كان بيطلع «delete_transaction» نفسها في الكارت (تليجرام ٢١/١١).
+      const t = recent.find((r) => r.id === input.transaction_id);
+      return t ? `هامسح: ${t.title || "معاملة"} — ${money(Number(t.amount))}` : "هامسح المعاملة دي";
+    }
     case "log_transaction": {
       const lines = input.txn_kind === "income" ? [] : toolPurchaseLines(input.lines);
       return `${input.txn_kind === "income" ? "دخل" : "مصروف"}: ${money(input.amount)} — ${input.title}` +
@@ -8651,7 +8659,7 @@ async function handleAgentTurnInLane(
           continue;
         }
         ctx.counts[call.name] = (ctx.counts[call.name] ?? 0) + 1;
-        const summary = describeProposal(call.name, call.input, snap.currency ?? "غير معروف");
+        const summary = describeProposal(call.name, call.input, snap.currency ?? "غير معروف", snap.recent_transactions ?? []);
         proposals.push({ tool: call.name, input: call.input, summary });
         toolResults.push({
           id: call.id,
@@ -8698,7 +8706,7 @@ async function handleAgentTurnInLane(
       hintedTools: turnHints, confirmTools: CONFIRM_REQUIRED_TOOLS, totalProposals: proposals.length, message,
       calledBefore: history.flatMap((t) => "toolCalls" in t && Array.isArray(t.toolCalls) ? t.toolCalls.map((c) => c.name) : []),
     })) {
-      modelText = proposalsReply(proposals.map((p) => p.summary));
+      modelText = proposalsReply(proposals.map((p) => p.summary), proposals.map((p) => p.tool));
       calls.stopped++;
       break;
     }
@@ -8750,7 +8758,7 @@ async function handleAgentTurnInLane(
           const v = await validateTool(call.name, call.input, snap, ctx);
           if (v.ok) {
             ctx.counts[call.name] = (ctx.counts[call.name] ?? 0) + 1;
-            const summary = describeProposal(call.name, call.input, snap.currency ?? "غير معروف");
+            const summary = describeProposal(call.name, call.input, snap.currency ?? "غير معروف", snap.recent_transactions ?? []);
             proposals.push({ tool: call.name, input: call.input, summary });
             modelText = forcedLogReply(summary);
           }

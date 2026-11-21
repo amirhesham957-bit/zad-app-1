@@ -77,6 +77,6 @@ export function shouldForceLog(message: string, reply: string, executedTools: re
 }
 
 /** الرد لو الموديل نادى الأداة من غير كلام. */
-export function forcedLogReply(summary: string): string {
-  return `${summary} — أكّد من الكارت وأنا أسجّله.`;
+export function forcedLogReply(summary: string, verb = "أسجّله"): string {
+  return `${summary} — أكّد من الكارت وأنا ${verb}.`;
 }
