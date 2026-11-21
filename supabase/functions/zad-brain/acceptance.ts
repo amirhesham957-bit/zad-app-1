@@ -105,7 +105,8 @@ export const ACCEPTANCE_CASES: AcceptanceCase[] = [
   {
     id: "2_dollar",
     message: "الدولار بكام؟",
-    check: (o) => (/\d/.test(o.reply) && /جنيه|دولار/.test(o.reply) && !NOT_FOUND.test(firstSentence(o.reply)) ? null : "no rate"),
+    // «الدولار بحوالي ٣.٧٥ ريال» (نشر ٢١/١١) رد صح اتقرا «no rate»: \d في JS أرقام لاتيني بس.
+    check: (o) => (/[0-9٠-٩]/.test(o.reply) && /جنيه|دولار/.test(o.reply) && !NOT_FOUND.test(firstSentence(o.reply)) ? null : "no rate"),
   },
   {
     id: "3_reminder_once",
