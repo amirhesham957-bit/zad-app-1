@@ -167,6 +167,7 @@ import {
 import { type BookingConflict, bookingConflicts, bookingQuestion, CLASH_WINDOW_MINUTES, type ScheduledLike } from "./scheduleGuard.ts";
 import { eventDayBudget, eventDayBudgetRule } from "./eventDayBudget.ts";
 import { paydayOdds, paydayOddsRule, type SpendRow } from "./paydayOdds.ts";
+import { medicineDaysLeft, medicineLow } from "./medicineStock.ts";
 import { budgetAtStart, circumstanceBudget, circumstanceBudgetLine, circumstanceBudgetRule, circumstanceCost } from "./circumstanceBudget.ts";
 import { homeEmergencyRule, technicianFollowUp, techniciansForSnapshot } from "./homeEmergency.ts";
 import { loadWhileAway, whileAwayBlock } from "./whileAway.ts";
@@ -1009,7 +1010,7 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
         .or(householdFilter(userId, householdFamily)),
       sb.from("zad_subscriptions").select("title,amount,renewal_date,is_active,due_day,billing_cycle")
         .eq("user_id", userId).eq("is_active", true),
-      sb.from("zad_pharmacy_items").select("name,dosage,for_person,remaining_quantity,daily_dose_count,dose_times,created_at")
+      sb.from("zad_pharmacy_items").select("name,dosage,for_person,remaining_quantity,daily_dose_count,units_per_dose,dose_times,created_at")
         .eq("user_id", userId),
       sb.from("zad_shopping_list").select("item_name").or(householdFilter(userId, householdFamily)).eq("is_purchased", false),
       sb.from("zad_consumption").select("item_name,avg_daily_qty,rate_known").eq("user_id", userId),
@@ -1543,7 +1544,7 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
     if (when) upcoming.push({ type: "subscription", name: sub.title, when });
   }
   for (const p of pharmRes.data ?? []) {
-    if (p.remaining_quantity <= (p.daily_dose_count ?? 1) * 3) {
+    if (medicineLow(p)) { // م٣.٤: نقطة إعادة الطلب بالوحدات (medicineStock.ts)، مش «٣ جرعات × ٣»
       upcoming.push({ type: "medication_low", name: p.for_person ? `${p.name} (لـ${p.for_person})` : p.name, when: "قريب" });
     }
   }
@@ -1776,11 +1777,10 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
     appointments: (apptRows ?? []) as Array<Record<string, unknown>>,
     // أدوية البيت كلها، ولمين كل دوا (for: null = العميل نفسه) — «دوا مامتك الساعة ٤». قبل كده
     // العقل كان شايف الناقص والالتزام بس، مش القايمة ولا المواعيد ولا صاحب الدوا.
-    medicines: ((pharmRes.data ?? []) as Array<{ name: string; dosage: string | null; for_person: string | null; dose_times: string | null; remaining_quantity: number | null; daily_dose_count: number | null }>)
+    medicines: ((pharmRes.data ?? []) as Array<{ name: string; dosage: string | null; for_person: string | null; dose_times: string | null; remaining_quantity: number | null; daily_dose_count: number | null; units_per_dose: number | null }>)
       .slice(0, 30).map((m) => ({
         name: m.name, for: m.for_person, dosage: m.dosage, times: m.dose_times,
-        days_left: m.remaining_quantity != null && (m.daily_dose_count ?? 0) > 0
-          ? Math.floor(m.remaining_quantity / (m.daily_dose_count as number)) : null,
+        days_left: medicineDaysLeft(m),
       })),
     // كارت العميل — مين بتكلمه. missing_important = اللي يستاهل يتسأل عنه بلطف لو الكلام جاب سيرته.
     customer: customerCard(profileRow as Record<string, unknown> | null, {
@@ -7273,11 +7273,11 @@ async function handleStoreArrival(sb: SupabaseClient, userId: string, body: any)
   let clientHints = sanitizeItemHints(body?.client_items);
   if (category === "pharmacy") {
     const { data: meds, error } = await sb.from("zad_pharmacy_items")
-      .select("name,remaining_quantity,daily_dose_count").eq("user_id", userId);
+      .select("name,remaining_quantity,daily_dose_count,units_per_dose").eq("user_id", userId);
     if (error) console.error("[store_arrival] pharmacy lookup failed:", error.message);
-    // نفس عتبة ملخص البيت (_agent_home_weekly_digest_for_user): ٥ أيام أو أقل.
-    lowStock = ((meds ?? []) as Array<{ name: string; remaining_quantity: number | null; daily_dose_count: number | null }>)
-      .filter((m) => (m.remaining_quantity ?? 0) <= (m.daily_dose_count ?? 1) * 5)
+    // نفس عتبة ملخص البيت (_agent_home_weekly_digest_for_user): ٥ أيام، بس بالوحدات (medicineStock.ts، م٣.٤).
+    lowStock = ((meds ?? []) as Array<{ name: string; remaining_quantity: number | null; daily_dose_count: number | null; units_per_dose: number | null }>)
+      .filter((m) => medicineLow(m))
       .map((m) => m.name);
   } else {
     // قايمة البيت: اللي الفرد التاني ضافه مطلوب من اللي واقف في المحل كمان.
