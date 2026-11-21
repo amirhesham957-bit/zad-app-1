@@ -108,19 +108,19 @@ export async function settleDoseReminder(
   const already: string[] = [];
   const failed: string[] = [];
   if (action === "skipped") {
-    // صف `skipped` في نفس الخانة الزمنية: الفهرس الفريد (user_id, item_id, scheduled_at)
-    // بيخليه الإجابة الوحيدة على الجرعة دي، و`zad_enqueue_missed_doses` بيعتبره إجابة
-    // فبيبطّل «فاتتك الجرعة». units = 0 لأن مفيش حاجة خرجت من العلبة. الـinsert مش upsert
-    // عن قصد: الفهرس جزئي (WHERE scheduled_at IS NOT NULL) وON CONFLICT مايقدرش يستنتجه؛
-    // وتكرار (23505) معناه إن الجرعة اتجاوب عليها قبل كده — مش فشل.
+    // صف `skipped` في نفس الخانة الزمنية، من الباب (م٢.٥: pharmacy.dose_skipped). الفهرس الفريد (user_id, item_id,
+    // scheduled_at) بيخليه الإجابة الوحيدة على الجرعة دي، و`zad_enqueue_missed_doses` بيعتبره إجابة فبيبطّل «فاتتك
+    // الجرعة». units = 0 لأن مفيش حاجة خرجت من العلبة. إجابة تانية (dose_already_logged) معناها إن الجرعة
+    // اتجاوب عليها قبل كده — مش فشل.
     const { data: items } = await sb.from("zad_pharmacy_items").select("id,name").eq("user_id", userId).in("id", itemIds);
     const nameOf = new Map(((items ?? []) as Array<{ id: string; name: string }>).map((i) => [i.id, i.name]));
     for (const itemId of itemIds) {
-      const { error } = await sb.from("zad_pharmacy_doses").insert({
-        user_id: userId, item_id: itemId, scheduled_at: slotOf(itemId), status: "skipped", units: 0,
+      const keyed: AuditScope = scope.eventKey ? { ...scope, eventKey: `${itemId}:${scope.eventKey}` } : scope;
+      const r = await commitIntent(sb, userId, keyed, "skip_dose", { itemId, momentId }, "pharmacy.dose_skipped", {
+        item_id: itemId, scheduled_at: slotOf(itemId),
       });
-      if (error && (error as { code?: string }).code !== "23505") {
-        console.error("[dose] skip failed:", itemId, error.message);
+      if (!r.ok && r.reason !== "dose_already_logged") {
+        console.error("[dose] skip failed:", itemId, r.reason);
         failed.push(itemId);
       } else {
         names.push(String(nameOf.get(itemId) ?? "الدوا"));

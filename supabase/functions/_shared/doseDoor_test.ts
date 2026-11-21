@@ -108,13 +108,22 @@ Deno.test("snoozeDose sends the minutes and slot and returns the door's snooze_u
 });
 
 Deno.test("«I skipped it» is an answer, and answering twice is not a failure", async () => {
-  const { sb, calls } = fakeSb({ moment, insertCode: "23505" });
+  // الباب بيرد «اتجاوبت قبل كده» على التانية — ده إجابة مش فشل.
+  const { sb, calls } = fakeSb({ moment, rpc: { ok: false, reason: "dose_already_logged" } });
   // deno-lint-ignore no-explicit-any
   const reply = await settleDoseReminder(sb as any, "u1", MOMENT, "skipped");
   assert(reply.includes("مخدتش جرعة"), reply);
-  const inserts = calls.filter((c) => c.table === "zad_pharmacy_doses");
-  assertEquals(inserts.length, 2);
-  assertEquals((inserts[0].payload as { status: string; units: number }).status, "skipped");
+  const door = calls.filter((c) => c.op === "rpc" && c.table === "zad_commit_intent");
+  assertEquals(door.length, 2);
+  const intent = (door[1].payload as { p_intent: { kind: string; payload: { item_id: string } } }).p_intent;
+  assertEquals([intent.kind, intent.payload.item_id], ["pharmacy.dose_skipped", ITEM_B]);
+  assert(!calls.some((c) => c.table === "zad_pharmacy_doses"), "skip never writes the dose row by hand (م٢.٥)");
+});
+
+Deno.test("a skip the door refuses for a real reason is reported, not thanked", async () => {
+  const { sb } = fakeSb({ moment, rpc: { ok: false, reason: "item_not_found" } });
+  // deno-lint-ignore no-explicit-any
+  assert(!(await settleDoseReminder(sb as any, "u1", MOMENT, "skipped")).includes("مخدتش جرعة"));
 });
 
 Deno.test("«I took it» goes through the one atomic dose RPC, slot by slot", async () => {

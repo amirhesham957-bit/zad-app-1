@@ -56,3 +56,10 @@ begin
   return jsonb_build_object('ok', true, 'current_value', v_goal.current_value, 'target_value', v_goal.target_value);
 end
 $function$;
+-- zad_pharmacy_doses بشكل الحي (٢١/١١): الحالات الثلاثة، والفهرس الفريد الجزئي على الخانة.
+create table public.zad_pharmacy_doses (
+  id uuid primary key default gen_random_uuid(), user_id uuid not null references auth.users(id) on delete cascade,
+  item_id uuid not null references public.zad_pharmacy_items(id) on delete cascade, scheduled_at timestamptz, taken_at timestamptz,
+  status text not null check (status in ('taken', 'skipped', 'missed')), units numeric not null default 1,
+  created_at timestamptz not null default now());
+create unique index zad_doses_unique on public.zad_pharmacy_doses (user_id, item_id, scheduled_at) where scheduled_at is not null;

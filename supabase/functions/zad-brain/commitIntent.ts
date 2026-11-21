@@ -12,7 +12,7 @@ import type { AuditScope } from "./audit.ts";
 export type IntentKind =
   | "inventory.added" | "inventory.consumed" | "inventory.quantity_set" | "inventory.deleted" | "inventory.restock_mode_set"
   | "shopping.added" | "shopping.completed" | "shopping.deleted"
-  | "pharmacy.added" | "pharmacy.updated" | "pharmacy.deleted" | "pharmacy.dose_taken" | "pharmacy.dose_snoozed"
+  | "pharmacy.added" | "pharmacy.updated" | "pharmacy.deleted" | "pharmacy.dose_taken" | "pharmacy.dose_snoozed" | "pharmacy.dose_skipped"
   | "money.logged" | "money.updated" | "money.deleted" | "money.purchase" | "money.limit_set" | "money.category_budget_set"
   | "subscription.added" | "subscription.updated" | "subscription.deleted"
   | "debt.added" | "debt.updated" | "debt.deleted"

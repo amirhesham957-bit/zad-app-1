@@ -234,7 +234,7 @@ check(od.includes("اتلغى") && (await obls()).length === 1 && (await obls())
 check(await count("zad_events", { user_id: AMIR, kind: "obligation.deactivated" }) === 1, "obligation delete: event");
 const oc = await runTool(sb, AMIR, "confirm_obligation", { kind: "rent" }, { ...snapL, obligation_detection: { title: "إيجار الشقة", amount: 4000, due_day: 3, provider: null } }, freshContext(AMIR), run8);
 check(oc.includes("اتسجل الالتزام") && (await obls()).some((o) => o.title === "إيجار الشقة" && o.active === true), "obligation confirmed", [oc, await obls()]);
-// ١٤) صيانة البيت والمستندات والمواعيد (م٢.٥).
+// ١٥) صيانة البيت والمستندات والمواعيد (م٢.٥).
 const rows = async (table: string) => (await sb.from(table).select("*").eq("user_id", AMIR)).data ?? [];
 const runH = () => ({ source: "app_chat", runId: crypto.randomUUID() } as const);
 const h1 = await runTool(sb, AMIR, "add_maintenance_item", { name: "غسالة", warranty_expiry_date: "2027-03-01", service_interval_days: 180 }, snapM, freshContext(AMIR), runH());
@@ -265,24 +265,24 @@ check(ap3.includes("اتمسح") && (await rows("zad_appointments")).length === 
 check(await count("zad_events", { user_id: AMIR, kind: "appointment.deleted" }) === 1 && await count("agent_actions", { user_id: AMIR, tool_name: "update_appointment" }) === 1, "appointment: events and undo rows");
 const ap4 = await runTool(sb, AMIR, "delete_appointment", { appointment_id: "99999999-9999-9999-9999-999999999999" }, snapM, freshContext(AMIR), runH());
 check(ap4.startsWith("مرفوض"), "appointment: unknown id refused", ap4);
-// ١٤) الإعدادات (zad_users) من الباب، مع سجل التراجع.
+// ١٦) الإعدادات (zad_users) من الباب، مع سجل التراجع.
 const urow = async () => (await sb.from("zad_users").select("cycle_start_day,currency,country,emergency_fund_balance,sleep_bed,sleep_wake,sleep_source,pet_calls_enabled").eq("id", AMIR).single()).data;
-const run8 = { source: "app_chat", runId: crypto.randomUUID() } as const;
+const run9 = { source: "app_chat", runId: crypto.randomUUID() } as const;
 const snapS = { ...snapM, cycle_detection: { suggested_day: 25 }, life_goals: [{ title: "مصيف الصيف", kind: "amount" }] };
-const x1 = await runTool(sb, AMIR, "update_emergency_fund_balance", { new_balance: 1500.555 }, snapS, freshContext(AMIR), run8);
+const x1 = await runTool(sb, AMIR, "update_emergency_fund_balance", { new_balance: 1500.555 }, snapS, freshContext(AMIR), run9);
 check(x1.includes("1500") && Number((await urow())?.emergency_fund_balance) === 1500.56, "emergency fund set and rounded", [x1, await urow()]);
 check(await count("agent_actions", { user_id: AMIR, tool_name: "update_emergency_fund_balance" }) === 1, "fund: undo log row");
-const x2 = await runTool(sb, AMIR, "update_emergency_fund_balance", { new_balance: 1500.555 }, snapS, freshContext(AMIR), run8);
+const x2 = await runTool(sb, AMIR, "update_emergency_fund_balance", { new_balance: 1500.555 }, snapS, freshContext(AMIR), run9);
 check(x2.includes("اتنفذ قبل كده") || x2.startsWith("مرفوض"), "fund: repeat in one run writes nothing again", x2);
-const x3 = await runTool(sb, AMIR, "set_market", { currency: "SAR", country: "SA" }, snapS, freshContext(AMIR), run8);
+const x3 = await runTool(sb, AMIR, "set_market", { currency: "SAR", country: "SA" }, snapS, freshContext(AMIR), run9);
 check(x3.includes("SAR") && (await urow())?.currency === "SAR" && (await urow())?.country === "SA", "market set", x3);
-const x4 = await runTool(sb, AMIR, "confirm_cycle_start", { cycle_start_day: 25 }, snapS, freshContext(AMIR), run8);
+const x4 = await runTool(sb, AMIR, "confirm_cycle_start", { cycle_start_day: 25 }, snapS, freshContext(AMIR), run9);
 check((await urow())?.cycle_start_day === 25, "cycle day set", x4);
-const x5 = await runTool(sb, AMIR, "set_sleep_window", { bed: "23:30", wake: "07:00" }, snapS, freshContext(AMIR), run8);
+const x5 = await runTool(sb, AMIR, "set_sleep_window", { bed: "23:30", wake: "07:00" }, snapS, freshContext(AMIR), run9);
 check((await urow())?.sleep_source === "manual" && String((await urow())?.sleep_bed).startsWith("23:30"), "sleep window set", x5);
 const x6 = await runTool(sb, AMIR, "set_sleep_window", { clear: true }, snapS, freshContext(AMIR), { source: "app_chat", runId: crypto.randomUUID() });
 check((await urow())?.sleep_bed === null && (await urow())?.sleep_source === null, "sleep window cleared", x6);
-const x7 = await runTool(sb, AMIR, "set_app_setting", { setting: "pet_calls", on: false }, snapS, freshContext(AMIR), run8);
+const x7 = await runTool(sb, AMIR, "set_app_setting", { setting: "pet_calls", on: false }, snapS, freshContext(AMIR), run9);
 check((await urow())?.pet_calls_enabled === false, "pet calls off", x7);
 const gGuard = await count("zad_guard_events", { user_id: AMIR });
 const x8 = await runTool(sb, AMIR, "update_emergency_fund_balance", { new_balance: 300_000_000 }, snapS, freshContext(AMIR), { source: "app_chat", runId: crypto.randomUUID() });
@@ -291,14 +291,14 @@ for (const kind of ["settings.emergency_fund_set", "settings.market_set", "setti
   check(await count("zad_events", { user_id: AMIR, kind }) >= 1, `event: ${kind}`);
 }
 
-// ١٥) الأهداف والتحدي.
+// ١٧) الأهداف والتحدي.
 const goals = async () => (await sb.from("agent_goals").select("id,title,status,progress_kind,current_value,target_value").eq("user_id", AMIR)).data ?? [];
-const y1 = await runTool(sb, AMIR, "set_life_goal", { title: "مصيف الصيف", target_value: 5000, unit: "money", deadline_date: "2027-06-01" }, snapS, freshContext(AMIR), run8);
+const y1 = await runTool(sb, AMIR, "set_life_goal", { title: "مصيف الصيف", target_value: 5000, unit: "money", deadline_date: "2027-06-01" }, snapS, freshContext(AMIR), run9);
 check(y1.includes("اتسجل") && (await goals()).length === 1 && (await goals())[0].progress_kind === "amount", "goal set as money", [y1, await goals()]);
-const y2 = await runTool(sb, AMIR, "add_goal_progress", { goal_title: "مصيف الصيف", amount: 500 }, snapS, freshContext(AMIR), run8);
+const y2 = await runTool(sb, AMIR, "add_goal_progress", { goal_title: "مصيف الصيف", amount: 500 }, snapS, freshContext(AMIR), run9);
 check(y2.includes("500") && Number((await goals())[0].current_value) === 500, "goal progress added", [y2, await goals()]);
 check(await count("agent_actions", { user_id: AMIR, tool_name: "add_goal_progress" }) === 1, "progress: undo log row");
-const y3 = await runTool(sb, AMIR, "start_savings_challenge", { daily_cap: 150, length_days: 30 }, snapS, freshContext(AMIR), run8);
+const y3 = await runTool(sb, AMIR, "start_savings_challenge", { daily_cap: 150, length_days: 30 }, snapS, freshContext(AMIR), run9);
 const chs = async () => (await sb.from("zad_savings_challenges").select("status,daily_cap,source").eq("user_id", AMIR)).data ?? [];
 check(y3.includes("150") && JSON.stringify(await chs()) === JSON.stringify([{ status: "active", daily_cap: 150, source: "chat" }]), "challenge started", [y3, await chs()]);
 const y4 = await runTool(sb, AMIR, "start_savings_challenge", { daily_cap: 100 }, snapS, freshContext(AMIR), { source: "app_chat", runId: crypto.randomUUID() });
@@ -311,10 +311,10 @@ for (const kind of ["goal.set", "goal.progress", "goal.challenge_started", "goal
   check(await count("zad_events", { user_id: AMIR, kind }) >= 1, `event: ${kind}`);
 }
 
-// ١٦) تأجيل الجرعة.
+// ١٨) تأجيل الجرعة.
 const ins = await sb.from("zad_pharmacy_items").insert({ user_id: AMIR, name: "أملوديبين", dose_times: "08:00,20:00", daily_dose_count: 2, remaining_quantity: 20 }).select("id").single();
 const snoozes = async () => (await sb.from("zad_dose_snoozes").select("item_id,scheduled_at,snooze_until").eq("user_id", AMIR)).data ?? [];
-const z1 = await runTool(sb, AMIR, "snooze_pharmacy_dose", { name: "أملوديبين", dose_time: "08:00", minutes: 30 }, snapS, freshContext(AMIR), run8);
+const z1 = await runTool(sb, AMIR, "snooze_pharmacy_dose", { name: "أملوديبين", dose_time: "08:00", minutes: 30 }, snapS, freshContext(AMIR), run9);
 check(z1.includes("snoozed") && (await snoozes()).length === 1 && (await snoozes())[0].item_id === ins.data?.id, "dose snoozed", [z1, await snoozes()]);
 check(await count("zad_events", { user_id: AMIR, kind: "pharmacy.dose_snoozed" }) === 1 && await count("agent_actions", { user_id: AMIR, tool_name: "snooze_pharmacy_dose" }) === 1, "snooze: one event and one undo row");
 const z2 = await runTool(sb, AMIR, "snooze_pharmacy_dose", { name: "أملوديبين", dose_time: "08:00", minutes: 60 }, snapS, freshContext(AMIR), { source: "app_chat", runId: crypto.randomUUID() });

@@ -128,6 +128,15 @@ select pg_temp.check(pg_temp.why('pharmacy.dose_snoozed', '{"item_id":"c0000000-
 select pg_temp.check(pg_temp.why('pharmacy.dose_snoozed', '{"item_id":"c0000000-0000-0000-0000-0000000000a1","scheduled_at":"غدا","minutes":15}', 'z5') = 'dose_slot_invalid', 'bad slot');
 select pg_temp.check(pg_temp.why('pharmacy.dose_snoozed', '{"item_id":"c0000000-0000-0000-0000-0000000000a2","scheduled_at":"2026-11-22T09:00:00Z","minutes":15}', 'z6') = 'item_not_found', 'someone else''s medicine, consent or not');
 select pg_temp.check(pg_temp.why('pharmacy.dose_snoozed', '{"item_id":"00000000-0000-0000-0000-000000000000","scheduled_at":"2026-11-22T09:00:00Z","minutes":15}', 'z7') = 'item_not_found', 'unknown medicine');
+-- «فوّتها» (pharmacy.dose_skipped): صف skipped بـ٠، والمخزون ماتحركش، وإجابة تانية على نفس الخانة مرفوضة من غير صف تاني.
+select pg_temp.check(pg_temp.ok('pharmacy.dose_skipped', '{"item_id":"c0000000-0000-0000-0000-0000000000a1","scheduled_at":"2026-11-22T08:00:00Z"}', 'k1'), 'skipped');
+select pg_temp.check((select count(*) = 1 and bool_and(status = 'skipped' and units = 0) from zad_pharmacy_doses where item_id = 'c0000000-0000-0000-0000-0000000000a1'), 'one skipped row, zero units');
+select pg_temp.check((select remaining_quantity = 10 from zad_pharmacy_items where id = 'c0000000-0000-0000-0000-0000000000a1'), 'stock untouched by a skip');
+select pg_temp.check(pg_temp.why('pharmacy.dose_skipped', '{"item_id":"c0000000-0000-0000-0000-0000000000a1","scheduled_at":"2026-11-22T08:00:00Z"}', 'k2') = 'dose_already_logged', 'second answer on the same slot');
+select pg_temp.check((select count(*) = 1 from zad_pharmacy_doses where item_id = 'c0000000-0000-0000-0000-0000000000a1'), 'still one row');
+select pg_temp.check(pg_temp.why('pharmacy.dose_skipped', '{"item_id":"c0000000-0000-0000-0000-0000000000a2","scheduled_at":"2026-11-22T09:00:00Z"}', 'k3') = 'item_not_found', 'someone else''s medicine is not skipped');
+select pg_temp.check(pg_temp.why('pharmacy.dose_skipped', '{"item_id":"c0000000-0000-0000-0000-0000000000a1","scheduled_at":"x"}', 'k4') = 'dose_slot_invalid', 'bad skip slot');
+select pg_temp.check((select count(*) from zad_guard_events where intent ->> 'client_event_id' in ('k2','k3','k4')) = 3, 'skip refusals logged');
 select pg_temp.check((select count(*) = 0 from zad_dose_snoozes where user_id = '22222222-2222-2222-2222-222222222222'), 'other user has no snoozes');
 
 select pg_temp.check((select count(*) from zad_guard_events where intent ->> 'client_event_id' in

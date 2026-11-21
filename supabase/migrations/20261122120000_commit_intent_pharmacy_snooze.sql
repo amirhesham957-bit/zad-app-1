@@ -1,6 +1,8 @@
 -- الباب الوحيد: تأجيل الجرعة (ZAD_OR_PLAN م٢.٥، ٢٢/١١). zad_intent_pharmacy زي 20261122000000 بالحرف، وزايد نوع:
 --   pharmacy.dose_snoozed {item_id, scheduled_at, minutes}   «فكّرني بعدين»: upsert على zad_dose_snoozes (user_id, item_id,
 --                                                            scheduled_at)، الدقايق ٥–٢٤٠، والدوا بتاع العميل نفسه بس.
+--   pharmacy.dose_skipped {item_id, scheduled_at}            «فوّتها»: صف skipped بـ٠ وحدة في نفس الخانة (الفهرس الفريد
+--                                                            zad_doses_unique)، وإجابة تانية على نفس الخانة = dose_already_logged.
 -- الباب نفسه ماتغيرش (المجال pharmacy موجود فيه). الكتابة كلها بعد كده من الباب: أداة snooze_pharmacy_dose وزرار تليجرام.
 
 create or replace function public.zad_intent_pharmacy(p_uid uuid, p_kind text, p_payload jsonb, p_occurred timestamptz)
@@ -26,7 +28,8 @@ declare
   v_snooze_before jsonb;
   c_times constant text := '^([01][0-9]|2[0-3]):[0-5][0-9](,([01][0-9]|2[0-3]):[0-5][0-9])*$';
 begin
-  if p_kind not in ('pharmacy.added', 'pharmacy.updated', 'pharmacy.deleted', 'pharmacy.dose_taken', 'pharmacy.dose_snoozed') then
+  if p_kind not in ('pharmacy.added', 'pharmacy.updated', 'pharmacy.deleted', 'pharmacy.dose_taken', 'pharmacy.dose_snoozed',
+                    'pharmacy.dose_skipped') then
     return jsonb_build_object('ok', false, 'reason', 'unknown_kind');
   end if;
 
@@ -37,7 +40,7 @@ begin
       v_row := null;
     end;
     if v_row.id is null or not public.zad_intent_pharmacy_can_write(p_uid, v_row.user_id)
-       or (p_kind in ('pharmacy.dose_taken', 'pharmacy.dose_snoozed') and v_row.user_id <> p_uid) then
+       or (p_kind in ('pharmacy.dose_taken', 'pharmacy.dose_snoozed', 'pharmacy.dose_skipped') and v_row.user_id <> p_uid) then
       return jsonb_build_object('ok', false, 'reason', 'item_not_found');
     end if;
   end if;
@@ -163,6 +166,25 @@ begin
     v_row_id := v_row.id;
     v_payload := v_payload || jsonb_build_object('row_id', v_row_id, 'before', v_snooze_before, 'after',
       (select to_jsonb(s) from public.zad_dose_snoozes s where s.user_id = p_uid and s.item_id = v_row.id and s.scheduled_at = v_at));
+  elsif p_kind = 'pharmacy.dose_skipped' then
+    -- «فوّتها»: مفيش حاجة خرجت من العلبة (units = 0)، والصف بيخلي zad_enqueue_missed_doses يبطّل «فاتتك الجرعة».
+    begin
+      v_at := (v_payload ->> 'scheduled_at')::timestamptz;
+    exception when others then
+      v_at := null;
+    end;
+    if v_at is null then
+      return jsonb_build_object('ok', false, 'reason', 'dose_slot_invalid');
+    end if;
+    begin
+      insert into public.zad_pharmacy_doses (user_id, item_id, scheduled_at, status, units)
+      values (p_uid, v_row.id, v_at, 'skipped', 0)
+      returning to_jsonb(zad_pharmacy_doses.*) into v_dose;
+    exception when unique_violation then
+      return jsonb_build_object('ok', false, 'reason', 'dose_already_logged');
+    end;
+    v_row_id := v_row.id;
+    v_payload := v_payload || jsonb_build_object('row_id', v_row_id, 'dose_id', v_dose -> 'id', 'before', null, 'after', v_dose);
   else
     v_dose := public.zad_log_pharmacy_dose_atomic(p_uid, v_row.id, null,
       coalesce(nullif(v_payload ->> 'taken_at', '')::timestamptz, p_occurred));
