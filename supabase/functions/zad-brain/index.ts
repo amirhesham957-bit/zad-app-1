@@ -161,7 +161,8 @@ import { itemSaidInMessage, shouldForceConsume } from "./forcedConsume.ts";
 import { kindFixCandidate, kindFixReply, kindFixTarget, shouldForceKindFix } from "./forcedKindFix.ts";
 import { pantryLinesWithoutPrice, pricelessResult } from "./pricelessPurchase.ts";
 import { FORCED_REPLIES, forcedIntentTool } from "./forcedIntent.ts";
-import { loadRestockJudge, loadRestockVerdicts } from "./restockJudge.ts";
+import { householdUserIds, loadRestockJudge, loadRestockVerdicts } from "./restockJudge.ts";
+import { type BudgetListRow, budgetCandidates, describeBudgetPlan, latestPaid, planOnBudget, type PricePaid } from "./restockBudget.ts";
 import { describeWhereToBuy, type WhereDeal, type WhereReport, WHERE_WINDOW_DAYS, whereToBuy } from "./whereToBuy.ts";
 import { bankTwinMergedReply } from "./bankTwin.ts";
 import {
@@ -5227,6 +5228,30 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       return await findChatDeals(sb, userId, store, item);
     }
 
+    case "restock_on_budget": {
+      const budget = Number(input?.budget);
+      if (!Number.isFinite(budget) || budget <= 0 || budget > 1_000_000) return "مرفوض: budget لازم رقم موجب بعملة العميل.";
+      const currency = snap?.currency ?? "";
+      const familyId = await householdFamilyId(sb, userId);
+      const users = await householdUserIds(sb, userId, familyId);
+      const [verdictOf, invRes, listRes, paidRes] = await Promise.all([
+        loadRestockVerdicts(sb, userId, familyId),
+        sb.from("zad_inventory").select("item_name,category,quantity,low_stock_threshold,restock_mode,restock_cycle_days,created_at")
+          .or(inventoryOwnerFilter(userId, familyId)).limit(300),
+        sb.from("zad_shopping_list").select("item_name,estimated_price")
+          .or(householdFilter(userId, familyId)).eq("is_purchased", false).limit(100),
+        sb.from("price_index").select("item_name,price,timestamp").in("user_id", users).eq("currency", currency)
+          .order("timestamp", { ascending: false }).limit(500),
+      ]);
+      if (invRes.error || listRes.error) return "مقدرتش أقرا المخزن أو القايمة دلوقتي — قول للعميل كده.";
+      const inventory = ((invRes.data ?? []) as Array<Parameters<typeof verdictOf>[0] & { item_name: string | null }>)
+        .map((row) => ({ item_name: row.item_name, verdict: verdictOf(row) }));
+      // فشل قراية الأسعار = كل حاجة «محتاج سعره»، مش رقم مخترع.
+      const paid = latestPaid(paidRes.error ? [] : (paidRes.data ?? []) as PricePaid[]);
+      const plan = planOnBudget(budgetCandidates(inventory, (listRes.data ?? []) as BudgetListRow[], paid), budget);
+      return describeBudgetPlan(plan, currency);
+    }
+
     case "where_to_buy": {
       // «ألاقيه فين بسعر كويس؟» — صنف واحد: عروض المحلات + فواتير عملاء زاد في مدينته (whereToBuy.ts، أرضية ٣ بيوت).
       const item = String(input?.item_name ?? "").trim().slice(0, 60);
@@ -7161,6 +7186,18 @@ export const CHAT_TOOLS: ToolDef[] = [
         days: { type: "number", description: "عدد الأيام للفحص. الافتراضي 30، الأقصى 90." },
       },
       required: ["item_name"],
+    },
+  },
+  {
+    // م٥.٥ (restockBudget.ts): بتيجي بنية بس (RESTOCK_BUDGET_INTENT) أو مع وكيل المخزن.
+    name: "restock_on_budget",
+    description:
+      "«معايا مبلغ قليل، أجيب إيه الأول؟»: بترتب المستحق من المخزن والقايمة على المبلغ. الضروري الأول، وبعده الأهم " +
+      "بالاستعجال. الأسعار من القايمة أو آخر سعر دفعه البيت بس، واللي مالوش سعر بيرجع «محتاج سعره». الأرقام من الأداة بس.",
+    input_schema: {
+      type: "object",
+      properties: { budget: { type: "number", description: "المبلغ اللي معاه للمشتريات بعملته" } },
+      required: ["budget"],
     },
   },
   {
