@@ -147,5 +147,40 @@ const p6 = await runTool(sb, AMIR, "delete_pharmacy_item", { name: "كونكور
 check(p6.includes("اتحذف") && (await med()).length === 0, "med delete", p6);
 check(await count("zad_events", { user_id: AMIR, kind: "pharmacy.deleted" }) === 1, "med delete: event");
 
+// ١٢) الفلوس: «صرفت ٥٠ قهوة كاش» مرتين في نفس اللفة، ثم نفس المبلغ في لفة تانية (لازم يسأل)، ثم «أيوة دي تانية»،
+// ثم تعديل وتصنيف وحذف، وتسوية الكاش، ووصف تخمين.
+const txs = async (title: string) => ((await sb.from("zad_transactions").select("id,amount,category,wallet,is_expense,txn_kind").eq("user_id", AMIR).eq("title", title)).data ?? []);
+const run6 = { source: "app_chat", runId: crypto.randomUUID() } as const;
+const coffee = { amount: 50, title: "قهوة", txn_kind: "expense", wallet: "cash", category: "مطاعم" };
+const snapM = { stock: [], now_local: { date: new Date().toISOString().slice(0, 10), utc_offset: "+00:00" } };
+const t1 = await runTool(sb, AMIR, "log_transaction", coffee, snapM, freshContext(AMIR), run6);
+check(t1.includes("اتسجلت المعاملة"), "money log: reply", t1);
+const t2 = await runTool(sb, AMIR, "log_transaction", { ...coffee }, snapM, freshContext(AMIR), run6);
+// نافذة الـ١٠ دقايق (قبل الباب، زي ما كانت) بتمسكه الأول وبتسأل؛ المهم إن مفيش صف تاني.
+check(t2.startsWith("مرفوض") && (await txs("قهوة")).length === 1, "money log again in the turn: still one row", t2);
+const run7 = { source: "app_chat", runId: crypto.randomUUID() } as const;
+const t3 = await runTool(sb, AMIR, "log_transaction", { ...coffee, title: "قهوة تانية" }, snapM, freshContext(AMIR), run7);
+check(t3.startsWith("مرفوض") && t3.includes("allow_duplicate"), "money: same amount within 10 min asks first", t3);
+const t4 = await runTool(sb, AMIR, "log_transaction", { ...coffee, title: "قهوة تانية", allow_duplicate: true }, snapM, freshContext(AMIR), run7);
+check(t4.includes("اتسجلت") && (await txs("قهوة تانية")).length === 1, "money: «it's another one» goes through", t4);
+const row = (await txs("قهوة"))[0];
+check(row?.is_expense === true && row?.wallet === "cash" && Number(row?.amount) === 50, "money: both columns and the wallet", row);
+const idOf = String(row?.id);
+const snapT = { ...snapM, recent_transaction_ids: [idOf], distinct_categories: ["مطاعم", "بقالة"] };
+const t5 = await runTool(sb, AMIR, "update_transaction", { transaction_id: idOf, amount: 55 }, snapT, freshContext(AMIR), run7);
+check(t5.includes("اتعدلت") && Number((await txs("قهوة"))[0]?.amount) === 55, "money update: 50 -> 55", t5);
+const t6 = await runTool(sb, AMIR, "set_transaction_category", { transaction_id: idOf, category: "بقالة" }, snapT, freshContext(AMIR), run7);
+check(t6.includes("اتصنفت") && (await txs("قهوة"))[0]?.category === "بقالة", "money category", t6);
+const cashBefore = Number((await sb.rpc("zad_cash_balance", { p_user: AMIR })).data);
+const t7 = await runTool(sb, AMIR, "reconcile_cash_balance", { reported_amount: cashBefore + 300 }, snapT, freshContext(AMIR), run7);
+check(t7.includes("زيادة") && Number((await sb.rpc("zad_cash_balance", { p_user: AMIR })).data) === cashBefore + 300, "cash reconcile: +300", [t7, cashBefore]);
+const t8 = await runTool(sb, AMIR, "delete_transaction", { transaction_id: idOf }, snapT, freshContext(AMIR), run7);
+check(t8.includes("اتحذفت") && (await txs("قهوة")).length === 0, "money delete", t8);
+check(await count("zad_events", { user_id: AMIR, kind: "money.deleted" }) === 1, "money delete: event");
+const gM = await count("zad_guard_events", { user_id: AMIR });
+const t9 = await runTool(sb, AMIR, "log_transaction", { amount: 100, title: "مصروف - مثلا صدقة؟", txn_kind: "expense" }, snapM, freshContext(AMIR), run7);
+check(t9.startsWith("مرفوض") && (await txs("مصروف - مثلا صدقة؟")).length === 0, "money: guessed title refused", t9);
+check(await count("zad_guard_events", { user_id: AMIR }) === gM + 1, "money: refusal logged");
+
 console.log(failed === 0 ? "e2e: all checks passed" : `e2e: ${failed} FAILED`);
 Deno.exit(failed === 0 ? 0 : 1);
