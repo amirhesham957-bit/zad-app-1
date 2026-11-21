@@ -6,7 +6,8 @@ PG=${PG_CONTAINER:-zadpg}; DB=t_e2e_commit_intent; SECRET=e2e-local-secret-at-le
 docker exec "$PG" dropdb -U postgres --if-exists "$DB"; docker exec "$PG" createdb -U postgres "$DB"
 for f in supabase/sql/tests/events_ledger_scaffold.sql supabase/migrations/20261121160000_events_ledger.sql \
          supabase/sql/tests/commit_intent_scaffold.sql supabase/migrations/20261121180000_commit_intent.sql \
-         supabase/migrations/20261121200000_commit_intent_merge.sql supabase/sql/e2e/commit_intent_e2e_scaffold.sql; do
+         supabase/migrations/20261121200000_commit_intent_merge.sql supabase/migrations/20261121220000_commit_intent_domains.sql \
+         supabase/sql/e2e/commit_intent_e2e_scaffold.sql; do
   docker exec -i "$PG" psql -U postgres -d "$DB" -v ON_ERROR_STOP=1 -q < "$f" > /dev/null
 done
 docker rm -f zad-e2e-rest > /dev/null 2>&1 || true

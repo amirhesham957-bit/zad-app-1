@@ -85,6 +85,14 @@ function fakeDb(tables: Record<string, Row[]>, names: Record<string, string> = {
       inv.push(fresh);
       writes.push({ table: "zad_inventory", op: "door:insert", id: fresh.id, row: fresh });
       out = { ok: true, duplicate: false, row_id: fresh.id, after: p.quantity };
+    } else if (intent.kind === "inventory.deleted") {
+      inv.splice(inv.indexOf(row!), 1);
+      writes.push({ table: "zad_inventory", op: "door:delete", id: row!.id, row: {} });
+      out = { ok: true, duplicate: false, row_id: row!.id, before: null, after: null };
+    } else if (intent.kind === "inventory.restock_mode_set") {
+      row!.restock_mode = p.restock_mode;
+      writes.push({ table: "zad_inventory", op: "door:update", id: row!.id, row: { restock_mode: p.restock_mode } });
+      out = { ok: true, duplicate: false, row_id: row!.id, before: null, after: null };
     } else {
       const before = Number(row!.quantity ?? 0);
       const after = intent.kind === "inventory.added" ? Math.max(before, 0) + Number(p.quantity)
@@ -363,4 +371,29 @@ Deno.test("guards: a failed log never changes the reply", async () => {
   const broken = { ...sb, from: (t: string) => (t === "zad_guard_events" ? (() => { throw new Error("down"); })() : sb.from(t)) };
   const out = await runTool(broken as any, "dad", "update_inventory_qty", { item_name: "لبن", new_qty: -1 }, { stock: [{ name: "لبن", qty: 1 }] }, freshContext("dad"), RUN);
   assert(out.startsWith("مرفوض") && out.includes("بالسالب"), out);
+});
+
+Deno.test("M2.5: deleting an item and marking it occasional go through the door too", async () => {
+  const { sb, writes, rpcs, tables } = fakeDb({
+    family_members: FAMILY,
+    zad_inventory: [
+      { id: "c1", user_id: "mom", family_id: "f1", item_name: "كمون", quantity: 1, unit: "علبة", created_at: "2026-11-01" },
+      { id: "c2", user_id: "dad", family_id: "f1", item_name: "كمون", quantity: 2, unit: "علبة", created_at: "2026-11-02" },
+      { id: "s", user_id: "dad", family_id: "f1", item_name: "سكر", quantity: 1, unit: "كيلو", created_at: "2026-11-01" },
+    ],
+  });
+  const mode = await executeTool(sb, "dad", "update_inventory_qty", { item_name: "كمون", restock_mode: "occasional" }, {}, freshContext("dad"), RUN);
+  assert(mode.includes("كل فترة"), mode);
+  assertEquals(tables.zad_inventory.filter((r) => r.item_name === "كمون").map((r) => r.restock_mode), ["occasional", "occasional"]);
+  // Same call again in the turn: every row is a duplicate, so nothing new is said to have happened.
+  const again = await executeTool(sb, "dad", "update_inventory_qty", { item_name: "كمون", restock_mode: "occasional" }, {}, freshContext("dad"), RUN);
+  assert(again.includes("اتنفذ قبل كده"), again);
+  const del = await executeTool(sb, "dad", "delete_inventory_item", { item_name: "سكر" }, {}, freshContext("dad"), RUN);
+  assert(del.includes("اتحذف"), del);
+  assertEquals(tables.zad_inventory.some((r) => r.id === "s"), false);
+  assertEquals(writes.filter((w) => w.table === "zad_inventory").map((w) => w.op), ["door:update", "door:update", "door:delete"]);
+  const kinds = rpcs.filter((r) => r.fn === "zad_commit_intent").map((r) => (r.args.p_intent as Row).kind);
+  assertEquals(kinds, ["inventory.restock_mode_set", "inventory.restock_mode_set", "inventory.restock_mode_set", "inventory.restock_mode_set", "inventory.deleted"]);
+  // The undo log still has the delete with the whole row.
+  assert(writes.some((w) => w.table === "agent_actions" && (w.row.previous_state as Row)?.item_name === "سكر"));
 });

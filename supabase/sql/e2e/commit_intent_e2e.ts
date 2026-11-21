@@ -88,5 +88,19 @@ check(await count("zad_guard_events", { user_id: AMIR }) === guards8 + 1, "valid
 const { data: g8 } = await sb.from("zad_guard_events").select("kind,source").eq("user_id", AMIR).order("id", { ascending: false }).limit(1).single();
 check(g8?.kind === "validator:update_inventory_qty" && g8?.source === "model", "validator refuse: guard row names the validator", g8);
 
+// ٩) «اللبن ده على فترات» ثم «امسح اللبن»: الاتنين من الباب، والتكرار مابيعملش حاجة.
+const r9 = await runTool(sb, AMIR, "update_inventory_qty", { item_name: "لبن", restock_mode: "occasional" }, snap, freshContext(AMIR), run2);
+check(r9.includes("كل فترة"), "mode: reply", r9);
+check((await sb.from("zad_inventory").select("restock_mode").eq("user_id", AMIR).eq("item_name", "لبن").single()).data?.restock_mode === "occasional", "mode: row marked");
+check(await count("zad_events", { user_id: AMIR, kind: "inventory.restock_mode_set" }) === 1, "mode: event");
+const r10 = await runTool(sb, AMIR, "delete_inventory_item", { item_name: "لبن" }, snap, freshContext(AMIR), run2);
+check(r10.includes("اتحذف"), "delete: reply", r10);
+check((await qty("لبن")).length === 0, "delete: row gone");
+check(await count("zad_events", { user_id: AMIR, kind: "inventory.deleted" }) === 1, "delete: event with the row");
+check(await count("agent_actions", { user_id: AMIR, tool_name: "delete_inventory_item" }) === 1, "delete: undo log row");
+const r11 = await runTool(sb, AMIR, "delete_inventory_item", { item_name: "لبن" }, snap, freshContext(AMIR), run2);
+check(r11.startsWith("مرفوض"), "delete again: nothing left to delete", r11);
+check(await count("zad_events", { user_id: AMIR, kind: "inventory.deleted" }) === 1, "delete again: no second event");
+
 console.log(failed === 0 ? "e2e: all checks passed" : `e2e: ${failed} FAILED`);
 Deno.exit(failed === 0 ? 0 : 1);

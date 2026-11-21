@@ -2436,11 +2436,16 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       // «دي مش أساسية» (ZAD_PLAN ٣.١٠): على كل صفوف البيت بالاسم ده، عشان القايمة والتشيك-إن يسكتوا عنه.
       if (input.restock_mode === "staple" || input.restock_mode === "occasional") {
         const ids = ((candidates ?? []) as Array<{ id: string }>).map((r) => r.id);
-        const m = await writeRows(
-          sb.from("zad_inventory").update({ restock_mode: input.restock_mode }).in("id", ids).select("id"),
-          "نوع الصنف",
-        );
-        if (!m.ok) return `مرفوض: ${m.reason}`;
+        // من الباب (م٢.٥): حدث لكل صف، والمفتاح فيه الصف عشان الصفوف ماتبانش تكرار لبعض.
+        let fresh = 0;
+        for (const id of ids) {
+          const m = await commitIntent(sb, userId, scope, name, { ...input, item_id: id }, "inventory.restock_mode_set", {
+            item_id: id, restock_mode: input.restock_mode,
+          });
+          if (!m.ok) return refusalText(m.reason);
+          if (!m.duplicate) fresh++;
+        }
+        if (fresh === 0) return DUPLICATE_REPLY;
         ctx.mutationCount++;
         await recordAction(sb, userId, scope, {
           tool: name, input, table: "zad_inventory", targetId: before.id,
@@ -3082,8 +3087,10 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
         .eq("item_name", itemName).or(inventoryOwnerFilter(userId, familyId));
       const before = pickInventoryRow(candidates as any[], userId, familyId);
       if (!before) return `مرفوض: مفيش صنف اسمه "${itemName}" في المخزون.`;
-      const w = await writeRows(sb.from("zad_inventory").delete().eq("id", before.id).select("id"), "حذف صنف");
-      if (!w.ok) return `مرفوض: ${w.reason}`;
+      // من الباب (م٢.٥): الحدث شايل الصف كامل، وتريجر zad_trash بيحفظه للتراجع.
+      const gone = await commitIntent(sb, userId, scope, name, input, "inventory.deleted", { item_id: before.id });
+      if (!gone.ok) return refusalText(gone.reason);
+      if (gone.duplicate) return DUPLICATE_REPLY;
       ctx.mutationCount++;
       ctx.mutations.push({ tool: name, old: before, new: null });
       await recordAction(sb, userId, scope, { tool: name, input, table: "zad_inventory", targetId: before.id, previous: before, next: null });
