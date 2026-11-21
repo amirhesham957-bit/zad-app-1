@@ -2,14 +2,18 @@
 // zad_commit_intent (commitIntent.ts). والمعاملات كمان من ٢٢/١١. التست بيقرا كل ملفات zad-brain وبيفشل لو سلسلة `.from("<الجدول>")` فيها
 // insert/upsert/update/delete — نفس قارئ one_writer_test.
 //
-// الاستثناء الوحيد المسمّى: «الحلم» بالليل بيضيف النواقص للقايمة (كرون، مش أداة موديل) — مكانه بعد م٢.٥.
+// الإعدادات (zad_users)، الأهداف والتحديات، وتأجيل الجرعة كمان من الباب (٢٢/١١). مفيش استثناء مسمّى.
 import { assertEquals } from "jsr:@std/assert@1";
 import { writesIn } from "../_schema/one_writer_test.ts";
 
-const THROUGH_THE_DOOR = ["zad_inventory", "zad_shopping_list", "zad_pharmacy_items", "zad_transactions", "zad_category_budgets"];
-const ALLOWED: Record<string, Record<string, number>> = {
-  "index.ts": { zad_shopping_list: 1 }, // الحلم: lowStockToAdd ⇐ zad_shopping_list.insert
-};
+const THROUGH_THE_DOOR = [
+  "zad_inventory", "zad_shopping_list", "zad_pharmacy_items", "zad_transactions", "zad_category_budgets",
+  "zad_users", "agent_goals", "zad_savings_challenges", "zad_dose_snoozes",
+];
+// مفيش استثناء: «الحلم» بالليل كمان بيضيف للقايمة من الباب (مصدره cron).
+const ALLOWED: Record<string, Record<string, number>> = {};
+// _shared/doseDoor.ts (زرار «فكّرني بعدين» وأداته) مش جوه zad-brain/ بس بيكتب zad_dose_snoozes — فبنقراه هو كمان.
+const ALSO_SCANNED = ["../_shared/doseDoor.ts"];
 
 Deno.test("the brain writes the pantry, the list, the pharmacy and the transactions only through zad_commit_intent", async () => {
   const found: Record<string, Record<string, number>> = {};
@@ -19,6 +23,13 @@ Deno.test("the brain writes the pantry, the list, the pharmacy and the transacti
     for (const table of THROUGH_THE_DOOR) {
       const n = writesIn(text, table);
       if (n > 0) (found[e.name] ??= {})[table] = n;
+    }
+  }
+  for (const rel of ALSO_SCANNED) {
+    const text = await Deno.readTextFile(new URL(rel, import.meta.url));
+    for (const table of THROUGH_THE_DOOR) {
+      const n = writesIn(text, table);
+      if (n > 0) (found[rel.replace("../", "")] ??= {})[table] = n;
     }
   }
   assertEquals(found, ALLOWED);

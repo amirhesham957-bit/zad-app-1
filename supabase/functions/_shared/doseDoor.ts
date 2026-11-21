@@ -6,6 +6,11 @@
 // في zad-brain، اللي البوت بيوصلها بـagent_execute زي باقي أدواته). الحارس: _schema/one_writer_test.ts.
 
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
+import type { AuditScope } from "../zad-brain/audit.ts";
+import { commitIntent, refusalText } from "../zad-brain/commitIntent.ts";
+
+/** مين بيكتب لما اللي نادى ماعداش scope (اختبار، أو سكربت): زرار من غير لفة. */
+const BUTTON_SCOPE: AuditScope = { source: "telegram" };
 
 /** دقايق التأجيل لما العميل يدوس «فكّرني بعدين» — نفس الرقم في SQL (zad_dose_snoozes). */
 export const DOSE_SNOOZE_MINUTES = 15;
@@ -47,16 +52,17 @@ export function doseAlreadyReply(names: readonly string[]): string {
  * مواعيد الدوا مش من تذكير. الدوا لازم يكون بتاع العميل (اتقرا بـuser_id قبلها في العقل)، والدقايق ٥–٢٤٠.
  */
 export async function snoozeDose(
-  sb: SupabaseClient, userId: string, itemId: string, scheduledAt: string, minutes: number,
-): Promise<{ ok: true; until: string } | { ok: false; reason: string }> {
-  const until = new Date(Date.now() + minutes * 60_000).toISOString();
-  const { data, error } = await sb.from("zad_dose_snoozes").upsert(
-    { user_id: userId, item_id: itemId, scheduled_at: scheduledAt, snooze_until: until },
-    { onConflict: "user_id,item_id,scheduled_at" },
-  ).select("item_id");
-  if (error) return { ok: false, reason: error.message };
-  if (!data?.length) return { ok: false, reason: "التأجيل ما اتكتبش" };
-  return { ok: true, until };
+  sb: SupabaseClient, userId: string, itemId: string, scheduledAt: string, minutes: number, scope: AuditScope = BUTTON_SCOPE,
+): Promise<{ ok: true; until: string; duplicate: boolean } | { ok: false; reason: string; refusal?: string }> {
+  // من الباب (م٢.٥): pharmacy.dose_snoozed. المفتاح لكل دوا لوحده (نفس لفة، أكتر من دوا).
+  // مفتاح التكرار ≤ ١٠٠ حرف: مع لفة بيتحسب من المدخل (فيه الدوا)، ومن غير لفة بيتحسب من eventKey فنحط الدوا أوله (مقصوص من آخره).
+  const keyed: AuditScope = scope.eventKey ? { ...scope, eventKey: `${itemId}:${scope.eventKey}` } : scope;
+  const r = await commitIntent(sb, userId, keyed, "snooze_dose", { itemId, scheduledAt, minutes }, "pharmacy.dose_snoozed", {
+    item_id: itemId, scheduled_at: scheduledAt, minutes,
+  });
+  if (!r.ok) return { ok: false, reason: r.reason, refusal: refusalText(r.reason) };
+  const until = (r.payload.after as { snooze_until?: string } | undefined)?.snooze_until;
+  return { ok: true, until: until ?? new Date(Date.now() + minutes * 60_000).toISOString(), duplicate: r.duplicate };
 }
 
 // ── تسوية تذكير الجرعة: زرار أو كلام، نفس المسار (٢٠٢٦-٠٩-١٩، ومخدتهاش ٢٠٢٦-٠٩-٢٥) ──
@@ -64,7 +70,9 @@ export async function snoozeDose(
 // الترتيب مقصود بالحرف: بنقرا اللحظة من `zad_voice_moments` (مصدر الحقيقة الوحيد لأسماء
 // الأدوية ومواعيدها — مفيش أي اسم بييجي من كلام الموديل)، بنكتب في الداتابيز، وبنرد على
 // العميل **بس** لو الكتابة نجحت. أي فشل بيقول له صراحةً إنها ماتسجلتش.
-export async function settleDoseReminder(sb: SupabaseClient, userId: string, momentId: string, action: DoseAction): Promise<string> {
+export async function settleDoseReminder(
+  sb: SupabaseClient, userId: string, momentId: string, action: DoseAction, scope: AuditScope = BUTTON_SCOPE,
+): Promise<string> {
   const { data: momentRow } = await sb.from("zad_voice_moments")
     .select("id,user_id,moment,facts")
     .eq("id", momentId).eq("user_id", userId).maybeSingle();
@@ -84,17 +92,14 @@ export async function settleDoseReminder(sb: SupabaseClient, userId: string, mom
 
   if (action === "snooze") {
     // التأجيل بيتكتب في جدول، مش في الذاكرة: الكرون هو اللي بيقرا منه فبيسكت عن
-    // نفس الجرعة لحد ما الوقت يعدّي، وبعدها بيبعت تذكير واحد جديد.
-    const until = new Date(Date.now() + DOSE_SNOOZE_MINUTES * 60_000).toISOString();
-    const { error: snoozeErr } = await sb.from("zad_dose_snoozes").upsert(
-      itemIds.map((itemId) => ({
-        user_id: userId, item_id: itemId, scheduled_at: slotOf(itemId), snooze_until: until,
-      })),
-      { onConflict: "user_id,item_id,scheduled_at" },
-    );
-    if (snoozeErr) {
-      console.error("[dose] snooze failed:", snoozeErr.message);
-      return "معلش، مقدرتش أأجّل التذكير — هفضل أفكّرك زي ما هو.";
+    // نفس الجرعة لحد ما الوقت يعدّي، وبعدها بيبعت تذكير واحد جديد. من الباب (م٢.٥)، دوا دوا في خانته.
+    // تكرار (ضغطة تانية على نفس الزرار) مش فشل: الصف اتكتب في الأولى.
+    for (const itemId of itemIds) {
+      const r = await snoozeDose(sb, userId, itemId, slotOf(itemId), DOSE_SNOOZE_MINUTES, scope);
+      if (!r.ok) {
+        console.error("[dose] snooze failed:", itemId, r.reason);
+        return "معلش، مقدرتش أأجّل التذكير — هفضل أفكّرك زي ما هو.";
+      }
     }
     return `تمام، هسكت ${DOSE_SNOOZE_MINUTES} دقيقة وأفكّرك تاني.`;
   }

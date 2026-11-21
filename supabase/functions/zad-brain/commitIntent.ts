@@ -12,8 +12,11 @@ import type { AuditScope } from "./audit.ts";
 export type IntentKind =
   | "inventory.added" | "inventory.consumed" | "inventory.quantity_set" | "inventory.deleted" | "inventory.restock_mode_set"
   | "shopping.added" | "shopping.completed" | "shopping.deleted"
-  | "pharmacy.added" | "pharmacy.updated" | "pharmacy.deleted" | "pharmacy.dose_taken"
-  | "money.logged" | "money.updated" | "money.deleted" | "money.purchase" | "money.limit_set" | "money.category_budget_set";
+  | "pharmacy.added" | "pharmacy.updated" | "pharmacy.deleted" | "pharmacy.dose_taken" | "pharmacy.dose_snoozed"
+  | "money.logged" | "money.updated" | "money.deleted" | "money.purchase" | "money.limit_set" | "money.category_budget_set"
+  | "settings.cycle_start_set" | "settings.market_set" | "settings.emergency_fund_set" | "settings.sleep_set"
+  | "settings.sleep_cleared" | "settings.app_flag_set"
+  | "goal.set" | "goal.cancelled" | "goal.progress" | "goal.challenge_started" | "goal.challenge_stopped";
 export type IntentSource = "manual" | "receipt" | "bank" | "model" | "cron";
 
 export type CommitResult =
@@ -109,6 +112,30 @@ const REASONS: Record<string, string> = {
   date_invalid: "تاريخ العملية مش مفهوم أو في المستقبل أو أقدم من سنة",
   category_invalid: "اسم الفئة لازم يكون من ٢ لـ٤٠ حرف",
   no_category_budget: "مفيش سقف على الفئة دي أصلاً",
+  user_not_found: "حساب العميل مش موجود",
+  cycle_day_invalid: "يوم بداية الدورة رقم صحيح من ١ لـ٣١",
+  currency_invalid: "العملة كود ISO من ٣ حروف كابيتال (مثل EGP) — والتحدي عملته لحد ١٠ حروف",
+  country_invalid: "البلد كود ISO من حرفين كابيتال (مثل EG)",
+  balance_invalid: "الرصيد لازم يكون رقم غير سالب",
+  sleep_time_invalid: "المواعيد بصيغة HH:MM (٢٤ ساعة)",
+  sleep_bed_out_of_range: "النوم من ٢٠:٠٠ لـ٠٣:٠٠ — شغل ليلي؟ اسأله وماتحفظش",
+  sleep_wake_out_of_range: "الصحيان من ٠٤:٠٠ لـ١٢:٠٠",
+  setting_unknown: "الإعداد ده يا pet_calls يا food_pattern",
+  goal_title_invalid: "عنوان الهدف من ٤ لـ٢٠٠ حرف",
+  metric_too_long: "وصف المقياس طويل أوي",
+  target_invalid: "المبلغ المستهدف لازم رقم موجب منطقي",
+  deadline_invalid: "تاريخ الهدف مش مفهوم",
+  unit_invalid: "unit يا money يا count",
+  goal_not_found: "مفيش هدف بالاسم ده عند العميل",
+  goal_amount_invalid: "المبلغ لازم رقم مش صفر وبحدود المنطق",
+  goal_not_amount: "الهدف ده بيتعد بالمهام مش بالفلوس — تقدمه بيتحسب لوحده.",
+  challenge_already_active: "عنده تحدي شغال بالفعل — شجّعه يكمّله أو اسأله لو عايز يقفله الأول (stop_savings_challenge).",
+  no_active_challenge: "مفيش تحدي شغال أصلاً",
+  challenge_cap_invalid: "السقف اليومي لازم رقم موجب منطقي",
+  challenge_length_invalid: "مدة التحدي من ٧ لـ٩٠ يوم",
+  challenge_date_invalid: "تاريخ بداية التحدي مش مفهوم",
+  dose_slot_invalid: "ميعاد الجرعة مش تاريخ مفهوم",
+  snooze_minutes_invalid: "التأجيل من ٥ لـ٢٤٠ دقيقة",
 };
 
 /** سبب الرفض بالعربي للموديل (والكود الأصلي بين قوسين للتشخيص). */
