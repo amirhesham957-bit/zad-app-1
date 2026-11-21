@@ -78,13 +78,15 @@ check(r7.startsWith("مرفوض") && r7.includes("expiry_before_purchase"), "ref
 check((await qty("زبادي")).length === 0, "refuse: no yoghurt row");
 check(await count("zad_guard_events", { user_id: AMIR, reason: "expiry_before_purchase" }) === 1, "refuse: expiry guard row");
 
-// ٨) مدخل غلط يقف عند المدقق قبل الباب (كمية بالسالب): مفيش كتابة، والرفض في ctx.rejections بس — مش في zad_guard_events.
+// ٨) مدخل غلط يقف عند المدقق قبل الباب (كمية بالسالب): مفيش كتابة، والرفض متسجل في zad_guard_events برضه.
 const ctx8 = freshContext(AMIR);
 const guards8 = await count("zad_guard_events", { user_id: AMIR });
 const r8 = await runTool(sb, AMIR, "update_inventory_qty", { item_name: "لبن", new_qty: -1, reason: why }, snap, ctx8, run2);
 check(r8.startsWith("مرفوض"), "validator refuse: reply", r8);
 check(JSON.stringify(await qty("لبن")) === "[1]", "validator refuse: nothing written", await qty("لبن"));
-console.log(`INFO  validator refusal reached zad_guard_events: ${(await count("zad_guard_events", { user_id: AMIR })) > guards8}`);
+check(await count("zad_guard_events", { user_id: AMIR }) === guards8 + 1, "validator refuse: one guard row");
+const { data: g8 } = await sb.from("zad_guard_events").select("kind,source").eq("user_id", AMIR).order("id", { ascending: false }).limit(1).single();
+check(g8?.kind === "validator:update_inventory_qty" && g8?.source === "model", "validator refuse: guard row names the validator", g8);
 
 console.log(failed === 0 ? "e2e: all checks passed" : `e2e: ${failed} FAILED`);
 Deno.exit(failed === 0 ? 0 : 1);
