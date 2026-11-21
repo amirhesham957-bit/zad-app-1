@@ -114,7 +114,9 @@ jobs:
           git config user.name "zad-worker"
           git config user.email "zad-worker@users.noreply.github.com"
           git checkout -b "worker/$SLICE"
-          git add -A -- . ':!worker.log' ':!TASK_WORKER.md'
+          # worker.log وTASK_WORKER.md متجاهلين أصلاً؛ ذكرهم بالاسم هنا بيخلّي git add يطلع 1 والشغل يضيع (٢٢/١١).
+          git add -A
+          git reset -q -- worker.log TASK_WORKER.md 2>/dev/null || true
           git commit -m "worker($SLICE): $USED — unreviewed, do not merge as is"
           git push --force-with-lease origin "worker/$SLICE"
 
