@@ -11,9 +11,11 @@ library;
 import 'package:flutter/foundation.dart';
 import 'package:zad/core/l10n/l10n.dart';
 
-/// The tables `zad_agent_undo` knows how to restore — read off the deployed
-/// function on 2026-09-21. Any other table answers `table_not_undoable`, so
-/// offering the button for it would only ever end in an apology.
+/// The tables `zad_agent_undo` knows how to restore — the seven read off the
+/// deployed function on 2026-09-21, plus the seven trash tables added by
+/// `20261121140000_undo_knows_every_trash_table` (ZAD_OR_PLAN M1.6). Any other
+/// table answers `table_not_undoable`, so offering the button for it would
+/// only ever end in an apology.
 const Set<String> kUndoableTables = <String>{
   'zad_transactions',
   'zad_inventory',
@@ -21,6 +23,13 @@ const Set<String> kUndoableTables = <String>{
   'zad_pharmacy_doses',
   'zad_shopping_list',
   'zad_obligations',
+  'zad_subscriptions',
+  'zad_debts',
+  'zad_maintenance_items',
+  'zad_documents',
+  'zad_appointments',
+  'zad_memory',
+  'zad_category_budgets',
   'zad_users',
 };
 
