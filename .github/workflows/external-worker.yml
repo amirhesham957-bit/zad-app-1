@@ -87,13 +87,15 @@ jobs:
           for m in "$MODEL" "$FALLBACK"; do
             [ -z "$m" ] && continue
             echo "### model=$m" | tee -a worker.log
-            timeout 1500 opencode run -m "$m" --title "$SLICE" "$prompt" >> worker.log 2>&1
-            rc=$?
+            # `bash -e`: من غير `|| rc=$?` أول موديل يفشل بيوقف السكربت قبل البديل.
+            rc=0
+            timeout 1500 opencode run -m "$m" --title "$SLICE" "$prompt" >> worker.log 2>&1 || rc=$?
             echo "### exit=$rc" | tee -a worker.log
             if [ $rc -eq 0 ] && changed; then used="$m"; break; fi
             git checkout -- . && git clean -fdq -e worker.log
           done
           echo "used=$used" >> "$GITHUB_OUTPUT"
+          echo "----- worker.log (tail) -----"; tail -c 3000 worker.log | sed 's/\x1b\[[0-9;]*m//g'
           [ -n "$used" ] || { echo "::error::no model produced a change"; exit 1; }
 
       - name: Check what the worker wrote
