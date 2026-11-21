@@ -26,6 +26,7 @@ const PANE = {
 } as const
 
 test('the pane shows the next open item of the plan', async ($, on) => {
+  on('clock.now', () => ({ value: 0 }))
   on('command.register', () => ({ value: { command: 'zad-plan' } }))
   on('ui.open', () => ({ value: { isPlaced: true } }))
   on('clock.every', () => ({ value: undefined }))
@@ -55,4 +56,21 @@ test('on another branch the plan comes from git, and the command answers in text
   await $.session.start({ cwd: '/workspaces/zad-app-1', surface: 'vscode', isInteractive: true })
   const out = await $.command.run({ command: 'zad-plan', args: '' } as never)
   expect(JSON.stringify(out)).toContain('ج١.٢')
+})
+
+test('the usage line says what is left of the context and of each limit', async ($, on) => {
+  on('command.register', () => ({ value: { command: 'zad-plan' } }))
+  on('ui.open', () => ({ value: { isPlaced: false, reason: 'no pane here' } }))
+  on('clock.every', () => ({ value: undefined }))
+  on('clock.now', () => ({ value: Date.parse('2026-11-21T12:00:00Z') }))
+  on('session.cwd', () => ({ value: '/workspaces/zad-app-1' }))
+  on('session.usage', () => ({ value: { context: { tokens: 300000, window: 1000000, percent: 30 }, rateLimits: [{ kind: 'five_hour', percentUsed: 40, resetsAt: '2026-11-21T14:00:00Z' }] } as never }))
+  on('fs.exists', () => ({ value: false }))
+  on('process.run', () => ({ value: { exitCode: 0, stdout: PLAN, stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }))
+  on('session.start', (_, e) => ({ cwd: e.cwd }))
+
+  await $.session.start({ cwd: '/workspaces/zad-app-1', surface: 'vscode', isInteractive: true })
+  const out = JSON.stringify(await $.command.run({ command: 'zad-plan', args: '' } as never))
+  expect(out).toContain('السياق باقي 70%')
+  expect(out).toContain('الـ٥ ساعات باقي 60%')
 })
