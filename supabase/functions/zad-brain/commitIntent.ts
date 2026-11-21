@@ -81,5 +81,36 @@ export function refusalText(reason: string): string {
   return `مرفوض: ${REASONS[reason] ?? "الكتابة اترفضت"} (${reason}) — عدّل وحاول تاني.`;
 }
 
+/**
+ * الرفض ده جه من الباب (وبالتالي اتسجل في zad_guard_events هناك)؟ شكل refusalText بس: كود الباب بين قوسين
+ * (حروف صغيرة و_). فشل النداء نفسه «(rpc: …)» مابيطابقش، فبيتسجل من runTool لأن الباب ماسجلهوش.
+ */
+export function isDoorRefusal(text: string): boolean {
+  return /^مرفوض: .* \([a-z_]+\) — عدّل وحاول تاني\.$/s.test(text);
+}
+
+/** أكبر مدخل بيتحفظ مع الرفض (فاتورة كاملة مثلاً) — اللي أكبر بيتحفظ مقصوص. */
+const GUARD_INPUT_MAX = 4000;
+
+/**
+ * رفض قبل الباب (المدقق أو الأداة نفسها) بيتسجل في zad_guard_events زي رفض الباب، عشان «صحة العقل» تشوف كل الرفض
+ * من مكان واحد. kind = `validator:<أداة>` أو `tool:<أداة>`. فشل التسجيل مابيغيّرش الرد.
+ */
+export async function logGuard(
+  sb: SupabaseClient, userId: string, scope: AuditScope, stage: "validator" | "tool", tool: string, reason: string, input: unknown,
+): Promise<void> {
+  try {
+    const raw = JSON.stringify(input ?? {});
+    const intent = raw.length <= GUARD_INPUT_MAX ? { tool, input: input ?? {} } : { tool, input_truncated: raw.slice(0, GUARD_INPUT_MAX) };
+    const { error } = await sb.from("zad_guard_events").insert({
+      user_id: userId, kind: `${stage}:${tool}`, reason: reason.replace(/^مرفوض:\s*/, "").slice(0, 300),
+      source: intentSource(scope), intent,
+    });
+    if (error) console.error("[guard] insert failed:", error.message);
+  } catch (e) {
+    console.error("[guard] insert threw:", String(e));
+  }
+}
+
 /** نفس النداء اتعمل قبل كده في اللفة دي: مفيش كتابة تانية. */
 export const DUPLICATE_REPLY = "النداء ده اتنفذ قبل كده في نفس الطلب — مفيش حاجة اتكررت.";

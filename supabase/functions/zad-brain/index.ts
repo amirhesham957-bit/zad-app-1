@@ -109,7 +109,7 @@ import { seasonFor, seasonInstruction, upcomingSeason, upcomingSeasonInstruction
 import { SEASON_PLAN_DAYS, seasonPlanInstruction, upcomingCalendarSeasons } from "../_shared/seasonCalendar.ts";
 import { type FastIntent, formatBalanceReply, parseFastPath } from "./fastPath.ts";
 import { AgentSource, AuditScope, recordAction, writeRows } from "./audit.ts";
-import { commitIntent, DUPLICATE_REPLY, refusalText } from "./commitIntent.ts";
+import { commitIntent, DUPLICATE_REPLY, isDoorRefusal, logGuard, refusalText } from "./commitIntent.ts";
 import { redactNotificationText } from "./redact.ts";
 import { type LearnedFormat, learnedCases, learnedSenders, senderKnown } from "./learnedFormats.ts";
 import { classifyMessage, consume as consumeEntitlement, lockedReply, quotaExempt } from "./entitlement.ts";
@@ -5225,9 +5225,15 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
 /** مُصدَّرة للاختبار (bookingGuard_test.ts). */
 export async function runTool(sb: SupabaseClient, userId: string, name: string, input: any, snap: any, ctx: RunContext, scope: AuditScope): Promise<string> {
   const v = await validateTool(name, input, snap, ctx);
-  if (!v.ok) return `مرفوض: ${v.reason} — عدّل وحاول تاني.`;
+  if (!v.ok) {
+    // كل رفض بيتسجل في zad_guard_events (م٢.٥)، مش رفض الباب بس — «صحة العقل» بتشوفه كله.
+    await logGuard(sb, userId, scope, "validator", name, v.reason, input);
+    return `مرفوض: ${v.reason} — عدّل وحاول تاني.`;
+  }
   ctx.counts[name] = (ctx.counts[name] ?? 0) + 1;
-  return await executeTool(sb, userId, name, input, snap, ctx, scope);
+  const result = await executeTool(sb, userId, name, input, snap, ctx, scope);
+  if (result.startsWith("مرفوض:") && !isDoorRefusal(result)) await logGuard(sb, userId, scope, "tool", name, result, input);
+  return result;
 }
 
 // ═══════════════════════════════════════════════════════════

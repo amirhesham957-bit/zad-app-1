@@ -841,6 +841,15 @@
     "updated_at",
     "usd_rate"
   ],
+  "zad_guard_events": [
+    "created_at",
+    "id",
+    "intent",
+    "kind",
+    "reason",
+    "source",
+    "user_id"
+  ],
   "zad_guardian_outcomes": [
     "acted_within_2h",
     "delivered_at",

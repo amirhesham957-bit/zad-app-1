@@ -4,7 +4,8 @@
 // dad's own rows only — a duplicate row, «مش موجود», or an update that matched nothing and
 // still said «الكمية بقت…».
 import { assert, assertEquals } from "jsr:@std/assert@1";
-import { executeTool } from "./index.ts";
+import { executeTool, runTool } from "./index.ts";
+import { isDoorRefusal, refusalText } from "./commitIntent.ts";
 import { freshContext } from "./validators.ts";
 
 type Row = Record<string, unknown>;
@@ -320,4 +321,46 @@ Deno.test("M2.5: a refusal from the door reaches the model with its reason, and 
   assert(out.startsWith("مرفوض") && out.includes("qty_too_large"), out);
   assertEquals(ctx.mutationCount, 0);
   assertEquals(writes.length, 0, "no audit row for a refused write");
+});
+
+// Every refusal lands in zad_guard_events, so «صحة العقل» sees them all — not only the door's.
+const guards = (writes: Array<{ table: string; row: Row }>) => writes.filter((w) => w.table === "zad_guard_events").map((w) => w.row);
+
+Deno.test("guards: a validator refusal is logged with the tool, the reason and the input", async () => {
+  const { sb, writes } = fakeDb({ family_members: FAMILY, zad_inventory: [] });
+  const out = await runTool(sb, "dad", "update_inventory_qty", { item_name: "لبن", new_qty: -1 }, { stock: [{ name: "لبن", qty: 1 }] }, freshContext("dad"), RUN);
+  assert(out.startsWith("مرفوض"), out);
+  const g = guards(writes);
+  assertEquals(g.length, 1);
+  assertEquals([g[0].user_id, g[0].kind, g[0].source], ["dad", "validator:update_inventory_qty", "model"]);
+  assert(String(g[0].reason).includes("بالسالب") && !String(g[0].reason).startsWith("مرفوض"), String(g[0].reason));
+  assertEquals((g[0].intent as Row).input, { item_name: "لبن", new_qty: -1 });
+});
+
+Deno.test("guards: a tool's own refusal is logged as tool:, a door refusal is not logged twice", async () => {
+  const { sb, writes, refuse } = fakeDb({
+    family_members: FAMILY,
+    zad_inventory: [{ id: "rice", user_id: "dad", family_id: "f1", item_name: "رز", quantity: 2, unit: "كيلو", created_at: "2026-11-01" }],
+  });
+  const missing = await runTool(sb, "dad", "consume_item", { item_name: "زيتون", amount: 1 }, {}, freshContext("dad"), RUN);
+  assert(missing.startsWith("مرفوض"), missing);
+  assertEquals(guards(writes).map((g) => g.kind), ["tool:consume_item"]);
+  refuse("amount_too_large");
+  const door = await runTool(sb, "dad", "consume_item", { item_name: "رز", amount: 1 }, {}, freshContext("dad"), RUN);
+  assert(isDoorRefusal(door), door);
+  assertEquals(guards(writes).length, 1, "the door already logged its own refusal");
+});
+
+Deno.test("guards: the door's reply shape is recognised, nothing else is", () => {
+  assert(isDoorRefusal(refusalText("qty_too_large")));
+  assert(isDoorRefusal(refusalText("something_new")));
+  assert(!isDoorRefusal("مرفوض: الكتابة اترفضت (rpc: timeout) — عدّل وحاول تاني."));
+  assert(!isDoorRefusal("مرفوض: «زيتون» مش في مخزون البيت — اسأل العميل لو عايز يضيفه."));
+});
+
+Deno.test("guards: a failed log never changes the reply", async () => {
+  const { sb } = fakeDb({ family_members: FAMILY, zad_inventory: [] });
+  const broken = { ...sb, from: (t: string) => (t === "zad_guard_events" ? (() => { throw new Error("down"); })() : sb.from(t)) };
+  const out = await runTool(broken as any, "dad", "update_inventory_qty", { item_name: "لبن", new_qty: -1 }, { stock: [{ name: "لبن", qty: 1 }] }, freshContext("dad"), RUN);
+  assert(out.startsWith("مرفوض") && out.includes("بالسالب"), out);
 });
