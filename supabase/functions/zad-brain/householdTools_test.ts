@@ -76,6 +76,34 @@ function fakeDb(tables: Record<string, Row[]>, names: Record<string, string> = {
     if (prior) return { ...prior, duplicate: true };
     if (doorRefuses) return { ok: false, reason: doorRefuses };
     const p = intent.payload as Row;
+    if (String(intent.kind).startsWith("shopping.")) {
+      const list = (tables.zad_shopping_list ??= []);
+      const line = p.item_id ? list.find((r) => r.id === p.item_id) : undefined;
+      if (p.item_id && !line) return { ok: false, reason: "item_not_found" };
+      if (line && intent.kind !== "shopping.deleted" && line.is_purchased) return { ok: false, reason: "already_purchased" };
+      let res: Row;
+      if (intent.kind === "shopping.added" && !line) {
+        const fresh = { id: `new${next++}`, user_id: intent.user_id, item_name: p.item_name, quantity: Math.ceil(Number(p.quantity)), is_purchased: false };
+        list.push(fresh);
+        writes.push({ table: "zad_shopping_list", op: "door:insert", id: fresh.id, row: fresh });
+        res = { ok: true, duplicate: false, row_id: fresh.id, after: fresh.quantity };
+      } else if (intent.kind === "shopping.added") {
+        const after = Number(line!.quantity ?? 1) + Math.ceil(Number(p.quantity));
+        line!.quantity = after;
+        writes.push({ table: "zad_shopping_list", op: "door:update", id: line!.id, row: { quantity: after } });
+        res = { ok: true, duplicate: false, row_id: line!.id, after };
+      } else if (intent.kind === "shopping.completed") {
+        line!.is_purchased = true;
+        writes.push({ table: "zad_shopping_list", op: "door:update", id: line!.id, row: { is_purchased: true } });
+        res = { ok: true, duplicate: false, row_id: line!.id };
+      } else {
+        list.splice(list.indexOf(line!), 1);
+        writes.push({ table: "zad_shopping_list", op: "door:delete", id: line!.id, row: {} });
+        res = { ok: true, duplicate: false, row_id: line!.id };
+      }
+      seen.set(key, res);
+      return res;
+    }
     const inv = (tables.zad_inventory ??= []);
     const row = p.item_id ? inv.find((r) => r.id === p.item_id) : undefined;
     if (p.item_id && !row) return { ok: false, reason: "item_not_found" };
@@ -396,4 +424,36 @@ Deno.test("M2.5: deleting an item and marking it occasional go through the door 
   assertEquals(kinds, ["inventory.restock_mode_set", "inventory.restock_mode_set", "inventory.restock_mode_set", "inventory.restock_mode_set", "inventory.deleted"]);
   // The undo log still has the delete with the whole row.
   assert(writes.some((w) => w.table === "agent_actions" && (w.row.previous_state as Row)?.item_name === "سكر"));
+});
+
+Deno.test("M2.5: the shopping list tools write through the door only", async () => {
+  const { sb, writes, rpcs, tables } = fakeDb({
+    family_members: FAMILY,
+    zad_inventory: [],
+    zad_shopping_list: [{ id: "l1", user_id: "mom", family_id: "f1", item_name: "لبن", quantity: 1, is_purchased: false, created_at: "2026-11-01" }],
+  });
+  const top = await executeTool(sb, "dad", "add_shopping_item", { item_name: "لبن", quantity: 2 }, {}, freshContext("dad"), RUN);
+  assert(top.includes("الكمية بقت 3"), top);
+  const add = await executeTool(sb, "dad", "add_shopping_item", { item_name: "عيش", quantity: 1 }, {}, freshContext("dad"), RUN);
+  assert(add.includes("اتضافت"), add);
+  const tick = await executeTool(sb, "dad", "complete_shopping_item", { item_name: "لبن" }, {}, freshContext("dad"), RUN);
+  assert(tick.includes("اتشطب"), tick);
+  const del = await executeTool(sb, "dad", "delete_shopping_item", { item_name: "عيش" }, {}, freshContext("dad"), RUN);
+  assert(del.includes("اتحذف"), del);
+  assertEquals(writes.filter((w) => w.table === "zad_shopping_list").map((w) => w.op), ["door:update", "door:insert", "door:update", "door:delete"]);
+  assertEquals(rpcs.filter((r) => r.fn === "zad_commit_intent").map((r) => (r.args.p_intent as Row).kind),
+    ["shopping.added", "shopping.added", "shopping.completed", "shopping.deleted"]);
+  assertEquals(tables.zad_shopping_list.map((r) => [r.item_name, r.quantity, r.is_purchased]), [["لبن", 3, true]]);
+});
+
+Deno.test("M2.5: a purchase ticks its list line through the door, and a repeat of the purchase ticks nothing twice", async () => {
+  const { sb, writes } = fakeDb({
+    family_members: FAMILY,
+    zad_inventory: [],
+    zad_shopping_list: [{ id: "l1", user_id: "mom", family_id: "f1", item_name: "زيت", quantity: 1, is_purchased: false, created_at: "2026-11-01" }],
+  });
+  const out = await executeTool(sb, "dad", "add_inventory_item", { item_name: "زيت", quantity: 1, category: "البقالة" }, {}, freshContext("dad"), RUN);
+  assert(out.includes("اتشطب"), out);
+  assertEquals(writes.filter((w) => w.table === "zad_shopping_list").map((w) => w.op), ["door:update"]);
+  assertEquals(writes.filter((w) => w.table === "agent_actions" && w.row.target_id === "l1").length, 1);
 });
