@@ -4,8 +4,7 @@
 alter table public.zad_inventory add column if not exists low_stock_threshold numeric,
   add column if not exists restock_mode text, add column if not exists restock_cycle_days int,
   add column if not exists opened_life_days int;
-create table public.zad_shopping_list (id uuid primary key default gen_random_uuid(), user_id uuid, family_id uuid,
-  item_name text, quantity numeric, is_purchased boolean default false, created_at timestamptz default now());
+-- zad_shopping_list: commit_intent_shopping_scaffold.sql (قبل مايجريشن القايمة).
 create table public.agent_actions (id uuid primary key default gen_random_uuid(), user_id uuid, run_id uuid, source text,
   tool_name text, input jsonb, target_table text, target_id uuid, previous_state jsonb, new_state jsonb, status text,
   result_summary text, created_at timestamptz default now());

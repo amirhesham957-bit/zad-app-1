@@ -1912,6 +1912,29 @@ async function householdName(sb: SupabaseClient, userId: string, name: string): 
 }
 
 /**
+ * سطور كتير للقايمة (النواقص، العزومة) من الباب، سطر سطر (م٢.٥). مفتاح التكرار فيه اسم السطر، فنفس النداء مرتين
+ * في اللفة مابيكررش ولا سطر. بيرجّع اللي اتضاف فعلاً، وأول رفض لو مفيش ولا سطر اتضاف.
+ */
+async function addLinesThroughDoor(
+  sb: SupabaseClient, userId: string, scope: AuditScope, tool: string, input: unknown,
+  lines: Array<{ item_name: string; quantity: number }>,
+): Promise<{ added: Array<{ id: string | null; item_name: string; quantity: number }>; refusal: string | null }> {
+  const added: Array<{ id: string | null; item_name: string; quantity: number }> = [];
+  let refusal: string | null = null;
+  for (const line of lines) {
+    const r = await commitIntent(sb, userId, scope, tool, { input, line: line.item_name }, "shopping.added", {
+      item_name: line.item_name, quantity: line.quantity,
+    });
+    if (!r.ok) {
+      refusal ??= refusalText(r.reason);
+      continue;
+    }
+    if (!r.duplicate) added.push({ id: r.rowId, item_name: line.item_name, quantity: r.after ?? line.quantity });
+  }
+  return { added, refusal };
+}
+
+/**
  * «اشتريت X» بيشطب X من قايمة البيت (الموجة ٥، ٢٠٢٦-١٠-١١). الفاتورة من التطبيق كانت بتعمل كده
  * (intakeIntoPantry)، لكن الشات وصورة الفاتورة في تليجرام (الاتنين بيعدّوا على add_inventory_item)
  * كانوا بيزوّدوا المخزن ويسيبوا السطر مفتوح — فالعقل يفضل يفكّر العميل بحاجة اشتراها.
@@ -1932,11 +1955,14 @@ async function tickBoughtLine(
     .filter((l) => samePantryItem(l.item_name, itemName));
   const line = pickInventoryRow(lines, userId, familyId);
   if (!line) return null;
-  const { error: upErr } = await sb.from("zad_shopping_list").update({ is_purchased: true }).eq("id", line.id);
-  if (upErr) {
-    console.error("[add_inventory_item] list tick failed:", upErr.message);
+  // من الباب (م٢.٥). رفض الباب متسجل هناك؛ هنا الشطب بس مابيحصلش والإضافة اللي حصلت بتفضل.
+  const ticked = await commitIntent(sb, userId, scope, "complete_shopping_item",
+    { via: "add_inventory_item", item_id: line.id }, "shopping.completed", { item_id: line.id });
+  if (!ticked.ok) {
+    console.error("[add_inventory_item] list tick refused:", ticked.reason);
     return null;
   }
+  if (ticked.duplicate) return null;
   await recordAction(sb, userId, scope, {
     tool: "complete_shopping_item", input: { item_name: line.item_name, via: "add_inventory_item" },
     table: "zad_shopping_list", targetId: line.id, previous: { is_purchased: false }, next: { is_purchased: true },
@@ -2403,20 +2429,21 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       ) as { id: string; quantity: number } | undefined;
 
       if (match) {
-        // نفس الصنف مطلوب تاني قبل ما يتشترى = كمية أكبر، مش سطر تاني في القايمة.
-        const merged = (match.quantity ?? 1) + (Number(input.quantity) || 1);
-        // بـid بس: الصف ممكن يكون باسم فرد تاني في البيت، واتقرا من قايمة البيت فوق. فلتر
-        // user_id هنا كان هيعدّي من غير ما يلاقي حاجة ويقول «الكمية بقت…» كدب.
-        const { error: upErr } = await sb.from("zad_shopping_list")
-          .update({ quantity: merged }).eq("id", match.id);
-        if (upErr) return `فشل التعديل: ${upErr.message}`;
-        return `"${itemName}" كان في القايمة أصلاً — الكمية بقت ${merged}`;
+        // نفس الصنف مطلوب تاني قبل ما يتشترى = كمية أكبر، مش سطر تاني في القايمة. من الباب (م٢.٥) بـid السطر:
+        // الصف ممكن يكون باسم فرد تاني في البيت، والجمع على الكمية المقفولة وقت الكتابة.
+        const merged = await commitIntent(sb, userId, scope, name, input, "shopping.added", {
+          item_id: match.id, item_name: itemName, quantity: Number(input.quantity) || 1,
+        });
+        if (!merged.ok) return refusalText(merged.reason);
+        if (merged.duplicate) return DUPLICATE_REPLY;
+        return `"${itemName}" كان في القايمة أصلاً — الكمية بقت ${merged.after}`;
       }
 
-      const { error } = await sb.from("zad_shopping_list").insert({
-        user_id: userId, item_name: itemName, quantity: input.quantity, is_purchased: false,
+      const added = await commitIntent(sb, userId, scope, name, input, "shopping.added", {
+        item_name: itemName, quantity: input.quantity,
       });
-      if (error) return `فشل الإضافة: ${error.message}`;
+      if (!added.ok) return refusalText(added.reason);
+      if (added.duplicate) return DUPLICATE_REPLY;
       return "اتضافت لقائمة التسوق";
     }
     case "update_inventory_qty": {
@@ -3234,11 +3261,13 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       const { data: open } = await sb.from("zad_shopping_list").select("*").or(householdFilter(userId, familyId)).eq("item_name", itemName).eq("is_purchased", false);
       const before = pickInventoryRow(open as any[], userId, familyId);
       if (!before) return `مرفوض: "${itemName}" مش موجود في قائمة التسوق المفتوحة.`;
-      const w = await writeRows(sb.from("zad_shopping_list").update({ is_purchased: true }).eq("id", before.id).select("id,is_purchased"), "إتمام شراء");
-      if (!w.ok) return `مرفوض: ${w.reason}`;
+      const ticked = await commitIntent(sb, userId, scope, name, input, "shopping.completed", { item_id: before.id });
+      if (!ticked.ok) return refusalText(ticked.reason);
+      if (ticked.duplicate) return DUPLICATE_REPLY;
+      const after = { id: before.id, is_purchased: true };
       ctx.mutationCount++;
-      ctx.mutations.push({ tool: name, old: before, new: w.rows[0] });
-      await recordAction(sb, userId, scope, { tool: name, input, table: "zad_shopping_list", targetId: before.id, previous: before, next: w.rows[0] });
+      ctx.mutations.push({ tool: name, old: before, new: after });
+      await recordAction(sb, userId, scope, { tool: name, input, table: "zad_shopping_list", targetId: before.id, previous: before, next: after });
       return `اتشطب "${itemName}" من قائمة التسوق`;
     }
     case "delete_shopping_item": {
@@ -3247,8 +3276,10 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       const { data: rows } = await sb.from("zad_shopping_list").select("*").or(householdFilter(userId, familyId)).eq("item_name", itemName);
       const before = pickInventoryRow(rows as any[], userId, familyId);
       if (!before) return `مرفوض: "${itemName}" مش موجود في قائمة التسوق.`;
-      const w = await writeRows(sb.from("zad_shopping_list").delete().eq("id", before.id).select("id"), "حذف من التسوق");
-      if (!w.ok) return `مرفوض: ${w.reason}`;
+      // من الباب (م٢.٥): الحدث شايل الصف كامل، وتريجر zad_trash بيحفظه للتراجع.
+      const gone = await commitIntent(sb, userId, scope, name, input, "shopping.deleted", { item_id: before.id });
+      if (!gone.ok) return refusalText(gone.reason);
+      if (gone.duplicate) return DUPLICATE_REPLY;
       ctx.mutationCount++;
       ctx.mutations.push({ tool: name, old: before, new: null });
       await recordAction(sb, userId, scope, { tool: name, input, table: "zad_shopping_list", targetId: before.id, previous: before, next: null });
@@ -4514,15 +4545,12 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       if (name === "plan_gathering") return JSON.stringify(plan);
       const rows = gatheringListRows(plan, Array.isArray(input.skip) ? input.skip.map(String) : []);
       if (rows.length === 0) return "مفيش حاجة تتضاف — كل سطور العزومة في القايمة أو العميل قال عنده منها.";
-      const w = await writeRows(
-        sb.from("zad_shopping_list").insert(rows.map((r) => ({ ...r, user_id: userId, is_purchased: false }))).select("id,item_name,quantity"),
-        "إضافة سطور العزومة",
-      );
-      if (!w.ok) return `مرفوض: ${w.reason}`;
+      const put = await addLinesThroughDoor(sb, userId, scope, name, input, rows);
+      if (put.added.length === 0) return put.refusal ?? DUPLICATE_REPLY;
       ctx.mutationCount++;
-      ctx.mutations.push({ tool: name, old: null, new: { rows: rows.length } });
-      await recordAction(sb, userId, scope, { tool: name, input, table: "zad_shopping_list", targetId: null, previous: null, next: w.rows });
-      return `اتضاف لقايمة التسوق: ${rows.map((r) => r.item_name).join("، ")}`;
+      ctx.mutations.push({ tool: name, old: null, new: { rows: put.added.length } });
+      await recordAction(sb, userId, scope, { tool: name, input, table: "zad_shopping_list", targetId: null, previous: null, next: put.added });
+      return `اتضاف لقايمة التسوق: ${put.added.map((r) => r.item_name).join("، ")}`;
     }
     case "set_sleep_window": {
       // إيقاع النوم يدوي (الشريحة ٣٧): نفس قواعد zad_set_sleep_window — اليدوي بيكسب المتعلّم، و«امسح» يرجّع ١١–٧.
@@ -4596,15 +4624,14 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       const toAdd = lowStockToAdd(pantry, (openShop ?? []).map((r: { item_name: string | null }) => r.item_name),
         Array.isArray(occasional) ? (occasional as string[]) : [], isDue);
       if (toAdd.length === 0) return "status=nothing — مفيش نواقص مش على القايمة.";
-      const w = await writeRows(
-        sb.from("zad_shopping_list").insert(toAdd.map((item_name) => ({ user_id: userId, item_name, quantity: 1 }))).select("id,item_name"),
-        "إضافة النواقص للقايمة",
-      );
-      if (!w.ok) return `مرفوض: ${w.reason}`;
+      // من الباب (م٢.٥)، سطر سطر: السطر المرفوض بيتسجل سببه هناك والباقي بيكمل.
+      const put = await addLinesThroughDoor(sb, userId, scope, name, input, toAdd.map((item_name) => ({ item_name, quantity: 1 })));
+      if (put.added.length === 0) return put.refusal ?? DUPLICATE_REPLY;
+      const items = put.added.map((r) => r.item_name);
       ctx.mutationCount++;
-      ctx.mutations.push({ tool: name, old: null, new: { items: toAdd } });
-      await recordAction(sb, userId, scope, { tool: name, input, table: "zad_shopping_list", targetId: null, previous: null, next: { items: toAdd } });
-      return `status=added items=${toAdd.join("، ")}`;
+      ctx.mutations.push({ tool: name, old: null, new: { items } });
+      await recordAction(sb, userId, scope, { tool: name, input, table: "zad_shopping_list", targetId: null, previous: null, next: { items } });
+      return `status=added items=${items.join("، ")}`;
     }
     case "snooze_pharmacy_dose": {
       // ZAD_PLAN ١٠.٢(أ): «فكّرني بعدين» بالكلام. الكتابة من doseDoor.ts بس (one_writer_test).

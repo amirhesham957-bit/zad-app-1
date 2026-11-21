@@ -102,5 +102,28 @@ const r11 = await runTool(sb, AMIR, "delete_inventory_item", { item_name: "لب�
 check(r11.startsWith("مرفوض"), "delete again: nothing left to delete", r11);
 check(await count("zad_events", { user_id: AMIR, kind: "inventory.deleted" }) === 1, "delete again: no second event");
 
+// ١٠) القايمة: «ضيف ٢ عيش» مرتين في نفس اللفة، ثم «اشتريت عيش» (بيشطبه)، ثم «ضيف زيت» و«شيل الزيت».
+const lines = async (name: string) =>
+  ((await sb.from("zad_shopping_list").select("quantity,is_purchased").eq("user_id", AMIR).eq("item_name", name)).data ?? []);
+const s1 = await runTool(sb, AMIR, "add_shopping_item", { item_name: "عيش", quantity: 2 }, { stock: [] }, freshContext(AMIR), run2);
+check(s1.includes("اتضافت"), "list add: reply", s1);
+const s2 = await runTool(sb, AMIR, "add_shopping_item", { item_name: "عيش", quantity: 2 }, { stock: [] }, freshContext(AMIR), run2);
+check(s2.includes("اتنفذ قبل كده"), "list add again in the turn: duplicate", s2);
+check(JSON.stringify(await lines("عيش")) === JSON.stringify([{ quantity: 2, is_purchased: false }]), "list: one line of 2", await lines("عيش"));
+const run3 = { source: "app_chat", runId: crypto.randomUUID() } as const;
+const s3 = await runTool(sb, AMIR, "add_inventory_item", { item_name: "عيش", quantity: 10, unit: "رغيف", category: "البقالة" }, { stock: [] }, freshContext(AMIR), run3);
+check(s3.includes("اتشطب"), "bought: the list line is ticked", s3);
+check((await lines("عيش"))[0]?.is_purchased === true, "bought: line marked purchased");
+check(await count("zad_events", { user_id: AMIR, kind: "shopping.completed" }) === 1, "bought: tick event");
+await runTool(sb, AMIR, "add_shopping_item", { item_name: "زيت", quantity: 1 }, { stock: [] }, freshContext(AMIR), run3);
+const s4 = await runTool(sb, AMIR, "delete_shopping_item", { item_name: "زيت" }, { stock: [] }, freshContext(AMIR), run3);
+check(s4.includes("اتحذف"), "list delete: reply", s4);
+check((await lines("زيت")).length === 0, "list delete: line gone");
+check(await count("zad_events", { user_id: AMIR, kind: "shopping.deleted" }) === 1, "list delete: event");
+const g0 = await count("zad_guard_events", { user_id: AMIR });
+const s5 = await runTool(sb, AMIR, "add_shopping_item", { item_name: "بيض", quantity: 500 }, { stock: [] }, freshContext(AMIR), run3);
+check(s5.startsWith("مرفوض") && (await lines("بيض")).length === 0, "list refuse: 500 eggs not written", s5);
+check(await count("zad_guard_events", { user_id: AMIR }) === g0 + 1, "list refuse: logged in zad_guard_events");
+
 console.log(failed === 0 ? "e2e: all checks passed" : `e2e: ${failed} FAILED`);
 Deno.exit(failed === 0 ? 0 : 1);

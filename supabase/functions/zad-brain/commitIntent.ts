@@ -10,7 +10,8 @@ import { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import type { AuditScope } from "./audit.ts";
 
 export type IntentKind =
-  | "inventory.added" | "inventory.consumed" | "inventory.quantity_set" | "inventory.deleted" | "inventory.restock_mode_set";
+  | "inventory.added" | "inventory.consumed" | "inventory.quantity_set" | "inventory.deleted" | "inventory.restock_mode_set"
+  | "shopping.added" | "shopping.completed" | "shopping.deleted";
 export type IntentSource = "manual" | "receipt" | "bank" | "model" | "cron";
 
 export type CommitResult =
@@ -76,6 +77,7 @@ const REASONS: Record<string, string> = {
   amount_invalid: "الكمية المستعملة لازم تكون أكبر من صفر",
   amount_too_large: "الكمية المستعملة كبيرة بشكل مش منطقي",
   restock_mode_unknown: "النوع يا staple يا occasional",
+  already_purchased: "السطر ده اتشطب من القايمة قبل كده",
 };
 
 /** سبب الرفض بالعربي للموديل (والكود الأصلي بين قوسين للتشخيص). */
