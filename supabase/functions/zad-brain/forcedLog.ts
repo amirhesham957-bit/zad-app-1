@@ -30,6 +30,13 @@ const NOT_A_LOG = /(ضيف|اضف|ذكرني|فكرني|الساعه|حول|حو
  */
 const REFUSAL_SHAPE = /[0-9٠-٩]{9,}|(^|\s)(cvv|otp|pin|باسورد|الباسورد|كلمه السر|الرقم السري|كود|رقم الكارت|رقم البطاقه|رقم الحساب)(\s|$)|مزور|تزوير|زور|(^|\s)(احفظ|احفظلي|احفظ لي|اعملي|اعمللي|اعمل لي|اطلعلي|طلعلي)(\s|$)/;
 
+/**
+ * نية مش مصروف: «هشتري موبايل جديد بـ20 ألف جنيه النهارده كاش» (فحص القبول ٢١/١١) اتجبر log_transaction عليها،
+ * والرد بقى «مصروف: 20000 — أكّد» بدل ما يراجعه بأرقام الميزانية. المستقبل («هـ/حـ» قبل الفعل) والنية والتفكير
+ * مش حاجة اتصرفت؛ الموديل يرد عليها بكلامه.
+ */
+const FUTURE_INTENT = /(^|\s)(ه|ح|هن|حن)(شتري|جيب|دفع|صرف|طلب|حجز|سدد)(\s|$)|(^|\s)(ناوي|ناويه|نويت|بفكر|بخطط|هقبض|حقبض)(\s|$)/;
+
 /** كمية أو مدة أو سن مش سعر: «رز 3 كيلو»، «ابني 7 سنين»، «اجازة 3 ايام». */
 const NOT_A_PRICE = /(كيلو|كيلوجرام|كجم|جرام|جم|لتر|علبه|علب|قطعه|قطع|حبه|حبات|كرتونه|كراتين|باكو|بواكي|كيس|اكياس|سنه|سنين|سنوات|يوم|ايام|ساعه|ساعات|دقيقه|دقايق|شهور|اسبوع|مره|مرات|نفر|افراد|عيال|x\s*[0-9٠-٩])/;
 /** ساعة مش سعر: «مش هنام دلوقتي هنام علي 12» (٨/١١) اتقرت مصروف، والموديل جاب ٥٠ جنيه بقالة من تاريخ المحادثة. */
@@ -56,7 +63,7 @@ export function bareMoneyLog(message: string): boolean {
 /** اللفة دي تستاهل محاولة إجبار log_transaction؟ [reply] = رد الموديل (أو رد الحارس). */
 export function wantsForcedLog(message: string, reply: string): boolean {
   const m = normalize(message ?? "");
-  if (!m || m.length > 160 || !AMOUNT.test(m) || QUESTION.test(m) || NOT_A_LOG.test(m) || REFUSAL_SHAPE.test(m)) return false;
+  if (!m || m.length > 160 || !AMOUNT.test(m) || QUESTION.test(m) || NOT_A_LOG.test(m) || REFUSAL_SHAPE.test(m) || FUTURE_INTENT.test(m)) return false;
   return MONEY_VERB.test(m) || bareMoneyLog(message) || REPLY_OFFERS_LOG.test(normalize(reply ?? ""));
 }
 
