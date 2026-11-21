@@ -122,6 +122,7 @@ import { INITIATIVE_RULE, childToneBlock, conversationProfile, dropServiceCloser
 import { dialectPromptBlock, dialectReminder } from "../_shared/dialect.ts";
 import { customerCard, IDENTITY_MEMORY_SCOPES, identityOverwrites, sanitizeProfilePatch } from "../_shared/customerProfile.ts";
 import { rateConfidence } from "../_shared/consumptionRate.ts";
+import { type LevelReading, pantryForecast } from "../_shared/or/pantryForecast.ts";
 import { buildGroqSystemPrompt, groqToolOrder } from "./groqPrompt.ts";
 import { ANSWER_FROM_RESULTS_NOTE, historyForAnswer, isWrite, needsAnswerAfterTools, recordCall, silentWriteFallback, visibleReceipts } from "./receipts.ts";
 import { decideGate, GATE_RESPONSE_SCHEMA, gatePrompt, type GateVerdict, knownFinancialSender, looksLikeMoneyMoved, parseGateVerdict, proposalFieldsFromVerdict, proposalTitle, ruleGate, txnKindFor } from "./notificationGate.ts";
@@ -919,6 +920,8 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
       .eq("user_id", userId).gte("scheduled_at", new Date(Date.now() - 14 * 86400000).toISOString())),
     restock: prefetch(loadRestockVerdicts(sb, userId, householdFamily).catch(() => null)),
     prior: prefetch(sb.rpc("zad_pantry_prior_days_for", { p_user: userId })),
+    // م٣.١: قرايات البيت والمعدل المبدئي لكل صنف ⇐ TSB ونطاق للأيام الباقية (pantryForecast.ts).
+    forecastInputs: prefetch(sb.rpc("zad_pantry_forecast_inputs", { p_user: userId })),
     appointments: prefetch(sb.from("zad_appointments")
       .select("id,title,kind,starts_at,place_label,remind_minutes_before,recurrence,for_person,expected_cost")
       .eq("user_id", userId).eq("status", "upcoming")
@@ -1410,8 +1413,18 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
       .filter((r) => r.days_left !== null && Number.isFinite(Number(r.days_left)))
       .map((r) => [r.item_name, Number(r.days_left)]),
   );
+  // م٣.١: فشل القراية = الصفوف من غير forecast، زي ما كانت.
+  const { data: forecastRows, error: forecastErr } = await early.forecastInputs;
+  if (forecastErr) console.error("[snapshot] zad_pantry_forecast_inputs failed:", forecastErr.message);
+  const forecastByItem = new Map(
+    (Array.isArray(forecastRows)
+      ? forecastRows as Array<{ item_name: string; quantity: number | string; prior_daily: number | string | null; readings: LevelReading[] | null }>
+      : [])
+      .map((r) => [r.item_name, pantryForecast(Number(r.quantity), r.readings ?? [], Number(r.prior_daily ?? 0), Date.now())]),
+  );
   const stock = (invRes.data ?? []).map((item) => {
     const cons = consumptionByItem[item.item_name];
+    const tsb = forecastByItem.get(item.item_name);
     let confidence: string = rateConfidence(cons?.avgDailyQty, cons?.rateKnown);
     let daysLeft: number | null = confidence === "unknown" ? null : item.quantity / cons!.avgDailyQty;
     if (daysLeft === null && priorDays.has(item.item_name)) {
@@ -1433,6 +1446,11 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
     }
     return {
       name: item.item_name, qty: item.quantity, unit: item.unit, daysLeft, confidence, rateKnown: cons?.rateKnown ?? false,
+      // م٣.١: معدل TSB في اليوم ونطاقه (٩٠٪)، والأيام الباقية من الأقل للأكتر. basis: prior = تقدير مبدئي من حجم
+      // البيت بس، blended = أقل من ١٤ يوم قرايات، observed = من البيت نفسه. مش موجود لما مفيش ولا قراية ولا معدل مبدئي.
+      ...(tsb && tsb.rate > 0
+        ? { forecast: { rate: tsb.rate, low: tsb.low, high: tsb.high, basis: tsb.basis, days_left_low: tsb.daysLeftLow, days_left_high: tsb.daysLeftHigh } }
+        : {}),
       ...(open ? { openedDaysAgo: open.daysAgo } : {}),
     };
   });
@@ -9760,7 +9778,8 @@ ${snap?.asked_this_morning ? `   - **asked_this_morning** (لو مش null) = ا�
 ${INITIATIVE_RULE}   - طابق درجة الرسمية والمفردات مع أسلوب المستخدم، ولا تحشر تعبيرات محلية في كل جملة.
    - ${voiceModeInstruction(voiceMode, snap?.customer?.zad_voice)}
 2ب. **واعي بالبيت وبالبلد**:
-${Array.isArray(snap?.stock_totals) && snap.stock_totals.length > 0 ? `   - **stock_totals** = سلعة ليها كذا ماركة (مية، رز، سكر…): اتكلم عن **الإجمالي** («عندك ٨ إزايز مية»)، مش عن ماركة واحدة كأنها كل اللي في البيت.
+${Array.isArray(snap?.stock) && (snap.stock as Array<{ forecast?: unknown }>).some((s) => s.forecast) ? `   - **stock[].forecast** = تنبؤ الصنف بنطاق: لو سألك «هيخلص امتى» قول النطاق بأرقامه (days_left_low لـdays_left_high يوم)، مش رقم واحد. basis=prior أو blended ⇒ قول إنه «تقدير مبدئي» بيتظبط مع كل مرة يقولك فاضل قد إيه.
+` : ""}${Array.isArray(snap?.stock_totals) && snap.stock_totals.length > 0 ? `   - **stock_totals** = سلعة ليها كذا ماركة (مية، رز، سكر…): اتكلم عن **الإجمالي** («عندك ٨ إزايز مية»)، مش عن ماركة واحدة كأنها كل اللي في البيت.
 ` : ""}   - العميل في **country** من الـSNAPSHOT وعملته **currency**: اقترح ماركات ومحلات ومنتجات موجودة في البلد دي بالظبط، والأسعار بعملته — متقترحش منتج أو محل مش موجود هناك.
    - أي سؤال عن **أسعار السوق دلوقتي، ترندات، أخبار، أو معلومة عامة** مش في بيانات البيت ⇒ نادِ الأداة قبل ما ترد: **gold_price** للدهب، **fetch_current_exchange_rate** للعملات، و**web_search** لأي حاجة تانية. ابدأ ردك بالإجابة نفسها (الرقم أو الاسم) ومعاها المصدر. متقولش «معنديش إنترنت».
 3. **الإحساس والكتابة**:
