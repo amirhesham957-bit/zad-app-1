@@ -4441,6 +4441,9 @@ class ZadL10nEn extends ZadL10n {
   String get agentToolDeleteMemory => 'Forgot a note';
 
   @override
+  String get agentToolRestoreDeleted => 'Brought back something deleted';
+
+  @override
   String get agentToolMarkSubscriptionPaid => 'Paid a subscription';
 
   @override

@@ -127,6 +127,12 @@ void main() {
     final en = lookupZadL10n(const Locale('en'));
     expect(agentToolLabel('rate_recipe', en), 'Rated a recipe');
     expect(agentToolLabel('rate_recipe'), 'رأيك في وصفة');
+    // ZAD_OR_PLAN M1.6: the brain's restore from the trash.
+    expect(agentToolLabel('restore_deleted'), 'رجّع حاجة اتمسحت');
+    expect(
+      agentToolLabel('restore_deleted', en),
+      'Brought back something deleted',
+    );
     // The older labels are untouched by the language.
     expect(agentToolLabel('log_transaction', en), 'تسجيل معاملة');
   });

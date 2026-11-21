@@ -8,6 +8,7 @@
 //   اللي بيخلي "مين عالج الرسالة دي" مثبت في الداتابيز مش ادعاء.
 // - الأدوات نفسها بتتحقق في validators.ts زي ما هي — التوجيه ما بيغيرش صلاحيات.
 
+import { RESTORE_INTENT } from "./restoreDeleted.ts";
 import { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { bareMoneyLog } from "./forcedLog.ts";
 
@@ -298,6 +299,8 @@ export function intentToolHints(message: string, priorReply = ""): string[] {
   if (SLEEP_INTENT.test(norm)) tools.push("set_sleep_window");
   if (APP_SETTING_INTENT.test(norm)) tools.push("set_app_setting");
   if (FORGET_INTENT.test(norm)) tools.push("delete_memory", "remember");
+  // ZAD_OR_PLAN م١.٦: «رجّع اللي اتمسح» — من سلة zad_trash (restoreDeleted.ts).
+  if (RESTORE_INTENT.test(norm)) tools.push("restore_deleted");
   if (FAMILY_SHARE_INTENT.test(norm)) tools.push("share_memory_with_family");
   if (GOAL_PROGRESS_INTENT.test(norm) || (GOAL_PROGRESS_ASKED.test(normalize(priorReply)) && /[0-9٠-٩]/.test(norm))) {
     tools.push("add_goal_progress");

@@ -53,6 +53,7 @@
 // Validators (Task 16.1/16.2) live in validators.ts — untouched, still the sole gate
 // before any tool executes. Model adapter (STEP 0) lives in callModel.ts.
 
+import { restorableRow, restoreError, TRASH_DAYS, trashLabel, trashList, type TrashRow } from "./restoreDeleted.ts";
 import { qtyFromFraction } from "./readingFraction.ts";
 import { purchaseToolReply, toolPurchaseLines } from "./purchaseDoor.ts";
 import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
@@ -4710,6 +4711,33 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       await recordAction(sb, userId, scope, { tool: name, input, table: "zad_memory", targetId: memoryId, previous: before, next: null });
       return `status=deleted — اتنسيت: «${String((before as { note?: string }).note ?? "").slice(0, 80)}»`;
     }
+    case "restore_deleted": {
+      // ZAD_OR_PLAN م١.٦: من سلة zad_trash. العقل شغال بـservice_role وzad_trash_restore مابيفحصش الملكية من غير
+      // auth.uid()، فصف السلة بيتقرا بـuser_id العميل وrestorableRow بيرفض أي حاجة مش بتاعته قبل النداء.
+      const SELECT_TRASH = "id,table_name,row_id,user_id,row_data,deleted_at,restored_at";
+      const trashId = Number(input.trash_id);
+      if (!Number.isInteger(trashId) || trashId <= 0) {
+        const { data: rows, error: listErr } = await sb.from("zad_trash").select(SELECT_TRASH)
+          .eq("user_id", userId).is("restored_at", null)
+          .gte("deleted_at", new Date(Date.now() - TRASH_DAYS * 86_400_000).toISOString())
+          .order("deleted_at", { ascending: false }).limit(10);
+        if (listErr) return `مرفوض: مقدرتش أقرا السلة (${listErr.message})`;
+        return trashList((rows ?? []) as TrashRow[]);
+      }
+      const { data: trashRow } = await sb.from("zad_trash").select(SELECT_TRASH)
+        .eq("id", trashId).eq("user_id", userId).maybeSingle();
+      const refused = restorableRow(trashRow as TrashRow | null, userId, Date.now());
+      if (refused) return `مرفوض: ${refused}`;
+      const t = trashRow as TrashRow;
+      const { data: res, error: restoreErr } = await sb.rpc("zad_trash_restore", { p_id: trashId });
+      if (restoreErr) return `مرفوض: ${restoreErr.message}`;
+      const r = (res ?? {}) as { ok?: boolean; error?: string };
+      if (!r.ok) return `مرفوض: ${restoreError(r.error)}`;
+      ctx.mutationCount++;
+      ctx.mutations.push({ tool: name, old: null, new: t.row_data });
+      await recordAction(sb, userId, scope, { tool: name, input, table: t.table_name, targetId: t.row_id, previous: null, next: t.row_data });
+      return `status=restored — رجع ${trashLabel(t)}`;
+    }
     case "share_memory_with_family": {
       // ١٠.٢(ج): الكتابة كلها في zad_memory_share_with_family — صاحب الملاحظة بس، ومش حساب طفل، وفي عيلة فيها حد تاني.
       const memoryId = String(input.memory_id);
@@ -6650,6 +6678,18 @@ export const CHAT_TOOLS: ToolDef[] = [
       type: "object",
       properties: { memory_id: { type: "string", description: "id الملاحظة من memory" } },
       required: ["memory_id"],
+    },
+  },
+  {
+    name: "restore_deleted",
+    description:
+      "رجّع حاجة اتمسحت من حاجة العميل (حركة فلوس، صنف مخزن أو قايمة، دوا، اشتراك، دين، التزام، صيانة، مستند، ميعاد، " +
+      "ملاحظة، ميزانية فئة) لما **يطلب** يرجّعها («رجّعلي اللي اتمسح»، «الميعاد اتمسح بالغلط»). من غير trash_id بترجع قايمة " +
+      "باللي اتمسح في آخر ٣٠ يوم كل سطر بـtrash_id؛ لو فيه أكتر من حاجة ممكن يقصدها اسأله أنهي واحدة. بالـtrash_id بترجّعها بنفس بياناتها. " +
+      "ماتخترعش trash_id: لازم يكون من القايمة.",
+    input_schema: {
+      type: "object",
+      properties: { trash_id: { type: "integer", description: "trash_id من القايمة. فاضي = اعرض القايمة." } },
     },
   },
   {
