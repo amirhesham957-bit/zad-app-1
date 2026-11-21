@@ -274,6 +274,8 @@ export const validateRemember: Validator = (input, snap, ctx) => {
   if ((ctx.counts["remember"] ?? 0) >= 3) return { ok: false, reason: "وصلت لحد أقصى ٣ ملاحظات في المرة" };
   // جواب «صح؟» على ملاحظة حساسة مستنية: الملاحظة نفسها في الصف، والـid بس اللي يهم.
   if (input.pending_id) return { ok: true };
+  // م٩.٢: pause_note_id من غير valid_until = العادة المتوقفة رجعت، والـid بس اللي يهم.
+  if (input.pause_note_id && !(typeof input.valid_until === "string" && input.valid_until.trim())) return { ok: true };
   const len = (input.note ?? "").length;
   if (len < 10) return { ok: false, reason: "الملاحظة قصيرة أوي" };
   if (len > 200) return { ok: false, reason: "طويلة أوي، لخّصها في جملة" };

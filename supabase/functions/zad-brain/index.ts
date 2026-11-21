@@ -146,6 +146,7 @@ import { type GatheringMeal, gatheringListRows, gatheringPlan } from "./gatherin
 import { daysLeft, DOCUMENT_KINDS, type DocumentKind, documentName, type DocumentRow, KIND_NAMES } from "./documents.ts";
 import { ASKED_RELEVANT_MS, askedThisMorning } from "./curiosity.ts";
 import { type PersonTxn, spendByPerson } from "./spendByPerson.ts";
+import { conflictAction, type HouseholdMember, memberIdFor, memoryTimeRefusal, temporalFields } from "./memoryTime.ts";
 import { PENDING_TTL_MS, pendingAnswerable, SENSITIVE_TOPIC_LABEL, type SensitiveTopic, sensitiveTopic } from "./sensitiveMemory.ts";
 import { type ForwardLedger, simulatePurchase } from "./whatIf.ts";
 import { goalPace, stepPerWeek } from "./goalPace.ts";
@@ -599,6 +600,8 @@ type MemoryRow = {
   last_seen: string | null; valid_until?: string | null; about?: string[] | null;
   /** ١٠.٢(ج): ملاحظة شاركها فرد تاني في العيلة — اسمه، و«العميل» فيها = هو. */
   shared_by?: string;
+  /** م٩.٢ (20261122150000): العادة متوقفة لحد، والفرد اللي الحقيقة عنه. */
+  paused_until?: string | null; member?: string | null;
 };
 
 /** شكل الملاحظة في الـSNAPSHOT: «until» و«about» بس لو ليهم قيمة. */
@@ -609,6 +612,7 @@ export function memoryForSnapshot(m: MemoryRow) {
     ...(m.valid_until ? { until: String(m.valid_until).slice(0, 10) } : {}),
     ...(m.about && m.about.length ? { about: m.about } : {}),
     ...(m.shared_by ? { shared_by: m.shared_by } : {}),
+    ...temporalFields(m),
   };
 }
 
@@ -2301,6 +2305,40 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
         return "اتحفظت بعد ما العميل أكّد";
       }
 
+      // م٩.٢: «رجع الجيم» قبل المعاد — العادة بتشتغل تاني وملاحظة السبب بتتقفل.
+      if (input.pause_note_id && !validUntil) {
+        const { data: res, error: resErr } = await sb.rpc("zad_memory_resume", { p_user: userId, p_note: input.pause_note_id });
+        if (resErr) return `فشل الحفظ: ${resErr.message}`;
+        if (!(res as { ok?: boolean })?.ok) return memoryTimeRefusal((res as { reason?: string })?.reason);
+        return "رجّعت العادة شغالة، وسبب الإيقاف بقى تاريخ";
+      }
+      // م٩.٢: «أحمد وقف الجيم أسبوع» — العادة بتتوقف لحد valid_until (مش بتتقفل)، وnote = السبب.
+      if (input.pause_note_id && validUntil) {
+        if (sensitiveTopic(input.note)) return "مرفوض: السبب فيه تفصيلة حساسة — اكتبه من غيرها («وقف الجيم أسبوع»).";
+        const { data: res, error: pauseErr } = await sb.rpc("zad_memory_pause", {
+          p_user: userId, p_note: input.pause_note_id, p_until: validUntil, p_reason: input.note,
+        });
+        if (pauseErr) return `فشل الحفظ: ${pauseErr.message}`;
+        if (!(res as { ok?: boolean })?.ok) return memoryTimeRefusal((res as { reason?: string })?.reason);
+        return `وقّفت العادة لحد ${validUntil.slice(0, 10)} — بعدها بترجع لوحدها، ومش اتمسحت`;
+      }
+
+      // م٩.٢: الحقيقة عن فرد من البيت. الاسم لازم يكون في أفراد البيت، وإلا الحفظ مايحصلش.
+      let memberId: string | null = null;
+      if (typeof input.member === "string" && input.member.trim()) {
+        const { data: members } = await sb.from("zad_household_members")
+          .select("id,display_name,kind").eq("user_id", userId).is("archived_at", null).limit(30);
+        memberId = memberIdFor(input.member, (members ?? []) as HouseholdMember[]);
+        if (!memberId) {
+          return `مرفوض: «${input.member}» مش في أفراد البيت. سيب member فاضي واكتب الاسم في about، أو خلّي العميل يضيفه من «البيت».`;
+        }
+      }
+      const tagMember = async (noteId: string | null | undefined) => {
+        if (!memberId || !noteId) return;
+        const { error } = await sb.rpc("zad_memory_set_member", { p_user: userId, p_note: noteId, p_member: memberId });
+        if (error) console.warn("[memory] member not set:", error.message);
+      };
+
       // The customer already settled a conflict this tool reported last turn. The old belief
       // is closed (superseded, not deleted — having been wrong once is evidence too) and the
       // new one inherits its entities; a 'contradicts' link keeps the history visible.
@@ -2313,6 +2351,7 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
         if (!(resolved as any)?.ok) return "مرفوض: الملاحظة القديمة اللي بتشاور عليها مش موجودة.";
         const newId = (resolved as { new_id?: string }).new_id;
         if (newId && about.length) await attachEntities(sb, userId, newId, about);
+        await tagMember(newId);
         return "سجّلت الجديدة، والقديمة بقت تاريخ (اتقفلت ومربوطة بالجديدة كتناقض)";
       }
 
@@ -2359,10 +2398,25 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
         });
         const existing = clash as { id: string; note: string } | null;
         if (!existing) return "اتحفظت";
+        // م٩.١: العميل قالها في الشات دلوقتي ⇒ كلامه الأحدث هو الحسم، والقديمة بتتقفل (مش بتتمسح).
+        if (conflictAction(ctx.heard) === "supersede") {
+          const { data: resolved, error: resolveErr } = await sb.rpc("zad_memory_resolve_conflict", {
+            p_user: userId, p_old_id: existing.id, p_scope: scope, p_note: input.note, p_conf: input.confidence ?? 0.6,
+          });
+          if (resolveErr) return `فشل الحفظ: ${resolveErr.message}`;
+          const newId = (resolved as { ok?: boolean; new_id?: string })?.ok ? (resolved as { new_id?: string }).new_id : null;
+          if (newId) {
+            if (about.length) await attachEntities(sb, userId, newId, about);
+            await tagMember(newId);
+            await embedAndLinkNote(sb, userId, scope, input.note, { link: true, noteId: newId });
+            return `سجّلت الجديدة، والقديمة («${existing.note}») بقت تاريخ — اتقفلت ومربوطة بالجديدة كتناقض.`;
+          }
+        }
         return `متعارضة مع ملاحظة متخزنة: "${existing.note}". ماخزنتش حاجة. `
           + `اسأل العميل أنهي واحدة الصح دلوقتي، ولما يرد نادِ remember تاني بنفس الملاحظة `
           + `الجديدة مع replaces_note_id="${existing.id}".`;
       }
+      if (memberId) await tagMember(await liveNoteId(sb, userId, scope, input.note));
       if (data === "strengthened") return "الملاحظة موجودة — قوّيتها بدل ما أكررها";
       return validUntil ? `اتحفظت لحد ${validUntil.slice(0, 10)}` : "اتحفظت";
     }
@@ -5266,6 +5320,19 @@ const REMEMBER_ABOUT_AND_UNTIL = {
     description:
       "بس لو الحقيقة مؤقتة («أخويا عندنا لحد الجمعة»، «صايم الشهر ده»، «في إجازة الأسبوع ده»): آخر يوم ليها " +
       "YYYY-MM-DD. من غيرها الملاحظة دائمة.",
+  },
+  // م٩.٢ (memoryTime.ts): الفرد، والإيقاف المؤقت للعادة.
+  member: {
+    type: "string",
+    description:
+      "اسم فرد البيت اللي الحقيقة عنه بالظبط زي ما هو في أفراد البيت («أحمد»). فاضي لو عن العميل نفسه أو البيت كله.",
+  },
+  pause_note_id: {
+    type: "string",
+    description:
+      "id عادة من memory وقفت **مؤقتاً** («أحمد وقف الجيم أسبوع»): مع valid_until = آخر يوم في الوقفة وnote = السبب، " +
+      "والعادة بترجع لوحدها بعد التاريخ. من غير valid_until = العادة المتوقفة رجعت بدري («رجع الجيم»). " +
+      "لو وقفت خالص سجّل حقيقة جديدة بدل كده.",
   },
   // الحساس مايتحفظش غير بعد «صح؟» (ZAD_PLAN ٥.٣، sensitiveMemory.ts).
   sensitive: {
