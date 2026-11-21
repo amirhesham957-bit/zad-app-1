@@ -35,8 +35,17 @@ function fakeSb(rows: Record<string, unknown[]>) {
   };
   const sb = {
     from: (table: string) => builder(table),
-    rpc: (name: string) => {
+    rpc: (name: string, args?: { p_intent?: { kind: string; payload: Record<string, unknown> } }) => {
       rpcs.push(name);
+      // الكتابة من الباب (م٢.٥): النية بتتسجل زي الـinsert/update القديمين، والباب بيرد بالصف بعد الكتابة.
+      if (name === "zad_commit_intent") {
+        const { kind, payload } = args!.p_intent!;
+        if (kind === "appointment.added") inserts.push({ table: "zad_appointments", row: payload });
+        if (kind === "appointment.updated") updates.push({ table: "zad_appointments", patch: payload.patch });
+        const base = (rows.zad_appointments?.[0] ?? {}) as Record<string, unknown>;
+        const after = kind === "appointment.added" ? { id: "00000000-0000-0000-0000-0000000000aa", ...payload } : { ...base, ...(payload.patch as object) };
+        return Promise.resolve({ data: { ok: true, duplicate: false, row_id: after.id ?? null, payload: { ...payload, before: null, after } }, error: null });
+      }
       return Promise.resolve({ data: name === "zad_memory_recall_entities" ? [{ note: "الدكتور قال هات الأشعة" }] : null, error: null });
     },
   };

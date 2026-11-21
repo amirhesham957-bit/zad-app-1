@@ -3607,19 +3607,17 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
     }
     case "add_maintenance_item": {
       const itemName = String(input.name).trim();
-      const w = await writeRows(
-        sb.from("zad_maintenance_items").insert({
-          user_id: userId,
-          name: itemName,
-          category: input.category ? String(input.category).trim() : "عام",
-          warranty_expiry_date: input.warranty_expiry_date ?? null,
-          service_interval_days: input.service_interval_days ?? null,
-          estimated_cost: input.estimated_cost ?? 0,
-        }).select("id,name"),
-        "إضافة الجهاز",
-      );
-      if (!w.ok) return `مرفوض: ${w.reason}`;
-      const newRow = w.rows[0] as any;
+      // من الباب (م٢.٥).
+      const w = await commitIntent(sb, userId, scope, name, input, "maintenance.added", {
+        name: itemName,
+        category: input.category ? String(input.category).trim() : "عام",
+        warranty_expiry_date: input.warranty_expiry_date ?? null,
+        service_interval_days: input.service_interval_days ?? null,
+        estimated_cost: input.estimated_cost ?? 0,
+      });
+      if (!w.ok) return refusalText(w.reason);
+      if (w.duplicate) return DUPLICATE_REPLY;
+      const newRow = { id: w.rowId, name: itemName };
       ctx.mutationCount++;
       ctx.mutations.push({ tool: name, old: null, new: { name: itemName } });
       await recordAction(sb, userId, scope, {
@@ -3642,16 +3640,14 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       if (input.last_service_date !== undefined) patch.last_service_date = input.last_service_date;
       if (input.warranty_expiry_date !== undefined) patch.warranty_expiry_date = input.warranty_expiry_date;
       if (Object.keys(patch).length === 0) return "مرفوض: مفيش حاجة تتعدل — حدد تاريخ آخر صيانة أو تاريخ انتهاء الضمان.";
-      const w = await writeRows(
-        sb.from("zad_maintenance_items").update(patch).eq("id", match.id).eq("user_id", userId).select("id,name"),
-        "تعديل الجهاز",
-      );
-      if (!w.ok) return `مرفوض: ${w.reason}`;
+      const w = await commitIntent(sb, userId, scope, name, input, "maintenance.updated", { item_id: match.id, patch });
+      if (!w.ok) return refusalText(w.reason);
+      if (w.duplicate) return DUPLICATE_REPLY;
       ctx.mutationCount++;
       ctx.mutations.push({ tool: name, old: match, new: patch });
       await recordAction(sb, userId, scope, {
         tool: name, input, table: "zad_maintenance_items", targetId: match.id,
-        previous: match, next: w.rows[0],
+        previous: match, next: { id: match.id, name: match.name },
       });
       return `اتعدل "${match.name}"`;
     }
@@ -3665,11 +3661,9 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
         return a.includes(b) || b.includes(a);
       });
       if (!match) return `مرفوض: مفيش جهاز اسمه "${spoken}" عند العميل — عدّل وحاول تاني.`;
-      const w = await writeRows(
-        sb.from("zad_maintenance_items").delete().eq("id", match.id).eq("user_id", userId).select("id"),
-        "حذف الجهاز",
-      );
-      if (!w.ok) return `مرفوض: ${w.reason}`;
+      const w = await commitIntent(sb, userId, scope, name, input, "maintenance.deleted", { item_id: match.id });
+      if (!w.ok) return refusalText(w.reason);
+      if (w.duplicate) return DUPLICATE_REPLY;
       ctx.mutationCount++;
       ctx.mutations.push({ tool: name, old: match, new: null });
       await recordAction(sb, userId, scope, {
@@ -3687,14 +3681,14 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
         label: String(input.label ?? "").trim(),
         expires_on: String(input.expires_on),
       };
-      const { data: before } = await sb.from("zad_documents").select("*").eq("user_id", userId)
-        .eq("kind", row.kind).eq("holder", row.holder).eq("label", row.label).maybeSingle();
-      const w = await writeRows(
-        sb.from("zad_documents").upsert(row, { onConflict: "user_id,kind,holder,label" }).select("*"),
-        "حفظ المستند",
-      );
-      if (!w.ok) return `مرفوض: ${w.reason}`;
-      const saved = w.rows[0] as any;
+      // من الباب (م٢.٥): الصف القديم (لو موجود) بيرجع في before، والحفظ تاني بيعدّل التاريخ.
+      const w = await commitIntent(sb, userId, scope, name, input, "document.saved", {
+        kind: row.kind, holder: row.holder, label: row.label, expires_on: row.expires_on,
+      });
+      if (!w.ok) return refusalText(w.reason);
+      if (w.duplicate) return DUPLICATE_REPLY;
+      const before = (w.payload.before ?? null) as Record<string, unknown> | null;
+      const saved = (w.payload.after ?? { id: w.rowId, ...row }) as any;
       ctx.mutationCount++;
       ctx.mutations.push({ tool: name, old: before ?? null, new: { kind: row.kind, expires_on: row.expires_on } });
       await recordAction(sb, userId, scope, {
@@ -3716,11 +3710,9 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
         return `مرفوض: مش لاقي ${KIND_NAMES[kind]}${holder ? ` بتاع «${holder}»` : ""}. ` +
           (all.length ? `المسجّل: ${all.map((r) => documentName(r)).join("، ")} — اسأل العميل يقصد أنهي.` : "مفيش منه حاجة متسجلة.");
       }
-      const w = await writeRows(
-        sb.from("zad_documents").delete().eq("id", match.id).eq("user_id", userId).select("id"),
-        "حذف المستند",
-      );
-      if (!w.ok) return `مرفوض: ${w.reason}`;
+      const w = await commitIntent(sb, userId, scope, name, input, "document.deleted", { item_id: match.id });
+      if (!w.ok) return refusalText(w.reason);
+      if (w.duplicate) return DUPLICATE_REPLY;
       ctx.mutationCount++;
       ctx.mutations.push({ tool: name, old: match, new: null });
       await recordAction(sb, userId, scope, {
@@ -3807,9 +3799,8 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
         });
         if (conflicts.length) return bookingQuestion(conflicts);
       }
-      const w = await writeRows(
-        sb.from("zad_appointments").insert({
-          user_id: userId,
+      // من الباب (م٢.٥): الحساب (الوقت بتوقيت العميل، «لمين»، المصدر) هنا، والقيود والكتابة في الباب.
+      const w = await commitIntent(sb, userId, scope, name, input, "appointment.added", {
           title,
           kind: APPOINTMENT_KINDS.includes(String(input.kind)) ? String(input.kind) : "personal",
           starts_at: startsAt,
@@ -3821,11 +3812,14 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
           for_person: normalizeForPerson(input.for_person),
           // اللي العميل قاله بس (validateAddAppointment) — zad_budget_state بتحجزه لحد الميعاد.
           expected_cost: input.expected_cost == null ? null : Math.round(Number(input.expected_cost) * 100) / 100,
-        }).select("id,title,starts_at,expected_cost"),
-        "تسجيل الميعاد",
-      );
-      if (!w.ok) return `مرفوض: ${w.reason}`;
-      const row = w.rows[0] as { id: string; title: string; starts_at: string; expected_cost: number | null };
+      });
+      if (!w.ok) return refusalText(w.reason);
+      if (w.duplicate) return DUPLICATE_REPLY;
+      const after = (w.payload.after ?? {}) as { title?: string; starts_at?: string; expected_cost?: number | null };
+      const row = {
+        id: String(w.rowId), title: after.title ?? title, starts_at: after.starts_at ?? startsAt,
+        expected_cost: after.expected_cost ?? null,
+      };
       ctx.mutationCount++;
       ctx.mutations.push({ tool: name, old: null, new: { title, starts_at: startsAt } });
       await recordAction(sb, userId, scope, {
@@ -3877,17 +3871,19 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
         });
         if (conflicts.length) return bookingQuestion(conflicts, "update_appointment");
       }
-      const w = await writeRows(
-        sb.from("zad_appointments").update(patch).eq("id", id).eq("user_id", userId).select("id,title,starts_at,status,expected_cost"),
-        "تعديل الميعاد",
-      );
-      if (!w.ok) return `مرفوض: ${w.reason}`;
+      // updated_at بيحطه الباب.
+      const { updated_at: _stamp, ...doorPatch } = patch;
+      const w = await commitIntent(sb, userId, scope, name, input, "appointment.updated", { item_id: id, patch: doorPatch });
+      if (!w.ok) return refusalText(w.reason);
+      if (w.duplicate) return DUPLICATE_REPLY;
+      const a = (w.payload.after ?? {}) as Record<string, unknown>;
+      const changed = { id: a.id, title: a.title, starts_at: a.starts_at, status: a.status, expected_cost: a.expected_cost };
       ctx.mutationCount++;
       ctx.mutations.push({ tool: name, old: before, new: patch });
       await recordAction(sb, userId, scope, {
-        tool: name, input, table: "zad_appointments", targetId: id, previous: before, next: w.rows[0],
+        tool: name, input, table: "zad_appointments", targetId: id, previous: before, next: changed,
       });
-      const cost = (w.rows[0] as { expected_cost?: number | null }).expected_cost;
+      const cost = changed.expected_cost as number | null | undefined;
       const reserved = input.expected_cost === undefined ? "" : cost ? ` وحجزت ${cost} من المتاح لحد الميعاد.` : " وشلت الحجز.";
       return `تم تعديل الميعاد «${b.title}».${reserved}`;
     }
@@ -3896,11 +3892,9 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       const id = String(input.appointment_id).trim();
       const { data: before } = await sb.from("zad_appointments").select("*").eq("id", id).eq("user_id", userId).maybeSingle();
       if (!before) return "مرفوض: الميعاد ده مش موجود في مواعيد العميل — دوّر عليه بـfind_appointments وماتقولش إنك مسحته.";
-      const w = await writeRows(
-        sb.from("zad_appointments").delete().eq("id", id).eq("user_id", userId).select("id"),
-        "مسح الميعاد",
-      );
-      if (!w.ok) return `مرفوض: ${w.reason}`;
+      const w = await commitIntent(sb, userId, scope, name, input, "appointment.deleted", { item_id: id });
+      if (!w.ok) return refusalText(w.reason);
+      if (w.duplicate) return DUPLICATE_REPLY;
       ctx.mutationCount++;
       ctx.mutations.push({ tool: name, old: before, new: null });
       await recordAction(sb, userId, scope, {
