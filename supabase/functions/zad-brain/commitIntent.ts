@@ -11,11 +11,16 @@ import type { AuditScope } from "./audit.ts";
 
 export type IntentKind =
   | "inventory.added" | "inventory.consumed" | "inventory.quantity_set" | "inventory.deleted" | "inventory.restock_mode_set"
-  | "shopping.added" | "shopping.completed" | "shopping.deleted";
+  | "shopping.added" | "shopping.completed" | "shopping.deleted"
+  | "pharmacy.added" | "pharmacy.updated" | "pharmacy.deleted" | "pharmacy.dose_taken";
 export type IntentSource = "manual" | "receipt" | "bank" | "model" | "cron";
 
 export type CommitResult =
-  | { ok: true; duplicate: boolean; rowId: string | null; before: number | null; after: number | null }
+  | {
+    ok: true; duplicate: boolean; rowId: string | null; before: number | null; after: number | null;
+    /** الـpayload اللي اتكتب في الحدث (الصيدلية بتقرا منه نتيجة الجرعة). فاضي في التكرار. */
+    payload: Record<string, unknown>;
+  }
   | { ok: false; reason: string };
 
 /** JSON بترتيب مفاتيح ثابت، عشان نفس المدخل يدّي نفس المفتاح. */
@@ -62,6 +67,7 @@ export async function commitIntent(
   return {
     ok: true, duplicate: r.duplicate === true, rowId: typeof r.row_id === "string" ? r.row_id : null,
     before: num(r.before), after: num(r.after),
+    payload: r.payload && typeof r.payload === "object" ? r.payload as Record<string, unknown> : {},
   };
 }
 
@@ -78,6 +84,14 @@ const REASONS: Record<string, string> = {
   amount_too_large: "الكمية المستعملة كبيرة بشكل مش منطقي",
   restock_mode_unknown: "النوع يا staple يا occasional",
   already_purchased: "السطر ده اتشطب من القايمة قبل كده",
+  member_not_granted: "الفرد ده مش في العيلة أو مش موافق إنك تتابع أدويته",
+  patch_empty: "مفيش حاجة تتعدل",
+  patch_field_unknown: "الحقل ده مايتعدلش من هنا",
+  dose_times_invalid: "مواعيد الجرعات لازم تكون HH:MM مفصولة بفاصلة",
+  dose_count_invalid: "عدد الجرعات في اليوم من ١ لـ٢٤",
+  qty_invalid: "الكمية لازم تكون رقم صحيح من ٠ لـ١٠٠٠٠",
+  dosage_too_long: "الجرعة مكتوبة طويلة أوي",
+  dose_already_logged: "الجرعة دي متسجلة قبل كده — الكمية ماتخصمتش تاني",
 };
 
 /** سبب الرفض بالعربي للموديل (والكود الأصلي بين قوسين للتشخيص). */

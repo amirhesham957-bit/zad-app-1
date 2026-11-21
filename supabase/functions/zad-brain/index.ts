@@ -3165,17 +3165,16 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
         if (input.quantity != null) patch.remaining_quantity = input.quantity;
         if (typeof input.is_recurring === "boolean") patch.is_recurring = input.is_recurring;
         if (Object.keys(patch).length > 0) {
-          const u = await writeRows(
-            sb.from("zad_pharmacy_items").update(patch)
-              .eq("id", dupe.id).eq("user_id", medOwner).select("id,name,dose_times"),
-            "تحديث الدواء",
-          );
-          if (!u.ok) return `مرفوض: ${u.reason}`;
+          // من الباب (م٢.٥): الصف ممكن يكون في صيدلية فرد موافق، والباب بيتأكد من الموافقة بنفسه.
+          const u = await commitIntent(sb, userId, scope, name, input, "pharmacy.updated", { item_id: dupe.id, patch });
+          if (!u.ok) return refusalText(u.reason);
+          if (u.duplicate) return DUPLICATE_REPLY;
+          const next = { id: dupe.id, name: medName, dose_times: (u.payload.after as { dose_times?: string | null } | undefined)?.dose_times ?? null };
           ctx.mutationCount++;
-          ctx.mutations.push({ tool: name, old: dupe, new: u.rows[0] });
+          ctx.mutations.push({ tool: name, old: dupe, new: next });
           await recordAction(sb, userId, scope, {
             tool: name, input, table: "zad_pharmacy_items", targetId: dupe.id,
-            previous: dupe, next: u.rows[0],
+            previous: dupe, next,
           });
           return `"${medName}" كان مسجل أصلاً${forMember || " عندك"} — حدّثت بياناته بدل ما أضيفه تاني`;
         }
@@ -3184,26 +3183,24 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
 
       const normalizedUnit = pharmacyUnit(input.unit);
 
-      const w = await writeRows(
-        sb.from("zad_pharmacy_items").insert({
-          user_id: medOwner,
-          name: medName,
-          dosage: input.dosage ? String(input.dosage).trim() : null,
-          // Derived from the normalized list, not the model's own count: the two used to
-          // be able to disagree (3 times listed, daily_dose_count 2), and every
-          // days-of-supply figure on the phone divides by this number.
-          daily_dose_count: doseTimes ? doseTimes.split(",").length : (input.daily_dose_count ?? 1),
-          dose_times: doseTimes,
-          unit: normalizedUnit,
-          remaining_quantity: input.quantity ?? 1,
-          category: input.category ?? "عام",
-          for_person: forPerson,
-          ...(pharmacyIsRecurring(input) == null ? {} : { is_recurring: pharmacyIsRecurring(input) }),
-        }).select("id,name,dose_times"),
-        "إضافة الدواء",
-      );
-      if (!w.ok) return `مرفوض: ${w.reason}`;
-      const newRow = w.rows[0] as any;
+      // من الباب (م٢.٥). العدد في اليوم بيتحسب في الباب من المواعيد لو موجودة، مش من عدّ الموديل: الاتنين كانوا
+      // ممكن يختلفوا (٣ مواعيد وdaily_dose_count 2)، وكل «يكفي كام يوم» على التلفون بيقسم على الرقم ده.
+      const recurring = pharmacyIsRecurring(input);
+      const made = await commitIntent(sb, userId, scope, name, input, "pharmacy.added", {
+        owner_id: medOwner,
+        name: medName,
+        dosage: input.dosage ? String(input.dosage).trim() : null,
+        daily_dose_count: input.daily_dose_count ?? 1,
+        dose_times: doseTimes,
+        unit: normalizedUnit,
+        remaining_quantity: input.quantity ?? 1,
+        category: input.category ?? "عام",
+        for_person: forPerson,
+        ...(recurring == null ? {} : { is_recurring: recurring }),
+      });
+      if (!made.ok) return refusalText(made.reason);
+      if (made.duplicate) return DUPLICATE_REPLY;
+      const newRow = { id: made.rowId, name: medName, dose_times: doseTimes };
       ctx.mutationCount++;
       ctx.mutations.push({ tool: name, old: null, new: { name: medName, dose_times: doseTimes } });
       await recordAction(sb, userId, scope, {
@@ -3246,11 +3243,15 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       } else if (input.daily_dose_count !== undefined) {
         patch.daily_dose_count = input.daily_dose_count;
       }
-      const w = await writeRows(sb.from("zad_pharmacy_items").update(patch).eq("id", before.id).eq("user_id", userId).select("id,name,dosage,remaining_quantity,dose_times,daily_dose_count"), "تعديل الدواء");
-      if (!w.ok) return `مرفوض: ${w.reason}`;
+      // من الباب (م٢.٥). العدد من المواعيد بيتحسب هناك، فمابيتبعتش معاها.
+      if (patch.dose_times !== undefined) delete patch.daily_dose_count;
+      const u = await commitIntent(sb, userId, scope, name, input, "pharmacy.updated", { item_id: before.id, patch });
+      if (!u.ok) return refusalText(u.reason);
+      if (u.duplicate) return DUPLICATE_REPLY;
+      const next = (u.payload.after ?? { id: before.id, ...patch }) as Record<string, unknown>;
       ctx.mutationCount++;
-      ctx.mutations.push({ tool: name, old: before, new: w.rows[0] });
-      await recordAction(sb, userId, scope, { tool: name, input, table: "zad_pharmacy_items", targetId: before.id, previous: before, next: w.rows[0] });
+      ctx.mutations.push({ tool: name, old: before, new: next });
+      await recordAction(sb, userId, scope, { tool: name, input, table: "zad_pharmacy_items", targetId: before.id, previous: before, next });
       return `اتعدلت بيانات "${before.name}" ومواعيد التذكير هتتحدث بعد مزامنة التطبيق`;
     }
     case "complete_shopping_item": {
@@ -3324,20 +3325,19 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
           : `مرفوض: مفيش دواء اسمه "${spoken}" في جدول العميل. الأدوية المسجّلة: ${registered}. قوله "مفيش دواء مسجل بالاسم ده في جدولك" واعرض عليه الأسماء دي بالظبط — ممنوع تخترع اسم.`;
       }
 
-      const nowIso = new Date().toISOString();
-      const { data: mutation, error: doseErr } = await sb.rpc("zad_log_pharmacy_dose_atomic", {
-        p_user: userId,
-        p_item: match.id,
-        p_scheduled_at: null,
-        p_taken_at: nowIso,
+      // من الباب (م٢.٥)، والباب بينادي zad_log_pharmacy_dose_atomic (الكاتب الوحيد للجرعات، one_writer_test).
+      const dose = await commitIntent(sb, userId, scope, name, input, "pharmacy.dose_taken", {
+        item_id: match.id, taken_at: new Date().toISOString(),
       });
-      if (doseErr || !mutation?.ok) {
-        console.error("zad_log_pharmacy_dose_atomic failed:", doseErr?.message ?? mutation?.reason ?? "unknown");
-        return "مرفوض: مقدرتش أسجل الجرعة بأمان — الكمية ماتغيرتش";
+      if (!dose.ok) {
+        if (dose.reason === "dose_already_logged") return "الجرعة دي متسجلة قبل كده — الكمية ماتخصمتش تاني";
+        console.error("pharmacy.dose_taken refused:", dose.reason);
+        return dose.reason.startsWith("rpc:") ? "مرفوض: مقدرتش أسجل الجرعة بأمان — الكمية ماتغيرتش" : refusalText(dose.reason);
       }
-      if (mutation.duplicate === true) return "الجرعة دي متسجلة قبل كده — الكمية ماتخصمتش تاني";
+      if (dose.duplicate) return "الجرعة دي متسجلة قبل كده — الكمية ماتخصمتش تاني";
+      const mutation = { dose_id: dose.payload.dose_id, shopping_added: dose.payload.shopping_added === true };
 
-      const newQty = Number(mutation.remaining_quantity ?? match.remaining_quantity ?? 0);
+      const newQty = Number(dose.after ?? match.remaining_quantity ?? 0);
       ctx.mutationCount++;
       ctx.mutations.push({ tool: name, old: match.remaining_quantity, new: newQty });
       await recordAction(sb, userId, scope, {
@@ -3369,11 +3369,10 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
           ? `مرفوض: مفيش أي دوا مسجّل في جدول العميل — مفيش حاجة تتحذف. ماتقولش إنك حذفت.`
           : `مرفوض: مفيش دواء اسمه "${spoken}" في جدول العميل. الأدوية المسجّلة: ${rows.map((r) => r.name).join("، ")}. لو قصده واحد منهم نادي تاني بالاسم ده بالظبط، ولو مش واضح اسأله — وماتقولش إنك حذفت.`;
       }
-      const w = await writeRows(
-        sb.from("zad_pharmacy_items").delete().eq("id", match.id).eq("user_id", userId).select("id"),
-        "حذف الدواء",
-      );
-      if (!w.ok) return `مرفوض: ${w.reason}`;
+      // من الباب (م٢.٥): الحدث شايل الصف كامل، وتريجر zad_trash بيحفظه للتراجع.
+      const gone = await commitIntent(sb, userId, scope, name, input, "pharmacy.deleted", { item_id: match.id });
+      if (!gone.ok) return refusalText(gone.reason);
+      if (gone.duplicate) return DUPLICATE_REPLY;
       ctx.mutationCount++;
       ctx.mutations.push({ tool: name, old: match, new: null });
       await recordAction(sb, userId, scope, {

@@ -7,7 +7,8 @@ docker exec "$PG" dropdb -U postgres --if-exists "$DB"; docker exec "$PG" create
 for f in supabase/sql/tests/events_ledger_scaffold.sql supabase/migrations/20261121160000_events_ledger.sql \
          supabase/sql/tests/commit_intent_scaffold.sql supabase/migrations/20261121180000_commit_intent.sql \
          supabase/migrations/20261121200000_commit_intent_merge.sql supabase/migrations/20261121220000_commit_intent_domains.sql supabase/sql/tests/commit_intent_shopping_scaffold.sql \
-         supabase/migrations/20261121230000_commit_intent_shopping.sql \
+         supabase/migrations/20261121230000_commit_intent_shopping.sql supabase/sql/tests/commit_intent_pharmacy_scaffold.sql \
+         supabase/migrations/20261122000000_commit_intent_pharmacy.sql \
          supabase/sql/e2e/commit_intent_e2e_scaffold.sql; do
   docker exec -i "$PG" psql -U postgres -d "$DB" -v ON_ERROR_STOP=1 -q < "$f" > /dev/null
 done

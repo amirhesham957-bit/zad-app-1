@@ -125,5 +125,27 @@ const s5 = await runTool(sb, AMIR, "add_shopping_item", { item_name: "بيض", q
 check(s5.startsWith("مرفوض") && (await lines("بيض")).length === 0, "list refuse: 500 eggs not written", s5);
 check(await count("zad_guard_events", { user_id: AMIR }) === g0 + 1, "list refuse: logged in zad_guard_events");
 
+// ١١) الصيدلية: «سجل كونكور ٨ الصبح و٨ بالليل، معايا ٣٠» مرتين، «غيّر المواعيد»، «خدت الكونكور» مرتين، «امسحه».
+const med = async () => (await sb.from("zad_pharmacy_items").select("dose_times,daily_dose_count,remaining_quantity").eq("user_id", AMIR).eq("name", "كونكور")).data ?? [];
+const run4 = { source: "app_chat", runId: crypto.randomUUID() } as const;
+const addMed = { name: "كونكور", dose_times: "08:00,20:00", quantity: 30, unit: "قرص", times_explicit: true };
+const p1 = await runTool(sb, AMIR, "add_pharmacy_item", addMed, { stock: [] }, freshContext(AMIR), run4);
+check(p1.includes("اتسجل"), "med add: reply", p1);
+const p2 = await runTool(sb, AMIR, "add_pharmacy_item", { ...addMed }, { stock: [] }, freshContext(AMIR), run4);
+check(p2.includes("اتنفذ قبل كده"), "med add again in the turn: duplicate", p2);
+check(JSON.stringify(await med()) === JSON.stringify([{ dose_times: "08:00,20:00", daily_dose_count: 2, remaining_quantity: 30 }]), "med: one row, 2 doses, 30", await med());
+const run5 = { source: "app_chat", runId: crypto.randomUUID() } as const;
+const p3 = await runTool(sb, AMIR, "update_pharmacy_item", { name: "كونكور", dose_times: "09:00", times_explicit: true }, { stock: [] }, freshContext(AMIR), run5);
+check(p3.includes("اتعدلت"), "med update: reply", p3);
+check((await med())[0]?.dose_times === "09:00" && (await med())[0]?.daily_dose_count === 1, "med update: times and count", await med());
+const p4 = await runTool(sb, AMIR, "log_pharmacy_dose", { name: "كونكور" }, { stock: [] }, freshContext(AMIR), run5);
+check(p4.includes("اتسجلت") && (await med())[0]?.remaining_quantity === 29, "dose: 30 -> 29", [p4, await med()]);
+const p5 = await runTool(sb, AMIR, "log_pharmacy_dose", { name: "كونكور" }, { stock: [] }, freshContext(AMIR), { source: "app_chat", runId: crypto.randomUUID() });
+check(p5.includes("متسجلة قبل كده") && (await med())[0]?.remaining_quantity === 29, "dose twice in the window: once", [p5, await med()]);
+check(await count("zad_guard_events", { user_id: AMIR, reason: "dose_already_logged" }) === 1, "dose twice: refusal logged");
+const p6 = await runTool(sb, AMIR, "delete_pharmacy_item", { name: "كونكور" }, { stock: [] }, freshContext(AMIR), run5);
+check(p6.includes("اتحذف") && (await med()).length === 0, "med delete", p6);
+check(await count("zad_events", { user_id: AMIR, kind: "pharmacy.deleted" }) === 1, "med delete: event");
+
 console.log(failed === 0 ? "e2e: all checks passed" : `e2e: ${failed} FAILED`);
 Deno.exit(failed === 0 ? 0 : 1);
