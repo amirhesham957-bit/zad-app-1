@@ -234,6 +234,37 @@ check(od.includes("اتلغى") && (await obls()).length === 1 && (await obls())
 check(await count("zad_events", { user_id: AMIR, kind: "obligation.deactivated" }) === 1, "obligation delete: event");
 const oc = await runTool(sb, AMIR, "confirm_obligation", { kind: "rent" }, { ...snapL, obligation_detection: { title: "إيجار الشقة", amount: 4000, due_day: 3, provider: null } }, freshContext(AMIR), run8);
 check(oc.includes("اتسجل الالتزام") && (await obls()).some((o) => o.title === "إيجار الشقة" && o.active === true), "obligation confirmed", [oc, await obls()]);
+// ١٤) صيانة البيت والمستندات والمواعيد (م٢.٥).
+const rows = async (table: string) => (await sb.from(table).select("*").eq("user_id", AMIR)).data ?? [];
+const runH = () => ({ source: "app_chat", runId: crypto.randomUUID() } as const);
+const h1 = await runTool(sb, AMIR, "add_maintenance_item", { name: "غسالة", warranty_expiry_date: "2027-03-01", service_interval_days: 180 }, snapM, freshContext(AMIR), runH());
+check(h1.includes("اتضاف") && (await rows("zad_maintenance_items")).length === 1, "maintenance: added", h1);
+const h2 = await runTool(sb, AMIR, "update_maintenance_item", { name: "غسالة", last_service_date: "2026-11-01" }, snapM, freshContext(AMIR), runH());
+check(h2.includes("اتعدل") && (await rows("zad_maintenance_items"))[0]?.last_service_date === "2026-11-01", "maintenance: updated", h2);
+const h3 = await runTool(sb, AMIR, "delete_maintenance_item", { name: "غسالة" }, snapM, freshContext(AMIR), runH());
+check(h3.includes("اتحذف") && (await rows("zad_maintenance_items")).length === 0, "maintenance: deleted", h3);
+check(await count("agent_actions", { user_id: AMIR, tool_name: "delete_maintenance_item" }) === 1, "maintenance: undo row for the delete");
+
+const d1 = await runTool(sb, AMIR, "save_document", { kind: "passport", holder: "أمير", expires_on: "2028-05-10" }, snapM, freshContext(AMIR), runH());
+const d2 = await runTool(sb, AMIR, "save_document", { kind: "passport", holder: "أمير", expires_on: "2033-05-10" }, snapM, freshContext(AMIR), runH());
+check(d1.includes("اتسجّل") && d2.includes("اتعدّل") && JSON.stringify((await rows("zad_documents")).map((r) => r.expires_on)) === '["2033-05-10"]', "document: saved then renewed, one row", [d1, d2]);
+const d3 = await runTool(sb, AMIR, "delete_document", { kind: "passport", holder: "أمير" }, snapM, freshContext(AMIR), runH());
+check(d3.includes("اتشال") && (await rows("zad_documents")).length === 0, "document: deleted", d3);
+
+const when = new Date(Date.now() + 2 * 86_400_000).toISOString();
+const ap1 = await runTool(sb, AMIR, "add_appointment", { title: "دكتور أسنان", starts_at: when, kind: "medical", remind_minutes_before: 30, for_person: "ماما", expected_cost: 400, confirm_conflict: true },
+  { ...snapM, now_local: { ...snapM.now_local, time_zone: "UTC" } }, Object.assign(freshContext(AMIR), { heard: "الكشف بـ400" }), runH());
+const apRow = (await rows("zad_appointments"))[0] as Record<string, unknown> | undefined;
+check(ap1.includes("تم تسجيل الميعاد") && apRow?.title === "دكتور أسنان" && apRow?.kind === "medical" && apRow?.source === "chat" && Number(apRow?.expected_cost) === 400 && apRow?.for_person != null,
+  "appointment: added with the tool's fields", [ap1, apRow]);
+const ap2 = await runTool(sb, AMIR, "update_appointment", { appointment_id: String(apRow?.id), status: "done", place_label: "عيادة النور" }, snapM, freshContext(AMIR), runH());
+const apRow2 = (await rows("zad_appointments"))[0] as Record<string, unknown> | undefined;
+check(ap2.includes("تم تعديل") && apRow2?.status === "done" && apRow2?.place_label === "عيادة النور", "appointment: updated", [ap2, apRow2]);
+const ap3 = await runTool(sb, AMIR, "delete_appointment", { appointment_id: String(apRow?.id) }, snapM, freshContext(AMIR), runH());
+check(ap3.includes("اتمسح") && (await rows("zad_appointments")).length === 0, "appointment: deleted", ap3);
+check(await count("zad_events", { user_id: AMIR, kind: "appointment.deleted" }) === 1 && await count("agent_actions", { user_id: AMIR, tool_name: "update_appointment" }) === 1, "appointment: events and undo rows");
+const ap4 = await runTool(sb, AMIR, "delete_appointment", { appointment_id: "99999999-9999-9999-9999-999999999999" }, snapM, freshContext(AMIR), runH());
+check(ap4.startsWith("مرفوض"), "appointment: unknown id refused", ap4);
 
 console.log(failed === 0 ? "e2e: all checks passed" : `e2e: ${failed} FAILED`);
 Deno.exit(failed === 0 ? 0 : 1);

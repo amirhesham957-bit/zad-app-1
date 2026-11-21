@@ -16,7 +16,10 @@ export type IntentKind =
   | "money.logged" | "money.updated" | "money.deleted" | "money.purchase" | "money.limit_set" | "money.category_budget_set"
   | "subscription.added" | "subscription.updated" | "subscription.deleted"
   | "debt.added" | "debt.updated" | "debt.deleted"
-  | "obligation.added" | "obligation.updated" | "obligation.deactivated";
+  | "obligation.added" | "obligation.updated" | "obligation.deactivated"
+  | "maintenance.added" | "maintenance.updated" | "maintenance.deleted"
+  | "document.saved" | "document.deleted"
+  | "appointment.added" | "appointment.updated" | "appointment.deleted";
 export type IntentSource = "manual" | "receipt" | "bank" | "model" | "cron";
 
 export type CommitResult =
@@ -79,7 +82,7 @@ export async function commitIntent(
 }
 
 const REASONS: Record<string, string> = {
-  item_not_found: "الصنف مش في مخزن البيت ده",
+  item_not_found: "السجل ده مش موجود عندك",
   name_invalid: "اسم الصنف لازم يكون من ٢ لـ١٢٠ حرف",
   qty_not_positive: "الكمية لازم تكون أكبر من صفر",
   qty_too_large: "الكمية كبيرة بشكل مش منطقي — اتأكد من العميل",
@@ -126,6 +129,23 @@ const REASONS: Record<string, string> = {
   recurrence_invalid: "التكرار يا monthly يا quarterly يا yearly يا once",
   installments_invalid: "عدد الأقساط لازم يكون رقم صحيح من ١ لـ٦٠٠",
   already_inactive: "الالتزام ده اتلغى قبل كده",
+  device_name_invalid: "اسم الجهاز لازم يكون من ٢ لـ١٢٠ حرف",
+  device_category_invalid: "فئة الجهاز طويلة أوي (٦٠ حرف بالكتير)",
+  day_invalid: "التاريخ لازم يوم حقيقي بصيغة YYYY-MM-DD",
+  interval_invalid: "الفاصل بين الصيانات لازم عدد أيام صحيح موجب",
+  cost_invalid: "التكلفة لازم رقم موجب في الحدود المنطقية",
+  kind_invalid: "النوع مش من الأنواع المعروفة",
+  holder_invalid: "اسم صاحب المستند لازم يكون من غير مسافات زيادة ولحد ٤٠ حرف",
+  label_invalid: "اسم المستند لازم يكون من غير مسافات زيادة ولحد ٤٠ حرف",
+  label_required: "مستند «other» محتاج اسم",
+  date_out_of_range: "تاريخ الانتهاء مش معقول (بين ٢٠٠٠ و٢١٠٠)",
+  appt_title_invalid: "اسم الميعاد لازم من ٢ لـ١٦٠ حرف",
+  starts_at_invalid: "وقت الميعاد مش مفهوم",
+  appt_recurrence_invalid: "التكرار لازم once أو hourly أو daily أو weekly أو monthly",
+  source_invalid: "مصدر الميعاد مش معروف",
+  remind_invalid: "التذكير قبلها لازم دقايق صحيحة من ٠ لـ١٠٠٨٠",
+  place_too_long: "اسم المكان طويل أوي (١٢٠ حرف بالكتير)",
+  status_invalid: "الحالة لازم upcoming أو done أو cancelled",
 };
 
 /** سبب الرفض بالعربي للموديل (والكود الأصلي بين قوسين للتشخيص). */
