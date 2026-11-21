@@ -82,7 +82,7 @@ import { callModel, embedText, embedSelfTest, hasEvalKey, hasGroq, inLane, smoke
 import { type Lane, laneFor } from "./keyLanes.ts";
 import { chatLane, FREE_BUSY_REPLY, freeDailyBudget, gateReply, historyWindow, turnsPerMinute } from "./freeLane.ts";
 import { medicineHolder, memberNoticeNames, tellMemberMedicineAdded } from "./familyMedicine.ts";
-import { type HoldCode, heldMessagesSummary, agentTaskNotice, buildRestaurantArrivalMessage, buildStoreArrivalMessage, dailyCapDecision, outlivesShelf, responsiveHourDecision, pacingDecision, pacingPriority, PACING_DUPLICATE_HOURS, decideOnBrainFailure, postponeForQuietHours, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, quietWindowOf, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey, doseAdherence, pickCrossChannelTwin, twinEnrichment, seenHereItems, type SeenHere, type StoreCategory, cheaperHereItems, type CheaperHere, normalizeForPerson, pharmacyIsRecurring, entityRecallText, itemKey, type MemoryEntity, normalizeMemoryEntities, resolveValidUntil, travelContext } from "./shared.ts";
+import { type HoldCode, heldMessagesSummary, agentTaskNotice, buildRestaurantArrivalMessage, buildStoreArrivalMessage, dailyCapDecision, attentionDecisions, capPostponeUntil, outlivesShelf, responsiveHourDecision, pacingDecision, pacingPriority, PACING_DUPLICATE_HOURS, decideOnBrainFailure, postponeForQuietHours, postponeForSuppression, DUPLICATE_PROPOSAL_WINDOW_MS, hasRecentMutatingRun, normalizeBrainTrigger, normalizeDoseTimes, normalizeStoreCategory, pickDuplicateProposalSibling, sanitizeItemHints, sanitizeStoreName, storeArrivalBlock, storeArrivalDescription, summarizeProactiveScan, localNowContext, quietWindowOf, resolveLocalIso, matchMedicineByName, placesMatchingArrival, placeReminderDedupeKey, doseAdherence, pickCrossChannelTwin, twinEnrichment, seenHereItems, type SeenHere, type StoreCategory, cheaperHereItems, type CheaperHere, normalizeForPerson, pharmacyIsRecurring, entityRecallText, itemKey, type MemoryEntity, normalizeMemoryEntities, resolveValidUntil, travelContext } from "./shared.ts";
 import { itemsForStore, storeArrivalTask, storeLocationFrom } from "./storeFit.ts";
 import { refreshDueHomeStates, saveHomeState } from "./homeState.ts";
 import { DOSE_SNOOZE_MINUTES, isDoseAction, muteCheckin, settleDoseReminder, snoozeDose } from "../_shared/doseDoor.ts";
@@ -7651,6 +7651,19 @@ async function processDueAgentTasks(sb: SupabaseClient): Promise<{ processed: nu
     }
     return list;
   };
+  // م٥.١: قرارات ميزانية الانتباه لكل عميل، مرة في اللفة، على مهامه المستحقة بترتيب dueTasks.
+  const planByUser = new Map<string, Map<string, "send" | "defer">>();
+  const planFor = async (userId: string, tz: string) => {
+    let m = planByUser.get(userId);
+    if (!m) {
+      m = attentionDecisions(
+        dueTasks.filter((t) => t.user_id === userId).map((t) => ({ id: t.id, kind: t.kind, stance: stances.get(t.id) ?? "normal" })),
+        await deliveredFor(userId), tz, Date.now(),
+      );
+      planByUser.set(userId, m);
+    }
+    return m;
+  };
   // ساعات رد كل عميل (zad_engagement_hours)، مرة في اللفة. فشل القراية = null = الافتراضي.
   const engagementByUser = new Map<string, number[] | null>();
   const engagementHoursFor = async (userId: string) => {
@@ -7743,9 +7756,13 @@ async function processDueAgentTasks(sb: SupabaseClient): Promise<{ processed: nu
         continue;
       }
       // المنسّق ٣: سقف اليوم (اتنين) — الزيادة تاخد خانة بكرة من الصحيان، الأهم الأول.
-      const cap = dailyCapDecision(task.kind, await deliveredFor(task.user_id), await accountTimeZone(sb, task.user_id), Date.now(),
-        quietWindowOf((sleep as { sleep_bed?: string | null } | null)?.sleep_bed, (sleep as { sleep_wake?: string | null } | null)?.sleep_wake),
-        await parkedFor(task.user_id));
+      const capTz = await accountTimeZone(sb, task.user_id);
+      const capWindow = quietWindowOf((sleep as { sleep_bed?: string | null } | null)?.sleep_bed, (sleep as { sleep_wake?: string | null } | null)?.sleep_wake);
+      // م٥.١: خطة الميزانية — اللي الخطة أجّلته ياخد خانة بكرة، واللي بعتته بيعدّي على السقف كشبكة أمان.
+      const plan = await planFor(task.user_id, capTz);
+      const cap = plan.get(task.id) === "defer"
+        ? { action: "postpone" as const, until: capPostponeUntil((task.kind ?? "").trim(), capTz, Date.now(), capWindow, await parkedFor(task.user_id)) }
+        : dailyCapDecision(task.kind, await deliveredFor(task.user_id), capTz, Date.now(), capWindow, await parkedFor(task.user_id));
       if (cap.action === "postpone") {
         if (await park(task, cap.until, "daily_cap")) postponed++;
         continue;
