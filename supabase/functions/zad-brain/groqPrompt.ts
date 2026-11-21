@@ -8,6 +8,8 @@
 //
 // نقي: بياخد الـsnapshot والبلوكات الجاهزة ويرجّع نص، من غير داتابيز.
 
+import { type PinnedFacts, pinnedFactsBlock } from "./pinnedFacts.ts";
+
 /** مفاتيح الـsnapshot اللي بتفضل، بالترتيب — الفلوس والعميل الأول، اللي بيتسأل عنه كل يوم. */
 const KEEP: ReadonlyArray<string> = [
   "now_local", "currency", "country", "customer",
@@ -76,6 +78,8 @@ export function buildGroqSystemPrompt(
   return `${dialectBlock}
 
 ${CORE_RULES}
+
+${pinnedFactsBlock(snap?.pinned_facts as PinnedFacts | undefined)}
 
 === SNAPSHOT ===
 ${JSON.stringify(compactSnapshotForGroq(snap))}

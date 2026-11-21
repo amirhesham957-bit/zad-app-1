@@ -124,6 +124,7 @@ import { customerCard, IDENTITY_MEMORY_SCOPES, identityOverwrites, sanitizeProfi
 import { rateConfidence } from "../_shared/consumptionRate.ts";
 import { type LevelReading, pantryForecast } from "../_shared/or/pantryForecast.ts";
 import { buildGroqSystemPrompt, groqToolOrder } from "./groqPrompt.ts";
+import { type PinnedInput, pinnedFacts, pinnedFactsBlock } from "./pinnedFacts.ts";
 import { ANSWER_FROM_RESULTS_NOTE, historyForAnswer, isWrite, needsAnswerAfterTools, recordCall, silentWriteFallback, visibleReceipts } from "./receipts.ts";
 import { decideGate, GATE_RESPONSE_SCHEMA, gatePrompt, type GateVerdict, knownFinancialSender, looksLikeMoneyMoved, parseGateVerdict, proposalFieldsFromVerdict, proposalTitle, ruleGate, txnKindFor } from "./notificationGate.ts";
 import { decideLifeEvent } from "../_shared/lifeEventDecide.ts";
@@ -920,6 +921,10 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
       .eq("user_id", userId).gte("scheduled_at", new Date(Date.now() - 14 * 86400000).toISOString())),
     restock: prefetch(loadRestockVerdicts(sb, userId, householdFamily).catch(() => null)),
     prior: prefetch(sb.rpc("zad_pantry_prior_days_for", { p_user: userId })),
+    // م٩.٣: ملاحظات الحساسية كلها (مش أعلى ٢٠ بالثقة بس)، عشان تتثبت في pinned_facts.
+    allergyNotes: prefetch(sb.from("zad_memory").select("note,valid_until")
+      .eq("user_id", userId).is("superseded_by", null)
+      .or("note.ilike.*حساسي*,note.ilike.*allerg*").limit(40)),
     // م٣.١: قرايات البيت والمعدل المبدئي لكل صنف ⇐ TSB ونطاق للأيام الباقية (pantryForecast.ts).
     forecastInputs: prefetch(sb.rpc("zad_pantry_forecast_inputs", { p_user: userId })),
     appointments: prefetch(sb.from("zad_appointments")
@@ -1422,6 +1427,10 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
       : [])
       .map((r) => [r.item_name, pantryForecast(Number(r.quantity), r.readings ?? [], Number(r.prior_daily ?? 0), Date.now())]),
   );
+  // م٩.٣: فشل القراية = من غير حساسية في البلوك (الأدوية والديون والقبض لسه موجودين)، مش عطل.
+  const { data: allergyData, error: allergyErr } = await early.allergyNotes;
+  if (allergyErr) console.error("[snapshot] allergy notes failed:", allergyErr.message);
+  const allergyNoteRows = (allergyData ?? []) as PinnedInput["allergyNotes"];
   const stock = (invRes.data ?? []).map((item) => {
     const cons = consumptionByItem[item.item_name];
     const tsb = forecastByItem.get(item.item_name);
@@ -1688,6 +1697,13 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
     },
     // ─── مصادر كانت غايبة عن العقل تماماً ───
     // ديون نشطة. الحد الأدنى للسداد التزام فعلي زي الإيجار — أي اقتراح توفير لازم يحترمه.
+    // م٩.٣: الحساسية والأدوية والديون ويوم القبض، بتتبعت في بلوك لوحدها في البرومبتين برا أي قص (pinnedFacts.ts).
+    pinned_facts: pinnedFacts({
+      allergyNotes: allergyNoteRows,
+      medicines: (pharmRes.data ?? []) as PinnedInput["medicines"],
+      debts: (debtRes.data ?? []) as PinnedInput["debts"],
+      cycleStartDay, cycleEnd, nowMs: Date.now(),
+    }),
     debts: (debtRes.data ?? []).map((d: any) => ({
       name: d.name, remaining: d.remaining_balance, min_payment: d.minimum_payment, due_day: d.due_day,
     })),
@@ -9738,6 +9754,8 @@ const HOUSE_SECTIONS_ON_REQUEST = [
 function promptSnapshot(snap: any): Record<string, unknown> {
   const out: Record<string, unknown> = { ...(snap ?? {}) };
   for (const key of HOUSE_SECTIONS_ON_REQUEST) delete out[key];
+  // م٩.٣: ليها بلوك لوحدها فوق (pinnedFactsBlock)، مش مرتين.
+  delete out.pinned_facts;
   return out;
 }
 
@@ -9842,6 +9860,8 @@ ${snap?.commute ? `13هـ. **مواعيد يومه (commute)**: ${snap.commute} 
 ${(offers("set_item_preference")) ? `15ب. **تفضيلات الصنف (set_item_preference)**: العميل قال البراند اللي بيجيبه أو اللي مش بيجيبه، أو إن صنف اتجاب صدفة ⇒ set_item_preference (مش remember)، ورد بسطر.
 ` : ""}${(offers("find_deals")) ? `15أ. **العروض (find_deals)**: «هاتلي عروض/دوّرلي على عرض/فيه عروض إيه/كود خصم» ⇒ نادِ find_deals الأول واعرض العروض بأسعارها ولينكاتها. الميزانية عمرها ما تكون سبب ترفض أو تأجّل بيه البحث أو تقول «انزل بص بنفسك» — ممكن يكون بيخطط للشهر الجاي أو عنده فلوس تانية. نصيحة الفلوس لو لازمة: سطر واحد في آخر الرد بعد العروض.
 ` : ""}${(offers("suggest_recipes")) ? `15. **شيف زاد (suggest_recipes)**: «أطبخ إيه؟/أعمل أكل إيه من اللي عندي؟» ⇒ نادِ suggest_recipes واعرض من الوصفات اللي رجعت بس، باختصار — ممنوع تخترع وصفة من عندك. «افتحلي الشيف/صفحة الوصفات» ⇒ app_command(screen=recipes).` : ""}
+
+${pinnedFactsBlock(snap?.pinned_facts)}
 
 === SNAPSHOT ===
 ${JSON.stringify(promptSnapshot(snap))}
