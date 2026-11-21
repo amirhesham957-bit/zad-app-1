@@ -4332,6 +4332,9 @@ class ZadL10nAr extends ZadL10n {
   String get agentToolDeleteMemory => 'نسيان ملاحظة';
 
   @override
+  String get agentToolRestoreDeleted => 'رجّع حاجة اتمسحت';
+
+  @override
   String get agentToolMarkSubscriptionPaid => 'دفع اشتراك';
 
   @override

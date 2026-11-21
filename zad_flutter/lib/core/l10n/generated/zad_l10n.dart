@@ -7622,6 +7622,12 @@ abstract class ZadL10n {
   /// **'نسيان ملاحظة'**
   String get agentToolDeleteMemory;
 
+  /// Brain action log: the chat restored a deleted row from the trash (ZAD_OR_PLAN M1.6).
+  ///
+  /// In ar, this message translates to:
+  /// **'رجّع حاجة اتمسحت'**
+  String get agentToolRestoreDeleted;
+
   /// Brain action log: what a tool the chat ran did (ZAD_PLAN 10.2a).
   ///
   /// In ar, this message translates to:

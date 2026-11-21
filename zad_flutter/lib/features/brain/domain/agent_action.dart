@@ -122,6 +122,7 @@ String agentToolLabel(String tool, [ZadL10n? l]) =>
 String? _newToolLabel(String tool, ZadL10n l) => switch (tool) {
   'set_app_setting' => l.agentToolSetAppSetting,
   'delete_memory' => l.agentToolDeleteMemory,
+  'restore_deleted' => l.agentToolRestoreDeleted,
   'mark_subscription_paid' => l.agentToolMarkSubscriptionPaid,
   'add_shortages_to_shopping' => l.agentToolAddShortages,
   'snooze_pharmacy_dose' => l.agentToolSnoozeDose,

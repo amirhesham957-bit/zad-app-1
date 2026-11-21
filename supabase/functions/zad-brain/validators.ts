@@ -1386,6 +1386,8 @@ export const VALIDATORS: Record<string, Validator> = {
  * مش هنا عمداً.
  */
 export const MUTATING_TOOLS = [
+  // ZAD_OR_PLAN م١.٦: بترجّع صف من السلة — كتابة، وتراجعها مسح.
+  "restore_deleted",
   "start_family_poll", "log_decision", "set_life_circumstance", "end_life_circumstance", "confirm_life_shift",
   "remember_occasion", "save_trusted_technician", "answer_same_product",
   "update_inventory_qty", "consume_item", "set_transaction_category", "merge_duplicate_expense",

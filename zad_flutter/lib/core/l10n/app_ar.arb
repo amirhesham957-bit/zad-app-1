@@ -3673,6 +3673,10 @@
   "@agentToolDeleteMemory": {
     "description": "Brain action log: what a tool the chat ran did (ZAD_PLAN 10.2a)."
   },
+  "agentToolRestoreDeleted": "رجّع حاجة اتمسحت",
+  "@agentToolRestoreDeleted": {
+    "description": "Brain action log: the chat restored a deleted row from the trash (ZAD_OR_PLAN M1.6)."
+  },
   "agentToolMarkSubscriptionPaid": "دفع اشتراك",
   "@agentToolMarkSubscriptionPaid": {
     "description": "Brain action log: what a tool the chat ran did (ZAD_PLAN 10.2a)."
