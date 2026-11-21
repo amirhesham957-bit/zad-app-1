@@ -6,7 +6,8 @@
 import { assertEquals } from "jsr:@std/assert@1";
 import { writesIn } from "../_schema/one_writer_test.ts";
 
-const THROUGH_THE_DOOR = ["zad_inventory", "zad_shopping_list", "zad_pharmacy_items", "zad_transactions", "zad_category_budgets"];
+const THROUGH_THE_DOOR = ["zad_inventory", "zad_shopping_list", "zad_pharmacy_items", "zad_transactions", "zad_category_budgets",
+  "zad_subscriptions", "zad_debts", "zad_obligations"];
 const ALLOWED: Record<string, Record<string, number>> = {
   "index.ts": { zad_shopping_list: 1 }, // الحلم: lowStockToAdd ⇐ zad_shopping_list.insert
 };
