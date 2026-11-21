@@ -7,6 +7,12 @@
 > still holds, and the Dart code lives under `zad_flutter/lib/`. Git history keeps
 > the Kotlin source if it is ever needed.
 
+> **Start here (owner, 2026-11-22): read [`AGENTS_CONTEXT.md`](./AGENTS_CONTEXT.md) first, and only that.**
+> It is the compressed state (architecture, the single write door, how to test, the rules that never
+> break, where things live). Open `ZAD_OR_PLAN.md`, `SESSION_LOG.md` or the other docs below only
+> when the task needs a detail from them; the "read X first" lines further down are superseded by
+> this. Keep `AGENTS_CONTEXT.md` current in the same commit that changes something it states.
+
 Project-specific rules for any Claude session working in this repo. Read alongside [PROJECT_MAP.md](./PROJECT_MAP.md) (architecture, data flow, sprint history).
 
 ## Facts to not get wrong
