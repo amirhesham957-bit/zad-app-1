@@ -194,5 +194,46 @@ const u4 = await runTool(sb, AMIR, "set_category_budget", { category: "مطاع�
 check(u4.includes("اتشال") && (await caps()).length === 0, "cap removed", u4);
 check(await count("zad_events", { user_id: AMIR, kind: "money.category_budget_set" }) === 3, "cap events");
 
+// ١٤) الاشتراكات والديون والالتزامات: إضافة وتعديل وحذف (وقفل الدين برصيد صفر، والتزام ناعم، ودفعة اشتراك بتأجّل التجديد).
+const snapL = { stock: [], now_local: { date: "2026-12-01", utc_offset: "+00:00" } };
+const run8 = { source: "app_chat", runId: crypto.randomUUID() } as const;
+const subs = async () => (await sb.from("zad_subscriptions").select("id,title,amount,renewal_date,is_active").eq("user_id", AMIR)).data ?? [];
+const sa = await runTool(sb, AMIR, "add_subscription", { title: "سبوتيفاي", amount: 99.999, renewal_date: "2026-12-01" }, snapL, freshContext(AMIR), run8);
+check(sa.includes("اتضاف اشتراك") && (await subs()).length === 1 && Number((await subs())[0].amount) === 100, "subscription added, rounded", [sa, await subs()]);
+const sa2 = await runTool(sb, AMIR, "add_subscription", { title: "سبوتيفاي", amount: 99.999, renewal_date: "2026-12-01" }, snapL, freshContext(AMIR), run8);
+check(sa2.includes("اتنفذ قبل كده") && (await subs()).length === 1, "subscription: repeat in the turn is one row", sa2);
+const sa3 = await runTool(sb, AMIR, "add_subscription", { title: "أنغامي", amount: 50, renewal_date: "2026-02-30" }, snapL, freshContext(AMIR), run8);
+check(sa3.startsWith("مرفوض") && sa3.includes("renewal_date_invalid") && (await subs()).length === 1, "subscription: bad date refused by the door", sa3);
+const su = await runTool(sb, AMIR, "update_subscription", { title: "سبوتيفاي", new_amount: 120 }, snapL, freshContext(AMIR), run8);
+check(su.includes("اتعدل") && Number((await subs())[0].amount) === 120, "subscription updated", su);
+const sp = await runTool(sb, AMIR, "mark_subscription_paid", { title: "سبوتيفاي" }, snapL, freshContext(AMIR), run8);
+check(sp.includes("اتسجلت دفعة") && (await subs())[0].renewal_date === "2027-01-01", "subscription paid: renewal moved a month", [sp, await subs()]);
+check(await count("zad_events", { user_id: AMIR, kind: "subscription.updated" }) === 2, "subscription events (update + renewal)");
+const sd = await runTool(sb, AMIR, "delete_subscription", { title: "سبوتيفاي" }, snapL, freshContext(AMIR), run8);
+check(sd.includes("اتحذف") && (await subs()).length === 0, "subscription deleted", sd);
+check(await count("agent_actions", { user_id: AMIR, tool_name: "delete_subscription" }) === 1, "subscription delete: undo log row");
+
+const debts = async () => (await sb.from("zad_debts").select("id,name,principal_amount,remaining_balance,is_active").eq("user_id", AMIR)).data ?? [];
+const da = await runTool(sb, AMIR, "add_debt", { name: "سلفة أحمد", remaining_balance: 1500, minimum_payment: 100 }, snapL, freshContext(AMIR), run8);
+check(da.includes("اتضاف دين") && Number((await debts())[0]?.principal_amount) === 1500, "debt added, principal = balance", [da, await debts()]);
+const du = await runTool(sb, AMIR, "update_debt", { name: "سلفة", new_remaining_balance: 900 }, snapL, freshContext(AMIR), run8);
+check(du.includes("اتعدل") && Number((await debts())[0].remaining_balance) === 900, "debt updated", du);
+const dz = await runTool(sb, AMIR, "update_debt", { name: "سلفة", new_remaining_balance: 0 }, snapL, freshContext(AMIR), run8);
+check(dz.includes("خلص وقُفل") && (await debts())[0].is_active === false, "debt at zero closes", [dz, await debts()]);
+const dd = await runTool(sb, AMIR, "delete_debt", { name: "سلفة أحمد" }, snapL, freshContext(AMIR), run8);
+check(dd.includes("اتحذف") && (await debts()).length === 0, "debt deleted", dd);
+check(await count("zad_events", { user_id: AMIR, kind: "debt.deleted" }) === 1, "debt delete: event");
+
+const obls = async () => (await sb.from("zad_obligations").select("id,title,amount,due_day,active,provider,total_installments,remaining_installments").eq("user_id", AMIR)).data ?? [];
+const oa = await runTool(sb, AMIR, "add_obligation", { title: "قسط تابي", amount: 250, kind: "installment", provider: "تابي", total_installments: 6 }, snapL, freshContext(AMIR), run8);
+check(oa.includes("اتضاف الالتزام") && (await obls())[0]?.remaining_installments === 6, "obligation added with installments", [oa, await obls()]);
+const ou = await runTool(sb, AMIR, "update_obligation", { title: "قسط تابي", new_amount: 300, new_due_day: 5 }, snapL, freshContext(AMIR), run8);
+check(ou.includes("اتعدل") && Number((await obls())[0].amount) === 300 && (await obls())[0].due_day === 5, "obligation updated", ou);
+const od = await runTool(sb, AMIR, "delete_obligation", { title: "قسط تابي" }, snapL, freshContext(AMIR), run8);
+check(od.includes("اتلغى") && (await obls()).length === 1 && (await obls())[0].active === false, "obligation delete is soft", [od, await obls()]);
+check(await count("zad_events", { user_id: AMIR, kind: "obligation.deactivated" }) === 1, "obligation delete: event");
+const oc = await runTool(sb, AMIR, "confirm_obligation", { kind: "rent" }, { ...snapL, obligation_detection: { title: "إيجار الشقة", amount: 4000, due_day: 3, provider: null } }, freshContext(AMIR), run8);
+check(oc.includes("اتسجل الالتزام") && (await obls()).some((o) => o.title === "إيجار الشقة" && o.active === true), "obligation confirmed", [oc, await obls()]);
+
 console.log(failed === 0 ? "e2e: all checks passed" : `e2e: ${failed} FAILED`);
 Deno.exit(failed === 0 ? 0 : 1);

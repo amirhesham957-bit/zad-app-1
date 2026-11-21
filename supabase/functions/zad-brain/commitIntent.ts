@@ -13,7 +13,10 @@ export type IntentKind =
   | "inventory.added" | "inventory.consumed" | "inventory.quantity_set" | "inventory.deleted" | "inventory.restock_mode_set"
   | "shopping.added" | "shopping.completed" | "shopping.deleted"
   | "pharmacy.added" | "pharmacy.updated" | "pharmacy.deleted" | "pharmacy.dose_taken"
-  | "money.logged" | "money.updated" | "money.deleted" | "money.purchase" | "money.limit_set" | "money.category_budget_set";
+  | "money.logged" | "money.updated" | "money.deleted" | "money.purchase" | "money.limit_set" | "money.category_budget_set"
+  | "subscription.added" | "subscription.updated" | "subscription.deleted"
+  | "debt.added" | "debt.updated" | "debt.deleted"
+  | "obligation.added" | "obligation.updated" | "obligation.deactivated";
 export type IntentSource = "manual" | "receipt" | "bank" | "model" | "cron";
 
 export type CommitResult =
@@ -109,6 +112,20 @@ const REASONS: Record<string, string> = {
   date_invalid: "تاريخ العملية مش مفهوم أو في المستقبل أو أقدم من سنة",
   category_invalid: "اسم الفئة لازم يكون من ٢ لـ٤٠ حرف",
   no_category_budget: "مفيش سقف على الفئة دي أصلاً",
+  subscription_title_invalid: "اسم الاشتراك لازم يكون من ٢ لـ١٢٠ حرف",
+  renewal_date_invalid: "تاريخ التجديد لازم يكون تاريخ حقيقي بصيغة YYYY-MM-DD",
+  billing_cycle_invalid: "دورة الدفع يا MONTHLY يا YEARLY",
+  due_day_invalid: "يوم الاستحقاق لازم يكون من ١ لـ٣١",
+  is_active_invalid: "التفعيل لازم يكون true أو false",
+  debt_name_invalid: "اسم الدين لازم يكون من ٢ لـ١٢٠ حرف",
+  minimum_invalid: "الحد الأدنى الشهري لازم يكون رقم مش سالب",
+  interest_invalid: "نسبة الفايدة لازم تكون من ٠ لـ١٠٠٠",
+  balance_negative: "الرصيد المتبقي مينفعش يبقى بالسالب",
+  obligation_title_invalid: "اسم الالتزام لازم يكون من ٢ لـ١٢٠ حرف",
+  obligation_kind_invalid: "نوع الالتزام يا rent يا installment يا tuition يا utility يا other",
+  recurrence_invalid: "التكرار يا monthly يا quarterly يا yearly يا once",
+  installments_invalid: "عدد الأقساط لازم يكون رقم صحيح من ١ لـ٦٠٠",
+  already_inactive: "الالتزام ده اتلغى قبل كده",
 };
 
 /** سبب الرفض بالعربي للموديل (والكود الأصلي بين قوسين للتشخيص). */
