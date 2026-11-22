@@ -7120,6 +7120,323 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get settingsGuardEventsSubtitle => 'اللي زاد رفض يكتبه، وأسباب الرفض';
+
+  @override
+  String get guardReason_item_not_found => 'السجل ده مش موجود عندك';
+
+  @override
+  String get guardReason_name_invalid => 'اسم الصنف لازم يكون من ٢ لـ١٢٠ حرف';
+
+  @override
+  String get guardReason_qty_not_positive => 'الكمية لازم تكون أكبر من صفر';
+
+  @override
+  String get guardReason_qty_too_large =>
+      'الكمية كبيرة بشكل مش منطقي — اتأكد من العميل';
+
+  @override
+  String get guardReason_qty_negative => 'الكمية مينفعش تبقى بالسالب';
+
+  @override
+  String get guardReason_category_unknown => 'الفئة مش من الفئات المعروفة';
+
+  @override
+  String get guardReason_expiry_bad_format => 'الصلاحية لازم تكون YYYY-MM-DD';
+
+  @override
+  String get guardReason_expiry_before_purchase =>
+      'تاريخ الصلاحية قبل النهارده — اتأكد من العميل';
+
+  @override
+  String get guardReason_amount_invalid =>
+      'الكمية المستعملة لازم تكون أكبر من صفر';
+
+  @override
+  String get guardReason_amount_too_large =>
+      'الكمية المستعملة كبيرة بشكل مش منطقي';
+
+  @override
+  String get guardReason_restock_mode_unknown =>
+      'النوع يا staple يا occasional';
+
+  @override
+  String get guardReason_already_purchased =>
+      'السطر ده اتشطب من القايمة قبل كده';
+
+  @override
+  String get guardReason_member_not_granted =>
+      'الفرد ده مش في العيلة أو مش موافق إنك تتابع أدويته';
+
+  @override
+  String get guardReason_patch_empty => 'مفيش حاجة تتعدل';
+
+  @override
+  String get guardReason_patch_field_unknown => 'الحقل ده مايتعدلش من هنا';
+
+  @override
+  String get guardReason_dose_times_invalid =>
+      'مواعيد الجرعات لازم تكون HH:MM مفصولة بفاصلة';
+
+  @override
+  String get guardReason_dose_count_invalid => 'عدد الجرعات في اليوم من ١ لـ٢٤';
+
+  @override
+  String get guardReason_qty_invalid =>
+      'الكمية لازم تكون رقم صحيح من ٠ لـ١٠٠٠٠';
+
+  @override
+  String get guardReason_dosage_too_long => 'الجرعة مكتوبة طويلة أوي';
+
+  @override
+  String get guardReason_dose_already_logged =>
+      'الجرعة دي متسجلة قبل كده — الكمية ماتخصمتش تاني';
+
+  @override
+  String get guardReason_amount_not_positive => 'المبلغ لازم يكون رقم موجب';
+
+  @override
+  String get guardReason_amount_over_cap =>
+      'المبلغ ده كبير بشكل غير منطقي — تأكد منه';
+
+  @override
+  String get guardReason_title_invalid => 'اكتب وصف قصير للمعاملة (لحد ٨٠ حرف)';
+
+  @override
+  String get guardReason_title_guessed =>
+      'الوصف ده تخمين — اسأل العميل الفلوس دي راحت على إيه قبل ما تسجلها';
+
+  @override
+  String get guardReason_txn_kind_unknown => 'النوع يا expense يا income';
+
+  @override
+  String get guardReason_wallet_unknown => 'المحفظة يا cash يا card يا bank';
+
+  @override
+  String get guardReason_transfer_to_missing => 'التحويل لازم يقول رايح فين';
+
+  @override
+  String get guardReason_transfer_change_unsupported =>
+      'التحويل مايتعملش بالتعديل — سجّله معاملة جديدة';
+
+  @override
+  String get guardReason_text_too_long => 'الفئة أو اسم المحل طويل أوي';
+
+  @override
+  String get guardReason_for_person_invalid => '«لمين» لازم يكون من ١ لـ٤٠ حرف';
+
+  @override
+  String get guardReason_date_invalid =>
+      'تاريخ العملية مش مفهوم أو في المستقبل أو أقدم من سنة';
+
+  @override
+  String get guardReason_category_invalid =>
+      'اسم الفئة لازم يكون من ٢ لـ٤٠ حرف';
+
+  @override
+  String get guardReason_no_category_budget => 'مفيش سقف على الفئة دي أصلاً';
+
+  @override
+  String get guardReason_subscription_title_invalid =>
+      'اسم الاشتراك لازم يكون من ٢ لـ١٢٠ حرف';
+
+  @override
+  String get guardReason_renewal_date_invalid =>
+      'تاريخ التجديد لازم يكون تاريخ حقيقي بصيغة YYYY-MM-DD';
+
+  @override
+  String get guardReason_billing_cycle_invalid =>
+      'دورة الدفع يا MONTHLY يا YEARLY';
+
+  @override
+  String get guardReason_due_day_invalid => 'يوم الاستحقاق لازم يكون من ١ لـ٣١';
+
+  @override
+  String get guardReason_is_active_invalid => 'التفعيل لازم يكون true أو false';
+
+  @override
+  String get guardReason_debt_name_invalid =>
+      'اسم الدين لازم يكون من ٢ لـ١٢٠ حرف';
+
+  @override
+  String get guardReason_minimum_invalid =>
+      'الحد الأدنى الشهري لازم يكون رقم مش سالب';
+
+  @override
+  String get guardReason_interest_invalid =>
+      'نسبة الفايدة لازم تكون من ٠ لـ١٠٠٠';
+
+  @override
+  String get guardReason_balance_negative =>
+      'الرصيد المتبقي مينفعش يبقى بالسالب';
+
+  @override
+  String get guardReason_obligation_title_invalid =>
+      'اسم الالتزام لازم يكون من ٢ لـ١٢٠ حرف';
+
+  @override
+  String get guardReason_obligation_kind_invalid =>
+      'نوع الالتزام يا rent يا installment يا tuition يا utility يا other';
+
+  @override
+  String get guardReason_recurrence_invalid =>
+      'التكرار يا monthly يا quarterly يا yearly يا once';
+
+  @override
+  String get guardReason_installments_invalid =>
+      'عدد الأقساط لازم يكون رقم صحيح من ١ لـ٦٠٠';
+
+  @override
+  String get guardReason_already_inactive => 'الالتزام ده اتلغى قبل كده';
+
+  @override
+  String get guardReason_device_name_invalid =>
+      'اسم الجهاز لازم يكون من ٢ لـ١٢٠ حرف';
+
+  @override
+  String get guardReason_device_category_invalid =>
+      'فئة الجهاز طويلة أوي (٦٠ حرف بالكتير)';
+
+  @override
+  String get guardReason_day_invalid =>
+      'التاريخ لازم يوم حقيقي بصيغة YYYY-MM-DD';
+
+  @override
+  String get guardReason_interval_invalid =>
+      'الفاصل بين الصيانات لازم عدد أيام صحيح موجب';
+
+  @override
+  String get guardReason_cost_invalid =>
+      'التكلفة لازم رقم موجب في الحدود المنطقية';
+
+  @override
+  String get guardReason_kind_invalid => 'النوع مش من الأنواع المعروفة';
+
+  @override
+  String get guardReason_holder_invalid =>
+      'اسم صاحب المستند لازم يكون من غير مسافات زيادة ولحد ٤٠ حرف';
+
+  @override
+  String get guardReason_label_invalid =>
+      'اسم المستند لازم يكون من غير مسافات زيادة ولحد ٤٠ حرف';
+
+  @override
+  String get guardReason_label_required => 'مستند «other» محتاج اسم';
+
+  @override
+  String get guardReason_date_out_of_range =>
+      'تاريخ الانتهاء مش معقول (بين ٢٠٠٠ و٢١٠٠)';
+
+  @override
+  String get guardReason_appt_title_invalid =>
+      'اسم الميعاد لازم من ٢ لـ١٦٠ حرف';
+
+  @override
+  String get guardReason_starts_at_invalid => 'وقت الميعاد مش مفهوم';
+
+  @override
+  String get guardReason_appt_recurrence_invalid =>
+      'التكرار لازم once أو hourly أو daily أو weekly أو monthly';
+
+  @override
+  String get guardReason_source_invalid => 'مصدر الميعاد مش معروف';
+
+  @override
+  String get guardReason_remind_invalid =>
+      'التذكير قبلها لازم دقايق صحيحة من ٠ لـ١٠٠٨٠';
+
+  @override
+  String get guardReason_place_too_long =>
+      'اسم المكان طويل أوي (١٢٠ حرف بالكتير)';
+
+  @override
+  String get guardReason_status_invalid =>
+      'الحالة لازم upcoming أو done أو cancelled';
+
+  @override
+  String get guardReason_user_not_found => 'حساب العميل مش موجود';
+
+  @override
+  String get guardReason_cycle_day_invalid =>
+      'يوم بداية الدورة رقم صحيح من ١ لـ٣١';
+
+  @override
+  String get guardReason_currency_invalid =>
+      'العملة كود ISO من ٣ حروف كابيتال (مثل EGP) — والتحدي عملته لحد ١٠ حروف';
+
+  @override
+  String get guardReason_country_invalid =>
+      'البلد كود ISO من حرفين كابيتال (مثل EG)';
+
+  @override
+  String get guardReason_balance_invalid => 'الرصيد لازم يكون رقم غير سالب';
+
+  @override
+  String get guardReason_sleep_time_invalid => 'المواعيد بصيغة HH:MM (٢٤ ساعة)';
+
+  @override
+  String get guardReason_sleep_bed_out_of_range =>
+      'النوم من ٢٠:٠٠ لـ٠٣:٠٠ — شغل ليلي؟ اسأله وماتحفظش';
+
+  @override
+  String get guardReason_sleep_wake_out_of_range => 'الصحيان من ٠٤:٠٠ لـ١٢:٠٠';
+
+  @override
+  String get guardReason_setting_unknown =>
+      'الإعداد ده يا pet_calls يا food_pattern';
+
+  @override
+  String get guardReason_goal_title_invalid => 'عنوان الهدف من ٤ لـ٢٠٠ حرف';
+
+  @override
+  String get guardReason_metric_too_long => 'وصف المقياس طويل أوي';
+
+  @override
+  String get guardReason_target_invalid =>
+      'المبلغ المستهدف لازم رقم موجب منطقي';
+
+  @override
+  String get guardReason_deadline_invalid => 'تاريخ الهدف مش مفهوم';
+
+  @override
+  String get guardReason_unit_invalid => 'unit يا money يا count';
+
+  @override
+  String get guardReason_goal_not_found => 'مفيش هدف بالاسم ده عند العميل';
+
+  @override
+  String get guardReason_goal_amount_invalid =>
+      'المبلغ لازم رقم مش صفر وبحدود المنطق';
+
+  @override
+  String get guardReason_goal_not_amount =>
+      'الهدف ده بيتعد بالمهام مش بالفلوس — تقدمه بيتحسب لوحده.';
+
+  @override
+  String get guardReason_challenge_already_active =>
+      'عنده تحدي شغال بالفعل — شجّعه يكمّله أو اسأله لو عايز يقفله الأول (stop_savings_challenge).';
+
+  @override
+  String get guardReason_no_active_challenge => 'مفيش تحدي شغال أصلاً';
+
+  @override
+  String get guardReason_challenge_cap_invalid =>
+      'السقف اليومي لازم رقم موجب منطقي';
+
+  @override
+  String get guardReason_challenge_length_invalid => 'مدة التحدي من ٧ لـ٩٠ يوم';
+
+  @override
+  String get guardReason_challenge_date_invalid =>
+      'تاريخ بداية التحدي مش مفهوم';
+
+  @override
+  String get guardReason_dose_slot_invalid => 'ميعاد الجرعة مش تاريخ مفهوم';
+
+  @override
+  String get guardReason_snooze_minutes_invalid => 'التأجيل من ٥ لـ٢٤٠ دقيقة';
+
+  @override
+  String get guardReason_fallback => 'الكتابة اترفضت';
 }
 
 /// The translations for Arabic, as used in Saudi Arabia (`ar_SA`).
@@ -9962,4 +10279,321 @@ class ZadL10nArSa extends ZadL10nAr {
 
   @override
   String get settingsGuardEventsSubtitle => 'اللي رفض زاد يكتبه، وأسباب الرفض';
+
+  @override
+  String get guardReason_item_not_found => 'السجل هذا مو موجود عندك';
+
+  @override
+  String get guardReason_name_invalid => 'اسم الصنف لازم يكون من ٢ لـ١٢٠ حرف';
+
+  @override
+  String get guardReason_qty_not_positive => 'الكمية لازم تكون أكبر من صفر';
+
+  @override
+  String get guardReason_qty_too_large =>
+      'الكمية كبيرة بشكل مو منطقي — تأكد من العميل';
+
+  @override
+  String get guardReason_qty_negative => 'الكمية ما تقدر تكون بالسالب';
+
+  @override
+  String get guardReason_category_unknown => 'الفئة مو من الفئات المعروفة';
+
+  @override
+  String get guardReason_expiry_bad_format =>
+      'تاريخ الصلاحية لازم يكون YYYY-MM-DD';
+
+  @override
+  String get guardReason_expiry_before_purchase =>
+      'تاريخ الصلاحية قبل اليوم — تأكد من العميل';
+
+  @override
+  String get guardReason_amount_invalid =>
+      'الكمية المستخدمة لازم تكون أكبر من صفر';
+
+  @override
+  String get guardReason_amount_too_large =>
+      'الكمية المستخدمة كبيرة بشكل مو منطقي';
+
+  @override
+  String get guardReason_restock_mode_unknown =>
+      'النوع إما staple أو occasional';
+
+  @override
+  String get guardReason_already_purchased =>
+      'هذا السطر انشطب من القائمة من قبل';
+
+  @override
+  String get guardReason_member_not_granted =>
+      'هذا الفرد مو في العائلة أو ما وافق إنك تتابع أدويته';
+
+  @override
+  String get guardReason_patch_empty => 'ما فيه شي يتعدل';
+
+  @override
+  String get guardReason_patch_field_unknown => 'هذا الحقل ما يتعدل من هنا';
+
+  @override
+  String get guardReason_dose_times_invalid =>
+      'مواعيد الجرعات لازم تكون HH:MM مفصولة بفاصلة';
+
+  @override
+  String get guardReason_dose_count_invalid => 'عدد الجرعات في اليوم من ١ لـ٢٤';
+
+  @override
+  String get guardReason_qty_invalid =>
+      'الكمية لازم تكون رقم صحيح من ٠ لـ١٠٠٠٠';
+
+  @override
+  String get guardReason_dosage_too_long => 'الجرعة مكتوبة طويلة زيادة';
+
+  @override
+  String get guardReason_dose_already_logged =>
+      'هذي الجرعة مسجلة من قبل — الكمية ما انخصمت مرة ثانية';
+
+  @override
+  String get guardReason_amount_not_positive => 'المبلغ لازم يكون رقم موجب';
+
+  @override
+  String get guardReason_amount_over_cap =>
+      'هذا المبلغ كبير بشكل غير منطقي — تأكد منه';
+
+  @override
+  String get guardReason_title_invalid => 'اكتب وصف قصير للمعاملة (لين ٨٠ حرف)';
+
+  @override
+  String get guardReason_title_guessed =>
+      'هذا الوصف تخمين — اسأل العميل الفلوس هذي راحت على إيش قبل ما تسجلها';
+
+  @override
+  String get guardReason_txn_kind_unknown => 'النوع إما expense أو income';
+
+  @override
+  String get guardReason_wallet_unknown => 'المحفظة إما cash أو card أو bank';
+
+  @override
+  String get guardReason_transfer_to_missing => 'التحويل لازم يقول رايح وين';
+
+  @override
+  String get guardReason_transfer_change_unsupported =>
+      'التحويل ما يتسوي بالتعديل — سجله معاملة جديدة';
+
+  @override
+  String get guardReason_text_too_long => 'الفئة أو اسم المحل طويل زيادة';
+
+  @override
+  String get guardReason_for_person_invalid => '«لمين» لازم يكون من ١ لـ٤٠ حرف';
+
+  @override
+  String get guardReason_date_invalid =>
+      'تاريخ العملية مو واضح أو في المستقبل أو أقدم من سنة';
+
+  @override
+  String get guardReason_category_invalid =>
+      'اسم الفئة لازم يكون من ٢ لـ٤٠ حرف';
+
+  @override
+  String get guardReason_no_category_budget => 'ما فيه سقف على هذي الفئة أصلاً';
+
+  @override
+  String get guardReason_subscription_title_invalid =>
+      'اسم الاشتراك لازم يكون من ٢ لـ١٢٠ حرف';
+
+  @override
+  String get guardReason_renewal_date_invalid =>
+      'تاريخ التجديد لازم يكون تاريخ صحيح بصيغة YYYY-MM-DD';
+
+  @override
+  String get guardReason_billing_cycle_invalid =>
+      'دورة الدفع إما MONTHLY أو YEARLY';
+
+  @override
+  String get guardReason_due_day_invalid => 'يوم الاستحقاق لازم يكون من ١ لـ٣١';
+
+  @override
+  String get guardReason_is_active_invalid => 'التفعيل لازم يكون true أو false';
+
+  @override
+  String get guardReason_debt_name_invalid =>
+      'اسم الدين لازم يكون من ٢ لـ١٢٠ حرف';
+
+  @override
+  String get guardReason_minimum_invalid =>
+      'الحد الأدنى الشهري لازم يكون رقم مو سالب';
+
+  @override
+  String get guardReason_interest_invalid =>
+      'نسبة الفائدة لازم تكون من ٠ لـ١٠٠٠';
+
+  @override
+  String get guardReason_balance_negative =>
+      'الرصيد المتبقي ما يقدر يكون بالسالب';
+
+  @override
+  String get guardReason_obligation_title_invalid =>
+      'اسم الالتزام لازم يكون من ٢ لـ١٢٠ حرف';
+
+  @override
+  String get guardReason_obligation_kind_invalid =>
+      'نوع الالتزام إما rent أو installment أو tuition أو utility أو other';
+
+  @override
+  String get guardReason_recurrence_invalid =>
+      'التكرار إما monthly أو quarterly أو yearly أو once';
+
+  @override
+  String get guardReason_installments_invalid =>
+      'عدد الأقساط لازم يكون رقم صحيح من ١ لـ٦٠٠';
+
+  @override
+  String get guardReason_already_inactive => 'هذا الالتزام انلغى من قبل';
+
+  @override
+  String get guardReason_device_name_invalid =>
+      'اسم الجهاز لازم يكون من ٢ لـ١٢٠ حرف';
+
+  @override
+  String get guardReason_device_category_invalid =>
+      'فئة الجهاز طويلة زيادة (٦٠ حرف بالكثير)';
+
+  @override
+  String get guardReason_day_invalid =>
+      'التاريخ لازم يكون يوم صحيح بصيغة YYYY-MM-DD';
+
+  @override
+  String get guardReason_interval_invalid =>
+      'الفاصل بين الصيانات لازم يكون عدد أيام صحيح وموجب';
+
+  @override
+  String get guardReason_cost_invalid =>
+      'التكلفة لازم تكون رقم موجب في الحدود المنطقية';
+
+  @override
+  String get guardReason_kind_invalid => 'النوع مو من الأنواع المعروفة';
+
+  @override
+  String get guardReason_holder_invalid =>
+      'اسم صاحب المستند لازم يكون بدون مسافات زيادة ولين ٤٠ حرف';
+
+  @override
+  String get guardReason_label_invalid =>
+      'اسم المستند لازم يكون بدون مسافات زيادة ولين ٤٠ حرف';
+
+  @override
+  String get guardReason_label_required => 'مستند «other» يحتاج اسم';
+
+  @override
+  String get guardReason_date_out_of_range =>
+      'تاريخ الانتهاء مو معقول (بين ٢٠٠٠ و٢١٠٠)';
+
+  @override
+  String get guardReason_appt_title_invalid =>
+      'اسم الموعد لازم يكون من ٢ لـ١٦٠ حرف';
+
+  @override
+  String get guardReason_starts_at_invalid => 'وقت الموعد مو واضح';
+
+  @override
+  String get guardReason_appt_recurrence_invalid =>
+      'التكرار لازم يكون once أو hourly أو daily أو weekly أو monthly';
+
+  @override
+  String get guardReason_source_invalid => 'مصدر الموعد مو معروف';
+
+  @override
+  String get guardReason_remind_invalid =>
+      'التذكير قبله لازم يكون دقايق صحيحة من ٠ لـ١٠٠٨٠';
+
+  @override
+  String get guardReason_place_too_long =>
+      'اسم المكان طويل زيادة (١٢٠ حرف بالكثير)';
+
+  @override
+  String get guardReason_status_invalid =>
+      'الحالة لازم تكون upcoming أو done أو cancelled';
+
+  @override
+  String get guardReason_user_not_found => 'حساب العميل مو موجود';
+
+  @override
+  String get guardReason_cycle_day_invalid =>
+      'يوم بداية الدورة رقم صحيح من ١ لـ٣١';
+
+  @override
+  String get guardReason_currency_invalid =>
+      'العملة كود ISO من ٣ حروف كابيتال (مثل EGP)';
+
+  @override
+  String get guardReason_country_invalid =>
+      'البلد كود ISO من حرفين كابيتال (مثل EG)';
+
+  @override
+  String get guardReason_balance_invalid => 'الرصيد لازم يكون رقم مو سالب';
+
+  @override
+  String get guardReason_sleep_time_invalid => 'المواعيد بصيغة HH:MM (٢٤ ساعة)';
+
+  @override
+  String get guardReason_sleep_bed_out_of_range =>
+      'النوم من ٢٠:٠٠ لـ٠٣:٠٠ — شغل ليلي؟ اسأله وما تحفظش';
+
+  @override
+  String get guardReason_sleep_wake_out_of_range => 'الصحيان من ٠٤:٠٠ لـ١٢:٠٠';
+
+  @override
+  String get guardReason_setting_unknown =>
+      'هذا الإعداد إما pet_calls أو food_pattern';
+
+  @override
+  String get guardReason_goal_title_invalid => 'عنوان الهدف من ٤ لـ٢٠٠ حرف';
+
+  @override
+  String get guardReason_metric_too_long => 'وصف المقياس طويل زيادة';
+
+  @override
+  String get guardReason_target_invalid =>
+      'المبلغ المستهدف لازم يكون رقم موجب ومنطقي';
+
+  @override
+  String get guardReason_deadline_invalid => 'تاريخ الهدف مو واضح';
+
+  @override
+  String get guardReason_unit_invalid => 'الوحدة إما money أو count';
+
+  @override
+  String get guardReason_goal_not_found => 'ما فيه هدف بهذا الاسم عند العميل';
+
+  @override
+  String get guardReason_goal_amount_invalid =>
+      'المبلغ لازم يكون رقم مو صفر وفي حدود المنطق';
+
+  @override
+  String get guardReason_goal_not_amount =>
+      'هذا الهدف يتعد بالمهام مو بالفلوس — تقدمه يتحسب لحاله.';
+
+  @override
+  String get guardReason_challenge_already_active =>
+      'عنده تحدي شغال من قبل — شجعه يكمله أو اسأله إذا يبي يقفله أول (stop_savings_challenge).';
+
+  @override
+  String get guardReason_no_active_challenge => 'ما فيه تحدي شغال أصلاً';
+
+  @override
+  String get guardReason_challenge_cap_invalid =>
+      'السقف اليومي لازم يكون رقم موجب ومنطقي';
+
+  @override
+  String get guardReason_challenge_length_invalid => 'مدة التحدي من ٧ لـ٩٠ يوم';
+
+  @override
+  String get guardReason_challenge_date_invalid => 'تاريخ بداية التحدي مو واضح';
+
+  @override
+  String get guardReason_dose_slot_invalid => 'موعد الجرعة مو تاريخ واضح';
+
+  @override
+  String get guardReason_snooze_minutes_invalid => 'التأجيل من ٥ لـ٢٤٠ دقيقة';
+
+  @override
+  String get guardReason_fallback => 'انرفضت الكتابة';
 }

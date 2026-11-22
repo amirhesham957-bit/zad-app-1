@@ -7214,4 +7214,351 @@ class ZadL10nEn extends ZadL10n {
   @override
   String get settingsGuardEventsSubtitle =>
       'What Zad refused to write, and why';
+
+  @override
+  String get guardReason_item_not_found => 'This record isn’t in your account';
+
+  @override
+  String get guardReason_name_invalid =>
+      'The item name must be 2 to 120 characters';
+
+  @override
+  String get guardReason_qty_not_positive =>
+      'The quantity must be more than zero';
+
+  @override
+  String get guardReason_qty_too_large =>
+      'The quantity is unreasonably large — check with the customer';
+
+  @override
+  String get guardReason_qty_negative => 'The quantity can’t be negative';
+
+  @override
+  String get guardReason_category_unknown =>
+      'The category isn’t one of the known categories';
+
+  @override
+  String get guardReason_expiry_bad_format =>
+      'The expiry date must be YYYY-MM-DD';
+
+  @override
+  String get guardReason_expiry_before_purchase =>
+      'The expiry date is before today — check with the customer';
+
+  @override
+  String get guardReason_amount_invalid =>
+      'The amount used must be more than zero';
+
+  @override
+  String get guardReason_amount_too_large =>
+      'The amount used is unreasonably large';
+
+  @override
+  String get guardReason_restock_mode_unknown =>
+      'The type must be staple or occasional';
+
+  @override
+  String get guardReason_already_purchased =>
+      'This line was already crossed off the list';
+
+  @override
+  String get guardReason_member_not_granted =>
+      'This person isn’t in the family, or hasn’t agreed to let you follow their medicines';
+
+  @override
+  String get guardReason_patch_empty => 'There’s nothing to change';
+
+  @override
+  String get guardReason_patch_field_unknown =>
+      'This field can’t be changed from here';
+
+  @override
+  String get guardReason_dose_times_invalid =>
+      'Dose times must be HH:MM, separated by commas';
+
+  @override
+  String get guardReason_dose_count_invalid =>
+      'The number of doses a day must be 1 to 24';
+
+  @override
+  String get guardReason_qty_invalid =>
+      'The quantity must be a whole number from 0 to 10,000';
+
+  @override
+  String get guardReason_dosage_too_long => 'The dosage text is too long';
+
+  @override
+  String get guardReason_dose_already_logged =>
+      'This dose was already logged — the quantity wasn’t deducted again';
+
+  @override
+  String get guardReason_amount_not_positive =>
+      'The amount must be a positive number';
+
+  @override
+  String get guardReason_amount_over_cap =>
+      'This amount is unreasonably large — please double-check it';
+
+  @override
+  String get guardReason_title_invalid =>
+      'Write a short description for the transaction (up to 80 characters)';
+
+  @override
+  String get guardReason_title_guessed =>
+      'This description is a guess — ask the customer what the money was spent on before you record it';
+
+  @override
+  String get guardReason_txn_kind_unknown =>
+      'The type must be expense or income';
+
+  @override
+  String get guardReason_wallet_unknown =>
+      'The wallet must be cash, card or bank';
+
+  @override
+  String get guardReason_transfer_to_missing =>
+      'The transfer must say where it’s going';
+
+  @override
+  String get guardReason_transfer_change_unsupported =>
+      'A transfer can’t be edited — record it as a new transaction';
+
+  @override
+  String get guardReason_text_too_long =>
+      'The category or shop name is too long';
+
+  @override
+  String get guardReason_for_person_invalid =>
+      '“For whom” must be 1 to 40 characters';
+
+  @override
+  String get guardReason_date_invalid =>
+      'The transaction date isn’t valid, is in the future, or is more than a year old';
+
+  @override
+  String get guardReason_category_invalid =>
+      'The category name must be 2 to 40 characters';
+
+  @override
+  String get guardReason_no_category_budget =>
+      'This category has no budget limit to begin with';
+
+  @override
+  String get guardReason_subscription_title_invalid =>
+      'The subscription name must be 2 to 120 characters';
+
+  @override
+  String get guardReason_renewal_date_invalid =>
+      'The renewal date must be a real date in YYYY-MM-DD format';
+
+  @override
+  String get guardReason_billing_cycle_invalid =>
+      'The billing cycle must be MONTHLY or YEARLY';
+
+  @override
+  String get guardReason_due_day_invalid => 'The due day must be 1 to 31';
+
+  @override
+  String get guardReason_is_active_invalid => 'Active must be true or false';
+
+  @override
+  String get guardReason_debt_name_invalid =>
+      'The debt name must be 2 to 120 characters';
+
+  @override
+  String get guardReason_minimum_invalid =>
+      'The monthly minimum must be a non-negative number';
+
+  @override
+  String get guardReason_interest_invalid =>
+      'The interest rate must be 0 to 1,000';
+
+  @override
+  String get guardReason_balance_negative =>
+      'The remaining balance can’t be negative';
+
+  @override
+  String get guardReason_obligation_title_invalid =>
+      'The obligation name must be 2 to 120 characters';
+
+  @override
+  String get guardReason_obligation_kind_invalid =>
+      'The obligation type must be rent, installment, tuition, utility or other';
+
+  @override
+  String get guardReason_recurrence_invalid =>
+      'The recurrence must be monthly, quarterly, yearly or once';
+
+  @override
+  String get guardReason_installments_invalid =>
+      'The number of installments must be a whole number from 1 to 600';
+
+  @override
+  String get guardReason_already_inactive =>
+      'This obligation was already cancelled';
+
+  @override
+  String get guardReason_device_name_invalid =>
+      'The device name must be 2 to 120 characters';
+
+  @override
+  String get guardReason_device_category_invalid =>
+      'The device category is too long (60 characters at most)';
+
+  @override
+  String get guardReason_day_invalid =>
+      'The date must be a real day in YYYY-MM-DD format';
+
+  @override
+  String get guardReason_interval_invalid =>
+      'The gap between maintenance visits must be a positive whole number of days';
+
+  @override
+  String get guardReason_cost_invalid =>
+      'The cost must be a positive number within a reasonable range';
+
+  @override
+  String get guardReason_kind_invalid =>
+      'The type isn’t one of the known types';
+
+  @override
+  String get guardReason_holder_invalid =>
+      'The document holder’s name must have no extra spaces and be up to 40 characters';
+
+  @override
+  String get guardReason_label_invalid =>
+      'The document name must have no extra spaces and be up to 40 characters';
+
+  @override
+  String get guardReason_label_required =>
+      'A document marked “other” needs a name';
+
+  @override
+  String get guardReason_date_out_of_range =>
+      'The expiry date isn’t reasonable (between 2000 and 2100)';
+
+  @override
+  String get guardReason_appt_title_invalid =>
+      'The appointment name must be 2 to 160 characters';
+
+  @override
+  String get guardReason_starts_at_invalid =>
+      'The appointment time isn’t clear';
+
+  @override
+  String get guardReason_appt_recurrence_invalid =>
+      'The recurrence must be once, hourly, daily, weekly or monthly';
+
+  @override
+  String get guardReason_source_invalid =>
+      'The appointment’s source isn’t known';
+
+  @override
+  String get guardReason_remind_invalid =>
+      'The reminder before it must be a whole number of minutes from 0 to 10,080';
+
+  @override
+  String get guardReason_place_too_long =>
+      'The place name is too long (120 characters at most)';
+
+  @override
+  String get guardReason_status_invalid =>
+      'The status must be upcoming, done or cancelled';
+
+  @override
+  String get guardReason_user_not_found =>
+      'The customer’s account wasn’t found';
+
+  @override
+  String get guardReason_cycle_day_invalid =>
+      'The cycle start day must be a whole number from 1 to 31';
+
+  @override
+  String get guardReason_currency_invalid =>
+      'The currency must be a 3-letter uppercase ISO code (such as EGP)';
+
+  @override
+  String get guardReason_country_invalid =>
+      'The country must be a 2-letter uppercase ISO code (such as EG)';
+
+  @override
+  String get guardReason_balance_invalid =>
+      'The balance must be a non-negative number';
+
+  @override
+  String get guardReason_sleep_time_invalid =>
+      'Times must be in HH:MM format (24-hour)';
+
+  @override
+  String get guardReason_sleep_bed_out_of_range =>
+      'Bedtime must be between 20:00 and 03:00 — night shift? Ask, and don’t save it';
+
+  @override
+  String get guardReason_sleep_wake_out_of_range =>
+      'Wake-up must be between 04:00 and 12:00';
+
+  @override
+  String get guardReason_setting_unknown =>
+      'The setting must be pet_calls or food_pattern';
+
+  @override
+  String get guardReason_goal_title_invalid =>
+      'The goal title must be 4 to 200 characters';
+
+  @override
+  String get guardReason_metric_too_long =>
+      'The measure description is too long';
+
+  @override
+  String get guardReason_target_invalid =>
+      'The target amount must be a reasonable positive number';
+
+  @override
+  String get guardReason_deadline_invalid => 'The goal date isn’t clear';
+
+  @override
+  String get guardReason_unit_invalid => 'The unit must be money or count';
+
+  @override
+  String get guardReason_goal_not_found =>
+      'The customer has no goal with that name';
+
+  @override
+  String get guardReason_goal_amount_invalid =>
+      'The amount must be a non-zero number within reason';
+
+  @override
+  String get guardReason_goal_not_amount =>
+      'This goal is counted by tasks, not money — its progress is worked out on its own.';
+
+  @override
+  String get guardReason_challenge_already_active =>
+      'They already have a challenge running — encourage them to finish it, or ask if they want to stop it first (stop_savings_challenge).';
+
+  @override
+  String get guardReason_no_active_challenge =>
+      'There’s no challenge running to begin with';
+
+  @override
+  String get guardReason_challenge_cap_invalid =>
+      'The daily cap must be a reasonable positive number';
+
+  @override
+  String get guardReason_challenge_length_invalid =>
+      'The challenge length must be 7 to 90 days';
+
+  @override
+  String get guardReason_challenge_date_invalid =>
+      'The challenge start date isn’t clear';
+
+  @override
+  String get guardReason_dose_slot_invalid =>
+      'The dose time isn’t a clear date';
+
+  @override
+  String get guardReason_snooze_minutes_invalid =>
+      'The snooze must be 5 to 240 minutes';
+
+  @override
+  String get guardReason_fallback => 'The write was refused';
 }

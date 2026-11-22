@@ -11971,6 +11971,540 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'اللي زاد رفض يكتبه، وأسباب الرفض'**
   String get settingsGuardEventsSubtitle;
+
+  /// No description provided for @guardReason_item_not_found.
+  ///
+  /// In ar, this message translates to:
+  /// **'السجل ده مش موجود عندك'**
+  String get guardReason_item_not_found;
+
+  /// No description provided for @guardReason_name_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم الصنف لازم يكون من ٢ لـ١٢٠ حرف'**
+  String get guardReason_name_invalid;
+
+  /// No description provided for @guardReason_qty_not_positive.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكمية لازم تكون أكبر من صفر'**
+  String get guardReason_qty_not_positive;
+
+  /// No description provided for @guardReason_qty_too_large.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكمية كبيرة بشكل مش منطقي — اتأكد من العميل'**
+  String get guardReason_qty_too_large;
+
+  /// No description provided for @guardReason_qty_negative.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكمية مينفعش تبقى بالسالب'**
+  String get guardReason_qty_negative;
+
+  /// No description provided for @guardReason_category_unknown.
+  ///
+  /// In ar, this message translates to:
+  /// **'الفئة مش من الفئات المعروفة'**
+  String get guardReason_category_unknown;
+
+  /// No description provided for @guardReason_expiry_bad_format.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصلاحية لازم تكون YYYY-MM-DD'**
+  String get guardReason_expiry_bad_format;
+
+  /// No description provided for @guardReason_expiry_before_purchase.
+  ///
+  /// In ar, this message translates to:
+  /// **'تاريخ الصلاحية قبل النهارده — اتأكد من العميل'**
+  String get guardReason_expiry_before_purchase;
+
+  /// No description provided for @guardReason_amount_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكمية المستعملة لازم تكون أكبر من صفر'**
+  String get guardReason_amount_invalid;
+
+  /// No description provided for @guardReason_amount_too_large.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكمية المستعملة كبيرة بشكل مش منطقي'**
+  String get guardReason_amount_too_large;
+
+  /// No description provided for @guardReason_restock_mode_unknown.
+  ///
+  /// In ar, this message translates to:
+  /// **'النوع يا staple يا occasional'**
+  String get guardReason_restock_mode_unknown;
+
+  /// No description provided for @guardReason_already_purchased.
+  ///
+  /// In ar, this message translates to:
+  /// **'السطر ده اتشطب من القايمة قبل كده'**
+  String get guardReason_already_purchased;
+
+  /// No description provided for @guardReason_member_not_granted.
+  ///
+  /// In ar, this message translates to:
+  /// **'الفرد ده مش في العيلة أو مش موافق إنك تتابع أدويته'**
+  String get guardReason_member_not_granted;
+
+  /// No description provided for @guardReason_patch_empty.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش حاجة تتعدل'**
+  String get guardReason_patch_empty;
+
+  /// No description provided for @guardReason_patch_field_unknown.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحقل ده مايتعدلش من هنا'**
+  String get guardReason_patch_field_unknown;
+
+  /// No description provided for @guardReason_dose_times_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'مواعيد الجرعات لازم تكون HH:MM مفصولة بفاصلة'**
+  String get guardReason_dose_times_invalid;
+
+  /// No description provided for @guardReason_dose_count_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'عدد الجرعات في اليوم من ١ لـ٢٤'**
+  String get guardReason_dose_count_invalid;
+
+  /// No description provided for @guardReason_qty_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكمية لازم تكون رقم صحيح من ٠ لـ١٠٠٠٠'**
+  String get guardReason_qty_invalid;
+
+  /// No description provided for @guardReason_dosage_too_long.
+  ///
+  /// In ar, this message translates to:
+  /// **'الجرعة مكتوبة طويلة أوي'**
+  String get guardReason_dosage_too_long;
+
+  /// No description provided for @guardReason_dose_already_logged.
+  ///
+  /// In ar, this message translates to:
+  /// **'الجرعة دي متسجلة قبل كده — الكمية ماتخصمتش تاني'**
+  String get guardReason_dose_already_logged;
+
+  /// No description provided for @guardReason_amount_not_positive.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ لازم يكون رقم موجب'**
+  String get guardReason_amount_not_positive;
+
+  /// No description provided for @guardReason_amount_over_cap.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ ده كبير بشكل غير منطقي — تأكد منه'**
+  String get guardReason_amount_over_cap;
+
+  /// No description provided for @guardReason_title_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب وصف قصير للمعاملة (لحد ٨٠ حرف)'**
+  String get guardReason_title_invalid;
+
+  /// No description provided for @guardReason_title_guessed.
+  ///
+  /// In ar, this message translates to:
+  /// **'الوصف ده تخمين — اسأل العميل الفلوس دي راحت على إيه قبل ما تسجلها'**
+  String get guardReason_title_guessed;
+
+  /// No description provided for @guardReason_txn_kind_unknown.
+  ///
+  /// In ar, this message translates to:
+  /// **'النوع يا expense يا income'**
+  String get guardReason_txn_kind_unknown;
+
+  /// No description provided for @guardReason_wallet_unknown.
+  ///
+  /// In ar, this message translates to:
+  /// **'المحفظة يا cash يا card يا bank'**
+  String get guardReason_wallet_unknown;
+
+  /// No description provided for @guardReason_transfer_to_missing.
+  ///
+  /// In ar, this message translates to:
+  /// **'التحويل لازم يقول رايح فين'**
+  String get guardReason_transfer_to_missing;
+
+  /// No description provided for @guardReason_transfer_change_unsupported.
+  ///
+  /// In ar, this message translates to:
+  /// **'التحويل مايتعملش بالتعديل — سجّله معاملة جديدة'**
+  String get guardReason_transfer_change_unsupported;
+
+  /// No description provided for @guardReason_text_too_long.
+  ///
+  /// In ar, this message translates to:
+  /// **'الفئة أو اسم المحل طويل أوي'**
+  String get guardReason_text_too_long;
+
+  /// No description provided for @guardReason_for_person_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'«لمين» لازم يكون من ١ لـ٤٠ حرف'**
+  String get guardReason_for_person_invalid;
+
+  /// No description provided for @guardReason_date_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'تاريخ العملية مش مفهوم أو في المستقبل أو أقدم من سنة'**
+  String get guardReason_date_invalid;
+
+  /// No description provided for @guardReason_category_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم الفئة لازم يكون من ٢ لـ٤٠ حرف'**
+  String get guardReason_category_invalid;
+
+  /// No description provided for @guardReason_no_category_budget.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش سقف على الفئة دي أصلاً'**
+  String get guardReason_no_category_budget;
+
+  /// No description provided for @guardReason_subscription_title_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم الاشتراك لازم يكون من ٢ لـ١٢٠ حرف'**
+  String get guardReason_subscription_title_invalid;
+
+  /// No description provided for @guardReason_renewal_date_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'تاريخ التجديد لازم يكون تاريخ حقيقي بصيغة YYYY-MM-DD'**
+  String get guardReason_renewal_date_invalid;
+
+  /// No description provided for @guardReason_billing_cycle_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'دورة الدفع يا MONTHLY يا YEARLY'**
+  String get guardReason_billing_cycle_invalid;
+
+  /// No description provided for @guardReason_due_day_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'يوم الاستحقاق لازم يكون من ١ لـ٣١'**
+  String get guardReason_due_day_invalid;
+
+  /// No description provided for @guardReason_is_active_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'التفعيل لازم يكون true أو false'**
+  String get guardReason_is_active_invalid;
+
+  /// No description provided for @guardReason_debt_name_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم الدين لازم يكون من ٢ لـ١٢٠ حرف'**
+  String get guardReason_debt_name_invalid;
+
+  /// No description provided for @guardReason_minimum_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحد الأدنى الشهري لازم يكون رقم مش سالب'**
+  String get guardReason_minimum_invalid;
+
+  /// No description provided for @guardReason_interest_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'نسبة الفايدة لازم تكون من ٠ لـ١٠٠٠'**
+  String get guardReason_interest_invalid;
+
+  /// No description provided for @guardReason_balance_negative.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرصيد المتبقي مينفعش يبقى بالسالب'**
+  String get guardReason_balance_negative;
+
+  /// No description provided for @guardReason_obligation_title_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم الالتزام لازم يكون من ٢ لـ١٢٠ حرف'**
+  String get guardReason_obligation_title_invalid;
+
+  /// No description provided for @guardReason_obligation_kind_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'نوع الالتزام يا rent يا installment يا tuition يا utility يا other'**
+  String get guardReason_obligation_kind_invalid;
+
+  /// No description provided for @guardReason_recurrence_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'التكرار يا monthly يا quarterly يا yearly يا once'**
+  String get guardReason_recurrence_invalid;
+
+  /// No description provided for @guardReason_installments_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'عدد الأقساط لازم يكون رقم صحيح من ١ لـ٦٠٠'**
+  String get guardReason_installments_invalid;
+
+  /// No description provided for @guardReason_already_inactive.
+  ///
+  /// In ar, this message translates to:
+  /// **'الالتزام ده اتلغى قبل كده'**
+  String get guardReason_already_inactive;
+
+  /// No description provided for @guardReason_device_name_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم الجهاز لازم يكون من ٢ لـ١٢٠ حرف'**
+  String get guardReason_device_name_invalid;
+
+  /// No description provided for @guardReason_device_category_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'فئة الجهاز طويلة أوي (٦٠ حرف بالكتير)'**
+  String get guardReason_device_category_invalid;
+
+  /// No description provided for @guardReason_day_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'التاريخ لازم يوم حقيقي بصيغة YYYY-MM-DD'**
+  String get guardReason_day_invalid;
+
+  /// No description provided for @guardReason_interval_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'الفاصل بين الصيانات لازم عدد أيام صحيح موجب'**
+  String get guardReason_interval_invalid;
+
+  /// No description provided for @guardReason_cost_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'التكلفة لازم رقم موجب في الحدود المنطقية'**
+  String get guardReason_cost_invalid;
+
+  /// No description provided for @guardReason_kind_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'النوع مش من الأنواع المعروفة'**
+  String get guardReason_kind_invalid;
+
+  /// No description provided for @guardReason_holder_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم صاحب المستند لازم يكون من غير مسافات زيادة ولحد ٤٠ حرف'**
+  String get guardReason_holder_invalid;
+
+  /// No description provided for @guardReason_label_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم المستند لازم يكون من غير مسافات زيادة ولحد ٤٠ حرف'**
+  String get guardReason_label_invalid;
+
+  /// No description provided for @guardReason_label_required.
+  ///
+  /// In ar, this message translates to:
+  /// **'مستند «other» محتاج اسم'**
+  String get guardReason_label_required;
+
+  /// No description provided for @guardReason_date_out_of_range.
+  ///
+  /// In ar, this message translates to:
+  /// **'تاريخ الانتهاء مش معقول (بين ٢٠٠٠ و٢١٠٠)'**
+  String get guardReason_date_out_of_range;
+
+  /// No description provided for @guardReason_appt_title_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم الميعاد لازم من ٢ لـ١٦٠ حرف'**
+  String get guardReason_appt_title_invalid;
+
+  /// No description provided for @guardReason_starts_at_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'وقت الميعاد مش مفهوم'**
+  String get guardReason_starts_at_invalid;
+
+  /// No description provided for @guardReason_appt_recurrence_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'التكرار لازم once أو hourly أو daily أو weekly أو monthly'**
+  String get guardReason_appt_recurrence_invalid;
+
+  /// No description provided for @guardReason_source_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'مصدر الميعاد مش معروف'**
+  String get guardReason_source_invalid;
+
+  /// No description provided for @guardReason_remind_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'التذكير قبلها لازم دقايق صحيحة من ٠ لـ١٠٠٨٠'**
+  String get guardReason_remind_invalid;
+
+  /// No description provided for @guardReason_place_too_long.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم المكان طويل أوي (١٢٠ حرف بالكتير)'**
+  String get guardReason_place_too_long;
+
+  /// No description provided for @guardReason_status_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحالة لازم upcoming أو done أو cancelled'**
+  String get guardReason_status_invalid;
+
+  /// No description provided for @guardReason_user_not_found.
+  ///
+  /// In ar, this message translates to:
+  /// **'حساب العميل مش موجود'**
+  String get guardReason_user_not_found;
+
+  /// No description provided for @guardReason_cycle_day_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'يوم بداية الدورة رقم صحيح من ١ لـ٣١'**
+  String get guardReason_cycle_day_invalid;
+
+  /// No description provided for @guardReason_currency_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'العملة كود ISO من ٣ حروف كابيتال (مثل EGP) — والتحدي عملته لحد ١٠ حروف'**
+  String get guardReason_currency_invalid;
+
+  /// No description provided for @guardReason_country_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'البلد كود ISO من حرفين كابيتال (مثل EG)'**
+  String get guardReason_country_invalid;
+
+  /// No description provided for @guardReason_balance_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرصيد لازم يكون رقم غير سالب'**
+  String get guardReason_balance_invalid;
+
+  /// No description provided for @guardReason_sleep_time_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'المواعيد بصيغة HH:MM (٢٤ ساعة)'**
+  String get guardReason_sleep_time_invalid;
+
+  /// No description provided for @guardReason_sleep_bed_out_of_range.
+  ///
+  /// In ar, this message translates to:
+  /// **'النوم من ٢٠:٠٠ لـ٠٣:٠٠ — شغل ليلي؟ اسأله وماتحفظش'**
+  String get guardReason_sleep_bed_out_of_range;
+
+  /// No description provided for @guardReason_sleep_wake_out_of_range.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصحيان من ٠٤:٠٠ لـ١٢:٠٠'**
+  String get guardReason_sleep_wake_out_of_range;
+
+  /// No description provided for @guardReason_setting_unknown.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإعداد ده يا pet_calls يا food_pattern'**
+  String get guardReason_setting_unknown;
+
+  /// No description provided for @guardReason_goal_title_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'عنوان الهدف من ٤ لـ٢٠٠ حرف'**
+  String get guardReason_goal_title_invalid;
+
+  /// No description provided for @guardReason_metric_too_long.
+  ///
+  /// In ar, this message translates to:
+  /// **'وصف المقياس طويل أوي'**
+  String get guardReason_metric_too_long;
+
+  /// No description provided for @guardReason_target_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ المستهدف لازم رقم موجب منطقي'**
+  String get guardReason_target_invalid;
+
+  /// No description provided for @guardReason_deadline_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'تاريخ الهدف مش مفهوم'**
+  String get guardReason_deadline_invalid;
+
+  /// No description provided for @guardReason_unit_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'unit يا money يا count'**
+  String get guardReason_unit_invalid;
+
+  /// No description provided for @guardReason_goal_not_found.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش هدف بالاسم ده عند العميل'**
+  String get guardReason_goal_not_found;
+
+  /// No description provided for @guardReason_goal_amount_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ لازم رقم مش صفر وبحدود المنطق'**
+  String get guardReason_goal_amount_invalid;
+
+  /// No description provided for @guardReason_goal_not_amount.
+  ///
+  /// In ar, this message translates to:
+  /// **'الهدف ده بيتعد بالمهام مش بالفلوس — تقدمه بيتحسب لوحده.'**
+  String get guardReason_goal_not_amount;
+
+  /// No description provided for @guardReason_challenge_already_active.
+  ///
+  /// In ar, this message translates to:
+  /// **'عنده تحدي شغال بالفعل — شجّعه يكمّله أو اسأله لو عايز يقفله الأول (stop_savings_challenge).'**
+  String get guardReason_challenge_already_active;
+
+  /// No description provided for @guardReason_no_active_challenge.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش تحدي شغال أصلاً'**
+  String get guardReason_no_active_challenge;
+
+  /// No description provided for @guardReason_challenge_cap_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'السقف اليومي لازم رقم موجب منطقي'**
+  String get guardReason_challenge_cap_invalid;
+
+  /// No description provided for @guardReason_challenge_length_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'مدة التحدي من ٧ لـ٩٠ يوم'**
+  String get guardReason_challenge_length_invalid;
+
+  /// No description provided for @guardReason_challenge_date_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'تاريخ بداية التحدي مش مفهوم'**
+  String get guardReason_challenge_date_invalid;
+
+  /// No description provided for @guardReason_dose_slot_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'ميعاد الجرعة مش تاريخ مفهوم'**
+  String get guardReason_dose_slot_invalid;
+
+  /// No description provided for @guardReason_snooze_minutes_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'التأجيل من ٥ لـ٢٤٠ دقيقة'**
+  String get guardReason_snooze_minutes_invalid;
+
+  /// No description provided for @guardReason_fallback.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكتابة اترفضت'**
+  String get guardReason_fallback;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

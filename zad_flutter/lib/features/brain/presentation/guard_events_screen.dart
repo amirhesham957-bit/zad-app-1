@@ -89,7 +89,10 @@ class GuardEventsScreen extends ConsumerWidget {
                                   children: <Widget>[
                                     Expanded(
                                       child: Text(
-                                        guardReasonLabel(entry.key),
+                                        guardReasonLabel(
+                                          context.l10n,
+                                          entry.key,
+                                        ),
                                         style: ZadType.bodySmall,
                                       ),
                                     ),
@@ -202,7 +205,10 @@ class _EventCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Text(guardReasonLabel(event.reason), style: ZadType.bodySmall),
+          Text(
+            guardReasonLabel(context.l10n, event.reason),
+            style: ZadType.bodySmall,
+          ),
           const SizedBox(height: ZadSpacing.xs),
           Text(
             <String>[
