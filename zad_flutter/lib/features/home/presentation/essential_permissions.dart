@@ -16,8 +16,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/l10n/l10n.dart';
-import 'package:zad/features/alerts/application/alerts_controller.dart';
-import 'package:zad/features/alerts/data/notification_permission.dart';
+import 'package:zad/shared/alerts/application/notification_access.dart';
 import 'package:zad/shared/bank/application/bank_access_controller.dart';
 
 /// The permissions the proactive brain needs from day one.
@@ -39,16 +38,14 @@ const String kPermissionsIntroKey = 'essential_permissions_intro';
 /// cannot give (a test host) counts as nothing missing.
 final FutureProvider<List<EssentialPermission>> missingPermissionsProvider =
     FutureProvider.autoDispose<List<EssentialPermission>>((ref) async {
-      final alerts = ref.watch(
-        alertsControllerProvider.select((v) => v.permission),
-      );
+      final alerts = ref.watch(notificationStandProvider);
       final bank = ref.watch(
         bankAccessControllerProvider.select((v) => v.granted),
       );
       final battery = await ref.read(batteryUnrestrictedProvider)();
       return <EssentialPermission>[
-        if (alerts == AlertPermission.denied ||
-            alerts == AlertPermission.blocked)
+        if (alerts == NotificationStand.denied ||
+            alerts == NotificationStand.blocked)
           EssentialPermission.notifications,
         if (!bank) EssentialPermission.bankReading,
         if (battery == false) EssentialPermission.battery,
@@ -60,7 +57,7 @@ final FutureProvider<List<EssentialPermission>> missingPermissionsProvider =
 Future<void> requestEssential(WidgetRef ref, EssentialPermission p) async {
   switch (p) {
     case EssentialPermission.notifications:
-      await ref.read(alertsControllerProvider.notifier).enable();
+      await ref.read(enableNotificationsProvider)();
     case EssentialPermission.bankReading:
       await ref.read(bankAccessControllerProvider.notifier).openSettings();
     case EssentialPermission.battery:
@@ -103,6 +100,7 @@ Future<void> maybeShowPermissionsIntro(
   await showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
+    useSafeArea: true,
     showDragHandle: true,
     builder: (_) => const PermissionsSheet(),
   );
@@ -136,9 +134,7 @@ class _PermissionsSheetState extends ConsumerState<PermissionsSheet>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     // Back from a system page: look again, so a granted row disappears.
     if (state == AppLifecycleState.resumed) {
-      unawaited(
-        ref.read(alertsControllerProvider.notifier).refreshPermission(),
-      );
+      unawaited(ref.read(refreshNotificationStandProvider)());
       unawaited(ref.read(bankAccessControllerProvider.notifier).refresh());
       ref.invalidate(missingPermissionsProvider);
     }
@@ -235,6 +231,7 @@ class EssentialPermissionsCard extends ConsumerWidget {
               showModalBottomSheet<void>(
                 context: context,
                 isScrollControlled: true,
+                useSafeArea: true,
                 showDragHandle: true,
                 builder: (_) => const PermissionsSheet(),
               ),

@@ -18,9 +18,11 @@ import 'package:zad/core/data/local/boxes.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/env/zad_env.dart';
 import 'package:zad/core/l10n/app_language.dart';
+import 'package:zad/features/alerts/application/alerts_controller.dart';
 import 'package:zad/features/alerts/data/notification_permission.dart';
 import 'package:zad/features/bank/background/bank_background_main.dart';
 import 'package:zad/features/places/background/place_background_main.dart';
+import 'package:zad/shared/alerts/application/notification_access.dart';
 import 'package:zad/shared/alerts/data/push_platform.dart';
 import 'package:zad/shared/market/application/arabic_variant.dart';
 import 'package:zad/shared/places/application/place_engine.dart';
@@ -130,6 +132,28 @@ Future<void> bootstrap(Widget app) async {
           sharingNoticeProvider.overrideWithValue(const LocalSharingNotice()),
           notificationPermissionProvider.overrideWithValue(
             const PluginNotificationPermission(),
+          ),
+          // Home's permissions card reads the alerts through this contract,
+          // not by importing the alerts feature.
+          notificationStandProvider.overrideWith(
+            (ref) => switch (ref.watch(
+              alertsControllerProvider.select((v) => v.permission),
+            )) {
+              AlertPermission.granted => NotificationStand.granted,
+              AlertPermission.denied => NotificationStand.denied,
+              AlertPermission.blocked => NotificationStand.blocked,
+              AlertPermission.unknown => NotificationStand.unknown,
+            },
+          ),
+          enableNotificationsProvider.overrideWith(
+            (ref) =>
+                () => ref.read(alertsControllerProvider.notifier).enable(),
+          ),
+          refreshNotificationStandProvider.overrideWith(
+            (ref) =>
+                () => ref
+                    .read(alertsControllerProvider.notifier)
+                    .refreshPermission(),
           ),
           placeHostProvider.overrideWithValue(const PluginPlaceHost()),
           backgroundLocationProvider.overrideWithValue(

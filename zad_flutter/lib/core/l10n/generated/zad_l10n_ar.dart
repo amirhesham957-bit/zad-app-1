@@ -10728,4 +10728,11 @@ class ZadL10nArSa extends ZadL10nAr {
 
   @override
   String get pantryRateSaved => 'سجّلنا تصحيحك';
+
+  @override
+  String get permSheetBody =>
+      'عشان زاد ينبّهك ويتابع بيتك من دون ما تفتح التطبيق، نحتاج هذي الأذونات. كل واحد منها اختياري، وتقدر تغيّره من إعدادات الجوال في أي وقت.';
+
+  @override
+  String get permLater => 'مو الحين';
 }
