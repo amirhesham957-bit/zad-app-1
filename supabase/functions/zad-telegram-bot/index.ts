@@ -26,6 +26,7 @@ import { nextRenewal } from "../_shared/nextRenewal.ts";
 import { Bot, type Context, InlineKeyboard, webhookCallback } from "npm:grammy@1";
 import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { mediaGate } from "./entitlement.ts";
+import { decideNotificationPush, notificationText, validNotificationId } from "./notificationPush.ts";
 import { routePhoto } from "./photoRoute.ts";
 import { alertEmotion, alertSpeechText, geminiKeysFromEnv, pcmToMp3, synthesizeAlertPcm, wantsVoice, speechLimitForMoment } from "./voiceAlert.ts";
 import { detectDialectFromText, voiceCountry } from "../_shared/dialect.ts";
@@ -3588,6 +3589,59 @@ Deno.serve(async (req: Request) => {
     } catch (e) {
       console.error("flyer_health failed:", e);
       return new Response(JSON.stringify({ ok: false, error: String(e) }), { status: 500 });
+    }
+  }
+
+  // البوت بيتكلم مع كل إشعار في التطبيق (التريجر على app_notifications). إشعار واحد = رسالة واحدة:
+  // الصف في zad_bot_notification_push بيتحجز الأول (المفتاح id الإشعار)، وبعدين القرار (decideNotificationPush).
+  if (req.method === "POST" && new URL(req.url).searchParams.get("job") === "notification_push") {
+    if (!(await secretMatches(req.headers.get("X-Realtime-Push-Secret"), "ZAD_REALTIME_PUSH_SECRET"))) {
+      return new Response("unauthorized", { status: 401 });
+    }
+    if (!BOT_CONFIGURED) {
+      return new Response(JSON.stringify({ ok: false, reason: "bot not configured" }), { status: 503 });
+    }
+    const reply = (o: Record<string, unknown>, status = 200) =>
+      new Response(JSON.stringify(o), { status, headers: { "Content-Type": "application/json" } });
+    try {
+      const { notification_id, user_id, title, body } = await req.json() as {
+        notification_id?: unknown; user_id?: string; title?: string; body?: string;
+      };
+      if (!validNotificationId(notification_id) || !user_id || !title) return reply({ ok: false, reason: "missing notification_id/user_id/title" }, 400);
+      const sb = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+      const chatId = await resolveChatId(sb, user_id);
+      if (chatId === null) return reply({ ok: true, delivered: false, reason: "not linked" });
+
+      const claim = await sb.from("zad_bot_notification_push")
+        .insert({ notification_id, user_id, status: "skipped", reason: "pending" });
+      const alreadyClaimed = claim.error?.code === "23505";
+      if (claim.error && !alreadyClaimed) throw new Error(`claim failed: ${claim.error.message}`);
+
+      const nowMs = Date.now();
+      const [u, sent] = await Promise.all([
+        sb.from("zad_users").select("country,sleep_bed,sleep_wake").eq("id", user_id).maybeSingle(),
+        sb.from("zad_bot_notification_push").select("notification_id", { count: "exact", head: true })
+          .eq("user_id", user_id).eq("status", "sent").gt("created_at", new Date(nowMs - 86_400_000).toISOString()),
+      ]);
+      const country = (u.data as { country?: string | null } | null)?.country ?? null;
+      const { data: tz } = await sb.rpc("zad_market_timezone", { p_country: country });
+      const decision = decideNotificationPush({
+        alreadyClaimed,
+        tz: typeof tz === "string" && tz ? tz : "UTC",
+        sleepBed: (u.data as { sleep_bed?: string | null } | null)?.sleep_bed ?? null,
+        sleepWake: (u.data as { sleep_wake?: string | null } | null)?.sleep_wake ?? null,
+        sentLast24h: sent.count ?? 0,
+      }, nowMs);
+      if (!decision.send) {
+        if (!alreadyClaimed) await sb.from("zad_bot_notification_push").update({ reason: decision.reason }).eq("notification_id", notification_id);
+        return reply({ ok: true, delivered: false, reason: decision.reason });
+      }
+      await sendTelegramMessage(chatId, notificationText(title, body ?? ""));
+      await sb.from("zad_bot_notification_push").update({ status: "sent", reason: null }).eq("notification_id", notification_id);
+      return reply({ ok: true, delivered: true });
+    } catch (e) {
+      console.error("notification_push failed:", e);
+      return reply({ ok: false, error: String(e) }, 500);
     }
   }
 
