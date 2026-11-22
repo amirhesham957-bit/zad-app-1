@@ -36,6 +36,7 @@ import 'package:zad/features/family/presentation/family_dialogs.dart';
 import 'package:zad/features/home/application/home_campaign.dart';
 import 'package:zad/features/home/application/home_widget_controller.dart';
 import 'package:zad/features/home/presentation/campaign_banner.dart';
+import 'package:zad/features/home/presentation/essential_permissions.dart';
 import 'package:zad/features/home/presentation/home_screen.dart';
 import 'package:zad/features/home/presentation/season_header.dart';
 import 'package:zad/features/home/presentation/sections_grid.dart';
@@ -152,7 +153,8 @@ class _ZadShellState extends ConsumerState<ZadShell> {
       unawaited(links.listen(_openAppLink));
       final alerts = ref.read(alertsControllerProvider.notifier);
       await alerts.start();
-      if (mounted) await alerts.askOnce();
+      // ج١.٢: explain first, then the system dialog (from the sheet).
+      if (mounted) await maybeShowPermissionsIntro(context, ref);
       // Kotlin's on-phone reminders: doses, tasbih at 17:00, seasons.
       if (mounted) await ref.read(localRemindersProvider).resyncAll();
       // إيقاع النوم (الشريحة ٣٧): نافذة النوم من قفل الشاشة، مرة في اليوم.

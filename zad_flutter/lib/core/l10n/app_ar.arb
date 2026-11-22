@@ -6879,5 +6879,20 @@
   "@pantryRateEstimate": {"description": "Pantry edit dialog: the estimate in days.", "placeholders": {"days": {"type": "String"}}},
   "@pantryRateFaster": {"description": "Pantry edit dialog: correction tap, consumption is faster."},
   "@pantryRateSlower": {"description": "Pantry edit dialog: correction tap, consumption is slower."},
-  "@pantryRateSaved": {"description": "Pantry edit dialog: after a correction tap."}
+  "@pantryRateSaved": {"description": "Pantry edit dialog: after a correction tap."},
+  "permSheetTitle": "خلّي زاد يشتغل لبيتك من أول يوم",
+  "permSheetBody": "عشان زاد ينبّهك ويتابع بيتك من غير ما تفتح التطبيق، محتاج الإذون دي. كل واحد منها اختياري، وتقدر تغيّره من إعدادات الموبايل في أي وقت.",
+  "permNotificationsTitle": "الإشعارات",
+  "permNotificationsWhy": "تنبيهات الجرعات والمواعيد والفواتير وموجز الصبح.",
+  "permBankTitle": "قراءة إشعارات البنك",
+  "permBankWhy": "زاد بيقرا الإشعارات اللي بتوصلك من البنك ورسايل الدفع عشان يسجّل المشتريات عنك، وبيحتفظ بس بالإشعارات اللي شكلها معاملة.",
+  "permBatteryTitle": "الشغل في الخلفية",
+  "permBatteryWhy": "عشان قراءة الإشعارات والتذكيرات ماتتقفلش لما الموبايل يوفّر البطارية.",
+  "permEnable": "فعّل",
+  "permLater": "مش دلوقتي",
+  "permDone": "تمام",
+  "permPrivacy": "بياناتك عندنا بتتعامل حسب سياسة الخصوصية المنشورة، وزاد مابيوعدش بأكتر منها.",
+  "permCardBody": "فعّلها بضغطة عشان تنبيهات زاد توصلك.",
+  "permCardTitle": "{count, plural, =1{إذن ناقص} other{{count} إذون ناقصة}}",
+  "@permCardTitle": {"placeholders": {"count": {"type": "int"}}}
 }
