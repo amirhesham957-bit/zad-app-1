@@ -108,6 +108,7 @@ import { foodProfile } from "./foodProfile.ts";
 import { seasonFor, seasonInstruction, upcomingSeason, upcomingSeasonInstruction } from "../_shared/season.ts";
 import { SEASON_PLAN_DAYS, seasonPlanInstruction, upcomingCalendarSeasons } from "../_shared/seasonCalendar.ts";
 import { buildMenu, describeMenu, feedbackMap, parseMenuDishes } from "./menuTool.ts";
+import { describeGatherings, findGatherings, parseGatheringInput } from "./gatheringTool.ts";
 import { guardEngineReply, type EngineOutput } from "./engineGuard.ts";
 import { type FastIntent, formatBalanceReply, parseFastPath } from "./fastPath.ts";
 import { AgentSource, AuditScope, recordAction, writeRows } from "./audit.ts";
@@ -5269,6 +5270,14 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       return describeMenu(menu, costs, snap?.currency ?? "");
     }
 
+    case "plan_gathering_time": {
+      // م٥.٢: أحسن وقت تقعد فيه العيلة سوا (gatheringTool.ts). المشغول من كلام العميل بس.
+      const parsed = parseGatheringInput(input);
+      if ("error" in parsed) return parsed.error;
+      const today = snap?.now_local?.date ?? new Date().toISOString().slice(0, 10);
+      return describeGatherings(findGatherings(parsed.value), parsed.value, today);
+    }
+
     case "where_to_buy": {
       // «ألاقيه فين بسعر كويس؟» — صنف واحد: عروض المحلات + فواتير عملاء زاد في مدينته (whereToBuy.ts، أرضية ٣ بيوت).
       const item = String(input?.item_name ?? "").trim().slice(0, 60);
@@ -7239,6 +7248,36 @@ export const CHAT_TOOLS: ToolDef[] = [
         },
       },
       required: ["budget", "days", "dishes"],
+    },
+  },
+  {
+    name: "plan_gathering_time",
+    description:
+      "أحسن وقت تقعد فيه العيلة كلها سوا الأسبوع الجاي (٧ أيام من النهارده): بتدّيها الأفراد ومدة اللمّة وأوقات انشغال كل واحد " +
+      "(من كلام العميل: ماتخمنش مواعيد حد)، وبترجّع أحسن ٣ أوقات ومين ناقص في كل واحد. الأرقام من الأداة بس.",
+    input_schema: {
+      type: "object",
+      properties: {
+        members: { type: "array", items: { type: "string" }, description: "أسماء الأفراد (٢ لـ١٢)" },
+        minutes: { type: "number", description: "مدة اللمّة بالدقايق (١٥ لـ٣٦٠)" },
+        earliest: { type: "string", description: "أبكر ساعة HH:MM (افتراضي 09:00)" },
+        latest: { type: "string", description: "آخر ساعة HH:MM (افتراضي 23:00)" },
+        busy: {
+          type: "array",
+          description: "أوقات الانشغال",
+          items: {
+            type: "object",
+            properties: {
+              member: { type: "string" },
+              day: { type: "number", description: "٠ = النهارده … ٦" },
+              from: { type: "string", description: "HH:MM" },
+              to: { type: "string", description: "HH:MM" },
+            },
+            required: ["member", "day", "from", "to"],
+          },
+        },
+      },
+      required: ["members", "minutes"],
     },
   },
   {
