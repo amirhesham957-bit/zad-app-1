@@ -69,6 +69,7 @@ E2E_DB=t_e2e_x E2E_PORT=39xx E2E_REST=zad-e2e-rest-x bash supabase/sql/e2e/run_c
 | قناة البنك (ماتشددش الفلترة من غير قياس) | `docs/agent/BANK_NOTIFICATION_CHANNEL.md` |
 | توزيع الشغل على عمّال | `.claude/skills/orchestrate-workers/SKILL.md` (المراجعة والدمج) و`.claude/skills/external-workers/SKILL.md` (NVIDIA وGemini وGroq عبر opencode) |
 | مواصفات شرايح م٣ الجاهزة للعمّال | `.claude/tasks/<slice>/TASK_WORKER.md` (مش متتبعة في git) |
+| الترندز / تيك توك / العروض مابتوصلش | `docs/agent/SEARCH_HEALTH_RUNBOOK.md` |
 
 ## آخر الجلسة
 
