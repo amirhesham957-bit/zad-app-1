@@ -18,6 +18,7 @@ import { decideLifeEvent } from "../_shared/lifeEventDecide.ts";
 import { secretMatches } from "../_shared/cronSecret.ts";
 import { type DealLogRow, decideSearchAlert, type RestRow } from "../_shared/searchHealthAlert.ts";
 import { decideFlyerAlert, type FlyerReadRow } from "../_shared/flyerHealthAlert.ts";
+import { decideOpsAlert, type CronJobRow } from "../_shared/opsAlert.ts";
 import { recentOutbound } from "../_shared/outbound.ts";
 import { type ForecastInput, lastAskedDaysAgo, weeklyGateClosed, weeklyPick } from "./weeklyCheckin.ts";
 import { proactiveTurn, recordConversation, trimProactive } from "../_shared/conversationLog.ts";
@@ -3586,6 +3587,45 @@ Deno.serve(async (req: Request) => {
       return new Response(JSON.stringify({ ok: true, alert: true, delivered: true, reason: d.reason }), { headers: { "Content-Type": "application/json" } });
     } catch (e) {
       console.error("flyer_health failed:", e);
+      return new Response(JSON.stringify({ ok: false, error: String(e) }), { status: 500 });
+    }
+  }
+
+  // م٥.٧: أعطال الكرونات (فشل أو تأخير)، ومهام الطابور الفاشلة ومفاتيح الوقف لما تتوصل (_shared/opsAlert.ts) ⇒ تنبيه لشات الأدمن بس، مرة كل ٦ ساعات.
+  // الحالة في zad_admin_alert_log (kind='ops_alert').
+  if (req.method === "POST" && new URL(req.url).searchParams.get("job") === "ops_alert") {
+    if (!(await secretMatches(req.headers.get("X-Realtime-Push-Secret"), "ZAD_REALTIME_PUSH_SECRET"))) {
+      return new Response("unauthorized", { status: 401 });
+    }
+    try {
+      const sb = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+      const now = new Date();
+      const [health, last] = await Promise.all([
+        sb.rpc("zad_diag_cron_health"),
+        sb.from("zad_admin_alert_log").select("last_sent").eq("kind", "ops_alert").maybeSingle(),
+      ]);
+      if (health.error || last.error) {
+        console.error("[ops_alert] read failed:", health.error?.message ?? last.error?.message);
+        return new Response(JSON.stringify({ ok: false, reason: "read_failed" }), { status: 500 });
+      }
+      const lastSent = (last.data as { last_sent?: string } | null)?.last_sent;
+      const crons = ((health.data as { jobs?: CronJobRow[] } | null)?.jobs ?? []);
+      const d = decideOpsAlert({ crons, now, lastAlertAt: lastSent ? new Date(lastSent) : null });
+      if (!d.alert) return new Response(JSON.stringify({ ok: true, alert: false, reason: d.reason }), { headers: { "Content-Type": "application/json" } });
+      const chatId = adminChatId(Deno.env.get("ZAD_ADMIN_CHAT_ID"));
+      if (chatId === null) {
+        console.warn("[ops_alert] ZAD_ADMIN_CHAT_ID not set — not sent");
+        return new Response(JSON.stringify({ ok: true, alert: true, delivered: false, reason: "no admin chat" }), { headers: { "Content-Type": "application/json" } });
+      }
+      if (await resolveUserId(sb, chatId)) {
+        console.error("[ops_alert] ZAD_ADMIN_CHAT_ID is a customer chat — refused");
+        return new Response(JSON.stringify({ ok: false, delivered: false, reason: "admin chat is a customer chat" }), { status: 409 });
+      }
+      await sendTelegramMessage(chatId, `🚨 أعطال\n\n${d.message}`);
+      await sb.from("zad_admin_alert_log").upsert({ kind: "ops_alert", last_sent: now.toISOString() });
+      return new Response(JSON.stringify({ ok: true, alert: true, delivered: true, reason: d.reason }), { headers: { "Content-Type": "application/json" } });
+    } catch (e) {
+      console.error("ops_alert failed:", e);
       return new Response(JSON.stringify({ ok: false, error: String(e) }), { status: 500 });
     }
   }
