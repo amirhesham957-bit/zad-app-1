@@ -64,6 +64,10 @@ verify_jwt = false
 [functions.zad-fx-refresh]
 verify_jwt = false
 
+# الكرون مابيحملش JWT، والحارس هيدر X-Restock-Alert-Cron-Secret جوه الدالة.
+[functions.zad-restock-alerts]
+verify_jwt = false
+
 # نفس النمط: الكرون مابيحملش JWT، والحارس هيدر X-Admitad-Cron-Secret جوه الدالة.
 # م٦.٣: كرون يومي لتسجيل قفزات الترند المجمّعة. الحارس هيدر X-Trend-Cron-Secret جوه الدالة.
 [functions.zad-trend-surge]

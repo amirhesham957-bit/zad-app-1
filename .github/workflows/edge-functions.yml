@@ -310,6 +310,7 @@ jobs:
           supabase/sql/tests/scratch_scaffold.sql supabase/migrations/20261123110000_trend_surge_record.sql supabase/sql/tests/trend_surge_record_test.sql
           supabase/sql/tests/scratch_scaffold.sql supabase/sql/tests/restock_ingest_scaffold.sql supabase/migrations/20261123030000_restock_observations.sql supabase/migrations/20261123080000_restock_observe_writer.sql supabase/migrations/20261123100000_restock_ingest_from_deals.sql supabase/sql/tests/restock_ingest_from_deals_test.sql
           supabase/sql/tests/scratch_scaffold.sql supabase/migrations/20261123060000_notification_events.sql supabase/sql/tests/notification_events_test.sql
+          supabase/sql/tests/scratch_scaffold.sql supabase/sql/tests/restock_alert_dispatch_scaffold.sql supabase/migrations/20261123120000_restock_alert_dispatch.sql supabase/sql/tests/restock_alert_dispatch_test.sql
           LIST
 
   # النشر من الريبو، بعد ما الفحص يعدي — مش من على جهاز حد.
