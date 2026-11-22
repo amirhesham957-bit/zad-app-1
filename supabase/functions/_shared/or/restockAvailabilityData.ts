@@ -80,3 +80,29 @@ export async function rankStoresForItem(
   const rows = Array.isArray(data) ? (data as AvailabilityRow[]) : [];
   return rankNearby(toCandidates(rows, args.item, args.home)).slice(0, args.limit ?? 5);
 }
+
+export interface ObserveArgs {
+  country: string;
+  store: string;
+  item: string;
+  inStock: boolean;
+  source: "receipt" | "flyer" | "partner";
+  area?: Home;
+  observedAt?: Date;
+}
+
+/** كتابة ملاحظة توافر (مجهولة: مفيش صاحب). بترجّع false لو اتجاهلت (مكررة في ساعة، أو أقدم من ٩٠ يوم). الفشل بيرمي خطأ. */
+export async function observeRestock(sb: Rpc, a: ObserveArgs): Promise<boolean> {
+  const { data, error } = await sb.rpc("zad_restock_observe", {
+    p_country: a.country,
+    p_store_key: a.store,
+    p_item_key: a.item,
+    p_in_stock: a.inStock,
+    p_source_kind: a.source,
+    p_lat: a.area?.lat ?? null,
+    p_lng: a.area?.lng ?? null,
+    p_observed_at: a.observedAt?.toISOString() ?? null,
+  });
+  if (error) throw new Error(`zad_restock_observe: ${error.message}`);
+  return data === true;
+}
