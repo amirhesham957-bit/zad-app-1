@@ -11,6 +11,9 @@ import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/l10n/app_language.dart';
+import 'package:zad/core/l10n/generated/zad_l10n.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/family/application/family_controller.dart';
 import 'package:zad/shared/family/data/family_life_remote.dart';
 import 'package:zad/shared/family/domain/family.dart';
@@ -602,6 +605,7 @@ class FamilyLifeController extends Notifier<FamilyLifeView> {
     required String title,
     String? dueDate,
     double reward = 0,
+    int? minutes,
   }) async {
     final family = _family;
     if (family == null || title.trim().isEmpty) return false;
@@ -612,6 +616,7 @@ class FamilyLifeController extends Notifier<FamilyLifeView> {
         title: title.trim(),
         dueDate: dueDate,
         reward: reward,
+        minutes: minutes,
       );
       await refresh();
       return true;
@@ -621,6 +626,93 @@ class FamilyLifeController extends Notifier<FamilyLifeView> {
             ? 'المكافأة يحددها المسؤول بس.'
             : 'المهمة ماتضافتش. جرّب تاني.',
       );
+      return false;
+    }
+  }
+
+  /// This app's strings for the notices below (م٥.٢); Arabic when the
+  /// locale cannot be read (a test without the app's providers).
+  ZadL10n get _l {
+    try {
+      return lookupZadL10n(ref.read(appLocaleProvider));
+    } on Object {
+      return zadL10nArabic;
+    }
+  }
+
+  /// Every member's chore time and taste, by member id. Empty on failure:
+  /// the sheet then starts from the defaults.
+  Future<Map<String, ChorePreference>> chorePreferences() async {
+    final family = _family;
+    if (family == null) return const <String, ChorePreference>{};
+    try {
+      final rows = await _remote.fetchChorePreferences(family.id);
+      return <String, ChorePreference>{
+        for (final r in rows)
+          (r['member_id'] as String): ChorePreference.fromJson(r),
+      };
+    } on Object {
+      return const <String, ChorePreference>{};
+    }
+  }
+
+  /// Saves a member's chore time and taste.
+  Future<bool> saveChorePreference(ChorePreference pref) async {
+    final family = _family;
+    if (family == null) return false;
+    try {
+      await _remote.saveChorePreference(
+        familyId: family.id,
+        memberId: pref.memberId,
+        minutesPerWeek: pref.minutesPerWeek,
+        dislikes: pref.dislikes,
+        likes: pref.likes,
+      );
+      _say(_l.choreSaved);
+      return true;
+    } on Object {
+      _say(_l.chorePrefNotSaved);
+      return false;
+    }
+  }
+
+  /// The server's proposed distribution of the open chores; null (and said)
+  /// when it could not be read.
+  Future<ChorePlan?> planChores() async {
+    final family = _family;
+    if (family == null) return null;
+    try {
+      final answer = await _remote.chorePlan(family.id);
+      if (answer['ok'] != true) {
+        _say(_l.chorePlanFailed);
+        return null;
+      }
+      return ChorePlan.fromJson(answer);
+    } on Object {
+      _say(_l.choreServerUnreachable);
+      return null;
+    }
+  }
+
+  /// Applies [plan], all of it or none, and reads the chores again.
+  Future<bool> applyChorePlan(ChorePlan plan) async {
+    final family = _family;
+    if (family == null || plan.lines.isEmpty) return false;
+    try {
+      final result = await _remote.applyChorePlan(family.id, plan.toApply());
+      if (result['ok'] != true) {
+        _say(switch (result['reason']) {
+          'admins_only' => _l.choreAdminsOnly,
+          'chore_not_open' => _l.choreNotOpen,
+          _ => _l.chorePlanNotApplied,
+        });
+        return false;
+      }
+      _say(_l.choreAssignedCount((result['assigned'] as num?)?.toInt() ?? 0));
+      await refresh();
+      return true;
+    } on Object {
+      _say(_l.choreServerUnreachable);
       return false;
     }
   }

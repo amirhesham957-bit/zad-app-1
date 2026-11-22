@@ -11725,6 +11725,186 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'بدأت المتابعة.'**
   String get familyFollowStarted;
+
+  /// No description provided for @choreSaved.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتحفظ.'**
+  String get choreSaved;
+
+  /// No description provided for @chorePrefNotSaved.
+  ///
+  /// In ar, this message translates to:
+  /// **'ماتحفظش. تفضيلات حد تاني بيغيّرها المسؤول بس.'**
+  String get chorePrefNotSaved;
+
+  /// No description provided for @chorePlanFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقدرتش أوزّع المهام دلوقتي.'**
+  String get chorePlanFailed;
+
+  /// No description provided for @choreServerUnreachable.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقدرتش أوصل للسيرفر. جرّب تاني.'**
+  String get choreServerUnreachable;
+
+  /// No description provided for @choreAdminsOnly.
+  ///
+  /// In ar, this message translates to:
+  /// **'توزيع المهام للمسؤول بس.'**
+  String get choreAdminsOnly;
+
+  /// No description provided for @choreNotOpen.
+  ///
+  /// In ar, this message translates to:
+  /// **'مهمة اتعملت أو اتشالت من ساعتها. وزّع تاني.'**
+  String get choreNotOpen;
+
+  /// No description provided for @chorePlanNotApplied.
+  ///
+  /// In ar, this message translates to:
+  /// **'التوزيع ماتطبّقش.'**
+  String get chorePlanNotApplied;
+
+  /// No description provided for @choreAssignedCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتوزعت {count} مهمة.'**
+  String choreAssignedCount(int count);
+
+  /// No description provided for @choreMinutesLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'المدة بالدقايق (اختياري)'**
+  String get choreMinutesLabel;
+
+  /// No description provided for @choreMinutesHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'مثال: ٢٠'**
+  String get choreMinutesHint;
+
+  /// No description provided for @chorePrefsButton.
+  ///
+  /// In ar, this message translates to:
+  /// **'الوقت والتفضيلات'**
+  String get chorePrefsButton;
+
+  /// No description provided for @choreDistributeButton.
+  ///
+  /// In ar, this message translates to:
+  /// **'وزّع المهام'**
+  String get choreDistributeButton;
+
+  /// No description provided for @chorePlanTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'توزيع المهام'**
+  String get chorePlanTitle;
+
+  /// No description provided for @chorePlanSubtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'على مدة كل مهمة ووقت كل فرد واللي بيحبه.'**
+  String get chorePlanSubtitle;
+
+  /// No description provided for @chorePlanEmptyTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش مهام مفتوحة تتوزع'**
+  String get chorePlanEmptyTitle;
+
+  /// No description provided for @chorePlanEmptyMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضيف مهام الأول، أو زوّد وقت الأفراد.'**
+  String get chorePlanEmptyMessage;
+
+  /// No description provided for @choreMinutesValue.
+  ///
+  /// In ar, this message translates to:
+  /// **'{minutes} دقيقة'**
+  String choreMinutesValue(int minutes);
+
+  /// No description provided for @choreNoTimeFor.
+  ///
+  /// In ar, this message translates to:
+  /// **'مافيش وقت ليها عند حد: {titles}'**
+  String choreNoTimeFor(String titles);
+
+  /// No description provided for @choreLoadLine.
+  ///
+  /// In ar, this message translates to:
+  /// **'{name}: {minutes} من {week} دقيقة في الأسبوع'**
+  String choreLoadLine(String name, int minutes, int week);
+
+  /// No description provided for @choreApplyPlan.
+  ///
+  /// In ar, this message translates to:
+  /// **'طبّق التوزيع'**
+  String get choreApplyPlan;
+
+  /// No description provided for @chorePrefsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الوقت والتفضيلات'**
+  String get chorePrefsTitle;
+
+  /// No description provided for @chorePrefsMember.
+  ///
+  /// In ar, this message translates to:
+  /// **'الفرد'**
+  String get chorePrefsMember;
+
+  /// No description provided for @chorePrefsMinutes.
+  ///
+  /// In ar, this message translates to:
+  /// **'دقايق متاحة للمهام في الأسبوع'**
+  String get chorePrefsMinutes;
+
+  /// No description provided for @chorePrefsMinutesHelper.
+  ///
+  /// In ar, this message translates to:
+  /// **'من ٠ لـ ٢٠٠٠'**
+  String get chorePrefsMinutesHelper;
+
+  /// No description provided for @chorePrefsLikes.
+  ///
+  /// In ar, this message translates to:
+  /// **'مهام بيحبها (افصل بفاصلة)'**
+  String get chorePrefsLikes;
+
+  /// No description provided for @chorePrefsLikesHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'كنس الصالة، الطبخ'**
+  String get chorePrefsLikesHint;
+
+  /// No description provided for @chorePrefsDislikes.
+  ///
+  /// In ar, this message translates to:
+  /// **'مهام مابيحبهاش (افصل بفاصلة)'**
+  String get chorePrefsDislikes;
+
+  /// No description provided for @chorePrefsDislikesHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'غسيل المواعين'**
+  String get chorePrefsDislikesHint;
+
+  /// No description provided for @choreCancel.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلغاء'**
+  String get choreCancel;
+
+  /// No description provided for @choreSave.
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ'**
+  String get choreSave;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

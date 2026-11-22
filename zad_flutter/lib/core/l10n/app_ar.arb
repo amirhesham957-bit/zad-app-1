@@ -6696,5 +6696,69 @@
   "familyToolSavings": "صناديق التجميع",
   "familyToolAchievements": "الإنجازات والرتب",
   "familyToolTasbiha": "تسبيحة",
-  "familyFollowStarted": "بدأت المتابعة."
+  "familyFollowStarted": "بدأت المتابعة.",
+  "choreSaved": "اتحفظ.",
+  "chorePrefNotSaved": "ماتحفظش. تفضيلات حد تاني بيغيّرها المسؤول بس.",
+  "chorePlanFailed": "مقدرتش أوزّع المهام دلوقتي.",
+  "choreServerUnreachable": "مقدرتش أوصل للسيرفر. جرّب تاني.",
+  "choreAdminsOnly": "توزيع المهام للمسؤول بس.",
+  "choreNotOpen": "مهمة اتعملت أو اتشالت من ساعتها. وزّع تاني.",
+  "chorePlanNotApplied": "التوزيع ماتطبّقش.",
+  "choreAssignedCount": "اتوزعت {count} مهمة.",
+  "@choreAssignedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "choreMinutesLabel": "المدة بالدقايق (اختياري)",
+  "choreMinutesHint": "مثال: ٢٠",
+  "chorePrefsButton": "الوقت والتفضيلات",
+  "choreDistributeButton": "وزّع المهام",
+  "chorePlanTitle": "توزيع المهام",
+  "chorePlanSubtitle": "على مدة كل مهمة ووقت كل فرد واللي بيحبه.",
+  "chorePlanEmptyTitle": "مفيش مهام مفتوحة تتوزع",
+  "chorePlanEmptyMessage": "ضيف مهام الأول، أو زوّد وقت الأفراد.",
+  "choreMinutesValue": "{minutes} دقيقة",
+  "@choreMinutesValue": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "choreNoTimeFor": "مافيش وقت ليها عند حد: {titles}",
+  "@choreNoTimeFor": {
+    "placeholders": {
+      "titles": {
+        "type": "String"
+      }
+    }
+  },
+  "choreLoadLine": "{name}: {minutes} من {week} دقيقة في الأسبوع",
+  "@choreLoadLine": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "minutes": {
+        "type": "int"
+      },
+      "week": {
+        "type": "int"
+      }
+    }
+  },
+  "choreApplyPlan": "طبّق التوزيع",
+  "chorePrefsTitle": "الوقت والتفضيلات",
+  "chorePrefsMember": "الفرد",
+  "chorePrefsMinutes": "دقايق متاحة للمهام في الأسبوع",
+  "chorePrefsMinutesHelper": "من ٠ لـ ٢٠٠٠",
+  "chorePrefsLikes": "مهام بيحبها (افصل بفاصلة)",
+  "chorePrefsLikesHint": "كنس الصالة، الطبخ",
+  "chorePrefsDislikes": "مهام مابيحبهاش (افصل بفاصلة)",
+  "chorePrefsDislikesHint": "غسيل المواعين",
+  "choreCancel": "إلغاء",
+  "choreSave": "حفظ"
 }

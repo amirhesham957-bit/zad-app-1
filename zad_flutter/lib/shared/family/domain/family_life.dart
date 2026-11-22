@@ -261,6 +261,7 @@ class Chore {
     this.rewardAmount = 0,
     this.isCompleted = false,
     this.createdAt,
+    this.minutes,
   });
 
   /// Reads a `family_chores` row.
@@ -272,10 +273,14 @@ class Chore {
     rewardAmount: (json['reward_amount'] as num?)?.toDouble() ?? 0,
     isCompleted: (json['is_completed'] as bool?) ?? false,
     createdAt: DateTime.tryParse((json['created_at'] as String?) ?? ''),
+    minutes: (json['minutes'] as num?)?.toInt(),
   );
 
   /// The row id.
   final String id;
+
+  /// How long it takes, in minutes (م٥.٢); null when nobody said.
+  final int? minutes;
 
   /// The member row it is assigned to.
   final String assignedTo;
@@ -294,6 +299,129 @@ class Chore {
 
   /// When it was set.
   final DateTime? createdAt;
+}
+
+/// One member's chore time and taste (م٥.٢, `family_chore_preferences`).
+@immutable
+class ChorePreference {
+  /// Creates a preference.
+  const new({
+    required this.memberId,
+    this.minutesPerWeek = defaultMinutesPerWeek,
+    this.dislikes = const <String>[],
+    this.likes = const <String>[],
+  });
+
+  /// Reads a `family_chore_preferences` row.
+  factory fromJson(Map<String, dynamic> json) => ChorePreference(
+    memberId: json['member_id'] as String,
+    minutesPerWeek:
+        (json['minutes_per_week'] as num?)?.toInt() ?? defaultMinutesPerWeek,
+    dislikes: <String>[
+      for (final d in (json['dislikes'] as List<dynamic>?) ?? <dynamic>[]) '$d',
+    ],
+    likes: <String>[
+      for (final l in (json['likes'] as List<dynamic>?) ?? <dynamic>[]) '$l',
+    ],
+  );
+
+  /// The table's default, and the distribution's, for a member who never said.
+  static const int defaultMinutesPerWeek = 120;
+
+  /// The `family_members` row.
+  final String memberId;
+
+  /// Minutes a week they have for chores.
+  final int minutesPerWeek;
+
+  /// Chore titles they would rather not get.
+  final List<String> dislikes;
+
+  /// Chore titles they like.
+  final List<String> likes;
+}
+
+/// One proposed assignment in a [ChorePlan].
+@immutable
+class ChorePlanLine {
+  /// Creates a line.
+  const new({
+    required this.choreId,
+    required this.memberId,
+    required this.title,
+    required this.memberName,
+    required this.minutes,
+  });
+
+  /// The chore.
+  final String choreId;
+
+  /// Who gets it.
+  final String memberId;
+
+  /// The chore's title.
+  final String title;
+
+  /// The member's alias.
+  final String memberName;
+
+  /// How long it takes.
+  final int minutes;
+}
+
+/// The server's proposed distribution (`chore_plan`): who gets what, what
+/// did not fit anyone's week, and each member's minutes against their week.
+@immutable
+class ChorePlan {
+  /// Creates a plan.
+  const new({
+    this.lines = const <ChorePlanLine>[],
+    this.unassigned = const <String>[],
+    this.load = const <(String, int, int)>[],
+  });
+
+  /// Reads the `chore_plan` answer.
+  factory fromJson(Map<String, dynamic> json) => ChorePlan(
+    lines: <ChorePlanLine>[
+      for (final a in (json['assignments'] as List<dynamic>?) ?? <dynamic>[])
+        if (a is Map)
+          ChorePlanLine(
+            choreId: '${a['chore_id']}',
+            memberId: '${a['member_id']}',
+            title: '${a['title'] ?? ''}',
+            memberName: '${a['member_name'] ?? ''}',
+            minutes: (a['minutes'] as num?)?.toInt() ?? 0,
+          ),
+    ],
+    unassigned: <String>[
+      for (final u in (json['unassigned'] as List<dynamic>?) ?? <dynamic>[])
+        if (u is Map) '${u['title'] ?? ''}',
+    ],
+    load: <(String, int, int)>[
+      for (final l in (json['load'] as List<dynamic>?) ?? <dynamic>[])
+        if (l is Map)
+          (
+            '${l['member_name'] ?? ''}',
+            (l['minutes'] as num?)?.toInt() ?? 0,
+            (l['week'] as num?)?.toInt() ?? 0,
+          ),
+    ],
+  );
+
+  /// The assignments.
+  final List<ChorePlanLine> lines;
+
+  /// Titles that fit nobody's week.
+  final List<String> unassigned;
+
+  /// (name, minutes given, minutes a week) per member.
+  final List<(String, int, int)> load;
+
+  /// The body `zad_apply_chore_plan` takes.
+  List<Map<String, String>> toApply() => <Map<String, String>>[
+    for (final l in lines)
+      <String, String>{'chore_id': l.choreId, 'member_id': l.memberId},
+  ];
 }
 
 /// One line of the household's shopping list, as the family tab shows it.

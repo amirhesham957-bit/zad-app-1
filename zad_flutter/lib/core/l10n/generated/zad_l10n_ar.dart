@@ -6986,6 +6986,105 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get familyFollowStarted => 'بدأت المتابعة.';
+
+  @override
+  String get choreSaved => 'اتحفظ.';
+
+  @override
+  String get chorePrefNotSaved =>
+      'ماتحفظش. تفضيلات حد تاني بيغيّرها المسؤول بس.';
+
+  @override
+  String get chorePlanFailed => 'مقدرتش أوزّع المهام دلوقتي.';
+
+  @override
+  String get choreServerUnreachable => 'مقدرتش أوصل للسيرفر. جرّب تاني.';
+
+  @override
+  String get choreAdminsOnly => 'توزيع المهام للمسؤول بس.';
+
+  @override
+  String get choreNotOpen => 'مهمة اتعملت أو اتشالت من ساعتها. وزّع تاني.';
+
+  @override
+  String get chorePlanNotApplied => 'التوزيع ماتطبّقش.';
+
+  @override
+  String choreAssignedCount(int count) {
+    return 'اتوزعت $count مهمة.';
+  }
+
+  @override
+  String get choreMinutesLabel => 'المدة بالدقايق (اختياري)';
+
+  @override
+  String get choreMinutesHint => 'مثال: ٢٠';
+
+  @override
+  String get chorePrefsButton => 'الوقت والتفضيلات';
+
+  @override
+  String get choreDistributeButton => 'وزّع المهام';
+
+  @override
+  String get chorePlanTitle => 'توزيع المهام';
+
+  @override
+  String get chorePlanSubtitle => 'على مدة كل مهمة ووقت كل فرد واللي بيحبه.';
+
+  @override
+  String get chorePlanEmptyTitle => 'مفيش مهام مفتوحة تتوزع';
+
+  @override
+  String get chorePlanEmptyMessage => 'ضيف مهام الأول، أو زوّد وقت الأفراد.';
+
+  @override
+  String choreMinutesValue(int minutes) {
+    return '$minutes دقيقة';
+  }
+
+  @override
+  String choreNoTimeFor(String titles) {
+    return 'مافيش وقت ليها عند حد: $titles';
+  }
+
+  @override
+  String choreLoadLine(String name, int minutes, int week) {
+    return '$name: $minutes من $week دقيقة في الأسبوع';
+  }
+
+  @override
+  String get choreApplyPlan => 'طبّق التوزيع';
+
+  @override
+  String get chorePrefsTitle => 'الوقت والتفضيلات';
+
+  @override
+  String get chorePrefsMember => 'الفرد';
+
+  @override
+  String get chorePrefsMinutes => 'دقايق متاحة للمهام في الأسبوع';
+
+  @override
+  String get chorePrefsMinutesHelper => 'من ٠ لـ ٢٠٠٠';
+
+  @override
+  String get chorePrefsLikes => 'مهام بيحبها (افصل بفاصلة)';
+
+  @override
+  String get chorePrefsLikesHint => 'كنس الصالة، الطبخ';
+
+  @override
+  String get chorePrefsDislikes => 'مهام مابيحبهاش (افصل بفاصلة)';
+
+  @override
+  String get chorePrefsDislikesHint => 'غسيل المواعين';
+
+  @override
+  String get choreCancel => 'إلغاء';
+
+  @override
+  String get choreSave => 'حفظ';
 }
 
 /// The translations for Arabic, as used in Saudi Arabia (`ar_SA`).
@@ -9787,4 +9886,10 @@ class ZadL10nArSa extends ZadL10nAr {
 
   @override
   String get familyFollowStarted => 'بدأت المتابعة.';
+
+  @override
+  String get chorePlanFailed => 'ما قدرت أوزّع المهام الحين.';
+
+  @override
+  String get chorePlanEmptyTitle => 'ما فيه مهام مفتوحة تتوزع';
 }

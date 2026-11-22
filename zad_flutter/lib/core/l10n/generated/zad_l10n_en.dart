@@ -7075,4 +7075,106 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get familyFollowStarted => 'Following started.';
+
+  @override
+  String get choreSaved => 'Saved.';
+
+  @override
+  String get chorePrefNotSaved =>
+      'Not saved. Only an admin can change someone else\'s preferences.';
+
+  @override
+  String get chorePlanFailed => 'Couldn\'t distribute the chores right now.';
+
+  @override
+  String get choreServerUnreachable => 'Couldn\'t reach the server. Try again.';
+
+  @override
+  String get choreAdminsOnly => 'Only an admin can distribute chores.';
+
+  @override
+  String get choreNotOpen =>
+      'A chore was done or removed since. Distribute again.';
+
+  @override
+  String get chorePlanNotApplied => 'The distribution wasn\'t applied.';
+
+  @override
+  String choreAssignedCount(int count) {
+    return '$count chores assigned.';
+  }
+
+  @override
+  String get choreMinutesLabel => 'Duration in minutes (optional)';
+
+  @override
+  String get choreMinutesHint => 'e.g. 20';
+
+  @override
+  String get chorePrefsButton => 'Time & preferences';
+
+  @override
+  String get choreDistributeButton => 'Distribute chores';
+
+  @override
+  String get chorePlanTitle => 'Chore distribution';
+
+  @override
+  String get chorePlanSubtitle =>
+      'By each chore\'s duration and each member\'s time and taste.';
+
+  @override
+  String get chorePlanEmptyTitle => 'No open chores to distribute';
+
+  @override
+  String get chorePlanEmptyMessage =>
+      'Add chores first, or give members more time.';
+
+  @override
+  String choreMinutesValue(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String choreNoTimeFor(String titles) {
+    return 'Nobody has time for: $titles';
+  }
+
+  @override
+  String choreLoadLine(String name, int minutes, int week) {
+    return '$name: $minutes of $week minutes a week';
+  }
+
+  @override
+  String get choreApplyPlan => 'Apply';
+
+  @override
+  String get chorePrefsTitle => 'Time & preferences';
+
+  @override
+  String get chorePrefsMember => 'Member';
+
+  @override
+  String get chorePrefsMinutes => 'Minutes a week for chores';
+
+  @override
+  String get chorePrefsMinutesHelper => '0 to 2000';
+
+  @override
+  String get chorePrefsLikes => 'Chores they like (comma separated)';
+
+  @override
+  String get chorePrefsLikesHint => 'Sweeping, cooking';
+
+  @override
+  String get chorePrefsDislikes => 'Chores they dislike (comma separated)';
+
+  @override
+  String get chorePrefsDislikesHint => 'Dishes';
+
+  @override
+  String get choreCancel => 'Cancel';
+
+  @override
+  String get choreSave => 'Save';
 }
