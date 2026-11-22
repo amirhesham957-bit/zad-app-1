@@ -475,6 +475,10 @@
     "shown_at",
     "user_id"
   ],
+  "zad_admin_alert_log": [
+    "kind",
+    "last_sent"
+  ],
   "zad_affiliate_offers": [
     "affiliate_url",
     "category",
