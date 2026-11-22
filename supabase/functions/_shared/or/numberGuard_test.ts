@@ -30,3 +30,11 @@ Deno.test("checkNumbers applies the default relative tolerance", () => {
 Deno.test("a reply without numbers passes", () => {
   assertEquals(checkNumbers("لا توجد أرقام هنا", []), { ok: true, unknown: [] });
 });
+
+Deno.test("a number glued to a one-letter Arabic prefix still counts (بـ75، ب75، ل٣٠٠)", () => {
+  assertEquals(extractNumbers("اشتري بـ75 و ب120 ل٣٠٠"), [75, 120, 300]);
+});
+
+Deno.test("identifiers glued to letters are still not numbers", () => {
+  assertEquals(extractNumbers("كود abc123 ورقم الطلب"), []);
+});
