@@ -4,7 +4,7 @@
 import { checkNumbers, extractNumbers } from "../_shared/or/numberGuard.ts";
 
 /** الأدوات اللي نتيجتها حساب مضمون، ورد الموديل عليها ما يضيفش أرقام. */
-export const ENGINE_TOOLS: ReadonlySet<string> = new Set(["restock_on_budget", "plan_menu", "plan_gathering_time"]);
+export const ENGINE_TOOLS: ReadonlySet<string> = new Set(["restock_on_budget", "plan_menu", "plan_gathering_time", "safe_daily_spend"]);
 
 export type EngineOutput = { tool: string; content: string };
 
