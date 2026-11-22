@@ -8,125 +8,111 @@
 library;
 
 import 'package:flutter/foundation.dart';
+import 'package:zad/core/l10n/l10n.dart';
 
-// l10n: data-begin — a mirror of the server's own Arabic refusal
-// sentences (REASONS in commitIntent.ts). The server writes validator and tool
-// refusals in Arabic and they are shown as written, so the door's are too.
-/// Arabic for every door refusal code. Copied from `REASONS` in
-/// `supabase/functions/zad-brain/commitIntent.ts`; a code missing here shows
-/// as the plain "الكتابة اترفضت", never as the raw identifier.
-const Map<String, String> _doorReasons = <String, String>{
-  'item_not_found': 'السجل ده مش موجود عندك',
-  'name_invalid': 'اسم الصنف لازم يكون من ٢ لـ١٢٠ حرف',
-  'qty_not_positive': 'الكمية لازم تكون أكبر من صفر',
-  'qty_too_large': 'الكمية كبيرة بشكل مش منطقي — اتأكد من العميل',
-  'qty_negative': 'الكمية مينفعش تبقى بالسالب',
-  'category_unknown': 'الفئة مش من الفئات المعروفة',
-  'expiry_bad_format': 'الصلاحية لازم تكون YYYY-MM-DD',
-  'expiry_before_purchase': 'تاريخ الصلاحية قبل النهارده — اتأكد من العميل',
-  'amount_invalid': 'الكمية المستعملة لازم تكون أكبر من صفر',
-  'amount_too_large': 'الكمية المستعملة كبيرة بشكل مش منطقي',
-  'restock_mode_unknown': 'النوع يا staple يا occasional',
-  'already_purchased': 'السطر ده اتشطب من القايمة قبل كده',
-  'member_not_granted': 'الفرد ده مش في العيلة أو مش موافق إنك تتابع أدويته',
-  'patch_empty': 'مفيش حاجة تتعدل',
-  'patch_field_unknown': 'الحقل ده مايتعدلش من هنا',
-  'dose_times_invalid': 'مواعيد الجرعات لازم تكون HH:MM مفصولة بفاصلة',
-  'dose_count_invalid': 'عدد الجرعات في اليوم من ١ لـ٢٤',
-  'qty_invalid': 'الكمية لازم تكون رقم صحيح من ٠ لـ١٠٠٠٠',
-  'dosage_too_long': 'الجرعة مكتوبة طويلة أوي',
-  'dose_already_logged': 'الجرعة دي متسجلة قبل كده — الكمية ماتخصمتش تاني',
-  'amount_not_positive': 'المبلغ لازم يكون رقم موجب',
-  'amount_over_cap': 'المبلغ ده كبير بشكل غير منطقي — تأكد منه',
-  'title_invalid': 'اكتب وصف قصير للمعاملة (لحد ٨٠ حرف)',
-  'title_guessed':
-      'الوصف ده تخمين — اسأل العميل الفلوس دي راحت على إيه قبل ما تسجلها',
-  'txn_kind_unknown': 'النوع يا expense يا income',
-  'wallet_unknown': 'المحفظة يا cash يا card يا bank',
-  'transfer_to_missing': 'التحويل لازم يقول رايح فين',
-  'transfer_change_unsupported':
-      'التحويل مايتعملش بالتعديل — سجّله معاملة جديدة',
-  'text_too_long': 'الفئة أو اسم المحل طويل أوي',
-  'for_person_invalid': '«لمين» لازم يكون من ١ لـ٤٠ حرف',
-  'date_invalid': 'تاريخ العملية مش مفهوم أو في المستقبل أو أقدم من سنة',
-  'category_invalid': 'اسم الفئة لازم يكون من ٢ لـ٤٠ حرف',
-  'no_category_budget': 'مفيش سقف على الفئة دي أصلاً',
-  'subscription_title_invalid': 'اسم الاشتراك لازم يكون من ٢ لـ١٢٠ حرف',
-  'renewal_date_invalid':
-      'تاريخ التجديد لازم يكون تاريخ حقيقي بصيغة YYYY-MM-DD',
-  'billing_cycle_invalid': 'دورة الدفع يا MONTHLY يا YEARLY',
-  'due_day_invalid': 'يوم الاستحقاق لازم يكون من ١ لـ٣١',
-  'is_active_invalid': 'التفعيل لازم يكون true أو false',
-  'debt_name_invalid': 'اسم الدين لازم يكون من ٢ لـ١٢٠ حرف',
-  'minimum_invalid': 'الحد الأدنى الشهري لازم يكون رقم مش سالب',
-  'interest_invalid': 'نسبة الفايدة لازم تكون من ٠ لـ١٠٠٠',
-  'balance_negative': 'الرصيد المتبقي مينفعش يبقى بالسالب',
-  'obligation_title_invalid': 'اسم الالتزام لازم يكون من ٢ لـ١٢٠ حرف',
-  'obligation_kind_invalid':
-      'نوع الالتزام يا rent يا installment يا tuition يا utility يا other',
-  'recurrence_invalid': 'التكرار يا monthly يا quarterly يا yearly يا once',
-  'installments_invalid': 'عدد الأقساط لازم يكون رقم صحيح من ١ لـ٦٠٠',
-  'already_inactive': 'الالتزام ده اتلغى قبل كده',
-  'device_name_invalid': 'اسم الجهاز لازم يكون من ٢ لـ١٢٠ حرف',
-  'device_category_invalid': 'فئة الجهاز طويلة أوي (٦٠ حرف بالكتير)',
-  'day_invalid': 'التاريخ لازم يوم حقيقي بصيغة YYYY-MM-DD',
-  'interval_invalid': 'الفاصل بين الصيانات لازم عدد أيام صحيح موجب',
-  'cost_invalid': 'التكلفة لازم رقم موجب في الحدود المنطقية',
-  'kind_invalid': 'النوع مش من الأنواع المعروفة',
-  'holder_invalid':
-      'اسم صاحب المستند لازم يكون من غير مسافات زيادة ولحد ٤٠ حرف',
-  'label_invalid': 'اسم المستند لازم يكون من غير مسافات زيادة ولحد ٤٠ حرف',
-  'label_required': 'مستند «other» محتاج اسم',
-  'date_out_of_range': 'تاريخ الانتهاء مش معقول (بين ٢٠٠٠ و٢١٠٠)',
-  'appt_title_invalid': 'اسم الميعاد لازم من ٢ لـ١٦٠ حرف',
-  'starts_at_invalid': 'وقت الميعاد مش مفهوم',
-  'appt_recurrence_invalid':
-      'التكرار لازم once أو hourly أو daily أو weekly أو monthly',
-  'source_invalid': 'مصدر الميعاد مش معروف',
-  'remind_invalid': 'التذكير قبلها لازم دقايق صحيحة من ٠ لـ١٠٠٨٠',
-  'place_too_long': 'اسم المكان طويل أوي (١٢٠ حرف بالكتير)',
-  'status_invalid': 'الحالة لازم upcoming أو done أو cancelled',
-  'user_not_found': 'حساب العميل مش موجود',
-  'cycle_day_invalid': 'يوم بداية الدورة رقم صحيح من ١ لـ٣١',
-  'currency_invalid':
-      'العملة كود ISO من ٣ حروف كابيتال (مثل EGP) — والتحدي عملته لحد ١٠ حروف',
-  'country_invalid': 'البلد كود ISO من حرفين كابيتال (مثل EG)',
-  'balance_invalid': 'الرصيد لازم يكون رقم غير سالب',
-  'sleep_time_invalid': 'المواعيد بصيغة HH:MM (٢٤ ساعة)',
-  'sleep_bed_out_of_range': 'النوم من ٢٠:٠٠ لـ٠٣:٠٠ — شغل ليلي؟ اسأله وماتحفظش',
-  'sleep_wake_out_of_range': 'الصحيان من ٠٤:٠٠ لـ١٢:٠٠',
-  'setting_unknown': 'الإعداد ده يا pet_calls يا food_pattern',
-  'goal_title_invalid': 'عنوان الهدف من ٤ لـ٢٠٠ حرف',
-  'metric_too_long': 'وصف المقياس طويل أوي',
-  'target_invalid': 'المبلغ المستهدف لازم رقم موجب منطقي',
-  'deadline_invalid': 'تاريخ الهدف مش مفهوم',
-  'unit_invalid': 'unit يا money يا count',
-  'goal_not_found': 'مفيش هدف بالاسم ده عند العميل',
-  'goal_amount_invalid': 'المبلغ لازم رقم مش صفر وبحدود المنطق',
-  'goal_not_amount': 'الهدف ده بيتعد بالمهام مش بالفلوس — تقدمه بيتحسب لوحده.',
-  'challenge_already_active':
-      'عنده تحدي شغال بالفعل — شجّعه يكمّله أو اسأله لو عايز يقفله الأول '
-      '(stop_savings_challenge).',
-  'no_active_challenge': 'مفيش تحدي شغال أصلاً',
-  'challenge_cap_invalid': 'السقف اليومي لازم رقم موجب منطقي',
-  'challenge_length_invalid': 'مدة التحدي من ٧ لـ٩٠ يوم',
-  'challenge_date_invalid': 'تاريخ بداية التحدي مش مفهوم',
-  'dose_slot_invalid': 'ميعاد الجرعة مش تاريخ مفهوم',
-  'snooze_minutes_invalid': 'التأجيل من ٥ لـ٢٤٠ دقيقة',
-};
-
-/// The customer's words for a refusal.
+/// The customer's words for a refusal, in the app's language.
 ///
-/// A snake code is looked up; anything else is already Arabic (a validator's
-/// sentence), so it is shown as it was written.
-String guardReasonLabel(String reason) {
+/// A snake code is looked up in the ARB files (`guardReason_<code>`); anything
+/// else is already Arabic (a validator's sentence), so it is shown as it was
+/// written. A code the app does not know shows as the plain fallback, never
+/// as the raw identifier.
+String guardReasonLabel(ZadL10n l, String reason) {
   final trimmed = reason.trim();
-  if (trimmed.isEmpty) return 'الكتابة اترفضت';
+  if (trimmed.isEmpty) return l.guardReason_fallback;
   if (!_snakeCode.hasMatch(trimmed)) return trimmed;
-  return _doorReasons[trimmed] ?? 'الكتابة اترفضت';
+  return switch (trimmed) {
+    'item_not_found' => l.guardReason_item_not_found,
+    'name_invalid' => l.guardReason_name_invalid,
+    'qty_not_positive' => l.guardReason_qty_not_positive,
+    'qty_too_large' => l.guardReason_qty_too_large,
+    'qty_negative' => l.guardReason_qty_negative,
+    'category_unknown' => l.guardReason_category_unknown,
+    'expiry_bad_format' => l.guardReason_expiry_bad_format,
+    'expiry_before_purchase' => l.guardReason_expiry_before_purchase,
+    'amount_invalid' => l.guardReason_amount_invalid,
+    'amount_too_large' => l.guardReason_amount_too_large,
+    'restock_mode_unknown' => l.guardReason_restock_mode_unknown,
+    'already_purchased' => l.guardReason_already_purchased,
+    'member_not_granted' => l.guardReason_member_not_granted,
+    'patch_empty' => l.guardReason_patch_empty,
+    'patch_field_unknown' => l.guardReason_patch_field_unknown,
+    'dose_times_invalid' => l.guardReason_dose_times_invalid,
+    'dose_count_invalid' => l.guardReason_dose_count_invalid,
+    'qty_invalid' => l.guardReason_qty_invalid,
+    'dosage_too_long' => l.guardReason_dosage_too_long,
+    'dose_already_logged' => l.guardReason_dose_already_logged,
+    'amount_not_positive' => l.guardReason_amount_not_positive,
+    'amount_over_cap' => l.guardReason_amount_over_cap,
+    'title_invalid' => l.guardReason_title_invalid,
+    'title_guessed' => l.guardReason_title_guessed,
+    'txn_kind_unknown' => l.guardReason_txn_kind_unknown,
+    'wallet_unknown' => l.guardReason_wallet_unknown,
+    'transfer_to_missing' => l.guardReason_transfer_to_missing,
+    'transfer_change_unsupported' => l.guardReason_transfer_change_unsupported,
+    'text_too_long' => l.guardReason_text_too_long,
+    'for_person_invalid' => l.guardReason_for_person_invalid,
+    'date_invalid' => l.guardReason_date_invalid,
+    'category_invalid' => l.guardReason_category_invalid,
+    'no_category_budget' => l.guardReason_no_category_budget,
+    'subscription_title_invalid' => l.guardReason_subscription_title_invalid,
+    'renewal_date_invalid' => l.guardReason_renewal_date_invalid,
+    'billing_cycle_invalid' => l.guardReason_billing_cycle_invalid,
+    'due_day_invalid' => l.guardReason_due_day_invalid,
+    'is_active_invalid' => l.guardReason_is_active_invalid,
+    'debt_name_invalid' => l.guardReason_debt_name_invalid,
+    'minimum_invalid' => l.guardReason_minimum_invalid,
+    'interest_invalid' => l.guardReason_interest_invalid,
+    'balance_negative' => l.guardReason_balance_negative,
+    'obligation_title_invalid' => l.guardReason_obligation_title_invalid,
+    'obligation_kind_invalid' => l.guardReason_obligation_kind_invalid,
+    'recurrence_invalid' => l.guardReason_recurrence_invalid,
+    'installments_invalid' => l.guardReason_installments_invalid,
+    'already_inactive' => l.guardReason_already_inactive,
+    'device_name_invalid' => l.guardReason_device_name_invalid,
+    'device_category_invalid' => l.guardReason_device_category_invalid,
+    'day_invalid' => l.guardReason_day_invalid,
+    'interval_invalid' => l.guardReason_interval_invalid,
+    'cost_invalid' => l.guardReason_cost_invalid,
+    'kind_invalid' => l.guardReason_kind_invalid,
+    'holder_invalid' => l.guardReason_holder_invalid,
+    'label_invalid' => l.guardReason_label_invalid,
+    'label_required' => l.guardReason_label_required,
+    'date_out_of_range' => l.guardReason_date_out_of_range,
+    'appt_title_invalid' => l.guardReason_appt_title_invalid,
+    'starts_at_invalid' => l.guardReason_starts_at_invalid,
+    'appt_recurrence_invalid' => l.guardReason_appt_recurrence_invalid,
+    'source_invalid' => l.guardReason_source_invalid,
+    'remind_invalid' => l.guardReason_remind_invalid,
+    'place_too_long' => l.guardReason_place_too_long,
+    'status_invalid' => l.guardReason_status_invalid,
+    'user_not_found' => l.guardReason_user_not_found,
+    'cycle_day_invalid' => l.guardReason_cycle_day_invalid,
+    'currency_invalid' => l.guardReason_currency_invalid,
+    'country_invalid' => l.guardReason_country_invalid,
+    'balance_invalid' => l.guardReason_balance_invalid,
+    'sleep_time_invalid' => l.guardReason_sleep_time_invalid,
+    'sleep_bed_out_of_range' => l.guardReason_sleep_bed_out_of_range,
+    'sleep_wake_out_of_range' => l.guardReason_sleep_wake_out_of_range,
+    'setting_unknown' => l.guardReason_setting_unknown,
+    'goal_title_invalid' => l.guardReason_goal_title_invalid,
+    'metric_too_long' => l.guardReason_metric_too_long,
+    'target_invalid' => l.guardReason_target_invalid,
+    'deadline_invalid' => l.guardReason_deadline_invalid,
+    'unit_invalid' => l.guardReason_unit_invalid,
+    'goal_not_found' => l.guardReason_goal_not_found,
+    'goal_amount_invalid' => l.guardReason_goal_amount_invalid,
+    'goal_not_amount' => l.guardReason_goal_not_amount,
+    'challenge_already_active' => l.guardReason_challenge_already_active,
+    'no_active_challenge' => l.guardReason_no_active_challenge,
+    'challenge_cap_invalid' => l.guardReason_challenge_cap_invalid,
+    'challenge_length_invalid' => l.guardReason_challenge_length_invalid,
+    'challenge_date_invalid' => l.guardReason_challenge_date_invalid,
+    'dose_slot_invalid' => l.guardReason_dose_slot_invalid,
+    'snooze_minutes_invalid' => l.guardReason_snooze_minutes_invalid,
+    _ => l.guardReason_fallback,
+  };
 }
 
-// l10n: data-end
 final RegExp _snakeCode = RegExp(r'^[a-z][a-z0-9_]*$');
 
 /// One refusal row.
