@@ -34,6 +34,9 @@ const Set<String> _dataFiles = <String>{
   // and the words that file a row under one. Their English labels, when they
   // come, are a lookup over these keys — the keys themselves never change.
   'features/inventory/domain/pantry_categories.dart',
+  // The eight category keys the server's door accepts, copied from it: data
+  // compared against `zad_inventory.category`, never shown.
+  'shared/inventory/domain/inventory_rules.dart',
   // The art kit: words matched against item names, and the lettering drawn
   // inside the pictures themselves (the milk carton's «حليب», the calendar's
   // day number) — part of the artwork, not screen text.

@@ -63,6 +63,17 @@ class _Scanner implements ReceiptScanner {
 
 class _Accepting implements InventoryRemote, ShoppingListRemote {
   @override
+  Future<Map<String, dynamic>> commitMyIntent({
+    required String kind,
+    required String clientEventId,
+    required Map<String, dynamic> payload,
+    required DateTime occurredAt,
+  }) => throw UnimplementedError('commitMyIntent');
+
+  @override
+  Future<Map<String, dynamic>?> fetchOne(String id) async => null;
+
+  @override
   Future<List<Map<String, dynamic>>> fetchAll({String? userId}) async =>
       <Map<String, dynamic>>[];
 
