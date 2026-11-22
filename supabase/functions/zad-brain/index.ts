@@ -107,6 +107,8 @@ import { AFFINITY_SCOPE, affinityNote, loadAffinity, type Polarity, signalTerms,
 import { foodProfile } from "./foodProfile.ts";
 import { seasonFor, seasonInstruction, upcomingSeason, upcomingSeasonInstruction } from "../_shared/season.ts";
 import { SEASON_PLAN_DAYS, seasonPlanInstruction, upcomingCalendarSeasons } from "../_shared/seasonCalendar.ts";
+import { buildMenu, describeMenu, feedbackMap, parseMenuDishes } from "./menuTool.ts";
+import { guardEngineReply, type EngineOutput } from "./engineGuard.ts";
 import { type FastIntent, formatBalanceReply, parseFastPath } from "./fastPath.ts";
 import { AgentSource, AuditScope, recordAction, writeRows } from "./audit.ts";
 import { commitIntent, DUPLICATE_REPLY, isDoorRefusal, logGuard, refusalText } from "./commitIntent.ts";
@@ -5252,6 +5254,21 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       return describeBudgetPlan(plan, currency);
     }
 
+    case "plan_menu": {
+      // م٥.٢: منيو الأسبوع على ميزانية (menuTool.ts فوق _shared/or/menuPlan.ts). الأطباق والأسعار من العميل.
+      const budget = Number(input?.budget);
+      const days = Number(input?.days);
+      if (!Number.isFinite(budget) || budget <= 0 || budget > 1_000_000) return "مرفوض: budget لازم رقم موجب بعملة العميل.";
+      if (!Number.isInteger(days) || days < 1 || days > 14) return "مرفوض: days لازم عدد صحيح من ١ لـ١٤.";
+      const parsed = parseMenuDishes(input?.dishes);
+      if ("error" in parsed) return parsed.error;
+      const { data: fbRows } = await sb.from("zad_recipe_feedback").select("recipe_name,liked").eq("user_id", userId).limit(300);
+      const maxRepeat = Math.min(7, Math.max(1, Math.floor(Number(input?.max_repeat) || 1)));
+      const menu = await buildMenu(parsed.dishes, feedbackMap(fbRows ?? []), { days, budget, maxRepeat });
+      const costs = new Map([...menu.names].map(([id, n]) => [id, parsed.dishes.find((d) => d.name === n)?.cost ?? 0]));
+      return describeMenu(menu, costs, snap?.currency ?? "");
+    }
+
     case "where_to_buy": {
       // «ألاقيه فين بسعر كويس؟» — صنف واحد: عروض المحلات + فواتير عملاء زاد في مدينته (whereToBuy.ts، أرضية ٣ بيوت).
       const item = String(input?.item_name ?? "").trim().slice(0, 60);
@@ -7201,6 +7218,30 @@ export const CHAT_TOOLS: ToolDef[] = [
     },
   },
   {
+    name: "plan_menu",
+    description:
+      "منيو أسبوع (أو كام يوم) على ميزانية: العميل بيدّيك الأطباق وسعر كل واحد، والأداة بتختار أحسن توليفة بالذوق " +
+      "(اللي حبّوه وماحبّوهوش) من غير ما تعدّي الميزانية. ماتخترعش أطباق ولا أسعار: اسأل العميل. الأرقام من الأداة بس.",
+    input_schema: {
+      type: "object",
+      properties: {
+        budget: { type: "number", description: "ميزانية المنيو كله بعملة العميل" },
+        days: { type: "number", description: "عدد الأيام (١ لـ١٤)" },
+        max_repeat: { type: "number", description: "أقصى تكرار للطبق الواحد (الافتراضي ١)" },
+        dishes: {
+          type: "array",
+          description: "الأطباق من العميل",
+          items: {
+            type: "object",
+            properties: { name: { type: "string" }, cost: { type: "number", description: "تكلفة الطبق للبيت كله" }, tags: { type: "array", items: { type: "string" } } },
+            required: ["name", "cost"],
+          },
+        },
+      },
+      required: ["budget", "days", "dishes"],
+    },
+  },
+  {
     name: "where_to_buy",
     description:
       "فين يلاقي صنف معيّن بسعر كويس: العروض الشغالة عليه في محلات بلده، وفي أنهي محلات اتشاف في فواتير عملاء زاد في " +
@@ -8609,6 +8650,8 @@ async function handleAgentTurnInLane(
   ].join(" ").slice(-1500)) + promptParts.purchase;
 
   const executed: Array<{ tool: string; ok: boolean; summary: string }> = [];
+  // م٤.٢: نتايج أدوات المحرك في اللفة دي (engineGuard.ts).
+  const engineOutputs: EngineOutput[] = [];
   // أوامر واجهة التطبيق (app_command) — بتترجع للكلاينت عشان ZadViewModel يفتح الشاشة/
   // يظلّل العنصر محلياً. منفصلة عن executed لأنها مش كتابة بيانات.
   const appCommands: Array<{ screen: string; action: string; highlight_name: string | null }> = [];
@@ -8798,6 +8841,7 @@ async function handleAgentTurnInLane(
           highlight_name: call.input.highlight_name != null ? String(call.input.highlight_name) : null,
         });
       }
+      engineOutputs.push({ tool: call.name, content: result });
       toolResults.push({ id: call.id, name: call.name, content: result });
     }
 
@@ -8984,6 +9028,12 @@ async function handleAgentTurnInLane(
   }
   if (snapshotLeak(reply)) reply = SNAPSHOT_REFUSAL_REPLY;
   reply = silentWriteFallback(reply, executed, proposals.length);
+  // م٤.٢: رقم في رد على أداة محرك مش جاي من نتيجتها ولا من العميل ⇒ نص الأداة نفسه بدل كلام الموديل.
+  const numberVerdict = guardEngineReply(reply, message, engineOutputs);
+  if (numberVerdict.replaced) {
+    console.warn("[agent_turn] number guard replaced the reply; unknown numbers:", numberVerdict.unknown.join(","));
+    reply = numberVerdict.reply;
+  }
   // «تحب أساعدك في حاجة تانية؟» في الآخر = كلام آلة (persona.ts). الفضول والعرض المحدد بيفضلوا.
   reply = dropServiceCloser(reply);
   // روابط نضيفة يفتحها الموبايل، وأمازون بالتاج ومفحوص بـ200 (dealLink.ts، بلاغ المالك ١٠/١١).

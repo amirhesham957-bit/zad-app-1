@@ -17,8 +17,9 @@ export function extractNumbers(text: string): number[] {
     const before = text.slice(0, start);
     const after = text.slice(start + raw.length);
 
-    // A standalone Arabic conjunction و introduces a number (و٣٥); other letter-glued runs are identifiers.
-    const letterBefore = /\p{L}$/u.test(before) && !/(?:^|[^\p{L}])و$/u.test(before);
+    // A standalone one-letter Arabic prefix (و ب ل ك ف), with or without a tatweel, introduces a number
+    // (و٣٥، بـ٧٥); other letter-glued runs are identifiers.
+    const letterBefore = /\p{L}$/u.test(before) && !/(?:^|[^\p{L}])[وبلكف]ـ?$/u.test(before) && !/[^\p{L}]ـ$|^ـ$/u.test(before);
     if (letterBefore || /^\p{L}/u.test(after)) continue;
 
     const normalized = normalizeDigits(raw).replace(/[٬,]/g, "").replace("٫", ".");
