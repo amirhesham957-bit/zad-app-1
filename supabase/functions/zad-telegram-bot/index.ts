@@ -16,6 +16,7 @@
 // through that table, never by anything the client claims about itself.
 import { decideLifeEvent } from "../_shared/lifeEventDecide.ts";
 import { secretMatches } from "../_shared/cronSecret.ts";
+import { type DealLogRow, decideSearchAlert, type RestRow } from "../_shared/searchHealthAlert.ts";
 import { recentOutbound } from "../_shared/outbound.ts";
 import { type ForecastInput, lastAskedDaysAgo, weeklyGateClosed, weeklyPick } from "./weeklyCheckin.ts";
 import { proactiveTurn, recordConversation, trimProactive } from "../_shared/conversationLog.ts";
@@ -3504,6 +3505,48 @@ Deno.serve(async (req: Request) => {
       return new Response(JSON.stringify({ ok: true, delivered: true }), { headers: { "Content-Type": "application/json" } });
     } catch (e) {
       console.error("admin_alert failed:", e);
+      return new Response(JSON.stringify({ ok: false, error: String(e) }), { status: 500 });
+    }
+  }
+
+  // م٥.٧: صحة البحث على الويب. مزودين واقفين أو ٩٠٪ من البحث بصفر نتيجة ⇒ تنبيه لشات الأدمن بس، مرة كل ١٢ ساعة.
+  // الحالة في zad_admin_alert_log (kind='search_health').
+  if (req.method === "POST" && new URL(req.url).searchParams.get("job") === "search_health") {
+    if (!(await secretMatches(req.headers.get("X-Realtime-Push-Secret"), "ZAD_REALTIME_PUSH_SECRET"))) {
+      return new Response("unauthorized", { status: 401 });
+    }
+    try {
+      const sb = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+      const now = new Date();
+      const [rest, log, last] = await Promise.all([
+        sb.from("zad_search_source_rest").select("source,until,reason"),
+        sb.from("zad_deal_search_log").select("hits,searched_at").gte("searched_at", new Date(now.getTime() - 24 * 3600_000).toISOString()).limit(2000),
+        sb.from("zad_admin_alert_log").select("last_sent").eq("kind", "search_health").maybeSingle(),
+      ]);
+      if (rest.error || log.error || last.error) {
+        console.error("[search_health] read failed:", rest.error?.message ?? log.error?.message ?? last.error?.message);
+        return new Response(JSON.stringify({ ok: false, reason: "read_failed" }), { status: 500 });
+      }
+      const lastSent = (last.data as { last_sent?: string } | null)?.last_sent;
+      const d = decideSearchAlert({
+        restRows: (rest.data ?? []) as RestRow[], dealLog: (log.data ?? []) as DealLogRow[], now,
+        lastAlertAt: lastSent ? new Date(lastSent) : null,
+      });
+      if (!d.alert) return new Response(JSON.stringify({ ok: true, alert: false, reason: d.reason }), { headers: { "Content-Type": "application/json" } });
+      const chatId = adminChatId(Deno.env.get("ZAD_ADMIN_CHAT_ID"));
+      if (chatId === null) {
+        console.warn("[search_health] ZAD_ADMIN_CHAT_ID not set — not sent");
+        return new Response(JSON.stringify({ ok: true, alert: true, delivered: false, reason: "no admin chat" }), { headers: { "Content-Type": "application/json" } });
+      }
+      if (await resolveUserId(sb, chatId)) {
+        console.error("[search_health] ZAD_ADMIN_CHAT_ID is a customer chat — refused");
+        return new Response(JSON.stringify({ ok: false, delivered: false, reason: "admin chat is a customer chat" }), { status: 409 });
+      }
+      await sendTelegramMessage(chatId, `🔎 صحة البحث\n\n${d.message}`);
+      await sb.from("zad_admin_alert_log").upsert({ kind: "search_health", last_sent: now.toISOString() });
+      return new Response(JSON.stringify({ ok: true, alert: true, delivered: true, reason: d.reason }), { headers: { "Content-Type": "application/json" } });
+    } catch (e) {
+      console.error("search_health failed:", e);
       return new Response(JSON.stringify({ ok: false, error: String(e) }), { status: 500 });
     }
   }

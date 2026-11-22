@@ -12,7 +12,7 @@
 // هيخلص خلال أسبوع (zad_home_state)، وبعدها الاهتمامات.
 
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
-import { withDealLink } from "./dealLink.ts";
+import { asinOf, withDealLink } from "./dealLink.ts";
 import { countryNameAr, type DealHere, itemKey, sameStore, travelContext } from "./shared.ts";
 import { isBrokeModeActive } from "../_shared/brokeMode.ts";
 import { householdFamilyId, householdFilter } from "../_shared/household.ts";
@@ -23,6 +23,7 @@ import { deliveryApp } from "../_shared/deliveryApps.ts";
 import { habitCycleDays, PURCHASE_SOURCES, purchaseDaysByItem } from "../_shared/restockCycle.ts";
 import { householdUserIds } from "./restockJudge.ts";
 import { isGroceryTerm } from "../_shared/groceryLexicon.ts";
+import { offerValue } from "../_shared/or/offerValue.ts";
 import { likedTerms, loadAffinity, rankByRelevance } from "../_shared/dealRelevance.ts";
 
 export const MAX_TASTE_ITEMS = 5;
@@ -86,6 +87,8 @@ export interface TasteDeal {
   intent?: string;
   /** كل كام يوم البيت بيشتري الصنف ده فعلاً (ZAD_PLAN ٤.٢٤). */
   cycle_days?: number;
+  /** عرض أمازون (عمولة): مابيدخلش الترتيب (م٦.١)، والرسالة بتقول لو في أرخص منه. */
+  commission?: boolean;
   /** صنف + محل — عليه بيتعمل منع التكرار. */
   key: string;
   /** من zad_deals بس: نوع المصدر ورابطه ولحد إمتى. البحث الحي مالوش مصدر متخزّن. */
@@ -257,6 +260,43 @@ const sameName = (a: string, b: string) => {
   return ka.length >= 2 && kb.length >= 2 && (ka.includes(kb) || kb.includes(ka));
 };
 
+
+// ── قيمة العرض (م٦.١) ─────────────────────────────────────────────────────────────────────────────
+// القيمة = التوفير × احتمال الاحتياج (offerValue). التوفير بالنسبة المئوية عشان الخصم من غير سعر قبل يتقارن بالباقي.
+// العمولة مش جوه الحساب. أمازون بيدخل للنواقص الأساسية بس (ألبان، بقالة جافة، تنظيف). شي إن مش هنا.
+export const NEED_PROB_SHORT = 0.9;
+export const NEED_PROB_OTHER = 0.3;
+const AMAZON_ONLY = /amazon|أمازون|امازون/i;
+const AMAZON_BASICS = [
+  "لبن", "حليب", "جبنة", "زبادي", "روب", "زبدة", "سمن", "زيت", "رز", "ارز", "سكر", "شاي", "قهوة", "مكرونة", "عدس", "فول", "دقيق",
+  "صابون", "منظف", "كلور", "مسحوق", "مناديل", "جلي", "اسفنج",
+].map((w) => itemKey(w));
+
+/** صنف أساسي من الألبان أو البقالة الجافة أو التنظيف. */
+export function isAmazonBasic(item: string): boolean {
+  const k = itemKey(item);
+  return k.length >= 2 && AMAZON_BASICS.some((b) => k.includes(b));
+}
+
+/** نسبة التوفير المئوية للعرض (٠ لو مجهولة). */
+export function savingPercent(d: { price: number | null; price_before?: number | null; discount_percent: number | null }): number {
+  if (d.price !== null && d.price_before && d.price_before > d.price) return ((d.price_before - d.price) / d.price_before) * 100;
+  return d.discount_percent ?? 0;
+}
+
+/** قيمة العرض للترتيب: [short] = الصنف ناقص فعلاً. */
+export function tasteDealValue(d: { price: number | null; price_before?: number | null; discount_percent: number | null }, short: boolean): number {
+  const pct = savingPercent(d);
+  return offerValue({ id: "x", price: 100 - pct, usualPrice: 100, needProb: short ? NEED_PROB_SHORT : NEED_PROB_OTHER, annoyance: 0 });
+}
+
+/** لو الفايز بعمولة ومش الأرخص (بين اللي ليهم سعر) الرسالة بتقول كده. نقي. */
+function withCommissionNote(pick: TasteDeal | null, all: readonly TasteDeal[]): TasteDeal | null {
+  if (!pick?.commission || pick.price === null) return pick;
+  const cheaper = all.some((d) => d !== pick && d.price !== null && d.price < (pick.price as number));
+  return cheaper ? { ...pick, note: "في عرض أرخص منه في محل تاني، وده رابط شراكة" } : pick;
+}
+
 /**
  * العرض اللي يتقال، أو null. لازم: صنفه من أصناف الذوق، محل باسم، وسعر أو خصم موجب. الأولوية: محل من محلاته،
  * بعدها الماركة اللي البيت بيجيبها ([brands]، ٤.١٥)، بعدها محل قريب منه ([nearby] = أسامي محلات حوالين آخر نقطة)،
@@ -274,9 +314,12 @@ export function pickDeal(
   tight = false,
   brands: ReadonlyMap<number, string> = new Map(),
   stockable: ReadonlySet<number> = new Set(),
+  needed: readonly string[] = [],
 ): TasteDeal | null {
   if (!Array.isArray(raw)) return null;
   const found: TasteDeal[] = [];
+  const shortOf = (item: string) => needed.some((n) => offerMatchesNeed(n, item));
+  const values = new Map<TasteDeal, number>();
   for (const d of raw as Array<Record<string, unknown>>) {
     const item = String(d?.item ?? "").trim().slice(0, 60);
     const store = String(d?.store ?? "").trim().slice(0, 60);
@@ -291,6 +334,9 @@ export function pickDeal(
     if (!wanted) continue;
     const key = `deal:${itemKey(wanted)}:${itemKey(store)}`;
     if (skip.has(key) || skip.has(`need:${itemKey(wanted)}`)) continue;
+    // أمازون للنواقص الأساسية بس: غير كده العرض مايتقالش.
+    const commission = AMAZON_ONLY.test(store) || asinOf(d?.url) !== null;
+    if (commission && !(isAmazonBasic(wanted) && shortOf(item))) continue;
     const src = d?.source as { kind?: unknown; url?: unknown; until?: unknown } | undefined;
     found.push({
       item, store, key,
@@ -308,6 +354,7 @@ export function pickDeal(
       ...(d?.trip && typeof d.trip === "object" ? { trip: d.trip as Trip } : {}),
       ...(d?.delivery && typeof d.delivery === "object" ? { delivery: d.delivery as Delivery } : {}),
       ...(d?.deal_kind === "multi_buy" ? { multi_buy: true } : {}),
+      ...(commission ? { commission: true } : {}),
       ...(tight ? { tight: true } : {}),
       ...(!tight && (hasBefore || hasDiscount) && stockable.has(brandWords(item).group ?? -1) ? { stock: true } : {}),
     });
@@ -315,13 +362,14 @@ export function pickDeal(
   if (tight) {
     const need = (d: TasteDeal) => items.findIndex((w) => offerMatchesNeed(w, d.item));
     found.sort((a, b) => need(a) - need(b) || (a.price ?? 0) - (b.price ?? 0) || Number(b.nearby) - Number(a.nearby));
-    return found[0] ?? null;
+    return withCommissionNote(found[0] ?? null, found);
   }
+  for (const d of found) values.set(d, tasteDealValue(d, shortOf(d.item)));
   found.sort((a, b) =>
     Number(b.favorite) - Number(a.favorite) || Number(!!b.brand) - Number(!!a.brand) || Number(b.nearby) - Number(a.nearby) ||
-    (b.discount_percent ?? 0) - (a.discount_percent ?? 0)
+    (values.get(b) ?? 0) - (values.get(a) ?? 0) || (b.discount_percent ?? 0) - (a.discount_percent ?? 0)
   );
-  return found[0] ?? null;
+  return withCommissionNote(found[0] ?? null, found);
 }
 
 export interface StoredDealRow {
@@ -783,9 +831,9 @@ export async function loadTasteDeal(sb: SupabaseClient, userId: string, now = Da
     const stored = withoutPausedSources(dealsForCity(storedAll as Array<StoredDealRow & { city?: string | null }> | null, await cityRead), paused);
     // النية الأول: عرض على حاجة قال إنه عايزها يغلب محله المعتاد على حاجة من القايمة.
     const pick = (raw: unknown): TasteDeal | null => {
-      const wanted = wants.length ? pickDeal(raw, wants, favorites, skip, nearby, false, brands, stockable) : null;
+      const wanted = wants.length ? pickDeal(raw, wants, favorites, skip, nearby, false, brands, stockable, runningOut) : null;
       if (wanted) return { ...wanted, intent: wants.find((w) => offerMatchesNeed(w, wanted.item)) };
-      return pickDeal(raw, items, favorites, skip, nearby, tight, brands, stockable);
+      return pickDeal(raw, items, favorites, skip, nearby, tight, brands, stockable, runningOut);
     };
     // ٤.١٠: المشوار من نقطته (مقرّبة لكيلو) للمحل اللي ليه إحداثيات، بسعر بنزين بلده.
     // ٤.٧: عرض من غير إحداثيات بياخد أقرب فرع باسمه حوالين نقطته. ٤.١٠: «معندناش عربية» = مفيش مشوار بالعربية.
