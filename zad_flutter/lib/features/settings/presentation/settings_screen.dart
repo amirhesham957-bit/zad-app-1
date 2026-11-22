@@ -165,6 +165,24 @@ class SettingsScreen extends ConsumerWidget {
                         onTap: () =>
                             unawaited(ZadScreens.showGuardEvents(context)),
                       ),
+                      ZadWorldMenuRow(
+                        art: ZadIconArt.brain,
+                        color: color,
+                        title: l.notifReadsSwitchesTitle,
+                        subtitle: l.notifReadsPrivacy,
+                        onTap: () => unawaited(
+                          ZadScreens.showNotificationReadsSwitches(context),
+                        ),
+                      ),
+                      ZadWorldMenuRow(
+                        art: ZadIconArt.brain,
+                        color: color,
+                        title: l.notifReadsTodayTitle,
+                        subtitle: l.notifReadsExplain,
+                        onTap: () => unawaited(
+                          ZadScreens.showNotificationReadsToday(context),
+                        ),
+                      ),
                     ],
                   ),
                   // Alerts from زاد: their own sections, owned by the alerts

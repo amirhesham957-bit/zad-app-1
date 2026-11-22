@@ -258,6 +258,13 @@ abstract final class ZadScreens {
   /// الشروط.
   static late OpenScreen showTermsScreen;
 
+  // ── notification reads
+  /// قراءة الإشعارات: the three switches.
+  static late OpenScreen showNotificationReadsSwitches;
+
+  /// «زاد قرا إيه النهارده».
+  static late OpenScreen showNotificationReadsToday;
+
   // ── tasbiha
   /// التسبيحة.
   static late OpenScreen showTasbihaScreen;

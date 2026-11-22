@@ -44,6 +44,22 @@ IconData _kindIcon(ReadKind k) => switch (k) {
   ReadKind.documentDue => Icons.badge_outlined,
 };
 
+/// Opens the three switches.
+Future<void> showNotificationReadsSwitches(BuildContext context) =>
+    Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => const NotificationReadsSwitchesScreen(),
+      ),
+    );
+
+/// Opens «زاد قرا إيه النهارده».
+Future<void> showNotificationReadsToday(BuildContext context) =>
+    Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => const NotificationReadsTodayScreen(),
+      ),
+    );
+
 /// The three switches, plus the way into today's reads.
 class NotificationReadsSwitchesScreen extends ConsumerStatefulWidget {
   /// Creates the screen.

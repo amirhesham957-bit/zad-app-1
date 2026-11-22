@@ -46,6 +46,7 @@ import 'package:zad/features/nearby/presentation/home_deals_carousel.dart';
 import 'package:zad/features/nearby/presentation/home_nearby_stores.dart';
 import 'package:zad/features/nearby/presentation/nearby_deals_screen.dart';
 import 'package:zad/features/nearby/presentation/nearby_view.dart';
+import 'package:zad/features/notification_reads/presentation/notification_reads_screens.dart';
 import 'package:zad/features/notifications/presentation/notification_center_screen.dart';
 import 'package:zad/features/obligations/application/obligations_controller.dart';
 import 'package:zad/features/obligations/domain/obligation.dart';
@@ -125,6 +126,8 @@ void wireScreens() {
   ZadScreens.showNearbyDealsScreen = showNearbyDealsScreen;
   ZadScreens.showOffersScreen = showOffersScreen;
   ZadScreens.showNotificationCenter = showNotificationCenter;
+  ZadScreens.showNotificationReadsSwitches = showNotificationReadsSwitches;
+  ZadScreens.showNotificationReadsToday = showNotificationReadsToday;
   ZadScreens.showCompanionStudio = showCompanionStudio;
   ZadScreens.showGamesHub = showGamesHub;
   ZadScreens.showPaywallScreen = showPaywallScreen;
