@@ -7672,4 +7672,49 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get tripBudgetSave => 'Save';
+
+  @override
+  String get notifReadsSwitchesTitle => 'Notification reading';
+
+  @override
+  String get notifReadsPrivacy =>
+      'Each one stays off until you turn it on yourself. You can turn it off any time.';
+
+  @override
+  String get notifReadsAppointment => 'Doctor bookings';
+
+  @override
+  String get notifReadsTrip => 'Flights';
+
+  @override
+  String get notifReadsDocument => 'Absher and services';
+
+  @override
+  String get notifReadsExplain =>
+      'We read the notification and pull out only the date and place; the text is deleted.';
+
+  @override
+  String get notifReadsSaveFailed => 'Could not save the change, try again';
+
+  @override
+  String get notifReadsTodayTitle => 'What Zad read today';
+
+  @override
+  String get notifReadsEmptyTitle => 'Nothing read yet today';
+
+  @override
+  String get notifReadsEmptyBody =>
+      'When a notification of a kind you turned on arrives, the date and place we pulled out of it will show here.';
+
+  @override
+  String get notifReadsLoadFailed => 'Could not load, tap to try again';
+
+  @override
+  String get notifReadsDate => 'Date';
+
+  @override
+  String get notifReadsTime => 'Time';
+
+  @override
+  String get notifReadsPlace => 'Place';
 }

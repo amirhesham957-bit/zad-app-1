@@ -6906,5 +6906,19 @@
   "@tripSpent": {"placeholders": {"amount": {"type": "String"}, "currency": {"type": "String"}}},
   "@tripLeft": {"placeholders": {"amount": {"type": "String"}, "currency": {"type": "String"}}},
   "@tripOver": {"placeholders": {"amount": {"type": "String"}, "currency": {"type": "String"}}},
-  "@tripBudgetHint": {"placeholders": {"currency": {"type": "String"}}}
+  "@tripBudgetHint": {"placeholders": {"currency": {"type": "String"}}},
+  "notifReadsSwitchesTitle": "قراءة الإشعارات",
+  "notifReadsPrivacy": "كل واحد مقفول لحد ما تفتحه بنفسك. وتقدر تقفله في أي وقت.",
+  "notifReadsAppointment": "حجوزات الدكتور",
+  "notifReadsTrip": "الطيران",
+  "notifReadsDocument": "أبشر والخدمات",
+  "notifReadsExplain": "بنقرا الإشعار ونطلّع التاريخ والمكان بس، والنص بيتمسح.",
+  "notifReadsSaveFailed": "ماقدرناش نحفظ التغيير، جرّب تاني",
+  "notifReadsTodayTitle": "زاد قرا إيه النهارده",
+  "notifReadsEmptyTitle": "لسه مفيش حاجة اتقرت النهارده",
+  "notifReadsEmptyBody": "أول ما يوصلك إشعار من نوع مفتوح، هتلاقي هنا التاريخ والمكان اللي طلّعناهم منه.",
+  "notifReadsLoadFailed": "ماقدرناش نحمّل، اضغط للمحاولة تاني",
+  "notifReadsDate": "التاريخ",
+  "notifReadsTime": "الوقت",
+  "notifReadsPlace": "المكان"
 }

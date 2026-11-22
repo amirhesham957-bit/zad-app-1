@@ -12673,6 +12673,90 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'حفظ'**
   String get tripBudgetSave;
+
+  /// No description provided for @notifReadsSwitchesTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'قراءة الإشعارات'**
+  String get notifReadsSwitchesTitle;
+
+  /// No description provided for @notifReadsPrivacy.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل واحد مقفول لحد ما تفتحه بنفسك. وتقدر تقفله في أي وقت.'**
+  String get notifReadsPrivacy;
+
+  /// No description provided for @notifReadsAppointment.
+  ///
+  /// In ar, this message translates to:
+  /// **'حجوزات الدكتور'**
+  String get notifReadsAppointment;
+
+  /// No description provided for @notifReadsTrip.
+  ///
+  /// In ar, this message translates to:
+  /// **'الطيران'**
+  String get notifReadsTrip;
+
+  /// No description provided for @notifReadsDocument.
+  ///
+  /// In ar, this message translates to:
+  /// **'أبشر والخدمات'**
+  String get notifReadsDocument;
+
+  /// No description provided for @notifReadsExplain.
+  ///
+  /// In ar, this message translates to:
+  /// **'بنقرا الإشعار ونطلّع التاريخ والمكان بس، والنص بيتمسح.'**
+  String get notifReadsExplain;
+
+  /// No description provided for @notifReadsSaveFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'ماقدرناش نحفظ التغيير، جرّب تاني'**
+  String get notifReadsSaveFailed;
+
+  /// No description provided for @notifReadsTodayTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد قرا إيه النهارده'**
+  String get notifReadsTodayTitle;
+
+  /// No description provided for @notifReadsEmptyTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'لسه مفيش حاجة اتقرت النهارده'**
+  String get notifReadsEmptyTitle;
+
+  /// No description provided for @notifReadsEmptyBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'أول ما يوصلك إشعار من نوع مفتوح، هتلاقي هنا التاريخ والمكان اللي طلّعناهم منه.'**
+  String get notifReadsEmptyBody;
+
+  /// No description provided for @notifReadsLoadFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'ماقدرناش نحمّل، اضغط للمحاولة تاني'**
+  String get notifReadsLoadFailed;
+
+  /// No description provided for @notifReadsDate.
+  ///
+  /// In ar, this message translates to:
+  /// **'التاريخ'**
+  String get notifReadsDate;
+
+  /// No description provided for @notifReadsTime.
+  ///
+  /// In ar, this message translates to:
+  /// **'الوقت'**
+  String get notifReadsTime;
+
+  /// No description provided for @notifReadsPlace.
+  ///
+  /// In ar, this message translates to:
+  /// **'المكان'**
+  String get notifReadsPlace;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

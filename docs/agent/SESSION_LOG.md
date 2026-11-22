@@ -810,6 +810,9 @@ related:
 - **اتعمل:** قريت `socialSources.ts` و`tiktokDeals.ts` وكرونات `deals-instagram-weekly`/`deals-tiktok-daily`: كلهم رسمي (Graph API، محرك بحث، YouTube Data API). مفيش كود اتغيّر.
 - **فاضل:** المالك يجدّد توكن إنستجرام. الكرون هيفضل يفشل لحد ما يتجدد.
 
+## 2026-11-22 م٦.٤ Flutter half
+
+Added `zad_flutter/lib/features/notification_reads` (repository interface + Supabase impl, switches screen, today screen), strings in ar / ar_SA / en, 7 tests. Not measured against the real tables (the migration is the other agent's). Left: wire the screen into Settings, tick م٦.٤ after the server half lands.
 ## ٢٠٢٦-١١-٢٣ — م٦.٤ (نص السيرفر والداتابيز)
 - **اتعمل:** `20261123060000_notification_events.sql`: `zad_notification_switches` (مفتاح لكل نوع، الافتراضي مقفول، العميل يقرا ويكتب صفوفه بس من غير مسح) و`zad_notification_reads` (الاستخراج date/time/place/title بس، مفيش عمود نص خام، الكتابة service role). `_shared/notificationEvents.ts` تصنيف صافي (عربي وإنجليزي، سعودي ومصري) بيرجّع حقول منظّمة وعنوان ثابت. `zad-brain/notificationEvents.ts` موصّل في `handleNotificationIngest` قبل بوابة الفلوس: مفيش مفتاح مفتوح = مفيش قراية ولا كتابة. الموعد (تاريخ ووقت موجودين) بيتعمل من `zad_commit_intent` بمصدر `model`؛ الرحلة والمستند بيتسجلوا قراية بس. السطرين في `_schema/schema.json` وسطر الـCI.
 - **اتقاس:** تست SQL على zadpg EXIT=0، وبدون الميجريشن بيفشل EXIT=3. `deno check` EXIT=0، و`deno test -A zad-brain/ _shared/ _schema/` EXIT=0 (٢٠٣٧ نجحوا). mutation: شيل فحص المفتاح بيوقّع تست. مفيش تشغيل على الحي.
