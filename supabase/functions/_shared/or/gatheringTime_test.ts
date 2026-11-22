@@ -105,6 +105,41 @@ Deno.test("a busy interval ending exactly at slot start does not block it", () =
   assertEquals(slots[0].missing, []);
 });
 
+Deno.test("a busy interval starting exactly at slot end does not block it", () => {
+  const slots = bestGatherings([{ member: "a", start: at(0, 19), end: at(0, 20) }], {
+    members: ["a"],
+    minutes: 60,
+    earliest: 18 * 60,
+    latest: 19 * 60,
+    step: 60,
+  }, 1);
+
+  assertEquals(slots[0].start, at(0, 18));
+  assertEquals(slots[0].present, ["a"]);
+});
+
+Deno.test("preferred bonus only counts for slots fully inside the window", () => {
+  const slots = bestGatherings([], {
+    members: ["a"],
+    minutes: 60,
+    earliest: 18 * 60,
+    latest: 20 * 60,
+    step: 60,
+    preferred: [{ start: at(0, 18) + 30, end: at(0, 20), bonus: 40 }],
+  }, 2);
+
+  assertEquals(slots.map((slot) => [slot.start, slot.score]), [[at(0, 19), 140], [at(0, 18), 100]]);
+});
+
+Deno.test("defaults: 3 slots, 30-minute step, from 09:00", () => {
+  const slots = bestGatherings([{ member: "a", start: at(0, 9), end: at(0, 9) + 30 }], {
+    members: ["a"],
+    minutes: 60,
+  });
+
+  assertEquals(slots.map((slot) => slot.start), [at(0, 9) + 30, at(0, 10) + 30, at(0, 11) + 30]);
+});
+
 Deno.test("invalid gathering inputs throw RangeError", () => {
   const rules: GatheringRules = { members: ["a"], minutes: 60 };
   assertThrows(() => bestGatherings([], { ...rules, minutes: 14 }), RangeError);
