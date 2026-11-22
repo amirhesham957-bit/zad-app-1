@@ -12673,6 +12673,48 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'حفظ'**
   String get tripBudgetSave;
+
+  /// Heading of the recipe-page card listing recent videos from curated chef and shop YouTube channels.
+  ///
+  /// In ar, this message translates to:
+  /// **'من مطابخ الشيفات'**
+  String get chefVideosTitle;
+
+  /// Empty state title of that card.
+  ///
+  /// In ar, this message translates to:
+  /// **'مافيه فيديوهات جديدة'**
+  String get chefVideosEmptyTitle;
+
+  /// Empty state guidance of that card.
+  ///
+  /// In ar, this message translates to:
+  /// **'أول ما الشيفات والمحلات اللي بنتابعها لبلدك ينزّلوا فيديو جديد هيظهر هنا'**
+  String get chefVideosEmptyBody;
+
+  /// Error line of that card.
+  ///
+  /// In ar, this message translates to:
+  /// **'ماقدرناش نجيب الفيديوهات دلوقتي'**
+  String get chefVideosFailed;
+
+  /// Retry button of that card.
+  ///
+  /// In ar, this message translates to:
+  /// **'حاول تاني'**
+  String get chefVideosRetry;
+
+  /// Snackbar when a video link cannot be opened.
+  ///
+  /// In ar, this message translates to:
+  /// **'ماقدرناش نفتح الفيديو'**
+  String get chefVideosOpenFailed;
+
+  /// Small tag on a video from a shop channel rather than a chef.
+  ///
+  /// In ar, this message translates to:
+  /// **'محل'**
+  String get chefVideosKindStore;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

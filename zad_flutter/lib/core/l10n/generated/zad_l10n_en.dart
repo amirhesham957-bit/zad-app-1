@@ -7672,4 +7672,26 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get tripBudgetSave => 'Save';
+
+  @override
+  String get chefVideosTitle => 'From the chefs\' kitchens';
+
+  @override
+  String get chefVideosEmptyTitle => 'No new videos';
+
+  @override
+  String get chefVideosEmptyBody =>
+      'When the chefs and shops we follow for your country post a new video, it shows up here';
+
+  @override
+  String get chefVideosFailed => 'Could not load the videos right now';
+
+  @override
+  String get chefVideosRetry => 'Try again';
+
+  @override
+  String get chefVideosOpenFailed => 'Could not open the video';
+
+  @override
+  String get chefVideosKindStore => 'Shop';
 }

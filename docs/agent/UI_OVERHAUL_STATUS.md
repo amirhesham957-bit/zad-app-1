@@ -81,6 +81,10 @@ owner's real account, where only read-only taps are allowed.
 - Checked: widget tests (noon and 23:00-night skies from the account zone, empty day, greeting, state line), screenshot `build/screens/world_home.png` (ZAD_SCREENS=1). **Not checked on a phone.**
 - Left: the `homeHello` string (with an emoji) is now unused anywhere; delete it in a later l10n cleanup.
 
+## Chef videos card (2026-11-22, م٦.٧)
+
+- «من مطابخ الشيفات» at the end of the chef page (`features/recipes/presentation/chef_videos_card.dart`): recent videos from curated chef and shop YouTube channels for the account's country. Tap opens YouTube. Loading, empty and failed (with retry) are all real states. Not yet checked on the emulator.
+
 ## Open bugs
 
 - **Signing:** two CI builds on 2026-11-09 carried different keys, so Android refused to update one over the other. The `ZAD_DEBUG_KEYSTORE_B64` secret is missing or invalid, and only a person can set it. Until then an APK update on the owner's phone means uninstalling first.

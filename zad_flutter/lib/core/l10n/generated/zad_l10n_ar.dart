@@ -7546,6 +7546,28 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get tripBudgetSave => 'حفظ';
+
+  @override
+  String get chefVideosTitle => 'من مطابخ الشيفات';
+
+  @override
+  String get chefVideosEmptyTitle => 'مافيه فيديوهات جديدة';
+
+  @override
+  String get chefVideosEmptyBody =>
+      'أول ما الشيفات والمحلات اللي بنتابعها لبلدك ينزّلوا فيديو جديد هيظهر هنا';
+
+  @override
+  String get chefVideosFailed => 'ماقدرناش نجيب الفيديوهات دلوقتي';
+
+  @override
+  String get chefVideosRetry => 'حاول تاني';
+
+  @override
+  String get chefVideosOpenFailed => 'ماقدرناش نفتح الفيديو';
+
+  @override
+  String get chefVideosKindStore => 'محل';
 }
 
 /// The translations for Arabic, as used in Saudi Arabia (`ar_SA`).
@@ -10735,4 +10757,26 @@ class ZadL10nArSa extends ZadL10nAr {
 
   @override
   String get permLater => 'مو الحين';
+
+  @override
+  String get chefVideosTitle => 'من مطابخ الشيفات';
+
+  @override
+  String get chefVideosEmptyTitle => 'ما فيه فيديوهات جديدة';
+
+  @override
+  String get chefVideosEmptyBody =>
+      'أول ما ينزّل الشيفات والمحلات اللي نتابعها لبلدك فيديو جديد يظهر هنا';
+
+  @override
+  String get chefVideosFailed => 'ما قدرنا نجيب الفيديوهات الحين';
+
+  @override
+  String get chefVideosRetry => 'جرّب مرة ثانية';
+
+  @override
+  String get chefVideosOpenFailed => 'ما قدرنا نفتح الفيديو';
+
+  @override
+  String get chefVideosKindStore => 'محل';
 }

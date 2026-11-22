@@ -21,6 +21,7 @@ import 'package:zad/core/design/tokens/zad_world_colors.dart';
 import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/recipes/application/recipes_controller.dart';
 import 'package:zad/features/recipes/domain/recipe.dart';
+import 'package:zad/features/recipes/presentation/chef_videos_card.dart';
 import 'package:zad/features/recipes/presentation/chef_world_scene.dart';
 import 'package:zad/features/recipes/presentation/recipe_detail_screen.dart';
 import 'package:zad/shared/ads/presentation/ai_wait_ad.dart';
@@ -232,6 +233,15 @@ class RecipesView extends ConsumerWidget {
             ads: !view.isAsking,
           ),
         ],
+        const SliverPadding(
+          padding: EdgeInsets.fromLTRB(
+            ZadSpacing.gutter,
+            ZadSpacing.lg,
+            ZadSpacing.gutter,
+            ZadSpacing.lg,
+          ),
+          sliver: SliverToBoxAdapter(child: ChefVideosCard()),
+        ),
       ],
     );
   }

@@ -6906,5 +6906,19 @@
   "@tripSpent": {"placeholders": {"amount": {"type": "String"}, "currency": {"type": "String"}}},
   "@tripLeft": {"placeholders": {"amount": {"type": "String"}, "currency": {"type": "String"}}},
   "@tripOver": {"placeholders": {"amount": {"type": "String"}, "currency": {"type": "String"}}},
-  "@tripBudgetHint": {"placeholders": {"currency": {"type": "String"}}}
+  "@tripBudgetHint": {"placeholders": {"currency": {"type": "String"}}},
+  "chefVideosTitle": "من مطابخ الشيفات",
+  "chefVideosEmptyTitle": "مافيه فيديوهات جديدة",
+  "chefVideosEmptyBody": "أول ما الشيفات والمحلات اللي بنتابعها لبلدك ينزّلوا فيديو جديد هيظهر هنا",
+  "chefVideosFailed": "ماقدرناش نجيب الفيديوهات دلوقتي",
+  "chefVideosRetry": "حاول تاني",
+  "chefVideosOpenFailed": "ماقدرناش نفتح الفيديو",
+  "chefVideosKindStore": "محل",
+  "@chefVideosTitle": {"description": "Heading of the recipe-page card listing recent videos from curated chef and shop YouTube channels."},
+  "@chefVideosEmptyTitle": {"description": "Empty state title of that card."},
+  "@chefVideosEmptyBody": {"description": "Empty state guidance of that card."},
+  "@chefVideosFailed": {"description": "Error line of that card."},
+  "@chefVideosRetry": {"description": "Retry button of that card."},
+  "@chefVideosOpenFailed": {"description": "Snackbar when a video link cannot be opened."},
+  "@chefVideosKindStore": {"description": "Small tag on a video from a shop channel rather than a chef."}
 }

@@ -60,6 +60,7 @@ import {
 } from "./socialSources.ts";
 import { tavilyKeys, tavilyProbe, tavilySearchRotating } from "./tavily.ts";
 import { readSocialVideo, recipeAccountQuery, recipeTopicQuery, socialVideoHits, socialVideoPrompt, type SocialVideo } from "./socialRecipes.ts";
+import { channelVideos } from "./channelVideos.ts";
 import { instagramRecipeHits, PLATFORM_NAME, recipePlatform, youtubeRecipeHits, youtubeRecipeQuery } from "./socialRecipeSources.ts";
 import { avoidNames, chefAngles, chefDeals, type ChefDeal, type ChefDealRow, chefExpiring, chefPantryLine, chefSecret, dealsBlock, dealsForMissing, dishKey, type ExpiringItem, expiringBlock, NO_REPEAT_DAYS, type PantryRow, pickSocialRecipes, recipeSource, type SocialRecipeRow, socialRecipesBlock, trendBlock, trendCacheKey, trendQuery, withoutRecent } from "./chefInputs.ts";
 import { householdFamilyId, householdFilter } from "../_shared/household.ts";
@@ -3360,6 +3361,17 @@ async function handle(req: Request): Promise<Response> {
           console.error("[CoreIntel] place_city FAILED:", (e as Error).message);
           return jsonResponse({ ok: false, reason: "network" });
         }
+      }
+
+      // ──────────────────────────────────────────────
+      // CHANNEL_VIDEOS — آخر فيديوهات قنوات الشيفات والمحلات المختارة لبلد العميل (channelVideos.ts، م٦.٧).
+      // اليوتيوب الرسمي بالـhandle (وحدتين لكل قناة، وكاش ٦ ساعات). مفيش موديل.
+      // ──────────────────────────────────────────────
+      case "channel_videos": {
+        const cc = marketOf(payload?.country).code;
+        const kind = payload?.kind === "chef" || payload?.kind === "store" ? payload.kind : undefined;
+        const found = await channelVideos(Deno.env.get("YOUTUBE_API_KEY"), cc, { kind, max: 6 });
+        return jsonResponse({ ok: found.ok, reason: found.reason, country: cc, videos: found.videos });
       }
 
       // ──────────────────────────────────────────────

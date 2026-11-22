@@ -2986,5 +2986,12 @@
   "tripOver": "Over the trip budget by {amount} {currency}",
   "tripSetBudget": "Set a trip budget",
   "tripBudgetHint": "Budget in {currency}",
-  "tripBudgetSave": "Save"
+  "tripBudgetSave": "Save",
+  "chefVideosTitle": "From the chefs' kitchens",
+  "chefVideosEmptyTitle": "No new videos",
+  "chefVideosEmptyBody": "When the chefs and shops we follow for your country post a new video, it shows up here",
+  "chefVideosFailed": "Could not load the videos right now",
+  "chefVideosRetry": "Try again",
+  "chefVideosOpenFailed": "Could not open the video",
+  "chefVideosKindStore": "Shop"
 }

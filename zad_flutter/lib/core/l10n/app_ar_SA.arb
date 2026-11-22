@@ -861,5 +861,12 @@
   "pantryRateSlower": "يخلص أبطأ",
   "pantryRateSaved": "سجّلنا تصحيحك",
   "permSheetBody": "عشان زاد ينبّهك ويتابع بيتك من دون ما تفتح التطبيق، نحتاج هذي الأذونات. كل واحد منها اختياري، وتقدر تغيّره من إعدادات الجوال في أي وقت.",
-  "permLater": "مو الحين"
+  "permLater": "مو الحين",
+  "chefVideosTitle": "من مطابخ الشيفات",
+  "chefVideosEmptyTitle": "ما فيه فيديوهات جديدة",
+  "chefVideosEmptyBody": "أول ما ينزّل الشيفات والمحلات اللي نتابعها لبلدك فيديو جديد يظهر هنا",
+  "chefVideosFailed": "ما قدرنا نجيب الفيديوهات الحين",
+  "chefVideosRetry": "جرّب مرة ثانية",
+  "chefVideosOpenFailed": "ما قدرنا نفتح الفيديو",
+  "chefVideosKindStore": "محل"
 }
