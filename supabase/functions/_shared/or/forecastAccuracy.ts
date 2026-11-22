@@ -77,3 +77,36 @@ export function accuracyReport(rows: readonly ForecastOutcome[]): AccuracyReport
     accuracyPct: w === null ? null : Math.round(Math.max(0, 1 - w) * 100),
   };
 }
+
+export const EVIDENCE_MIN_RECORDED = 3;
+
+export interface SettledWeek {
+  predicted: number;
+  actual: number;
+  recorded: number;
+}
+
+export function isEvidenceWeek(w: SettledWeek): boolean {
+  return w.recorded >= EVIDENCE_MIN_RECORDED && w.actual > 0;
+}
+
+function round3(n: number | null): number | null {
+  return n === null ? null : Math.round(n * 1e3) / 1e3;
+}
+
+export function weeklySpendSummary(weeks: readonly SettledWeek[]): {
+  settled: number;
+  evidence: number;
+  thin: number;
+  wape: number | null;
+  bias: number | null;
+} {
+  const evidenceWeeks = weeks.filter(isEvidenceWeek);
+  return {
+    settled: weeks.length,
+    evidence: evidenceWeeks.length,
+    thin: weeks.length - evidenceWeeks.length,
+    wape: round3(wape(evidenceWeeks)),
+    bias: round3(bias(evidenceWeeks)),
+  };
+}
