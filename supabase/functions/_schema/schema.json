@@ -1267,6 +1267,17 @@
     "recipe_name",
     "user_id"
   ],
+  "zad_restock_observations": [
+    "area_lat",
+    "area_lng",
+    "country",
+    "id",
+    "in_stock",
+    "item_key",
+    "observed_at",
+    "source_kind",
+    "store_key"
+  ],
   "zad_savings_challenges": [
     "best_streak",
     "created_at",
