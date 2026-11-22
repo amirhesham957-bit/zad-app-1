@@ -8,7 +8,7 @@
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { codeStoreKey } from "./dealCodes.ts";
 import { isGroceryTerm } from "../_shared/groceryLexicon.ts";
-import { offerValue } from "../_shared/or/offerValue.ts";
+import { offerValue } from "./offerValue.ts";
 import { offerMatchesNeed } from "./productIdentity.ts";
 import { itemKey } from "./shared.ts";
 import { customerCity, dealCountry, dealsForCity, runningOutNames } from "./tasteDeals.ts";
