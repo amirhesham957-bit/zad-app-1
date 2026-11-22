@@ -515,7 +515,7 @@ export async function recordSpecialistTrace(
 }
 
 /** خرائط أدوات كل وكيل — مستخدمة في الأساسي *وفي* اتحاد أدوات الاستشاري (31.6). */
-const SPECIALIST_TOOL_SCOPE: Record<Exclude<SpecialistId, "general">, string[]> = {
+export const SPECIALIST_TOOL_SCOPE: Record<Exclude<SpecialistId, "general">, string[]> = {
   finance: [
     "log_transaction", "allocate_income", "update_transaction", "delete_transaction",
     "set_monthly_limit", "set_category_budget", "add_debt", "update_debt", "delete_debt",
@@ -550,6 +550,19 @@ const SPECIALIST_TOOL_SCOPE: Record<Exclude<SpecialistId, "general">, string[]> 
     "set_life_circumstance", "end_life_circumstance",
   ],
 };
+
+/**
+ * الأدوات العابرة للنطاقات — متاحة مع أي وكيل متخصص (م٤.٦: اتفصلت في ثابت عشان toolDomains يشاور عليها).
+ * سبب كل أداة فيها: أسباب رجيم السياق ٣.٢ والمواعيد (add_appointment وupdate_appointment) والبروفايل.
+ */
+export const CROSS_DOMAIN_TOOLS: readonly string[] = [
+  "remember", "link_memory", "web_search", "set_market", "set_transaction_category",
+  "update_emergency_fund_balance", "app_command", "learn_skill",
+  "add_appointment", "update_appointment", "add_place_reminder", "cancel_place_reminder",
+  "update_customer_profile",
+  // بيانات البيت التقيلة بتتقري عند الحاجة، مش بتتبعت مع كل رسالة.
+  "read_house",
+];
 
 /**
  * تقليل الأدوات المعروضة حسب الوكيل — سر سرعة الردود:
@@ -591,24 +604,8 @@ export function scopeToolsForSpecialist<T extends { name: string }>(
   const allowed = new Set([
     ...(SPECIALIST_TOOL_SCOPE[specialist as Exclude<SpecialistId, "general">] ?? []),
     ...(secondary ? SPECIALIST_TOOL_SCOPE[secondary as Exclude<SpecialistId, "general">] ?? [] : []),
-    // الأدوات العابرة للنطاقات — متاحة دايمًا
-    "remember", "link_memory", "web_search", "set_market", "set_transaction_category",
-    // رجيم السياق ٣.٢ (٢/١١): الدهب والعملات والشكوى والمناسبات و«أنا مفلس» بيجوا بنية الرسالة (intentToolHints)،
-    // والصيانة وhome_health_score في نطاق وكيل البيت/المال — كانوا ٩ أدوات مع كل رسالة لأي وكيل، و٣٠ يوم من
-    // agent_actions: صفر نداء لـ٨ منهم ونداء واحد لـset_broke_mode.
-    "update_emergency_fund_balance", "app_command", "learn_skill",
-    // المواعيد عابرة للنطاقات: «ميعاد» بيتوجّه لوكيل العيلة، «دكتور» للصيدلية، «اجتماع بنك»
-    // للمال — لو كانت في نطاق واحد، التذكير كان هيختفي في باقي الحالات.
-    // find_appointments وdelete_appointment (٨ج.٣) بيجوا بالنية (AGENDA_INTENT/reminderIntent) مش هنا: اتنين
-    // زيادة مع كل رسالة نزّلوا وكيل المال على Groq من ٤٢ أداة لـ٣٨ (promptBudget_test).
-    "add_appointment", "update_appointment",
-    "add_place_reminder", "cancel_place_reminder",
-    // start/stop_savings_challenge بيجوا بالنية (SAVINGS_CHALLENGE_INTENT) أو بتحدي شغال (index.ts) — صفر نداء
-    // في agent_actions من أول يوم، وكانوا التنين اللي بيخلّوا وكيل المال ٤١ أداة (رجيم ٣.٢، ٣/١١).
-    // العميل ممكن يقول عن نفسه حاجة في أي موضوع.
-    "update_customer_profile",
-    // بيانات البيت التقيلة (الحركات، صفوف المخزون…) بتتقري عند الحاجة، مش بتتبعت مع كل رسالة.
-    "read_house",
+    // الأدوات العابرة للنطاقات (CROSS_DOMAIN_TOOLS) — متاحة دايمًا
+    ...CROSS_DOMAIN_TOOLS,
     ...extra,
   ]);
   return tools.filter((t) => allowed.has(t.name));
