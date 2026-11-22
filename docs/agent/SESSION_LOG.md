@@ -740,3 +740,14 @@ related:
   - تقرير الـagent رجع «placeholder» مع إن الشغل اتعمل. افحص الفرع نفسه، ماتعتمدش على التقرير.
   - `a && git mv` بعد أمر فشل = الـmv مااتعملش، والـWrite بعدها مسح الأصل. رجّعته من `origin/main`.
   - ملف مش متتبع في git مابيرجعش بـ`git checkout` بعد الـmutation، فرجّعه بإيدك.
+
+## ٢٠٢٦-١١-٢٢ — م٩.١ وم٩.٢ وم٥.٥ وشغل البيت من م٥.٢ (PR #656)
+- **اتعمل:** `20261122150000` (الفرد والإيقاف المؤقت على `zad_memory`، والتعارض بيتقفل لما العميل يقوله في الشات). `restock_on_budget` (م٥.٥). `20261122160000` (مدة المهمة، و`family_chore_preferences`، و`zad_apply_chore_plan`) و`chore_plan` في `zad-core-intelligence` وشاشات Flutter. النسخة 1.1.1+14.
+- **اتقاس:** على الحي `zad_memory` ٤٤ صف (٣٨ حي)، و`zad_household_members` فيه صف «أنا» بس لكل حساب، و٤ من ٧٦ سطر قايمة ليهم سعر معروف، و`family_chores` فيه صف واحد. التستات: deno ٢١٦١، وflutter ٢٣٧٧، وanalyze نضيف، وتستين SQL جداد مع mutation check.
+- **المالك:** «ابني في GitHub وخلّي عمّال Groq وGemini وNVIDIA يساعدوك».
+- **فاضل:** الدمج (بموافقة المالك). وتشغيل «Build Flutter Debug APK» يدوي على الفرع عشان الـAAB. والعمّال: `m5-2-menu-plan` و`m5-2-gathering-time` (المواصفات على `worker-base-m5-2`، شغّلهم بـ`base=worker-base-m5-2`). وبعدهم ربط المنيو واللّمّة بالعقل.
+- **فخاخ:**
+  - توكن الجلسة مايقدرش يعمل `workflow_dispatch` (403)، فالبناء والعمّال محتاجين المالك يدوس.
+  - الكودسبيس مساحته ٣٢ جيجا والـNDK مش متثبت. `~/.gradle` و`~/android-sdk/ndk` و`.temp` بقوا symlinks على `/tmp`، ولو الـ`/tmp` اتمسح هيتعادوا من الأول.
+  - حد أدوات Groq (`promptBudget_test`، lean ≥ full+15) كان على الحرف، فأي باراميتر جديد في أداة finance بيكسره.
+  - `arabic_literals_test` مابيسمحش بنص عربي جديد برا الـARB، و`saudi_coverage_test` بيطلب نسخة سعودي لأي كلمة مصري.
