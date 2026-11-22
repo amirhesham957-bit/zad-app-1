@@ -1524,7 +1524,9 @@ export async function morningFacts(
   const threat = String((budget as { threat?: unknown } | null)?.threat ?? "");
   // والميزانية مرتاحة (مؤكدة، SAFE، و٣٠٪ متاح): الأساسي اللي بيتخزّن بيتقال كفرصة تخزين.
   const comfortable = !!budget?.limit_confirmed && budgetComfortable(threat, budget?.available, budget?.monthly_limit);
-  const homeDeal = quiet ? null : await withBuyingCycle(
+  // م٧.١٠: أقل من ١٨ مفيش عروض موجهة ولا بعمولة؛ ابن العيلة (role=child) ما بيجيلوش عرض. فشل القراءة = مفيش عرض.
+  const minor = quiet ? false : await isChildAccount(sb, userId);
+  const homeDeal = quiet || minor ? null : await withBuyingCycle(
     sb,
     userId,
     await loadTasteDeal(sb, userId, Date.now(), {
@@ -2164,4 +2166,11 @@ export function momentSourceUrl(facts: unknown): string | null {
     if (typeof u === "string" && /^https:\/\/[^\s]{4,500}$/.test(u.trim())) return u.trim();
   }
   return null;
+}
+
+/** حساب ابن؟ (family_members.role = child). فشل القراءة ⇒ true (آمن). */
+export async function isChildAccount(sb: SupabaseClient, userId: string): Promise<boolean> {
+  const { data, error } = await sb.from("family_members").select("role").eq("user_id", userId).maybeSingle();
+  if (error) return true;
+  return (data as { role?: string } | null)?.role === "child";
 }
