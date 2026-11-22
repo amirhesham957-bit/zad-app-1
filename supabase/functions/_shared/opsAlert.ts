@@ -6,7 +6,14 @@ export type CronJobRow = {
   failed_24h?: number | null; recent?: { status?: string; at?: string }[] | null;
 };
 export type FailedQueueJob = { queue: string; id?: string | number | null; attempts?: number | null; error?: string | null };
-export type KillSwitch = { name: string; tripped: boolean; reason?: string | null };
+export type KillSwitch = { name: string; tripped: boolean; reason?: string | null; since?: string | null };
+/** صف zad_kill_switches (م٥.٤): enabled=false يعني واقف. */
+export type KillSwitchRow = { key: string; enabled: boolean; reason?: string | null; updated_at?: string | null };
+
+/** صفوف جدول مفاتيح الوقف ⇒ مدخل التنبيه. المفتاح المقفول (enabled=false) بس هو اللي بيتحول. */
+export function killSwitchesFromRows(rows: KillSwitchRow[] | null | undefined): KillSwitch[] {
+  return (rows ?? []).map((r) => ({ name: r.key, tripped: r.enabled === false, reason: r.reason ?? null, since: r.updated_at ?? null }));
+}
 
 export type OpsAlertDecision = { alert: boolean; message: string; reason: string; issues: string[] };
 
@@ -32,6 +39,15 @@ export function expectedIntervalMs(schedule: string | null | undefined): number 
 
 const clip = (s: unknown, n: number) => String(s ?? "").replace(/\s+/g, " ").slice(0, n);
 
+function stoppedFor(since: string | null | undefined, nowMs: number): string {
+  const t = since ? Date.parse(since) : NaN;
+  if (Number.isNaN(t) || nowMs < t) return "";
+  const m = Math.floor((nowMs - t) / MIN);
+  if (m < 60) return ` من ${m} دقيقة`;
+  const h = Math.floor(m / 60);
+  return h < 48 ? ` من ${h} ساعة` : ` من ${Math.floor(h / 24)} يوم`;
+}
+
 export function decideOpsAlert(input: {
   crons?: CronJobRow[]; queueFailures?: FailedQueueJob[]; killSwitches?: KillSwitch[];
   now: Date; lastAlertAt?: Date | null;
@@ -47,7 +63,10 @@ export function decideOpsAlert(input: {
   for (const k of input.killSwitches ?? []) {
     if (!k.tripped) continue;
     kinds.add("kill_switch");
-    issues.push(`مفتاح وقف اتقفل: ${clip(k.name, 40)}${k.reason ? ` (${clip(k.reason, 80)})` : ""}`);
+    const what = k.name === "pause_all" ? "كل المهام واقفة (pause_all)"
+      : k.name.startsWith("job:") ? `المهمة ${clip(k.name.slice(4), 40)} واقفة (${clip(k.name, 40)})`
+      : `مفتاح وقف اتقفل: ${clip(k.name, 40)}`;
+    issues.push(`${what}${stoppedFor(k.since, nowMs)}${k.reason ? ` (${clip(k.reason, 80)})` : ""}`);
   }
   for (const c of input.crons ?? []) {
     if (c.active === false) continue;
