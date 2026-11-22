@@ -185,7 +185,9 @@ const MENU_PLAN_INTENT = /منيو|جدول (ال)?اكل|خطه (ال)?(اكل|
 const GATHERING_TIME_INTENT = /(امتي|وقت|ميعاد|يوم) (ال)?(نتجمع|لمه|لمتنا|نقعد سوا|نقعد مع بعض)|نتجمع كلنا|لمه (العيله|الاسره)|نقعد سوا/;
 // م٣.٤: «الدوا هيخلص امتى؟»، «اطلب الدوا امتى» ⇒ check_medicine_reorder (pharmacyReorderTool.ts).
 const MEDICINE_REORDER_INTENT = /(الدوا|الدواء|ادويه|ادويتي|العلاج|الحبوب).{0,25}(هيخلص|يخلص|خلص|كفايه|يكفي|اطلبه|اجيبه|اعيد طلب)|(اطلب|اعيد طلب|اجيب).{0,15}(الدوا|الدواء|العلاج) (امتي|ميعاد)|نقطه اعاده الطلب/;
-const BROKE_INTENT =/مفلس|طفران|خلصت فلوسي|فلوسي خلصت|مفيش فلوس|معيش فلوس|معنديش فلوس|ماعنديش فلوس|مخلص فلوسي/;
+// م٣.٥: «اصرف كام النهارده؟»، «المصروف الآمن» ⇒ safe_daily_spend (safeSpendTool.ts).
+const SAFE_SPEND_INTENT = /(اصرف|اقدر اصرف|ينفع اصرف) (كام|قد ايه) (النهارده|اليوم)|مصروف (ال)?(نهارده|يوم|اليوم) (ال)?امن|(ال)?مصروف (ال)?امن|هوصل (ل)?(لاخر الشهر|للقبض)|هكمل (ال)?شهر/;
+const BROKE_INTENT = /مفلس|طفران|خلصت فلوسي|فلوسي خلصت|مفيش فلوس|معيش فلوس|معنديش فلوس|ماعنديش فلوس|مخلص فلوسي/;
 const RECIPE_INTENT = /اطبخ|نطبخ|تطبخ|طبخه|وصفه|وصفات|(اعمل|نعمل|ناكل|اكل)\s*(اكل)?\s*ايه|(غدا|عشا|فطار|سحور)\s*(ايه|النهارده)|شيف/;
 // «هاتلي عروض كيتا»، «فيه عروض إيه؟»، «في كود خصم لطلبات؟» (طلب المالك ٧/١١): من غيرها الوكيل كان بيرد بنصيحة ميزانية.
 // «عايز فستان من شي ان»، «لبس أطفال» (SHEIN للخليج، المالك ١١/١١) — العروض بتقرر بلده جوه find_deals.
@@ -294,6 +296,7 @@ export function intentToolHints(message: string, priorReply = ""): string[] {
   if (MENU_PLAN_INTENT.test(norm)) tools.push("plan_menu");
   if (GATHERING_TIME_INTENT.test(norm)) tools.push("plan_gathering_time");
   if (MEDICINE_REORDER_INTENT.test(norm)) tools.push("check_medicine_reorder");
+  if (SAFE_SPEND_INTENT.test(norm)) tools.push("safe_daily_spend");
   if (SAVINGS_CHALLENGE_INTENT.test(norm)) tools.push("start_savings_challenge", "stop_savings_challenge");
   if (RECIPE_INTENT.test(norm)) tools.push("suggest_recipes");
   if (NEARBY_INTENT.test(norm)) tools.push("find_nearby_stores");

@@ -762,3 +762,9 @@ related:
 ## ٢٠٢٦-١١-٢٢ — م٢.٦ تكملة: اختيار الفرد في إضافة المخزن
 - **اتعمل:** نشر #669 على الإنتاج نجح (Edge Functions). `householdMembersProvider` (قراية `zad_household_members`) وحقل «لمين؟» في حوار إضافة المخزن (بيظهر لما البيت فيه فردين أو أكتر) و`memberId` في `PantryController.add` (والدمج مع صنف موجود بيحترم الفرد). نصوص ar وar_SA وen.
 - **فاضل:** دالة مجال للتفضيلات والأهداف (عميل Flutter لسه مابيبعتش `member_id` فيهم). تعديل صنف موجود مابيغيّرش صاحبه. اسم الـcheck المطلوب في حماية `main`.
+
+## ٢٠٢٦-١١-٢٣ — م٣.٢ (زرار «أسرع / أبطأ»)
+- **اتعمل:** `20261123000000_rate_corrected.sql`: عمود `zad_inventory.rate_override_per_day`، ونية `inventory.rate_corrected {item_id, rate_per_day}` في `zad_intent_inventory` وقايمة `zad_commit_my_intent`، و`zad_pantry_learning` بيستخدم المعدل ده بدل المتعلَّم (confidence=known). تست SQL `rate_corrected_test` (سطر جديد في edge-functions.yml). Flutter: `InventoryRepository.correctRate` (×/÷ ١.٣) وزرارين في «تعديل الصنف» وجمل ARB.
+- **ملاحظة:** وحدة `rateCorrection.ts` من فرع العامل جت معاها، بس السيرفر مابيستدعيهاش (العميل بيحسب)، والـTAP_FACTOR مكرر في Dart.
+- **ماتجرّبش:** تست SQL ما اتشغلش محلياً (مفيش Postgres)، والتأكيد من الـCI. `days_left` المصحَّح مفيش تست SQL له (محتاج سقالة كبيرة).
+- **فاضل:** الـoverride مابيتمسحش لما قراءات حقيقية تكفي (بيتمسح بس مع الصف).

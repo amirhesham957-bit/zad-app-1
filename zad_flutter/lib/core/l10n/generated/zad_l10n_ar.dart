@@ -7446,6 +7446,75 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get pantryWhoseMe => 'أنا';
+
+  @override
+  String pantryRateEstimate(String days) {
+    return 'تقديرنا إنه يكفي حوالي $days يوم';
+  }
+
+  @override
+  String get pantryRateFaster => 'بيخلص أسرع';
+
+  @override
+  String get pantryRateSlower => 'بيخلص أبطأ';
+
+  @override
+  String get pantryRateSaved => 'سجّلنا تصحيحك';
+
+  @override
+  String get permSheetTitle => 'خلّي زاد يشتغل لبيتك من أول يوم';
+
+  @override
+  String get permSheetBody =>
+      'عشان زاد ينبّهك ويتابع بيتك من غير ما تفتح التطبيق، محتاج الإذون دي. كل واحد منها اختياري، وتقدر تغيّره من إعدادات الموبايل في أي وقت.';
+
+  @override
+  String get permNotificationsTitle => 'الإشعارات';
+
+  @override
+  String get permNotificationsWhy =>
+      'تنبيهات الجرعات والمواعيد والفواتير وموجز الصبح.';
+
+  @override
+  String get permBankTitle => 'قراءة إشعارات البنك';
+
+  @override
+  String get permBankWhy =>
+      'زاد بيقرا الإشعارات اللي بتوصلك من البنك ورسايل الدفع عشان يسجّل المشتريات عنك، وبيحتفظ بس بالإشعارات اللي شكلها معاملة.';
+
+  @override
+  String get permBatteryTitle => 'الشغل في الخلفية';
+
+  @override
+  String get permBatteryWhy =>
+      'عشان قراءة الإشعارات والتذكيرات ماتتقفلش لما الموبايل يوفّر البطارية.';
+
+  @override
+  String get permEnable => 'فعّل';
+
+  @override
+  String get permLater => 'مش دلوقتي';
+
+  @override
+  String get permDone => 'تمام';
+
+  @override
+  String get permPrivacy =>
+      'بياناتك عندنا بتتعامل حسب سياسة الخصوصية المنشورة، وزاد مابيوعدش بأكتر منها.';
+
+  @override
+  String get permCardBody => 'فعّلها بضغطة عشان تنبيهات زاد توصلك.';
+
+  @override
+  String permCardTitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count إذون ناقصة',
+      one: 'إذن ناقص',
+    );
+    return '$_temp0';
+  }
 }
 
 /// The translations for Arabic, as used in Saudi Arabia (`ar_SA`).
@@ -10614,4 +10683,18 @@ class ZadL10nArSa extends ZadL10nAr {
 
   @override
   String get pantryWhoseMe => 'أنا';
+
+  @override
+  String pantryRateEstimate(String days) {
+    return 'تقديرنا إنه يكفي قرابة $days يوم';
+  }
+
+  @override
+  String get pantryRateFaster => 'يخلص أسرع';
+
+  @override
+  String get pantryRateSlower => 'يخلص أبطأ';
+
+  @override
+  String get pantryRateSaved => 'سجّلنا تصحيحك';
 }

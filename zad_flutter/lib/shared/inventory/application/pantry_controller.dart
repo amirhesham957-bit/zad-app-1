@@ -17,6 +17,7 @@ import 'package:zad/shared/inventory/application/shopping_controller.dart';
 import 'package:zad/shared/inventory/data/consumption_observations.dart';
 import 'package:zad/shared/inventory/data/consumption_rates.dart';
 import 'package:zad/shared/inventory/data/inventory_repository.dart';
+import 'package:zad/shared/inventory/data/pantry_learning.dart';
 import 'package:zad/shared/inventory/data/product_names_repository.dart';
 import 'package:zad/shared/inventory/data/restock_cycles.dart';
 import 'package:zad/shared/inventory/data/shopping_list_repository.dart';
@@ -187,6 +188,19 @@ class PantryController extends Notifier<PantryView> {
     if (updated != null) await _reading(updated);
     await _reload();
     if (updated != null && delta > 0) await _tickOffRestocked(updated);
+  }
+
+  /// «أسرع / أبطأ» on the estimate of [item] (م٣.٢), then reads the server's
+  /// estimate again.
+  Future<void> correctRate(
+    InventoryItem item, {
+    required double daysLeft,
+    required bool faster,
+  }) async {
+    await ref
+        .read(inventoryRepositoryProvider)
+        .correctRate(item.id, daysLeft: daysLeft, faster: faster);
+    ref.invalidate(pantryLearningProvider);
   }
 
   Future<void> _reading(InventoryItem item) => ref

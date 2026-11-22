@@ -12523,6 +12523,114 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'أنا'**
   String get pantryWhoseMe;
+
+  /// Pantry edit dialog: the estimate in days.
+  ///
+  /// In ar, this message translates to:
+  /// **'تقديرنا إنه يكفي حوالي {days} يوم'**
+  String pantryRateEstimate(String days);
+
+  /// Pantry edit dialog: correction tap, consumption is faster.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيخلص أسرع'**
+  String get pantryRateFaster;
+
+  /// Pantry edit dialog: correction tap, consumption is slower.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيخلص أبطأ'**
+  String get pantryRateSlower;
+
+  /// Pantry edit dialog: after a correction tap.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجّلنا تصحيحك'**
+  String get pantryRateSaved;
+
+  /// No description provided for @permSheetTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'خلّي زاد يشتغل لبيتك من أول يوم'**
+  String get permSheetTitle;
+
+  /// No description provided for @permSheetBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'عشان زاد ينبّهك ويتابع بيتك من غير ما تفتح التطبيق، محتاج الإذون دي. كل واحد منها اختياري، وتقدر تغيّره من إعدادات الموبايل في أي وقت.'**
+  String get permSheetBody;
+
+  /// No description provided for @permNotificationsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإشعارات'**
+  String get permNotificationsTitle;
+
+  /// No description provided for @permNotificationsWhy.
+  ///
+  /// In ar, this message translates to:
+  /// **'تنبيهات الجرعات والمواعيد والفواتير وموجز الصبح.'**
+  String get permNotificationsWhy;
+
+  /// No description provided for @permBankTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'قراءة إشعارات البنك'**
+  String get permBankTitle;
+
+  /// No description provided for @permBankWhy.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد بيقرا الإشعارات اللي بتوصلك من البنك ورسايل الدفع عشان يسجّل المشتريات عنك، وبيحتفظ بس بالإشعارات اللي شكلها معاملة.'**
+  String get permBankWhy;
+
+  /// No description provided for @permBatteryTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الشغل في الخلفية'**
+  String get permBatteryTitle;
+
+  /// No description provided for @permBatteryWhy.
+  ///
+  /// In ar, this message translates to:
+  /// **'عشان قراءة الإشعارات والتذكيرات ماتتقفلش لما الموبايل يوفّر البطارية.'**
+  String get permBatteryWhy;
+
+  /// No description provided for @permEnable.
+  ///
+  /// In ar, this message translates to:
+  /// **'فعّل'**
+  String get permEnable;
+
+  /// No description provided for @permLater.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش دلوقتي'**
+  String get permLater;
+
+  /// No description provided for @permDone.
+  ///
+  /// In ar, this message translates to:
+  /// **'تمام'**
+  String get permDone;
+
+  /// No description provided for @permPrivacy.
+  ///
+  /// In ar, this message translates to:
+  /// **'بياناتك عندنا بتتعامل حسب سياسة الخصوصية المنشورة، وزاد مابيوعدش بأكتر منها.'**
+  String get permPrivacy;
+
+  /// No description provided for @permCardBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'فعّلها بضغطة عشان تنبيهات زاد توصلك.'**
+  String get permCardBody;
+
+  /// No description provided for @permCardTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{إذن ناقص} other{{count} إذون ناقصة}}'**
+  String permCardTitle(int count);
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

@@ -855,5 +855,9 @@
   "guardReason_snooze_minutes_invalid": "التأجيل من ٥ لـ٢٤٠ دقيقة",
   "guardReason_fallback": "انرفضت الكتابة",
   "pantryWhoseField": "لمن؟",
-  "pantryWhoseMe": "أنا"
+  "pantryWhoseMe": "أنا",
+  "pantryRateEstimate": "تقديرنا إنه يكفي قرابة {days} يوم",
+  "pantryRateFaster": "يخلص أسرع",
+  "pantryRateSlower": "يخلص أبطأ",
+  "pantryRateSaved": "سجّلنا تصحيحك"
 }

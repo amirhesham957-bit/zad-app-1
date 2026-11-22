@@ -173,6 +173,7 @@ import {
 } from "./moneySafety.ts";
 import { type BookingConflict, bookingConflicts, bookingQuestion, CLASH_WINDOW_MINUTES, type ScheduledLike } from "./scheduleGuard.ts";
 import { eventDayBudget, eventDayBudgetRule } from "./eventDayBudget.ts";
+import { describeSafeSpend } from "./safeSpendTool.ts";
 import { paydayOdds, paydayOddsRule, type SpendRow } from "./paydayOdds.ts";
 import { medicineDaysLeft, medicineLow } from "./medicineStock.ts";
 import { describeReorder, parseReorderInput } from "./pharmacyReorderTool.ts";
@@ -5288,6 +5289,18 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       return describeGatherings(findGatherings(parsed.value), parsed.value, today);
     }
 
+    case "safe_daily_spend": {
+      // م٣.٥: مصروف النهارده الآمن + احتمال الوصول للقبض (safeSpendTool.ts). المتاح والأيام من zad_budget_state.
+      const timeZone = snap?.cycle?.timezone ?? "UTC";
+      const [state, txns] = await Promise.all([
+        sb.rpc("zad_budget_state", { p_user: userId, p_tz: timeZone }),
+        sb.from("zad_transactions").select("amount,is_expense,txn_kind,created_at,linked_obligation_id").eq("user_id", userId)
+          .gte("created_at", new Date(Date.now() - 30 * 86_400_000).toISOString()).limit(2000),
+      ]);
+      if (state.error || txns.error) return "مقدرتش أقرا ميزانيتك أو حركاتك دلوقتي — قول للعميل كده.";
+      return describeSafeSpend(state.data as Parameters<typeof describeSafeSpend>[0], (txns.data ?? []) as SpendRow[], localNowContext(timeZone).date, timeZone);
+    }
+
     case "where_to_buy": {
       // «ألاقيه فين بسعر كويس؟» — صنف واحد: عروض المحلات + فواتير عملاء زاد في مدينته (whereToBuy.ts، أرضية ٣ بيوت).
       const item = String(input?.item_name ?? "").trim().slice(0, 60);
@@ -7305,6 +7318,14 @@ export const CHAT_TOOLS: ToolDef[] = [
       },
       required: ["members", "minutes"],
     },
+  },
+  {
+    name: "safe_daily_spend",
+    description:
+      "مصروف النهارده الآمن (المتاح بعد الالتزامات ÷ أيام لحد القبض) واحتمال إنه يوصل للقبض (محاكاة على صرف آخر ٢٨ يوم). " +
+      "نادِها لما يسأل «أصرف كام النهارده؟» أو «هكمّل الشهر؟». من غير مدخلات: كله من ميزانيته. قبل ١٤ يوم صرف بترجّع الرقم «تقريباً» " +
+      "من غير احتمال. الأرقام من الأداة بس.",
+    input_schema: { type: "object", properties: {} },
   },
   {
     name: "where_to_buy",

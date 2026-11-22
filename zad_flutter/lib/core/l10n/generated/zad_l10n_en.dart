@@ -7571,4 +7571,74 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get pantryWhoseMe => 'Me';
+
+  @override
+  String pantryRateEstimate(String days) {
+    return 'We estimate it lasts about $days days';
+  }
+
+  @override
+  String get pantryRateFaster => 'Runs out faster';
+
+  @override
+  String get pantryRateSlower => 'Runs out slower';
+
+  @override
+  String get pantryRateSaved => 'Your correction is saved';
+
+  @override
+  String get permSheetTitle => 'Let Zad work for your home from day one';
+
+  @override
+  String get permSheetBody =>
+      'So Zad can alert you and follow your home without opening the app, it needs these permissions. Each is optional and you can change it in phone settings any time.';
+
+  @override
+  String get permNotificationsTitle => 'Notifications';
+
+  @override
+  String get permNotificationsWhy =>
+      'Alerts for doses, appointments, bills and the morning brief.';
+
+  @override
+  String get permBankTitle => 'Reading bank notifications';
+
+  @override
+  String get permBankWhy =>
+      'Zad reads the notifications bank and payment messages arrive in, to record purchases for you, and keeps only the ones that look like a transaction.';
+
+  @override
+  String get permBatteryTitle => 'Background work';
+
+  @override
+  String get permBatteryWhy =>
+      'So notification reading and reminders are not stopped when the phone saves battery.';
+
+  @override
+  String get permEnable => 'Enable';
+
+  @override
+  String get permLater => 'Not now';
+
+  @override
+  String get permDone => 'Done';
+
+  @override
+  String get permPrivacy =>
+      'Your data is handled as the published privacy policy says; Zad promises nothing beyond it.';
+
+  @override
+  String get permCardBody =>
+      'Turn them on in one tap so Zad\'s alerts reach you.';
+
+  @override
+  String permCardTitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count permissions missing',
+      one: 'One permission missing',
+    );
+    return '$_temp0';
+  }
 }
