@@ -13,6 +13,8 @@ export interface DeployDecision {
 
 export interface ModelGateOptions {
   minN?: number;
+  /** Required relative MAE improvement (0.05 = 5% better). Default 0 = any improvement. */
+  margin?: number;
 }
 
 function assertValidStats(stats: ModelStats, label: string): void {
@@ -34,13 +36,25 @@ export function shouldDeploy(
   if (!Number.isFinite(minN) || minN < 0) {
     throw new RangeError("minN must be finite and non-negative");
   }
+  const margin = opts?.margin ?? 0;
+  if (!Number.isFinite(margin) || margin < 0 || margin >= 1) {
+    throw new RangeError("margin must be in [0, 1)");
+  }
   assertValidStats(candidate, "candidate");
   assertValidStats(current, "current");
 
   if (candidate.mae >= current.mae) {
     return {
       deploy: false,
-      reason: `candidate MAE ${candidate.mae} is not better than current ${current.mae}`,
+      reason:
+        `candidate MAE ${candidate.mae} is not better than current ${current.mae}`,
+    };
+  }
+  if (candidate.mae > current.mae * (1 - margin)) {
+    return {
+      deploy: false,
+      reason:
+        `candidate MAE ${candidate.mae} does not beat current ${current.mae} by margin ${margin}`,
     };
   }
   if (candidate.n < minN) {
@@ -51,6 +65,7 @@ export function shouldDeploy(
   }
   return {
     deploy: true,
-    reason: `candidate ${candidate.version} MAE ${candidate.mae} beats current ${current.version} MAE ${current.mae}`,
+    reason:
+      `candidate ${candidate.version} MAE ${candidate.mae} beats current ${current.version} MAE ${current.mae}`,
   };
 }
