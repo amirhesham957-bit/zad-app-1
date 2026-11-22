@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
         stats[plan.reason] = (stats[plan.reason] ?? 0) + 1;
         continue;
       }
-      const note = await sb.from("app_notifications").insert({ user_id: c.user_id, title: plan.title, message: plan.body });
+      const note = await sb.from("app_notifications").insert({ user_id: c.user_id, title: plan.title, message: plan.body, bot_push: true });
       if (note.error) throw new Error(note.error.message);
       const log = await sb.from("zad_restock_alert_log").insert(plan.itemKeys.map((item_key) => ({ user_id: c.user_id, item_key })));
       if (log.error) console.error("[restock-alerts] log:", log.error.message);
