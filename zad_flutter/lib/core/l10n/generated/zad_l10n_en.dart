@@ -7641,4 +7641,35 @@ class ZadL10nEn extends ZadL10n {
     );
     return '$_temp0';
   }
+
+  @override
+  String tripTitle(String country) {
+    return 'Your trip to $country';
+  }
+
+  @override
+  String tripSpent(String amount, String currency) {
+    return 'You\'ve spent about $amount $currency since the trip began';
+  }
+
+  @override
+  String tripLeft(String amount, String currency) {
+    return '$amount $currency left of the trip budget';
+  }
+
+  @override
+  String tripOver(String amount, String currency) {
+    return 'Over the trip budget by $amount $currency';
+  }
+
+  @override
+  String get tripSetBudget => 'Set a trip budget';
+
+  @override
+  String tripBudgetHint(String currency) {
+    return 'Budget in $currency';
+  }
+
+  @override
+  String get tripBudgetSave => 'Save';
 }

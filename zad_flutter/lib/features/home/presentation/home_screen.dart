@@ -50,6 +50,7 @@ import 'package:zad/features/home/presentation/sections_grid.dart';
 import 'package:zad/features/home/presentation/subscribe_pulse_card.dart';
 import 'package:zad/features/home/presentation/tasbiha_home_widget.dart';
 import 'package:zad/features/home/presentation/travel_banner.dart';
+import 'package:zad/features/home/presentation/trip_card.dart';
 import 'package:zad/features/home/presentation/urgent_recipe_card.dart';
 import 'package:zad/features/home/presentation/who_are_you_card.dart';
 import 'package:zad/features/home/presentation/zad_status_card.dart';
@@ -146,6 +147,7 @@ class HomeScreen extends ConsumerWidget {
               const BirthdayCelebration(),
               // Kotlin's order: the travel suggestion, then the offline banner.
               const TravelBannerSlot(),
+              const TripCardSlot(),
               const GroceryPurchasePromptHost(),
               const HomeOfflineBanner(),
               // «حالة زاد» (owner 20/11): every permission and whether it
