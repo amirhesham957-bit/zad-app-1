@@ -8,6 +8,22 @@ export type CronJobRow = {
 export type FailedQueueJob = { queue: string; id?: string | number | null; attempts?: number | null; error?: string | null };
 export type KillSwitch = { name: string; tripped: boolean; reason?: string | null };
 
+/** صف zad_kill_switches كما يرجع من القاعدة. */
+export type KillSwitchRow = { key?: unknown; enabled?: unknown; reason?: unknown };
+
+/**
+ * صفوف zad_kill_switches ⇒ KillSwitch[]. «tripped» = المفتاح بيمنع شغل فعلاً: enabled=false بالظبط
+ * (نفس شرط isOff في or/jobQueue.ts decideDispatch، سواء pause_all أو job:<kind>). enabled=true أو غير boolean = شغال عادي.
+ */
+export function killSwitchesFromRows(rows: KillSwitchRow[] | null | undefined): KillSwitch[] {
+  const out: KillSwitch[] = [];
+  for (const r of rows ?? []) {
+    if (typeof r?.key !== "string" || r.key === "") continue;
+    out.push({ name: r.key, tripped: r.enabled === false, reason: typeof r.reason === "string" ? r.reason : null });
+  }
+  return out;
+}
+
 export type OpsAlertDecision = { alert: boolean; message: string; reason: string; issues: string[] };
 
 const MIN = 60_000;

@@ -18,7 +18,7 @@ import { decideLifeEvent } from "../_shared/lifeEventDecide.ts";
 import { secretMatches } from "../_shared/cronSecret.ts";
 import { type DealLogRow, decideSearchAlert, type RestRow } from "../_shared/searchHealthAlert.ts";
 import { decideFlyerAlert, type FlyerReadRow } from "../_shared/flyerHealthAlert.ts";
-import { decideOpsAlert, type CronJobRow } from "../_shared/opsAlert.ts";
+import { decideOpsAlert, killSwitchesFromRows, type CronJobRow } from "../_shared/opsAlert.ts";
 import { recentOutbound } from "../_shared/outbound.ts";
 import { type ForecastInput, lastAskedDaysAgo, weeklyGateClosed, weeklyPick } from "./weeklyCheckin.ts";
 import { proactiveTurn, recordConversation, trimProactive } from "../_shared/conversationLog.ts";
@@ -3600,17 +3600,18 @@ Deno.serve(async (req: Request) => {
     try {
       const sb = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
       const now = new Date();
-      const [health, last] = await Promise.all([
+      const [health, last, switches] = await Promise.all([
         sb.rpc("zad_diag_cron_health"),
         sb.from("zad_admin_alert_log").select("last_sent").eq("kind", "ops_alert").maybeSingle(),
+        sb.from("zad_kill_switches").select("key, enabled, reason"),
       ]);
-      if (health.error || last.error) {
-        console.error("[ops_alert] read failed:", health.error?.message ?? last.error?.message);
+      if (health.error || last.error || switches.error) {
+        console.error("[ops_alert] read failed:", health.error?.message ?? last.error?.message ?? switches.error?.message);
         return new Response(JSON.stringify({ ok: false, reason: "read_failed" }), { status: 500 });
       }
       const lastSent = (last.data as { last_sent?: string } | null)?.last_sent;
       const crons = ((health.data as { jobs?: CronJobRow[] } | null)?.jobs ?? []);
-      const d = decideOpsAlert({ crons, now, lastAlertAt: lastSent ? new Date(lastSent) : null });
+      const d = decideOpsAlert({ crons, killSwitches: killSwitchesFromRows(switches.data), now, lastAlertAt: lastSent ? new Date(lastSent) : null });
       if (!d.alert) return new Response(JSON.stringify({ ok: true, alert: false, reason: d.reason }), { headers: { "Content-Type": "application/json" } });
       const chatId = adminChatId(Deno.env.get("ZAD_ADMIN_CHAT_ID"));
       if (chatId === null) {

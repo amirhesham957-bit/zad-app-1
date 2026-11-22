@@ -1,5 +1,5 @@
 import { assertEquals } from "jsr:@std/assert@1";
-import { decideOpsAlert, expectedIntervalMs, type CronJobRow } from "./opsAlert.ts";
+import { decideOpsAlert, expectedIntervalMs, killSwitchesFromRows, type CronJobRow } from "./opsAlert.ts";
 
 const now = new Date("2026-11-22T06:00:00Z");
 const ago = (m: number) => new Date(now.getTime() - m * 60_000).toISOString();
@@ -46,4 +46,30 @@ Deno.test("ops alert: schedule intervals", () => {
   assertEquals(expectedIntervalMs("17 5 * * *"), 86_400_000);
   assertEquals(expectedIntervalMs("17 5 * * 1"), 604_800_000);
   assertEquals(expectedIntervalMs("0 8 1 * *"), null);
+});
+
+Deno.test("killSwitchesFromRows: tripped only when enabled=false", () => {
+  const r = killSwitchesFromRows([
+    { key: "pause_all", enabled: false, reason: "صيانة" },
+    { key: "job:flyer", enabled: true, reason: null },
+    { key: "job:x", enabled: false },
+  ]);
+  assertEquals(r, [
+    { name: "pause_all", tripped: true, reason: "صيانة" },
+    { name: "job:flyer", tripped: false, reason: null },
+    { name: "job:x", tripped: true, reason: null },
+  ]);
+});
+
+Deno.test("killSwitchesFromRows: empty, null, and bad rows", () => {
+  assertEquals(killSwitchesFromRows([]), []);
+  assertEquals(killSwitchesFromRows(null), []);
+  assertEquals(killSwitchesFromRows([{ key: "", enabled: false }, { enabled: false }]), []);
+});
+
+Deno.test("ops alert: tripped switch from rows alerts, untripped stays quiet", () => {
+  const on = decideOpsAlert({ killSwitches: killSwitchesFromRows([{ key: "pause_all", enabled: false, reason: "r" }]), now });
+  assertEquals(on.alert, true);
+  const off = decideOpsAlert({ killSwitches: killSwitchesFromRows([{ key: "pause_all", enabled: true }]), now });
+  assertEquals(off.alert, false);
 });
