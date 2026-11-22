@@ -1104,6 +1104,19 @@
     "store",
     "user_id"
   ],
+  "zad_notification_reads": [
+    "extracted",
+    "id",
+    "kind",
+    "read_at",
+    "user_id"
+  ],
+  "zad_notification_switches": [
+    "enabled",
+    "enabled_at",
+    "kind",
+    "user_id"
+  ],
   "zad_obligations": [
     "active",
     "amount",
