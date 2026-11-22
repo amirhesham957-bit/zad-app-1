@@ -12,6 +12,11 @@ Deno.test("z: مدخلات غلط", () => {
   assertThrows(() => poissonZ(-1, 3), RangeError);
   assertThrows(() => poissonZ(1, NaN), RangeError);
 });
+Deno.test("z أقل من ٣ مابيترشّحش حتى مع ٥ بيوت أو أكتر", () => {
+  // count 27, baseline 16 → z = 11/4 = 2.75 < 3
+  assertEquals(poissonZ(27, 16) < 3, true);
+  assertEquals(detectSurges([{ item: "عدس", count: 27, houses: 9, baseline: 16 }]), []);
+});
 Deno.test("أقل من ٥ بيوت مابيطلعش حتى لو القفزة ضخمة", () => {
   assertEquals(detectSurges([{ item: "رز", count: 100, houses: 4, baseline: 5 }]), []);
 });
