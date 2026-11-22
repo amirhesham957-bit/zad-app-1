@@ -58,7 +58,7 @@ import {
   exchangeLongLivedToken, instagramAccountPosts, instagramHandles, instagramHashtagPosts, metaAppKeys, MIN_STORE_FOLLOWERS, instagramProbe, instagramTokenInfo, storeHashtag, tokenDaysLeft, tokenNeedsRefresh,
   youtubeProbe, youtubeSearch,
 } from "./socialSources.ts";
-import { tavilyProbe, tavilySearch } from "./tavily.ts";
+import { tavilyKeys, tavilyProbe, tavilySearchRotating } from "./tavily.ts";
 import { readSocialVideo, recipeAccountQuery, recipeTopicQuery, socialVideoHits, socialVideoPrompt, type SocialVideo } from "./socialRecipes.ts";
 import { instagramRecipeHits, PLATFORM_NAME, recipePlatform, youtubeRecipeHits, youtubeRecipeQuery } from "./socialRecipeSources.ts";
 import { avoidNames, chefAngles, chefDeals, type ChefDeal, type ChefDealRow, chefExpiring, chefPantryLine, chefSecret, dealsBlock, dealsForMissing, dishKey, type ExpiringItem, expiringBlock, NO_REPEAT_DAYS, type PantryRow, pickSocialRecipes, recipeSource, type SocialRecipeRow, socialRecipesBlock, trendBlock, trendCacheKey, trendQuery, withoutRecent } from "./chefInputs.ts";
@@ -1606,10 +1606,11 @@ const decodeEntities = (v: string) => v
  * the chain while the paid grounding rests ([tavilyFirstWhileGroundingRests]). The call is in tavily.ts.
  */
 async function tavilySnippets(query: string, maxResults: number): Promise<WebHit[]> {
-  const tavily = Deno.env.get("TAVILY_API_KEY");
-  if (!tavily) return [];
-  const r = await tavilySearch(tavily, query, maxResults);
-  lastWebSearchAttempts.push(r.ok ? `tavily:200 hits=${r.items.length}` : r.status === 0 ? `tavily:threw ${r.reason ?? ""}` : `tavily:${r.status}`);
+  const keys = tavilyKeys();
+  if (keys.length === 0) return [];
+  const r = await tavilySearchRotating(keys, query, maxResults);
+  const via = keys.length > 1 ? ` key=${r.tried}/${keys.length}` : "";
+  lastWebSearchAttempts.push(r.ok ? `tavily:200 hits=${r.items.length}${via}` : r.tried === 0 ? `tavily:all ${keys.length} keys resting` : r.status === 0 ? `tavily:threw ${r.reason ?? ""}` : `tavily:${r.status}${via}`);
   return r.items;
 }
 
@@ -2049,7 +2050,7 @@ async function handle(req: Request): Promise<Response> {
           };
         }),
         // ٤.١٤: احتياطي البحث موجود وبيرد؟ (بحث واحد من الألف في الشهر لكل نشر)
-        tavilyProbe(Deno.env.get("TAVILY_API_KEY")),
+        tavilyProbe(tavilyKeys()),
       ]);
       // البحث الحقيقي اللي web_search بتاعة العقل بتعتمد عليه — عدد النتايج بس.
       let webSearch: unknown;
