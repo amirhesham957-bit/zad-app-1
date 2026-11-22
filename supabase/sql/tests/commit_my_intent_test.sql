@@ -65,4 +65,16 @@ exception when insufficient_privilege then null;
 end $$;
 reset role;
 
+-- ٨) item_id جديد من العميل (الـOutbox المحلي): بيتكتب بنفس الـid، ومايعديش على صف مستخدم تاني.
+select set_config('request.jwt.claims', '{"role":"authenticated","sub":"44444444-4444-4444-4444-444444444444"}', false);
+select pg_temp.check((public.zad_commit_my_intent('inventory.added', 'c1', '{"item_id":"b0000000-0000-0000-0000-0000000000aa","item_name":"عدس","quantity":2,"category":"البقالة"}') ->> 'ok')::boolean, 'added with a client id');
+select pg_temp.check((select user_id from public.zad_inventory where id = 'b0000000-0000-0000-0000-0000000000aa') = '44444444-4444-4444-4444-444444444444', 'client id row belongs to the JWT user');
+select pg_temp.check((public.zad_commit_my_intent('inventory.added', 'c1', '{"item_id":"b0000000-0000-0000-0000-0000000000aa","item_name":"عدس","quantity":2,"category":"البقالة"}') ->> 'duplicate')::boolean, 'client id replay is duplicate');
+select pg_temp.check((select count(*) from public.zad_inventory where item_name = 'عدس') = 1, 'replay wrote no second row');
+select pg_temp.check(public.zad_commit_my_intent('inventory.added', 'c2', '{"item_id":"b0000000-0000-0000-0000-000000000002","item_name":"سكر","quantity":9,"category":"البقالة"}') ->> 'reason' = 'item_not_found', 'other user id is not taken over');
+select pg_temp.check((select quantity from public.zad_inventory where id = 'b0000000-0000-0000-0000-000000000002') = 5, 'other user row untouched by added');
+select pg_temp.check(public.zad_commit_my_intent('inventory.added', 'c3', '{"item_id":"not-a-uuid","item_name":"فول","quantity":1,"category":"البقالة"}') ->> 'reason' = 'item_not_found', 'bad uuid refused');
+select pg_temp.check((select count(*) from public.zad_inventory where item_name in ('سكر', 'فول')) = 0, 'refused adds wrote nothing');
+select set_config('request.jwt.claims', '{}', false);
+
 select 'commit_my_intent_test ok';
