@@ -1,8 +1,6 @@
 /// ج٢.٤ — the trip's spending in the trip country's currency, with an
-/// optional budget the customer sets (kept on this device, per trip).
+/// optional budget the customer sets (kept on the server, per trip).
 library;
-
-import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -36,8 +34,25 @@ final tripSinceProvider = FutureProvider<DateTime?>((ref) async {
   }
 });
 
-String _budgetKey(DateTime since) =>
-    'trip_budget_${since.toUtc().toIso8601String()}';
+/// The trip budget the server holds (`zad_users.travel_budget`, in the trip
+/// country's currency), or null.
+final tripBudgetProvider = FutureProvider<double?>((ref) async {
+  await ref.watch(travelReportProvider.future);
+  final client = ref.watch(supabaseClientProvider);
+  final id = client.auth.currentUser?.id;
+  if (id == null) return null;
+  try {
+    final row = await client
+        .from('zad_users')
+        .select('travel_budget')
+        .eq('id', id)
+        .maybeSingle();
+    final v = row?['travel_budget'];
+    return v is num ? v.toDouble() : null;
+  } on Object {
+    return null;
+  }
+});
 
 /// The card, or nothing while the customer is home.
 class TripCardSlot extends ConsumerStatefulWidget {
@@ -49,14 +64,13 @@ class TripCardSlot extends ConsumerStatefulWidget {
 }
 
 class _TripCardSlotState extends ConsumerState<TripCardSlot> {
-  double? _budget;
-  String? _loadedFor;
-
   Future<void> _edit(DateTime since, String currency) async {
     final l10n = context.l10n;
     final raw = await showFieldDialog<String>(
       context: context,
-      initial: <String>[_budget?.toStringAsFixed(0) ?? ''],
+      initial: <String>[
+        ref.read(tripBudgetProvider).value?.toStringAsFixed(0) ?? '',
+      ],
       builder: (ctx, f) => AlertDialog(
         title: Text(l10n.tripSetBudget),
         content: TextField(
@@ -76,8 +90,17 @@ class _TripCardSlotState extends ConsumerState<TripCardSlot> {
     if (raw == null) return;
     final v = parseMoneyInput(raw);
     if (v == null || v <= 0) return;
-    setState(() => _budget = v);
-    unawaited(ref.read(localStoreProvider).device.put(_budgetKey(since), '$v'));
+    try {
+      await ref
+          .read(supabaseClientProvider)
+          .rpc<Object?>(
+            'zad_trip_budget_set',
+            params: <String, dynamic>{'p_amount': v},
+          );
+    } on Object catch (e) {
+      debugPrint('[trip] budget not saved: $e');
+    }
+    ref.invalidate(tripBudgetProvider);
   }
 
   @override
@@ -89,20 +112,14 @@ class _TripCardSlotState extends ConsumerState<TripCardSlot> {
     if (country == null || since == null || home == null || trip == null) {
       return const SizedBox.shrink();
     }
-    final key = _budgetKey(since);
-    if (_loadedFor != key) {
-      _loadedFor = key;
-      _budget = double.tryParse(
-        ref.read(localStoreProvider).device.get(key) ?? '',
-      );
-    }
+    final budget = ref.watch(tripBudgetProvider).value;
     final rows = ref.watch(transactionsControllerProvider).rows;
     final s = summarizeTrip(
       rows: rows,
       since: since,
       homeCurrency: home,
       tripCurrency: trip.currency,
-      budgetTrip: _budget,
+      budgetTrip: budget,
     );
     if (s.spentTrip == null) return const SizedBox.shrink();
     final l10n = context.l10n;
