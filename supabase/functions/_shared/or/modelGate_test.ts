@@ -60,11 +60,45 @@ Deno.test("rejects non-finite or negative inputs", () => {
     RangeError,
   );
   assertThrows(
-    () => shouldDeploy({ version: "v2", mae: 1, n: 50 }, { version: "v1", mae: -1, n: 100 }),
+    () =>
+      shouldDeploy({ version: "v2", mae: 1, n: 50 }, {
+        version: "v1",
+        mae: -1,
+        n: 100,
+      }),
     RangeError,
   );
   assertThrows(
     () => shouldDeploy({ version: "v2", mae: 1, n: 50 }, current, { minN: -1 }),
+    RangeError,
+  );
+});
+
+Deno.test("margin: improvement below margin is rejected", () => {
+  const d = shouldDeploy({ version: "v2", mae: 1.9, n: 100 }, current, {
+    margin: 0.1,
+  });
+  assertEquals(d.deploy, false);
+});
+
+Deno.test("margin: improvement at or above margin deploys", () => {
+  const d = shouldDeploy({ version: "v2", mae: 1.7, n: 100 }, current, {
+    margin: 0.1,
+  });
+  assertEquals(d.deploy, true);
+});
+
+Deno.test("margin: invalid values throw", () => {
+  assertThrows(
+    () =>
+      shouldDeploy({ version: "v2", mae: 1, n: 100 }, current, { margin: 1 }),
+    RangeError,
+  );
+  assertThrows(
+    () =>
+      shouldDeploy({ version: "v2", mae: 1, n: 100 }, current, {
+        margin: -0.1,
+      }),
     RangeError,
   );
 });
