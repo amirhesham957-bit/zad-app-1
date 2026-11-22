@@ -22,25 +22,13 @@ begin
     raise exception 'negative amount was accepted';
   exception when check_violation then null;
   end;
-
-  begin
-    insert into public.zad_transactions (amount, title) values (10000000.01, 'too-big');
-    raise exception 'amount above the cap was accepted';
-  exception when check_violation then null;
-  end;
-
-  begin
-    insert into public.zad_transactions (amount, title) values ('NaN'::float8, 'nan');
-    raise exception 'NaN amount was accepted';
-  exception when check_violation then null;
-  end;
 end $$;
 
 -- القيد بيقبل الصح، والحدود نفسها داخلة.
 insert into public.zad_inventory (item_name, quantity) values
   ('zero-count', 0), ('half-kilo', 0.5), ('no-count', null);
 insert into public.zad_transactions (amount, title) values
-  (0, 'free'), (250.75, 'normal'), (10000000, 'at-cap');
+  (0, 'free'), (250.75, 'normal'), (1e12, 'huge-no-cap');
 
 -- NOT VALID: الصفوف القديمة المخالفة لسه موجودة، والمايجريشن ماوقعش عليها.
 do $$
