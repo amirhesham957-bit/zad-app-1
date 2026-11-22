@@ -9991,7 +9991,7 @@ const HOUSE_SECTIONS_ON_REQUEST = [
 ];
 
 /** الملخص اللي بيتبعت مع الرسالة: البيت من غير الأجزاء اللي بتتقري عند الحاجة. */
-function promptSnapshot(snap: any): Record<string, unknown> {
+export function promptSnapshot(snap: any): Record<string, unknown> {
   const out: Record<string, unknown> = { ...(snap ?? {}) };
   for (const key of HOUSE_SECTIONS_ON_REQUEST) delete out[key];
   // م٩.٣: ليها بلوك لوحدها فوق (pinnedFactsBlock)، مش مرتين.
