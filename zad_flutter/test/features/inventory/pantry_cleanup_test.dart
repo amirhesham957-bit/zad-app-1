@@ -43,6 +43,7 @@ class _Recording extends pantry.PantryController {
     String? category,
     double? lowStockThreshold,
     DateTime? expiryDate,
+    String? memberId,
   }) async => added.add(itemName);
 
   @override

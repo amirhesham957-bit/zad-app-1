@@ -34,6 +34,7 @@ import 'package:zad/shared/chat/application/chat_controller.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart'
     hide PantryView;
 import 'package:zad/shared/inventory/application/shopping_controller.dart';
+import 'package:zad/shared/inventory/data/household_members.dart';
 import 'package:zad/shared/inventory/data/pantry_learning.dart';
 import 'package:zad/shared/inventory/domain/inventory_item.dart';
 import 'package:zad/shared/inventory/domain/inventory_rules.dart'
@@ -1081,6 +1082,9 @@ class _AddState extends ConsumerState<_AddInventoryDialog> {
   DateTime? _expiry;
   late final DateTime _today = _accountToday(ref);
 
+  /// Whose it is; null = the account's own («me»), the server's default.
+  String? _memberId;
+
   @override
   void initState() {
     super.initState();
@@ -1121,9 +1125,37 @@ class _AddState extends ConsumerState<_AddInventoryDialog> {
             unit: kPantryUnits[_unit],
             category: _categoryDefs[_category + 1].key,
             expiryDate: expiry,
+            memberId: _memberId,
           ),
     );
     if (saved) navigator.pop();
+  }
+
+  /// «Whose is it»: only when the home has more than one person.
+  List<Widget> _memberField(TextStyle label) {
+    final members =
+        ref.watch(householdMembersProvider).value ?? const <HouseholdMember>[];
+    if (members.length < 2) return const <Widget>[];
+    return <Widget>[
+      Text(context.l10n.pantryWhoseField, style: label),
+      const SizedBox(height: 6),
+      DropdownMenu<String>(
+        initialSelection: _memberId ?? members.first.id,
+        expandedInsets: EdgeInsets.zero,
+        inputDecorationTheme: InputDecorationTheme(
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+        onSelected: (id) => setState(() => _memberId = id),
+        dropdownMenuEntries: <DropdownMenuEntry<String>>[
+          for (final m in members)
+            DropdownMenuEntry<String>(
+              value: m.id,
+              label: m.isSelf ? context.l10n.pantryWhoseMe : m.name,
+            ),
+        ],
+      ),
+      const SizedBox(height: 14),
+    ];
   }
 
   @override
@@ -1251,6 +1283,7 @@ class _AddState extends ConsumerState<_AddInventoryDialog> {
                 ],
               ),
               const SizedBox(height: 14),
+              ..._memberField(label),
               Text(context.l10n.pantryCategory, style: label),
               const SizedBox(height: 6),
               DropdownMenu<int>(

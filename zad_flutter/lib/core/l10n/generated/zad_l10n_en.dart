@@ -7565,4 +7565,10 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get guardReason_fallback => 'The write was refused';
+
+  @override
+  String get pantryWhoseField => 'Whose is it?';
+
+  @override
+  String get pantryWhoseMe => 'Me';
 }

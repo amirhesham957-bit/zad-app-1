@@ -13,6 +13,7 @@ import 'package:zad/features/inventory/presentation/pantry_view.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart'
     as pantry;
 import 'package:zad/shared/inventory/application/shopping_controller.dart';
+import 'package:zad/shared/inventory/data/household_members.dart';
 import 'package:zad/shared/inventory/domain/inventory_item.dart';
 import 'package:zad/shared/inventory/domain/inventory_rules.dart';
 import 'package:zad/shared/inventory/domain/shortage.dart';
@@ -382,13 +383,18 @@ void main() {
     // device: the chips must count from the account's day.
     final late = DateTime.utc(2026, 11, 12, 21, 30);
 
-    Future<_AddingPantry> openAdd(WidgetTester tester, {String? refuse}) async {
+    Future<_AddingPantry> openAdd(
+      WidgetTester tester, {
+      String? refuse,
+      List<HouseholdMember> members = const <HouseholdMember>[],
+    }) async {
       final pantryCtl = _AddingPantry(refuse);
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
             ...quietOrbOverrides,
             nowProvider.overrideWithValue(() => late),
+            householdMembersProvider.overrideWith((ref) async => members),
             accountTimeZoneProvider.overrideWithValue('Asia/Riyadh'),
             pantry.pantryControllerProvider.overrideWith(() => pantryCtl),
             shoppingControllerProvider.overrideWith(QuietShopping.new),
@@ -428,6 +434,36 @@ void main() {
       await tapVisible(tester, find.widgetWithText(ChoiceChip, 'أسبوع'));
       await tapVisible(tester, find.widgetWithText(FilledButton, 'حفظ'));
       expect(pantryCtl.added.single.expiry, DateTime.utc(2026, 11, 20));
+    });
+
+    testWidgets('«لمين؟» shows only for a home of two or more, and is sent', (
+      tester,
+    ) async {
+      final alone = await openAdd(
+        tester,
+        members: const [HouseholdMember(id: 'me', name: 'أنا', isSelf: true)],
+      );
+      expect(find.text('لمين؟'), findsNothing);
+      expect(alone.added, isEmpty);
+      await tester.pumpWidget(const SizedBox());
+
+      final pantryCtl = await openAdd(
+        tester,
+        members: const [
+          HouseholdMember(id: 'me', name: 'أنا', isSelf: true),
+          HouseholdMember(id: 'sara', name: 'سارة', isSelf: false),
+        ],
+      );
+      expect(find.text('لمين؟'), findsOneWidget);
+      await tester.enterText(find.byType(TextField).first, 'صابون');
+      await tapVisible(
+        tester,
+        find.widgetWithText(DropdownMenu<String>, 'أنا'),
+      );
+      await tester.tap(find.text('سارة').last);
+      await tester.pumpAndSettle();
+      await tapVisible(tester, find.widgetWithText(FilledButton, 'حفظ'));
+      expect(pantryCtl.memberIds.single, 'sara');
     });
 
     testWidgets('a write the door would refuse says why and keeps the sheet', (
@@ -564,6 +600,8 @@ class _AddingPantry extends QuietPantry {
   /// door would: before anything is saved.
   final String? refuseWith;
 
+  final List<String?> memberIds = <String?>[];
+
   final List<({String name, String? category, DateTime? expiry})> added =
       <({String name, String? category, DateTime? expiry})>[];
 
@@ -575,7 +613,9 @@ class _AddingPantry extends QuietPantry {
     String? category,
     double? lowStockThreshold,
     DateTime? expiryDate,
+    String? memberId,
   }) async {
+    memberIds.add(memberId);
     if (refuseWith case final reason?) throw InventoryRuleViolation(reason);
     added.add((name: itemName, category: category, expiry: expiryDate));
   }

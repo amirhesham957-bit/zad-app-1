@@ -137,12 +137,20 @@ class PantryController extends Notifier<PantryView> {
     String? category,
     double? lowStockThreshold,
     DateTime? expiryDate,
+    String? memberId,
   }) async {
     // The name the home chose («حليب» ⇒ «لبن» once it said they are the
     // same), so the match below finds the row the server would write it to.
     final name = householdProductNames(ref).canonical(itemName);
     final existing = state.items
-        .where((i) => sameItemName(i.itemName, name) && sameUnit(i.unit, unit))
+        .where(
+          (i) =>
+              sameItemName(i.itemName, name) &&
+              sameUnit(i.unit, unit) &&
+              (memberId == null ||
+                  i.memberId == null ||
+                  i.memberId == memberId),
+        )
         .firstOrNull;
     if (existing != null && quantity > 0) {
       await adjust(existing.id, quantity);
@@ -157,6 +165,7 @@ class PantryController extends Notifier<PantryView> {
           category: category,
           lowStockThreshold: lowStockThreshold,
           expiryDate: expiryDate,
+          memberId: memberId,
         );
     // The first level the learner hears of. Without it the first − has
     // nothing to be a drop from.

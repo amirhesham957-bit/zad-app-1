@@ -12511,6 +12511,18 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'الكتابة اترفضت'**
   String get guardReason_fallback;
+
+  /// Pantry add dialog: whose it is in the household.
+  ///
+  /// In ar, this message translates to:
+  /// **'لمين؟'**
+  String get pantryWhoseField;
+
+  /// Pantry add dialog: the account owner's own entry.
+  ///
+  /// In ar, this message translates to:
+  /// **'أنا'**
+  String get pantryWhoseMe;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

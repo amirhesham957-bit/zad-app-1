@@ -853,5 +853,7 @@
   "guardReason_challenge_date_invalid": "تاريخ بداية التحدي مو واضح",
   "guardReason_dose_slot_invalid": "موعد الجرعة مو تاريخ واضح",
   "guardReason_snooze_minutes_invalid": "التأجيل من ٥ لـ٢٤٠ دقيقة",
-  "guardReason_fallback": "انرفضت الكتابة"
+  "guardReason_fallback": "انرفضت الكتابة",
+  "pantryWhoseField": "لمن؟",
+  "pantryWhoseMe": "أنا"
 }

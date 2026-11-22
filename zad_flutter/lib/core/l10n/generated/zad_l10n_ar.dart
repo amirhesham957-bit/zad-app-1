@@ -7440,6 +7440,12 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get guardReason_fallback => 'الكتابة اترفضت';
+
+  @override
+  String get pantryWhoseField => 'لمين؟';
+
+  @override
+  String get pantryWhoseMe => 'أنا';
 }
 
 /// The translations for Arabic, as used in Saudi Arabia (`ar_SA`).
@@ -10602,4 +10608,10 @@ class ZadL10nArSa extends ZadL10nAr {
 
   @override
   String get guardReason_fallback => 'انرفضت الكتابة';
+
+  @override
+  String get pantryWhoseField => 'لمن؟';
+
+  @override
+  String get pantryWhoseMe => 'أنا';
 }
