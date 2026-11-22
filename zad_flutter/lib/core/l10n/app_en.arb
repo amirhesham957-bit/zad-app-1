@@ -2793,5 +2793,69 @@
   "familyToolSavings": "Savings funds",
   "familyToolAchievements": "Achievements and ranks",
   "familyToolTasbiha": "Tasbiha",
-  "familyFollowStarted": "Following started."
+  "familyFollowStarted": "Following started.",
+  "choreSaved": "Saved.",
+  "chorePrefNotSaved": "Not saved. Only an admin can change someone else's preferences.",
+  "chorePlanFailed": "Couldn't distribute the chores right now.",
+  "choreServerUnreachable": "Couldn't reach the server. Try again.",
+  "choreAdminsOnly": "Only an admin can distribute chores.",
+  "choreNotOpen": "A chore was done or removed since. Distribute again.",
+  "chorePlanNotApplied": "The distribution wasn't applied.",
+  "choreAssignedCount": "{count} chores assigned.",
+  "@choreAssignedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "choreMinutesLabel": "Duration in minutes (optional)",
+  "choreMinutesHint": "e.g. 20",
+  "chorePrefsButton": "Time & preferences",
+  "choreDistributeButton": "Distribute chores",
+  "chorePlanTitle": "Chore distribution",
+  "chorePlanSubtitle": "By each chore's duration and each member's time and taste.",
+  "chorePlanEmptyTitle": "No open chores to distribute",
+  "chorePlanEmptyMessage": "Add chores first, or give members more time.",
+  "choreMinutesValue": "{minutes} min",
+  "@choreMinutesValue": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "choreNoTimeFor": "Nobody has time for: {titles}",
+  "@choreNoTimeFor": {
+    "placeholders": {
+      "titles": {
+        "type": "String"
+      }
+    }
+  },
+  "choreLoadLine": "{name}: {minutes} of {week} minutes a week",
+  "@choreLoadLine": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "minutes": {
+        "type": "int"
+      },
+      "week": {
+        "type": "int"
+      }
+    }
+  },
+  "choreApplyPlan": "Apply",
+  "chorePrefsTitle": "Time & preferences",
+  "chorePrefsMember": "Member",
+  "chorePrefsMinutes": "Minutes a week for chores",
+  "chorePrefsMinutesHelper": "0 to 2000",
+  "chorePrefsLikes": "Chores they like (comma separated)",
+  "chorePrefsLikesHint": "Sweeping, cooking",
+  "chorePrefsDislikes": "Chores they dislike (comma separated)",
+  "chorePrefsDislikesHint": "Dishes",
+  "choreCancel": "Cancel",
+  "choreSave": "Save"
 }

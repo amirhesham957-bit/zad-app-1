@@ -16,7 +16,9 @@ import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/design/tokens/zad_world_colors.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/core/money/money.dart';
+import 'package:zad/features/family/presentation/chore_planning.dart';
 import 'package:zad/features/family/presentation/family_dialogs.dart';
 import 'package:zad/features/family/presentation/family_follow.dart';
 import 'package:zad/shared/family/application/family_controller.dart';
@@ -101,6 +103,8 @@ class FamilyTasksTab extends ConsumerStatefulWidget {
 class _FamilyTasksTabState extends ConsumerState<FamilyTasksTab> {
   String _filter = 'all';
 
+  String? get _myUserId => ref.read(familyControllerProvider).userId;
+
   bool _keep(Chore c) => switch (_filter) {
     'pending' => !c.isCompleted,
     'done' => c.isCompleted,
@@ -145,6 +149,41 @@ class _FamilyTasksTabState extends ConsumerState<FamilyTasksTab> {
             '${chores.where((c) => c.isCompleted).length}/${chores.length} '
             'منجزة',
           ),
+          // M5.2: each member's time and taste (an admin: anyone's), and the
+          // admin's distribution.
+          Wrap(
+            spacing: ZadSpacing.sm,
+            runSpacing: ZadSpacing.sm,
+            children: <Widget>[
+              OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(minimumSize: const Size(0, 44)),
+                onPressed: () => unawaited(
+                  showChorePreferenceDialog(
+                    context,
+                    ref,
+                    widget.isAdmin
+                        ? widget.family.members
+                        : <FamilyMember>[
+                            for (final m in widget.family.members)
+                              if (m.userId == _myUserId) m,
+                          ],
+                  ),
+                ),
+                icon: const Icon(ZadIcons.duration, size: 18),
+                label: Text(context.l10n.chorePrefsButton),
+              ),
+              if (widget.isAdmin)
+                FilledButton.tonalIcon(
+                  style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
+                  onPressed: chores.any((c) => !c.isCompleted)
+                      ? () => unawaited(showChorePlanSheet(context, ref))
+                      : null,
+                  icon: const Icon(ZadIcons.chore, size: 18),
+                  label: Text(context.l10n.choreDistributeButton),
+                ),
+            ],
+          ),
+          const SizedBox(height: ZadSpacing.sm),
           Wrap(
             spacing: ZadSpacing.sm,
             children: <Widget>[

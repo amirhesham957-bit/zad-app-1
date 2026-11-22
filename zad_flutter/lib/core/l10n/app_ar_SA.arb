@@ -750,5 +750,7 @@
   "familyRetry": "جرّب مرة ثانية",
   "familyCodeHint": "مثال: ZAD-1234",
   "familyJoinPasteLink": "عندك رابط دعوة؟ افتح نافذة الانضمام",
-  "familyFollowStarted": "بدأت المتابعة."
+  "familyFollowStarted": "بدأت المتابعة.",
+  "chorePlanFailed": "ما قدرت أوزّع المهام الحين.",
+  "chorePlanEmptyTitle": "ما فيه مهام مفتوحة تتوزع"
 }

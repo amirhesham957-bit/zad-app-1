@@ -124,12 +124,64 @@ class FamilyLifeRemote {
     required String title,
     String? dueDate,
     double reward = 0,
+    int? minutes,
   }) => _client.from('family_chores').insert(<String, dynamic>{
     'family_id': familyId,
     'assigned_to': assignedTo,
     'title': title,
     'due_date': ?dueDate,
     'reward_amount': reward,
+    'minutes': ?minutes,
+  });
+
+  /// Every member's chore time and taste (م٥.٢).
+  Future<List<Map<String, dynamic>>> fetchChorePreferences(String familyId) =>
+      _rows(
+        _client
+            .from('family_chore_preferences')
+            .select()
+            .eq('family_id', familyId),
+      );
+
+  /// Sets a member's chore time and taste: their own, or any member's for an
+  /// admin (the table's policies).
+  Future<void> saveChorePreference({
+    required String familyId,
+    required String memberId,
+    required int minutesPerWeek,
+    required List<String> dislikes,
+    required List<String> likes,
+  }) => _client.from('family_chore_preferences').upsert(<String, dynamic>{
+    'member_id': memberId,
+    'family_id': familyId,
+    'minutes_per_week': minutesPerWeek,
+    'dislikes': dislikes,
+    'likes': likes,
+    'updated_at': DateTime.now().toUtc().toIso8601String(),
+  });
+
+  /// The server's proposed distribution of the open chores (`chore_plan` on
+  /// zad-core-intelligence). Nothing is written.
+  Future<Map<String, dynamic>> chorePlan(String familyId) async {
+    final response = await _client.functions.invoke(
+      'zad-core-intelligence',
+      body: <String, dynamic>{
+        'action': 'chore_plan',
+        'payload': <String, dynamic>{'family_id': familyId},
+      },
+    );
+    final data = response.data;
+    if (data is! Map) throw StateError('chore_plan answered $data');
+    return Map<String, dynamic>.from(data);
+  }
+
+  /// `zad_apply_chore_plan` — an admin applies the plan, all of it or none.
+  Future<Map<String, dynamic>> applyChorePlan(
+    String familyId,
+    List<Map<String, String>> plan,
+  ) => _rpc('zad_apply_chore_plan', <String, dynamic>{
+    'p_family': familyId,
+    'p_plan': plan,
   });
 
   /// `zad_complete_chore` — pays the reward once.

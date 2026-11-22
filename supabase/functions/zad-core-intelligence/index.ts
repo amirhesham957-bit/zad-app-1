@@ -1,5 +1,6 @@
 // deno-lint-ignore-file
 import { voiceCountry } from "../_shared/dialect.ts";
+import { chorePlan } from "./chorePlan.ts";
 import { buildTicker, countryForLocation } from "./liveTicker.ts";
 import { asksLatest, bingNewsUrl, cacheTtlMs, englishTwin, type GoldQuote, GOOGLE_CONSENT_COOKIE, goldQuotes, googleNewsUrl, isLiveQuery, keepAnswering, latestFirst, marketOf, topicOf, withTwin } from "./searchQuality.ts";
 import { spokenText, WHISPER_DEFAULT_MODEL, type WhisperOptions, whisperOptions, whisperWithFallback } from "./whisper.ts";
@@ -2114,6 +2115,17 @@ async function handle(req: Request): Promise<Response> {
         model: GEMINI_TTS_MODEL,
         audio_bytes: hasAudio ? data.candidates[0].content.parts[0].inlineData.data.length : 0,
       }, 200);
+    }
+
+    // م٥.٢: توزيع شغل البيت (chorePlan.ts). حساب من غير موديل ومن غير كتابة، فمالوش كوتة.
+    if (action === "chore_plan") {
+      const token = bearerToken(req);
+      const { data: caller, error: authError } = token
+        ? await supabase.auth.getUser(token)
+        : { data: { user: null }, error: new Error("missing token") };
+      if (authError || !caller?.user?.id) return jsonResponse({ error: "unauthorized" }, 401);
+      const out = await chorePlan(supabase, caller.user.id, (payload || {}).family_id);
+      return jsonResponse(out.body, out.status);
     }
 
     if (action === "voice_synthesize") {

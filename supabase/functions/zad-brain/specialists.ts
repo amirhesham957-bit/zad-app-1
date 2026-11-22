@@ -177,6 +177,8 @@ const FX_INTENT = /(دولار|يورو|استرليني|ريال|درهم|دي�
 const OCCASION_INTENT = /عيد ميلاد|عيد ميلادي|ذكري (ال)?جواز|ذكري جوازنا|عيد جوازنا/;
 const MEMORY_INTENT = /افتكر|افتكري|خليك فاكر|خليكي فاكره|متنساش|متنسيش|احفظ|اعرف ان|خد بالك ان|خدي بالك ان/;
 // نوايا الأدوات اللي خرجت من الأساسي (٢٠٢٦-١٠-٠٢). النص متطبّع (normalize): ة→ه، أ/إ/آ→ا، ى→ي.
+// م٥.٥: «معايا ٣٠٠ جنيه أجيب إيه؟»، «الفلوس قليلة إيه الأهم في الطلبات؟» ⇒ restock_on_budget.
+const RESTOCK_BUDGET_INTENT = /(معايا|معي|فاضل معايا|في حدود|ميزانيتي|بميزانيه)\s*[\d٠-٩]+.{0,40}(اجيب|اشتري|اشتريه|الطلبات|البيت|السوبر|المخزن|القايمه)|(اجيب|اشتري) (ايه|اي) (الاول|بالاول)|(الفلوس|الميزانيه) (قليله|علي القد|مش مكفيه).{0,40}(اجيب|اشتري|الاهم|الطلبات|القايمه)|اولويات (الشرا|المشتريات|الطلبات|القايمه)/;
 const BROKE_INTENT = /مفلس|طفران|خلصت فلوسي|فلوسي خلصت|مفيش فلوس|معيش فلوس|معنديش فلوس|ماعنديش فلوس|مخلص فلوسي/;
 const RECIPE_INTENT = /اطبخ|نطبخ|تطبخ|طبخه|وصفه|وصفات|(اعمل|نعمل|ناكل|اكل)\s*(اكل)?\s*ايه|(غدا|عشا|فطار|سحور)\s*(ايه|النهارده)|شيف/;
 // «هاتلي عروض كيتا»، «فيه عروض إيه؟»، «في كود خصم لطلبات؟» (طلب المالك ٧/١١): من غيرها الوكيل كان بيرد بنصيحة ميزانية.
@@ -282,6 +284,7 @@ export function intentToolHints(message: string, priorReply = ""): string[] {
   else if (WEB_PRICE_INTENT.test(norm) && !OWN_MONEY.test(norm)) tools.push("web_search");
   else if (RECENT_FACT_INTENT.test(norm)) tools.push("web_search");
   if (BROKE_INTENT.test(norm)) tools.push("set_broke_mode");
+  if (RESTOCK_BUDGET_INTENT.test(norm)) tools.push("restock_on_budget");
   if (SAVINGS_CHALLENGE_INTENT.test(norm)) tools.push("start_savings_challenge", "stop_savings_challenge");
   if (RECIPE_INTENT.test(norm)) tools.push("suggest_recipes");
   if (NEARBY_INTENT.test(norm)) tools.push("find_nearby_stores");
@@ -515,7 +518,7 @@ const SPECIALIST_TOOL_SCOPE: Record<Exclude<SpecialistId, "general">, string[]> 
     "add_shopping_item", "complete_shopping_item", "delete_shopping_item",
     "suggest_product", "check_price_online", "find_nearby_stores", "web_search", "where_to_buy",
     "suggest_recipes", "area_trends", "plan_gathering", "add_gathering_to_list",
-    "answer_same_product",
+    "answer_same_product", "restock_on_budget",
   ],
   pharmacy: [
     "add_pharmacy_item", "update_pharmacy_item", "delete_pharmacy_item",
