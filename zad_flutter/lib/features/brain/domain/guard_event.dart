@@ -9,6 +9,9 @@ library;
 
 import 'package:flutter/foundation.dart';
 
+// l10n: data-begin — a mirror of the server's own Arabic refusal
+// sentences (REASONS in commitIntent.ts). The server writes validator and tool
+// refusals in Arabic and they are shown as written, so the door's are too.
 /// Arabic for every door refusal code. Copied from `REASONS` in
 /// `supabase/functions/zad-brain/commitIntent.ts`; a code missing here shows
 /// as the plain "الكتابة اترفضت", never as the raw identifier.
@@ -123,6 +126,7 @@ String guardReasonLabel(String reason) {
   return _doorReasons[trimmed] ?? 'الكتابة اترفضت';
 }
 
+// l10n: data-end
 final RegExp _snakeCode = RegExp(r'^[a-z][a-z0-9_]*$');
 
 /// One refusal row.

@@ -41,6 +41,7 @@ class GuardEventsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final view = ref.watch(guardEventsProvider);
+    final l = context.l10n;
     final now = ref.read(nowProvider)();
     final zone = ref.read(accountTimeZoneProvider);
 
@@ -48,7 +49,7 @@ class GuardEventsScreen extends ConsumerWidget {
       decoration: BoxDecoration(gradient: ZadColors.canvas),
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        appBar: AppBar(title: const Text('صحة العقل')),
+        appBar: AppBar(title: Text(l.guardEventsTitle)),
         body: RefreshIndicator(
           onRefresh: () => _reload(ref),
           child: CustomScrollView(
@@ -58,10 +59,8 @@ class GuardEventsScreen extends ConsumerWidget {
                 AsyncData(:final value) when value.recent.isEmpty => <Widget>[
                   _empty(
                     icon: ZadIcons.brainHealth,
-                    title: 'زاد مارفضش حاجة لحد دلوقتي',
-                    message:
-                        'لما زاد يرفض يكتب حاجة (مبلغ غلط، صنف مش موجود…) '
-                        'السبب هيظهر هنا.',
+                    title: l.guardEventsEmptyTitle,
+                    message: l.guardEventsEmptyBody,
                     tone: ZadEmptyTone.calm,
                   ),
                 ],
@@ -69,11 +68,11 @@ class GuardEventsScreen extends ConsumerWidget {
                   _padded(
                     SliverList.list(
                       children: <Widget>[
-                        const _SectionTitle('آخر ٧ أيام'),
+                        _SectionTitle(l.guardEventsLast7Days),
                         if (value.countsByReason.isEmpty)
                           ZadCard(
                             child: Text(
-                              'مفيش رفض في آخر ٧ أيام',
+                              l.guardEventsNone7Days,
                               style: ZadType.bodySmall.copyWith(
                                 color: ZadColors.inkMuted,
                               ),
@@ -104,7 +103,7 @@ class GuardEventsScreen extends ConsumerWidget {
                               ),
                             ),
                         const SizedBox(height: ZadSpacing.lg),
-                        const _SectionTitle('آخر الرفوض'),
+                        _SectionTitle(l.guardEventsRecent),
                       ],
                     ),
                   ),
@@ -132,8 +131,8 @@ class GuardEventsScreen extends ConsumerWidget {
                 AsyncError() => <Widget>[
                   _empty(
                     icon: ZadIcons.failed,
-                    title: 'مقدرتش أجيب الرفوض',
-                    message: 'اسحب لتحت نجرب تاني.',
+                    title: l.guardEventsErrorTitle,
+                    message: l.guardEventsErrorBody,
                     tone: ZadEmptyTone.problem,
                   ),
                 ],

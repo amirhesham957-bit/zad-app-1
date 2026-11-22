@@ -7092,6 +7092,34 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get choreSave => 'حفظ';
+
+  @override
+  String get guardEventsTitle => 'صحة العقل';
+
+  @override
+  String get guardEventsEmptyTitle => 'زاد مارفضش حاجة لحد دلوقتي';
+
+  @override
+  String get guardEventsEmptyBody =>
+      'لما زاد يرفض يكتب حاجة (مبلغ غلط، صنف مش موجود…) السبب هيظهر هنا.';
+
+  @override
+  String get guardEventsLast7Days => 'آخر ٧ أيام';
+
+  @override
+  String get guardEventsNone7Days => 'مفيش رفض في آخر ٧ أيام';
+
+  @override
+  String get guardEventsRecent => 'آخر الرفوض';
+
+  @override
+  String get guardEventsErrorTitle => 'مقدرتش أجيب الرفوض';
+
+  @override
+  String get guardEventsErrorBody => 'اسحب لتحت نجرب تاني.';
+
+  @override
+  String get settingsGuardEventsSubtitle => 'اللي زاد رفض يكتبه، وأسباب الرفض';
 }
 
 /// The translations for Arabic, as used in Saudi Arabia (`ar_SA`).
@@ -9906,4 +9934,32 @@ class ZadL10nArSa extends ZadL10nAr {
 
   @override
   String get chorePlanEmptyTitle => 'ما فيه مهام مفتوحة تتوزع';
+
+  @override
+  String get guardEventsTitle => 'صحة العقل';
+
+  @override
+  String get guardEventsEmptyTitle => 'زاد ما رفض شي لين الحين';
+
+  @override
+  String get guardEventsEmptyBody =>
+      'لما زاد يرفض يكتب شي (مبلغ غلط، صنف مو موجود…) يظهر السبب هنا.';
+
+  @override
+  String get guardEventsLast7Days => 'آخر ٧ أيام';
+
+  @override
+  String get guardEventsNone7Days => 'ما فيه رفض في آخر ٧ أيام';
+
+  @override
+  String get guardEventsRecent => 'آخر الرفوض';
+
+  @override
+  String get guardEventsErrorTitle => 'ما قدرت أجيب الرفوض';
+
+  @override
+  String get guardEventsErrorBody => 'اسحب لتحت نجرب مرة ثانية.';
+
+  @override
+  String get settingsGuardEventsSubtitle => 'اللي رفض زاد يكتبه، وأسباب الرفض';
 }

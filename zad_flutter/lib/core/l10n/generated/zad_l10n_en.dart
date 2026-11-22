@@ -7185,4 +7185,33 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get choreSave => 'Save';
+
+  @override
+  String get guardEventsTitle => 'Mind health';
+
+  @override
+  String get guardEventsEmptyTitle => 'Zad hasn\'t refused anything yet';
+
+  @override
+  String get guardEventsEmptyBody =>
+      'When Zad refuses to write something (a wrong amount, an item that doesn\'t exist…) the reason will show here.';
+
+  @override
+  String get guardEventsLast7Days => 'Last 7 days';
+
+  @override
+  String get guardEventsNone7Days => 'No refusals in the last 7 days';
+
+  @override
+  String get guardEventsRecent => 'Latest refusals';
+
+  @override
+  String get guardEventsErrorTitle => 'Couldn\'t load the refusals';
+
+  @override
+  String get guardEventsErrorBody => 'Pull down to try again.';
+
+  @override
+  String get settingsGuardEventsSubtitle =>
+      'What Zad refused to write, and why';
 }

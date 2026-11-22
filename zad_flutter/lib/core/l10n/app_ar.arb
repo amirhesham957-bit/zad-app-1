@@ -6768,5 +6768,14 @@
   "chorePrefsDislikes": "مهام مابيحبهاش (افصل بفاصلة)",
   "chorePrefsDislikesHint": "غسيل المواعين",
   "choreCancel": "إلغاء",
-  "choreSave": "حفظ"
+  "choreSave": "حفظ",
+  "guardEventsTitle": "صحة العقل",
+  "guardEventsEmptyTitle": "زاد مارفضش حاجة لحد دلوقتي",
+  "guardEventsEmptyBody": "لما زاد يرفض يكتب حاجة (مبلغ غلط، صنف مش موجود…) السبب هيظهر هنا.",
+  "guardEventsLast7Days": "آخر ٧ أيام",
+  "guardEventsNone7Days": "مفيش رفض في آخر ٧ أيام",
+  "guardEventsRecent": "آخر الرفوض",
+  "guardEventsErrorTitle": "مقدرتش أجيب الرفوض",
+  "guardEventsErrorBody": "اسحب لتحت نجرب تاني.",
+  "settingsGuardEventsSubtitle": "اللي زاد رفض يكتبه، وأسباب الرفض"
 }

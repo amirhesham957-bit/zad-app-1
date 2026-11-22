@@ -160,8 +160,8 @@ class SettingsScreen extends ConsumerWidget {
                       ZadWorldMenuRow(
                         art: ZadIconArt.brain,
                         color: color,
-                        title: 'صحة العقل',
-                        subtitle: 'اللي زاد رفض يكتبه، وأسباب الرفض',
+                        title: l.guardEventsTitle,
+                        subtitle: l.settingsGuardEventsSubtitle,
                         onTap: () =>
                             unawaited(ZadScreens.showGuardEvents(context)),
                       ),
