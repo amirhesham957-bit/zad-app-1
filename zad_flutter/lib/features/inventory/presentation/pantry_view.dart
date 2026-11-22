@@ -29,12 +29,15 @@ import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/inventory/domain/pantry_categories.dart';
 import 'package:zad/features/inventory/presentation/pantry_starter_card.dart';
 import 'package:zad/features/inventory/presentation/pantry_world_scene.dart';
+import 'package:zad/shared/brain/domain/guard_reason_label.dart';
 import 'package:zad/shared/chat/application/chat_controller.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart'
     hide PantryView;
 import 'package:zad/shared/inventory/application/shopping_controller.dart';
 import 'package:zad/shared/inventory/data/pantry_learning.dart';
 import 'package:zad/shared/inventory/domain/inventory_item.dart';
+import 'package:zad/shared/inventory/domain/inventory_rules.dart'
+    show InventoryRuleViolation;
 import 'package:zad/shared/inventory/domain/product_family.dart';
 import 'package:zad/shared/inventory/domain/quantity.dart';
 import 'package:zad/shared/inventory/domain/shelf_life.dart';
@@ -273,7 +276,13 @@ class _PantryViewState extends ConsumerState<PantryView> {
     final l = context.l10n;
     final amount = item.quantity;
     final controller = ref.read(pantryControllerProvider.notifier);
-    await controller.adjust(item.id, -amount);
+    if (!await _saidYes(
+      messenger,
+      l,
+      () => controller.adjust(item.id, -amount),
+    )) {
+      return;
+    }
     messenger
       ?..hideCurrentSnackBar()
       ..showSnackBar(
@@ -281,7 +290,9 @@ class _PantryViewState extends ConsumerState<PantryView> {
           content: Text(l.pantryFinishedSnack(item.itemName)),
           action: SnackBarAction(
             label: l.pantryUndo,
-            onPressed: () => unawaited(controller.adjust(item.id, amount)),
+            onPressed: () => unawaited(
+              _saidYes(messenger, l, () => controller.adjust(item.id, amount)),
+            ),
           ),
         ),
       );
@@ -1096,17 +1107,23 @@ class _AddState extends ConsumerState<_AddInventoryDialog> {
     final name = _name.text.trim();
     if (name.isEmpty) return;
     final navigator = Navigator.of(context);
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    final l = context.l10n;
     final expiry = _expiry ?? _estimate;
-    await ref
-        .read(pantryControllerProvider.notifier)
-        .add(
-          itemName: name,
-          quantity: parseQuantity(_qty.text) ?? 1,
-          unit: kPantryUnits[_unit],
-          category: _categoryDefs[_category + 1].key,
-          expiryDate: expiry,
-        );
-    navigator.pop();
+    final saved = await _saidYes(
+      messenger,
+      l,
+      () => ref
+          .read(pantryControllerProvider.notifier)
+          .add(
+            itemName: name,
+            quantity: parseQuantity(_qty.text) ?? 1,
+            unit: kPantryUnits[_unit],
+            category: _categoryDefs[_category + 1].key,
+            expiryDate: expiry,
+          ),
+    );
+    if (saved) navigator.pop();
   }
 
   @override
@@ -1483,18 +1500,24 @@ class _EditState extends ConsumerState<_EditInventoryDialog> {
                       : (_occasional ? restockOccasional : restockStaple);
                   final expiry = _expiry;
                   final expiryChanged = expiry != widget.item.expiryDate;
-                  await ref
-                      .read(pantryControllerProvider.notifier)
-                      .edit(
-                        widget.item,
-                        itemName: _name.text.trim(),
-                        quantity: quantity,
-                        unit: unit.isEmpty ? null : unit,
-                        restockMode: said,
-                        expiryDate: expiryChanged ? expiry : null,
-                        clearExpiry: expiryChanged && expiry == null,
-                      );
-                  navigator.pop();
+                  final messenger = ScaffoldMessenger.maybeOf(context);
+                  final l = context.l10n;
+                  final saved = await _saidYes(
+                    messenger,
+                    l,
+                    () => ref
+                        .read(pantryControllerProvider.notifier)
+                        .edit(
+                          widget.item,
+                          itemName: _name.text.trim(),
+                          quantity: quantity,
+                          unit: unit.isEmpty ? null : unit,
+                          restockMode: said,
+                          expiryDate: expiryChanged ? expiry : null,
+                          clearExpiry: expiryChanged && expiry == null,
+                        ),
+                  );
+                  if (saved) navigator.pop();
                 }
               : null,
           child: Text(context.l10n.commonSave),
@@ -1635,5 +1658,24 @@ class _ExpiryField extends StatelessWidget {
         ),
       ],
     );
+  }
+}
+
+/// Runs a pantry write and says why in words if the door's rules (mirrored in
+/// `inventory_rules.dart`) would refuse it — nothing was saved, and the sheet
+/// stays open so the customer can fix the number. True when it went through.
+Future<bool> _saidYes(
+  ScaffoldMessengerState? messenger,
+  ZadL10n l,
+  Future<void> Function() write,
+) async {
+  try {
+    await write();
+    return true;
+  } on InventoryRuleViolation catch (e) {
+    messenger
+      ?..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(guardReasonLabel(l, e.reason))));
+    return false;
   }
 }

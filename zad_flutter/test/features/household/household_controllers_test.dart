@@ -35,6 +35,17 @@ import 'package:zad/shared/settings/data/settings_repository.dart';
 import '../../support/quiet_household.dart';
 
 class _Pantry implements InventoryRemote {
+  @override
+  Future<Map<String, dynamic>> commitMyIntent({
+    required String kind,
+    required String clientEventId,
+    required Map<String, dynamic> payload,
+    required DateTime occurredAt,
+  }) => throw UnimplementedError('commitMyIntent');
+
+  @override
+  Future<Map<String, dynamic>?> fetchOne(String id) async => null;
+
   List<Map<String, dynamic>> rows = <Map<String, dynamic>>[];
 
   @override

@@ -4,116 +4,11 @@
 /// The rows are written by `zad_commit_intent` and the guard in `zad-brain`
 /// (`zad_guard_events`). The reason is either a snake code the door answered
 /// with (`qty_too_large`), or — for a refusal from a validator or a tool — the
-/// Arabic sentence itself. [guardReasonLabel] reads both into words.
+/// Arabic sentence itself. `guardReasonLabel` (shared/brain) reads both into words.
 library;
 
 import 'package:flutter/foundation.dart';
-import 'package:zad/core/l10n/l10n.dart';
-
-/// The customer's words for a refusal, in the app's language.
-///
-/// A snake code is looked up in the ARB files (`guardReason_<code>`); anything
-/// else is already Arabic (a validator's sentence), so it is shown as it was
-/// written. A code the app does not know shows as the plain fallback, never
-/// as the raw identifier.
-String guardReasonLabel(ZadL10n l, String reason) {
-  final trimmed = reason.trim();
-  if (trimmed.isEmpty) return l.guardReason_fallback;
-  if (!_snakeCode.hasMatch(trimmed)) return trimmed;
-  return switch (trimmed) {
-    'item_not_found' => l.guardReason_item_not_found,
-    'name_invalid' => l.guardReason_name_invalid,
-    'qty_not_positive' => l.guardReason_qty_not_positive,
-    'qty_too_large' => l.guardReason_qty_too_large,
-    'qty_negative' => l.guardReason_qty_negative,
-    'category_unknown' => l.guardReason_category_unknown,
-    'expiry_bad_format' => l.guardReason_expiry_bad_format,
-    'expiry_before_purchase' => l.guardReason_expiry_before_purchase,
-    'amount_invalid' => l.guardReason_amount_invalid,
-    'amount_too_large' => l.guardReason_amount_too_large,
-    'restock_mode_unknown' => l.guardReason_restock_mode_unknown,
-    'already_purchased' => l.guardReason_already_purchased,
-    'member_not_granted' => l.guardReason_member_not_granted,
-    'patch_empty' => l.guardReason_patch_empty,
-    'patch_field_unknown' => l.guardReason_patch_field_unknown,
-    'dose_times_invalid' => l.guardReason_dose_times_invalid,
-    'dose_count_invalid' => l.guardReason_dose_count_invalid,
-    'qty_invalid' => l.guardReason_qty_invalid,
-    'dosage_too_long' => l.guardReason_dosage_too_long,
-    'dose_already_logged' => l.guardReason_dose_already_logged,
-    'amount_not_positive' => l.guardReason_amount_not_positive,
-    'amount_over_cap' => l.guardReason_amount_over_cap,
-    'title_invalid' => l.guardReason_title_invalid,
-    'title_guessed' => l.guardReason_title_guessed,
-    'txn_kind_unknown' => l.guardReason_txn_kind_unknown,
-    'wallet_unknown' => l.guardReason_wallet_unknown,
-    'transfer_to_missing' => l.guardReason_transfer_to_missing,
-    'transfer_change_unsupported' => l.guardReason_transfer_change_unsupported,
-    'text_too_long' => l.guardReason_text_too_long,
-    'for_person_invalid' => l.guardReason_for_person_invalid,
-    'date_invalid' => l.guardReason_date_invalid,
-    'category_invalid' => l.guardReason_category_invalid,
-    'no_category_budget' => l.guardReason_no_category_budget,
-    'subscription_title_invalid' => l.guardReason_subscription_title_invalid,
-    'renewal_date_invalid' => l.guardReason_renewal_date_invalid,
-    'billing_cycle_invalid' => l.guardReason_billing_cycle_invalid,
-    'due_day_invalid' => l.guardReason_due_day_invalid,
-    'is_active_invalid' => l.guardReason_is_active_invalid,
-    'debt_name_invalid' => l.guardReason_debt_name_invalid,
-    'minimum_invalid' => l.guardReason_minimum_invalid,
-    'interest_invalid' => l.guardReason_interest_invalid,
-    'balance_negative' => l.guardReason_balance_negative,
-    'obligation_title_invalid' => l.guardReason_obligation_title_invalid,
-    'obligation_kind_invalid' => l.guardReason_obligation_kind_invalid,
-    'recurrence_invalid' => l.guardReason_recurrence_invalid,
-    'installments_invalid' => l.guardReason_installments_invalid,
-    'already_inactive' => l.guardReason_already_inactive,
-    'device_name_invalid' => l.guardReason_device_name_invalid,
-    'device_category_invalid' => l.guardReason_device_category_invalid,
-    'day_invalid' => l.guardReason_day_invalid,
-    'interval_invalid' => l.guardReason_interval_invalid,
-    'cost_invalid' => l.guardReason_cost_invalid,
-    'kind_invalid' => l.guardReason_kind_invalid,
-    'holder_invalid' => l.guardReason_holder_invalid,
-    'label_invalid' => l.guardReason_label_invalid,
-    'label_required' => l.guardReason_label_required,
-    'date_out_of_range' => l.guardReason_date_out_of_range,
-    'appt_title_invalid' => l.guardReason_appt_title_invalid,
-    'starts_at_invalid' => l.guardReason_starts_at_invalid,
-    'appt_recurrence_invalid' => l.guardReason_appt_recurrence_invalid,
-    'source_invalid' => l.guardReason_source_invalid,
-    'remind_invalid' => l.guardReason_remind_invalid,
-    'place_too_long' => l.guardReason_place_too_long,
-    'status_invalid' => l.guardReason_status_invalid,
-    'user_not_found' => l.guardReason_user_not_found,
-    'cycle_day_invalid' => l.guardReason_cycle_day_invalid,
-    'currency_invalid' => l.guardReason_currency_invalid,
-    'country_invalid' => l.guardReason_country_invalid,
-    'balance_invalid' => l.guardReason_balance_invalid,
-    'sleep_time_invalid' => l.guardReason_sleep_time_invalid,
-    'sleep_bed_out_of_range' => l.guardReason_sleep_bed_out_of_range,
-    'sleep_wake_out_of_range' => l.guardReason_sleep_wake_out_of_range,
-    'setting_unknown' => l.guardReason_setting_unknown,
-    'goal_title_invalid' => l.guardReason_goal_title_invalid,
-    'metric_too_long' => l.guardReason_metric_too_long,
-    'target_invalid' => l.guardReason_target_invalid,
-    'deadline_invalid' => l.guardReason_deadline_invalid,
-    'unit_invalid' => l.guardReason_unit_invalid,
-    'goal_not_found' => l.guardReason_goal_not_found,
-    'goal_amount_invalid' => l.guardReason_goal_amount_invalid,
-    'goal_not_amount' => l.guardReason_goal_not_amount,
-    'challenge_already_active' => l.guardReason_challenge_already_active,
-    'no_active_challenge' => l.guardReason_no_active_challenge,
-    'challenge_cap_invalid' => l.guardReason_challenge_cap_invalid,
-    'challenge_length_invalid' => l.guardReason_challenge_length_invalid,
-    'challenge_date_invalid' => l.guardReason_challenge_date_invalid,
-    'dose_slot_invalid' => l.guardReason_dose_slot_invalid,
-    'snooze_minutes_invalid' => l.guardReason_snooze_minutes_invalid,
-    _ => l.guardReason_fallback,
-  };
-}
-
-final RegExp _snakeCode = RegExp(r'^[a-z][a-z0-9_]*$');
+export 'package:zad/shared/brain/domain/guard_reason_label.dart';
 
 /// One refusal row.
 @immutable

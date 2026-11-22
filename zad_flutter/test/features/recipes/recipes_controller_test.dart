@@ -66,6 +66,17 @@ class _Chef implements RecipesRemote {
 
 class _Accepting implements InventoryRemote, ShoppingListRemote {
   @override
+  Future<Map<String, dynamic>> commitMyIntent({
+    required String kind,
+    required String clientEventId,
+    required Map<String, dynamic> payload,
+    required DateTime occurredAt,
+  }) => throw UnimplementedError('commitMyIntent');
+
+  @override
+  Future<Map<String, dynamic>?> fetchOne(String id) async => null;
+
+  @override
   Future<List<Map<String, dynamic>>> fetchAll({String? userId}) async =>
       <Map<String, dynamic>>[];
 
@@ -166,7 +177,9 @@ void main() {
 
     test('a tap asks about the pantry, and the answer is kept', () async {
       await pantry.add(itemName: 'طماطم', quantity: 3);
-      await pantry.add(itemName: 'لبن', quantity: 0);
+      final milk = await pantry.add(itemName: 'لبن');
+      // The door takes no row that starts at zero; a row runs out.
+      await pantry.adjustQuantity(milk.id, -1);
       final c = container();
 
       await c.read(recipesControllerProvider.notifier).ask();
@@ -217,7 +230,9 @@ void main() {
     );
 
     test('an empty pantry is not a question worth asking', () async {
-      await pantry.add(itemName: 'لبن', quantity: 0);
+      final milk = await pantry.add(itemName: 'لبن');
+      // The door takes no row that starts at zero; a row runs out.
+      await pantry.adjustQuantity(milk.id, -1);
       final c = container();
 
       await c.read(recipesControllerProvider.notifier).ask();

@@ -14,6 +14,7 @@ import 'package:zad/shared/inventory/application/pantry_controller.dart'
     as pantry;
 import 'package:zad/shared/inventory/application/shopping_controller.dart';
 import 'package:zad/shared/inventory/domain/inventory_item.dart';
+import 'package:zad/shared/inventory/domain/inventory_rules.dart';
 import 'package:zad/shared/inventory/domain/shortage.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/navigation/destinations.dart';
@@ -381,8 +382,8 @@ void main() {
     // device: the chips must count from the account's day.
     final late = DateTime.utc(2026, 11, 12, 21, 30);
 
-    Future<_AddingPantry> openAdd(WidgetTester tester) async {
-      final pantryCtl = _AddingPantry();
+    Future<_AddingPantry> openAdd(WidgetTester tester, {String? refuse}) async {
+      final pantryCtl = _AddingPantry(refuse);
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
@@ -427,6 +428,19 @@ void main() {
       await tapVisible(tester, find.widgetWithText(ChoiceChip, 'أسبوع'));
       await tapVisible(tester, find.widgetWithText(FilledButton, 'حفظ'));
       expect(pantryCtl.added.single.expiry, DateTime.utc(2026, 11, 20));
+    });
+
+    testWidgets('a write the door would refuse says why and keeps the sheet', (
+      tester,
+    ) async {
+      final pantryCtl = await openAdd(tester, refuse: 'name_invalid');
+      await tester.enterText(find.byType(TextField).first, 'صابون');
+      await tapVisible(tester, find.widgetWithText(FilledButton, 'حفظ'));
+
+      expect(find.byType(SnackBar), findsOneWidget);
+      expect(find.textContaining('٢ لـ١٢٠'), findsOneWidget);
+      expect(find.widgetWithText(FilledButton, 'حفظ'), findsOneWidget);
+      expect(pantryCtl.added, isEmpty);
     });
 
     testWidgets('left empty, the guess is shown as an estimate and saved', (
@@ -544,7 +558,11 @@ class _EditingPantry extends QuietPantry {
 
 /// A pantry that records what each [add] carried.
 class _AddingPantry extends QuietPantry {
-  new();
+  new([this.refuseWith]);
+
+  /// When set, every add is refused the way the repository refuses what the
+  /// door would: before anything is saved.
+  final String? refuseWith;
 
   final List<({String name, String? category, DateTime? expiry})> added =
       <({String name, String? category, DateTime? expiry})>[];
@@ -557,6 +575,8 @@ class _AddingPantry extends QuietPantry {
     String? category,
     double? lowStockThreshold,
     DateTime? expiryDate,
-  }) async =>
-      added.add((name: itemName, category: category, expiry: expiryDate));
+  }) async {
+    if (refuseWith case final reason?) throw InventoryRuleViolation(reason);
+    added.add((name: itemName, category: category, expiry: expiryDate));
+  }
 }
