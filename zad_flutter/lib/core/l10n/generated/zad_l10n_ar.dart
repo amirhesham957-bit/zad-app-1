@@ -7515,6 +7515,37 @@ class ZadL10nAr extends ZadL10n {
     );
     return '$_temp0';
   }
+
+  @override
+  String tripTitle(String country) {
+    return 'رحلتك في $country';
+  }
+
+  @override
+  String tripSpent(String amount, String currency) {
+    return 'صرفت تقريباً $amount $currency من أول الرحلة';
+  }
+
+  @override
+  String tripLeft(String amount, String currency) {
+    return 'فاضل $amount $currency من ميزانية الرحلة';
+  }
+
+  @override
+  String tripOver(String amount, String currency) {
+    return 'عدّيت ميزانية الرحلة بـ $amount $currency';
+  }
+
+  @override
+  String get tripSetBudget => 'حدّد ميزانية الرحلة';
+
+  @override
+  String tripBudgetHint(String currency) {
+    return 'الميزانية بـ$currency';
+  }
+
+  @override
+  String get tripBudgetSave => 'حفظ';
 }
 
 /// The translations for Arabic, as used in Saudi Arabia (`ar_SA`).
