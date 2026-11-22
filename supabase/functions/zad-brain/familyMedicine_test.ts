@@ -51,6 +51,33 @@ function fakeSb(tables: Record<string, Row[]>, granted: Array<[viewer: string, o
   const sb = {
     from: (table: string) => builder(table),
     rpc: (name: string, args: Record<string, unknown>) => {
+      // الباب (zad_commit_intent، م٢.٥): نفس قرار SQL — الدوا للعميل نفسه أو لفرد موافق.
+      if (name === "zad_commit_intent") {
+        const it = args.p_intent as Row;
+        const p = it.payload as Row;
+        const meds = (tables.zad_pharmacy_items ??= []);
+        const canWrite = (owner: unknown) => owner === it.user_id || granted.some(([v, o]) => v === it.user_id && o === owner);
+        if (it.kind === "pharmacy.added") {
+          const owner = p.owner_id ?? it.user_id;
+          if (!canWrite(owner)) return Promise.resolve({ data: { ok: false, reason: "member_not_granted" }, error: null });
+          const times = typeof p.dose_times === "string" && p.dose_times ? p.dose_times : null;
+          const row = {
+            id: crypto.randomUUID(), user_id: owner, name: p.name, dosage: p.dosage ?? null, dose_times: times,
+            daily_dose_count: times ? times.split(",").length : p.daily_dose_count ?? 1, unit: p.unit ?? "قرص",
+            remaining_quantity: p.remaining_quantity ?? 1, category: p.category ?? "عام", for_person: p.for_person ?? null,
+          };
+          meds.push(row);
+          inserts.push({ table: "zad_pharmacy_items", row });
+          return Promise.resolve({ data: { ok: true, duplicate: false, row_id: row.id, payload: { after: row } }, error: null });
+        }
+        if (it.kind === "pharmacy.updated") {
+          const row = meds.find((r) => r.id === p.item_id);
+          if (!row || !canWrite(row.user_id)) return Promise.resolve({ data: { ok: false, reason: "item_not_found" }, error: null });
+          Object.assign(row, p.patch as Row);
+          return Promise.resolve({ data: { ok: true, duplicate: false, row_id: row.id, payload: { after: row } }, error: null });
+        }
+        return Promise.resolve({ data: { ok: false, reason: "unknown_kind" }, error: null });
+      }
       if (name === "zad_family_share_granted") {
         return Promise.resolve({ data: granted.some(([v, o]) => v === args.p_viewer && o === args.p_owner), error: null });
       }

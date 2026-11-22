@@ -7,10 +7,9 @@ import { assertEquals } from "jsr:@std/assert@1";
 const ROOT = new URL("../", import.meta.url);
 
 /** ملف → عدد الكتابات المباشرة المسموحة فيه، وليه مفيهاش أصناف. */
-const MONEY_ONLY: Record<string, { count: number; why: string }> = {
-  // تسوية الكاش (المحسوب ≠ اللي العميل قاله)، وlog_transaction من غير lines.
-  "zad-brain/index.ts": { count: 2, why: "تسوية الكاش، ومصروف/دخل من غير أصناف" },
-};
+// من ٢٢/١١ (ZAD_OR_PLAN م٢.٥) فاضية: تسوية الكاش وlog_transaction من غير lines بقوا بيكتبوا من الباب الوحيد
+// (zad_commit_intent ⇐ zad_intent_money، 20261122010000)، والمصروف بأصناف بيروح من الباب لـzad_record_purchase_service.
+const MONEY_ONLY: Record<string, { count: number; why: string }> = {};
 
 const DIRECT = /\.from\(\s*["']zad_transactions["']\s*\)\s*\.(insert|upsert)\(/g;
 

@@ -1,0 +1,468 @@
+<title>زاد المدمج</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap">
+<style>
+/* Layout: a phone in the middle that you switch between screens, with a margin note beside it saying what stays, what grows and what is new. Light only, like the app. */
+:root{
+  --forest:#1B4332; --g800:#064E3B; --g600:#0F9B76; --glow:#6EE7B7; --mint:#E6F4EC; --mustard:#C68216; --rust:#D95726;
+  --amz:#FF9900; --amzd:#B86E00; --violet:#4A3F94; --lav:#F1EEFB; --sky:#2F7BD8; --rose:#F2416B;
+  --c1:#F8F9FA; --c2:#F4F6F2; --c3:#EDEFE9; --card:#FFFFFF; --ink:#1F1F14; --ink2:#374151; --muted:#5F6258; --hair:rgba(0,0,0,.07);
+  --ground:#E3E6DF;
+  --spring:cubic-bezier(.34,1.56,.64,1); --ease:cubic-bezier(.16,1,.3,1);
+  --f:"Cairo",system-ui,"Segoe UI",Tahoma,sans-serif; color-scheme:light;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--f);-webkit-font-smoothing:antialiased;overflow-x:hidden;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 40px}
+button{font-family:inherit;border:0;cursor:pointer;color:inherit;background:none}
+button:focus-visible{outline:2px solid var(--g600);outline-offset:2px}
+.wrap{max-width:1040px;margin:0 auto;display:grid;gap:20px}
+header.top h1{margin:0;font-size:28px;font-weight:900;color:var(--forest);text-wrap:balance}
+header.top p{margin:6px 0 0;color:var(--ink2);line-height:1.8;max-width:70ch}
+.legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.tag{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;border-radius:999px;font-size:12px;font-weight:800}
+.t-keep{background:#DDEFE4;color:var(--g800)}.t-grow{background:#FFF1D6;color:#8A5A0B}.t-new{background:var(--lav);color:var(--violet)}.t-off{background:#FBE3DC;color:#9A3412}
+.picker{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
+.picker button{flex:none;height:38px;padding:0 15px;border-radius:999px;background:#fff;font-size:13px;font-weight:800;color:var(--ink2)}
+.picker button.on{background:var(--forest);color:#fff}
+.stage{display:grid;grid-template-columns:minmax(0,400px) minmax(0,1fr);gap:22px;align-items:start}
+@media (max-width:820px){.stage{grid-template-columns:minmax(0,1fr)}}
+.device{width:100%;max-width:400px;margin:0 auto;border-radius:34px;background:linear-gradient(180deg,var(--c1),var(--c2) 55%,var(--c3));box-shadow:0 30px 60px -30px rgba(6,78,59,.45),0 0 0 8px #1F2420;overflow:hidden;position:relative;height:760px;display:flex;flex-direction:column}
+.scroll{flex:1;overflow-y:auto;overflow-x:hidden;padding:14px 14px 120px;scrollbar-width:none}
+.screen{display:none}.screen.on{display:block;animation:enter .5s var(--ease) both}
+@keyframes enter{from{opacity:.0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.notes{background:#fff;border-radius:24px;padding:20px;display:grid;gap:14px;min-width:0}
+.notes h2{margin:0;font-size:20px;font-weight:900;color:var(--forest)}
+.notes p,.notes li{font-size:14px;line-height:1.85;color:var(--ink2)}
+.notes ul{margin:0;padding-inline-start:18px;display:grid;gap:6px}
+.notes .row{display:flex;gap:8px;align-items:flex-start}
+.notes .row .tag{flex:none;margin-top:3px}
+.card{background:var(--card);border-radius:22px;box-shadow:0 1px 2px rgba(15,23,42,.04),0 14px 30px -18px rgba(15,23,42,.18)}
+.h2{font-size:18px;font-weight:900;margin:0}
+.sm{font-size:12.5px;color:var(--muted);line-height:1.7}
+.sec{margin-top:14px;display:grid;gap:10px}
+.sec-t{display:flex;justify-content:space-between;align-items:center;font-weight:900;font-size:15px}
+.chip{display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 9px;border-radius:999px;font-size:11px;font-weight:800}
+.press{transition:transform .4s var(--spring)}.press:active{transform:scale(.96);transition-duration:.08s}
+.badge-ad{font-size:10px;font-weight:900;background:#FFD54A;color:#5B4500;border-radius:6px;padding:1px 6px}
+/* bottom bar + Zado above it */
+.bar{position:absolute;left:10px;right:10px;bottom:10px;height:66px;background:#fff;border-radius:24px;display:flex;align-items:center;justify-content:space-around;box-shadow:0 12px 30px -12px rgba(6,78,59,.35);z-index:4}
+.bar span{display:flex;flex-direction:column;align-items:center;font-size:10.5px;font-weight:800;color:var(--muted);gap:2px}
+.bar span.on{color:var(--forest)}
+.bar .cam{width:54px;height:54px;border-radius:20px;background:var(--forest);display:grid;place-items:center;margin-top:-26px;box-shadow:0 10px 20px -8px rgba(6,78,59,.6)}
+.pet{position:absolute;bottom:70px;left:18px;width:70px;height:78px;z-index:5;animation:hop 3.2s ease-in-out infinite}
+@keyframes hop{0%,100%{transform:translateY(0)}45%{transform:translateY(-6px)}55%{transform:translateY(-6px)}}
+.pet-bub{position:absolute;bottom:150px;left:16px;z-index:6;background:#fff;border-radius:16px 16px 16px 4px;padding:8px 12px;font-size:12.5px;font-weight:800;color:var(--g800);box-shadow:0 10px 24px -10px rgba(6,78,59,.4);max-width:220px;animation:pop .5s var(--spring) both 1s}
+@keyframes pop{from{opacity:0;transform:scale(.8) translateY(8px)}to{opacity:1;transform:none}}
+.z-breathe{transform-origin:50% 90%;animation:br 3.4s ease-in-out infinite}@keyframes br{50%{transform:scale(1.03,.97)}}
+.z-blink{transform-origin:50% 150px;animation:bl 4.6s infinite}@keyframes bl{0%,94%,100%{transform:scaleY(1)}97%{transform:scaleY(.1)}}
+/* home */
+.hello{display:flex;justify-content:space-between;align-items:center}
+.budget{padding:16px;background:linear-gradient(135deg,var(--forest),var(--g800));color:#fff;border-radius:24px;position:relative;overflow:hidden}
+.budget b{font-size:30px;font-weight:900;font-variant-numeric:tabular-nums}
+.budget .bar2{height:8px;border-radius:9px;background:rgba(255,255,255,.18);margin-top:10px;overflow:hidden}
+.budget .bar2 i{display:block;height:100%;width:62%;background:var(--glow);border-radius:9px;animation:fill 1.4s var(--ease) both}
+@keyframes fill{from{width:0}}
+.side{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none}
+.side .card{flex:none;width:150px;padding:12px;display:grid;gap:4px}
+.amz{border-radius:22px;padding:14px;background:linear-gradient(160deg,#FFF6E6,#fff 60%);border:1px solid #FFE2B3}
+.amz-row{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;padding:4px 0}
+.need{flex:none;width:128px;background:#fff;border-radius:18px;padding:10px;display:grid;gap:4px;justify-items:center;text-align:center;box-shadow:0 8px 18px -12px rgba(184,110,0,.5)}
+.need .why{font-size:11px;font-weight:800;border-radius:999px;padding:1px 8px}
+.need button{width:100%;height:34px;border-radius:12px;background:var(--amz);color:#2B1A00;font-weight:900;font-size:13px}
+.disc{font-size:10.5px;color:var(--muted);margin-top:6px}
+.inline-ad{padding:12px;display:flex;gap:10px;align-items:center;border:1px dashed #E8D27A;background:#FFFCEB;border-radius:18px}
+.inline-ad .ph{width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,#FFE58A,#FFC93C);flex:none}
+.tasbih{display:flex;align-items:center;gap:12px;padding:12px}
+.reward{display:flex;gap:10px}
+.reward button{flex:1;height:48px;border-radius:16px;font-weight:900;font-size:13.5px}
+.rw{background:linear-gradient(90deg,#FFB020,#FF7A1A);color:#fff;background-size:200% 100%;animation:sh 3s linear infinite}
+@keyframes sh{to{background-position:-200% 0}}
+.pr{background:var(--forest);color:#fff}
+/* games */
+.ghero{border-radius:26px;padding:16px;background:radial-gradient(120% 90% at 20% 0%,#2A6F52,#0E3B2A);color:#fff;position:relative;overflow:hidden}
+.ghero .row{display:flex;justify-content:space-between;align-items:center}
+.flame{display:inline-flex;align-items:center;gap:4px;font-weight:900}
+.daily{display:grid;gap:8px;margin-top:12px}
+.daily div{display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,.1);border-radius:14px;padding:8px 12px;font-size:13px;font-weight:700}
+.daily progress{width:90px;height:8px;accent-color:var(--glow)}
+.glist{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.gcard{padding:12px;display:grid;gap:6px;text-align:start;border-radius:20px}
+.gcard .art{height:78px;border-radius:14px;display:grid;place-items:center}
+.gcard b{font-size:14px}
+canvas#run{width:100%;height:220px;display:block;border-radius:20px;background:linear-gradient(180deg,#BFEAD3,#F3F7EE);touch-action:manipulation;cursor:pointer}
+.gover{display:none;margin-top:10px;padding:14px;text-align:center;gap:8px}
+.gover.on{display:grid}
+.gover .btns{display:flex;gap:8px}
+.gover .btns button{flex:1;height:44px;border-radius:14px;font-weight:900;font-size:13px}
+.league li{display:flex;justify-content:space-between;padding:8px 12px;border-radius:12px;font-weight:700;font-size:13px}
+.league li.me{background:var(--mint);color:var(--g800)}
+.league{list-style:none;margin:0;padding:6px}
+/* profile + settings */
+.phero{border-radius:26px;padding:16px;background:linear-gradient(160deg,#16523C,#0B2E21);color:#fff;display:flex;gap:14px;align-items:center}
+.phero .z{width:84px;height:94px;flex:none}
+.lv{height:8px;background:rgba(255,255,255,.2);border-radius:9px;overflow:hidden;margin-top:6px}.lv i{display:block;height:100%;width:68%;background:var(--glow)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stats .card{padding:10px;text-align:center}.stats b{display:block;font-size:18px;font-weight:900;font-variant-numeric:tabular-nums}
+.group{padding:4px 0}
+.group .gt{font-size:12px;font-weight:900;color:var(--muted);padding:10px 14px 4px;letter-spacing:.02em}
+.item{display:flex;align-items:center;gap:12px;padding:10px 14px;min-height:52px}
+.item+.item{border-top:1px solid var(--hair)}
+.item .ic{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;flex:none}
+.item .tx{flex:1;min-width:0}.item .tx b{display:block;font-size:14px}.item .tx span{font-size:12px;color:var(--muted)}
+.sw{width:42px;height:24px;border-radius:99px;background:var(--g600);position:relative;flex:none}.sw::after{content:"";position:absolute;top:3px;right:3px;width:18px;height:18px;border-radius:50%;background:#fff}
+.sw.off{background:#C9CEC4}.sw.off::after{right:auto;left:3px}
+/* ads */
+.adrow{display:grid;grid-template-columns:auto 1fr;gap:10px;padding:10px 12px;align-items:start}
+.adrow+.adrow{border-top:1px solid var(--hair)}
+.adk{font-size:11px;font-weight:900;border-radius:8px;padding:3px 8px;white-space:nowrap}
+.k-in{background:#FFF4C2;color:#6B5200}.k-nat{background:#DDEFE4;color:var(--g800)}.k-full{background:#FBE3DC;color:#9A3412}.k-rw{background:#FFE6CC;color:#8A4A00}.k-open{background:#E2ECFA;color:#1E4F99}.k-no{background:#ECECEC;color:#444}
+.demo{padding:14px;display:grid;gap:10px}
+.demo .opts{display:flex;gap:6px;flex-wrap:wrap}
+.demo .opts button{height:34px;padding:0 12px;border-radius:999px;background:var(--c3);font-size:12.5px;font-weight:800}
+.demo .opts button.on{background:var(--forest);color:#fff}
+.ask{height:46px;border-radius:14px;background:var(--forest);color:#fff;font-weight:900}
+.chatq{align-self:flex-start;background:var(--mint);padding:8px 12px;border-radius:14px 14px 4px 14px;font-size:13px;font-weight:700;justify-self:start}
+.wait{padding:12px;border-radius:18px;background:#F7F9F5;display:grid;gap:8px}
+.dots i{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--g600);margin:0 2px;animation:d 1s infinite}
+.dots i:nth-child(2){animation-delay:.15s}.dots i:nth-child(3){animation-delay:.3s}
+@keyframes d{50%{transform:translateY(-5px);opacity:.4}}
+.full{position:absolute;inset:0;z-index:20;background:rgba(10,20,15,.92);color:#fff;display:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;text-align:center}
+.full.on{display:flex}
+.full .box{width:100%;height:300px;border-radius:20px;background:linear-gradient(135deg,#FFE58A,#FF9F43);display:grid;place-items:center;color:#4A2C00;font-weight:900;font-size:20px}
+.full button{height:42px;padding:0 18px;border-radius:12px;background:#fff;color:var(--ink);font-weight:900}
+.answer{background:#fff;border-radius:14px 14px 14px 4px;padding:10px 12px;font-size:13px;line-height:1.8;box-shadow:0 6px 16px -10px rgba(0,0,0,.3)}
+/* merge map */
+table{border-collapse:collapse;width:100%;font-size:13px}
+.tw{overflow-x:auto}
+th,td{text-align:start;padding:9px 10px;border-bottom:1px solid var(--hair);vertical-align:top;line-height:1.7}
+th{font-size:12px;color:var(--muted);font-weight:900}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <h1>زاد المدمج: التطبيق الحالي + العوالم الجديدة</h1>
+    <p>دي مش نسخة جديدة بتلغي القديمة. كل اللي موجود في التطبيق النهارده بيفضل (زادو فوق البار، شريط أمازون، الرئيسية بترتيبها، الحساب والإعدادات)، والمعاينة اللي فاتت بتتبني فوقه صفحة صفحة. كل شاشة هنا معلّمة باللي بيفضل زي ما هو واللي بيتطور واللي جديد.</p>
+    <div class="legend">
+      <span class="tag t-keep">موجود ويفضل</span><span class="tag t-grow">موجود ويتطوّر</span><span class="tag t-new">جديد</span><span class="tag t-off">بيتشال</span>
+    </div>
+  </header>
+
+  <nav class="picker" id="picker" aria-label="الشاشات">
+    <button data-s="home" class="on">الرئيسية + زادو</button>
+    <button data-s="amazon">أمازون بالعمولة</button>
+    <button data-s="games">ركن الألعاب</button>
+    <button data-s="profile">حسابي</button>
+    <button data-s="settings">الإعدادات</button>
+    <button data-s="ads">الإعلانات والذكاء</button>
+    <button data-s="map">خريطة الدمج</button>
+  </nav>
+
+  <div class="stage">
+    <div class="device" id="device">
+      <div class="scroll" id="scroll">
+
+        <!-- HOME -->
+        <section class="screen on" id="s-home">
+          <div class="hello"><div><div class="sm">مساء الخير</div><div class="h2">النهارده هادي، ٣ حاجات محتاجة نظرة</div></div><span id="bell"></span></div>
+          <div class="sec"><div class="budget"><div class="sm" style="color:#CDEBDD">المتاح لحد الراتب (مثال)</div><b>٣٬٢٤٠ ج</b><div class="sm" style="color:#CDEBDD">فاضل ١١ يوم · ٢٩٤ ج في اليوم</div><div class="bar2"><i></i></div></div></div>
+          <div class="sec"><div class="side" id="side"></div></div>
+          <div class="sec"><div class="card tasbih"><span id="tas"></span><div style="flex:1"><b>التسبيحة</b><div class="sm">٦٦ من ١٠٠ · بستانك فيه ٣ شجرات</div></div><span class="chip t-keep">رجعت</span></div></div>
+          <div class="sec"><div class="amz" id="home-amz"></div></div>
+          <div class="sec"><div class="reward"><button class="rw press">شاهد إعلان واكسب بذور</button><button class="pr press">اشترك بريميوم</button></div></div>
+          <div class="sec"><div class="inline-ad"><span class="ph"></span><div style="flex:1"><span class="badge-ad">إعلان</span><div style="font-weight:800;font-size:13px;margin-top:2px">إعلان مدمج بين الكروت</div><div class="sm">بيتقري زي أي كارت، مش بيغطي حاجة</div></div></div></div>
+          <div class="sec"><div class="card" style="padding:12px"><div class="sec-t">آخر المصاريف <span class="sm">الكل</span></div><div class="sm">بقالة ٢٤٠ ج · بنزين ٣٠٠ ج · صيدلية ٨٥ ج</div></div></div>
+        </section>
+
+        <!-- AMAZON -->
+        <section class="screen" id="s-amazon">
+          <div class="h2">أمازون في كل مكان فيه «ناقص»</div>
+          <div class="sm">زاد بيعرف إيه اللي خلص من المخزن والقايمة ووصفة الشيف، فبيعرض الحاجة دي بالظبط من أمازون بلد العميل، بلينك فيه التاج بتاعك.</div>
+          <div class="sec"><div class="card" style="padding:12px;display:flex;gap:8px;flex-wrap:wrap">
+            <span class="chip" style="background:#FFF1D6;color:#8A5A0B">مصر ⇠ amazon.eg · zad04-21</span>
+            <span class="chip" style="background:#FFF1D6;color:#8A5A0B">السعودية والباقي ⇠ amazon.sa · zad0b-21</span>
+          </div></div>
+          <div class="sec"><div class="sec-t">١. الرئيسية <span class="tag t-keep">موجود</span></div><div class="sm">شريط «تسوق من أمازون»: كارت لكل حاجة خلصت أو قربت أو في القايمة.</div></div>
+          <div class="sec"><div class="sec-t">٢. قايمة التسوق <span class="tag t-new">جديد</span></div>
+            <div class="card" id="shop-amz" style="padding:6px 0"></div></div>
+          <div class="sec"><div class="sec-t">٣. الشيف: الناقص من الوصفة <span class="tag t-new">جديد</span></div>
+            <div class="card" style="padding:12px;display:flex;gap:10px;align-items:center"><span id="chef-art"></span><div style="flex:1"><b>مكرونة بالصلصة</b><div class="sm">ناقصك صلصة وجبنة. «هات الناقص من أمازون» بيفتح بحث فيه الاتنين.</div></div></div></div>
+          <div class="sec"><div class="sec-t">٤. بعد ما المخزن يخلص <span class="tag t-new">جديد</span></div>
+            <div class="card" style="padding:12px"><div class="sm">إشعار واحد في ميعاد الصحيان (مش كل ساعة): «الزيت خلص من ٣ أيام، تطلبه؟» ويفتح نفس الكارت.</div></div></div>
+          <div class="sec"><div class="sec-t">٥. أجهزة البيت ومستلزماته <span class="tag t-new">جديد</span></div>
+            <div class="card" style="padding:12px"><div class="sm">من «الصيانة»: الفلتر ميعاد تغييره جه ⇠ «اطلب فلتر». من الصيدلية: مستلزمات بس (ترمومتر، جهاز ضغط) ومفيش أدوية.</div></div></div>
+          <div class="note sm" style="margin-top:14px;padding:12px;border-radius:16px;background:rgba(27,67,50,.07)">تحت كل كارت فيه سطر «لينك أمازون، زاد ممكن ياخد عمولة». ده شرط في اتفاقية Associates، ومن غيره الحساب ممكن يتقفل. ومفيش أسعار على الكارت غير لو جاية من API أمازون نفسه.</div>
+        </section>
+
+        <!-- GAMES -->
+        <section class="screen" id="s-games">
+          <div class="ghero">
+            <div class="row"><div><div class="sm" style="color:#BFE8D3">ركن زادو</div><div class="h2">العب، كمّل السلسلة، اكسب بذور</div></div><span class="flame" id="flame"></span></div>
+            <div class="daily">
+              <div><span>تحدي النهارده: ٣٠٠ نقطة في «نطّة زادو»</span><progress value="180" max="300"></progress></div>
+              <div><span>العب ٣ ألعاب مختلفة</span><progress value="2" max="3"></progress></div>
+              <div><span>صندوق الأسبوع: ٥ أيام ورا بعض</span><progress value="4" max="5"></progress></div>
+            </div>
+          </div>
+          <div class="sec"><div class="sec-t">نطّة زادو <span class="tag t-new">جرّبها هنا</span></div>
+            <canvas id="run" width="720" height="440" aria-label="لعبة نطة زادو، دوس عشان ينط"></canvas>
+            <div class="sm" id="runhint">دوس على اللعبة عشان زادو ينط فوق الصناديق ويلم البذور. السرعة بتزيد.</div>
+            <div class="card gover" id="gover">
+              <b class="h2" id="gscore"></b><div class="sm" id="gbest"></div>
+              <div class="btns"><button class="rw" id="cont">كمّل من مكانك (إعلان)</button><button class="pr" id="again">العب تاني</button></div>
+              <div class="sm">«كمّل» مرة واحدة في الجولة. «ضاعف البذور» يظهر بعد الجولة بس.</div>
+            </div>
+          </div>
+          <div class="sec"><div class="glist" id="glist"></div></div>
+          <div class="sec"><div class="sec-t">دوري العيلة الأسبوعي</div>
+            <ul class="card league"><li><span>ماما</span><span>٢٬٤١٠</span></li><li class="me"><span>إنت</span><span>٢٬١٨٠</span></li><li><span>يوسف</span><span>١٬٩٥٠</span></li><li><span>بابا</span><span>٨٤٠</span></li></ul></div>
+        </section>
+
+        <!-- PROFILE -->
+        <section class="screen" id="s-profile">
+          <div class="phero"><span class="z" id="pz"></span><div style="flex:1"><div class="sm" style="color:#BFE8D3">حسابي</div><div class="h2">المستوى ٧ · رفيق نشيط</div><div class="lv"><i></i></div><div class="sm" style="color:#BFE8D3">٦٨٠ من ١٠٠٠ خبرة · ١٤ يوم ورا بعض</div></div></div>
+          <div class="sec stats"><div class="card"><b>٤٢</b><span class="sm">فاتورة اتقرت</span></div><div class="card"><b>٩٬٨٠٠</b><span class="sm">جنيه اتوفّر</span></div><div class="card"><b>١٢٠</b><span class="sm">بذرة</span></div></div>
+          <div class="sec"><div class="sec-t">الإنجازات <span class="tag t-grow">كانت فاضية</span></div><div class="side" id="ach"></div></div>
+          <div class="sec"><div class="card group" id="pgroups"></div></div>
+        </section>
+
+        <!-- SETTINGS -->
+        <section class="screen" id="s-settings">
+          <div class="h2">الإعدادات</div><div class="sm">نفس البنود الموجودة، متجمّعة في ٥ مجموعات بدل قايمة طويلة.</div>
+          <div class="sec" id="sgroups"></div>
+        </section>
+
+        <!-- ADS -->
+        <section class="screen" id="s-ads">
+          <div class="h2">طلب ذكاء + إعلان</div><div class="sm">جرّب: اختار نوع الطلب واضغط «اسأل زاد».</div>
+          <div class="sec"><div class="card demo">
+            <div class="opts" id="kind"><button data-k="fast" class="on">سريع</button><button data-k="slow">بطيء</button><button data-k="long">طويل (فاتورة/تحليل)</button><button data-k="fail">بيلعك ويعيد</button></div>
+            <button class="ask press" id="ask">اسأل زاد</button>
+            <div id="conv" style="display:grid;gap:8px"></div>
+          </div></div>
+          <div class="sec"><div class="sec-t">كل الوحدات</div><div class="card" id="units"></div></div>
+        </section>
+
+        <!-- MAP -->
+        <section class="screen" id="s-map">
+          <div class="h2">كل صفحة: بتفضل ولا بتتغير</div>
+          <div class="sec"><div class="card tw"><table id="maptbl"><thead><tr><th>الصفحة</th><th>الحالة</th><th>اللي بيحصل</th></tr></thead><tbody></tbody></table></div></div>
+        </section>
+
+      </div>
+      <div class="pet-bub" id="petbub">الزيت خلص، أطلبهولك من أمازون؟</div>
+      <div class="pet" id="pet"></div>
+      <nav class="bar" aria-hidden="true">
+        <span class="on" id="b1"></span><span id="b2"></span><span class="cam" id="b3"></span><span id="b4"></span><span id="b5"></span>
+      </nav>
+      <div class="full" id="full"><span class="badge-ad">إعلان</span><div class="box">إعلان شاشة كاملة</div><div class="sm" style="color:#CFE" id="fullnote">زاد بيكمّل شغله ورا الإعلان</div><button id="closefull">اقفل</button></div>
+    </div>
+
+    <aside class="notes" id="notes"></aside>
+  </div>
+</div>
+
+<script src="art.js"></script>
+<script>
+(()=>{
+const $=(id)=>document.getElementById(id);
+const AR="٠١٢٣٤٥٦٧٨٩",fmt=(n)=>Math.round(n).toLocaleString("en-US").replace(/\d/g,(d)=>AR[d]).replace(/,/g,"٬");
+const A=(n,s=28)=>window.ART&&ART.has(n)?ART.icon(n,s):"";
+const P=(n,s=48)=>window.ART?ART.product(n,s):"";
+let zn=0;
+function zado(o={}){
+  const k="zd"+(++zn),m=o.mood||"idle",happy=m==="happy",wow=m==="wow";
+  const eyes=happy?`<g fill="none" stroke="#14181F" stroke-width="5" stroke-linecap="round"><path d="M83,154 Q94,138 105,154"/><path d="M135,154 Q146,138 157,154"/></g>`
+    :`<g class="z-blink"><ellipse cx="94" cy="150" rx="${wow?11:9.5}" ry="${wow?14:12.5}" fill="#14181F"/><ellipse cx="146" cy="150" rx="${wow?11:9.5}" ry="${wow?14:12.5}" fill="#14181F"/><circle cx="97.5" cy="145" r="3.4" fill="#fff"/><circle cx="149.5" cy="145" r="3.4" fill="#fff"/></g>`;
+  const mouth=happy?`<path d="M106,170 Q120,192 134,170 Z" fill="#7A1F2B" stroke="#14181F" stroke-width="2.5"/>`:wow?`<ellipse cx="120" cy="180" rx="8" ry="10" fill="#7A1F2B" stroke="#14181F" stroke-width="2.5"/>`:`<path d="M111,172 Q120,181 129,172" fill="none" stroke="#14181F" stroke-width="3.5" stroke-linecap="round"/>`;
+  let top=`<line x1="120" y1="68" x2="120" y2="50" stroke="#2E8B4A" stroke-width="5" stroke-linecap="round"/><ellipse cx="106" cy="46" rx="15" ry="6.5" fill="#45BF68" transform="rotate(26 106 46)"/><ellipse cx="134" cy="46" rx="15" ry="6.5" fill="#45BF68" transform="rotate(-26 134 46)"/>`;
+  if(o.hat==="crown")top=`<path d="M78,80 L84,34 L104,58 L120,24 L136,58 L156,34 L162,80 Z" fill="#F5B93A" stroke="#B9780F" stroke-width="2.5" stroke-linejoin="round"/><circle cx="120" cy="24" r="6" fill="#E5473C"/><rect x="80" y="70" width="80" height="10" rx="3" fill="#E08A1E"/>`;
+  return `<svg viewBox="0 0 240 264" width="100%" height="100%" aria-hidden="true"><defs><radialGradient id="${k}b" cx="36%" cy="28%" r="80%"><stop offset="0%" stop-color="#8BF0C4"/><stop offset="38%" stop-color="#37C98E"/><stop offset="78%" stop-color="#1C9A6E"/><stop offset="100%" stop-color="#0B6B4E"/></radialGradient><radialGradient id="${k}l" cx="40%" cy="30%" r="75%"><stop offset="0%" stop-color="#6FE3B1"/><stop offset="100%" stop-color="#1C9A6E"/></radialGradient></defs>
+  <ellipse cx="120" cy="248" rx="66" ry="9" fill="#000" opacity=".15"/><g class="z-breathe"><ellipse cx="86" cy="230" rx="20" ry="11" fill="url(#${k}l)"/><ellipse cx="154" cy="230" rx="20" ry="11" fill="url(#${k}l)"/>
+  <path d="M120,66 C170,66 206,104 206,158 C206,206 172,230 120,230 C68,230 34,206 34,158 C34,104 70,66 120,66 Z" fill="url(#${k}b)" stroke="#0B6B4E" stroke-opacity=".35" stroke-width="1.5"/>
+  <ellipse cx="74" cy="172" rx="12" ry="6.5" fill="#FF9DB2" opacity=".85"/><ellipse cx="166" cy="172" rx="12" ry="6.5" fill="#FF9DB2" opacity=".85"/>
+  ${eyes}${mouth}${top}<ellipse cx="38" cy="170" rx="13" ry="17" fill="url(#${k}l)" transform="rotate(18 38 170)"/><ellipse cx="202" cy="170" rx="13" ry="17" fill="url(#${k}l)" transform="rotate(-18 202 170)"/></g></svg>`;
+}
+
+/* chrome */
+$("pet").innerHTML=zado({mood:"happy"});
+$("bell").innerHTML=A("bell",30);
+$("b1").innerHTML=A("house",22)+"الرئيسية";$("b2").innerHTML=A("coin",22)+"فلوسي";$("b3").innerHTML=A("camera",30);$("b4").innerHTML=A("pantry",22)+"بيتي";$("b5").innerHTML=A("star",22)+"المزيد";
+$("tas").innerHTML=A("beads",40);
+
+/* home */
+$("side").innerHTML=[["repeat","اشتراكات","نتفليكس بيتجدد بكرة"],["pill","الصيدلية","جرعة ٩ بالليل"],["pantry","المخزن","٣ حاجات قربت تخلص"]].map(([i,t,s])=>`<div class="card"><span>${A(i,30)}</span><b style="font-size:13px">${t}</b><span class="sm">${s}</span></div>`).join("");
+const needs=[["oil","زيت","خلص","#FBE3DC","#9A3412"],["rice","أرز","قرب يخلص","#FFF1D6","#8A5A0B"],["detergent","منظف","في القايمة","#E2ECFA","#1E4F99"],["coffee","بن","قرب يخلص","#FFF1D6","#8A5A0B"]];
+$("home-amz").innerHTML=`<div class="sec-t">تسوق من أمازون <span class="tag t-keep">موجود</span></div><div class="amz-row">${needs.map(([p,n,w,b,c])=>`<div class="need">${P(p,54)}<b>${n}</b><span class="why" style="background:${b};color:${c}">${w}</span><button class="press">اطلبه</button></div>`).join("")}</div><div class="disc">لينكات أمازون مصر · زاد ممكن ياخد عمولة</div>`;
+
+/* amazon */
+$("shop-amz").innerHTML=[["milk","حليب ٢ لتر"],["tissue","مناديل"],["shampoo","شامبو"]].map(([p,n])=>`<div class="item"><span class="ic">${P(p,36)}</span><div class="tx"><b>${n}</b><span>في قايمتك من يومين</span></div><button class="chip press" style="background:var(--amz);color:#2B1A00;height:32px">من أمازون</button></div>`).join("");
+$("chef-art").innerHTML=P("pasta",56);
+
+/* games */
+$("flame").innerHTML=A("flame",22)+" ٤ أيام";
+const games=[
+ ["نطّة زادو","جري ونط، السرعة بتزيد، تحدي يومي","#DDF3E7","play","new"],
+ ["لقطة الكورة","كانت ٢٠ ثانية بس، دلوقتي فيها كومبو ومستويات","#E2ECFA","ball","grow"],
+ ["بستان التسبيح","ورد كل ٣٣، الشجرة تكبر كل ٩٩","#FFF1D6","tree","grow"],
+ ["زادو بيرتّب","لعبة دمج: حاجتين شبه بعض يبقوا حاجة أكبر، ألغاز يومية","#F1EEFB","jar","new"],
+ ["اصطاد النجوم","بالليل بس، تصطاد نجوم بتقع قبل ما تنطفي","#E9E4FA","moon","new"],
+ ["خمّن السعر وذاكرة الأسعار","بيتشالوا من ركن الألعاب زي ما طلبت","#F2F2F2","tag","off"]];
+const tg={new:"t-new",grow:"t-grow",off:"t-off"},tl={new:"جديد",grow:"بيتطوّر",off:"بيتشال"};
+$("glist").innerHTML=games.map(([t,s,b,i,k])=>`<button class="card gcard press"><span class="art" style="background:${b}">${A(i,48)}</span><b>${t}</b><span class="sm">${s}</span><span class="tag ${tg[k]}" style="justify-self:start">${tl[k]}</span></button>`).join("");
+
+/* runner game */
+(function(){
+  const c=$("run"),g=c.getContext("2d"),W=720,H=440,GY=360;
+  let st,raf=null,best=0,usedCont=false;
+  try{best=+localStorage.getItem("zad-run-best")||0}catch(e){}
+  function reset(keep){st={y:GY,vy:0,obs:[],seeds:[],t:0,sp:keep?Math.max(6,st.sp-1):6,score:keep?st.score:0,on:true,dead:false};}
+  function drawZ(x,y){g.save();g.translate(x,y);
+    const gr=g.createRadialGradient(-10,-30,4,0,-22,34);gr.addColorStop(0,"#8BF0C4");gr.addColorStop(1,"#1C9A6E");
+    g.fillStyle="rgba(0,0,0,.12)";g.beginPath();g.ellipse(0,4,24,5,0,0,7);g.fill();
+    g.fillStyle=gr;g.beginPath();g.ellipse(0,-24,30,27,0,0,7);g.fill();
+    g.fillStyle="#14181F";g.beginPath();g.ellipse(-9,-28,3.6,5,0,0,7);g.ellipse(9,-28,3.6,5,0,0,7);g.fill();
+    g.fillStyle="#45BF68";g.beginPath();g.ellipse(-6,-54,7,3,.5,0,7);g.ellipse(6,-54,7,3,-.5,0,7);g.fill();g.restore();}
+  function frame(){
+    const s=st;s.t++;
+    if(s.on&&!s.dead){
+      s.vy+=1.05;s.y=Math.min(GY,s.y+s.vy);if(s.y===GY)s.vy=0;
+      s.sp+=0.004;s.score+=0.25;
+      if(s.t%Math.max(48,Math.round(110-s.sp*5))===0)s.obs.push({x:W+20,h:30+Math.random()*34});
+      if(s.t%70===0)s.seeds.push({x:W+20,y:GY-90-Math.random()*90});
+      s.obs.forEach(o=>o.x-=s.sp);s.seeds.forEach(o=>o.x-=s.sp);
+      s.obs=s.obs.filter(o=>o.x>-40);s.seeds=s.seeds.filter(o=>o.x>-20&&!o.got);
+      for(const o of s.obs){if(o.x<150&&o.x+34>100&&s.y>GY-o.h-4){s.dead=true;over();}}
+      for(const o of s.seeds){if(Math.abs(o.x-125)<30&&Math.abs(o.y-(s.y-24))<36){o.got=true;s.score+=25;}}
+    }
+    g.clearRect(0,0,W,H);
+    g.fillStyle="#9ED8B8";g.fillRect(0,GY,W,H-GY);
+    g.fillStyle="#7CC79F";for(let i=0;i<W;i+=40){g.fillRect((i-(s.t*s.sp)%40),GY,20,6);}
+    s.obs.forEach(o=>{g.fillStyle="#C68216";g.fillRect(o.x,GY-o.h,34,o.h);g.fillStyle="#E6A63A";g.fillRect(o.x+4,GY-o.h+4,26,6);});
+    s.seeds.forEach(o=>{g.fillStyle="#F5B93A";g.beginPath();g.ellipse(o.x,o.y,9,12,.4,0,7);g.fill();});
+    drawZ(125,s.y);
+    g.fillStyle="#064E3B";g.font="900 30px Cairo, sans-serif";g.textAlign="right";g.fillText(fmt(s.score),W-24,48);
+    g.font="700 20px Cairo, sans-serif";g.fillText("أحسن: "+fmt(best),W-24,78);
+    if(!s.on){g.textAlign="center";g.font="900 34px Cairo, sans-serif";g.fillText("دوس عشان تبدأ",W/2,H/2-20);}
+    raf=requestAnimationFrame(frame);
+  }
+  function over(){
+    best=Math.max(best,Math.round(st.score));try{localStorage.setItem("zad-run-best",best)}catch(e){}
+    $("gscore").textContent="النتيجة "+fmt(st.score)+" · +"+fmt(Math.floor(st.score/100))+" بذور";
+    $("gbest").textContent=st.score>=300?"تحدي النهارده خلص!":"فاضلك "+fmt(300-st.score)+" نقطة على تحدي النهارده";
+    $("cont").hidden=usedCont;$("gover").classList.add("on");
+  }
+  function tap(){if(!st.on){st.on=true;return;}if(st.dead)return;if(st.y>=GY-1)st.vy=-19;}
+  c.addEventListener("pointerdown",tap);
+  c.addEventListener("keydown",(e)=>{if(e.key===" "||e.key==="Enter"){e.preventDefault();tap();}});c.tabIndex=0;
+  $("again").onclick=()=>{usedCont=false;reset(false);st.on=true;$("gover").classList.remove("on");};
+  $("cont").onclick=()=>{usedCont=true;$("gover").classList.remove("on");showFull("إعلان مكافأة · بعده بتكمّل من نفس النتيجة",()=>{reset(true);st.on=true;});};
+  reset(false);st.on=false;
+  window.__run={start(){if(!raf)frame();},stop(){if(raf){cancelAnimationFrame(raf);raf=null;}}};
+})();
+
+/* profile */
+$("pz").innerHTML=zado({mood:"happy",hat:"crown"});
+$("ach").innerHTML=[["receipt","أول فاتورة"],["flame","٧ أيام ورا بعض"],["tree","أول شجرة"],["coin","وفّرت ١٠٠٠"],["play","٣٠٠ في نطّة زادو"]].map(([i,t],n)=>`<div class="card" style="width:104px;padding:10px;text-align:center;flex:none;opacity:${n>2?.45:1}">${A(i,40)}<div style="font-size:12px;font-weight:800">${t}</div></div>`).join("");
+const pg=[["أنا وزاد",[["brain","زاد عارف عني إيه","الذاكرة"],["folder","سجل تعديلات زاد","كل اللي اتسجّل أو اتعدّل"],["bell","تنبيهات المساعد الذكي",""],["star","هدف حياة جديد","توفير أو عادة"]]],
+ ["الحساب والعيلة",[["person","تعديل الملف الشخصي","الاسم أو اللقب"],["family","إدارة العائلة","الأعضاء والصلاحيات"]]],
+ ["الفلوس",[["chart","الميزانية وطرق الدفع",""],["download","استيراد كشف حساب","CSV من البنك"]]],
+ ["رفيق زاد والاشتراك",[["sprout","رفيق زاد","الدولاب والبذور"],["crown","بريميوم","من غير إعلانات"],["chat","تيليجرام",""]]]];
+$("pgroups").innerHTML=pg.map(([t,it])=>`<div class="gt">${t}</div>`+it.map(([i,a,b])=>`<div class="item"><span class="ic" style="background:var(--mint)">${A(i,24)}</span><div class="tx"><b>${a}</b>${b?`<span>${b}</span>`:""}</div></div>`).join("")).join("");
+
+/* settings */
+const sg=[["الفلوس",[["coin","السقف الشهري","٨٬٠٠٠ ج",0],["calendar","يوم الراتب","يوم ٢٥",0],["bell","رسايل البنك","قراية الإشعارات",1]]],
+ ["رفيق زاد",[["sprout","زادو بينادي عليك","مرتين في اليوم بالكتير",1],["pot","نمط الأكل","يتعلّم من اللي بتطبخه",1]]],
+ ["الأصوات واللغة",[["mic","أصوات الواجهة","",1],["chat","اللغة","العربي",0],["pin","البلد والعملة","مصر · جنيه",0]]],
+ ["الإعلانات والخصوصية",[["noads","الإعلانات","مخصّصة ليك؟ تقدر تقفلها",1],["shield","موافقة الشروط","٢٫٢",0]]],
+ ["الحساب",[["person","تسجيل الخروج","",0],["trash","مسح الحساب","",0]]]];
+$("sgroups").innerHTML=sg.map(([t,it])=>`<div class="card group"><div class="gt">${t}</div>`+it.map(([i,a,b,s])=>`<div class="item"><span class="ic" style="background:var(--c2)">${A(i,22)}</span><div class="tx"><b>${a}</b>${b?`<span>${b}</span>`:""}</div>${s?`<span class="sw"></span>`:""}</div>`).join("")+`</div>`).join("");
+
+/* ads demo */
+let kind="fast";
+$("kind").onclick=(e)=>{const b=e.target.closest("button");if(!b)return;kind=b.dataset.k;[...$("kind").children].forEach(x=>x.classList.toggle("on",x===b));};
+const ans={fast:"صرفت على القهوة ٤٢٠ ج الشهر ده، أقل من الشهر اللي فات بـ٦٠.",slow:"أحسن وقت تشتري فيه الزيت أول الشهر، العروض بتنزل يوم ١ و١٥.",long:"الفاتورة اتقرت: ١٤ صنف، ٨ راحوا المخزن، ٢ للصيدلية. الإجمالي ٦٨٠ ج.",fail:"آسف اتأخرت. صرفك على المطاعم زاد ٢٠٪ عن متوسطك."};
+let busy=false;
+$("ask").onclick=()=>{
+  if(busy)return;busy=true;const conv=$("conv");
+  conv.innerHTML=`<div class="chatq">${{fast:"صرفت كام على القهوة؟",slow:"إمتى أشتري الزيت؟",long:"اقرا الفاتورة دي",fail:"حلّل مصاريف المطاعم"}[kind]}</div><div class="wait" id="w"><span class="dots"><i></i><i></i><i></i></span><span class="sm" id="wt">زاد بيفكر…</span></div>`;
+  const done=()=>{const w=$("w");if(w)w.remove();conv.insertAdjacentHTML("beforeend",`<div class="answer">${ans[kind]}</div>${kind==="fast"?"":`<div class="inline-ad"><span class="ph"></span><div><span class="badge-ad">إعلان</span><div class="sm">مدمج تحت الإجابة</div></div></div>`}`);busy=false;};
+  const nat=()=>{const w=$("w");if(w&&!w.querySelector(".inline-ad"))w.insertAdjacentHTML("beforeend",`<div class="inline-ad"><span class="ph"></span><div><span class="badge-ad">إعلان</span><div class="sm">إعلان أصلي جوه كارت الانتظار</div></div></div>`);};
+  if(kind==="fast")setTimeout(done,900);
+  if(kind==="slow"){setTimeout(nat,1500);setTimeout(done,4200);}
+  if(kind==="long"){setTimeout(nat,1200);setTimeout(()=>showFull("الطلب طويل وفات ٤ دقايق على آخر إعلان، فبيظهر واحد كامل",done),2600);}
+  if(kind==="fail"){setTimeout(nat,1400);setTimeout(()=>{$("wt").textContent="الموديل الأول اتأخر، بجرّب التاني…";},3000);setTimeout(done,5600);}
+};
+function showFull(note,after){$("fullnote").textContent=note;$("full").classList.add("on");$("closefull").onclick=()=>{$("full").classList.remove("on");after&&after();};}
+
+const units=[
+ ["k-nat","أصلي في كارت الانتظار","أي طلب ذكاء بياخد أكتر من ثانية ونص: الشات، الصوت، الصيدلية، الشيف، الفاتورة، الكاميرا. موجود (ZadAiWaitAd)، ولو الطلب بيعيد بيفضل ظاهر."],
+ ["k-in","مدمج تحت الإجابة","تحت إجابات الشات والصوت والدعم والعقل والوصفة، وبعد ملء القايمة وقراءة الكشف. موجود. اقتراح: مايظهرش تحت الإجابة السريعة."],
+ ["k-nat","أصلي جوه القوايم","الإشعارات والعروض والوصفات: واحد كل كام عنصر. موجود. اقتراح: نزوّد سجل المصاريف والمخزن."],
+ ["k-full","شاشة كاملة في وقفة طبيعية","بعد حفظ مصروف، بعد حفظ فاتورة، بعد ما لعبة تخلص، وطلب الذكاء الطويل. موجود بحد: ٤ دقايق بين كل واحد، ٤ في الساعة، مفيش في أول دقيقتين، ولو العميل قفل التطبيق بعده الفاصل بيتضاعف لحد ٣٢ دقيقة."],
+ ["k-full","بعد قفل أي شاشة","موجود دلوقتي. اقتراحي: يتشال. ده اللي بيحس بيه العميل إزعاج، وAdMob بيمنع إعلان بعد كل حركة."],
+ ["k-open","فتح التطبيق","لما يرجع بعد ٤ ساعات غياب. موجود ويفضل."],
+ ["k-rw","مكافأة","زرار البذور (حد ١٠ في اليوم من السيرفر)، «كمّل من مكانك» و«ضاعف» في الألعاب، و«زاد يفكر أعمق» للتحليل الطويل. أكتر إعلان بيجيب فلوس والعميل هو اللي اختاره."],
+ ["k-no","مفيش إعلان خالص","وضع الأطفال، التسبيحة، تأكيد الجرعة، استغاثة العيلة، الدخول والتسجيل، الدفع، وبريميوم."]];
+$("units").innerHTML=units.map(([k,t,s])=>`<div class="adrow"><span class="adk ${k}">${t}</span><span class="sm">${s}</span></div>`).join("");
+
+/* merge map */
+const rows=[
+ ["الرئيسية","t-keep","موجود ويفضل","بترتيبها الحالي (قرارك ١٥/١١) + الحركة والتسبيحة وأزرار المكافأة (PR #600)."],
+ ["زادو فوق البار","t-keep","موجود ويفضل","CompanionFloatingPet في الشِل، على كل التابات. بيتكلم من العوالم الجديدة: الزيت خلص، الجرعة جت."],
+ ["شريط أمازون","t-grow","يتطوّر","يفضل في الرئيسية، ويتضاف للقايمة والشيف والصيانة، مع سطر العمولة."],
+ ["الانترو والدخول","t-keep","خلص","#599 اتدمج، #601 مفتوح."],
+ ["الصيدلية","t-grow","يتطوّر","الشكل البنفسجي وشريط الحبوب + قسم لكل فرد ورب الأسرة يدير."],
+ ["عقل زاد","t-grow","يتطوّر","الصفحة الغامقة وخريطة المعرفة في صفحة واحدة بفلاتر."],
+ ["الشيف","t-grow","يتطوّر","المخزن ⇠ الوصفة ⇠ الناقص ⇠ أمازون/العروض ⇠ القايمة."],
+ ["الألعاب","t-new","جديد","نطّة زادو، الدمج، النجوم + الكورة تتطوّر. خمّن السعر وذاكرة الأسعار يتشالوا."],
+ ["البستان","t-grow","يتطوّر","التسبيحة تبقى لعبة من غير إعلانات."],
+ ["حسابي","t-grow","يتطوّر","نفس البنود في ٤ مجموعات + المستوى والإنجازات (محتاجة كاتب على السيرفر)."],
+ ["الإعدادات","t-grow","يتطوّر","نفس البنود في ٥ مجموعات + مجموعة الإعلانات والخصوصية."],
+ ["أماكني، الاشتراكات، بريميوم","t-grow","يتطوّر","زي المعاينة اللي فاتت، على نفس الشاشات الموجودة."],
+ ["إعلان قفل الشاشة","t-off","بيتشال","مستني موافقتك."]];
+document.querySelector("#maptbl tbody").innerHTML=rows.map(([p,c,t,s])=>`<tr><td><b>${p}</b></td><td><span class="tag ${c}">${t}</span></td><td>${s}</td></tr>`).join("");
+
+/* notes per screen */
+const N={
+home:`<h2>الرئيسية + زادو فوق البار</h2>
+<div class="row"><span class="tag t-keep">يفضل</span><p>الرئيسية الحالية بنفس ترتيبها، زي ما قلت يوم ١٥/١١. زادو بيفضل واقف فوق البار في كل التابات، وده موجود في الكود (<b>CompanionFloatingPet</b> في الشِل).</p></div>
+<div class="row"><span class="tag t-grow">يتطوّر</span><p>زادو بقى بيتكلم من العوالم: «الزيت خلص» يفتح كارت أمازون، و«الجرعة جت» يفتح الصيدلية. الفقاعة بتظهر مرة واحدة لكل حاجة.</p></div>
+<div class="row"><span class="tag t-keep">يفضل</span><p>شريط أمازون والتسبيحة والإعلان المدمج وزرار المكافأة، وكلهم في PR #600.</p></div>`,
+amazon:`<h2>أمازون بالعمولة</h2>
+<p>التاجات موجودة في الكود: <b>zad04-21</b> على amazon.eg للمصريين و<b>zad0b-21</b> على amazon.sa للسعودية والباقي. اللي ناقص إن أمازون مش ظاهر غير في الرئيسية.</p>
+<ul><li>نوصله لكل مكان فيه «ناقص»: القايمة والشيف والصيانة وإشعار «خلص» (واحد في ميعاد الصحيان).</li><li>الكارت بيعرض الحاجة نفسها مش منتج معيّن، والضغطة بتفتح بحث فيه التاج. ده بيجيب عمولة على أي حاجة يشتريها في ٢٤ ساعة.</li><li>مفيش أدوية خالص. أمازون بيمنعها، والعميل ممكن يتأذي.</li><li>سطر «زاد ممكن ياخد عمولة» لازم يظهر. ده شرط في الاتفاقية.</li></ul>`,
+games:`<h2>الألعاب: من غير أسعار، فيها تحدي وإدمان</h2>
+<p>الألعاب الحالية: الكورة (٢٠ ثانية)، خمّن السعر، وذاكرة الأسعار. ومفيش ولا واحدة فيهم بتدّي بذور أو خبرة.</p>
+<ul><li><b>بيتشال:</b> خمّن السعر وذاكرة الأسعار، زي ما طلبت.</li><li><b>جديد:</b> نطّة زادو (جرّبها في الموبايل)، زادو بيرتّب (دمج وألغاز يومية)، واصطاد النجوم بالليل.</li><li><b>اللي بيرجّع العميل:</b> تحدي يومي، سلسلة أيام بنار، صندوق أسبوعي، دوري العيلة، وأحسن نتيجة.</li><li><b>الإعلان:</b> «كمّل من مكانك» مرة في الجولة و«ضاعف البذور»، وده إعلان مكافأة هو اللي بيختاره. وممكن شاشة كاملة بعد الجولة لو الحد بيسمح.</li><li><b>محتاج سيرفر:</b> البذور تتسجّل في الدفتر بحد في اليوم، عشان محدش يغش.</li></ul>`,
+profile:`<h2>حسابي</h2>
+<p>كل البنود الموجودة في <b>profile_screen.dart</b> فاضلة زي ما هي، بس متقسّمة ٤ مجموعات بدل قايمة طويلة. فوقهم زادو بالتاج والمستوى والسلسلة.</p>
+<p>الإنجازات النهارده فاضية عند الكل، لأن جدول <b>user_achievements</b> محدش بيكتب فيه. محتاجين كاتب على السيرفر قبل ما الشريط ده يبان.</p>`,
+settings:`<h2>الإعدادات</h2>
+<p>نفس البنود الموجودة: السقف ويوم الراتب، نداءات زادو ونمط الأكل، الأصوات، اللغة، رسايل البنك، والحساب. متجمّعة في ٥ مجموعات.</p>
+<p><b>الجديد:</b> «الإعلانات والخصوصية». فيها الإعلانات المخصّصة (موافقة جوجل UMP) وحالة موافقة الشروط ٢٫٢.</p>`,
+ads:`<h2>أكتر إعلانات من غير إزعاج</h2>
+<p>القاعدة: الإعلان يظهر في وقت العميل مستني فيه أصلاً، أو بعد ما يخلّص حاجة. عمره ما يقطعه وهو بيعمل حاجة.</p>
+<ul><li><b>طلب سريع:</b> مفيش إعلان.</li><li><b>بطيء:</b> إعلان أصلي جوه كارت الانتظار، وبعد الإجابة مدمج تحتها.</li><li><b>طويل</b> (فاتورة، تحليل، وصفة): الأصلي، وكمان شاشة كاملة لو عدّى ٤ دقايق على آخر واحد.</li><li><b>بيلعك ويعيد:</b> الأصلي يفضل ظاهر وزاد يقول «بجرّب تاني». مفيش شاشة كاملة فوق الغلط، عشان ده اللي بيخلّي الناس تمسح التطبيق.</li></ul>
+<p>اللي محتاج قرارك: <b>نشيل إعلان قفل الشاشة؟</b> الحد الحالي (٤ دقايق، ٤ في الساعة) حلو ويفضل.</p>`,
+map:`<h2>بيندمج ولا بيلغي؟</h2>
+<p><b>بيندمج.</b> المعاينات رسم بس، ومفيش ولا سطر Flutter اتشال. كل صفحة بتتبني فوق الشاشة الموجودة في PR لوحدها، وبياناتها وميزاتها زي ما هي.</p>
+<p>اللي هيتشال تلات حاجات بس: لعبتين الأسعار، إعلان قفل الشاشة (لو وافقت)، والإيموجي (هيتحط مكانها رسومات).</p>`};
+
+/* switching */
+function show(s){
+  document.querySelectorAll(".screen").forEach(x=>x.classList.toggle("on",x.id==="s-"+s));
+  document.querySelectorAll("#picker button").forEach(b=>b.classList.toggle("on",b.dataset.s===s));
+  $("notes").innerHTML=N[s];$("scroll").scrollTop=0;
+  const home=s==="home";$("petbub").hidden=!home;
+  $("pet").hidden=s==="games"||s==="ads";
+  if(s==="games")window.__run.start();else window.__run.stop();
+  try{localStorage.setItem("zad-merged-tab",s)}catch(e){}
+}
+$("picker").onclick=(e)=>{const b=e.target.closest("button");if(b)show(b.dataset.s);};
+let first="home";try{first=localStorage.getItem("zad-merged-tab")||"home"}catch(e){}
+show(N[first]?first:"home");
+})();
+</script>

@@ -16,7 +16,11 @@
 // through that table, never by anything the client claims about itself.
 import { decideLifeEvent } from "../_shared/lifeEventDecide.ts";
 import { secretMatches } from "../_shared/cronSecret.ts";
+import { type DealLogRow, decideSearchAlert, type RestRow } from "../_shared/searchHealthAlert.ts";
+import { decideFlyerAlert, type FlyerReadRow } from "../_shared/flyerHealthAlert.ts";
+import { decideOpsAlert, type CronJobRow } from "../_shared/opsAlert.ts";
 import { recentOutbound } from "../_shared/outbound.ts";
+import { type ForecastInput, lastAskedDaysAgo, weeklyGateClosed, weeklyPick } from "./weeklyCheckin.ts";
 import { proactiveTurn, recordConversation, trimProactive } from "../_shared/conversationLog.ts";
 import { nextRenewal } from "../_shared/nextRenewal.ts";
 import { Bot, type Context, InlineKeyboard, webhookCallback } from "npm:grammy@1";
@@ -422,7 +426,7 @@ async function deliverVoiceAlert(
  * already-pending prompt are excluded (the unique index on telegram_checkin_prompts is the
  * hard guarantee; this filter just avoids the wasted query/round-trip).
  */
-async function findCheckInCandidates(sb: SupabaseClient, userId: string): Promise<Array<{ item_name: string; quantity: number; unit: string | null; why: CheckinWhy }>> {
+async function findCheckInCandidates(sb: SupabaseClient, userId: string): Promise<Array<{ item_name: string; quantity: number; unit: string | null; why: CheckinWhy; essential: boolean }>> {
   const [{ data: inv }, { data: cons }, { data: pending }, { data: occasional, error: occErr }, { data: seen }, { data: priors, error: priorErr }] = await Promise.all([
     sb.from("zad_inventory").select("item_name,quantity,category,unit,created_at,restock_mode,restock_cycle_days,opened_at,opened_life_days").eq("user_id", userId),
     sb.from("zad_consumption").select("item_name,avg_daily_qty,rate_known").eq("user_id", userId),
@@ -484,12 +488,12 @@ async function findCheckInCandidates(sb: SupabaseClient, userId: string): Promis
       const why: CheckinWhy = basis === "opened"
         ? { kind: "opened", days: item.opened_at ? (Date.now() - Date.parse(item.opened_at)) / 86_400_000 : 0 }
         : { kind: basis === "known" || basis === "approximate" ? "rate" : basis };
-      return { item, priority, score: priority == null ? 0 : checkInScore(priority, basis, essential), why };
+      return { item, priority, score: priority == null ? 0 : checkInScore(priority, basis, essential), why, essential };
     })
-    .filter((x): x is { item: typeof x.item; priority: number; score: number; why: CheckinWhy } => x.priority != null && x.priority >= 1)
+    .filter((x): x is { item: typeof x.item; priority: number; score: number; why: CheckinWhy; essential: boolean } => x.priority != null && x.priority >= 1)
     // سؤال واحد بس في الليلة (خطة المخزن ٤): للي إجابته بتفرق أكتر، مش للأقرب يخلص وبس.
     .sort((a, b) => b.score - a.score)
-    .map(({ item, why }) => ({ item_name: item.item_name, quantity: item.quantity, unit: item.unit, why }));
+    .map(({ item, why, essential }) => ({ item_name: item.item_name, quantity: item.quantity, unit: item.unit, why, essential }));
 }
 
 /** The daily cron entry point. Capped at 2 prompts/user/day — this is a check-in nudge,
@@ -586,7 +590,16 @@ async function nightCheckin(
     Date.now(),
   );
   if (plan === "rest") return null;
-  const candidates = (await findCheckInCandidates(sb, userId)).slice(0, budget);
+  // م٣.٣: سؤال واحد في الأسبوع بالكتير، ولحد ٣ أصناف متجمعين بقيمة المعلومة (weeklyCheckin.ts). الأسبوع من آخر سؤال
+  // بأي حالة. فشل قراية التنبؤ = مفيش سؤال الليلة دي (مش رجوع لسؤال كل ليلة).
+  const lastAsked = lastAskedDaysAgo(history[0]?.sent_at, Date.now());
+  if (weeklyGateClosed(lastAsked)) return null;
+  const { data: inputs, error: inputsErr } = await sb.rpc("zad_pantry_forecast_inputs", { p_user: userId });
+  if (inputsErr) {
+    console.error("checkin: zad_pantry_forecast_inputs failed:", inputsErr.message);
+    return null;
+  }
+  const candidates = weeklyPick(await findCheckInCandidates(sb, userId), Array.isArray(inputs) ? inputs as ForecastInput[] : [], lastAsked, Date.now());
   // فاضية = الحراس عدّوا ومفيش صنف عليه الدور: الليلة دي ممكن تبقى لسؤال ملف الأكل (askFoodProfile).
   return { candidates, plan };
 }
@@ -3498,6 +3511,125 @@ Deno.serve(async (req: Request) => {
     }
   }
 
+  // م٥.٧: صحة البحث على الويب. مزودين واقفين أو ٩٠٪ من البحث بصفر نتيجة ⇒ تنبيه لشات الأدمن بس، مرة كل ١٢ ساعة.
+  // الحالة في zad_admin_alert_log (kind='search_health').
+  if (req.method === "POST" && new URL(req.url).searchParams.get("job") === "search_health") {
+    if (!(await secretMatches(req.headers.get("X-Realtime-Push-Secret"), "ZAD_REALTIME_PUSH_SECRET"))) {
+      return new Response("unauthorized", { status: 401 });
+    }
+    try {
+      const sb = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+      const now = new Date();
+      const [rest, log, last] = await Promise.all([
+        sb.from("zad_search_source_rest").select("source,until,reason"),
+        sb.from("zad_deal_search_log").select("hits,searched_at").gte("searched_at", new Date(now.getTime() - 24 * 3600_000).toISOString()).limit(2000),
+        sb.from("zad_admin_alert_log").select("last_sent").eq("kind", "search_health").maybeSingle(),
+      ]);
+      if (rest.error || log.error || last.error) {
+        console.error("[search_health] read failed:", rest.error?.message ?? log.error?.message ?? last.error?.message);
+        return new Response(JSON.stringify({ ok: false, reason: "read_failed" }), { status: 500 });
+      }
+      const lastSent = (last.data as { last_sent?: string } | null)?.last_sent;
+      const d = decideSearchAlert({
+        restRows: (rest.data ?? []) as RestRow[], dealLog: (log.data ?? []) as DealLogRow[], now,
+        lastAlertAt: lastSent ? new Date(lastSent) : null,
+      });
+      if (!d.alert) return new Response(JSON.stringify({ ok: true, alert: false, reason: d.reason }), { headers: { "Content-Type": "application/json" } });
+      const chatId = adminChatId(Deno.env.get("ZAD_ADMIN_CHAT_ID"));
+      if (chatId === null) {
+        console.warn("[search_health] ZAD_ADMIN_CHAT_ID not set — not sent");
+        return new Response(JSON.stringify({ ok: true, alert: true, delivered: false, reason: "no admin chat" }), { headers: { "Content-Type": "application/json" } });
+      }
+      if (await resolveUserId(sb, chatId)) {
+        console.error("[search_health] ZAD_ADMIN_CHAT_ID is a customer chat — refused");
+        return new Response(JSON.stringify({ ok: false, delivered: false, reason: "admin chat is a customer chat" }), { status: 409 });
+      }
+      await sendTelegramMessage(chatId, `🔎 صحة البحث\n\n${d.message}`);
+      await sb.from("zad_admin_alert_log").upsert({ kind: "search_health", last_sent: now.toISOString() });
+      return new Response(JSON.stringify({ ok: true, alert: true, delivered: true, reason: d.reason }), { headers: { "Content-Type": "application/json" } });
+    } catch (e) {
+      console.error("search_health failed:", e);
+      return new Response(JSON.stringify({ ok: false, error: String(e) }), { status: 500 });
+    }
+  }
+
+  // قراية النشرات الأسبوعية فشلت أو رجّعت صفر عروض ⇒ تنبيه لشات الأدمن بس، مرة كل ٢٤ ساعة (flyerHealthAlert.ts).
+  // الحالة في zad_admin_alert_log (kind='flyer_health').
+  if (req.method === "POST" && new URL(req.url).searchParams.get("job") === "flyer_health") {
+    if (!(await secretMatches(req.headers.get("X-Realtime-Push-Secret"), "ZAD_REALTIME_PUSH_SECRET"))) {
+      return new Response("unauthorized", { status: 401 });
+    }
+    try {
+      const sb = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+      const now = new Date();
+      const [reads, last] = await Promise.all([
+        sb.from("zad_flyer_reads").select("store,ok,deals,reason,read_at").gte("read_at", new Date(now.getTime() - 48 * 3600_000).toISOString()).limit(500),
+        sb.from("zad_admin_alert_log").select("last_sent").eq("kind", "flyer_health").maybeSingle(),
+      ]);
+      if (reads.error || last.error) {
+        console.error("[flyer_health] read failed:", reads.error?.message ?? last.error?.message);
+        return new Response(JSON.stringify({ ok: false, reason: "read_failed" }), { status: 500 });
+      }
+      const lastSent = (last.data as { last_sent?: string } | null)?.last_sent;
+      const d = decideFlyerAlert({ reads: (reads.data ?? []) as FlyerReadRow[], now, lastAlertAt: lastSent ? new Date(lastSent) : null });
+      if (!d.alert) return new Response(JSON.stringify({ ok: true, alert: false, reason: d.reason }), { headers: { "Content-Type": "application/json" } });
+      const chatId = adminChatId(Deno.env.get("ZAD_ADMIN_CHAT_ID"));
+      if (chatId === null) {
+        console.warn("[flyer_health] ZAD_ADMIN_CHAT_ID not set — not sent");
+        return new Response(JSON.stringify({ ok: true, alert: true, delivered: false, reason: "no admin chat" }), { headers: { "Content-Type": "application/json" } });
+      }
+      if (await resolveUserId(sb, chatId)) {
+        console.error("[flyer_health] ZAD_ADMIN_CHAT_ID is a customer chat — refused");
+        return new Response(JSON.stringify({ ok: false, delivered: false, reason: "admin chat is a customer chat" }), { status: 409 });
+      }
+      await sendTelegramMessage(chatId, `📰 صحة النشرات\n\n${d.message}`);
+      await sb.from("zad_admin_alert_log").upsert({ kind: "flyer_health", last_sent: now.toISOString() });
+      return new Response(JSON.stringify({ ok: true, alert: true, delivered: true, reason: d.reason }), { headers: { "Content-Type": "application/json" } });
+    } catch (e) {
+      console.error("flyer_health failed:", e);
+      return new Response(JSON.stringify({ ok: false, error: String(e) }), { status: 500 });
+    }
+  }
+
+  // م٥.٧: أعطال الكرونات (فشل أو تأخير)، ومهام الطابور الفاشلة ومفاتيح الوقف لما تتوصل (_shared/opsAlert.ts) ⇒ تنبيه لشات الأدمن بس، مرة كل ٦ ساعات.
+  // الحالة في zad_admin_alert_log (kind='ops_alert').
+  if (req.method === "POST" && new URL(req.url).searchParams.get("job") === "ops_alert") {
+    if (!(await secretMatches(req.headers.get("X-Realtime-Push-Secret"), "ZAD_REALTIME_PUSH_SECRET"))) {
+      return new Response("unauthorized", { status: 401 });
+    }
+    try {
+      const sb = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+      const now = new Date();
+      const [health, last] = await Promise.all([
+        sb.rpc("zad_diag_cron_health"),
+        sb.from("zad_admin_alert_log").select("last_sent").eq("kind", "ops_alert").maybeSingle(),
+      ]);
+      if (health.error || last.error) {
+        console.error("[ops_alert] read failed:", health.error?.message ?? last.error?.message);
+        return new Response(JSON.stringify({ ok: false, reason: "read_failed" }), { status: 500 });
+      }
+      const lastSent = (last.data as { last_sent?: string } | null)?.last_sent;
+      const crons = ((health.data as { jobs?: CronJobRow[] } | null)?.jobs ?? []);
+      const d = decideOpsAlert({ crons, now, lastAlertAt: lastSent ? new Date(lastSent) : null });
+      if (!d.alert) return new Response(JSON.stringify({ ok: true, alert: false, reason: d.reason }), { headers: { "Content-Type": "application/json" } });
+      const chatId = adminChatId(Deno.env.get("ZAD_ADMIN_CHAT_ID"));
+      if (chatId === null) {
+        console.warn("[ops_alert] ZAD_ADMIN_CHAT_ID not set — not sent");
+        return new Response(JSON.stringify({ ok: true, alert: true, delivered: false, reason: "no admin chat" }), { headers: { "Content-Type": "application/json" } });
+      }
+      if (await resolveUserId(sb, chatId)) {
+        console.error("[ops_alert] ZAD_ADMIN_CHAT_ID is a customer chat — refused");
+        return new Response(JSON.stringify({ ok: false, delivered: false, reason: "admin chat is a customer chat" }), { status: 409 });
+      }
+      await sendTelegramMessage(chatId, `🚨 أعطال\n\n${d.message}`);
+      await sb.from("zad_admin_alert_log").upsert({ kind: "ops_alert", last_sent: now.toISOString() });
+      return new Response(JSON.stringify({ ok: true, alert: true, delivered: true, reason: d.reason }), { headers: { "Content-Type": "application/json" } });
+    } catch (e) {
+      console.error("ops_alert failed:", e);
+      return new Response(JSON.stringify({ ok: false, error: String(e) }), { status: 500 });
+    }
+  }
+
   if (req.method === "POST" && new URL(req.url).searchParams.get("job") === "realtime_push") {
     if (!(await secretMatches(req.headers.get("X-Realtime-Push-Secret"), "ZAD_REALTIME_PUSH_SECRET"))) {
       return new Response("unauthorized", { status: 401 });
@@ -3788,6 +3920,12 @@ Deno.serve(async (req: Request) => {
       const alreadySentToday = await checkinsSentToday(sb, user_id);
       if (alreadySentToday >= MAX_CHECKINS_PER_USER_PER_DAY) {
         return new Response(JSON.stringify({ ok: true, delivered: false, reason: "daily budget spent" }), { headers: { "Content-Type": "application/json" } });
+      }
+      // م٣.٣: نفس بوابة الأسبوع بتاعة سؤال الليل. فشل القراية = مايسألش.
+      const { data: lastPrompt, error: lastErr } = await sb.from("telegram_checkin_prompts").select("sent_at")
+        .eq("user_id", user_id).order("sent_at", { ascending: false }).limit(1).maybeSingle();
+      if (lastErr || weeklyGateClosed(lastAskedDaysAgo((lastPrompt as { sent_at?: string | null } | null)?.sent_at, Date.now()))) {
+        return new Response(JSON.stringify({ ok: true, delivered: false, reason: "weekly question already asked" }), { headers: { "Content-Type": "application/json" } });
       }
       const { data: existingPending } = await sb.from("telegram_checkin_prompts")
         .select("id").eq("user_id", user_id).eq("item_name", item_name).eq("status", "pending").maybeSingle();

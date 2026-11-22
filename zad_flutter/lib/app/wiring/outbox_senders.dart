@@ -40,6 +40,8 @@ Future<void> sendOutboxEntry(Ref ref, OutboxEntry entry) async =>
         await ref.read(settingsRepositoryProvider).sendQueued(entry),
       OutboxKind.upsertInventory =>
         await ref.read(inventoryRepositoryProvider).sendQueued(entry),
+      OutboxKind.commitInventoryIntent =>
+        await ref.read(inventoryRepositoryProvider).sendQueuedIntent(entry),
       OutboxKind.deleteInventory =>
         await ref.read(inventoryRepositoryProvider).sendQueuedDelete(entry),
       OutboxKind.upsertShoppingItem =>

@@ -9,7 +9,9 @@ import android.content.Intent
 import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Build
+import android.os.PowerManager
 import android.provider.OpenableColumns
+import android.provider.Settings
 import android.telephony.TelephonyManager
 import android.util.Log
 import java.util.Locale
@@ -147,6 +149,26 @@ class MainActivity : FlutterActivity() {
                 }
                 result.success(moveTaskToBack(true))
             }
+        // Battery optimisation without REQUEST_IGNORE_BATTERY_OPTIMIZATIONS
+        // (lib/shared/bank/data/battery_settings.dart): Play rejects that
+        // permission, so Zad reads the state and opens the system's list,
+        // where the customer switches Zad off themselves. Neither needs it.
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "zad/battery")
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "unrestricted" -> result.success(
+                        (getSystemService(Context.POWER_SERVICE) as? PowerManager)
+                            ?.isIgnoringBatteryOptimizations(packageName),
+                    )
+                    "openSettings" -> result.success(
+                        openFirst(
+                            Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS),
+                            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName")),
+                        ),
+                    )
+                    else -> result.notImplemented()
+                }
+            }
         // Kotlin's TravelDetector.detectCurrentCountryCode: the network's
         // country (right while roaming, unlike the SIM's), else the locale's.
         // networkCountry is the network's country alone, or null (Wi-Fi only, no
@@ -179,6 +201,21 @@ class MainActivity : FlutterActivity() {
         super.onNewIntent(intent)
         readShare(intent)
         readLink(intent)
+    }
+
+    /** Starts the first of [intents] some activity takes; false when none does. */
+    private fun openFirst(vararg intents: Intent): Boolean {
+        for (intent in intents) {
+            try {
+                startActivity(intent)
+                return true
+            } catch (e: android.content.ActivityNotFoundException) {
+                // The next one.
+            } catch (e: SecurityException) {
+                // The next one.
+            }
+        }
+        return false
     }
 
     private fun isAppLink(intent: Intent?): Boolean =

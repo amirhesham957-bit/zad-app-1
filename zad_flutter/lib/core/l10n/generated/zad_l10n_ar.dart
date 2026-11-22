@@ -214,7 +214,7 @@ class ZadL10nAr extends ZadL10n {
   String get paywallPlusTitle => 'المتقدمة (Plus)';
 
   @override
-  String get paywallPlusBadge => 'الأكثر شعبية ⭐';
+  String get paywallPlusBadge => 'الأكثر شعبية';
 
   @override
   String get paywallAllBasicPerks => 'كل مزايا الأساسية';
@@ -230,7 +230,7 @@ class ZadL10nAr extends ZadL10n {
   String get paywallFamilyTitle => 'العيلة (Family)';
 
   @override
-  String get paywallFamilyBadge => 'أكبر رصيد 👑';
+  String get paywallFamilyBadge => 'أكبر رصيد';
 
   @override
   String get paywallFamilyPerkAttempts =>
@@ -307,6 +307,14 @@ class ZadL10nAr extends ZadL10n {
   String paywallPricePerMonth(String price) {
     return '$price في الشهر';
   }
+
+  @override
+  String paywallStatePlan(String plan) {
+    return 'خطتك دلوقتي: $plan';
+  }
+
+  @override
+  String get paywallStateInvite => 'اختار الباقة اللي تناسب بيتك';
 
   @override
   String get navHome => 'الرئيسية';
@@ -816,9 +824,6 @@ class ZadL10nAr extends ZadL10n {
   String get amazonLow => 'قرب يخلص';
 
   @override
-  String get amazonShopEmoji => '🛍️ تسوق من أمازون';
-
-  @override
   String get amazonNoNeeds => 'ضيف اللي ناقصك، أو شوف عروض النهارده';
 
   @override
@@ -1086,11 +1091,11 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get chatWelcome =>
-      'أهلاً بيك! أنا زاد 🤖، مساعدك العائلي الذكي. أقدر أساعدك إزاي النهاردة؟\nاسألني عن الوصفات، أو راجع ثلاجتك، أو ضيف النواقص لقائمة التسوق!';
+      'أهلاً بيك! أنا زاد، مساعدك العائلي الذكي. أقدر أساعدك إزاي النهاردة؟\nاسألني عن الوصفات، أو راجع ثلاجتك، أو ضيف النواقص لقائمة التسوق!';
 
   @override
   String get chatBusy =>
-      'الذكاء الاصطناعي مشغول شوية دلوقتي 🙏 جرب تاني بعد لحظات.';
+      'الذكاء الاصطناعي مشغول شوية دلوقتي جرب تاني بعد لحظات.';
 
   @override
   String get chatUnexpected => 'حصل خطأ غير متوقع.';
@@ -1127,6 +1132,34 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get chatReportFailed => 'البلاغ ماوصلش — جرّب تاني';
+
+  @override
+  String get chatWorldEyebrow => 'اسأل أي حاجة';
+
+  @override
+  String get chatStateThinking => 'بيفكّر…';
+
+  @override
+  String get chatStateListening => 'بيسمعك…';
+
+  @override
+  String get chatStateSpeaking => 'بيتكلم…';
+
+  @override
+  String get chatStateEmpty => 'أنا سامعك';
+
+  @override
+  String chatStateCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count رسالة',
+      few: '$count رسايل',
+      two: 'رسالتين',
+      one: 'رسالة واحدة',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get chatThinking => 'بفكر…';
@@ -1822,6 +1855,27 @@ class ZadL10nAr extends ZadL10n {
   String get subsTitle => 'الاشتراكات والفواتير';
 
   @override
+  String get subsWorldNone => 'مفيش اشتراكات لسه';
+
+  @override
+  String subsWorldTotal(String amount) {
+    return '$amount في الشهر';
+  }
+
+  @override
+  String subsWorldNextToday(String amount, String title) {
+    return '$amount في الشهر · $title بيجدد النهارده';
+  }
+
+  @override
+  String subsWorldNext(String amount, String title, int days) {
+    return '$amount في الشهر · $title بعد $days يوم';
+  }
+
+  @override
+  String get subsEmptyHint => 'اضغط «إضافة» وزاد يحسب لك التجديد الجاي.';
+
+  @override
   String subsBnplTag(String name) {
     return 'اشتري وادفع بعدين · $name';
   }
@@ -1845,7 +1899,7 @@ class ZadL10nAr extends ZadL10n {
   }
 
   @override
-  String get subsPaidMark => 'تم الدفع ✓';
+  String get subsPaidMark => 'تم الدفع';
 
   @override
   String get subsToggleAuto => 'تفعيل/إيقاف الخصم التلقائي';
@@ -2732,6 +2786,170 @@ class ZadL10nAr extends ZadL10n {
   String get recipesTrendingGroup => 'ترند دلوقتي';
 
   @override
+  String chefWorldState(int total, int ready) {
+    String _temp0 = intl.Intl.pluralLogic(
+      total,
+      locale: localeName,
+      other: '$total وصفة',
+      few: '$total وصفات',
+      two: 'وصفتين',
+      one: 'وصفة واحدة',
+    );
+    return '$_temp0 · $ready منها مكتملة';
+  }
+
+  @override
+  String get chefStateEmpty => 'المخزن فاضي — ضيف أكلك وأنا أقترح';
+
+  @override
+  String get chefStateReady => 'جاهزة أقترحلك أكلة من مخزنك';
+
+  @override
+  String get chefStateThinking => 'بفكر في أكلة من مخزنك…';
+
+  @override
+  String get chefError => 'مقدرتش أوصل لشيف زاد. جرّب تاني بعد شوية.';
+
+  @override
+  String get chefStale => 'مخزنك اتغيّر من آخر اقتراحات — اطلب جديدة لو حابب.';
+
+  @override
+  String get chefReadyTitle => 'شيف زاد جاهزة';
+
+  @override
+  String get chefReadyBody =>
+      'دوس «وصفات من مخزني» وهتقولك تطبخ إيه من اللي عندك، واللي ناقصه حاجة بسيطة.';
+
+  @override
+  String get chefEmptyTitle => 'المخزن فاضي';
+
+  @override
+  String get chefEmptyBody =>
+      'ضيف اللي عندك في المخزن، وشيف زاد تقترح أكلات منه.';
+
+  @override
+  String get chefAskCta => 'وصفات من مخزني';
+
+  @override
+  String get chefAsking => 'شيف زاد بتفكر…';
+
+  @override
+  String get chefAskAgain => 'اقتراحات جديدة';
+
+  @override
+  String get chefGroupPantry => 'من مخزونك';
+
+  @override
+  String get chefGroupMore => 'وجبات تانية';
+
+  @override
+  String get chefComplete => 'مكتملة';
+
+  @override
+  String chefMissingCount(int count) {
+    return 'ناقصك $count';
+  }
+
+  @override
+  String chefMinutes(int count) {
+    return '$count دقيقة';
+  }
+
+  @override
+  String get chefHaveHeading => 'من عندك';
+
+  @override
+  String get chefMissingHeading => 'ناقصك';
+
+  @override
+  String get chefMethodHeading => 'الطريقة';
+
+  @override
+  String get chefStepByStep => 'الوصفة كاملة خطوة بخطوة';
+
+  @override
+  String chefAddMissing(int count) {
+    return 'ضيف الناقص لقايمة التسوق ($count)';
+  }
+
+  @override
+  String get chefAddedOne => 'ضفت صنف لقايمة التسوق.';
+
+  @override
+  String chefAddedMany(int count) {
+    return 'ضفت $count أصناف لقايمة التسوق.';
+  }
+
+  @override
+  String get chefNothingToAdd => 'الناقص كله في قايمة التسوق أو المخزن.';
+
+  @override
+  String get chefRatePrompt => 'عجبتك؟ شيف زاد بتفتكر.';
+
+  @override
+  String get chefLike => 'عجبتني';
+
+  @override
+  String get chefDislike => 'مش لذوقي';
+
+  @override
+  String get chefDetailIngredients => 'المقادير';
+
+  @override
+  String get chefDetailSteps => 'طريقة التحضير';
+
+  @override
+  String get chefDetailAddToShopping => 'إضافة الناقص للتسوق';
+
+  @override
+  String get chefDetailClose => 'إغلاق';
+
+  @override
+  String get chefDetailRetry => 'إعادة المحاولة';
+
+  @override
+  String get chefDetailLoading => 'شيف زاد يجهز لك الوصفة…';
+
+  @override
+  String get chefDetailEmpty => 'شيف زاد مارجّعش الوصفة دي — جرب تاني';
+
+  @override
+  String get chefDetailSlow => 'شيف زاد اتأخر في الرد — جرب تاني';
+
+  @override
+  String get chefDetailFailed => 'عذراً، حدث خطأ أثناء تحميل الوصفة';
+
+  @override
+  String get chefHomeTitle => 'شيف زاد (اقتراحات ذكية)';
+
+  @override
+  String get chefHomeAllDepleted =>
+      'مخزونك كله خلص — نزّل النواقص في التسوق وأنا أقترحلك أكل.';
+
+  @override
+  String get chefHomePantryEmpty =>
+      'ضيف أصناف لمخزونك عشان شيف زاد يقترح لك طبق اليوم.';
+
+  @override
+  String get chefHomeComplete => 'مكتملة من مخزونك';
+
+  @override
+  String chefHomeMinutes(int count) {
+    return '$count د';
+  }
+
+  @override
+  String chefHomeMissingList(String items) {
+    return 'ناقصك: $items';
+  }
+
+  @override
+  String get chefHomeAddMissing => 'ضيفهم لقائمة التسوق';
+
+  @override
+  String get chefHomeTapSteps => 'اضغط للخطوات';
+
+  @override
   String get homeDealsSeeAll => 'كل العروض';
 
   @override
@@ -3161,7 +3379,7 @@ class ZadL10nAr extends ZadL10n {
   String get chefFullRecipe => 'الشرح الكامل وأسرار الشيف';
 
   @override
-  String get chefSecrets => '🤫 أسرار الشيف';
+  String get chefSecrets => 'أسرار الشيف';
 
   @override
   String get chefSourceLink => 'شوف الوصفة في مصدرها';
@@ -4125,6 +4343,9 @@ class ZadL10nAr extends ZadL10n {
   String get agentToolDeleteMemory => 'نسيان ملاحظة';
 
   @override
+  String get agentToolRestoreDeleted => 'رجّع حاجة اتمسحت';
+
+  @override
   String get agentToolMarkSubscriptionPaid => 'دفع اشتراك';
 
   @override
@@ -4172,6 +4393,25 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get profileExportSubject => 'بياناتي من زاد';
+
+  @override
+  String get homeCareRenewsToday => 'بيتجدد النهارده';
+
+  @override
+  String get homeCareRenewsTomorrow => 'بيتجدد بكرة';
+
+  @override
+  String homeCareRenewsInDays(Object days) {
+    return 'بيتجدد بعد $days يوم';
+  }
+
+  @override
+  String homeCareDoseAt(Object time) {
+    return 'الجرعة $time';
+  }
+
+  @override
+  String get homeCareDoseNow => 'جرعتها دلوقتي';
 
   @override
   String get introSayPantry => 'التلاجة دي بتاعتي!';
@@ -4226,6 +4466,13 @@ class ZadL10nAr extends ZadL10n {
       'ومابنقراش كلمات سر البنك ولا أرقام الكروت ولا أكواد OTP.';
 
   @override
+  String get consentPointAiLead => 'كلامك بيتبعت لذكاء اصطناعي من شركات تانية.';
+
+  @override
+  String get consentPointAiBody =>
+      'عشان زاد يفهمك ويرد عليك، اللي بتكتبه أو بتقوله ورسايل البنك وفواتيرك بتتبعت لمزودي ذكاء اصطناعي خارجيين (زي Google و Groq) يعالجوها، وبس.';
+
+  @override
   String get consentPoint4Lead => 'الذكاء الاصطناعي بيساعد، وممكن يغلط.';
 
   @override
@@ -4266,6 +4513,3095 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get consentTermsUpdated => 'نوفمبر ٢٠٢٦';
+
+  @override
+  String get worldLabelBrain => 'عقل زاد';
+
+  @override
+  String get worldLabelChef => 'شيف زاد';
+
+  @override
+  String get worldLabelInv => 'المخزون';
+
+  @override
+  String get worldLabelShop => 'التسوق';
+
+  @override
+  String get worldLabelTx => 'المعاملات';
+
+  @override
+  String get worldLabelBudget => 'الميزانية';
+
+  @override
+  String get worldLabelStmt => 'كشف الحساب';
+
+  @override
+  String get worldLabelSubs => 'الاشتراكات';
+
+  @override
+  String get worldLabelPh => 'الصيدلية';
+
+  @override
+  String get worldLabelAppt => 'المواعيد';
+
+  @override
+  String get worldLabelMaint => 'الصيانة';
+
+  @override
+  String get worldLabelDocs => 'المستندات';
+
+  @override
+  String get worldLabelPlaces => 'أماكني';
+
+  @override
+  String get worldLabelComp => 'رفيق زاد';
+
+  @override
+  String get worldLabelChat => 'الشات';
+
+  @override
+  String get worldLabelNotif => 'الإشعارات';
+
+  @override
+  String get worldLabelProfile => 'حسابي';
+
+  @override
+  String get worldLabelPrem => 'بريميوم';
+
+  @override
+  String get worldLabelTas => 'بستان التسبيح';
+
+  @override
+  String get worldLabelGames => 'ألعاب زادو';
+
+  @override
+  String get worldLabelPrices => 'أسعار النهارده';
+
+  @override
+  String get worldLabelOffers => 'عروضي';
+
+  @override
+  String get worldLabelAch => 'إنجازاتي';
+
+  @override
+  String get worldLinksTitle => 'متصلة بـ';
+
+  @override
+  String get worldLinksHint => 'اللي بيحصل هنا بيأثر في:';
+
+  @override
+  String get worldBack => 'رجوع';
+
+  @override
+  String pantryWorldEyebrow(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count صنف',
+      few: '$count أصناف',
+      two: 'صنفين',
+      one: 'صنف واحد',
+      zero: 'لسه مفيش أصناف',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String pantryWorldState(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count حاجة قربت تخلص',
+      few: '$count حاجات قربت تخلص',
+      two: 'حاجتين قربوا يخلصوا',
+      one: 'حاجة واحدة قربت تخلص',
+      zero: 'مفيش حاجة قربت تخلص',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String pantryLegendLow(int count) {
+    return '$count قربت تخلص';
+  }
+
+  @override
+  String pantryLegendExpiring(int count) {
+    return '$count هتبوظ قريب';
+  }
+
+  @override
+  String pantryLegendOk(int count) {
+    return '$count تمام';
+  }
+
+  @override
+  String get brainWorldState => 'متصل ويتعلم';
+
+  @override
+  String brainWorldEyebrow(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count عنصر متصل',
+      zero: 'لسه مفيش عناصر',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get brainFilterAll => 'الكل';
+
+  @override
+  String get brainFilterLabel => 'فلتر المجالات';
+
+  @override
+  String get brainNetworkEmptyTitle => 'زاد لسه بيتعلم عنك';
+
+  @override
+  String get brainNetworkEmptyMessage =>
+      'سجّل مصاريفك أو ضيف مخزون وأدوية، وهتلاقي الشبكة بتكبر هنا.';
+
+  @override
+  String get brainCardsTitle => 'جوه عقل زاد';
+
+  @override
+  String get brainCardStaffTitle => 'فريق زاد';
+
+  @override
+  String get brainCardStaffBody =>
+      'اللي الموظفين لاحظوه في جولة الصبح على بيتك وفلوسك وعيلتك';
+
+  @override
+  String get brainCardMemoryTitle => 'زاد عارف عني إيه';
+
+  @override
+  String get brainCardMemoryBody =>
+      'اللي زاد فاكره عنك وبيكلمك على أساسه — صحّحه أو خلّيه ينساه';
+
+  @override
+  String get brainCardGraphTitle => 'شبكة زاد';
+
+  @override
+  String get brainCardGraphBody =>
+      'الناس والأماكن والحاجات اللي زاد عارفها ومترابطة إزاي — وصدّرها لأوبسيديان';
+
+  @override
+  String get brainCardMapTitle => 'خريطة زاد';
+
+  @override
+  String get brainCardMapBody =>
+      'إزاي ميزانيتك واشتراكاتك وبيتك متصلين ببعض — بملء الشاشة';
+
+  @override
+  String get brainCardLogTitle => 'سجل تعديلات زاد';
+
+  @override
+  String get brainCardLogBody =>
+      'كل حاجة زاد سجّلها أو عدّلها لك، وترجع فيها لو غلط';
+
+  @override
+  String get brainCardHealthTitle => 'صحة عقل زاد';
+
+  @override
+  String get brainCardHealthBody =>
+      'زاد شغال في الخلفية ولا واقف — ولو واقف، ليه';
+
+  @override
+  String brainTelemetryLinks(int active, int total) {
+    return 'الروابط: $active/$total';
+  }
+
+  @override
+  String get brainTelemetryDecisions => 'قرارات النهارده';
+
+  @override
+  String get brainTelemetryGauge => 'مؤشر الثبات';
+
+  @override
+  String get brainTelemetryStable => 'مستقر';
+
+  @override
+  String get brainTelemetryAlert => 'تنبيه';
+
+  @override
+  String get zadStatusTitle => 'حالة زاد';
+
+  @override
+  String get zadStatusAllGood => 'زاد شغال وبيتابع';
+
+  @override
+  String get zadStatusNeedsFix => 'في حاجة واقفة ومحتاجة منك خطوة';
+
+  @override
+  String zadStatusAllButOne(String what) {
+    return 'كله شغال ما عدا: $what';
+  }
+
+  @override
+  String get zadStatusWorking => 'شغال';
+
+  @override
+  String get zadStatusStopped => 'واقف';
+
+  @override
+  String get zadStatusMaybe => 'ممكن يقف';
+
+  @override
+  String get zadStatusBank => 'قراءة رسائل البنك';
+
+  @override
+  String get zadStatusBankOk => 'زاد بيقرا رسائل البنك ويسجّلها.';
+
+  @override
+  String get zadStatusBankOff =>
+      'قراءة رسائل البنك متوقفة. شغّلها عشان رصيدك ومصاريفك تتحدّث لوحدها.';
+
+  @override
+  String get zadStatusBankStalled =>
+      'الخدمة مابقتش بتشوف إشعارات من فترة. لو هي مفعّلة: اطفيها وشغّلها تاني من الصفحة اللي هتفتح.';
+
+  @override
+  String get zadStatusBankSilent =>
+      'مفعّلة، بس لسه ماجاتش ولا رسالة. لو مستني رسالة من البنك ومجتش: اطفيها وشغّلها تاني.';
+
+  @override
+  String get zadStatusNotifications => 'الإشعارات';
+
+  @override
+  String get zadStatusNotificationsOk =>
+      'تنبيهات الجرعات والفواتير والميزانية بتوصلك.';
+
+  @override
+  String get zadStatusNotificationsOff =>
+      'الإشعارات مقفولة، فتنبيهات الجرعات والفواتير مش هتوصلك.';
+
+  @override
+  String get zadStatusLocation => 'الموقع';
+
+  @override
+  String get zadStatusLocationOk =>
+      'الموقع شغال، والعروض والمحلات القريبة بتتحسب من مكانك.';
+
+  @override
+  String get zadStatusLocationServiceOff =>
+      'الموقع مقفول في الموبايل، فالقراءات مش هتبقى من مكانك الحقيقي.';
+
+  @override
+  String get zadStatusLocationDenied =>
+      'زاد مش مسموحله يعرف مكانك، فالعروض والمحلات القريبة مش هتشتغل.';
+
+  @override
+  String get zadStatusBackground => 'الموقع طول الوقت';
+
+  @override
+  String get zadStatusBackgroundOk =>
+      'تنبيهات الطريق شغالة حتى والتطبيق مقفول.';
+
+  @override
+  String get zadStatusBackgroundOff =>
+      'من غير «طول الوقت» تنبيهات الطريق مش هتشتغل والتطبيق مقفول.';
+
+  @override
+  String get zadStatusBattery => 'توفير البطارية';
+
+  @override
+  String get zadStatusBatteryOk => 'الموبايل مش بيقيّد زاد في الخلفية.';
+
+  @override
+  String get zadStatusBatteryWarn =>
+      'الموبايل ممكن يوقف زاد في الخلفية. اختار «بدون قيود» عشان القراءة ماتقطعش.';
+
+  @override
+  String get zadStatusFixOpenSettings => 'افتح الإعدادات';
+
+  @override
+  String get zadStatusFixAllow => 'اسمح';
+
+  @override
+  String get zadStatusFixLocationOn => 'شغّل الموقع';
+
+  @override
+  String get zadStatusFixBattery => 'فكّ القيود';
+
+  @override
+  String get gamesHubButton => 'ألعاب زادو';
+
+  @override
+  String get gamesHubTitle => 'ألعاب زادو';
+
+  @override
+  String get gamesBackTooltip => 'رجوع';
+
+  @override
+  String get gamesHubIntro => 'العب، كمّل السلسلة، اكسب بذور';
+
+  @override
+  String gamesHubToday(int target, String game) {
+    return 'تحدي النهارده: $target نقطة في «$game»';
+  }
+
+  @override
+  String gamesHubWeekly(int days, int goal) {
+    return 'صندوق الأسبوع: $days من $goal أيام ورا بعض';
+  }
+
+  @override
+  String gamesHubStreak(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count أيام ورا بعض',
+      one: 'يوم واحد',
+      zero: 'ابدأ سلسلتك النهارده',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String gamesHubBest(int score) {
+    return 'أحسن نتيجة: $score';
+  }
+
+  @override
+  String get gamesHubNotPlayed => 'لسه ما لعبتش';
+
+  @override
+  String get gamesHubPlay => 'العب';
+
+  @override
+  String get gamesHubChallengeDone => 'تحدي النهارده خلص';
+
+  @override
+  String get gameNameBall => 'اصطاد الكورة';
+
+  @override
+  String get gameNameRun => 'نطّة زادو';
+
+  @override
+  String get gameNameSort => 'زادو بيرتّب';
+
+  @override
+  String get gameNameStar => 'اصطاد النجوم';
+
+  @override
+  String get gameBlurbBall => 'كورة بتهرب، اصطادها بسرعة وكوّن كومبو';
+
+  @override
+  String get gameBlurbRun => 'انط فوق الصناديق وخد البذور والسرعة بتزيد';
+
+  @override
+  String get gameBlurbSort => 'ادمج البذور المتشابهة، ولغز جديد كل يوم';
+
+  @override
+  String get gameBlurbStar => 'حرّك زادو وامسك النجوم قبل ما تقع';
+
+  @override
+  String gameBest(int score) {
+    return 'أحسن نتيجة: $score';
+  }
+
+  @override
+  String get gameNewBest => 'رقم قياسي جديد!';
+
+  @override
+  String get gameEndTitle => 'خلصت الجولة';
+
+  @override
+  String gameEndScore(int score) {
+    return '$score نقطة';
+  }
+
+  @override
+  String gameChallenge(int target) {
+    return 'تحدي النهارده: اوصل $target نقطة';
+  }
+
+  @override
+  String gameChallengeProgress(int done, int target) {
+    return '$done من $target';
+  }
+
+  @override
+  String get gameChallengeDone => 'خلصت التحدي النهارده، برافو!';
+
+  @override
+  String gameSeedsGranted(int count) {
+    return '+$count بذور';
+  }
+
+  @override
+  String gameSeedsLeft(int count) {
+    return 'باقي $count بذور النهارده';
+  }
+
+  @override
+  String get gameSeedsCapped => 'وصلت للحد اليومي للبذور';
+
+  @override
+  String get gameDouble => 'ضاعف البذور';
+
+  @override
+  String get gameDoubleHint => 'بإعلان قصير';
+
+  @override
+  String get gameContinue => 'كمّل من مكانك';
+
+  @override
+  String get gameContinueHint => 'بإعلان قصير، مرة واحدة في الجولة';
+
+  @override
+  String get gameAdUnavailable => 'مفيش إعلان متاح دلوقتي';
+
+  @override
+  String get gameAgain => 'جولة تانية';
+
+  @override
+  String get gameDone => 'خلصت';
+
+  @override
+  String get gamePaused => 'اللعبة واقفة';
+
+  @override
+  String get gameResume => 'كمّل';
+
+  @override
+  String gameScoreSemantics(int score) {
+    return 'النقط $score';
+  }
+
+  @override
+  String gameCombo(int n) {
+    return 'كومبو ×$n';
+  }
+
+  @override
+  String gameLevel(int n) {
+    return 'مستوى $n';
+  }
+
+  @override
+  String gameLives(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count محاولات',
+      one: 'محاولة واحدة',
+      zero: 'مفيش محاولات',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String runGameTitle(String name) {
+    return 'نطّة $name';
+  }
+
+  @override
+  String runGameHint(String name) {
+    return 'المس الشاشة عشان $name ينط';
+  }
+
+  @override
+  String runGameHit(String name) {
+    return '$name خبط!';
+  }
+
+  @override
+  String runGameSeedsSemantics(int count) {
+    return 'بذور $count';
+  }
+
+  @override
+  String get sortGameTitle => 'زادو بيرتّب';
+
+  @override
+  String get sortGameHint =>
+      'اسحب في أي اتجاه أو استخدم الأسهم، وادمج البذور المتشابهة';
+
+  @override
+  String get sortGameDaily => 'لغز النهارده';
+
+  @override
+  String get sortGameStuck => 'مفيش حركات تانية';
+
+  @override
+  String get sortGameLeft => 'يسار';
+
+  @override
+  String get sortGameRight => 'يمين';
+
+  @override
+  String get sortGameUp => 'فوق';
+
+  @override
+  String get sortGameDown => 'تحت';
+
+  @override
+  String sortGameTile(int value) {
+    return 'بذرة بمستوى $value';
+  }
+
+  @override
+  String get starGameTitle => 'اصطاد النجوم';
+
+  @override
+  String starGameHint(String name) {
+    return 'اسحب $name يمين وشمال عشان يمسك النجوم';
+  }
+
+  @override
+  String get starGameOver => 'النجوم خلصت منك';
+
+  @override
+  String shopWorldEyebrow(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count حاجة ناقصة',
+      few: '$count حاجات ناقصة',
+      two: 'حاجتين ناقصين',
+      one: 'حاجة واحدة ناقصة',
+      zero: 'مفيش حاجة ناقصة',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String shopWorldStores(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'من $count محل',
+      few: 'من $count محلات',
+      two: 'من محلين',
+      one: 'من محل واحد',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get shopWorldAnyStore => 'من أي محل';
+
+  @override
+  String get shopWorldDone => 'القايمة فاضية';
+
+  @override
+  String get shopGroupAnyStore => 'أي محل';
+
+  @override
+  String shopPantryCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'في المخزن $count صنف',
+      few: 'في المخزن $count أصناف',
+      two: 'في المخزن صنفين',
+      one: 'في المخزن صنف واحد',
+      zero: 'المخزن فاضي',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String apptWorldToday(String weekday) {
+    return 'النهارده $weekday';
+  }
+
+  @override
+  String apptWorldNext(String title, String when) {
+    return '$title $when';
+  }
+
+  @override
+  String get apptWorldNone => 'مفيش مواعيد جاية';
+
+  @override
+  String get apptNextLabel => 'الميعاد الجاي';
+
+  @override
+  String get apptInNow => 'دلوقتي';
+
+  @override
+  String apptInMinutes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'بعد $count دقيقة',
+      few: 'بعد $count دقايق',
+      two: 'بعد دقيقتين',
+      one: 'بعد دقيقة',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String apptInHours(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'بعد $count ساعة',
+      few: 'بعد $count ساعات',
+      two: 'بعد ساعتين',
+      one: 'بعد ساعة',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String apptInDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'بعد $count يوم',
+      few: 'بعد $count أيام',
+      two: 'بعد يومين',
+      one: 'بعد يوم',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String phEyebrowCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count دواء',
+      few: '$count أدوية',
+      two: 'دواءين',
+      one: 'دوا واحد',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get phFamilyEyebrow => 'صيدلية العيلة';
+
+  @override
+  String phMemberState(String name) {
+    return 'جدول $name';
+  }
+
+  @override
+  String get phNoDosesToday => 'مفيش جرعات النهارده';
+
+  @override
+  String phDoseDueNow(String name) {
+    return 'جرعة $name وقتها دلوقتي';
+  }
+
+  @override
+  String phNextDose(String when) {
+    return 'الجرعة الجاية $when';
+  }
+
+  @override
+  String phDoseMissedLine(String name) {
+    return 'فاتتك جرعة $name';
+  }
+
+  @override
+  String get phDosesDone => 'خلصت جرعات النهارده';
+
+  @override
+  String get phPeriodMorning => 'الصبح';
+
+  @override
+  String get phPeriodNoon => 'الضهر';
+
+  @override
+  String get phPeriodAfternoon => 'العصر';
+
+  @override
+  String get phPeriodNight => 'بالليل';
+
+  @override
+  String phClockWords(String hour, String minutes, String period) {
+    return '$hour$minutes $period';
+  }
+
+  @override
+  String get phDoseTaken => 'اتاخدت';
+
+  @override
+  String get phDoseDue => 'وقتها دلوقتي';
+
+  @override
+  String get phDoseMissed => 'فاتت';
+
+  @override
+  String get phDoseUpcoming => 'جاية';
+
+  @override
+  String get phDoseSnoozed => 'اتأجلت شوية';
+
+  @override
+  String get phDosePassed => 'الميعاد عدّى';
+
+  @override
+  String get phSnooze => 'بعدين';
+
+  @override
+  String get phTake => 'خدته';
+
+  @override
+  String get phTakeFor => 'خدها';
+
+  @override
+  String phForPerson(String name) {
+    return 'لـ$name';
+  }
+
+  @override
+  String get phCourseDone => 'الكورس خلص';
+
+  @override
+  String phExpiredAgo(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'منتهي من $count يوم',
+      few: 'منتهي من $count أيام',
+      two: 'منتهي من يومين',
+      one: 'منتهي من يوم',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String phExpiresIn(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'تنتهي خلال $count يوم',
+      few: 'تنتهي خلال $count أيام',
+      two: 'تنتهي خلال يومين',
+      one: 'تنتهي خلال يوم',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String phRemaining(int count, String unit) {
+    return 'متبقي $count $unit';
+  }
+
+  @override
+  String phSupplyDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'يكفي $count يوم',
+      few: 'يكفي $count أيام',
+      two: 'يكفي يومين',
+      one: 'يكفي يوم',
+      zero: 'يكفي أقل من يوم',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get phDelete => 'حذف';
+
+  @override
+  String get phBadDoseTime => 'وقت جرعة مش مفهوم — عدّله';
+
+  @override
+  String get phNoSchedule => 'مالوش مواعيد — مش هفكّرك بيه';
+
+  @override
+  String get phSetTimes => 'حدد مواعيده';
+
+  @override
+  String get phConfirmQtyBadge => 'الكمية محتاجة تأكيد';
+
+  @override
+  String get phTakeDose => 'تناول جرعة';
+
+  @override
+  String get phRefill => 'تجديد الطلب';
+
+  @override
+  String get phToShopping => 'ضيفه للتسوق';
+
+  @override
+  String get phHowMuchLeft => 'فاضل قد إيه فعلاً؟';
+
+  @override
+  String phAddedToShopping(String name) {
+    return 'ضفت $name لقايمة التسوق';
+  }
+
+  @override
+  String get phDosesToday => 'جرعات النهارده';
+
+  @override
+  String get phNoDosesLeft => 'مفيش جرعات فاضلة النهارده.';
+
+  @override
+  String get phNoTimesYet =>
+      'ولا دوا ليه مواعيد لسه — حدد مواعيد أي دوا تحت عشان أفكّرك بيه.';
+
+  @override
+  String get phLoadFailed => 'مقدرتش أجيب الأدوية';
+
+  @override
+  String get phEmptyTitle => 'لا توجد أدوية مسجلة بعد';
+
+  @override
+  String get phPullRetry => 'اسحب لتحت نجرب تاني.';
+
+  @override
+  String get phEmptyGuide =>
+      'ضيفه بالزرار، أو صوّر العلبة، أو قول لزاد: \"باخد كونكور قرص الصبح وبالليل\" وهو يسجّله بمواعيده.';
+
+  @override
+  String get phMedicines => 'الأدوية';
+
+  @override
+  String phTimesTitle(String name) {
+    return 'مواعيد $name';
+  }
+
+  @override
+  String get phTimesHint => 'هفكّرك في كل ميعاد، وتقدر تسجّل الجرعة بضغطة.';
+
+  @override
+  String get phSaveTimes => 'احفظ المواعيد';
+
+  @override
+  String get phAdherence => 'الالتزام بالجرعات';
+
+  @override
+  String get phAdherenceWaiting => 'في انتظار أول جرعة';
+
+  @override
+  String get phCountTotal => 'إجمالي الأدوية';
+
+  @override
+  String get phCountExpiring => 'قرب الانتهاء';
+
+  @override
+  String get phCountLow => 'مخزون منخفض';
+
+  @override
+  String phExpiredBanner(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count دواء منتهي الصلاحية — تخلص منه بأمان',
+      few: '$count أدوية منتهية الصلاحية — تخلص منها بأمان',
+      two: 'دواءين منتهيين الصلاحية — تخلص منهم بأمان',
+      one: 'دواء منتهي الصلاحية — تخلص منه بأمان',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get phExpiringHeading => 'قرب الانتهاء — تخلص منها بأمان';
+
+  @override
+  String get phCostSpending => 'صرف الصحة الشهر ده';
+
+  @override
+  String get phCostBoxes => 'أسعار علب الأدوية';
+
+  @override
+  String get phTabMe => 'أنا';
+
+  @override
+  String get phTabMember => 'عضو';
+
+  @override
+  String get phMemberFallback => 'العضو';
+
+  @override
+  String phHeadNote(String name) {
+    return 'إنت رب الأسرة — بتشوف جدول $name وتعدّل فيه وتعلّم الجرعة لو ساعدته';
+  }
+
+  @override
+  String phReadOnlyNote(String name) {
+    return 'جدول $name للمتابعة بس — رب الأسرة هو اللي يعدّل';
+  }
+
+  @override
+  String phAddFor(String name) {
+    return 'دوا لـ$name';
+  }
+
+  @override
+  String phMemberLoadFailed(String name) {
+    return 'مقدرتش أجيب أدوية $name';
+  }
+
+  @override
+  String get phMemberEmptyTitle => 'لسه مفيش أدوية تقدر تشوفها';
+
+  @override
+  String get phMemberEmptyGuide =>
+      'أدوية كل فرد بتظهر هنا بعد ما يوافق — اطلب المتابعة من صفحته في «عيلتي»';
+
+  @override
+  String phMemberDoses(String name) {
+    return 'جرعات $name النهارده';
+  }
+
+  @override
+  String get phEdit => 'تعديل';
+
+  @override
+  String phEditTitle(String name) {
+    return 'تعديل $name';
+  }
+
+  @override
+  String get phPhoto => 'صوّر الدوا';
+
+  @override
+  String get phAdd => 'إضافة';
+
+  @override
+  String get phScanUnclear =>
+      'تعذر قراءة العلبة بدقة، يرجى المحاولة بزاوية أوضح';
+
+  @override
+  String get phScanOk => 'تم استخراج بيانات الدواء بنجاح';
+
+  @override
+  String get phScanReading => 'جاري قراءة علبة الدواء بالذكاء الاصطناعي...';
+
+  @override
+  String get phScanBtn => 'مسح العبوة بالكاميرا';
+
+  @override
+  String get phAddTitle => 'إضافة دواء';
+
+  @override
+  String get phReviewTitle => 'راجع الدواء';
+
+  @override
+  String get phReadFromBox =>
+      'قريت ده من العلبة — عدّل أي حاجة غلط قبل ما تحفظ.';
+
+  @override
+  String get phFieldName => 'اسم الدواء';
+
+  @override
+  String get phFieldForWhom => 'لمين؟ (سيبها فاضية لو ليك)';
+
+  @override
+  String get phHintPeople => 'ماما، بابا، يوسف…';
+
+  @override
+  String get phFieldDosageNote => 'الجرعة (مثال: بعد الأكل)';
+
+  @override
+  String get phFieldTimesOptional => 'مواعيد الجرعة (اختياري)';
+
+  @override
+  String phTimesSuggested(String times) {
+    return 'لسه مفيش مواعيد مضافة — مقترح: $times';
+  }
+
+  @override
+  String get phFieldAmount => 'المبلغ';
+
+  @override
+  String phFieldAmountCur(String currency) {
+    return 'المبلغ ($currency)';
+  }
+
+  @override
+  String get phMoreDetails => 'تفاصيل إضافية (اختياري)';
+
+  @override
+  String get phSave => 'حفظ';
+
+  @override
+  String get phCancel => 'إلغاء';
+
+  @override
+  String get phConfirm => 'تأكيد';
+
+  @override
+  String get phPickTime => 'اختر ميعاد الجرعة';
+
+  @override
+  String get phAddTime => 'إضافة ميعاد';
+
+  @override
+  String get phPickExpiry => 'تاريخ الانتهاء — اضغط لاختيار التاريخ';
+
+  @override
+  String get phFieldQty => 'الكمية المتبقية';
+
+  @override
+  String get phFieldUnit => 'الوحدة';
+
+  @override
+  String get phFieldDailyCount => 'جرعات اليوم';
+
+  @override
+  String phFieldPerDose(String unit) {
+    return 'الجرعة الواحدة كام $unit؟';
+  }
+
+  @override
+  String get phPresetMorning => 'صباحاً';
+
+  @override
+  String get phPresetNoon => 'ظهراً';
+
+  @override
+  String get phPresetEvening => 'مساءً';
+
+  @override
+  String get phPresetBed => 'قبل النوم';
+
+  @override
+  String get phFieldIngredient => 'المادة الفعالة';
+
+  @override
+  String get phFieldDosageFreq => 'الجرعة (مثال: قرص كل 8 ساعات)';
+
+  @override
+  String get phChronic => 'دواء مزمن / روشتة متجددة شهرياً';
+
+  @override
+  String get phForFamilyMember => 'لمين في العائلة';
+
+  @override
+  String get phNone => 'بدون';
+
+  @override
+  String phDeleteBody(String name) {
+    return 'حذف «$name» من الصيدلية؟';
+  }
+
+  @override
+  String phQtyCurrent(String name, int count, String unit) {
+    return '$name — الكمية الحالية المسجلة: $count $unit';
+  }
+
+  @override
+  String get phPerDoseHelp =>
+      'من غير الرقم ده مقدرش أحسب المخزون هيكفي كام يوم';
+
+  @override
+  String phRefillTitle(String name) {
+    return 'تجديد طلب $name';
+  }
+
+  @override
+  String phAddedQty(String unit) {
+    return 'الكمية المضافة ($unit)';
+  }
+
+  @override
+  String get phPrice => 'السعر';
+
+  @override
+  String get phExpiryDate => 'تاريخ الانتهاء';
+
+  @override
+  String get phAlarmHint =>
+      'فعّل \"المنبهات الدقيقة\" من الإعدادات عشان تنبيهات مواعيد الدواء تشتغل بدقة';
+
+  @override
+  String get phErrNotHead => 'بس رب الأسرة يقدر يعدّل أدوية حد من العيلة.';
+
+  @override
+  String get phErrOffline =>
+      'مفيش نت دلوقتي — ما اتحفظش حاجة. جرّب تاني لما يرجع.';
+
+  @override
+  String get phErrNotFound =>
+      'الدوا ده مش موجود عند العضو دلوقتي — حدّث الصفحة.';
+
+  @override
+  String get phErrDuplicate => 'العضو عنده دوا بنفس الاسم ده.';
+
+  @override
+  String get phErrRejected => 'السيرفر رفض الحفظ. جرّب تاني.';
+
+  @override
+  String get tasEyebrow => 'ورد كل ٣٣ · شجرة كل ٩٩';
+
+  @override
+  String tasStateLine(int count, int flowers) {
+    return '$count تسبيحة · $flowers وردة';
+  }
+
+  @override
+  String get tasStateEmpty => 'ابدأ أول تسبيحة والورد هيفتّح';
+
+  @override
+  String get tasTabMine => 'بستاني';
+
+  @override
+  String get tasTabFamily => 'أشجار العيلة';
+
+  @override
+  String get tasTabChallenges => 'التحديات';
+
+  @override
+  String get tasStage1 => 'بذرة';
+
+  @override
+  String get tasStage2 => 'بذرة نبتت';
+
+  @override
+  String get tasStage3 => 'شتلة';
+
+  @override
+  String get tasStage4 => 'شجرة';
+
+  @override
+  String get tasStage5 => 'شجرة مثمرة';
+
+  @override
+  String get tasStatLevel => 'المرحلة';
+
+  @override
+  String tasStatLevelValue(int level) {
+    return '$level/5';
+  }
+
+  @override
+  String get tasStatTotal => 'إجمالي التسبيح';
+
+  @override
+  String get tasStatStreak => 'السلسلة';
+
+  @override
+  String get tasStatFlowers => 'الورد';
+
+  @override
+  String get tasStatSession => 'في الجلسة دي';
+
+  @override
+  String tasNext(int score, int next) {
+    return '$score / $next للمرحلة التالية';
+  }
+
+  @override
+  String get tasComplete => 'اكتملت!';
+
+  @override
+  String tasStreakDays(int days) {
+    return '$days يوم ورا بعض';
+  }
+
+  @override
+  String get tasTapLabel => 'سبّح';
+
+  @override
+  String get tasReset => 'تصفير';
+
+  @override
+  String get tasCycle => 'الدورة';
+
+  @override
+  String get tasLevelUp => 'مبروك! شجرتك كبرت!';
+
+  @override
+  String get tasBloom => 'وردة جديدة فتّحت!';
+
+  @override
+  String tasSeedsGranted(int seeds) {
+    return '+$seeds بذور';
+  }
+
+  @override
+  String tasMyTrees(int count) {
+    return 'أشجاري ($count)';
+  }
+
+  @override
+  String get tasNewTree => 'شجرة جديدة';
+
+  @override
+  String get tasNoTreeTitle => 'لسه مفيش شجرة';
+
+  @override
+  String get tasNoTreeMsg => 'ازرع أول شجرة وابدأ التسبيح.';
+
+  @override
+  String get tasTreeNameLabel => 'اسم الشجرة';
+
+  @override
+  String get tasRenameTitle => 'تسمية الشجرة';
+
+  @override
+  String get tasNewTreeHint => 'أضف شجرة جديدة لبستانك!';
+
+  @override
+  String get tasTreeNameExample => 'مثال: شجرة التفاح';
+
+  @override
+  String get tasCancel => 'إلغاء';
+
+  @override
+  String get tasSave => 'حفظ';
+
+  @override
+  String get tasAdd => 'إضافة';
+
+  @override
+  String get tasLeaderboard => 'لوحة المتصدرين';
+
+  @override
+  String get tasShare => 'شارك الترتيب';
+
+  @override
+  String get tasNoTreesTitle => 'لا توجد أشجار بعد';
+
+  @override
+  String get tasNoTreesMsg => 'أول ما حد من العيلة يسبّح، شجرته هتظهر هنا.';
+
+  @override
+  String tasMemberTrees(int trees, int mature) {
+    return '$trees أشجار | $mature مثمرة';
+  }
+
+  @override
+  String get tasUnit => 'تسبيحة';
+
+  @override
+  String get tasChallengesTitle => 'التحديات العائلية';
+
+  @override
+  String get tasChallengesTagline => 'تحدَ أفراد عائلتك في التسبيحة!';
+
+  @override
+  String get tasNewChallenge => 'تحدي جديد';
+
+  @override
+  String get tasNoChallengesTitle => 'لا توجد تحديات حالياً';
+
+  @override
+  String get tasNoChallengesAdmin => 'اضغط + وابدأ أول تحدي للعيلة.';
+
+  @override
+  String get tasNoChallengesMember => 'اطلب من المدير إنشاء تحدي جديد!';
+
+  @override
+  String get tasOngoing => 'مستمر';
+
+  @override
+  String get tasChallengeTitleLabel => 'عنوان التحدي';
+
+  @override
+  String get tasChallengeDescLabel => 'الوصف (اختياري)';
+
+  @override
+  String get tasChallengeTargetLabel => 'الهدف (عدد التسبيحات)';
+
+  @override
+  String get tasNightSky => 'ليل البستان';
+
+  @override
+  String get tasDaySky => 'نهار البستان';
+
+  @override
+  String txWorldEyebrow(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count معاملة',
+      few: '$count معاملات',
+      two: 'معاملتين',
+      one: 'معاملة واحدة',
+      zero: 'لسه مفيش معاملات',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String txWorldState(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count اتسجلوا لوحدهم النهارده',
+      few: '$count اتسجلوا لوحدهم النهارده',
+      two: 'اتنين اتسجلوا لوحدهم النهارده',
+      one: 'واحدة اتسجلت لوحدها النهارده',
+      zero: 'لسه مفيش حاجة اتسجلت لوحدها النهارده',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get txSourceBank => 'رسالة من البنك';
+
+  @override
+  String txSourceBankNamed(String bank) {
+    return '$bank · رسالة';
+  }
+
+  @override
+  String get txSourceReceipt => 'فاتورة اتصورت';
+
+  @override
+  String get txSourceVoice => 'قولتها بصوتك';
+
+  @override
+  String get txSourceStatement => 'من كشف الحساب';
+
+  @override
+  String get txSourcePharmacy => 'تعبئة الصيدلية';
+
+  @override
+  String get txSourceManual => 'كتبتها بإيدك';
+
+  @override
+  String budgetWorldUntil(int day) {
+    return 'لحد يوم $day';
+  }
+
+  @override
+  String budgetWorldDaysLeft(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'فاضل $count يوم',
+      few: 'فاضل $count أيام',
+      two: 'فاضل يومين',
+      one: 'فاضل يوم واحد',
+      zero: 'آخر يوم',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String budgetWorldState(String amount, String perDay) {
+    return 'متاح $amount · $perDay في اليوم';
+  }
+
+  @override
+  String budgetWorldAvailable(String amount) {
+    return 'متاح $amount';
+  }
+
+  @override
+  String statementWorldStateLess(int pct) {
+    return 'صرفت $pct٪ أقل من نفس الفترة الشهر اللي فات';
+  }
+
+  @override
+  String statementWorldStateMore(int pct) {
+    return 'صرفت $pct٪ أكتر من نفس الفترة الشهر اللي فات';
+  }
+
+  @override
+  String get statementWorldStateSame => 'صرفك زي الشهر اللي فات';
+
+  @override
+  String get statementWorldStateNone => 'استورد كشفك وشوف فلوسك رايحة فين';
+
+  @override
+  String get statementWorldBreakdownTitle => 'فلوسك داخلة منين وخارجة فين';
+
+  @override
+  String get statementWorldIn => 'الدخل';
+
+  @override
+  String get statementWorldEmptyTitle => 'مفيش حركات الشهر ده لسه';
+
+  @override
+  String get statementWorldEmptyBody =>
+      'استورد كشفك أو سجّل معاملة، وهتلاقي هنا الدخل والمصروف حسب الفئة.';
+
+  @override
+  String get statementPickBody =>
+      'اختار كشف حسابك: PDF من تطبيق البنك، أو صورة، أو ملف CSV. زاد بيقرا الحركات ويراجعها على رصيد الكشف، ومفيش حاجة بتتسجل غير بعد ما تراجعها.';
+
+  @override
+  String get statementReading => 'بقرا الكشف… الكشف الطويل بياخد دقيقة';
+
+  @override
+  String get statementPickButton => 'اختيار الكشف';
+
+  @override
+  String get statementMapIntro =>
+      'حدد أي عمود من الملف يمثل كل بيانة — الملف مختلف من بنك لبنك';
+
+  @override
+  String get statementMapDate => 'عمود التاريخ';
+
+  @override
+  String get statementMapTitle => 'عمود الوصف/العنوان';
+
+  @override
+  String get statementMapAmount => 'عمود المبلغ';
+
+  @override
+  String get statementMapCategory => 'عمود التصنيف (اختياري)';
+
+  @override
+  String get statementMapInvert =>
+      'اعكس إشارة المبلغ (لو السالب هنا معناه دخل مش مصروف)';
+
+  @override
+  String get statementMapContinue => 'متابعة للمراجعة';
+
+  @override
+  String get statementMapNone => 'بدون';
+
+  @override
+  String statementMapColumnN(int n) {
+    return 'عمود $n';
+  }
+
+  @override
+  String statementPreviewCount(int rows, int checked) {
+    return '$rows صف — $checked محدد للاستيراد';
+  }
+
+  @override
+  String get statementPreviewEmptyTitle => 'ما لقيتش أي معاملة في الملف';
+
+  @override
+  String get statementPreviewEmptyBody =>
+      'الملف اتقرا لكن مفيهوش صفوف أقدر أستوردها — اتأكد إنه كشف حساب وإن صيغته CSV أو PDF مقروء.';
+
+  @override
+  String get statementRowUnreadable =>
+      'تعذّرت قراءة التاريخ أو المبلغ في هذا الصف';
+
+  @override
+  String get statementRowBalance =>
+      'الرصيد في الكشف مش متطابق مع الصف ده — راجع المبلغ';
+
+  @override
+  String get statementCheckBalanced => 'الأرقام متطابقة مع رصيد الكشف';
+
+  @override
+  String get statementCheckMismatch =>
+      'في أرقام مش متطابقة مع رصيد الكشف — الصفوف دي مش متعلّمة، راجعها';
+
+  @override
+  String get statementCheckUnknown =>
+      'الكشف مفيهوش رصيد أراجع عليه — راجع كل صف قبل الاستيراد';
+
+  @override
+  String statementDropped(String text, int n) {
+    return '$text. وفي $n صف ماقدرتش أقراه.';
+  }
+
+  @override
+  String placesWorldEyebrow(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count خروجة',
+      few: '$count خروجات',
+      two: 'خروجتين',
+      one: 'خروجة واحدة',
+      zero: 'لسه مفيش خروجات',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String placesWorldState(int count, String alerts) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count مكان',
+      few: '$count أماكن',
+      two: 'مكانين',
+      one: 'مكان واحد',
+      zero: 'مفيش أماكن',
+    );
+    String _temp1 = intl.Intl.selectLogic(alerts, {
+      'on': 'تنبيهات الشارع شغالة',
+      'other': 'تنبيهات الشارع مقفولة',
+    });
+    return '$_temp0 · $_temp1';
+  }
+
+  @override
+  String docsEyebrowCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count مستند',
+      few: '$count مستندات',
+      two: 'مستندين',
+      one: 'مستند واحد',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get docsStateEmpty => 'الدرج فاضي — ضيف أول مستند';
+
+  @override
+  String docsStateNearest(String name, String status) {
+    return 'الأقرب: $name — $status';
+  }
+
+  @override
+  String get docsPrivacy =>
+      'زاد بيحفظ نوع المستند وتاريخ انتهائه بس — من غير رقم ولا صورة — ويفكّرك قبلها.';
+
+  @override
+  String get docsDueOne => 'مستند واحد محتاج تجديد قريب';
+
+  @override
+  String docsDueMany(int count) {
+    return '$count مستندات محتاجة تجديد قريب';
+  }
+
+  @override
+  String get docsEmptyTitle => 'مفيش مستندات متسجلة';
+
+  @override
+  String get docsEmptyMessage =>
+      'ضيف الجواز أو البطاقة أو الرخصة بتاريخ انتهائها، وزاد يفكّرك قبلها بوقت كفاية للتجديد. أو قول لزاد في الشات: «جوازي بينتهي ١٥ مارس ٢٠٢٧».';
+
+  @override
+  String get docsAdd => 'إضافة مستند';
+
+  @override
+  String get docsDelete => 'حذف';
+
+  @override
+  String docsExpires(String date) {
+    return 'بينتهي $date';
+  }
+
+  @override
+  String get docsSaveFailedEdit =>
+      'ماتحفظش — يمكن فيه مستند بنفس النوع والاسم، أو النت مقطوع.';
+
+  @override
+  String get docsSaveFailedAdd => 'ماتحفظش — اتأكد من النت.';
+
+  @override
+  String get docsDeleteFailed => 'ماتشالش — اتأكد من النت.';
+
+  @override
+  String maintEyebrowCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count جهاز',
+      few: '$count أجهزة',
+      two: 'جهازين',
+      one: 'جهاز واحد',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get maintStateNone => 'مفيش جهاز متسجل لسه';
+
+  @override
+  String get maintStateNoSchedule => 'سجّل دورة الصيانة وزاد يفكّرك';
+
+  @override
+  String maintStateNext(String name, String status) {
+    return 'الجاي: $name — $status';
+  }
+
+  @override
+  String maintStateOverdue(String name, int days) {
+    return '$name متأخر $days يوم';
+  }
+
+  @override
+  String maintServiceOverdue(int days) {
+    return 'متأخر $days يوم';
+  }
+
+  @override
+  String maintServiceIn(int days) {
+    return 'الصيانة خلال $days يوم';
+  }
+
+  @override
+  String get maintServiceSoon => 'صيانة قريبة';
+
+  @override
+  String get maintWarrantyEnded => 'الضمان منتهي';
+
+  @override
+  String maintWarrantyIn(int days) {
+    return 'الضمان ينتهي خلال $days يوم';
+  }
+
+  @override
+  String get maintStatDevices => 'الأجهزة';
+
+  @override
+  String get maintStatSoon => 'صيانة قريبة';
+
+  @override
+  String get maintStatWarranty => 'ضمان قارب';
+
+  @override
+  String maintOverdueBanner(int count) {
+    return '$count جهاز متأخر عن موعد الصيانة';
+  }
+
+  @override
+  String get maintEmptyTitle => 'لا توجد أجهزة مسجلة بعد';
+
+  @override
+  String get maintEmptyMessage =>
+      'سجّل التكييف أو السخان أو العربية، وزاد يفكّرك بميعاد صيانتها وضمانها.';
+
+  @override
+  String get maintAdd => 'إضافة جهاز';
+
+  @override
+  String get maintServicedToday => 'تمت الصيانة اليوم';
+
+  @override
+  String get maintDelete => 'حذف';
+
+  @override
+  String get maintTechnicians => 'فنيين بثق فيهم';
+
+  @override
+  String get maintTechniciansHint => 'اتصل أو ابعت واتساب لفني اتجرّبته';
+
+  @override
+  String get maintAddFailed => 'ماتسجلش الجهاز — اتأكد من النت.';
+
+  @override
+  String get notifMarkAllRead => 'علّم الكل مقروء';
+
+  @override
+  String get notifAllRead => 'كله مقروء';
+
+  @override
+  String achWorldState(int done, int total) {
+    return '$done من $total إنجاز';
+  }
+
+  @override
+  String achLevel(int level) {
+    return 'المستوى $level';
+  }
+
+  @override
+  String achLevelPoints(int points, int next) {
+    return '$points من $next نقطة';
+  }
+
+  @override
+  String get achOnTrack => 'أنت على الطريق الصحيح!';
+
+  @override
+  String get achContributions => 'المساهمات';
+
+  @override
+  String get achStreak => 'التسلسل';
+
+  @override
+  String get achShelf => 'الإنجازات';
+
+  @override
+  String get achNext => 'الإنجاز التالي';
+
+  @override
+  String get achLocked => 'مقفول';
+
+  @override
+  String get achLoadFailed => 'مش قادرين نجيب الإنجازات دلوقتي';
+
+  @override
+  String get achLoadFailedHint => 'اتأكد من النت وجرّب تاني';
+
+  @override
+  String get achRetry => 'جرّب تاني';
+
+  @override
+  String get pricesEyebrow => 'لوحة الأسعار';
+
+  @override
+  String get pricesWorldNeutral => 'أسعار السوق من بلاغات الناس';
+
+  @override
+  String get pricesWorldFlat => 'الأسعار ثابتة النهارده';
+
+  @override
+  String pricesWorldUp(String name) {
+    return '$name طالع';
+  }
+
+  @override
+  String pricesWorldDown(String name) {
+    return '$name نازل';
+  }
+
+  @override
+  String pricesWorldUpDown(String up, String down) {
+    return '$up طالع، $down نازل';
+  }
+
+  @override
+  String get pricesMine => 'مساهماتك';
+
+  @override
+  String get pricesReportNew => 'سجّل سعر جديد';
+
+  @override
+  String get pricesCheapestTitle => 'أرخص سعر حواليك';
+
+  @override
+  String get pricesCheapestNote =>
+      'من بلاغات مجتمع زاد آخر ١٤ يوم — مش أسعار رسمية';
+
+  @override
+  String get pricesCityLabel => 'المدينة أو المنطقة (اختياري)';
+
+  @override
+  String get pricesSearch => 'دوّر';
+
+  @override
+  String get pricesFetchFailed => 'مقدرناش نجيب الأسعار دلوقتي';
+
+  @override
+  String get pricesFetchFailedHint => 'اتأكد من النت وجرّب تاني';
+
+  @override
+  String get pricesRetry => 'جرّب تاني';
+
+  @override
+  String get pricesNoReportsTitle => 'لسه مفيش بلاغات هنا';
+
+  @override
+  String get pricesNoReportsHint => 'كن أول واحد يبلّغ عن سعر — جيرانك هيشكروك';
+
+  @override
+  String get pricesFirstReport => 'سجّل أول سعر';
+
+  @override
+  String pricesRowMeta(String where, int count) {
+    return '$where · $count بلاغ';
+  }
+
+  @override
+  String get pricesTrendsTitle => 'ترندات سوقك';
+
+  @override
+  String pricesTrendsNote(int days) {
+    return 'اللي بيوت كتير في بلدك اشترته أو حطّته في قايمة التسوق آخر $days يوم — من غير أسماء ولا محلات';
+  }
+
+  @override
+  String get pricesTrendsNoMarket => 'اختار بلدك الأول';
+
+  @override
+  String get pricesTrendsNoMarketHint => 'الترندات بتتحسب لكل بلد لوحده.';
+
+  @override
+  String get pricesTrendsEmpty => 'لسه مفيش ترند في سوقك';
+
+  @override
+  String pricesTrendsEmptyHint(int homes) {
+    return 'الصنف بيظهر هنا لما $homes بيوت مختلفة على الأقل يشتروه أو يحطّوه في قايمتهم — عشان محدش يتعرف من مشترياته. كل فاتورة بتصوّرها بتقرّب اليوم ده.';
+  }
+
+  @override
+  String get pricesTrendUp => 'بيزيد';
+
+  @override
+  String get pricesTrendDown => 'بيقل';
+
+  @override
+  String get pricesTrendFlat => 'ثابت';
+
+  @override
+  String get pricesTrendFresh => 'جديد';
+
+  @override
+  String pricesHomes(int n) {
+    return '$n بيوت';
+  }
+
+  @override
+  String get pricesTopTitle => 'أكثر المشاركين';
+
+  @override
+  String get pricesTopNone => 'لسه مفيش مساهمات';
+
+  @override
+  String get pricesTopNoneHint =>
+      'سجّل أول سعر شفته في السوق — مساهمتك بتظهر هنا وبتساعد جيرانك يلاقوا أرخص مكان.';
+
+  @override
+  String pricesContributor(int rank) {
+    return 'المساهم $rank';
+  }
+
+  @override
+  String pricesContribCount(int n) {
+    return '$n مساهمات';
+  }
+
+  @override
+  String get profileGroupMe => 'أنا وزاد';
+
+  @override
+  String get profileGroupAccount => 'الحساب والعيلة';
+
+  @override
+  String get profileGroupMoney => 'الفلوس';
+
+  @override
+  String get profileGroupPlan => 'رفيق زاد والاشتراك';
+
+  @override
+  String get profilePlanFree => 'المجانية';
+
+  @override
+  String get profilePlanBasic => 'الأساسية';
+
+  @override
+  String get profilePlanPlus => 'المتقدمة';
+
+  @override
+  String get profilePlanUltra => 'العيلة';
+
+  @override
+  String get profileSettingsTitle => 'الإعدادات';
+
+  @override
+  String get profileSettingsSubtitle => 'السقف، الأصوات، الإعلانات والخصوصية';
+
+  @override
+  String get settingsWorldTitle => 'الإعدادات';
+
+  @override
+  String get settingsGroupMoney => 'الفلوس';
+
+  @override
+  String get settingsGroupCompanion => 'رفيق زاد';
+
+  @override
+  String get settingsGroupSounds => 'الأصوات واللغة';
+
+  @override
+  String get settingsGroupPrivacy => 'الإعلانات والخصوصية';
+
+  @override
+  String get settingsGroupAccount => 'الحساب';
+
+  @override
+  String get settingsAdsTitle => 'الإعلانات';
+
+  @override
+  String get settingsAdsBody => 'مخصّصة ليك؟ تقدر تغيّر اختيارك في أي وقت';
+
+  @override
+  String get settingsAdsUnavailable => 'مفيش اختيارات خصوصية متاحة دلوقتي';
+
+  @override
+  String get settingsTermsTitle => 'الشروط والأحكام';
+
+  @override
+  String get settingsTermsBody => 'سياسة الاستخدام والخصوصية';
+
+  @override
+  String get worldLabelHome => 'الرئيسية';
+
+  @override
+  String homeGreetDawn(String name) {
+    return 'صباح الخير يا $name';
+  }
+
+  @override
+  String homeGreetMorning(String name) {
+    return 'أهلاً يا $name';
+  }
+
+  @override
+  String homeGreetNoon(String name) {
+    return 'نهارك سعيد يا $name';
+  }
+
+  @override
+  String homeGreetEvening(String name) {
+    return 'مساء الخير يا $name';
+  }
+
+  @override
+  String homeGreetNight(String name) {
+    return 'ليلة هادية يا $name';
+  }
+
+  @override
+  String homeStateMoney(String amount, String currency, String days) {
+    return 'متاح $amount $currency · $days';
+  }
+
+  @override
+  String get homeStateIdle => 'بيتك كله قدامك';
+
+  @override
+  String get homeWorldsTitle => 'عوالمك';
+
+  @override
+  String get homeWorldsHint => 'كل جزء من بيتك في مكانه';
+
+  @override
+  String get homeTodayTitle => 'النهارده في بيتك';
+
+  @override
+  String get homeTodayEmpty => 'مفيش نواقص ولا جرعات ولا تجديدات قريبة';
+
+  @override
+  String get homeTodayEmptyHint =>
+      'اليوم هادي. أي حاجة تحتاج انتباهك هتظهر هنا.';
+
+  @override
+  String get homeTodayShortTitle => 'نواقص بتتجاب';
+
+  @override
+  String homeTodayShortSub(String name, int count) {
+    return '$count صنف · أولهم $name';
+  }
+
+  @override
+  String get homeGreetDawnAnon => 'صباح الخير';
+
+  @override
+  String get homeGreetMorningAnon => 'أهلاً بيك';
+
+  @override
+  String get homeGreetNoonAnon => 'نهارك سعيد';
+
+  @override
+  String get homeGreetEveningAnon => 'مساء الخير';
+
+  @override
+  String get homeGreetNightAnon => 'ليلة هادية';
+
+  @override
+  String get tasbihaHomeStart => 'ابدأ بستانك بأول تسبيحة';
+
+  @override
+  String tasbihaHomeMature(int score) {
+    return 'الشجرة كبرت · $score تسبيحة';
+  }
+
+  @override
+  String get amazonShopEmoji => '🛍️ تسوق من أمازون';
+
+  @override
+  String get homeCareTitle => 'اشتراكاتك وأدويتك';
+
+  @override
+  String compEyebrow(int level) {
+    return 'المستوى $level';
+  }
+
+  @override
+  String compStateAsleep(String name) {
+    return '$name نايم — ربّت عليه يصحى';
+  }
+
+  @override
+  String compStateMissions(int n) {
+    return 'فاضل $n من مهام النهارده';
+  }
+
+  @override
+  String compStateAllDone(String name) {
+    return '$name فرحان — خلّصت مهام النهارده';
+  }
+
+  @override
+  String get compAsleepLine => 'زززز… ربّت عليّ أصحى.';
+
+  @override
+  String compPet(String name) {
+    return 'ربّت على $name';
+  }
+
+  @override
+  String get compUnreachableTitle => 'الرفيق مش قادر يوصل';
+
+  @override
+  String get compUnreachableMsg =>
+      'اتأكد إنك مسجل دخول وفيه نت، وبعدين ارجع هنا.';
+
+  @override
+  String get compRetry => 'جرّب تاني';
+
+  @override
+  String compLevel(int level) {
+    return 'لفل $level';
+  }
+
+  @override
+  String compXpOf(int xp, int need) {
+    return '$xp / $need';
+  }
+
+  @override
+  String get compStatStreak => 'يوم ورا بعض';
+
+  @override
+  String get compStatSeeds => 'بذرة';
+
+  @override
+  String get compStatToday => 'نقاط النهارده';
+
+  @override
+  String get compMissionsTitle => 'مهام النهارده';
+
+  @override
+  String get compMissionLog => 'سجّل مصروف أو دخل';
+
+  @override
+  String get compMissionHome => 'حدّث المخزن أو قائمة التسوق';
+
+  @override
+  String get compMissionScan => 'صوّر فاتورة';
+
+  @override
+  String compXpGain(int n) {
+    return '+$n';
+  }
+
+  @override
+  String compMissionsAllDone(int n) {
+    return 'خلّصت التلاتة! خدت $n بذرة النهارده.';
+  }
+
+  @override
+  String compMissionsReward(int n) {
+    return 'خلّص التلاتة وخد $n بذرة هدية.';
+  }
+
+  @override
+  String get compWeekTitle => 'تحدي الأسبوع';
+
+  @override
+  String compWeekDone(int days) {
+    return 'خلّصته! سجّلت $days أيام الأسبوع ده';
+  }
+
+  @override
+  String compWeekLeft(int goal, int left) {
+    return 'سجّل مصروف في $goal أيام من ٧ — فاضلك $left.';
+  }
+
+  @override
+  String compJourney(String name) {
+    return 'رحلة $name';
+  }
+
+  @override
+  String compMaxStage(String name) {
+    return '$name وصل لأعلى مرحلة: حكيم البيت.';
+  }
+
+  @override
+  String compSoon(String next) {
+    return 'هيكبر ويبقى $next قريب جداً!';
+  }
+
+  @override
+  String compNeeds(String next, String what) {
+    return 'عشان يبقى $next: $what.';
+  }
+
+  @override
+  String compNeedLevel(int n) {
+    return 'لفل $n';
+  }
+
+  @override
+  String compNeedAge(int n, int left) {
+    return 'عمره $n يوم (فاضل $left)';
+  }
+
+  @override
+  String get compNeedJoin => ' و';
+
+  @override
+  String get compWardrobe => 'الدولاب';
+
+  @override
+  String get compTabPersona => 'الشخصيات';
+
+  @override
+  String get compTabOutfit => 'اللبس';
+
+  @override
+  String get compTabBackground => 'الخلفيات';
+
+  @override
+  String compTakeOff(String outfit) {
+    return 'اقلع $outfit';
+  }
+
+  @override
+  String get compWorn => 'لابسه';
+
+  @override
+  String get compWear => 'البسه';
+
+  @override
+  String get compLocked => 'مقفول';
+
+  @override
+  String compOrUsd(String price) {
+    return 'أو $price';
+  }
+
+  @override
+  String compBuyTitle(String name) {
+    return 'تاخد $name؟';
+  }
+
+  @override
+  String compBuyBody(int price) {
+    return 'هيتخصم $price بذرة من بذورك، ويفضل معاك على طول.';
+  }
+
+  @override
+  String get compBuyNo => 'مش دلوقتي';
+
+  @override
+  String get compBuyYes => 'خده';
+
+  @override
+  String compBought(String name) {
+    return 'مبروك! $name بقى بتاعك';
+  }
+
+  @override
+  String compMissing(String n) {
+    return 'ناقصك $n بذرة — كمّل مهام اليوم وهتوصل.';
+  }
+
+  @override
+  String get compCodeTitle => 'كود صاحبك';
+
+  @override
+  String get compCancel => 'إلغاء';
+
+  @override
+  String get compConfirm => 'تأكيد';
+
+  @override
+  String get compEnterCode => 'عندك كود صاحبك؟ اكتبه هنا';
+
+  @override
+  String get compCodeOk => 'تمام! سجّل أول مصروف وانت وصاحبك هتاخدوا بذور';
+
+  @override
+  String get compReasonNotOwned => 'لسه مش معاك — افتحه الأول.';
+
+  @override
+  String get compReasonOwned => 'ده معاك بالفعل.';
+
+  @override
+  String get compReasonSeason => 'ده بيظهر في موسمه بس.';
+
+  @override
+  String get compReasonNotForSeeds => 'ده مش للبيع بالبذور.';
+
+  @override
+  String get compReasonWrongCode => 'الكود ده مش مظبوط، راجعه تاني.';
+
+  @override
+  String get compReasonClaimed => 'انت كتبت كود صاحب قبل كده.';
+
+  @override
+  String get compReasonTooLate => 'كود الصاحب بيتكتب في أول ١٤ يوم بس.';
+
+  @override
+  String get compReasonTooMany => 'محاولات كتير — جرّب بعد ساعة.';
+
+  @override
+  String get compReasonOffline => 'مفيش اتصال دلوقتي — جرّب تاني.';
+
+  @override
+  String get compPlayUnavailable => 'Google Play مش متاح على الموبايل ده.';
+
+  @override
+  String get compPlayNotOnPlay =>
+      'ده لسه مش متاح على Google Play — جرّب بالبذور.';
+
+  @override
+  String get compPlayFailed => 'الشراء ماتمّش — جرّب تاني.';
+
+  @override
+  String get compSeedShopTitle => 'مستعجل؟ اشحن بذور';
+
+  @override
+  String get compSeedShopBody =>
+      'البذور بتتجمع ببلاش من عاداتك، وده للي مش عايز يستنى.';
+
+  @override
+  String compAllCharacters(String price) {
+    return 'كل الشخصيات مرة واحدة · $price';
+  }
+
+  @override
+  String get compInviteTitle => 'ادعي صحابك';
+
+  @override
+  String get compInviteBody =>
+      'كل صاحب يسجّل أول مصروف = ٢٠٠ بذرة ليك و١٠٠ ليه. صاحب واحد يفتح «فلة»، وتلاتة يفتحوا طاقية التخرج وخلفية «الشلة».';
+
+  @override
+  String get compInviteCopy => 'انسخ الكود';
+
+  @override
+  String get compInviteCopied => 'اتنسخ الكود';
+
+  @override
+  String get compInviteSend => 'ابعته';
+
+  @override
+  String get compInviteSubject => 'جرّب زاد';
+
+  @override
+  String compInviteCount(int n) {
+    return 'سجّلوا: $n';
+  }
+
+  @override
+  String compInvitePending(int n) {
+    return 'مستنيين أول مصروف: $n';
+  }
+
+  @override
+  String get compHowTitle => 'الرفيق بيكبر إزاي؟';
+
+  @override
+  String get compHowXp =>
+      'النقاط بتيجي من عاداتك بس: مصروف +١٠، فاتورة +٢٠، المخزن أو القائمة +٥، يوم في السلسلة +٢٥، فرد عيلة جديد +٢٠٠.';
+
+  @override
+  String get compHowSeeds =>
+      'البذور: كل لفل جديد +٥٠، مهام اليوم التلاتة +٣٠، ٧ أيام ورا بعض +١٠٠، و٣٠ يوم +٣٠٠.';
+
+  @override
+  String get compHowAi =>
+      'البذور للدولاب بس — مش بتتحول لمحاولات ذكاء اصطناعي.';
+
+  @override
+  String get compHowSleep =>
+      'لو غبت يومين بينام. ارجع وهيصحى فرحان ومعاه هدية.';
+
+  @override
+  String get compHowKind => 'عمره ما يزعل منك ولا ينزل لفل.';
+
+  @override
+  String get gamesWorldEmpty => 'لسه ما لعبتش النهارده';
+
+  @override
+  String get gamesWorldEmptyHint =>
+      'ابدأ بأي لعبة — أول جولة بتبدأ سلسلتك وبتكسب بذور.';
+
+  @override
+  String offersEyebrowMine(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count من إشعاراتك',
+      few: '$count من إشعاراتك',
+      two: 'اتنين من إشعاراتك',
+      one: 'واحد من إشعاراتك',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String offersStateCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count عرض شغال',
+      few: '$count عروض شغالة',
+      two: 'عرضين شغالين',
+      one: 'عرض واحد شغال',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get offersStateEmpty => 'مفيش عروض شغالة دلوقتي';
+
+  @override
+  String get offersMineTitle => 'من إشعاراتك';
+
+  @override
+  String get offersPartnerTitle => 'كوبونات لبلدك';
+
+  @override
+  String get offersCopy => 'انسخ';
+
+  @override
+  String offersCopied(String code) {
+    return 'اتنسخ الكود $code';
+  }
+
+  @override
+  String get offersNoCode => 'من غير كود';
+
+  @override
+  String get offersExpiresToday => 'بينتهي النهارده';
+
+  @override
+  String offersExpiresInDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'بينتهي بعد $count يوم',
+      few: 'بينتهي بعد $count أيام',
+      two: 'بينتهي بعد يومين',
+      one: 'بينتهي بكرة',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String offersPercentOff(String percent) {
+    return 'خصم $percent٪';
+  }
+
+  @override
+  String offersAmountOff(String amount, String currency) {
+    return 'خصم $amount $currency';
+  }
+
+  @override
+  String get offersFallbackTitle => 'عرض خاص';
+
+  @override
+  String get offersEmptyTitle => 'مفيش عروض شغالة';
+
+  @override
+  String get offersEmptyMessage =>
+      'أول ما يظهر كوبون لبلدك أو يوصلك إشعار بخصم من تطبيق تسوق، هتلاقيه هنا. اسحب لتحت عشان تحدّث.';
+
+  @override
+  String get offersNearbyTitle => 'عروض المحلات القريبة';
+
+  @override
+  String get offersNearbyMessage => 'أسعار الأسبوع ومحلات حواليك';
+
+  @override
+  String get offersOpenFailed => 'ماقدرناش نفتح العرض';
+
+  @override
+  String get worldLabelFamily => 'العيلة';
+
+  @override
+  String get familyWorldNone => 'لسه معندكش عيلة';
+
+  @override
+  String familyWorldChores(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count مهمة قدامكم',
+      few: '$count مهام قدامكم',
+      two: 'مهمتين قدامكم',
+      one: 'مهمة واحدة قدامكم',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String familyWorldRequests(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count طلب مصروف مستني قرارك',
+      few: '$count طلبات مصروف مستنية قرارك',
+      two: 'طلبين مصروف مستنيين قرارك',
+      one: 'طلب مصروف مستني قرارك',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get familyLoadingTitle => 'بنشوف عيلتك';
+
+  @override
+  String get familyLoadingMessage => 'أول مرة محتاجة نت. اسحب لتحت لو طوّلت.';
+
+  @override
+  String get familyRetry => 'جرّب تاني';
+
+  @override
+  String get familyWelcomeTitle => 'أهلاً بك في عائلة زاد';
+
+  @override
+  String get familyWelcomeBody =>
+      'يمكنك إنشاء عائلة جديدة لتكون أنت المدير، أو الانضمام لعائلة موجودة عبر كود الدعوة.';
+
+  @override
+  String get familyCreateButton => 'إنشاء عائلة جديدة كمدير (Admin)';
+
+  @override
+  String get familyJoinButton => 'الانضمام للعائلة';
+
+  @override
+  String get familyAliasCardTitle => 'اسمك في العيلة';
+
+  @override
+  String get familyAliasLabel => 'اسمك في العيلة (اختياري)';
+
+  @override
+  String get familyAliasHint => 'مثال: الابن أحمد';
+
+  @override
+  String get familyJoinCardTitle => 'عندك كود دعوة؟';
+
+  @override
+  String get familyCodeLabel => 'كود الدعوة';
+
+  @override
+  String get familyCodeHint => 'مثال: ZAD-1234';
+
+  @override
+  String get familyJoinPasteLink => 'عندك رابط دعوة؟ افتح نافذة الانضمام';
+
+  @override
+  String get familyTabChat => 'الشات';
+
+  @override
+  String get familyTabTasks => 'المهام';
+
+  @override
+  String get familyTabMembers => 'الأعضاء';
+
+  @override
+  String get familyTabGroceries => 'البقالة';
+
+  @override
+  String get familyTabKids => 'الأبناء';
+
+  @override
+  String get familyTabGoals => 'الأهداف';
+
+  @override
+  String get familyMoreTitle => 'كمان للعيلة';
+
+  @override
+  String get familyToolSavings => 'صناديق التجميع';
+
+  @override
+  String get familyToolAchievements => 'الإنجازات والرتب';
+
+  @override
+  String get familyToolTasbiha => 'تسبيحة';
+
+  @override
+  String get familyFollowStarted => 'بدأت المتابعة.';
+
+  @override
+  String get choreSaved => 'اتحفظ.';
+
+  @override
+  String get chorePrefNotSaved =>
+      'ماتحفظش. تفضيلات حد تاني بيغيّرها المسؤول بس.';
+
+  @override
+  String get chorePlanFailed => 'مقدرتش أوزّع المهام دلوقتي.';
+
+  @override
+  String get choreServerUnreachable => 'مقدرتش أوصل للسيرفر. جرّب تاني.';
+
+  @override
+  String get choreAdminsOnly => 'توزيع المهام للمسؤول بس.';
+
+  @override
+  String get choreNotOpen => 'مهمة اتعملت أو اتشالت من ساعتها. وزّع تاني.';
+
+  @override
+  String get chorePlanNotApplied => 'التوزيع ماتطبّقش.';
+
+  @override
+  String choreAssignedCount(int count) {
+    return 'اتوزعت $count مهمة.';
+  }
+
+  @override
+  String get choreMinutesLabel => 'المدة بالدقايق (اختياري)';
+
+  @override
+  String get choreMinutesHint => 'مثال: ٢٠';
+
+  @override
+  String get chorePrefsButton => 'الوقت والتفضيلات';
+
+  @override
+  String get choreDistributeButton => 'وزّع المهام';
+
+  @override
+  String get chorePlanTitle => 'توزيع المهام';
+
+  @override
+  String get chorePlanSubtitle => 'على مدة كل مهمة ووقت كل فرد واللي بيحبه.';
+
+  @override
+  String get chorePlanEmptyTitle => 'مفيش مهام مفتوحة تتوزع';
+
+  @override
+  String get chorePlanEmptyMessage => 'ضيف مهام الأول، أو زوّد وقت الأفراد.';
+
+  @override
+  String choreMinutesValue(int minutes) {
+    return '$minutes دقيقة';
+  }
+
+  @override
+  String choreNoTimeFor(String titles) {
+    return 'مافيش وقت ليها عند حد: $titles';
+  }
+
+  @override
+  String choreLoadLine(String name, int minutes, int week) {
+    return '$name: $minutes من $week دقيقة في الأسبوع';
+  }
+
+  @override
+  String get choreApplyPlan => 'طبّق التوزيع';
+
+  @override
+  String get chorePrefsTitle => 'الوقت والتفضيلات';
+
+  @override
+  String get chorePrefsMember => 'الفرد';
+
+  @override
+  String get chorePrefsMinutes => 'دقايق متاحة للمهام في الأسبوع';
+
+  @override
+  String get chorePrefsMinutesHelper => 'من ٠ لـ ٢٠٠٠';
+
+  @override
+  String get chorePrefsLikes => 'مهام بيحبها (افصل بفاصلة)';
+
+  @override
+  String get chorePrefsLikesHint => 'كنس الصالة، الطبخ';
+
+  @override
+  String get chorePrefsDislikes => 'مهام مابيحبهاش (افصل بفاصلة)';
+
+  @override
+  String get chorePrefsDislikesHint => 'غسيل المواعين';
+
+  @override
+  String get choreCancel => 'إلغاء';
+
+  @override
+  String get choreSave => 'حفظ';
+
+  @override
+  String get guardEventsTitle => 'صحة العقل';
+
+  @override
+  String get guardEventsEmptyTitle => 'زاد مارفضش حاجة لحد دلوقتي';
+
+  @override
+  String get guardEventsEmptyBody =>
+      'لما زاد يرفض يكتب حاجة (مبلغ غلط، صنف مش موجود…) السبب هيظهر هنا.';
+
+  @override
+  String get guardEventsLast7Days => 'آخر ٧ أيام';
+
+  @override
+  String get guardEventsNone7Days => 'مفيش رفض في آخر ٧ أيام';
+
+  @override
+  String get guardEventsRecent => 'آخر الرفوض';
+
+  @override
+  String get guardEventsErrorTitle => 'مقدرتش أجيب الرفوض';
+
+  @override
+  String get guardEventsErrorBody => 'اسحب لتحت نجرب تاني.';
+
+  @override
+  String get settingsGuardEventsSubtitle => 'اللي زاد رفض يكتبه، وأسباب الرفض';
+
+  @override
+  String get guardReason_item_not_found => 'السجل ده مش موجود عندك';
+
+  @override
+  String get guardReason_member_not_found => 'مفيش فرد بالاسم ده في البيت';
+
+  @override
+  String get guardReason_name_invalid => 'اسم الصنف لازم يكون من ٢ لـ١٢٠ حرف';
+
+  @override
+  String get guardReason_qty_not_positive => 'الكمية لازم تكون أكبر من صفر';
+
+  @override
+  String get guardReason_qty_too_large =>
+      'الكمية كبيرة بشكل مش منطقي — اتأكد من العميل';
+
+  @override
+  String get guardReason_qty_negative => 'الكمية مينفعش تبقى بالسالب';
+
+  @override
+  String get guardReason_category_unknown => 'الفئة مش من الفئات المعروفة';
+
+  @override
+  String get guardReason_expiry_bad_format => 'الصلاحية لازم تكون YYYY-MM-DD';
+
+  @override
+  String get guardReason_expiry_before_purchase =>
+      'تاريخ الصلاحية قبل النهارده — اتأكد من العميل';
+
+  @override
+  String get guardReason_amount_invalid =>
+      'الكمية المستعملة لازم تكون أكبر من صفر';
+
+  @override
+  String get guardReason_amount_too_large =>
+      'الكمية المستعملة كبيرة بشكل مش منطقي';
+
+  @override
+  String get guardReason_restock_mode_unknown =>
+      'النوع يا staple يا occasional';
+
+  @override
+  String get guardReason_already_purchased =>
+      'السطر ده اتشطب من القايمة قبل كده';
+
+  @override
+  String get guardReason_member_not_granted =>
+      'الفرد ده مش في العيلة أو مش موافق إنك تتابع أدويته';
+
+  @override
+  String get guardReason_patch_empty => 'مفيش حاجة تتعدل';
+
+  @override
+  String get guardReason_patch_field_unknown => 'الحقل ده مايتعدلش من هنا';
+
+  @override
+  String get guardReason_dose_times_invalid =>
+      'مواعيد الجرعات لازم تكون HH:MM مفصولة بفاصلة';
+
+  @override
+  String get guardReason_dose_count_invalid => 'عدد الجرعات في اليوم من ١ لـ٢٤';
+
+  @override
+  String get guardReason_qty_invalid =>
+      'الكمية لازم تكون رقم صحيح من ٠ لـ١٠٠٠٠';
+
+  @override
+  String get guardReason_dosage_too_long => 'الجرعة مكتوبة طويلة أوي';
+
+  @override
+  String get guardReason_dose_already_logged =>
+      'الجرعة دي متسجلة قبل كده — الكمية ماتخصمتش تاني';
+
+  @override
+  String get guardReason_amount_not_positive => 'المبلغ لازم يكون رقم موجب';
+
+  @override
+  String get guardReason_amount_over_cap =>
+      'المبلغ ده كبير بشكل غير منطقي — تأكد منه';
+
+  @override
+  String get guardReason_title_invalid => 'اكتب وصف قصير للمعاملة (لحد ٨٠ حرف)';
+
+  @override
+  String get guardReason_title_guessed =>
+      'الوصف ده تخمين — اسأل العميل الفلوس دي راحت على إيه قبل ما تسجلها';
+
+  @override
+  String get guardReason_txn_kind_unknown => 'النوع يا expense يا income';
+
+  @override
+  String get guardReason_wallet_unknown => 'المحفظة يا cash يا card يا bank';
+
+  @override
+  String get guardReason_transfer_to_missing => 'التحويل لازم يقول رايح فين';
+
+  @override
+  String get guardReason_transfer_change_unsupported =>
+      'التحويل مايتعملش بالتعديل — سجّله معاملة جديدة';
+
+  @override
+  String get guardReason_text_too_long => 'الفئة أو اسم المحل طويل أوي';
+
+  @override
+  String get guardReason_for_person_invalid => '«لمين» لازم يكون من ١ لـ٤٠ حرف';
+
+  @override
+  String get guardReason_date_invalid =>
+      'تاريخ العملية مش مفهوم أو في المستقبل أو أقدم من سنة';
+
+  @override
+  String get guardReason_category_invalid =>
+      'اسم الفئة لازم يكون من ٢ لـ٤٠ حرف';
+
+  @override
+  String get guardReason_no_category_budget => 'مفيش سقف على الفئة دي أصلاً';
+
+  @override
+  String get guardReason_subscription_title_invalid =>
+      'اسم الاشتراك لازم يكون من ٢ لـ١٢٠ حرف';
+
+  @override
+  String get guardReason_renewal_date_invalid =>
+      'تاريخ التجديد لازم يكون تاريخ حقيقي بصيغة YYYY-MM-DD';
+
+  @override
+  String get guardReason_billing_cycle_invalid =>
+      'دورة الدفع يا MONTHLY يا YEARLY';
+
+  @override
+  String get guardReason_due_day_invalid => 'يوم الاستحقاق لازم يكون من ١ لـ٣١';
+
+  @override
+  String get guardReason_is_active_invalid => 'التفعيل لازم يكون true أو false';
+
+  @override
+  String get guardReason_debt_name_invalid =>
+      'اسم الدين لازم يكون من ٢ لـ١٢٠ حرف';
+
+  @override
+  String get guardReason_minimum_invalid =>
+      'الحد الأدنى الشهري لازم يكون رقم مش سالب';
+
+  @override
+  String get guardReason_interest_invalid =>
+      'نسبة الفايدة لازم تكون من ٠ لـ١٠٠٠';
+
+  @override
+  String get guardReason_balance_negative =>
+      'الرصيد المتبقي مينفعش يبقى بالسالب';
+
+  @override
+  String get guardReason_obligation_title_invalid =>
+      'اسم الالتزام لازم يكون من ٢ لـ١٢٠ حرف';
+
+  @override
+  String get guardReason_obligation_kind_invalid =>
+      'نوع الالتزام يا rent يا installment يا tuition يا utility يا other';
+
+  @override
+  String get guardReason_recurrence_invalid =>
+      'التكرار يا monthly يا quarterly يا yearly يا once';
+
+  @override
+  String get guardReason_installments_invalid =>
+      'عدد الأقساط لازم يكون رقم صحيح من ١ لـ٦٠٠';
+
+  @override
+  String get guardReason_already_inactive => 'الالتزام ده اتلغى قبل كده';
+
+  @override
+  String get guardReason_device_name_invalid =>
+      'اسم الجهاز لازم يكون من ٢ لـ١٢٠ حرف';
+
+  @override
+  String get guardReason_device_category_invalid =>
+      'فئة الجهاز طويلة أوي (٦٠ حرف بالكتير)';
+
+  @override
+  String get guardReason_day_invalid =>
+      'التاريخ لازم يوم حقيقي بصيغة YYYY-MM-DD';
+
+  @override
+  String get guardReason_interval_invalid =>
+      'الفاصل بين الصيانات لازم عدد أيام صحيح موجب';
+
+  @override
+  String get guardReason_cost_invalid =>
+      'التكلفة لازم رقم موجب في الحدود المنطقية';
+
+  @override
+  String get guardReason_kind_invalid => 'النوع مش من الأنواع المعروفة';
+
+  @override
+  String get guardReason_holder_invalid =>
+      'اسم صاحب المستند لازم يكون من غير مسافات زيادة ولحد ٤٠ حرف';
+
+  @override
+  String get guardReason_label_invalid =>
+      'اسم المستند لازم يكون من غير مسافات زيادة ولحد ٤٠ حرف';
+
+  @override
+  String get guardReason_label_required => 'مستند «other» محتاج اسم';
+
+  @override
+  String get guardReason_date_out_of_range =>
+      'تاريخ الانتهاء مش معقول (بين ٢٠٠٠ و٢١٠٠)';
+
+  @override
+  String get guardReason_appt_title_invalid =>
+      'اسم الميعاد لازم من ٢ لـ١٦٠ حرف';
+
+  @override
+  String get guardReason_starts_at_invalid => 'وقت الميعاد مش مفهوم';
+
+  @override
+  String get guardReason_appt_recurrence_invalid =>
+      'التكرار لازم once أو hourly أو daily أو weekly أو monthly';
+
+  @override
+  String get guardReason_source_invalid => 'مصدر الميعاد مش معروف';
+
+  @override
+  String get guardReason_remind_invalid =>
+      'التذكير قبلها لازم دقايق صحيحة من ٠ لـ١٠٠٨٠';
+
+  @override
+  String get guardReason_place_too_long =>
+      'اسم المكان طويل أوي (١٢٠ حرف بالكتير)';
+
+  @override
+  String get guardReason_status_invalid =>
+      'الحالة لازم upcoming أو done أو cancelled';
+
+  @override
+  String get guardReason_user_not_found => 'حساب العميل مش موجود';
+
+  @override
+  String get guardReason_cycle_day_invalid =>
+      'يوم بداية الدورة رقم صحيح من ١ لـ٣١';
+
+  @override
+  String get guardReason_currency_invalid =>
+      'العملة كود ISO من ٣ حروف كابيتال (مثل EGP) — والتحدي عملته لحد ١٠ حروف';
+
+  @override
+  String get guardReason_country_invalid =>
+      'البلد كود ISO من حرفين كابيتال (مثل EG)';
+
+  @override
+  String get guardReason_balance_invalid => 'الرصيد لازم يكون رقم غير سالب';
+
+  @override
+  String get guardReason_sleep_time_invalid => 'المواعيد بصيغة HH:MM (٢٤ ساعة)';
+
+  @override
+  String get guardReason_sleep_bed_out_of_range =>
+      'النوم من ٢٠:٠٠ لـ٠٣:٠٠ — شغل ليلي؟ اسأله وماتحفظش';
+
+  @override
+  String get guardReason_sleep_wake_out_of_range => 'الصحيان من ٠٤:٠٠ لـ١٢:٠٠';
+
+  @override
+  String get guardReason_setting_unknown =>
+      'الإعداد ده يا pet_calls يا food_pattern';
+
+  @override
+  String get guardReason_goal_title_invalid => 'عنوان الهدف من ٤ لـ٢٠٠ حرف';
+
+  @override
+  String get guardReason_metric_too_long => 'وصف المقياس طويل أوي';
+
+  @override
+  String get guardReason_target_invalid =>
+      'المبلغ المستهدف لازم رقم موجب منطقي';
+
+  @override
+  String get guardReason_deadline_invalid => 'تاريخ الهدف مش مفهوم';
+
+  @override
+  String get guardReason_unit_invalid => 'unit يا money يا count';
+
+  @override
+  String get guardReason_goal_not_found => 'مفيش هدف بالاسم ده عند العميل';
+
+  @override
+  String get guardReason_goal_amount_invalid =>
+      'المبلغ لازم رقم مش صفر وبحدود المنطق';
+
+  @override
+  String get guardReason_goal_not_amount =>
+      'الهدف ده بيتعد بالمهام مش بالفلوس — تقدمه بيتحسب لوحده.';
+
+  @override
+  String get guardReason_challenge_already_active =>
+      'عنده تحدي شغال بالفعل — شجّعه يكمّله أو اسأله لو عايز يقفله الأول (stop_savings_challenge).';
+
+  @override
+  String get guardReason_no_active_challenge => 'مفيش تحدي شغال أصلاً';
+
+  @override
+  String get guardReason_challenge_cap_invalid =>
+      'السقف اليومي لازم رقم موجب منطقي';
+
+  @override
+  String get guardReason_challenge_length_invalid => 'مدة التحدي من ٧ لـ٩٠ يوم';
+
+  @override
+  String get guardReason_challenge_date_invalid =>
+      'تاريخ بداية التحدي مش مفهوم';
+
+  @override
+  String get guardReason_dose_slot_invalid => 'ميعاد الجرعة مش تاريخ مفهوم';
+
+  @override
+  String get guardReason_snooze_minutes_invalid => 'التأجيل من ٥ لـ٢٤٠ دقيقة';
+
+  @override
+  String get guardReason_fallback => 'الكتابة اترفضت';
+
+  @override
+  String get pantryWhoseField => 'لمين؟';
+
+  @override
+  String get pantryWhoseMe => 'أنا';
+
+  @override
+  String pantryRateEstimate(String days) {
+    return 'تقديرنا إنه يكفي حوالي $days يوم';
+  }
+
+  @override
+  String get pantryRateFaster => 'بيخلص أسرع';
+
+  @override
+  String get pantryRateSlower => 'بيخلص أبطأ';
+
+  @override
+  String get pantryRateSaved => 'سجّلنا تصحيحك';
+
+  @override
+  String get permSheetTitle => 'خلّي زاد يشتغل لبيتك من أول يوم';
+
+  @override
+  String get permSheetBody =>
+      'عشان زاد ينبّهك ويتابع بيتك من غير ما تفتح التطبيق، محتاج الإذون دي. كل واحد منها اختياري، وتقدر تغيّره من إعدادات الموبايل في أي وقت.';
+
+  @override
+  String get permNotificationsTitle => 'الإشعارات';
+
+  @override
+  String get permNotificationsWhy =>
+      'تنبيهات الجرعات والمواعيد والفواتير وموجز الصبح.';
+
+  @override
+  String get permBankTitle => 'قراءة إشعارات البنك';
+
+  @override
+  String get permBankWhy =>
+      'زاد بيقرا الإشعارات اللي بتوصلك من البنك ورسايل الدفع عشان يسجّل المشتريات عنك، وبيحتفظ بس بالإشعارات اللي شكلها معاملة.';
+
+  @override
+  String get permBatteryTitle => 'الشغل في الخلفية';
+
+  @override
+  String get permBatteryWhy =>
+      'عشان قراءة الإشعارات والتذكيرات ماتتقفلش لما الموبايل يوفّر البطارية.';
+
+  @override
+  String get permEnable => 'فعّل';
+
+  @override
+  String get permLater => 'مش دلوقتي';
+
+  @override
+  String get permDone => 'تمام';
+
+  @override
+  String get permPrivacy =>
+      'بياناتك عندنا بتتعامل حسب سياسة الخصوصية المنشورة، وزاد مابيوعدش بأكتر منها.';
+
+  @override
+  String get permCardBody => 'فعّلها بضغطة عشان تنبيهات زاد توصلك.';
+
+  @override
+  String permCardTitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count إذون ناقصة',
+      one: 'إذن ناقص',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String tripTitle(String country) {
+    return 'رحلتك في $country';
+  }
+
+  @override
+  String tripSpent(String amount, String currency) {
+    return 'صرفت تقريباً $amount $currency من أول الرحلة';
+  }
+
+  @override
+  String tripLeft(String amount, String currency) {
+    return 'فاضل $amount $currency من ميزانية الرحلة';
+  }
+
+  @override
+  String tripOver(String amount, String currency) {
+    return 'عدّيت ميزانية الرحلة بـ $amount $currency';
+  }
+
+  @override
+  String get tripSetBudget => 'حدّد ميزانية الرحلة';
+
+  @override
+  String tripBudgetHint(String currency) {
+    return 'الميزانية بـ$currency';
+  }
+
+  @override
+  String get tripBudgetSave => 'حفظ';
+
+  @override
+  String get notifReadsSwitchesTitle => 'قراءة الإشعارات';
+
+  @override
+  String get notifReadsPrivacy =>
+      'كل واحد مقفول لحد ما تفتحه بنفسك. وتقدر تقفله في أي وقت.';
+
+  @override
+  String get notifReadsAppointment => 'حجوزات الدكتور';
+
+  @override
+  String get notifReadsTrip => 'الطيران';
+
+  @override
+  String get notifReadsDocument => 'أبشر والخدمات';
+
+  @override
+  String get notifReadsExplain =>
+      'بنقرا الإشعار ونطلّع التاريخ والمكان بس، والنص بيتمسح.';
+
+  @override
+  String get notifReadsSaveFailed => 'ماقدرناش نحفظ التغيير، جرّب تاني';
+
+  @override
+  String get notifReadsTodayTitle => 'زاد قرا إيه النهارده';
+
+  @override
+  String get notifReadsEmptyTitle => 'لسه مفيش حاجة اتقرت النهارده';
+
+  @override
+  String get notifReadsEmptyBody =>
+      'أول ما يوصلك إشعار من نوع مفتوح، هتلاقي هنا التاريخ والمكان اللي طلّعناهم منه.';
+
+  @override
+  String get notifReadsLoadFailed => 'ماقدرناش نحمّل، اضغط للمحاولة تاني';
+
+  @override
+  String get notifReadsDate => 'التاريخ';
+
+  @override
+  String get notifReadsTime => 'الوقت';
+
+  @override
+  String get notifReadsPlace => 'المكان';
 }
 
 /// The translations for Arabic, as used in Saudi Arabia (`ar_SA`).
@@ -4344,6 +7680,14 @@ class ZadL10nArSa extends ZadL10nAr {
   @override
   String get paywallNotOnPlayBody =>
       'الباقة هذي للحين ما تفعّلت على Google Play. جرّب مرة ثانية قريب.';
+
+  @override
+  String paywallStatePlan(String plan) {
+    return 'خطتك الحين: $plan';
+  }
+
+  @override
+  String get paywallStateInvite => 'اختر الباقة اللي تناسب بيتك';
 
   @override
   String get navMyFamily => 'عائلتي';
@@ -4588,11 +7932,11 @@ class ZadL10nArSa extends ZadL10nAr {
 
   @override
   String get chatWelcome =>
-      'هلا والله! أنا زاد 🤖، مساعدك العائلي الذكي. كيف أقدر أساعدك اليوم؟\nاسألني عن الوصفات، أو راجع ثلاجتك، أو أضف النواقص لقائمة التسوق!';
+      'هلا والله! أنا زاد، مساعدك العائلي الذكي. كيف أقدر أساعدك اليوم؟\nاسألني عن الوصفات، أو راجع ثلاجتك، أو أضف النواقص لقائمة التسوق!';
 
   @override
   String get chatBusy =>
-      'الذكاء الاصطناعي مشغول شوي الحين 🙏 جرّب مرة ثانية بعد لحظات.';
+      'الذكاء الاصطناعي مشغول شوي الحين جرّب مرة ثانية بعد لحظات.';
 
   @override
   String get chatResend => 'ما وصلت — أرسلها مرة ثانية';
@@ -4611,6 +7955,34 @@ class ZadL10nArSa extends ZadL10nAr {
 
   @override
   String get chatReportFailed => 'ما وصل البلاغ — حاول مرة ثانية';
+
+  @override
+  String get chatWorldEyebrow => 'اسألني أي شيء';
+
+  @override
+  String get chatStateThinking => 'يفكّر…';
+
+  @override
+  String get chatStateListening => 'يسمعك…';
+
+  @override
+  String get chatStateSpeaking => 'يتكلم…';
+
+  @override
+  String get chatStateEmpty => 'أنا أسمعك';
+
+  @override
+  String chatStateCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count رسالة',
+      few: '$count رسائل',
+      two: 'رسالتان',
+      one: 'رسالة واحدة',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get chatThinking => 'أفكّر…';
@@ -4796,6 +8168,27 @@ class ZadL10nArSa extends ZadL10nAr {
   String get subsBnpl => 'اشترِ الحين وادفع بعدين';
 
   @override
+  String get subsWorldNone => 'ما فيه اشتراكات للحين';
+
+  @override
+  String subsWorldTotal(String amount) {
+    return '$amount في الشهر';
+  }
+
+  @override
+  String subsWorldNextToday(String amount, String title) {
+    return '$amount في الشهر · $title يتجدد اليوم';
+  }
+
+  @override
+  String subsWorldNext(String amount, String title, int days) {
+    return '$amount في الشهر · $title بعد $days يوم';
+  }
+
+  @override
+  String get subsEmptyHint => 'اضغط «إضافة» وزاد يحسب لك التجديد الجاي.';
+
+  @override
   String get oblNoneHint => 'الأقساط والفواتير الثابتة بتطلع هنا أول ما تنسجل';
 
   @override
@@ -4929,6 +8322,83 @@ class ZadL10nArSa extends ZadL10nAr {
 
   @override
   String get recipesTrendingGroup => 'ترند الحين';
+
+  @override
+  String get chefStateEmpty => 'المخزن فاضي — أضف أكلك وأنا أقترح';
+
+  @override
+  String get chefStateReady => 'جاهزة أقترح عليك أكلة من مخزنك';
+
+  @override
+  String get chefStateThinking => 'أفكر في أكلة من مخزنك…';
+
+  @override
+  String get chefError => 'ما قدرت أوصل لشيف زاد. جرّب مرة ثانية بعد شوي.';
+
+  @override
+  String get chefStale => 'مخزنك تغيّر من آخر اقتراحات — اطلب جديدة إذا تبغى.';
+
+  @override
+  String get chefReadyBody =>
+      'اضغط «وصفات من مخزني» وتقول لك وش تطبخ من اللي عندك، واللي ناقصه شي بسيط.';
+
+  @override
+  String get chefEmptyBody =>
+      'أضف اللي عندك في المخزن، وشيف زاد تقترح لك أكلات منه.';
+
+  @override
+  String get chefAsking => 'شيف زاد تفكّر…';
+
+  @override
+  String get chefGroupMore => 'وجبات ثانية';
+
+  @override
+  String get chefStepByStep => 'الوصفة كاملة خطوة خطوة';
+
+  @override
+  String chefAddMissing(int count) {
+    return 'أضف الناقص لقائمة التسوق ($count)';
+  }
+
+  @override
+  String get chefAddedOne => 'أضفت صنف لقائمة التسوق.';
+
+  @override
+  String chefAddedMany(int count) {
+    return 'أضفت $count أصناف لقائمة التسوق.';
+  }
+
+  @override
+  String get chefNothingToAdd => 'الناقص كله في قائمة التسوق أو المخزن.';
+
+  @override
+  String get chefRatePrompt => 'عجبتك؟ شيف زاد تتذكّر.';
+
+  @override
+  String get chefDislike => 'مو على ذوقي';
+
+  @override
+  String get chefDetailLoading => 'شيف زاد يجهّز لك الوصفة…';
+
+  @override
+  String get chefDetailEmpty => 'شيف زاد ما رجّع الوصفة — جرّب مرة ثانية';
+
+  @override
+  String get chefDetailSlow => 'شيف زاد تأخر في الرد — جرّب مرة ثانية';
+
+  @override
+  String get chefDetailFailed => 'عذراً، صار خطأ أثناء تحميل الوصفة';
+
+  @override
+  String get chefHomeAllDepleted =>
+      'مخزونك كله خلص — نزّل النواقص في التسوق وأنا أقترح لك أكل.';
+
+  @override
+  String get chefHomePantryEmpty =>
+      'أضف أصناف لمخزونك عشان شيف زاد يقترح لك طبق اليوم.';
+
+  @override
+  String get chefHomeAddMissing => 'أضفهم لقائمة التسوق';
 
   @override
   String get patternLearningTitle => 'للحين أتعلّم';
@@ -5378,6 +8848,20 @@ class ZadL10nArSa extends ZadL10nAr {
   String get profileTelegramSubtitle => 'اربط حسابك وخلّ التذكيرات توصلك';
 
   @override
+  String get homeCareRenewsToday => 'يتجدد اليوم';
+
+  @override
+  String get homeCareRenewsTomorrow => 'يتجدد بكرة';
+
+  @override
+  String homeCareRenewsInDays(Object days) {
+    return 'يتجدد بعد $days يوم';
+  }
+
+  @override
+  String get homeCareDoseNow => 'جرعتها الحين';
+
+  @override
   String get introSayPantry => 'الثلاجة هذي حقتي!';
 
   @override
@@ -5390,6 +8874,1966 @@ class ZadL10nArSa extends ZadL10nAr {
   String get consentPoint3Lead => 'ما نبيع بياناتك لأحد.';
 
   @override
+  String get consentPointAiLead => 'كلامك يُرسل لذكاء اصطناعي من شركات ثانية.';
+
+  @override
+  String get consentPointAiBody =>
+      'عشان زاد يفهمك ويرد عليك، اللي تكتبه أو تقوله ورسائل البنك وفواتيرك تُرسل لمزودي ذكاء اصطناعي خارجيين (مثل Google و Groq) يعالجونها، وبس.';
+
+  @override
   String get consentPoint4Body =>
       'راجع الأرقام قبل أي قرار؛ زاد مو بنك ولا مستشار مالي.';
+
+  @override
+  String get worldLabelPrices => 'أسعار اليوم';
+
+  @override
+  String get worldLinksHint => 'اللي يصير هنا يأثر في:';
+
+  @override
+  String pantryWorldEyebrow(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count صنف',
+      few: '$count أصناف',
+      two: 'صنفين',
+      one: 'صنف واحد',
+      zero: 'للحين ما فيه أصناف',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String pantryWorldState(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count شي قرّب يخلص',
+      few: '$count أشياء قرّبت تخلص',
+      two: 'شيئين قرّبوا يخلصون',
+      one: 'شي واحد قرّب يخلص',
+      zero: 'ما فيه شي قرّب يخلص',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String brainWorldEyebrow(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count عنصر متصل',
+      zero: 'للحين ما فيه عناصر',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get brainNetworkEmptyTitle => 'زاد للحين يتعلم عنك';
+
+  @override
+  String get brainNetworkEmptyMessage =>
+      'سجّل مصاريفك أو أضف مخزون وأدوية، وبتلقى الشبكة تكبر هنا.';
+
+  @override
+  String get brainCardStaffBody =>
+      'اللي لاحظه الموظفين في جولة الصباح على بيتك وفلوسك وعيلتك';
+
+  @override
+  String get brainCardMemoryTitle => 'وش يعرف زاد عني';
+
+  @override
+  String get brainCardMemoryBody =>
+      'اللي يتذكره زاد عنك ويكلمك على أساسه — صحّحه أو خله ينساه';
+
+  @override
+  String get brainCardGraphBody =>
+      'الناس والأماكن والأشياء اللي يعرفها زاد وكيف تترابط — وصدّرها لأوبسيديان';
+
+  @override
+  String get brainCardMapBody =>
+      'كيف ميزانيتك واشتراكاتك وبيتك مرتبطين ببعض — بملء الشاشة';
+
+  @override
+  String get brainCardLogBody =>
+      'كل شي سجّله زاد أو عدّله لك، وتتراجع عنه لو غلط';
+
+  @override
+  String get brainCardHealthBody =>
+      'زاد شغال في الخلفية ولا واقف — ولو واقف، ليش';
+
+  @override
+  String get brainTelemetryDecisions => 'قرارات اليوم';
+
+  @override
+  String get zadStatusTitle => 'حالة زاد';
+
+  @override
+  String get zadStatusAllGood => 'زاد شغّال ويتابع';
+
+  @override
+  String get zadStatusNeedsFix => 'فيه شي واقف ويحتاج منك خطوة';
+
+  @override
+  String zadStatusAllButOne(String what) {
+    return 'كله شغّال ما عدا: $what';
+  }
+
+  @override
+  String get zadStatusWorking => 'شغال';
+
+  @override
+  String get zadStatusStopped => 'واقف';
+
+  @override
+  String get zadStatusMaybe => 'ممكن يقف';
+
+  @override
+  String get zadStatusBank => 'قراءة رسائل البنك';
+
+  @override
+  String get zadStatusBankOk => 'زاد بيقرا رسائل البنك ويسجّلها.';
+
+  @override
+  String get zadStatusBankOff =>
+      'قراءة رسائل البنك متوقفة. شغّلها عشان رصيدك ومصاريفك تتحدّث لحالها.';
+
+  @override
+  String get zadStatusBankStalled =>
+      'الخدمة ما عادت تشوف إشعارات من فترة. إذا كانت مفعّلة: طفّها وشغّلها مرة ثانية من الصفحة اللي بتفتح.';
+
+  @override
+  String get zadStatusBankSilent =>
+      'مفعّلة، بس للحين ما وصلت ولا رسالة. إذا تنتظر رسالة من البنك وما وصلت: طفّها وشغّلها مرة ثانية.';
+
+  @override
+  String get zadStatusNotifications => 'الإشعارات';
+
+  @override
+  String get zadStatusNotificationsOk =>
+      'تنبيهات الجرعات والفواتير والميزانية بتوصلك.';
+
+  @override
+  String get zadStatusNotificationsOff =>
+      'الإشعارات مقفولة، فتنبيهات الجرعات والفواتير ما بتوصلك.';
+
+  @override
+  String get zadStatusLocation => 'الموقع';
+
+  @override
+  String get zadStatusLocationOk =>
+      'الموقع شغّال، والعروض والمحلات القريبة تنحسب من مكانك.';
+
+  @override
+  String get zadStatusLocationServiceOff =>
+      'الموقع مقفول في الجوال، فالقراءات ما بتكون من مكانك الحقيقي.';
+
+  @override
+  String get zadStatusLocationDenied =>
+      'زاد ما هو مسموح له يعرف مكانك، فالعروض والمحلات القريبة ما بتشتغل.';
+
+  @override
+  String get zadStatusBackground => 'الموقع طول الوقت';
+
+  @override
+  String get zadStatusBackgroundOk =>
+      'تنبيهات الطريق شغالة حتى والتطبيق مقفول.';
+
+  @override
+  String get zadStatusBackgroundOff =>
+      'بدون «طوال الوقت» تنبيهات الطريق ما بتشتغل والتطبيق مقفول.';
+
+  @override
+  String get zadStatusBattery => 'توفير البطارية';
+
+  @override
+  String get zadStatusBatteryOk => 'الجوال ما يقيّد زاد في الخلفية.';
+
+  @override
+  String get zadStatusBatteryWarn =>
+      'الجوال ممكن يوقف زاد في الخلفية. اختر «بدون قيود» عشان القراءة ما تنقطع.';
+
+  @override
+  String get zadStatusFixOpenSettings => 'افتح الإعدادات';
+
+  @override
+  String get zadStatusFixAllow => 'اسمح';
+
+  @override
+  String get zadStatusFixLocationOn => 'شغّل الموقع';
+
+  @override
+  String get zadStatusFixBattery => 'فكّ القيود';
+
+  @override
+  String get gamesHubIntro => 'العب، كمّل السلسلة، واكسب بذور';
+
+  @override
+  String gamesHubToday(int target, String game) {
+    return 'تحدي اليوم: $target نقطة في «$game»';
+  }
+
+  @override
+  String gamesHubStreak(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count أيام ورا بعض',
+      one: 'يوم واحد',
+      zero: 'ابدأ سلسلتك اليوم',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get gamesHubNotPlayed => 'ما لعبت للحين';
+
+  @override
+  String get gamesHubChallengeDone => 'تحدي اليوم خلص';
+
+  @override
+  String gameChallenge(int target) {
+    return 'تحدي اليوم: وصّل $target نقطة';
+  }
+
+  @override
+  String get gameChallengeDone => 'خلصت التحدي اليوم، برافو!';
+
+  @override
+  String gameSeedsLeft(int count) {
+    return 'باقي $count بذور اليوم';
+  }
+
+  @override
+  String get gameAdUnavailable => 'ما فيه إعلان متاح الحين';
+
+  @override
+  String gameLives(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count محاولات',
+      one: 'محاولة واحدة',
+      zero: 'ما فيه محاولات',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String runGameHint(String name) {
+    return 'المس الشاشة عشان $name يقفز';
+  }
+
+  @override
+  String get sortGameDaily => 'لغز اليوم';
+
+  @override
+  String get sortGameStuck => 'ما فيه حركات ثانية';
+
+  @override
+  String shopWorldEyebrow(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count شي ناقص',
+      few: '$count أشياء ناقصة',
+      two: 'شيئين ناقصين',
+      one: 'شي واحد ناقص',
+      zero: 'ما فيه شي ناقص',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String shopWorldStores(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'من $count محل',
+      few: 'من $count محلات',
+      two: 'من محلين',
+      one: 'من محل واحد',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get shopWorldAnyStore => 'من أي محل';
+
+  @override
+  String get shopWorldDone => 'القائمة فاضية';
+
+  @override
+  String get shopGroupAnyStore => 'أي محل';
+
+  @override
+  String shopPantryCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'في المخزن $count صنف',
+      few: 'في المخزن $count أصناف',
+      two: 'في المخزن صنفين',
+      one: 'في المخزن صنف واحد',
+      zero: 'المخزن فاضي',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String apptWorldToday(String weekday) {
+    return 'اليوم $weekday';
+  }
+
+  @override
+  String apptWorldNext(String title, String when) {
+    return '$title $when';
+  }
+
+  @override
+  String get apptWorldNone => 'ما فيه مواعيد جاية';
+
+  @override
+  String get apptNextLabel => 'الموعد القادم';
+
+  @override
+  String get apptInNow => 'الحين';
+
+  @override
+  String apptInMinutes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'بعد $count دقيقة',
+      few: 'بعد $count دقائق',
+      two: 'بعد دقيقتين',
+      one: 'بعد دقيقة',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String apptInHours(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'بعد $count ساعة',
+      few: 'بعد $count ساعات',
+      two: 'بعد ساعتين',
+      one: 'بعد ساعة',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String apptInDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'بعد $count يوم',
+      few: 'بعد $count أيام',
+      two: 'بعد يومين',
+      one: 'بعد يوم',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String phEyebrowCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count دواء',
+      few: '$count أدوية',
+      two: 'دواءين',
+      one: 'دواء واحد',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get phFamilyEyebrow => 'صيدلية العائلة';
+
+  @override
+  String phMemberState(String name) {
+    return 'جدول $name';
+  }
+
+  @override
+  String get phNoDosesToday => 'ما فيه جرعات اليوم';
+
+  @override
+  String phDoseDueNow(String name) {
+    return 'جرعة $name وقتها الحين';
+  }
+
+  @override
+  String phNextDose(String when) {
+    return 'الجرعة القادمة $when';
+  }
+
+  @override
+  String phDoseMissedLine(String name) {
+    return 'فاتتك جرعة $name';
+  }
+
+  @override
+  String get phDosesDone => 'خلصت جرعات اليوم';
+
+  @override
+  String get phPeriodMorning => 'الصباح';
+
+  @override
+  String get phPeriodNoon => 'الظهر';
+
+  @override
+  String get phPeriodAfternoon => 'العصر';
+
+  @override
+  String get phPeriodNight => 'بالليل';
+
+  @override
+  String phClockWords(String hour, String minutes, String period) {
+    return '$hour$minutes $period';
+  }
+
+  @override
+  String get phDoseTaken => 'انأخذت';
+
+  @override
+  String get phDoseDue => 'وقتها الحين';
+
+  @override
+  String get phDoseMissed => 'فاتت';
+
+  @override
+  String get phDoseUpcoming => 'قادمة';
+
+  @override
+  String get phDoseSnoozed => 'تأجلت شوي';
+
+  @override
+  String get phDosePassed => 'عدّى وقتها';
+
+  @override
+  String get phSnooze => 'بعدين';
+
+  @override
+  String get phTake => 'أخذته';
+
+  @override
+  String get phTakeFor => 'أخذتها';
+
+  @override
+  String phForPerson(String name) {
+    return 'لـ$name';
+  }
+
+  @override
+  String get phCourseDone => 'انتهى الكورس';
+
+  @override
+  String phExpiredAgo(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'منتهي من $count يوم',
+      few: 'منتهي من $count أيام',
+      two: 'منتهي من يومين',
+      one: 'منتهي من يوم',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String phExpiresIn(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'تنتهي خلال $count يوم',
+      few: 'تنتهي خلال $count أيام',
+      two: 'تنتهي خلال يومين',
+      one: 'تنتهي خلال يوم',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String phRemaining(int count, String unit) {
+    return 'متبقي $count $unit';
+  }
+
+  @override
+  String phSupplyDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'يكفي $count يوم',
+      few: 'يكفي $count أيام',
+      two: 'يكفي يومين',
+      one: 'يكفي يوم',
+      zero: 'يكفي أقل من يوم',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get phDelete => 'حذف';
+
+  @override
+  String get phBadDoseTime => 'وقت جرعة غير مفهوم — عدّله';
+
+  @override
+  String get phNoSchedule => 'ما له مواعيد — ما راح أذكّرك فيه';
+
+  @override
+  String get phSetTimes => 'حدد مواعيده';
+
+  @override
+  String get phConfirmQtyBadge => 'الكمية تحتاج تأكيد';
+
+  @override
+  String get phTakeDose => 'تناول جرعة';
+
+  @override
+  String get phRefill => 'تجديد الطلب';
+
+  @override
+  String get phToShopping => 'أضفه للتسوق';
+
+  @override
+  String get phHowMuchLeft => 'كم باقي فعلاً؟';
+
+  @override
+  String phAddedToShopping(String name) {
+    return 'أضفت $name لقائمة التسوق';
+  }
+
+  @override
+  String get phDosesToday => 'جرعات اليوم';
+
+  @override
+  String get phNoDosesLeft => 'ما فيه جرعات باقية اليوم.';
+
+  @override
+  String get phNoTimesYet =>
+      'ما فيه دواء له مواعيد للحين — حدد مواعيد أي دواء تحت عشان أذكّرك فيه.';
+
+  @override
+  String get phLoadFailed => 'ما قدرت أجيب الأدوية';
+
+  @override
+  String get phEmptyTitle => 'لا توجد أدوية مسجلة بعد';
+
+  @override
+  String get phPullRetry => 'اسحب لتحت ونجرب مرة ثانية.';
+
+  @override
+  String get phEmptyGuide =>
+      'أضفه بالزر، أو صوّر العلبة، أو قل لزاد: \"آخذ كونكور قرص الصباح والليل\" وهو يسجّله بمواعيده.';
+
+  @override
+  String get phMedicines => 'الأدوية';
+
+  @override
+  String phTimesTitle(String name) {
+    return 'مواعيد $name';
+  }
+
+  @override
+  String get phTimesHint => 'بذكّرك في كل ميعاد، وتقدر تسجّل الجرعة بضغطة.';
+
+  @override
+  String get phSaveTimes => 'احفظ المواعيد';
+
+  @override
+  String get phAdherence => 'الالتزام بالجرعات';
+
+  @override
+  String get phAdherenceWaiting => 'في انتظار أول جرعة';
+
+  @override
+  String get phCountTotal => 'إجمالي الأدوية';
+
+  @override
+  String get phCountExpiring => 'قريبة الانتهاء';
+
+  @override
+  String get phCountLow => 'مخزون منخفض';
+
+  @override
+  String phExpiredBanner(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count دواء منتهي الصلاحية — تخلص منه بأمان',
+      few: '$count أدوية منتهية الصلاحية — تخلص منها بأمان',
+      two: 'دواءين منتهيين الصلاحية — تخلص منهم بأمان',
+      one: 'دواء منتهي الصلاحية — تخلص منه بأمان',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get phExpiringHeading => 'قريبة الانتهاء — تخلص منها بأمان';
+
+  @override
+  String get phCostSpending => 'صرف الصحة هذا الشهر';
+
+  @override
+  String get phCostBoxes => 'أسعار علب الأدوية';
+
+  @override
+  String get phTabMe => 'أنا';
+
+  @override
+  String get phTabMember => 'عضو';
+
+  @override
+  String get phMemberFallback => 'العضو';
+
+  @override
+  String phHeadNote(String name) {
+    return 'أنت رب الأسرة — تشوف جدول $name وتعدّل عليه وتعلّم الجرعة لو ساعدته';
+  }
+
+  @override
+  String phReadOnlyNote(String name) {
+    return 'جدول $name للمتابعة فقط — رب الأسرة هو اللي يعدّل';
+  }
+
+  @override
+  String phAddFor(String name) {
+    return 'دواء لـ$name';
+  }
+
+  @override
+  String phMemberLoadFailed(String name) {
+    return 'ما قدرت أجيب أدوية $name';
+  }
+
+  @override
+  String get phMemberEmptyTitle => 'للحين ما فيه أدوية تقدر تشوفها';
+
+  @override
+  String get phMemberEmptyGuide =>
+      'أدوية كل فرد تظهر هنا بعد ما يوافق — اطلب المتابعة من صفحته في «عيلتي»';
+
+  @override
+  String phMemberDoses(String name) {
+    return 'جرعات $name اليوم';
+  }
+
+  @override
+  String get phEdit => 'تعديل';
+
+  @override
+  String phEditTitle(String name) {
+    return 'تعديل $name';
+  }
+
+  @override
+  String get phPhoto => 'صوّر الدواء';
+
+  @override
+  String get phAdd => 'إضافة';
+
+  @override
+  String get phScanUnclear =>
+      'تعذر قراءة العلبة بدقة، يرجى المحاولة بزاوية أوضح';
+
+  @override
+  String get phScanOk => 'تم استخراج بيانات الدواء بنجاح';
+
+  @override
+  String get phScanReading => 'جاري قراءة علبة الدواء بالذكاء الاصطناعي...';
+
+  @override
+  String get phScanBtn => 'مسح العبوة بالكاميرا';
+
+  @override
+  String get phAddTitle => 'إضافة دواء';
+
+  @override
+  String get phReviewTitle => 'راجع الدواء';
+
+  @override
+  String get phReadFromBox =>
+      'قرأت هذا من العلبة — عدّل أي شي غلط قبل ما تحفظ.';
+
+  @override
+  String get phFieldName => 'اسم الدواء';
+
+  @override
+  String get phFieldForWhom => 'لمن؟ (خلها فاضية لو لك)';
+
+  @override
+  String get phHintPeople => 'ماما، بابا، يوسف…';
+
+  @override
+  String get phFieldDosageNote => 'الجرعة (مثال: بعد الأكل)';
+
+  @override
+  String get phFieldTimesOptional => 'مواعيد الجرعة (اختياري)';
+
+  @override
+  String phTimesSuggested(String times) {
+    return 'للحين ما فيه مواعيد مضافة — المقترح: $times';
+  }
+
+  @override
+  String get phFieldAmount => 'المبلغ';
+
+  @override
+  String phFieldAmountCur(String currency) {
+    return 'المبلغ ($currency)';
+  }
+
+  @override
+  String get phMoreDetails => 'تفاصيل إضافية (اختياري)';
+
+  @override
+  String get phSave => 'حفظ';
+
+  @override
+  String get phCancel => 'إلغاء';
+
+  @override
+  String get phConfirm => 'تأكيد';
+
+  @override
+  String get phPickTime => 'اختر ميعاد الجرعة';
+
+  @override
+  String get phAddTime => 'إضافة ميعاد';
+
+  @override
+  String get phPickExpiry => 'تاريخ الانتهاء — اضغط لاختيار التاريخ';
+
+  @override
+  String get phFieldQty => 'الكمية المتبقية';
+
+  @override
+  String get phFieldUnit => 'الوحدة';
+
+  @override
+  String get phFieldDailyCount => 'جرعات اليوم';
+
+  @override
+  String phFieldPerDose(String unit) {
+    return 'كم $unit في الجرعة الواحدة؟';
+  }
+
+  @override
+  String get phPresetMorning => 'صباحاً';
+
+  @override
+  String get phPresetNoon => 'ظهراً';
+
+  @override
+  String get phPresetEvening => 'مساءً';
+
+  @override
+  String get phPresetBed => 'قبل النوم';
+
+  @override
+  String get phFieldIngredient => 'المادة الفعالة';
+
+  @override
+  String get phFieldDosageFreq => 'الجرعة (مثال: قرص كل 8 ساعات)';
+
+  @override
+  String get phChronic => 'دواء مزمن / روشتة متجددة شهرياً';
+
+  @override
+  String get phForFamilyMember => 'لمن في العائلة';
+
+  @override
+  String get phNone => 'بدون';
+
+  @override
+  String phDeleteBody(String name) {
+    return 'حذف «$name» من الصيدلية؟';
+  }
+
+  @override
+  String phQtyCurrent(String name, int count, String unit) {
+    return '$name — الكمية الحالية المسجلة: $count $unit';
+  }
+
+  @override
+  String get phPerDoseHelp =>
+      'من غير هذا الرقم ما أقدر أحسب المخزون يكفي كم يوم';
+
+  @override
+  String phRefillTitle(String name) {
+    return 'تجديد طلب $name';
+  }
+
+  @override
+  String phAddedQty(String unit) {
+    return 'الكمية المضافة ($unit)';
+  }
+
+  @override
+  String get phPrice => 'السعر';
+
+  @override
+  String get phExpiryDate => 'تاريخ الانتهاء';
+
+  @override
+  String get phAlarmHint =>
+      'فعّل \"المنبهات الدقيقة\" من الإعدادات عشان تشتغل تنبيهات مواعيد الدواء بدقة';
+
+  @override
+  String get phErrNotHead => 'فقط رب الأسرة يقدر يعدّل أدوية أحد من العائلة.';
+
+  @override
+  String get phErrOffline =>
+      'ما فيه نت الحين — ما انحفظ شي. جرّب مرة ثانية لما يرجع.';
+
+  @override
+  String get phErrNotFound =>
+      'هذا الدواء مو موجود عند العضو الحين — حدّث الصفحة.';
+
+  @override
+  String get phErrDuplicate => 'العضو عنده دواء بنفس هذا الاسم.';
+
+  @override
+  String get phErrRejected => 'السيرفر رفض الحفظ. جرّب مرة ثانية.';
+
+  @override
+  String get tasStateEmpty => 'ابدأ أول تسبيحة والورد بيتفتح';
+
+  @override
+  String get tasTabFamily => 'أشجار العائلة';
+
+  @override
+  String get tasStatSession => 'في هذي الجلسة';
+
+  @override
+  String tasStreakDays(int days) {
+    return '$days يوم متتالي';
+  }
+
+  @override
+  String get tasBloom => 'تفتّحت وردة جديدة!';
+
+  @override
+  String get tasNoTreeTitle => 'للحين ما فيه شجرة';
+
+  @override
+  String get tasNoTreesMsg => 'أول ما أحد من العائلة يسبّح تظهر شجرته هنا.';
+
+  @override
+  String get tasChallengesTitle => 'التحديات العائلية';
+
+  @override
+  String get tasNoChallengesAdmin => 'اضغط + وابدأ أول تحدي للعائلة.';
+
+  @override
+  String get tasNoChallengesMember => 'اطلب من المدير ينشئ تحدي جديد!';
+
+  @override
+  String txWorldEyebrow(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count معاملة',
+      few: '$count معاملات',
+      two: 'معاملتين',
+      one: 'معاملة وحدة',
+      zero: 'للحين ما فيه معاملات',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String txWorldState(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count تسجّلوا بنفسهم اليوم',
+      few: '$count تسجّلوا بنفسهم اليوم',
+      two: 'ثنتين تسجّلوا بنفسهم اليوم',
+      one: 'وحدة تسجّلت بنفسها اليوم',
+      zero: 'للحين ما فيه شي تسجّل بنفسه اليوم',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get txSourceBank => 'رسالة من البنك';
+
+  @override
+  String txSourceBankNamed(String bank) {
+    return '$bank · رسالة';
+  }
+
+  @override
+  String get txSourceReceipt => 'فاتورة مصوّرة';
+
+  @override
+  String get txSourceVoice => 'قلتها بصوتك';
+
+  @override
+  String get txSourceStatement => 'من كشف الحساب';
+
+  @override
+  String get txSourcePharmacy => 'تعبئة الصيدلية';
+
+  @override
+  String get txSourceManual => 'كتبتها بيدك';
+
+  @override
+  String budgetWorldUntil(int day) {
+    return 'لين يوم $day';
+  }
+
+  @override
+  String budgetWorldDaysLeft(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'باقي $count يوم',
+      few: 'باقي $count أيام',
+      two: 'باقي يومين',
+      one: 'باقي يوم واحد',
+      zero: 'آخر يوم',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String budgetWorldState(String amount, String perDay) {
+    return 'متاح $amount · $perDay في اليوم';
+  }
+
+  @override
+  String budgetWorldAvailable(String amount) {
+    return 'متاح $amount';
+  }
+
+  @override
+  String statementWorldStateLess(int pct) {
+    return 'صرفت $pct٪ أقل من نفس الفترة الشهر اللي فات';
+  }
+
+  @override
+  String statementWorldStateMore(int pct) {
+    return 'صرفت $pct٪ أكثر من نفس الفترة الشهر اللي فات';
+  }
+
+  @override
+  String get statementWorldStateSame => 'صرفك مثل الشهر اللي فات';
+
+  @override
+  String get statementWorldStateNone => 'استورد كشفك وشف فلوسك وين راحت';
+
+  @override
+  String get statementWorldBreakdownTitle => 'فلوسك من وين تدخل وين تطلع';
+
+  @override
+  String get statementWorldIn => 'الدخل';
+
+  @override
+  String get statementWorldEmptyTitle => 'ما فيه حركات هذا الشهر للحين';
+
+  @override
+  String get statementWorldEmptyBody =>
+      'استورد كشفك أو سجّل معاملة، وتلقى هنا الدخل والمصروف حسب الفئة.';
+
+  @override
+  String get statementPickBody =>
+      'اختر كشف حسابك: PDF من تطبيق البنك، أو صورة، أو ملف CSV. زاد يقرا الحركات ويراجعها على رصيد الكشف، وما يتسجل شي إلا بعد ما تراجعها.';
+
+  @override
+  String get statementReading => 'أقرا الكشف… الكشف الطويل ياخذ دقيقة';
+
+  @override
+  String get statementPickButton => 'اختيار الكشف';
+
+  @override
+  String get statementMapIntro =>
+      'حدد أي عمود من الملف يمثل كل بيان — الملف يختلف من بنك لبنك';
+
+  @override
+  String get statementMapDate => 'عمود التاريخ';
+
+  @override
+  String get statementMapTitle => 'عمود الوصف/العنوان';
+
+  @override
+  String get statementMapAmount => 'عمود المبلغ';
+
+  @override
+  String get statementMapCategory => 'عمود التصنيف (اختياري)';
+
+  @override
+  String get statementMapInvert =>
+      'اعكس إشارة المبلغ (لو السالب هنا يعني دخل مو مصروف)';
+
+  @override
+  String get statementMapContinue => 'متابعة للمراجعة';
+
+  @override
+  String get statementMapNone => 'بدون';
+
+  @override
+  String statementMapColumnN(int n) {
+    return 'عمود $n';
+  }
+
+  @override
+  String statementPreviewCount(int rows, int checked) {
+    return '$rows صف — $checked محدد للاستيراد';
+  }
+
+  @override
+  String get statementPreviewEmptyTitle => 'ما لقيت أي معاملة في الملف';
+
+  @override
+  String get statementPreviewEmptyBody =>
+      'الملف انقرا بس ما فيه صفوف أقدر أستوردها — تأكد إنه كشف حساب وإن صيغته CSV أو PDF مقروء.';
+
+  @override
+  String get statementRowUnreadable =>
+      'تعذّرت قراءة التاريخ أو المبلغ في هذا الصف';
+
+  @override
+  String get statementRowBalance =>
+      'الرصيد في الكشف مو متطابق مع هذا الصف — راجع المبلغ';
+
+  @override
+  String get statementCheckBalanced => 'الأرقام متطابقة مع رصيد الكشف';
+
+  @override
+  String get statementCheckMismatch =>
+      'فيه أرقام مو متطابقة مع رصيد الكشف — الصفوف هذي غير معلّمة، راجعها';
+
+  @override
+  String get statementCheckUnknown =>
+      'الكشف ما فيه رصيد أراجع عليه — راجع كل صف قبل الاستيراد';
+
+  @override
+  String statementDropped(String text, int n) {
+    return '$text. وفيه $n صف ما قدرت أقراه.';
+  }
+
+  @override
+  String placesWorldEyebrow(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count خروجة',
+      few: '$count خروجات',
+      two: 'خروجتين',
+      one: 'خروجة وحدة',
+      zero: 'ما فيه خروجات للحين',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String placesWorldState(int count, String alerts) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count مكان',
+      few: '$count أماكن',
+      two: 'مكانين',
+      one: 'مكان واحد',
+      zero: 'ما فيه أماكن',
+    );
+    String _temp1 = intl.Intl.selectLogic(alerts, {
+      'on': 'تنبيهات الشارع شغّالة',
+      'other': 'تنبيهات الشارع مقفّلة',
+    });
+    return '$_temp0 · $_temp1';
+  }
+
+  @override
+  String get docsPrivacy =>
+      'زاد يحفظ نوع المستند وتاريخ انتهائه بس — بدون رقم ولا صورة — ويذكّرك قبلها.';
+
+  @override
+  String get docsEmptyTitle => 'ما فيه مستندات مسجّلة';
+
+  @override
+  String get docsSaveFailedEdit =>
+      'ما انحفظ — يمكن فيه مستند بنفس النوع والاسم، أو ما فيه نت.';
+
+  @override
+  String get docsSaveFailedAdd => 'ما انحفظ — تأكد من النت.';
+
+  @override
+  String get docsDeleteFailed => 'ما انحذف — تأكد من النت.';
+
+  @override
+  String get maintStateNone => 'ما فيه جهاز مسجّل للحين';
+
+  @override
+  String get maintEmptyTitle => 'ما فيه أجهزة مسجّلة للحين';
+
+  @override
+  String get maintEmptyMessage =>
+      'سجّل المكيف أو السخان أو السيارة، وزاد يذكّرك بموعد صيانتها وضمانها.';
+
+  @override
+  String get maintTechnicians => 'فنيين أثق فيهم';
+
+  @override
+  String get maintTechniciansHint => 'اتصل أو أرسل واتساب لفني جرّبته';
+
+  @override
+  String get maintAddFailed => 'ما انسجّل الجهاز — تأكد من النت.';
+
+  @override
+  String get notifMarkAllRead => 'علّم الكل كمقروء';
+
+  @override
+  String get notifAllRead => 'الكل مقروء';
+
+  @override
+  String achWorldState(int done, int total) {
+    return '$done من $total إنجاز';
+  }
+
+  @override
+  String achLevel(int level) {
+    return 'المستوى $level';
+  }
+
+  @override
+  String achLevelPoints(int points, int next) {
+    return '$points من $next نقطة';
+  }
+
+  @override
+  String get achOnTrack => 'أنت على الطريق الصحيح!';
+
+  @override
+  String get achContributions => 'المساهمات';
+
+  @override
+  String get achStreak => 'التسلسل';
+
+  @override
+  String get achShelf => 'الإنجازات';
+
+  @override
+  String get achNext => 'الإنجاز التالي';
+
+  @override
+  String get achLocked => 'مقفول';
+
+  @override
+  String get achLoadFailed => 'ما قدرنا نجيب الإنجازات الحين';
+
+  @override
+  String get achLoadFailedHint => 'تأكد من الاتصال وحاول مرة ثانية';
+
+  @override
+  String get achRetry => 'حاول مرة ثانية';
+
+  @override
+  String get pricesEyebrow => 'لوحة الأسعار';
+
+  @override
+  String get pricesWorldNeutral => 'أسعار السوق من بلاغات الناس';
+
+  @override
+  String get pricesWorldFlat => 'الأسعار ثابتة اليوم';
+
+  @override
+  String pricesWorldUp(String name) {
+    return '$name طالع';
+  }
+
+  @override
+  String pricesWorldDown(String name) {
+    return '$name نازل';
+  }
+
+  @override
+  String pricesWorldUpDown(String up, String down) {
+    return '$up طالع، $down نازل';
+  }
+
+  @override
+  String get pricesMine => 'مساهماتك';
+
+  @override
+  String get pricesReportNew => 'سجّل سعراً جديداً';
+
+  @override
+  String get pricesCheapestTitle => 'أرخص سعر حولك';
+
+  @override
+  String get pricesCheapestNote =>
+      'من بلاغات مجتمع زاد آخر ١٤ يوماً — وليست أسعاراً رسمية';
+
+  @override
+  String get pricesCityLabel => 'المدينة أو المنطقة (اختياري)';
+
+  @override
+  String get pricesSearch => 'ابحث';
+
+  @override
+  String get pricesFetchFailed => 'ما قدرنا نجيب الأسعار الحين';
+
+  @override
+  String get pricesFetchFailedHint => 'تأكد من الإنترنت وحاول مرة ثانية';
+
+  @override
+  String get pricesRetry => 'حاول مرة ثانية';
+
+  @override
+  String get pricesNoReportsTitle => 'ما فيه بلاغات هنا للحين';
+
+  @override
+  String get pricesNoReportsHint => 'كن أول من يبلّغ عن سعر — جيرانك بيشكرونك';
+
+  @override
+  String get pricesFirstReport => 'سجّل أول سعر';
+
+  @override
+  String pricesRowMeta(String where, int count) {
+    return '$where · $count بلاغ';
+  }
+
+  @override
+  String get pricesTrendsTitle => 'ترندات سوقك';
+
+  @override
+  String pricesTrendsNote(int days) {
+    return 'ما اشترته أو أضافته بيوت كثيرة في بلدك لقائمة التسوق آخر $days يوم — بدون أسماء ولا محلات';
+  }
+
+  @override
+  String get pricesTrendsNoMarket => 'اختر بلدك أولاً';
+
+  @override
+  String get pricesTrendsNoMarketHint => 'الترندات تُحسب لكل بلد على حدة.';
+
+  @override
+  String get pricesTrendsEmpty => 'ما فيه ترند في سوقك للحين';
+
+  @override
+  String pricesTrendsEmptyHint(int homes) {
+    return 'يظهر الصنف هنا لما يشتريه أو يضيفه $homes بيوت مختلفة على الأقل — حتى لا يُعرف أحد من مشترياته. كل فاتورة تصوّرها تقرّب هذا اليوم.';
+  }
+
+  @override
+  String get pricesTrendUp => 'يزيد';
+
+  @override
+  String get pricesTrendDown => 'يقل';
+
+  @override
+  String get pricesTrendFlat => 'ثابت';
+
+  @override
+  String get pricesTrendFresh => 'جديد';
+
+  @override
+  String pricesHomes(int n) {
+    return '$n بيوت';
+  }
+
+  @override
+  String get pricesTopTitle => 'أكثر المشاركين';
+
+  @override
+  String get pricesTopNone => 'ما فيه مساهمات للحين';
+
+  @override
+  String get pricesTopNoneHint =>
+      'سجّل أول سعر رأيته في السوق — تظهر مساهمتك هنا وتساعد جيرانك يلقون أرخص مكان.';
+
+  @override
+  String pricesContributor(int rank) {
+    return 'المساهم $rank';
+  }
+
+  @override
+  String pricesContribCount(int n) {
+    return '$n مساهمات';
+  }
+
+  @override
+  String get settingsAdsUnavailable => 'ما فيه اختيارات خصوصية متاحة الحين';
+
+  @override
+  String get homeTodayTitle => 'اليوم في بيتك';
+
+  @override
+  String get homeTodayEmpty => 'ما فيه نواقص ولا جرعات ولا تجديدات قريبة';
+
+  @override
+  String get homeTodayEmptyHint => 'اليوم هادي. أي شي يحتاج انتباهك بيظهر هنا.';
+
+  @override
+  String get homeTodayShortTitle => 'نواقص تنشرى';
+
+  @override
+  String get homeGreetDawnAnon => 'صباح الخير';
+
+  @override
+  String get homeGreetMorningAnon => 'أهلاً فيك';
+
+  @override
+  String get homeGreetNoonAnon => 'نهارك سعيد';
+
+  @override
+  String get homeGreetEveningAnon => 'مساء الخير';
+
+  @override
+  String get homeGreetNightAnon => 'ليلة هادية';
+
+  @override
+  String get tasbihaHomeStart => 'ابدأ بستانك بأول تسبيحة';
+
+  @override
+  String tasbihaHomeMature(int score) {
+    return 'الشجرة كبرت · $score تسبيحة';
+  }
+
+  @override
+  String compStateMissions(int n) {
+    return 'باقي $n من مهام اليوم';
+  }
+
+  @override
+  String compStateAllDone(String name) {
+    return '$name مبسوط — خلّصت مهام اليوم';
+  }
+
+  @override
+  String get compUnreachableTitle => 'ما قدرنا نوصل للرفيق';
+
+  @override
+  String get compStatToday => 'نقاط اليوم';
+
+  @override
+  String get compMissionsTitle => 'مهام اليوم';
+
+  @override
+  String compMissionsAllDone(int n) {
+    return 'خلّصت الثلاث! أخذت $n بذرة اليوم.';
+  }
+
+  @override
+  String compWeekDone(int days) {
+    return 'خلّصته! سجّلت $days أيام هذا الأسبوع';
+  }
+
+  @override
+  String get compBuyNo => 'مو الحين';
+
+  @override
+  String compBought(String name) {
+    return 'مبروك! $name صار لك';
+  }
+
+  @override
+  String get compReasonNotOwned => 'للحين ما عندك — افتحه أول.';
+
+  @override
+  String get compReasonOwned => 'هذا عندك من قبل.';
+
+  @override
+  String get compReasonSeason => 'هذا يطلع في موسمه بس.';
+
+  @override
+  String get compReasonNotForSeeds => 'هذا ما يُباع بالبذور.';
+
+  @override
+  String get compReasonWrongCode => 'الكود هذا مو صحيح، راجعه مرة ثانية.';
+
+  @override
+  String get compReasonClaimed => 'أنت كتبت كود صديق من قبل.';
+
+  @override
+  String get compReasonOffline => 'ما فيه اتصال الحين — حاول مرة ثانية.';
+
+  @override
+  String get compPlayUnavailable => 'Google Play غير متاح على هذا الجوال.';
+
+  @override
+  String get compPlayNotOnPlay =>
+      'هذا للحين مو متاح على Google Play — جرّب بالبذور.';
+
+  @override
+  String get compSeedShopBody =>
+      'البذور تتجمع مجاناً من عاداتك، وهذا لمن ما يبي ينتظر.';
+
+  @override
+  String get compHowAi => 'البذور للدولاب بس — ما تتحول لمحاولات ذكاء اصطناعي.';
+
+  @override
+  String get gamesWorldEmpty => 'للحين ما لعبت اليوم';
+
+  @override
+  String offersEyebrowMine(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count من إشعاراتك',
+      few: '$count من إشعاراتك',
+      two: 'اثنين من إشعاراتك',
+      one: 'واحد من إشعاراتك',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String offersStateCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count عرض شغال',
+      few: '$count عروض شغالة',
+      two: 'عرضين شغالين',
+      one: 'عرض واحد شغال',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get offersStateEmpty => 'ما فيه عروض شغالة الحين';
+
+  @override
+  String get offersMineTitle => 'من إشعاراتك';
+
+  @override
+  String get offersPartnerTitle => 'كوبونات لبلدك';
+
+  @override
+  String get offersCopy => 'انسخ';
+
+  @override
+  String offersCopied(String code) {
+    return 'اننسخ الكود $code';
+  }
+
+  @override
+  String get offersNoCode => 'بدون كود';
+
+  @override
+  String get offersExpiresToday => 'ينتهي اليوم';
+
+  @override
+  String offersExpiresInDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'ينتهي بعد $count يوم',
+      few: 'ينتهي بعد $count أيام',
+      two: 'ينتهي بعد يومين',
+      one: 'ينتهي بكرة',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String offersPercentOff(String percent) {
+    return 'خصم $percent٪';
+  }
+
+  @override
+  String offersAmountOff(String amount, String currency) {
+    return 'خصم $amount $currency';
+  }
+
+  @override
+  String get offersFallbackTitle => 'عرض خاص';
+
+  @override
+  String get offersEmptyTitle => 'ما فيه عروض شغالة';
+
+  @override
+  String get offersEmptyMessage =>
+      'أول ما يظهر كوبون لبلدك أو يوصلك إشعار بخصم من تطبيق تسوق، تلقاه هنا. اسحب لتحت للتحديث.';
+
+  @override
+  String get offersNearbyTitle => 'عروض المحلات القريبة';
+
+  @override
+  String get offersNearbyMessage => 'أسعار الأسبوع والمحلات اللي حولك';
+
+  @override
+  String get offersOpenFailed => 'ما قدرنا نفتح العرض';
+
+  @override
+  String get familyWorldNone => 'ما عندك عيلة للحين';
+
+  @override
+  String familyWorldChores(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count مهمة قدامكم',
+      few: '$count مهام قدامكم',
+      two: 'مهمتين قدامكم',
+      one: 'مهمة وحدة قدامكم',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String familyWorldRequests(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count طلب مصروف ينتظر قرارك',
+      few: '$count طلبات مصروف تنتظر قرارك',
+      two: 'طلبين مصروف ينتظرون قرارك',
+      one: 'طلب مصروف ينتظر قرارك',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get familyLoadingMessage =>
+      'أول مرة تحتاج إنترنت. اسحب لتحت إذا تأخر.';
+
+  @override
+  String get familyRetry => 'جرّب مرة ثانية';
+
+  @override
+  String get familyCodeHint => 'مثال: ZAD-1234';
+
+  @override
+  String get familyJoinPasteLink => 'عندك رابط دعوة؟ افتح نافذة الانضمام';
+
+  @override
+  String get familyFollowStarted => 'بدأت المتابعة.';
+
+  @override
+  String get chorePlanFailed => 'ما قدرت أوزّع المهام الحين.';
+
+  @override
+  String get chorePlanEmptyTitle => 'ما فيه مهام مفتوحة تتوزع';
+
+  @override
+  String get guardEventsTitle => 'صحة العقل';
+
+  @override
+  String get guardEventsEmptyTitle => 'زاد ما رفض شي لين الحين';
+
+  @override
+  String get guardEventsEmptyBody =>
+      'لما زاد يرفض يكتب شي (مبلغ غلط، صنف مو موجود…) يظهر السبب هنا.';
+
+  @override
+  String get guardEventsLast7Days => 'آخر ٧ أيام';
+
+  @override
+  String get guardEventsNone7Days => 'ما فيه رفض في آخر ٧ أيام';
+
+  @override
+  String get guardEventsRecent => 'آخر الرفوض';
+
+  @override
+  String get guardEventsErrorTitle => 'ما قدرت أجيب الرفوض';
+
+  @override
+  String get guardEventsErrorBody => 'اسحب لتحت نجرب مرة ثانية.';
+
+  @override
+  String get settingsGuardEventsSubtitle => 'اللي رفض زاد يكتبه، وأسباب الرفض';
+
+  @override
+  String get guardReason_item_not_found => 'السجل هذا مو موجود عندك';
+
+  @override
+  String get guardReason_member_not_found => 'ما فيه فرد بهذا الاسم في البيت';
+
+  @override
+  String get guardReason_name_invalid => 'اسم الصنف لازم يكون من ٢ لـ١٢٠ حرف';
+
+  @override
+  String get guardReason_qty_not_positive => 'الكمية لازم تكون أكبر من صفر';
+
+  @override
+  String get guardReason_qty_too_large =>
+      'الكمية كبيرة بشكل مو منطقي — تأكد من العميل';
+
+  @override
+  String get guardReason_qty_negative => 'الكمية ما تقدر تكون بالسالب';
+
+  @override
+  String get guardReason_category_unknown => 'الفئة مو من الفئات المعروفة';
+
+  @override
+  String get guardReason_expiry_bad_format =>
+      'تاريخ الصلاحية لازم يكون YYYY-MM-DD';
+
+  @override
+  String get guardReason_expiry_before_purchase =>
+      'تاريخ الصلاحية قبل اليوم — تأكد من العميل';
+
+  @override
+  String get guardReason_amount_invalid =>
+      'الكمية المستخدمة لازم تكون أكبر من صفر';
+
+  @override
+  String get guardReason_amount_too_large =>
+      'الكمية المستخدمة كبيرة بشكل مو منطقي';
+
+  @override
+  String get guardReason_restock_mode_unknown =>
+      'النوع إما staple أو occasional';
+
+  @override
+  String get guardReason_already_purchased =>
+      'هذا السطر انشطب من القائمة من قبل';
+
+  @override
+  String get guardReason_member_not_granted =>
+      'هذا الفرد مو في العائلة أو ما وافق إنك تتابع أدويته';
+
+  @override
+  String get guardReason_patch_empty => 'ما فيه شي يتعدل';
+
+  @override
+  String get guardReason_patch_field_unknown => 'هذا الحقل ما يتعدل من هنا';
+
+  @override
+  String get guardReason_dose_times_invalid =>
+      'مواعيد الجرعات لازم تكون HH:MM مفصولة بفاصلة';
+
+  @override
+  String get guardReason_dose_count_invalid => 'عدد الجرعات في اليوم من ١ لـ٢٤';
+
+  @override
+  String get guardReason_qty_invalid =>
+      'الكمية لازم تكون رقم صحيح من ٠ لـ١٠٠٠٠';
+
+  @override
+  String get guardReason_dosage_too_long => 'الجرعة مكتوبة طويلة زيادة';
+
+  @override
+  String get guardReason_dose_already_logged =>
+      'هذي الجرعة مسجلة من قبل — الكمية ما انخصمت مرة ثانية';
+
+  @override
+  String get guardReason_amount_not_positive => 'المبلغ لازم يكون رقم موجب';
+
+  @override
+  String get guardReason_amount_over_cap =>
+      'هذا المبلغ كبير بشكل غير منطقي — تأكد منه';
+
+  @override
+  String get guardReason_title_invalid => 'اكتب وصف قصير للمعاملة (لين ٨٠ حرف)';
+
+  @override
+  String get guardReason_title_guessed =>
+      'هذا الوصف تخمين — اسأل العميل الفلوس هذي راحت على إيش قبل ما تسجلها';
+
+  @override
+  String get guardReason_txn_kind_unknown => 'النوع إما expense أو income';
+
+  @override
+  String get guardReason_wallet_unknown => 'المحفظة إما cash أو card أو bank';
+
+  @override
+  String get guardReason_transfer_to_missing => 'التحويل لازم يقول رايح وين';
+
+  @override
+  String get guardReason_transfer_change_unsupported =>
+      'التحويل ما يتسوي بالتعديل — سجله معاملة جديدة';
+
+  @override
+  String get guardReason_text_too_long => 'الفئة أو اسم المحل طويل زيادة';
+
+  @override
+  String get guardReason_for_person_invalid => '«لمين» لازم يكون من ١ لـ٤٠ حرف';
+
+  @override
+  String get guardReason_date_invalid =>
+      'تاريخ العملية مو واضح أو في المستقبل أو أقدم من سنة';
+
+  @override
+  String get guardReason_category_invalid =>
+      'اسم الفئة لازم يكون من ٢ لـ٤٠ حرف';
+
+  @override
+  String get guardReason_no_category_budget => 'ما فيه سقف على هذي الفئة أصلاً';
+
+  @override
+  String get guardReason_subscription_title_invalid =>
+      'اسم الاشتراك لازم يكون من ٢ لـ١٢٠ حرف';
+
+  @override
+  String get guardReason_renewal_date_invalid =>
+      'تاريخ التجديد لازم يكون تاريخ صحيح بصيغة YYYY-MM-DD';
+
+  @override
+  String get guardReason_billing_cycle_invalid =>
+      'دورة الدفع إما MONTHLY أو YEARLY';
+
+  @override
+  String get guardReason_due_day_invalid => 'يوم الاستحقاق لازم يكون من ١ لـ٣١';
+
+  @override
+  String get guardReason_is_active_invalid => 'التفعيل لازم يكون true أو false';
+
+  @override
+  String get guardReason_debt_name_invalid =>
+      'اسم الدين لازم يكون من ٢ لـ١٢٠ حرف';
+
+  @override
+  String get guardReason_minimum_invalid =>
+      'الحد الأدنى الشهري لازم يكون رقم مو سالب';
+
+  @override
+  String get guardReason_interest_invalid =>
+      'نسبة الفائدة لازم تكون من ٠ لـ١٠٠٠';
+
+  @override
+  String get guardReason_balance_negative =>
+      'الرصيد المتبقي ما يقدر يكون بالسالب';
+
+  @override
+  String get guardReason_obligation_title_invalid =>
+      'اسم الالتزام لازم يكون من ٢ لـ١٢٠ حرف';
+
+  @override
+  String get guardReason_obligation_kind_invalid =>
+      'نوع الالتزام إما rent أو installment أو tuition أو utility أو other';
+
+  @override
+  String get guardReason_recurrence_invalid =>
+      'التكرار إما monthly أو quarterly أو yearly أو once';
+
+  @override
+  String get guardReason_installments_invalid =>
+      'عدد الأقساط لازم يكون رقم صحيح من ١ لـ٦٠٠';
+
+  @override
+  String get guardReason_already_inactive => 'هذا الالتزام انلغى من قبل';
+
+  @override
+  String get guardReason_device_name_invalid =>
+      'اسم الجهاز لازم يكون من ٢ لـ١٢٠ حرف';
+
+  @override
+  String get guardReason_device_category_invalid =>
+      'فئة الجهاز طويلة زيادة (٦٠ حرف بالكثير)';
+
+  @override
+  String get guardReason_day_invalid =>
+      'التاريخ لازم يكون يوم صحيح بصيغة YYYY-MM-DD';
+
+  @override
+  String get guardReason_interval_invalid =>
+      'الفاصل بين الصيانات لازم يكون عدد أيام صحيح وموجب';
+
+  @override
+  String get guardReason_cost_invalid =>
+      'التكلفة لازم تكون رقم موجب في الحدود المنطقية';
+
+  @override
+  String get guardReason_kind_invalid => 'النوع مو من الأنواع المعروفة';
+
+  @override
+  String get guardReason_holder_invalid =>
+      'اسم صاحب المستند لازم يكون بدون مسافات زيادة ولين ٤٠ حرف';
+
+  @override
+  String get guardReason_label_invalid =>
+      'اسم المستند لازم يكون بدون مسافات زيادة ولين ٤٠ حرف';
+
+  @override
+  String get guardReason_label_required => 'مستند «other» يحتاج اسم';
+
+  @override
+  String get guardReason_date_out_of_range =>
+      'تاريخ الانتهاء مو معقول (بين ٢٠٠٠ و٢١٠٠)';
+
+  @override
+  String get guardReason_appt_title_invalid =>
+      'اسم الموعد لازم يكون من ٢ لـ١٦٠ حرف';
+
+  @override
+  String get guardReason_starts_at_invalid => 'وقت الموعد مو واضح';
+
+  @override
+  String get guardReason_appt_recurrence_invalid =>
+      'التكرار لازم يكون once أو hourly أو daily أو weekly أو monthly';
+
+  @override
+  String get guardReason_source_invalid => 'مصدر الموعد مو معروف';
+
+  @override
+  String get guardReason_remind_invalid =>
+      'التذكير قبله لازم يكون دقايق صحيحة من ٠ لـ١٠٠٨٠';
+
+  @override
+  String get guardReason_place_too_long =>
+      'اسم المكان طويل زيادة (١٢٠ حرف بالكثير)';
+
+  @override
+  String get guardReason_status_invalid =>
+      'الحالة لازم تكون upcoming أو done أو cancelled';
+
+  @override
+  String get guardReason_user_not_found => 'حساب العميل مو موجود';
+
+  @override
+  String get guardReason_cycle_day_invalid =>
+      'يوم بداية الدورة رقم صحيح من ١ لـ٣١';
+
+  @override
+  String get guardReason_currency_invalid =>
+      'العملة كود ISO من ٣ حروف كابيتال (مثل EGP)';
+
+  @override
+  String get guardReason_country_invalid =>
+      'البلد كود ISO من حرفين كابيتال (مثل EG)';
+
+  @override
+  String get guardReason_balance_invalid => 'الرصيد لازم يكون رقم مو سالب';
+
+  @override
+  String get guardReason_sleep_time_invalid => 'المواعيد بصيغة HH:MM (٢٤ ساعة)';
+
+  @override
+  String get guardReason_sleep_bed_out_of_range =>
+      'النوم من ٢٠:٠٠ لـ٠٣:٠٠ — شغل ليلي؟ اسأله وما تحفظش';
+
+  @override
+  String get guardReason_sleep_wake_out_of_range => 'الصحيان من ٠٤:٠٠ لـ١٢:٠٠';
+
+  @override
+  String get guardReason_setting_unknown =>
+      'هذا الإعداد إما pet_calls أو food_pattern';
+
+  @override
+  String get guardReason_goal_title_invalid => 'عنوان الهدف من ٤ لـ٢٠٠ حرف';
+
+  @override
+  String get guardReason_metric_too_long => 'وصف المقياس طويل زيادة';
+
+  @override
+  String get guardReason_target_invalid =>
+      'المبلغ المستهدف لازم يكون رقم موجب ومنطقي';
+
+  @override
+  String get guardReason_deadline_invalid => 'تاريخ الهدف مو واضح';
+
+  @override
+  String get guardReason_unit_invalid => 'الوحدة إما money أو count';
+
+  @override
+  String get guardReason_goal_not_found => 'ما فيه هدف بهذا الاسم عند العميل';
+
+  @override
+  String get guardReason_goal_amount_invalid =>
+      'المبلغ لازم يكون رقم مو صفر وفي حدود المنطق';
+
+  @override
+  String get guardReason_goal_not_amount =>
+      'هذا الهدف يتعد بالمهام مو بالفلوس — تقدمه يتحسب لحاله.';
+
+  @override
+  String get guardReason_challenge_already_active =>
+      'عنده تحدي شغال من قبل — شجعه يكمله أو اسأله إذا يبي يقفله أول (stop_savings_challenge).';
+
+  @override
+  String get guardReason_no_active_challenge => 'ما فيه تحدي شغال أصلاً';
+
+  @override
+  String get guardReason_challenge_cap_invalid =>
+      'السقف اليومي لازم يكون رقم موجب ومنطقي';
+
+  @override
+  String get guardReason_challenge_length_invalid => 'مدة التحدي من ٧ لـ٩٠ يوم';
+
+  @override
+  String get guardReason_challenge_date_invalid => 'تاريخ بداية التحدي مو واضح';
+
+  @override
+  String get guardReason_dose_slot_invalid => 'موعد الجرعة مو تاريخ واضح';
+
+  @override
+  String get guardReason_snooze_minutes_invalid => 'التأجيل من ٥ لـ٢٤٠ دقيقة';
+
+  @override
+  String get guardReason_fallback => 'انرفضت الكتابة';
+
+  @override
+  String get pantryWhoseField => 'لمن؟';
+
+  @override
+  String get pantryWhoseMe => 'أنا';
+
+  @override
+  String pantryRateEstimate(String days) {
+    return 'تقديرنا إنه يكفي قرابة $days يوم';
+  }
+
+  @override
+  String get pantryRateFaster => 'يخلص أسرع';
+
+  @override
+  String get pantryRateSlower => 'يخلص أبطأ';
+
+  @override
+  String get pantryRateSaved => 'سجّلنا تصحيحك';
+
+  @override
+  String get permSheetBody =>
+      'عشان زاد ينبّهك ويتابع بيتك من دون ما تفتح التطبيق، نحتاج هذي الأذونات. كل واحد منها اختياري، وتقدر تغيّره من إعدادات الجوال في أي وقت.';
+
+  @override
+  String get permLater => 'مو الحين';
+
+  @override
+  String get notifReadsSwitchesTitle => 'قراءة الإشعارات';
+
+  @override
+  String get notifReadsPrivacy =>
+      'كل خيار مقفل لين تفتحه بنفسك. وتقدر تقفله في أي وقت.';
+
+  @override
+  String get notifReadsAppointment => 'حجوزات الدكتور';
+
+  @override
+  String get notifReadsTrip => 'الطيران';
+
+  @override
+  String get notifReadsDocument => 'أبشر والخدمات';
+
+  @override
+  String get notifReadsExplain =>
+      'نقرا الإشعار ونطلّع التاريخ والمكان بس، والنص ينمسح.';
+
+  @override
+  String get notifReadsSaveFailed => 'ما قدرنا نحفظ التغيير، حاول مرة ثانية';
+
+  @override
+  String get notifReadsTodayTitle => 'وش قرا زاد اليوم';
+
+  @override
+  String get notifReadsEmptyTitle => 'للحين ما انقرا شي اليوم';
+
+  @override
+  String get notifReadsEmptyBody =>
+      'أول ما يوصلك إشعار من نوع مفتوح، بتلقى هنا التاريخ والمكان اللي طلعناهم منه.';
+
+  @override
+  String get notifReadsLoadFailed => 'ما قدرنا نحمّل، اضغط للمحاولة مرة ثانية';
+
+  @override
+  String get notifReadsDate => 'التاريخ';
+
+  @override
+  String get notifReadsTime => 'الوقت';
+
+  @override
+  String get notifReadsPlace => 'المكان';
 }

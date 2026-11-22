@@ -14,8 +14,10 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
+import 'package:zad/core/data/local/boxes.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/zad_theme.dart';
 import 'package:zad/features/inventory/presentation/pantry_view.dart' as pv;
@@ -107,6 +109,18 @@ void main() {
     await initializeDateFormatting('ar');
   });
 
+  late Directory dir;
+  late ZadLocalStore store;
+  setUp(() async {
+    dir = await Directory.systemTemp.createTemp('zad_amazon');
+    Hive.init(dir.path);
+    store = await ZadLocalStore.open();
+  });
+  tearDown(() async {
+    await Hive.deleteFromDisk();
+    await dir.delete(recursive: true);
+  });
+
   final key = GlobalKey();
 
   Future<void> shoot(
@@ -124,6 +138,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          localStoreProvider.overrideWithValue(store),
           adsAllowedProvider.overrideWithValue(false),
           nowProvider.overrideWithValue(() => DateTime.utc(2026, 9, 25, 9)),
           accountTimeZoneProvider.overrideWithValue('Africa/Cairo'),
@@ -191,7 +206,7 @@ void main() {
       'pantry',
       const pv.PantryView(),
       chips: 2,
-      after: () => tester.pumpAndSettle(),
+      after: () => tester.pump(const Duration(seconds: 1)),
       overrides: [
         shoppingControllerProvider.overrideWith(QuietShopping.new),
         pantryControllerProvider.overrideWith(
@@ -235,7 +250,7 @@ void main() {
       overrides: recipesOverrides,
       after: () async {
         await tester.tap(find.text('مكرونة بالصلصة والجبنة'));
-        await tester.pumpAndSettle();
+        await tester.pump(const Duration(seconds: 1));
       },
     );
   });
@@ -247,7 +262,7 @@ void main() {
       const RecipeDetailDialog(recipe: _pasta),
       chips: 2,
       overrides: recipesOverrides,
-      after: () => tester.pumpAndSettle(),
+      after: () => tester.pump(const Duration(seconds: 1)),
     );
   });
 }

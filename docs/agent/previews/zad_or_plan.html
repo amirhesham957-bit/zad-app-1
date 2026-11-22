@@ -1,0 +1,319 @@
+<title>محرك زاد الحسابي</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=Readex+Pro:wght@500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one reading column; a layered architecture diagram at the top, then phases as a sequence. */
+:root{
+  --bg:#f2f4f7; --surface:#ffffff; --ink:#151b26; --muted:#5a6475; --line:#d8dde6;
+  --accent:#2f4fb8; --accent-soft:#e2e8f8;
+  --math:#0d7a66; --math-soft:#ddf1ec;
+  --ai:#8a4fb0; --ai-soft:#f1e6f7;
+  --bad:#b42318; --bad-soft:#fde8e6; --warn:#9a5a06; --warn-soft:#fbf0db;
+  --display:"Readex Pro","IBM Plex Sans Arabic",Tahoma,sans-serif;
+  --body:"IBM Plex Sans Arabic",Tahoma,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f131a; --surface:#171d27; --ink:#e3e8f0; --muted:#9aa4b5; --line:#2a3240;
+  --accent:#8ea6f5; --accent-soft:#1f2a47; --math:#5fd0b6; --math-soft:#14322c;
+  --ai:#cf9cf0; --ai-soft:#2e2038; --bad:#f2836f; --bad-soft:#3a1a16; --warn:#f0b35a; --warn-soft:#382a14; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f131a; --surface:#171d27; --ink:#e3e8f0; --muted:#9aa4b5; --line:#2a3240;
+  --accent:#8ea6f5; --accent-soft:#1f2a47; --math:#5fd0b6; --math-soft:#14322c;
+  --ai:#cf9cf0; --ai-soft:#2e2038; --bad:#f2836f; --bad-soft:#3a1a16; --warn:#f0b35a; --warn-soft:#382a14; color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.8;direction:rtl}
+.wrap{max-width:900px;margin:0 auto;padding-block:32px 72px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:44px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.35}
+h1{font-size:32px} h2{font-size:22px} h3{font-size:16.5px}
+p{margin:0;max-width:68ch}
+ul{margin:0;padding-inline-start:20px;display:grid;gap:4px}
+code,.mono{font-family:var(--mono);font-size:13px;direction:ltr;unicode-bidi:isolate}
+code{background:var(--accent-soft);padding:1px 6px;border-radius:5px}
+.small{font-size:13px;color:var(--muted)}
+.eyebrow{font-size:12.5px;letter-spacing:.04em;color:var(--accent);font-weight:600}
+section{display:grid;gap:16px}
+.thesis{display:grid;gap:14px}
+.thesis .big{font-family:var(--display);font-size:21px;line-height:1.6;max-width:40ch}
+.thesis .big b{color:var(--math)} .thesis .big i{font-style:normal;color:var(--ai)}
+
+/* architecture stack */
+.stack{display:grid;gap:8px}
+.layer{border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:grid;grid-template-columns:minmax(0,11em) minmax(0,1fr);gap:4px 16px;background:var(--surface)}
+.layer h3{font-size:15.5px}
+.layer.ai{background:var(--ai-soft);border-color:transparent}
+.layer.math{background:var(--math-soft);border-color:transparent}
+.layer.kernel{background:var(--accent-soft);border-color:transparent}
+.layer .who{font-size:12.5px;color:var(--muted)}
+.arrow{text-align:center;color:var(--muted);font-size:13px}
+.side{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media (max-width:620px){.layer{grid-template-columns:1fr}.side{grid-template-columns:1fr}}
+
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
+.fact{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:grid;gap:2px;align-content:start}
+.fact b{font-family:var(--display);font-size:22px;font-variant-numeric:tabular-nums}
+.fact.bad b{color:var(--bad)} .fact.good b{color:var(--math)}
+
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:640px;font-size:14px}
+th,td{text-align:start;vertical-align:top;padding:10px 12px;border-bottom:1px solid var(--line)}
+th{font-family:var(--display);font-weight:500;font-size:13px;color:var(--muted);background:var(--bg)}
+tr:last-child td{border-bottom:0}
+td.m{color:var(--math);font-weight:500}
+
+.cause{display:grid;gap:10px}
+.cause-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface)}
+.cause-row>div{padding:12px 14px;display:grid;gap:2px}
+.cause-row>div+div{border-inline-start:1px solid var(--line);background:var(--math-soft)}
+.cause-row .lbl{font-size:12px;color:var(--muted)}
+@media (max-width:620px){.cause-row{grid-template-columns:1fr}.cause-row>div+div{border-inline-start:0;border-top:1px solid var(--line)}}
+
+.phases{display:grid;gap:12px;counter-reset:ph}
+.phase{counter-increment:ph;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px;display:grid;grid-template-columns:2.4em minmax(0,1fr);gap:6px 12px}
+.phase::before{content:"م" counter(ph);grid-row:span 4;font-family:var(--display);font-size:20px;color:var(--accent);line-height:1.3}
+.phase .dur{font-size:12.5px;color:var(--muted)}
+.phase .done{font-size:13.5px;color:var(--math)}
+.note{background:var(--warn-soft);border-radius:12px;padding:14px 16px;display:grid;gap:6px;font-size:14px}
+.rule{display:grid;gap:8px}
+.rule div{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 14px}
+.ask{display:grid;gap:10px}
+.ask div{background:var(--surface);border:1px solid var(--line);border-inline-start:3px solid var(--accent);border-radius:10px;padding:12px 14px;display:grid;gap:4px}
+footer{color:var(--muted);font-size:12.5px}
+</style>
+
+<div class="wrap">
+
+<header class="thesis">
+  <span class="eyebrow">خطة زاد · معتمدة من المالك · ٢٠٢٦-١١-٢٠</span>
+  <h1>محرك زاد الحسابي</h1>
+  <p class="big">الحساب بيقرر، والذكاء بيفهم ويحكي. كل رقم يطلع لعميل زاد يطلع من <b>معادلة أو solver</b> ليها مصدر وتاريخ، و<i>الذكاء الاصطناعي</i> شغلته يقرا الكلام والفواتير ويحكي النتيجة بلهجة البيت. ممنوع يخمّن رقم، وممنوع يمسح داتا.</p>
+  <p class="small">مبنية على محاكاة MiroFish (٣٠ مقابلة و١٤١ عقبة يومية) وعلى جرد للكود اتعمل النهارده. أرقام الداتابيز الحية منقولة من ZAD_PLAN بتاريخها (٢٤/١٠) ومحتاجة تتقاس تاني قبل التنفيذ.</p>
+</header>
+
+<section>
+  <h2>التنفيذ دلوقتي</h2>
+  <p>المالك اعتمد الخطة يوم ٢٠/١١، والملف المرجعي في الريبو بقى <code>docs/agent/ZAD_OR_PLAN.md</code>. م١ بيبدأ، وجنبه ج١ (نسخة المتجر) وج٢ (العملة والسفر). الصفحة دي بتتحدث مع كل بند بيخلص.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>المرحلة</th><th>خلص</th><th>الجاي</th></tr></thead>
+    <tbody>
+      <tr><td>ج١ نسخة المتجر</td><td>٢ من ٥</td><td>الصلاحيات الأساسية من أول يوم: خطوة في أول تشغيل بتشرح فايدة كل صلاحية للأسرة وإن بياناتهم آمنة، وكارت في الرئيسية يفعّل الناقص بضغطة (قرار المالك ٢١/١١، بدل تأجيل ٧ أيام). النسخة اللي اترفعت <code>1.1.0+13</code> (#630)</td></tr>
+      <tr><td>ج٢ العملة والسفر</td><td>١ من ٤</td><td>أسعار لكل بلد في Play Console (إيد المالك)</td></tr>
+      <tr><td>م١ وقف النزيف</td><td>٤ من ٧</td><td>السلة والتراجع بالصف كامل والذاكرة اتنشروا واتأكدوا على الحي يوم ٢١/١١. الجاي: حساب الاختبار (٩٦٪ من الكوتة)</td></tr>
+      <tr><td>م٢ لحد م٨</td><td>٠</td><td>بالترتيب بعد م١</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>القياس الأولاني على الداتابيز الحية (٢٠/١١)</h3>
+  <div class="facts">
+    <div class="fact"><b>١</b><span class="small">مرة نادى فيها الموديل أداة <code>delete_*</code> في التاريخ كله (حذف صنف من قايمة الشرا)</span></div>
+    <div class="fact bad"><b>مجهول</b><span class="small">مصدر باقي الحذف: ١٢٣ حركة و١٣٤ صنف و١٥٠ ذاكرة اتمسحوا من آخر يونيو، ومفيش تريجر بيسجّل مين مسح</span></div>
+    <div class="fact bad"><b>٩٦٪</b><span class="small">من لفات الشات في ١٤ يوم من حساب الاختبار (٣٬٣٦١ من ٣٬٥١٥، و٧٩ مليون توكن)</span></div>
+    <div class="fact"><b>٢١٬٣١٤</b><span class="small">توكن في متوسط اللفة الحقيقية (١٥٤ لفة في ١٤ يوم)</span></div>
+    <div class="fact"><b>١٩</b><span class="small">حساب فتح التطبيق آخر ٧ أيام، من ٣٠ حساب</span></div>
+    <div class="fact bad"><b>٥</b><span class="small">حسابات بس سجّلوا حركات فلوس في ٣٠ يوم (٢٢ حركة)</span></div>
+    <div class="fact bad"><b>٠ من ٦٥</b><span class="small">صنف في المخزن عليه تاريخ صلاحية</span></div>
+    <div class="fact"><b>٥١</b><span class="small">كرون شغال على الحي</span></div>
+  </div>
+  <p>المعنى: بلاغ «العقل بيمسح» مش ممكن يتثبت ولا يتنفي النهارده، لأن الحذف مش متسجل. عشان كده أول بند في م١ تريجر يسجّل كل حذف ومصدره. وأكبر توفير ممكن في الكوتة دلوقتي هو حساب الاختبار، قبل المحرك نفسه.</p>
+</section>
+
+<section>
+  <h2>المشكلة من الكود، مش من الإحساس</h2>
+  <p>التشخيص بتاعك صح: الميزات موجودة، والعيب في التركيبة. الذكاء الاصطناعي شايل الفهم والقرار والكتابة في الداتابيز في نفس اللفة، ومفيش طبقة حساب تحته تمسك الأرقام.</p>
+  <div class="facts">
+    <div class="fact bad"><b>١١٬٦٦٦</b><span class="small">سطر في ملف واحد (<code>zad-brain/index.ts</code>) فيه العقل وكل أدواته</span></div>
+    <div class="fact bad"><b>١١</b><span class="small">أداة <code>delete_*</code> الموديل بيناديها وبتمسح الصف نهائياً، من غير سلة محذوفات</span></div>
+    <div class="fact bad"><b>٢٠+</b><span class="small">أداة <code>update_*</code>/<code>set_*</code> بتكتب فوق القيمة القديمة ومش بتحفظها</span></div>
+    <div class="fact bad"><b>٨٢</b><span class="small">سطر <code>cron.schedule</code> في المايجريشنز، ده جيش موظفين كل واحد بمواعيده</span></div>
+    <div class="fact bad"><b>٠</b><span class="small">smoothing أو solver في السيرفر. معدل الاستهلاك = متوسط دورات الشرا</span></div>
+    <div class="fact bad"><b>~٢١٫٨ ألف</b><span class="small">توكن في اللفة الواحدة (٢٤/١٠)، والعقل بيقرا البيت كله خام كل مرة</span></div>
+    <div class="fact good"><b>موجود</b><span class="small"><code>zad_home_state</code> و<code>zad_forecasts</code> و<code>fastPath.ts</code>. دي أساس كويس نبني عليه</span></div>
+  </div>
+  <p>الحراس النهارده حدود عدد لكل أداة في <code>validators.ts</code>، زي «٣ حذف معاملات في اللفة». يعني الحارس بيعدّ، بس مش بيسأل «الحذف ده صح؟». وفيه دالة <code>writeSingleCopyMemory</code> (<code>index.ts:821</code>) بتمسح ذاكرة النطاق كله وبعدين تكتب، ولو الكتابة وقعت في النص الذاكرة بتضيع.</p>
+
+  <h3>كل شكوى من المحاكاة ليها سبب في التركيبة</h3>
+  <div class="cause">
+    <div class="cause-row"><div><span class="lbl">الشكوى</span>«هل خلص الرز؟» مزعج (٢٦ من ٣٠)</div><div><span class="lbl">السبب والحل</span>مفيش موديل تنبؤ، فالسؤال هو الحساس الوحيد. الحل نموذج استهلاك بيتنبأ، وسؤال يتسأل بس لو قيمة المعلومة عالية.</div></div>
+    <div class="cause-row"><div><span class="lbl">الشكوى</span>الفاتورة بتغلط في الكميات والصلاحية (٢٤)</div><div><span class="lbl">السبب والحل</span>مخرج الـOCR بيدخل الداتابيز من غير ما يتراجع بقواعد. الحل نواة بتشيك الكمية والسعر والصلاحية بحدود الصنف، وبتعرض شاشة تأكيد.</div></div>
+    <div class="cause-row"><div><span class="lbl">الشكوى</span>«العقل بيهيّس وبيمسح الداتا» (بلاغك)</div><div><span class="lbl">السبب والحل</span>الموديل بيكتب ويمسح مباشرة. الحل إن الموديل يقدم «نية» والنواة هي اللي تنفذ، والحذف يبقى حذف ناعم وليه تراجع.</div></div>
+    <div class="cause-row"><div><span class="lbl">الشكوى</span>تنبيهات محشورة في ساعة واحدة (بلاغك ١٧/١٠)</div><div><span class="lbl">السبب والحل</span>كل موظف بيبعت لوحده. الحل جدولة الانتباه كمسألة knapsack يومية بميزانية رسايل.</div></div>
+    <div class="cause-row"><div><span class="lbl">الشكوى</span>المرتب بيخلص قبل يوم ٢٠ (منى)</div><div><span class="lbl">السبب والحل</span>«المتاح» رقم واحد من غير احتمال. الحل «مصروف النهارده الآمن» واحتمال الوصول للقبض من محاكاة Monte Carlo.</div></div>
+  </div>
+</section>
+
+<section>
+  <h2>المعمارية الجديدة: ٤ طبقات وعقد واحد</h2>
+  <p>العقد: <b>أي كتابة في الداتابيز بتعدي على النواة</b>. الذكاء بيقدم نية مكتوبة (intent)، والنواة بتراجعها بقواعد ثابتة، والمحرك الحسابي بيحسب، والذكاء بيحكي اللي اتحسب.</p>
+  <div class="stack">
+    <div class="layer ai"><div><h3>١. الحواس</h3><span class="who">ذكاء اصطناعي · Gemini lite</span></div><p>بتحول الكلام والصوت والفاتورة وإشعار البنك لنية منظمة، زي <code>{intent:"consume", item:"رز", qty:1, unit:"كجم"}</code> ومعاها نسبة ثقة. مش بتكتب في أي جدول.</p></div>
+    <div class="arrow">النية ↓</div>
+    <div class="layer kernel"><div><h3>٢. نواة البيانات</h3><span class="who">SQL · Postgres</span></div><p>دفتر أحداث بيتكتب ومايتمسحش (<code>zad_events</code>)، وقيود ثابتة (الكمية مش سالبة، والسعر في حدود الصنف، والتاريخ منطقي)، وحذف ناعم بتراجع، ومصدر وتاريخ لكل رقم. الجداول الحالية بتبقى «عرض» بيتبني من الدفتر.</p></div>
+    <div class="arrow">حقائق نضيفة ↓</div>
+    <div class="layer math"><div><h3>٣. المحرك الحسابي (OR Core)</h3><span class="who">TypeScript + SQL + HiGHS</span></div><p>تنبؤ واستهلاك ومخزون وفلوس وجدولة وتحسين. كل نتيجة ليها رقم ونطاق ثقة ومصدر، وبتتسجل في دفتر التوقعات عشان تتحاسب بعدين.</p></div>
+    <div class="arrow">نتيجة محسوبة ↓</div>
+    <div class="layer ai"><div><h3>٤. العقل المتكلم</h3><span class="who">ذكاء اصطناعي · بيحكي بس</span></div><p>بياخد نتيجة المحرك وبيحكيها بلهجة البيت. الحارس بيشيك إن كل رقم في الرد موجود في النتيجة، ولو لقى رقم مش موجود الرد بيتبدل بقالب ثابت.</p></div>
+    <div class="side">
+      <div class="layer"><div><h3>الحراس</h3><span class="who">سجل واحد</span></div><p>قيود SQL وقواعد ثابتة، مش جمل في البرومبت. كل منع بيتسجل بسببه في <code>zad_guard_events</code> وبيبان في «صحة العقل».</p></div>
+      <div class="layer"><div><h3>الموظفين</h3><span class="who">مُرسِل واحد</span></div><p>جدول <code>zad_jobs</code> ودقة واحدة كل دقيقة بدل كرونات كتير. كل شغلانة ليها مفتاح تكرار وميزانية وسجل صحة.</p></div>
+    </div>
+  </div>
+  <p class="small">ده مش «عقل تاني» ولا إطار جديد. قرار ZAD_PLAN بعقل واحد في <code>zad-brain</code> فاضل زي ما هو، والطبقات دي بتتبني جواه وجوه الداتابيز.</p>
+</section>
+
+<section>
+  <h2>المحرك الحسابي: كل مشكلة وطريقتها</h2>
+  <p>كل صف هنا بيشيل شغلانة كان الموديل بيعملها بالتخمين. المسائل عندنا صغيرة (بيت واحد، عشرات الأصناف)، فالـsolver بيحلها في ملي ثواني من غير أي كوتة.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>المشكلة</th><th>الطريقة</th><th>الناتج للعميل</th><th>بيبدأ إزاي من غير داتا</th></tr></thead>
+    <tbody>
+      <tr><td>المخزن: إمتى الصنف يخلص</td><td class="m">TSB (Teunter–Syntetos–Babai) للطلب المتقطع، ومعاه Bayesian shrinkage</td><td>«الرز هيخلص الخميس، غالباً بين الأربع والسبت»</td><td>معدل مبدئي حسب الفئة وعدد أفراد البيت والبلد، وكل ملاحظة بتحرّكه ناحية البيت</td></tr>
+      <tr><td>المخزن: إمتى نسأل</td><td class="m">قيمة المعلومة (Value of Information)</td><td>سؤال واحد في الأسبوع بالكتير، ويتجمع</td><td>السؤال يتسأل بس لما عدم اليقين في صنف أساسي يبقى عالي</td></tr>
+      <tr><td>نقطة إعادة الطلب</td><td class="m">(s,S) بمستوى خدمة ٩٥٪ وأيام التوريد</td><td>الصنف يدخل القايمة قبل ما يخلص بيومين</td><td>أيام توريد افتراضية لكل نوع محل</td></tr>
+      <tr><td>الأدوية</td><td class="m">عدّ ثابت: الرصيد ناقص الجرعات المتسجلة، وجدولة بتوقيت كل فرد</td><td>«البخاخة هتخلص بعد ٦ أيام»، وجرعات مشعل بتوقيت تورنتو</td><td>محتاج عدد العبوة بس</td></tr>
+      <tr><td>الفلوس لآخر الشهر</td><td class="m">Cash-flow pacing، وMonte Carlo بـ١٠٠٠ مسار من صرف البيت نفسه</td><td>«تقدر تصرف ١٨٠ النهارده، واحتمال توصل للقبض ٨٤٪»</td><td>قبل ١٤ يوم صرف: الرقم من غير احتمال، ومكتوب «تقريباً»</td></tr>
+      <tr><td>توزيع الميزانية على البنود</td><td class="m">Goal programming</td><td>الأكل والدروس والعلاج بأولوية العميل</td><td>أوزان افتراضية يغيرها العميل</td></tr>
+      <tr><td>السلة على المحلات</td><td class="m">MILP صغير (HiGHS): أقل سعر مع تكلفة المشوار، وحد أقصى لعدد المحلات</td><td>«هات الزيت والرز من كيو، والباقي من جنبك»</td><td>محتاج أسعار. جدول الأسعار كان فيه ٢٨ صف، فده يستنى مصادر الأسعار</td></tr>
+      <tr><td>العروض: تستاهل ولا لأ</td><td class="m">التوفير المتوقع × احتمال الاحتياج قبل الصلاحية، وNewsvendor للحاجات اللي بتبوظ</td><td>العرض يتقال بس لو هيوفر فعلاً</td><td>بيشتغل بمجرد ما التنبؤ يشتغل</td></tr>
+      <tr><td>التخزين وقت الخصم</td><td class="m">EOQ بكسر السعر</td><td>«الرز نازل ١٥٪، خد ٣ شهور»</td><td>محتاج تاريخ سعر للصنف</td></tr>
+      <tr><td>الرسايل في اليوم</td><td class="m">Knapsack يومي بميزانية انتباه، والحارة الحرجة برا الميزانية</td><td>مفيش حشر، والمهم يوصل في وقته</td><td>القيمة الأولية حسب الحارة، وبتتعلم من التجاهل (<code>engagement.ts</code>)</td></tr>
+      <tr><td>«خطة الجمعة»</td><td class="m">LP للمنيو (Diet problem)، وHungarian لشغل البيت، وجدولة لوقت اللمّة</td><td>رسالة واحدة في الأسبوع والأسرة توافق بلمسة</td><td>من المخزن والميزانية الموجودين</td></tr>
+    </tbody>
+  </table></div>
+  <h3>أداة الحل</h3>
+  <ul>
+    <li><b>أغلب الحسابات</b> معادلات مقفولة في TypeScript وSQL، من غير مكتبات.</li>
+    <li><b>LP وMILP</b> بـHiGHS نسخة WASM جوه Deno، في نفس الـedge function. لازم نجرّبه في Deno الأول: لو ما اشتغلش في وقت وذاكرة الـedge، البديل <code>javascript-lp-solver</code> للمسائل الصغيرة.</li>
+    <li><b>OR-Tools</b> (Python) مش دلوقتي. محتاج سيرفر منفصل وتكلفته، ومسائلنا صغيرة عليه. نرجع له لو مسألة واحدة كبرت عن HiGHS.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>الهجين: مين يرد على إيه</h2>
+  <p>الطلب بيمشي بالترتيب ده، ويقف عند أول طبقة تقدر ترد:</p>
+  <div class="rule">
+    <div><b>١. المسار الثابت</b> (<code>fastPath.ts</code>، موجود): «سجل ٥٠ قهوة»، «فاضل كام». regex وقراية SQL، ومن غير أي موديل.</div>
+    <div><b>٢. المحرك</b>: «الرز هيخلص إمتى؟»، «أقدر أشتري التلاجة الشهر ده؟». النية بتتحدد بموديل lite (thinking off)، والإجابة من المحرك، وبتتحكي بقالب.</div>
+    <div><b>٣. الموديل الكامل</b>: الأسئلة المفتوحة بس («أعمل إيه في ضغط الشهر ده؟»). سياقه سطور <code>zad_home_state</code> ونتايج المحرك، مش الجداول الخام.</div>
+  </div>
+  <p>الرسايل الاستباقية (هيخلص، الجرعة، الميزانية) بتطلع من قوالب بلهجة كل بلد. الموديل ممكن يعيد صياغتها، والصياغة بتتخزن لكل قالب ولهجة، يعني نداء واحد بيخدم كل البيوت.</p>
+  <div class="note"><b>الكوتة (تقدير، مش قياس):</b> لو السياق نزل من ~٢١٫٨ ألف توكن لـ٢–٣ آلاف، والمسارين ١ و٢ خدوا أغلب الطلبات، الاستهلاك ممكن ينزل لأقل من عُشره. الرقم الحقيقي بيتقاس من <code>zad_health_daily</code> قبل م٤ وبعدها.</div>
+</section>
+
+<section>
+  <h2>العقل بيتحاسب: حلقة المعايرة</h2>
+  <p><code>zad_forecasts</code> موجود وبيقفل توقعات «هيخلص» و«صرف الأسبوع». هنوسعه لكل توقع المحرك بيطلعه، وكل أسبوع بيتحسب:</p>
+  <ul>
+    <li>دقة «هيخلص»: نسبة اللي خلص فعلاً، ومتوسط الغلط بالأيام.</li>
+    <li>غلط صرف الأسبوع (MAPE)، والمعايرة: لما المحرك يقول ٨٠٪، لازم يصح حوالي ٨٠٪ من المرات.</li>
+    <li>معاملات كل بيت (زي معامل التنعيم) بتتظبط لوحدها من غلطه هو.</li>
+  </ul>
+  <p>وقبل ما أي موديل يتنشر بيتجرب على تاريخ البيوت الحقيقي (backtest)، وعلى بيوت افتراضية مبنية من شخصيات المحاكاة الـ٢٢، عشان الداتا الحقيقية قليلة.</p>
+</section>
+
+<section>
+  <h2>السوق والجمهور والإشعارات: مكانهم في نفس المعمارية</h2>
+  <p>الترندات والعروض والريستوك وأمازون وشي إن وقراية الإشعارات مش أنظمة منفصلة. كلها <b>إشارات</b> بتدخل من الحواس، وبتتسجل في النواة، والمحرك بيقرر هي تهم بيت مين وإمتى. والعقل بيحكيها بس. القاعدة اللي بتمسكهم كلهم: <b>العرض بيتقال لما يقابل احتياج متوقع عند البيت ده</b>، مش لما يكون موجود وبس.</p>
+
+  <h3>الوضع النهارده (من الكود، مش من الداتابيز الحية)</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>الميزة</th><th>الموجود</th><th>الناقص</th></tr></thead>
+    <tbody>
+      <tr><td>عروض من إشعارات تطبيقات التسوق والتوصيل</td><td><code>notificationOffers.ts</code> بيطلّع المحل والصنف والخصم والكود، وبيتخزن لصاحبه بس</td><td>مفيش ربط بتنبؤ المخزن. العرض بيتخزن حتى لو البيت مش محتاجه</td></tr>
+      <tr><td>أسعار الجمهور</td><td><code>crowdFloor.ts</code>: أي رقم لازم يكون من ٣ بيوت على الأقل، والشاذ بيتشال</td><td>مفيش «المحل ده اتملى» ولا احتمال توافر الصنف</td></tr>
+      <tr><td>عروض الويب والنشرات</td><td>٧ كرونات <code>deals-*</code> (بحث، نشرات، يوتيوب، إنستجرام، تيك توك، موسم)</td><td>لازم نتأكد إن إنستجرام وتيك توك بالـAPI الرسمي، لأن ZAD_PLAN بيمنع الكشط</td></tr>
+      <tr><td>ذوق البيت والعروض</td><td><code>tasteDeals.ts</code></td><td>بيرتّب بقواعد، ومفيش تعلّم من اللي العميل ضغط عليه</td></tr>
+      <tr><td>أمازون بالعمولة</td><td>التاجات لمصر والسعودية، و<code>amazon-creators-search</code>، وPR #605 مفتوح</td><td>ترشيح بيطلع مع «أي ناقص»، مش لما يكون فعلاً أوفر</td></tr>
+      <tr><td>شي إن بالعمولة</td><td><code>shein-link-converter</code> بيتأكد إن <code>koc_id</code> بتاعنا قبل الحفظ، للسعودية والإمارات</td><td>مفيش ترتيب حسب البيت</td></tr>
+      <tr><td>Admitad</td><td>الكود جاهز</td><td>مفيش كرون لحد ما الأسرار تتحط</td></tr>
+      <tr><td>الملف السلوكي</td><td><code>update-behavior-profile</code> (صرف أسبوعي على الأسابيع اللي اتشافت فعلاً)</td><td>مفيش موديل سلوك لكل بيت، ولا تعلّم من رد فعله</td></tr>
+      <tr><td>إشعارات الحجز والطيران وأبشر</td><td>مفيش</td><td>كله. المستمع بيقرا البنوك وتطبيقات العروض بس</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>خمس محركات للسوق، كلها جوه المحرك الحسابي</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>المحرك</th><th>الطريقة</th><th>بيطلع إيه</th></tr></thead>
+    <tbody>
+      <tr><td>الريستوك: «كيو اتملى رز»</td><td class="m">احتمال توافر لكل (محل، صنف) بتوزيع Beta بيقل وزنه مع الوقت. المصدر فواتير الجمهور والنشرات وفيدات الشركاء</td><td>تنبيه لبيت محتاج الصنف ده حسب التنبؤ، وقريب من المحل (موقع تقريبي). مايتقالش أبداً مين اشترى</td></tr>
+      <tr><td>الترند والهايب</td><td class="m">رصد قفزة عن المعتاد (Poisson z-score أو Bayesian changepoint) على الإشارات المجمعة، بحد ٥ بيوت</td><td>«الزيت ده الناس بتشتريه أكتر الأسبوع ده». وبيتفصل عن الاحتياج: الهايب لوحده مش سبب ترشيح</td></tr>
+      <tr><td>قيمة العرض</td><td class="m">التوفير المتوقع × احتمال الاحتياج قبل ما العرض يخلص − تكلفة الإزعاج</td><td>عرض بيتقال، أو بيتشال وسببه متسجل</td></tr>
+      <tr><td>ترشيح أمازون وشي إن</td><td class="m">نفس المعادلة. العمولة مش جوه الترتيب، ولو منتج العمولة مش الأرخص بنقول كده</td><td>شريحة «من أمازون» بس لما تكون أوفر أو الصنف خلص فعلاً، ومعاها سطر العمولة</td></tr>
+      <tr><td>توقيت الشرا</td><td class="m">EOQ بكسر السعر، وNewsvendor للحاجات اللي بتبوظ، مع مصروف النهارده الآمن كقيد</td><td>«خزّن دلوقتي» أو «استنى»، ومفيش ترشيح شرا خالص لو الميزانية في خطر</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>الإشعارات: حدث مش نص</h3>
+  <p>كل إشعار بيتحول لحدث منظم على الموبايل، والنص الخام بيتمسح بعد الاستخراج بمدة قصيرة. والحدث بيروح للميزة اللي بتخدمه:</p>
+  <div class="tbl"><table>
+    <thead><tr><th>الإشعار</th><th>الحدث</th><th>رد فعل زاد</th></tr></thead>
+    <tbody>
+      <tr><td>عرض من تطبيق توصيل أو تسوق</td><td><code>offer</code></td><td>بيدخل «قيمة العرض». بيتقال بس لو فيه احتياج</td></tr>
+      <tr><td>تأكيد حجز دكتور</td><td><code>appointment</code></td><td>ميعاد في المواعيد، وتذكير، ولو فيه روشتة جاية بعده الصيدلية تتجهز</td></tr>
+      <tr><td>حجز طيران</td><td><code>trip</code></td><td>وضع السفر: ميزانية الرحلة، والعملة، والجرعات بتوقيت البلد التاني</td></tr>
+      <tr><td>أبشر (إقامة، جواز، رخصة، مخالفة)</td><td><code>document_due</code></td><td>المستندات والالتزامات، وتنبيه قبل الانتهاء بوقت كفاية. أبشر حكومي، فده تنظيم مستندات مش عروض</td></tr>
+      <tr><td>البنك والمحافظ</td><td><code>transaction</code></td><td>زي النهارده، بتأكيد</td></tr>
+    </tbody>
+  </table></div>
+  <div class="note"><b>الأمان هنا قبل أي حاجة:</b> ٢٩ من ٣٠ في المحاكاة وقفوا عند إذن الإشعارات، وأي قراية أوسع هتزود الخوف ده. فالقراية تبقى بمفاتيح منفصلة يفعّلها العميل (البنك، العروض، الحجوزات والسفر، المستندات الحكومية)، ومعاها شاشة «زاد قرا إيه النهارده». وحسب فهمي لسياسة بيانات المستخدم في Google Play: الداتا اللي جاية من إذن حساس بتتستخدم للميزة اللي اتقالت للعميل بس، ومينفعش تروح لشبكة إعلانات. يعني محتوى الإشعارات مايدخلش استهداف AdMob أبداً، وترشيح أمازون من حدث العروض لازم يتكتب صراحة في الإفصاح وسياسة الخصوصية. راجع الصياغة في إقرار Play Console قبل ما ده يتنشر.</div>
+
+  <h3>كل بيت ليه موديل، وردود الفعل بتكبر معاه</h3>
+  <ul>
+    <li><b>حالة البيت كأرقام:</b> معدلات الاستهلاك، وإيقاع الصرف حوالين يوم القبض، والساعات اللي بيتفاعل فيها، والأحداث (سفر، مولود، رمضان). Bayes هرمي: كل بيت بيستلف من البيوت اللي شبهه لحد ما داتاته تكفي.</li>
+    <li><b>رد الفعل بيتعلّم:</b> Contextual bandit (Thompson sampling) بيختار نوع الرسالة ونبرتها وتوقيتها والعرض، والمكافأة إن العميل عمل حاجة. بيختار من قوالب متوافق عليها بس، والحارة الحرجة (الجرعات والطوارئ) برا التجربة خالص.</li>
+    <li><b>التوجيه بحدود:</b> مفيش دفع للشرا لما الميزانية في خطر (وضع الإفلاس موجود)، ومفيش عد تنازلي مزيف ولا «فاضل ٢ بس». الثقة هي اللي بتبيع على المدى الطويل.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>المراحل</h2>
+  <p class="small">بالترتيب، مرحلة ورا مرحلة زي قاعدة ZAD_PLAN. المدد تقدير.</p>
+  <div class="phases">
+    <div class="phase"><h3>وقف النزيف</h3><span class="dur">أسبوع</span><p>الـ١١ أداة <code>delete_*</code> يبقوا حذف ناعم (<code>deleted_at</code>) ومعاهم تراجع من سجل الأفعال. <code>writeSingleCopyMemory</code> يبقى upsert في transaction. وقبل أي حاجة نقيس من الداتابيز الحية: كام صف اتمسح بأداة موديل آخر ٣٠ يوم، وكام واحد منهم رجع العميل كتبه تاني.</p><p class="done">يخلص لما: صفر حذف نهائي من أي أداة موديل، وتست لكل أداة بيثبت إن التراجع بيرجّع الصف.</p></div>
+    <div class="phase"><h3>نواة البيانات</h3><span class="dur">أسبوعين</span><p>دفتر <code>zad_events</code> للمخزن والصرف والجرعات، والجداول الحالية بتتحدث منه بتريجر. القيود في SQL. أدوات الموديل بتبعت نية لدالة <code>zad_commit_intent</code> بدل الكتابة المباشرة. عمود مصدر وتاريخ على كل رقم محسوب.</p><p class="done">يخلص لما: كل كتابة من الموديل بتعدي على <code>zad_commit_intent</code>، وكل رفض متسجل بسببه.</p></div>
+    <div class="phase"><h3>المحرك، النسخة الأولى</h3><span class="dur">٣ أسابيع</span><p>تنبؤ المخزن (TSB والقيم المبدئية) وسؤال بقيمة المعلومة، وإعادة طلب الأدوية، ومصروف النهارده الآمن بـMonte Carlo. دول أكبر ٣ في المحاكاة (٢٦ و٢٤ وعقبة منى)، والـOR في المحاكاة طلّعهم النواة.</p><p class="done">يخلص لما: أسئلة المخزن تبقى سؤال واحد في الأسبوع بالكتير، ودقة «هيخلص» بتتنشر كل أسبوع.</p></div>
+    <div class="phase"><h3>الهجين</h3><span class="dur">أسبوعين</span><p>الراوتر بطبقاته التلاتة، وحارس الأرقام، والسياق من <code>zad_home_state</code>، والقوالب الاستباقية. ومعاها تقسيم <code>index.ts</code>: كل أداة في ملفها، والملف يرجع راوتر بس.</p><p class="done">يخلص لما: التوكن في اللفة والنداءات لكل بيت نشط في اليوم متقاسين قبل وبعد، وصفر رقم في رد مش موجود في نتيجة المحرك.</p></div>
+    <div class="phase"><h3>المحسّنات</h3><span class="dur">٣ أسابيع</span><p>جدولة الانتباه (knapsack)، و«خطة الجمعة»، وتوزيع السلة على المحلات أول ما مصادر الأسعار تكفي. والموظفين يتجمعوا في <code>zad_jobs</code>.</p><p class="done">يخلص لما: مفيش ساعة فيها أكتر من رسالة غير حرجة، وعدد الكرونات النشطة ينزل لمُرسِل واحد ومعاه الحرجة.</p></div>
+    <div class="phase"><h3>السوق والجمهور والإشعارات</h3><span class="dur">٣ أسابيع</span><p>أحداث الإشعارات بمفاتيح منفصلة (الحجز والطيران وأبشر)، ومحرك قيمة العرض بيربط <code>notificationOffers</code> وأمازون وشي إن بتنبؤ المخزن، واحتمال الريستوك لكل محل، ورصد الترند بحد ٥ بيوت. ومراجعة كرونات إنستجرام وتيك توك إنها رسمية.</p><p class="done">يخلص لما: كل عرض اتقال وراه احتياج متوقع متسجل، وكل عرض اتشال سببه متسجل، ونسبة الضغط على ترشيحات العمولة بتتقاس.</p></div>
+    <div class="phase"><h3>رفيق السفر</h3><span class="dur">٣ أسابيع</span><p>حالة الرحلة (المدينة، واليوم كام، والميزانية بعملته)، وخطة يوم من Google Places حسب وقته وذوقه وميزانيته (orienteering)، ودواه بتوقيت البلد، والناقص. بيسأل سؤال أو اتنين في اليوم بالتوقيت المحلي على التليجرام أو التطبيق، والإجابة بتحسّن ترشيحات بكرة. بيسمع الفضفضة بلطف من غير تشخيص، ولو فيه علامة خطر بيدّي أرقام الدعم في البلد اللي هو فيها. العيلة تعرف إنه بخير برضاه بس.</p><p class="done">يخلص لما: المسافر ياخد خطة يوم وترشيح واحد على الأقل كل يوم في الرحلة، والرحلة تخلص بتقرير صرفها.</p></div>
+    <div class="phase"><h3>المعايرة وردود الفعل اللي بتتعلم</h3><span class="dur">مستمرة</span><p>التقرير الأسبوعي للدقة، والضبط الذاتي لكل بيت، والـbandit لاختيار الرسالة والتوقيت، والتجربة على البيوت الافتراضية قبل أي نشر.</p><p class="done">يخلص لما: كل موديل في المحرك ليه رقم دقة منشور، ونسخة جديدة ماتتنشرش لو دقتها أقل.</p></div>
+  </div>
+</section>
+
+<section>
+  <h2>المقاييس</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>المقياس</th><th>النهارده</th><th>الهدف</th></tr></thead>
+    <tbody>
+      <tr><td>حذف نهائي من أداة موديل</td><td>ممكن (١١ أداة)</td><td>صفر</td></tr>
+      <tr><td>أسئلة المخزن في الأسبوع</td><td>كل ليلة (٢٤/١٠)</td><td>واحد بالكتير</td></tr>
+      <tr><td>دقة «هيخلص»</td><td>بتتقاس من ١٤/١١ (<code>pantry-accuracy-weekly</code>)</td><td>٧٠٪ أو أكتر وغلط أقل من يومين</td></tr>
+      <tr><td>توكن في اللفة</td><td>~٢١٫٨ ألف</td><td>أقل من ٣ آلاف</td></tr>
+      <tr><td>رسايل غير حرجة في نفس الساعة</td><td>لحد ٥ (١٧/١٠)</td><td>واحدة</td></tr>
+      <tr><td>رقم في رد من غير مصدر</td><td>مش متقاس</td><td>صفر</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section>
+  <h2>اللي مش هنعمله</h2>
+  <ul>
+    <li>عقل تاني أو إطار وكلاء جديد (LangGraph وCrewAI وغيرهم). القرار القديم فاضل.</li>
+    <li>سيرفر Python دلوقتي.</li>
+    <li>موديل بيطلع رقم من دماغه، أو بيمسح صف نهائياً.</li>
+    <li>أسعار من كشط تطبيقات أو سوشيال بطرق مش رسمية.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>محتاج قرارك</h2>
+  <div class="ask">
+    <div><b>١. الخطة دي تيجي قبل باقي ZAD_PLAN؟</b><span>اقتراحي: آه، م١ فوراً لأنها بتحمي داتا العملاء، وبعدها م٢ وم٣ قبل أي ميزة جديدة.</span></div>
+    <div><b>٢. أكبر حاجتين في المحاكاة مش حسابيين</b><span>إذن الإشعارات (٢٩ من ٣٠): المالك قرر ٢١/١١ إنه يتطلب من أول يوم، مع شرح فايدته للأسرة وأمان بياناتها، وكارت في الرئيسية يفعّله في أي وقت. والسعر بعملة كل بلد (٢٥). الاتنين صغيرين وممكن يمشوا جنب م١، بس قرار السعر قرارك.</span></div>
+    <div><b>٣. تجربة HiGHS في Deno</b><span>نص يوم، قبل م٥. لو فشلت بنكمل بالمكتبة الأصغر.</span></div>
+    <div><b>٤. قراية إشعارات الحجز والطيران وأبشر</b><span>اقتراحي: آه، بس كل نوع بمفتاح لوحده ومقفول افتراضياً، ويتطلب بعد ما الثقة تتبني. ده بيحتاج تحديث سياسة الخصوصية وإقرار Play.</span></div>
+    <div><b>٥. حد الجمهور للترند</b><span>اقتراحي: ٥ بيوت للترند والسلوك، والـ٣ يفضلوا للأسعار بس زي قرارك القديم.</span></div>
+  </div>
+  <div class="note"><b>حدود الخطة:</b> الداتا الحقيقية قليلة (آخر قياس: ٧ حسابات، و٢٤ حركة في الشهر عند حساب واحد)، فالموديلات هتبدأ بالقيم المبدئية وهتتحسن مع الاستخدام. والمحاكاة كلام وكلاء ذكاء اصطناعي، مش استخدام حقيقي، فهي خريطة مخاطر بس.</div>
+</section>
+
+<footer>المصادر: محاكاة زاد (MiroFish)، و<code>docs/agent/ZAD_PLAN.md</code>، وجرد <code>supabase/functions</code> و<code>supabase/migrations</code> يوم ٢٠٢٦-١١-٢٠. مفيش كود اتغير.</footer>
+</div>

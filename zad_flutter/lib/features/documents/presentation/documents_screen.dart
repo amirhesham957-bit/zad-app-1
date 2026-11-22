@@ -9,7 +9,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:zad/core/data/local/screen_cache.dart';
@@ -19,12 +18,19 @@ import 'package:zad/core/design/components/zad_field_dialog.dart';
 import 'package:zad/core/design/components/zad_scroll_away.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
-import 'package:zad/core/design/tokens/zad_motion.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/l10n/l10n.dart';
+import 'package:zad/features/documents/presentation/documents_scene.dart';
 import 'package:zad/shared/alerts/application/local_reminders.dart';
 import 'package:zad/shared/documents/domain/important_document.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
+import 'package:zad/shared/orb/domain/companion_state.dart';
+import 'package:zad/shared/worlds/art/art.dart';
+import 'package:zad/shared/worlds/world_card.dart';
+import 'package:zad/shared/worlds/world_row.dart';
+import 'package:zad/shared/worlds/world_scaffold.dart';
+import 'package:zad/shared/worlds/zad_world.dart';
 
 /// Opens the screen.
 Future<void> showDocumentsScreen(BuildContext context) => Navigator.of(
@@ -114,6 +120,7 @@ class _DocumentsState extends ConsumerState<DocumentsScreen> {
   }
 
   Future<void> _edit([ImportantDocument? doc]) async {
+    final l = context.l10n;
     final draft = await _showDocumentDialog(context, doc, _today);
     if (draft == null) return;
     final client = ref.read(supabaseClientProvider);
@@ -136,16 +143,13 @@ class _DocumentsState extends ConsumerState<DocumentsScreen> {
       unawaited(HapticFeedback.lightImpact());
     } on Object catch (e) {
       debugPrint('document save failed: $e');
-      _say(
-        doc != null
-            ? 'ماتحفظش — يمكن فيه مستند بنفس النوع والاسم، أو النت مقطوع.'
-            : 'ماتحفظش — اتأكد من النت.',
-      );
+      _say(doc != null ? l.docsSaveFailedEdit : l.docsSaveFailedAdd);
     }
     await _afterChange();
   }
 
   Future<void> _delete(ImportantDocument doc) async {
+    final l = context.l10n;
     setState(() {
       _docs = <ImportantDocument>[
         for (final d in _docs)
@@ -160,105 +164,24 @@ class _DocumentsState extends ConsumerState<DocumentsScreen> {
           .eq('id', doc.id);
     } on Object catch (e) {
       debugPrint('document delete failed: $e');
-      _say('ماتشالش — اتأكد من النت.');
+      _say(l.docsDeleteFailed);
     }
     await _afterChange();
   }
 
   @override
-  Widget build(BuildContext context) {
-    final today = _today;
-    final sorted = _docs.toList()
-      ..sort((a, b) => a.expiresOn.compareTo(b.expiresOn));
-    final due = sorted.where((d) => d.stageOn(today) != null).length;
-
-    return DecoratedBox(
-      decoration: BoxDecoration(gradient: ZadColors.canvas),
-      child: ZadScrollAwayScope(
-        child: Scaffold(
-          backgroundColor: Colors.transparent,
-          appBar: AppBar(title: const Text('مستنداتي')),
-          floatingActionButton: ZadStepsAside(
-            child: FloatingActionButton(
-              tooltip: 'إضافة مستند',
-              onPressed: () => unawaited(_edit()),
-              child: const Icon(ZadIcons.add),
-            ),
-          ),
-          body: RefreshIndicator(
-            onRefresh: _load,
-            child: ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(
-                ZadSpacing.lg,
-                ZadSpacing.md,
-                ZadSpacing.lg,
-                120,
-              ),
-              children: <Widget>[
-                Row(
-                  children: <Widget>[
-                    Icon(ZadIcons.privacy, size: 16, color: ZadColors.inkMuted),
-                    const SizedBox(width: ZadSpacing.sm),
-                    Expanded(
-                      child: Text(
-                        'زاد بيحفظ نوع المستند وتاريخ انتهائه بس — من غير '
-                        'رقم ولا صورة — ويفكّرك قبلها.',
-                        style: ZadType.bodySmall.copyWith(
-                          color: ZadColors.inkMuted,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                if (due > 0) ...<Widget>[
-                  const SizedBox(height: ZadSpacing.md),
-                  Text(
-                    due == 1
-                        ? 'مستند واحد محتاج تجديد قريب'
-                        : '$due مستندات محتاجة تجديد قريب',
-                    style: ZadType.titleSmall.copyWith(
-                      color: ZadColors.terracottaRust,
-                    ),
-                  ),
-                ],
-                const SizedBox(height: ZadSpacing.md),
-                if (_loading)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 48),
-                    child: Center(child: CircularProgressIndicator()),
-                  )
-                else if (sorted.isEmpty)
-                  const ZadEmptyState(
-                    icon: ZadIcons.document,
-                    title: 'مفيش مستندات متسجلة',
-                    message:
-                        'ضيف الجواز أو البطاقة أو الرخصة بتاريخ انتهائها، وزاد '
-                        'يفكّرك قبلها بوقت كفاية للتجديد. '
-                        'أو قول لزاد في الشات: «جوازي بينتهي ١٥ مارس ٢٠٢٧».',
-                  )
-                else
-                  for (final (i, doc) in sorted.indexed)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: ZadSpacing.md),
-                      child:
-                          _DocumentCard(
-                                doc: doc,
-                                today: today,
-                                onEdit: () => unawaited(_edit(doc)),
-                                onDelete: () => unawaited(_delete(doc)),
-                              )
-                              .animate(delay: (i * 40).clamp(0, 400).ms)
-                              .fadeIn(duration: ZadDuration.enter)
-                              .moveY(begin: 8, curve: ZadCurves.standard),
-                    ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => Scaffold(
+    backgroundColor: Colors.transparent,
+    body: DocumentsWorld(
+      docs: _docs,
+      loading: _loading,
+      today: _today,
+      onRefresh: _load,
+      onAdd: () => unawaited(_edit()),
+      onEdit: (d) => unawaited(_edit(d)),
+      onDelete: (d) => unawaited(_delete(d)),
+    ),
+  );
 }
 
 /// The colour and words for where a document stands on [today].
@@ -274,81 +197,167 @@ class _DocumentsState extends ConsumerState<DocumentsScreen> {
   return (ZadColors.green700, 'ساري');
 }
 
-class _DocumentCard extends StatelessWidget {
+ZadIconArt _art(DocumentKind k) => switch (k) {
+  DocumentKind.passport => ZadIconArt.passport,
+  DocumentKind.nationalId || DocumentKind.residence => ZadIconArt.idcard,
+  DocumentKind.drivingLicense || DocumentKind.vehicleLicense => ZadIconArt.car,
+  DocumentKind.other => ZadIconArt.folder,
+};
+
+String _name(ImportantDocument d) =>
+    d.holder.isEmpty ? d.title : '${d.title} — ${d.holder}';
+
+/// The world: the nearest expiry on top, every document one row of a calm
+/// card, add docked in the thumb zone.
+class DocumentsWorld extends StatelessWidget {
+  /// Creates the world over [docs].
   const new({
-    required this.doc,
+    required this.docs,
+    required this.loading,
     required this.today,
+    required this.onRefresh,
+    required this.onAdd,
     required this.onEdit,
     required this.onDelete,
+    super.key,
   });
 
-  final ImportantDocument doc;
+  /// Every document, any order.
+  final List<ImportantDocument> docs;
+
+  /// The first answer has not come.
+  final bool loading;
+
+  /// Today in the account's zone.
   final DateTime today;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
+
+  /// Pull-to-refresh.
+  final Future<void> Function() onRefresh;
+
+  /// The add button.
+  final VoidCallback onAdd;
+
+  /// A row's tap: edit (rename, date).
+  final void Function(ImportantDocument) onEdit;
+
+  /// A row's delete.
+  final void Function(ImportantDocument) onDelete;
 
   @override
   Widget build(BuildContext context) {
-    final (color, status) = documentStatus(doc, today);
-    return Material(
-      color: ZadColors.surface,
-      borderRadius: BorderRadius.circular(ZadRadii.card),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(ZadRadii.card),
-        onTap: onEdit,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-            ZadSpacing.lg,
-            ZadSpacing.md,
-            ZadSpacing.sm,
-            ZadSpacing.md,
+    final l = context.l10n;
+    final sorted = docs.toList()
+      ..sort((a, b) => a.expiresOn.compareTo(b.expiresOn));
+    final due = sorted.where((d) => d.stageOn(today) != null).length;
+    final nearest = sorted.firstOrNull;
+    return ZadScrollAwayScope(
+      child: ZadWorldScaffold(
+        world: ZadWorld.docs,
+        eyebrow: sorted.isEmpty ? null : l.docsEyebrowCount(sorted.length),
+        title: l.worldLabelDocs,
+        stateLine: nearest == null
+            ? l.docsStateEmpty
+            : l.docsStateNearest(
+                _name(nearest),
+                documentStatus(nearest, today).$2,
+              ),
+        scene: (loop) => DocumentsWorldScene(loop, urgent: due > 0),
+        zado: const ZadWorldZado(left: 30, top: 50, state: CompanionState.idle),
+        onRefresh: onRefresh,
+        dockHeight: 80,
+        overlay: Positioned(
+          right: ZadSpacing.lg,
+          bottom: ZadSpacing.md,
+          child: ZadStepsAside(
+            child: FloatingActionButton.extended(
+              heroTag: 'documents-add',
+              tooltip: l.docsAdd,
+              onPressed: onAdd,
+              icon: const Icon(ZadIcons.add),
+              label: Text(l.docsAdd),
+            ),
           ),
-          child: Row(
-            children: <Widget>[
-              Icon(ZadIcons.document, color: color),
-              const SizedBox(width: ZadSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+        ),
+        slivers: <Widget>[
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(
+              ZadSpacing.gutter,
+              ZadSpacing.md,
+              ZadSpacing.gutter,
+              0,
+            ),
+            sliver: SliverList.list(
+              children: <Widget>[
+                Row(
                   children: <Widget>[
-                    Text(
-                      doc.holder.isEmpty
-                          ? doc.title
-                          : '${doc.title} — ${doc.holder}',
-                      style: ZadType.titleSmall,
-                    ),
-                    const SizedBox(height: ZadSpacing.xs),
-                    Text(
-                      'بينتهي ${doc.expiresOnIso}',
-                      style: ZadType.bodySmall.copyWith(
-                        color: ZadColors.inkMuted,
+                    Icon(ZadIcons.privacy, size: 16, color: ZadColors.inkMuted),
+                    const SizedBox(width: ZadSpacing.sm),
+                    Expanded(
+                      child: Text(
+                        l.docsPrivacy,
+                        style: ZadType.bodySmall.copyWith(
+                          color: ZadColors.inkMuted,
+                        ),
                       ),
                     ),
                   ],
                 ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: ZadSpacing.sm,
-                  vertical: ZadSpacing.xs,
-                ),
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(ZadRadii.pill),
-                ),
-                child: Text(
-                  status,
-                  style: ZadType.labelSmall.copyWith(color: color),
-                ),
-              ),
-              IconButton(
-                tooltip: 'حذف',
-                onPressed: onDelete,
-                icon: Icon(ZadIcons.delete, color: ZadColors.inkMuted),
-              ),
-            ],
+                if (due > 0) ...<Widget>[
+                  const SizedBox(height: ZadSpacing.md),
+                  Text(
+                    due == 1 ? l.docsDueOne : l.docsDueMany(due),
+                    style: ZadType.titleSmall.copyWith(
+                      color: ZadColors.terracottaRust,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: ZadSpacing.md),
+                if (loading)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 48),
+                    child: Center(child: CircularProgressIndicator()),
+                  )
+                else if (sorted.isEmpty)
+                  ZadEmptyState(
+                    icon: ZadIcons.document,
+                    title: l.docsEmptyTitle,
+                    message: l.docsEmptyMessage,
+                  )
+                else
+                  ZadWorldCard(
+                    child: Column(
+                      children: <Widget>[
+                        for (final (i, doc) in sorted.indexed) ...<Widget>[
+                          if (i > 0) const ZadWorldDivider(),
+                          _row(l, doc),
+                        ],
+                      ],
+                    ),
+                  ),
+              ],
+            ),
           ),
-        ),
+        ],
+      ),
+    );
+  }
+
+  Widget _row(ZadL10n l, ImportantDocument doc) {
+    final (color, status) = documentStatus(doc, today);
+    return ZadWorldRow(
+      leading: ZadWorldTile(
+        color: color,
+        child: ZadArt.icon(_art(doc.kind), size: 30),
+      ),
+      title: _name(doc),
+      subtitle: '${l.docsExpires(doc.expiresOnIso)} · $status',
+      stateColor: color,
+      onTap: () => onEdit(doc),
+      trailing: IconButton(
+        tooltip: l.docsDelete,
+        onPressed: () => onDelete(doc),
+        style: IconButton.styleFrom(minimumSize: const Size(44, 44)),
+        icon: Icon(ZadIcons.delete, color: ZadColors.inkMuted),
       ),
     );
   }

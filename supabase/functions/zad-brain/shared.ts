@@ -1,6 +1,8 @@
 // Small pure decision functions extracted out of the Deno.serve handler purely so
 // Task 16.4's tests #11/#12 don't need a live server or a live database to verify.
 
+import { planMessages } from "../_shared/or/attentionBudget.ts";
+import { learnedPriority, type Stance } from "./outcomeLearning.ts";
 import { CROWD_MIN_HOMES, homesIn, medianOf, withoutOutliers } from "./crowdFloor.ts";
 
 /** Task 16.3 partial-run idempotency: skip a new daily run if one in the window already mutated data. */
@@ -1107,19 +1109,66 @@ export function dailyCapDecision(
   parked: ReadonlyArray<{ kind: string | null; at: string }> = [],
 ): { action: "deliver" } | { action: "postpone"; until: string } {
   const k = (kind ?? "").trim();
-  if (!agentTaskNotice(k).proactive || PACING_EXEMPT.has(k) || pacingPriority(k) === 0) return { action: "deliver" };
+  if (isCapCritical(k)) return { action: "deliver" };
+  if (countedToday(recent, timeZone, nowMs) < PACING_DAILY_CAP) return { action: "deliver" };
+  return { action: "postpone", until: capPostponeUntil(k, timeZone, nowMs, w, parked) };
+}
+
+/** بيعدّي السقف من غير ما يتعدّ: مش مبادرة، أو مستثنى، أو سكوت إشعارات البنك (أولوية ٠). */
+function isCapCritical(k: string): boolean {
+  return !agentTaskNotice(k).proactive || PACING_EXEMPT.has(k) || pacingPriority(k) === 0;
+}
+
+/** المتعدّ النهارده (بيوم الحساب المحلي): نفس الفلتر للسقف وللخطة. */
+function countedToday(recent: ReadonlyArray<{ kind: string | null; at: string }>, timeZone: string, nowMs: number): number {
   const local = localNowContext(timeZone, new Date(nowMs));
-  const today = recent.filter((r) => {
+  return recent.filter((r) => {
     const rk = (r.kind ?? "").trim();
     if (rk.startsWith("moment:") || rk === "checkin" || PACING_EXEMPT.has(rk) || !agentTaskNotice(rk).proactive) return false;
     const at = Date.parse(r.at);
     return Number.isFinite(at) && at <= nowMs && localNowContext(timeZone, new Date(at)).date === local.date;
-  });
-  if (today.length < PACING_DAILY_CAP) return { action: "deliver" };
+  }).length;
+}
+
+/** خانة بكرة من الصحيان لمبادرة فاتها سقف النهارده (`capSlot`). */
+export function capPostponeUntil(
+  k: string,
+  timeZone: string,
+  nowMs: number,
+  w: QuietWindow = DEFAULT_QUIET,
+  parked: ReadonlyArray<{ kind: string | null; at: string }> = [],
+): string {
+  const local = localNowContext(timeZone, new Date(nowMs));
   const tomorrow = new Date(Date.parse(`${local.date}T00:00:00Z`) + 86_400_000).toISOString().slice(0, 10);
   const wake = resolveLocalIso(`${tomorrow}T${String(w.end).padStart(2, "0")}:00`, local.utc_offset);
-  if (!wake) return { action: "postpone", until: new Date(nowMs + 12 * 3_600_000).toISOString() };
-  return { action: "postpone", until: capSlot(k, Date.parse(wake), parked) };
+  if (!wake) return new Date(nowMs + 12 * 3_600_000).toISOString();
+  return capSlot(k, Date.parse(wake), parked);
+}
+
+/**
+ * م٥.١: ميزانية الانتباه اليومية. بدل ما أول مهمتين يستحقوا ياخدوا الخانتين، knapsack دقيق (planMessages)
+ * على المهام المستحقة: الأعلى قيمة تتبعت والباقي "defer". [due] بترتيب dueTasks (التعادل بياخد الأقدم).
+ * التكلفة = ١ لكل رسالة (التكلفة >١ مقبض للمستقبل، مش مستعملة دلوقتي). الحرجة (نفس اللي بيعدّي
+ * السقف) دايماً "send" ومابتاخدش خانة. ملحوظة: مهمة ممكن تتأجل بحارس تاني فمابتستعملش خانتها (v1).
+ */
+export function attentionDecisions(
+  due: ReadonlyArray<{ id: string; kind: string | null; stance: Stance }>,
+  recent: ReadonlyArray<{ kind: string | null; at: string }>,
+  timeZone: string,
+  nowMs: number,
+): Map<string, "send" | "defer"> {
+  const budget = Math.max(0, PACING_DAILY_CAP - countedToday(recent, timeZone, nowMs));
+  const plan = planMessages(
+    due.map((t) => {
+      const k = (t.kind ?? "").trim();
+      return { id: t.id, value: 10 - learnedPriority(pacingPriority(k), t.stance), cost: 1, critical: isCapCritical(k) };
+    }),
+    budget,
+  );
+  const out = new Map<string, "send" | "defer">();
+  for (const id of plan.send) out.set(id, "send");
+  for (const id of plan.deferred) out.set(id, "defer");
+  return out;
 }
 
 // ── المنسّق ٤: التوزيع بدل التكويم (ZAD_PLAN ١.٤) ──

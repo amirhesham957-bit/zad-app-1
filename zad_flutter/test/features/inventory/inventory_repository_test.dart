@@ -18,6 +18,7 @@ import 'package:zad/shared/inventory/data/inventory_remote.dart';
 import 'package:zad/shared/inventory/data/inventory_repository.dart';
 import 'package:zad/shared/inventory/data/shopping_list_repository.dart';
 import 'package:zad/shared/inventory/domain/inventory_item.dart';
+import 'package:zad/shared/inventory/domain/inventory_rules.dart';
 import 'package:zad/shared/inventory/domain/shopping_item.dart';
 import 'package:zad/shared/inventory/domain/shortage.dart';
 
@@ -26,6 +27,35 @@ class _FakeInventoryRemote implements InventoryRemote {
   final List<String> removed = <String>[];
   Map<String, dynamic> Function(Map<String, dynamic>)? onUpsert;
   Exception? failWith;
+
+  /// Every intent the door was asked to apply.
+  final List<Map<String, dynamic>> intents = <Map<String, dynamic>>[];
+
+  /// What the door answers. A refusal is `{'ok': false, 'reason': ...}`.
+  Map<String, dynamic> doorAnswer = <String, dynamic>{'ok': true};
+
+  /// The row the server holds after an intent, by id.
+  Map<String, Map<String, dynamic>> held = <String, Map<String, dynamic>>{};
+
+  @override
+  Future<Map<String, dynamic>> commitMyIntent({
+    required String kind,
+    required String clientEventId,
+    required Map<String, dynamic> payload,
+    required DateTime occurredAt,
+  }) async {
+    if (failWith case final e?) throw e;
+    intents.add(<String, dynamic>{
+      'kind': kind,
+      'client_event_id': clientEventId,
+      'payload': payload,
+      'occurred_at': occurredAt,
+    });
+    return doorAnswer;
+  }
+
+  @override
+  Future<Map<String, dynamic>?> fetchOne(String id) async => held[id];
 
   @override
   Future<List<Map<String, dynamic>>> fetchAll() async {
@@ -106,6 +136,9 @@ void main() {
       box: outboxBox,
       send: (entry) async => switch (entry.kind) {
         OutboxKind.upsertInventory => await pantry.sendQueued(entry),
+        OutboxKind.commitInventoryIntent => await pantry.sendQueuedIntent(
+          entry,
+        ),
         OutboxKind.deleteInventory => await pantry.sendQueuedDelete(entry),
         OutboxKind.upsertShoppingItem => await shopping.sendQueued(entry),
         OutboxKind.deleteShoppingItem => await shopping.sendQueuedDelete(entry),
@@ -119,6 +152,7 @@ void main() {
       outbox: () => outbox,
       newId: () => 'p${ids++}',
       signedInUserId: () => 'user-1',
+      clock: () => now,
     );
     shopping = ShoppingListRepository(
       cache: shoppingBox,
@@ -155,31 +189,108 @@ void main() {
   };
 
   group('adding to the pantry', () {
-    test('is on the device before it is sent', () async {
+    test('is on the device before it is sent, queued as an intent', () async {
       final item = await pantry.add(itemName: 'لبن', quantity: 2, unit: 'لتر');
 
       expect(pantry.cached().single.itemName, 'لبن');
       expect(pantry.cached().single.isPending, isTrue);
-      expect(queued(OutboxKind.upsertInventory), hasLength(1));
+      expect(queued(OutboxKind.commitInventoryIntent), hasLength(1));
+      expect(queued(OutboxKind.upsertInventory), isEmpty);
       expect(item.userId, 'user-1');
+
+      final intent = queued(OutboxKind.commitInventoryIntent).single.payload;
+      expect(intent['kind'], 'inventory.added');
+      // The row is written under the id the cache already shows it by.
+      expect((intent['payload'] as Map)['item_id'], item.id);
+      expect((intent['payload'] as Map)['quantity'], 2);
     });
 
-    test('editing the same row twice replaces the queued write', () async {
+    test('a category outside the eight is sent as «أخرى»', () async {
+      await pantry.add(itemName: 'لبن', category: 'ألبان');
+      await pantry.add(itemName: 'جبنة', category: 'الألبان');
+
+      final sent = queued(OutboxKind.commitInventoryIntent)
+          .map((e) => (e.payload['payload'] as Map)['category'])
+          .toList();
+      expect(sent, <String>['أخرى', 'الألبان']);
+    });
+
+    test('editing a field twice replaces the queued row write', () async {
+      final item = await pantry.add(itemName: 'لبن', quantity: 2);
+      await pantry.update(item.copyWith(itemName: 'لبن كامل'));
+      await pantry.update(item.copyWith(itemName: 'لبن خالي'));
+
+      expect(queued(OutboxKind.upsertInventory), hasLength(1));
+      final row = queued(OutboxKind.upsertInventory).single.payload;
+      expect(row['item_name'], 'لبن خالي');
+      // Without the count: it must not overwrite one still queued as an intent.
+      expect(row.containsKey('quantity'), isFalse);
+    });
+
+    test('a changed count is a quantity_set, never a row write', () async {
       final item = await pantry.add(itemName: 'لبن', quantity: 2);
       await pantry.update(item.copyWith(quantity: 5));
 
-      // Not both versions in the order they were typed — the corrected row.
-      expect(queued(OutboxKind.upsertInventory), hasLength(1));
-      expect(queued(OutboxKind.upsertInventory).single.payload['quantity'], 5);
+      final intents = queued(OutboxKind.commitInventoryIntent);
+      expect(intents, hasLength(2));
+      expect(intents.last.payload['kind'], 'inventory.quantity_set');
+      expect((intents.last.payload['payload'] as Map)['quantity'], 5);
+      expect(queued(OutboxKind.upsertInventory), isEmpty);
+      expect(pantry.cached().single.quantity, 5);
     });
 
     test("never sends family_id — that is the trigger's to decide", () async {
-      await pantry.add(itemName: 'لبن');
+      final item = await pantry.add(itemName: 'لبن');
+      await pantry.update(item.copyWith(unit: 'لتر'));
 
-      final payload = queued(OutboxKind.upsertInventory).single.payload;
-      expect(payload.containsKey('family_id'), isFalse);
-      expect(payload.containsKey('created_at'), isFalse);
+      final row = queued(OutboxKind.upsertInventory).single.payload;
+      expect(row.containsKey('family_id'), isFalse);
+      expect(row.containsKey('created_at'), isFalse);
+      final intent =
+          queued(OutboxKind.commitInventoryIntent).single.payload['payload']
+              as Map;
+      expect(intent.containsKey('family_id'), isFalse);
+      expect(intent.containsKey('user_id'), isFalse);
     });
+
+    test(
+      'member_id rides the intent only when chosen, and reads back',
+      () async {
+        await pantry.add(itemName: 'لبن');
+        final bare =
+            queued(OutboxKind.commitInventoryIntent).single.payload['payload']
+                as Map;
+        expect(bare.containsKey('member_id'), isFalse);
+
+        final item = await pantry.add(itemName: 'جبنة', memberId: 'm-1');
+        final intent =
+            queued(OutboxKind.commitInventoryIntent).last.payload['payload']
+                as Map;
+        expect(intent['member_id'], 'm-1');
+        expect(
+          pantry.cached().firstWhere((i) => i.id == item.id).memberId,
+          'm-1',
+        );
+        expect(
+          InventoryItem.fromJson(<String, dynamic>{
+            ...serverRow('x'),
+            'member_id': 'm-2',
+          }).memberId,
+          'm-2',
+        );
+
+        await pantry.adjustQuantity(item.id, 1);
+        final plus =
+            queued(OutboxKind.commitInventoryIntent).last.payload['payload']
+                as Map;
+        // A top-up lands on the existing row, whose owner is already set.
+        expect(plus.containsKey('member_id'), isFalse);
+        expect(
+          pantry.cached().firstWhere((i) => i.id == item.id).memberId,
+          'm-1',
+        );
+      },
+    );
 
     test('refuses to write with nobody signed in', () async {
       final orphan = InventoryRepository(
@@ -191,6 +302,133 @@ void main() {
       );
 
       await expectLater(orphan.add(itemName: 'لبن'), throwsStateError);
+    });
+  });
+
+  group('what the door would refuse is refused before anything is saved', () {
+    Future<void> refused(Future<Object?> write, String reason) async {
+      await expectLater(
+        write,
+        throwsA(
+          isA<InventoryRuleViolation>().having(
+            (e) => e.reason,
+            'reason',
+            reason,
+          ),
+        ),
+      );
+      expect(outbox.entries(), isEmpty);
+      expect(pantry.cached(), isEmpty);
+    }
+
+    test('a name of one letter, or of 121', () async {
+      await refused(pantry.add(itemName: 'ل'), 'name_invalid');
+      await refused(pantry.add(itemName: 'ل' * 121), 'name_invalid');
+      await refused(pantry.add(itemName: '   '), 'name_invalid');
+    });
+
+    test('a name of 2 and of 120 is fine', () async {
+      await pantry.add(itemName: 'لب');
+      await pantry.add(itemName: 'ل' * 120);
+      expect(queued(OutboxKind.commitInventoryIntent), hasLength(2));
+    });
+
+    test('zero, negative and rounds-to-zero quantities', () async {
+      await refused(
+        pantry.add(itemName: 'لبن', quantity: 0),
+        'qty_not_positive',
+      );
+      await refused(
+        pantry.add(itemName: 'لبن', quantity: -1),
+        'qty_not_positive',
+      );
+      await refused(
+        pantry.add(itemName: 'لبن', quantity: 0.0004),
+        'qty_not_positive',
+      );
+    });
+
+    test('999 is the most an add takes', () async {
+      await pantry.add(itemName: 'لبن', quantity: 999);
+      await expectLater(
+        pantry.add(itemName: 'رز', quantity: 999.5),
+        throwsA(isA<InventoryRuleViolation>()),
+      );
+      expect(pantry.cached(), hasLength(1));
+    });
+
+    test('an expiry before today', () async {
+      await refused(
+        pantry.add(
+          itemName: 'لبن',
+          expiryDate: DateTime(now.year, now.month, now.day - 1),
+        ),
+        'expiry_before_purchase',
+      );
+      await pantry.add(
+        itemName: 'لبن',
+        expiryDate: DateTime(now.year, now.month, now.day),
+      );
+    });
+
+    test('an add by more than 999 onto an existing row', () async {
+      final item = await pantry.add(itemName: 'لبن', quantity: 2);
+      await expectLater(
+        pantry.adjustQuantity(item.id, 1000),
+        throwsA(
+          isA<InventoryRuleViolation>().having(
+            (e) => e.reason,
+            'reason',
+            'qty_too_large',
+          ),
+        ),
+      );
+      expect(pantry.cached().single.quantity, 2);
+    });
+
+    test(
+      'a consume above 1000 is refused; up to the stock it is clamped',
+      () async {
+        final item = await pantry.add(itemName: 'لبن', quantity: 3);
+        // Clamped to the 3 that are there, so under the cap.
+        await pantry.adjustQuantity(item.id, -5000);
+        expect(pantry.cached().single.quantity, 0);
+        expect(
+          (queued(OutboxKind.commitInventoryIntent).last.payload['payload']
+              as Map)['amount'],
+          3,
+        );
+      },
+    );
+
+    test('a set above max(20 x current, 100), and a negative one', () async {
+      final item = await pantry.add(itemName: 'لبن', quantity: 2);
+      await expectLater(
+        pantry.update(item.copyWith(quantity: 101)),
+        throwsA(isA<InventoryRuleViolation>()),
+      );
+      await pantry.update(item.copyWith(quantity: 100));
+      await expectLater(
+        pantry.update(item.copyWith(quantity: -1)),
+        throwsA(isA<InventoryRuleViolation>()),
+      );
+      expect(pantry.cached().single.quantity, 100);
+    });
+
+    test('a set above 20 x a big count', () async {
+      final item = await pantry.add(itemName: 'لبن', quantity: 50);
+      await pantry.update(item.copyWith(quantity: 1000));
+      await expectLater(
+        pantry.update(pantry.cached().single.copyWith(quantity: 21000)),
+        throwsA(isA<InventoryRuleViolation>()),
+      );
+    });
+
+    test('the door and the phone agree on the eight categories', () {
+      expect(kInventoryDoorCategories, hasLength(8));
+      expect(inventoryCategoryFor('البقالة'), 'البقالة');
+      expect(inventoryCategoryFor(null), 'أخرى');
+      expect(inventoryCategoryFor('الكل'), 'أخرى');
     });
   });
 
@@ -245,6 +483,41 @@ void main() {
     });
   });
 
+  group('«أسرع / أبطأ» (م٣.٢)', () {
+    Map<String, dynamic> lastRate() => Map<String, dynamic>.from(
+      queued(OutboxKind.commitInventoryIntent)
+              .where((e) => e.payload['kind'] == 'inventory.rate_corrected')
+              .last
+              .payload['payload']
+          as Map,
+    );
+
+    test('the rate the estimate implies is moved by the tap factor', () async {
+      final item = await pantry.add(itemName: 'لبن', quantity: 6);
+
+      // 6 over 10 days = 0.6 a day.
+      await pantry.correctRate(item.id, daysLeft: 10, faster: true);
+      expect(lastRate()['item_id'], item.id);
+      expect(lastRate()['rate_per_day'], closeTo(0.6 * kRateTapFactor, 1e-4));
+
+      await pantry.correctRate(item.id, daysLeft: 10, faster: false);
+      expect(lastRate()['rate_per_day'], closeTo(0.6 / kRateTapFactor, 1e-4));
+    });
+
+    test('nothing to correct, nothing queued', () async {
+      final empty = await pantry.add(itemName: 'لبن');
+      await pantry.adjustQuantity(empty.id, -1);
+      final full = await pantry.add(itemName: 'رز', quantity: 2);
+      final before = outbox.entries().length;
+
+      await pantry.correctRate(empty.id, daysLeft: 10, faster: true);
+      await pantry.correctRate('nope', daysLeft: 10, faster: true);
+      await pantry.correctRate(full.id, daysLeft: 0, faster: true);
+
+      expect(outbox.entries(), hasLength(before));
+    });
+  });
+
   group('changing a count', () {
     test('clamps at zero rather than going negative', () async {
       final item = await pantry.add(itemName: 'لبن', quantity: 3);
@@ -254,6 +527,37 @@ void main() {
       // "I used the last two" on a row that says one is somebody who is right
       // about their kitchen and wrong about the number in the app.
       expect(adjusted?.quantity, 0);
+    });
+
+    test('a plus is an add onto the row, a minus is a consume', () async {
+      final item = await pantry.add(itemName: 'لبن', quantity: 3);
+      await pantry.adjustQuantity(item.id, 2);
+      await pantry.adjustQuantity(item.id, -1);
+
+      final kinds = queued(OutboxKind.commitInventoryIntent)
+          .map((e) => e.payload['kind'])
+          .toList();
+      expect(kinds, <String>[
+        'inventory.added',
+        'inventory.added',
+        'inventory.consumed',
+      ]);
+      expect(pantry.cached().single.quantity, 4);
+      // Two separate things the customer did: never merged into one.
+      final ids = queued(OutboxKind.commitInventoryIntent)
+          .map((e) => e.payload['client_event_id'])
+          .toSet();
+      expect(ids, hasLength(3));
+    });
+
+    test('taking nothing off an empty row queues nothing', () async {
+      final item = await pantry.add(itemName: 'لبن');
+      await pantry.adjustQuantity(item.id, -1);
+      final before = outbox.entries().length;
+
+      await pantry.adjustQuantity(item.id, -1);
+
+      expect(outbox.entries(), hasLength(before));
     });
 
     test('a row that is not there is not an error', () async {
@@ -281,17 +585,30 @@ void main() {
     test('the row read back replaces what was sent', () async {
       // `family_id` is a trigger's decision, and it is what decides whether
       // the household sees this at all.
-      pantryRemote.onUpsert = (row) => <String, dynamic>{
-        ...row,
+      final item = await pantry.add(itemName: 'لبن');
+      pantryRemote.held[item.id] = <String, dynamic>{
+        ...serverRow(item.id),
         'family_id': 'fam-9',
       };
-
-      await pantry.add(itemName: 'لبن');
       await outbox.flush();
 
       final stored = pantry.cached().single;
       expect(stored.familyId, 'fam-9');
       expect(stored.isPending, isFalse);
+      expect(outbox.entries(), isEmpty);
+    });
+
+    test('a write still queued behind this one is not blinked over', () async {
+      final item = await pantry.add(itemName: 'لبن', quantity: 3);
+      await pantry.adjustQuantity(item.id, -1);
+      // The server's row after the first intent only.
+      pantryRemote.held[item.id] = serverRow(item.id);
+
+      await outbox.flush();
+
+      expect(pantryRemote.intents, hasLength(2));
+      // Settled by the last write to land, not flipped back to 3 by the first.
+      expect(pantry.cached().single.isPending, isFalse);
     });
 
     test('a failed send leaves the row queued and pending', () async {
@@ -301,8 +618,117 @@ void main() {
       await outbox.flush();
 
       expect(pantry.cached().single.isPending, isTrue);
-      expect(queued(OutboxKind.upsertInventory), hasLength(1));
+      expect(queued(OutboxKind.commitInventoryIntent), hasLength(1));
     });
+
+    test(
+      'the door gets the intent with its own event id and the time',
+      () async {
+        final item = await pantry.add(itemName: 'لبن', quantity: 2);
+        pantryRemote.held[item.id] = serverRow(item.id);
+        await outbox.flush();
+
+        final sent = pantryRemote.intents.single;
+        expect(sent['kind'], 'inventory.added');
+        expect(sent['client_event_id'], isNotEmpty);
+        expect(sent['occurred_at'], now.toUtc());
+      },
+    );
+
+    test('a refusal is a dead letter, not silence', () async {
+      pantryRemote.doorAnswer = <String, dynamic>{
+        'ok': false,
+        'reason': 'item_not_found',
+      };
+      await pantry.add(itemName: 'لبن');
+
+      final report = await outbox.flush();
+
+      expect(report.died, 1);
+      final dead = outbox.entries().single;
+      expect(dead.state, OutboxState.dead);
+      expect(dead.lastError, contains('item_not_found'));
+    });
+
+    test(
+      'not_authenticated stops the flush without charging an attempt',
+      () async {
+        pantryRemote.doorAnswer = <String, dynamic>{
+          'ok': false,
+          'reason': 'not_authenticated',
+        };
+        await pantry.add(itemName: 'لبن');
+
+        final report = await outbox.flush();
+
+        expect(report.stop, FlushStop.unauthenticated);
+        expect(outbox.entries().single.attempts, 0);
+      },
+    );
+
+    test('a duplicate answer is a success', () async {
+      pantryRemote.doorAnswer = <String, dynamic>{
+        'ok': true,
+        'duplicate': true,
+      };
+      await pantry.add(itemName: 'لبن');
+
+      final report = await outbox.flush();
+
+      expect(report.sent, 1);
+      expect(outbox.entries(), isEmpty);
+    });
+  });
+
+  group('a queue written by the build before this one', () {
+    test('an old upsert_inventory entry is still sent, whole', () async {
+      await outbox.enqueue(
+        id: 'inventory:old-1',
+        kind: OutboxKind.upsertInventory,
+        payload: <String, dynamic>{
+          'id': 'old-1',
+          'user_id': 'user-1',
+          'item_name': 'رز',
+          'quantity': 4,
+        },
+      );
+
+      await outbox.flush();
+
+      expect(outbox.entries(), isEmpty);
+      expect(pantry.cached().single.itemName, 'رز');
+      expect(pantry.cached().single.quantity, 4);
+      expect(pantryRemote.intents, isEmpty);
+    });
+
+    test(
+      'editing a row whose first write is still an old entry keeps the count',
+      () async {
+        const item = InventoryItem(
+          id: 'old-2',
+          userId: 'user-1',
+          itemName: 'رز',
+          quantity: 4,
+          isPending: true,
+        );
+        await pantryBox.put(item.id, jsonEncode(item.toCacheJson()));
+        await outbox.enqueue(
+          id: 'inventory:old-2',
+          kind: OutboxKind.upsertInventory,
+          payload: item.toUpsertJson(),
+        );
+
+        await pantry.update(item.copyWith(itemName: 'رز مصري'));
+        await pantry.adjustQuantity('old-2', 1);
+
+        // Still one whole-row write, carrying the count: nothing was split off
+        // into an intent that could reach the server before the row exists.
+        expect(queued(OutboxKind.commitInventoryIntent), isEmpty);
+        final row = queued(OutboxKind.upsertInventory).single.payload;
+        expect(row['item_name'], 'رز مصري');
+        expect(row['quantity'], 5);
+      },
+    );
   });
 
   group('the shopping list adds shortages once', () {

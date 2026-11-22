@@ -4,6 +4,8 @@
 // The controller is a recording fake: every write in this app ends in a Hive
 // put, and one inside a widget test never completes under the fake clock.
 
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -17,6 +19,9 @@ import 'package:zad/shared/subscriptions/application/subscriptions_controller.da
 import 'package:zad/shared/subscriptions/data/subscriptions_repository.dart';
 import 'package:zad/shared/subscriptions/domain/renewal.dart';
 import 'package:zad/shared/subscriptions/domain/subscription.dart';
+
+import '../../support/fonts.dart';
+import '../../support/quiet_household.dart';
 
 final DateTime _today = DateTime.utc(2026, 9, 21);
 
@@ -112,9 +117,19 @@ void main() {
     List<Obligation> obligations = const <Obligation>[],
   }) async {
     subs = _Subs(items);
+    // The world is a screenful of scene before its first row: a phone-sized
+    // window, unless the test already chose one.
+    if (tester.view.devicePixelRatio != 1 &&
+        tester.view.devicePixelRatio != 2) {
+      tester.view
+        ..physicalSize = const Size(430, 932)
+        ..devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+    }
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          ...quietOrbOverrides,
           subscriptionsControllerProvider.overrideWith(() => subs),
           obligationsControllerProvider.overrideWith(
             () => obligationsFake = _Obligations(obligations),
@@ -122,7 +137,13 @@ void main() {
           budgetControllerProvider.overrideWith(_Budget.new),
         ],
         child: MaterialApp(
+          debugShowCheckedModeBanner: false,
           theme: ZadTheme.light(),
+          // The scene loops forever; a still one lets pumpAndSettle finish.
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(disableAnimations: true),
+            child: child!,
+          ),
           home: const Directionality(
             textDirection: TextDirection.rtl,
             child: SubscriptionsScreen(),
@@ -141,9 +162,40 @@ void main() {
     expect(find.byTooltip('إضافة'), findsOneWidget);
   });
 
+  testWidgets('the world: its title, and the total with the next charge', (
+    tester,
+  ) async {
+    await pump(tester, <Subscription>[
+      _sub('a', 'Netflix', renewalDate: '2026-09-24'),
+      _sub('b', 'Spotify', renewalDate: '2026-09-30', amount: 50),
+    ]);
+    await tester.pumpAndSettle();
+    expect(find.text('الاشتراكات'), findsWidgets);
+    expect(find.text('200 · Netflix بعد 3 يوم'), findsNothing);
+    expect(find.text('200 في الشهر · Netflix بعد 3 يوم'), findsOneWidget);
+  });
+
+  testWidgets('the world with nothing in it: its state line and empty state', (
+    tester,
+  ) async {
+    await pump(tester, <Subscription>[]);
+    await tester.pumpAndSettle();
+    expect(find.text('مفيش اشتراكات لسه'), findsOneWidget);
+    expect(find.text('لا توجد اشتراكات'), findsOneWidget);
+    expect(
+      find.text('اضغط «إضافة» وزاد يحسب لك التجديد الجاي.'),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('a bill and a plan saved as obligations sit in their tabs', (
     tester,
   ) async {
+    // Tall, so the rows under the scene are all built.
+    tester.view
+      ..physicalSize = const Size(430, 2400)
+      ..devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
     await pump(
       tester,
       <Subscription>[_sub('a', 'Netflix', renewalDate: '2026-09-22')],
@@ -210,7 +262,7 @@ void main() {
       _sub('a', 'Netflix', renewalDate: '2026-09-25'),
     ]);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('تم الدفع ✓'));
+    await tester.tap(find.text('تم الدفع'));
     await tester.pump();
     expect(subs.calls, <String>['paid:a']);
   });
@@ -226,6 +278,11 @@ void main() {
       _sub('a', 'Netflix Premium Family', renewalDate: '2026-09-25'),
     ]);
     await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.text('تم الدفع'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
 
     for (final tooltip in <Finder>[
       find.byIcon(Icons.bolt),
@@ -240,7 +297,7 @@ void main() {
     }
     final paid = tester.getSize(
       find
-          .ancestor(of: find.text('تم الدفع ✓'), matching: find.byType(InkWell))
+          .ancestor(of: find.text('تم الدفع'), matching: find.byType(InkWell))
           .first,
     );
     expect(paid.height, greaterThanOrEqualTo(44));
@@ -253,7 +310,7 @@ void main() {
     ]);
     await tester.tap(find.widgetWithText(FilterChip, 'الكل'));
     await tester.pumpAndSettle();
-    expect(find.text('تم الدفع ✓'), findsNothing);
+    expect(find.text('تم الدفع'), findsNothing);
     await tester.tap(find.byTooltip('تفعيل'));
     await tester.pump();
     expect(subs.calls, <String>['active:b:true']);
@@ -296,4 +353,24 @@ void main() {
       'add:الكهربا:420.0:utility:monthly',
     ]);
   });
+
+  testWidgets('screenshot: the subscriptions world', (tester) async {
+    await loadZadFonts();
+    tester.view
+      ..physicalSize = const Size(860, 1864)
+      ..devicePixelRatio = 2;
+    addTearDown(tester.view.reset);
+    await pump(tester, <Subscription>[
+      _sub('a', 'Netflix', renewalDate: '2026-09-23', amount: 169),
+      _sub('b', 'Spotify', renewalDate: '2026-09-28', amount: 59),
+      _sub('c', 'Shahid', renewalDate: '2026-10-04', amount: 99),
+      _sub('d', 'YouTube Premium', renewalDate: '2026-10-12', amount: 69),
+      _sub('e', 'فاتورة إنترنت', renewalDate: '2026-10-16', amount: 350),
+    ]);
+    await tester.pumpAndSettle();
+    await expectLater(
+      find.byType(MaterialApp),
+      matchesGoldenFile('../../../build/screens/world_subs.png'),
+    );
+  }, skip: Platform.environment['ZAD_SCREENS'] != '1');
 }

@@ -238,6 +238,28 @@ class PlaceEngine {
     }
   }
 
+  /// Hands the stored fences to Android again, unchanged.
+  ///
+  /// Android drops every geofence when the customer switches location off,
+  /// and some phones do when the app is killed; the plugin re-registers only
+  /// after a boot or an update. So the app calls this on every start and
+  /// every return to the front. `register` replaces by request id, so it is
+  /// idempotent, and nothing is looked up. Android reports «entered» for a
+  /// fence the phone is already inside, so the time is stamped in
+  /// [PlaceState.registeredAt] for [isRegistrationEcho] to recognise it.
+  /// Returns whether there was anything to register; throws when Android
+  /// refuses (no "all the time" permission).
+  Future<bool> reregister() async {
+    final state = await this.state();
+    final watching =
+        (state.enabled && state.shopFences.isNotEmpty) ||
+        state.zones.isNotEmpty;
+    if (!watching) return false;
+    await _registerAll(state);
+    await _save(state.copyWith(registeredAt: _now()));
+    return true;
+  }
+
   /// The child zones from the server (`zad_family_my_zones`). Registers only
   /// when they changed: Android reports «entered» straight away for a fence
   /// the phone is already inside, so registering the same zones on every
@@ -489,7 +511,12 @@ bool isStillHome(PlaceState state) =>
 /// in.
 @visibleForTesting
 bool isRegistrationEcho(PlaceState state, DateTime at) {
-  final registered = state.refreshedAt;
+  final registered = <DateTime?>[state.refreshedAt, state.registeredAt]
+      .whereType<DateTime>()
+      .fold<DateTime?>(
+        null,
+        (latest, t) => latest == null || t.isAfter(latest) ? t : latest,
+      );
   if (registered == null || at.isBefore(registered)) return false;
   return at.difference(registered) < kRegistrationEcho;
 }

@@ -18,6 +18,19 @@ abstract interface class InventoryRemote {
 
   /// Removes a row.
   Future<void> remove(String id);
+
+  /// Asks the door (`zad_commit_my_intent`) to apply one pantry intent and
+  /// answers what it said: `{ok, reason?, duplicate?, ...}`. A refusal is data
+  /// here, not an exception.
+  Future<Map<String, dynamic>> commitMyIntent({
+    required String kind,
+    required String clientEventId,
+    required Map<String, dynamic> payload,
+    required DateTime occurredAt,
+  });
+
+  /// One row as the server holds it, or null if there is none.
+  Future<Map<String, dynamic>?> fetchOne(String id);
 }
 
 /// Reads and writes `zad_shopping_list`.
@@ -72,6 +85,29 @@ class SupabaseInventoryRemote implements InventoryRemote {
 
   @override
   Future<void> remove(String id) => _client.from(_table).delete().eq('id', id);
+
+  @override
+  Future<Map<String, dynamic>> commitMyIntent({
+    required String kind,
+    required String clientEventId,
+    required Map<String, dynamic> payload,
+    required DateTime occurredAt,
+  }) async {
+    final answer = await _client.rpc<dynamic>(
+      'zad_commit_my_intent',
+      params: <String, dynamic>{
+        'p_kind': kind,
+        'p_client_event_id': clientEventId,
+        'p_payload': payload,
+        'p_occurred_at': occurredAt.toUtc().toIso8601String(),
+      },
+    );
+    return Map<String, dynamic>.from(answer as Map);
+  }
+
+  @override
+  Future<Map<String, dynamic>?> fetchOne(String id) =>
+      _client.from(_table).select(_columns).eq('id', id).maybeSingle();
 }
 
 /// The real shopping list.

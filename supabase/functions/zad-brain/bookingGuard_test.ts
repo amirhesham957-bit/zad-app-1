@@ -35,8 +35,17 @@ function fakeSb(rows: Record<string, unknown[]>) {
   };
   const sb = {
     from: (table: string) => builder(table),
-    rpc: (name: string) => {
+    rpc: (name: string, args?: { p_intent?: { kind: string; payload: Record<string, unknown> } }) => {
       rpcs.push(name);
+      // الكتابة من الباب (م٢.٥): النية بتتسجل زي الـinsert/update القديمين، والباب بيرد بالصف بعد الكتابة.
+      if (name === "zad_commit_intent") {
+        const { kind, payload } = args!.p_intent!;
+        if (kind === "appointment.added") inserts.push({ table: "zad_appointments", row: payload });
+        if (kind === "appointment.updated") updates.push({ table: "zad_appointments", patch: payload.patch });
+        const base = (rows.zad_appointments?.[0] ?? {}) as Record<string, unknown>;
+        const after = kind === "appointment.added" ? { id: "00000000-0000-0000-0000-0000000000aa", ...payload } : { ...base, ...(payload.patch as object) };
+        return Promise.resolve({ data: { ok: true, duplicate: false, row_id: after.id ?? null, payload: { ...payload, before: null, after } }, error: null });
+      }
       return Promise.resolve({ data: name === "zad_memory_recall_entities" ? [{ note: "الدكتور قال هات الأشعة" }] : null, error: null });
     },
   };
@@ -60,7 +69,9 @@ Deno.test("a clash refuses the booking before anything is written, and asks one 
   const r = await runTool(sb as any, "u", "add_appointment", { title: "دكتور الأسنان", starts_at: soon(9) }, snap, freshContext("u"), { source: "app_chat", runId: null });
   assertStringIncludes(r, "مرفوض: لسه ماسجّلتش");
   assertStringIncludes(r, "«البنك»");
-  assertEquals(inserts.length, 0);
+  // Nothing booked; the only row is the refusal itself in zad_guard_events («صحة العقل» sees it).
+  assertEquals(inserts.filter((i) => i.table !== "zad_guard_events").length, 0);
+  assertEquals(inserts.filter((i) => i.table === "zad_guard_events").length, 1);
 });
 
 Deno.test("confirm_conflict books it anyway, and the result carries what memory holds about it", async () => {
@@ -86,7 +97,9 @@ Deno.test("work hours from the profile and the pharmacy's own dose stop a bookin
   // deno-lint-ignore no-explicit-any
   const r2 = await runTool(sb as any, "u", "add_appointment", { title: "دوا الضغط", starts_at: soon(12) }, dosed, freshContext("u"), { source: "app_chat", runId: null });
   assertStringIncludes(r2, "«كونكور»");
-  assertEquals(inserts.length, 0);
+  // Nothing booked; the only rows are the two refusals in zad_guard_events («صحة العقل» sees them).
+  assertEquals(inserts.filter((i) => i.table !== "zad_guard_events").length, 0);
+  assertEquals(inserts.filter((i) => i.table === "zad_guard_events").length, 2);
 });
 
 const ID = "00000000-0000-0000-0000-0000000000bb";

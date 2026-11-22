@@ -1,0 +1,629 @@
+
+<title>انترو زاد ودخوله</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap">
+<style>
+/* Layout: two real-size phones side by side (stack on a narrow screen); each phone is the app, light only, as it will ship. */
+:root {
+  --bg: #E3E6DF; --fg: #1F1F14; --muted: #5F6258; --chip: #FFFFFF; --chip-on: #1B4332; --chip-on-fg: #FFFFFF;
+  --forest: #1B4332; --green800: #064E3B; --green600: #0F9B76; --deep: #0A382C;
+  --c1: #F8F9FA; --c2: #F4F6F2; --c3: #EDEFE9; --ink: #1F1F14; --ink2: #374151; --ink3: #5F6258;
+  --spring: cubic-bezier(.34,1.56,.64,1); --ease: cubic-bezier(.16,1,.3,1);
+  --phone-h: 640px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #121614; --fg: #E8EDE9; --muted: #9DAAA2; --chip: #1E2521; --chip-on: #74C69D; --chip-on-fg: #0B1F16; color-scheme: dark } }
+:root[data-theme="dark"] { --bg: #121614; --fg: #E8EDE9; --muted: #9DAAA2; --chip: #1E2521; --chip-on: #74C69D; --chip-on-fg: #0B1F16; color-scheme: dark }
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+body { background: var(--bg); color: var(--fg); font-family: "Cairo", system-ui, sans-serif; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 24px 48px; }
+button, input { font: inherit; color: inherit; }
+button { border: 0; background: none; cursor: pointer; padding: 0; }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--green600); outline-offset: 2px; }
+.wrap { max-width: 1240px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+header h1 { margin: 0; font-size: 28px; font-weight: 800; text-wrap: balance; }
+header p { margin: 6px 0 0; color: var(--muted); font-size: 15px; line-height: 1.8; max-width: 62ch; }
+.sizes { display: flex; gap: 8px; flex-wrap: wrap; }
+.sizes button { height: 40px; padding: 0 16px; border-radius: 999px; background: var(--chip); font-weight: 700; font-size: 14px; color: var(--fg); }
+.sizes button.on { background: var(--chip-on); color: var(--chip-on-fg); }
+.phones { display: flex; gap: 32px; flex-wrap: wrap; justify-content: center; align-items: flex-start; }
+figure { margin: 0; display: flex; flex-direction: column; gap: 10px; align-items: center; min-width: 0; }
+figcaption { font-size: 14px; color: var(--muted); text-align: center; max-width: 360px; line-height: 1.7; }
+.phone { width: 360px; max-width: 100%; height: var(--phone-h); border-radius: 36px; border: 8px solid #101412; overflow: hidden; position: relative; box-shadow: 0 30px 60px -30px rgba(0,0,0,.45); color: var(--ink); transition: height .5s var(--ease); }
+.phone.flash { animation: flash 1.2s var(--ease); }
+@keyframes flash { 30% { box-shadow: 0 0 0 6px #6EE7B7, 0 30px 60px -30px rgba(0,0,0,.45); } }
+
+/* Zado */
+.z-breathe { transform-box: fill-box; transform-origin: 50% 100%; animation: zb 2.6s cubic-bezier(.4,0,.2,1) infinite alternate; }
+@keyframes zb { from { transform: scale(.985,.98); } to { transform: scale(1.012,1.045); } }
+.z-blink { transform-box: fill-box; transform-origin: center; animation: zbl 6.4s infinite; }
+@keyframes zbl { 0%,44%,48%,88%,91%,94%,100% { transform: scaleY(1); } 46%,92.5% { transform: scaleY(.1); } }
+.z-eyes { transition: transform .35s var(--ease); }
+.z-hands { transition: transform .45s var(--spring); }
+.z-hop { animation: hop .8s var(--spring); }
+@keyframes hop { 35% { transform: translateY(-26px) scaleY(1.06); } 70% { transform: translateY(0) scaleY(.94); } }
+.bubble { position: absolute; z-index: 5; background: #fff; color: var(--green800); font-weight: 700; font-size: 14px; padding: 8px 14px; border-radius: 16px; box-shadow: 0 10px 24px -10px rgba(6,78,59,.35); white-space: nowrap; opacity: 0; transform: translateY(8px) scale(.9); transition: opacity .3s, transform .45s var(--spring); pointer-events: none; }
+.bubble.show { opacity: 1; transform: none; }
+
+/* intro */
+.intro { height: 100%; display: flex; flex-direction: column; background: linear-gradient(180deg, #F3FAF6 0%, var(--c2) 60%, var(--c3)); padding: 10px 18px 14px; }
+.top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.lang { display: flex; border: 1px solid #DCDDD6; border-radius: 999px; overflow: hidden; background: #fff; }
+.lang span { height: 32px; padding: 0 10px; display: grid; place-items: center; font-size: 12px; font-weight: 700; color: #5F6258; }
+.lang span.on { background: #E6F4EC; color: var(--forest); }
+.skip { height: 44px; padding: 0 10px; color: var(--forest); font-weight: 700; font-size: 15px; }
+.stage { flex: 1; min-height: 0; position: relative; touch-action: pan-y; }
+.stage svg.scene { position: absolute; inset: 0; width: 100%; height: 100%; }
+.float { animation: fl 4s ease-in-out infinite alternate; transform-box: fill-box; }
+.float.b { animation-duration: 5.2s; animation-delay: -1s; }
+@keyframes fl { from { transform: translateY(-6px); } to { transform: translateY(6px); } }
+.spin { animation: sp 14s linear infinite; transform-box: view-box; transform-origin: 215px 210px; }
+@keyframes sp { to { transform: rotate(360deg); } }
+.grow { transform-box: fill-box; transform-origin: 50% 100%; animation: gr 1.2s var(--spring) both; }
+@keyframes gr { from { transform: scaleY(0); } }
+.txt { text-align: center; padding: 0 6px; }
+.txt h2 { margin: 0; font-size: 24px; font-weight: 800; line-height: 1.35; }
+.txt p { margin: 6px 0 0; color: var(--ink3); font-size: 15px; line-height: 1.7; min-height: 51px; }
+.dots { display: flex; justify-content: center; gap: 6px; margin: 12px 0; }
+.dots i { height: 8px; width: 8px; border-radius: 99px; background: #CFD6CF; transition: width .5s var(--spring), background .3s; }
+.dots i.on { width: 28px; background: var(--forest); }
+.btn { height: 52px; width: 100%; border-radius: 16px; background: var(--forest); color: #fff; font-weight: 700; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: transform .45s var(--spring); }
+.btn:active { transform: scale(.96); transition-duration: .1s; }
+.ghost { height: 44px; width: 100%; color: var(--forest); font-weight: 700; font-size: 14px; }
+
+/* login */
+.login { height: 100%; display: flex; flex-direction: column; background: var(--c2); overflow-y: auto; }
+.hero { flex: none; height: clamp(200px, 32%, 300px); background: linear-gradient(180deg, var(--forest), var(--deep)); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding-bottom: 30px; position: relative; }
+.hero .z { width: 104px; height: 114px; }
+.card { margin: -36px 16px 0; background: #fff; border-radius: 22px; padding: 18px 18px 14px; box-shadow: 0 1px 2px rgba(15,23,42,.04), 0 12px 32px -14px rgba(15,23,42,.18); position: relative; z-index: 2; }
+.card h3 { margin: 0; font-size: 20px; font-weight: 800; }
+.card .sub { margin: 2px 0 0; font-size: 13px; color: var(--ink3); }
+.field { display: block; margin-top: 12px; }
+.field span { display: block; font-size: 13px; font-weight: 600; color: var(--ink2); margin-bottom: 4px; }
+.field input { width: 100%; height: 48px; border-radius: 14px; border: 1.5px solid #E1E4DD; background: var(--c1); padding: 0 14px; font-size: 16px; transition: border-color .2s; }
+.field input:focus { border-color: var(--green600); outline: none; background: #fff; }
+.forgot { display: flex; justify-content: flex-end; }
+.forgot button { height: 40px; font-size: 13px; font-weight: 700; color: var(--forest); }
+.hint { margin: 10px 0 0; text-align: center; font-size: 12px; color: var(--ink3); min-height: 20px; }
+.signup { display: flex; justify-content: center; align-items: center; gap: 4px; padding: 6px 0 10px; font-size: 14px; font-weight: 600; color: var(--ink2); }
+.signup button { height: 44px; color: var(--forest); font-weight: 800; }
+/* sign-up */
+.hero.small { height: clamp(150px, 24%, 230px); padding-bottom: 28px; }
+.hero.small .z { width: 78px; height: 86px; }
+.market { width: 100%; height: 46px; border-radius: 14px; border: 1.5px solid #E1E4DD; background: var(--c1); padding: 0 14px; display: flex; align-items: center; justify-content: space-between; font-size: 15px; color: var(--ink); }
+.market svg { flex: none; }
+.signupc .field input { height: 46px; }
+.consent { display: flex; align-items: center; gap: 4px; margin-top: 10px; font-size: 13px; color: var(--ink2); flex-wrap: wrap; }
+.consent .box { width: 44px; height: 44px; display: grid; place-items: center; }
+.consent .box i { width: 22px; height: 22px; border-radius: 7px; border: 2px solid #B9C0B8; display: grid; place-items: center; transition: background .25s, border-color .25s; }
+.consent .box.on i { background: var(--forest); border-color: var(--forest); }
+.consent .link { color: var(--forest); font-weight: 800; height: 44px; text-decoration: underline; text-underline-offset: 3px; }
+.btn[disabled] { background: #9DB3A8; cursor: default; }
+
+/* consent sheet */
+.dim { position: absolute; inset: 0; background: rgba(10,30,22,.45); }
+.under { position: absolute; inset: 0; filter: blur(1.5px); pointer-events: none; }
+.sheet { position: absolute; inset: auto 0 0 0; max-height: 88%; background: #fff; border-radius: 26px 26px 0 0; display: flex; flex-direction: column; box-shadow: 0 -12px 30px -12px rgba(0,0,0,.3); }
+.sheet .grab { width: 40px; height: 5px; border-radius: 9px; background: #D5D9D3; margin: 10px auto 4px; flex: none; }
+.sheet .head { padding: 4px 18px 8px; display: flex; gap: 12px; align-items: center; flex: none; }
+.sheet .head .z { width: 54px; height: 60px; flex: none; }
+.sheet h3 { margin: 0; font-size: 19px; font-weight: 800; line-height: 1.35; }
+.sheet .ver { font-size: 12px; color: var(--ink3); }
+.points { list-style: none; margin: 0; padding: 4px 18px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+.points li { display: grid; grid-template-columns: 36px 1fr; gap: 10px; align-items: start; font-size: 14px; line-height: 1.65; color: var(--ink2); }
+.points li b { color: var(--ink); }
+.points .ic { width: 36px; height: 36px; border-radius: 12px; display: grid; place-items: center; }
+.sheet .full { padding: 2px 18px; flex: none; display: flex; gap: 16px; }
+.sheet .full button { height: 44px; color: var(--forest); font-weight: 800; font-size: 14px; }
+.sheet .acts { display: grid; grid-template-columns: 1fr 2fr; gap: 10px; padding: 8px 18px 16px; flex: none; }
+.sheet .no { height: 52px; border-radius: 16px; background: var(--c3); font-weight: 700; color: var(--ink2); }
+
+/* policy reader */
+.policy { height: 100%; display: flex; flex-direction: column; background: var(--c2); }
+.pbar { flex: none; display: flex; align-items: center; gap: 6px; padding: 6px 8px; background: #fff; border-bottom: 1px solid rgba(0,0,0,.06); }
+.pbar .back { width: 44px; height: 44px; display: grid; place-items: center; }
+.pbar b { font-size: 17px; font-weight: 800; }
+.pscroll { flex: 1; min-height: 0; overflow-y: auto; padding: 14px 16px 18px; display: flex; flex-direction: column; gap: 10px; }
+.pmeta { font-size: 12px; color: var(--ink3); }
+.toc { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; flex: none; }
+.toc::-webkit-scrollbar { display: none; }
+.toc a { flex: none; height: 36px; padding: 0 12px; border-radius: 999px; background: #fff; display: grid; place-items: center; font-size: 12px; font-weight: 700; color: var(--ink2); text-decoration: none; }
+.sec { background: #fff; border-radius: 18px; padding: 14px; }
+.sec h4 { margin: 0 0 4px; font-size: 15px; font-weight: 800; color: var(--forest); }
+.sec p { margin: 0; font-size: 13.5px; line-height: 1.8; color: var(--ink2); }
+.rights { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+.rights button { min-height: 48px; border-radius: 14px; font-size: 13px; font-weight: 800; padding: 6px 8px; }
+.rights .exp { background: #E6F4EC; color: var(--forest); }
+.rights .del { background: #FDECE8; color: #A4361A; }
+.pnote { font-size: 12px; color: var(--ink3); text-align: center; }
+.web-bar .url { display: flex; flex-direction: column; line-height: 1.3; min-width: 0; }
+.web-bar .url b { font-size: 14px; }
+.web-bar .url span { font-size: 11px; color: var(--ink3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.web { display: block; background: #f8f9fa; font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; font-size: 14px; line-height: 1.7; color: #374151; padding: 18px 16px 24px; }
+.web h1 { font-size: 26px; line-height: 1.2; margin: 0 0 6px; color: #064e3b; }
+.web h2 { font-size: 17px; line-height: 1.35; margin: 26px 0 8px; color: #1f1f14; }
+.web h3 { font-size: 15px; margin: 18px 0 6px; }
+.web .meta { color: #5f6258; font-size: 12px; margin: 0 0 16px; }
+.web .summary { background: #e6f4ec; border-radius: 12px; padding: 12px 14px; margin: 0 0 20px; }
+.web .summary p { margin: 0; }
+.web .toc { background: #fff; border: 1px solid rgba(0,0,0,.08); border-radius: 12px; padding: 12px 14px; margin: 0 0 20px; }
+.web .toc strong { display: block; font-size: 12px; color: #5f6258; margin-bottom: 6px; }
+.web .toc ol { margin: 0; padding-left: 18px; font-size: 13px; }
+.web a { color: #0b6b4e; }
+.web ul { padding-left: 20px; }
+.web strong { color: #1f1f14; }
+.web .table { overflow-x: auto; border: 1px solid rgba(0,0,0,.08); border-radius: 12px; background: #fff; }
+.web table { border-collapse: collapse; width: 100%; font-size: 12px; }
+.web th, .web td { text-align: left; vertical-align: top; padding: 8px 10px; border-bottom: 1px solid rgba(0,0,0,.08); }
+.notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.notes div { background: var(--chip); border-radius: 18px; padding: 14px 16px; font-size: 14px; line-height: 1.8; min-width: 0; }
+.notes b { display: block; font-size: 15px; margin-bottom: 2px; }
+.real { display: flex; flex-direction: column; gap: 14px; background: var(--chip); border-radius: 24px; padding: 18px; }
+.real h2 { margin: 0; font-size: 22px; font-weight: 800; }
+.real p { margin: 0; color: var(--muted); font-size: 15px; line-height: 1.8; max-width: 70ch; }
+.shots { display: flex; gap: 20px; overflow-x: auto; padding-bottom: 6px; scroll-snap-type: x mandatory; }
+.shots figure { flex: none; scroll-snap-align: start; }
+.shots img { width: 270px; height: auto; border-radius: 28px; border: 6px solid #101412; display: block; box-shadow: 0 20px 40px -24px rgba(0,0,0,.45); }
+.shots figcaption { max-width: 270px; }
+.badge { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border-radius: 999px; background: #E6F4EC; color: #1B4332; font-size: 13px; font-weight: 800; align-self: flex-start; }
+.worlds { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
+.worlds a { display: grid; grid-template-columns: 48px 1fr; gap: 10px; align-items: center; padding: 12px; border-radius: 18px; background: var(--bg); color: var(--fg); text-decoration: none; min-width: 0; transition: transform .45s var(--spring); }
+.worlds a:active { transform: scale(.97); }
+.worlds a:focus-visible { outline: 2px solid var(--green600); outline-offset: 2px; }
+.worlds .disc { width: 48px; height: 48px; border-radius: 16px; display: grid; place-items: center; font-size: 22px; animation: wb 3.4s ease-in-out infinite alternate; }
+@keyframes wb { from { transform: translateY(-2px); } to { transform: translateY(2px); } }
+.worlds b { display: block; font-size: 15px; }
+.worlds span.d { font-size: 12.5px; color: var(--muted); line-height: 1.6; }
+.open-all { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 52px; padding: 0 22px; border-radius: 16px; background: var(--chip-on); color: var(--chip-on-fg); font-weight: 800; font-size: 16px; text-decoration: none; align-self: flex-start; }
+.rules { margin: 0; padding-inline-start: 20px; color: var(--muted); font-size: 15px; line-height: 1.9; max-width: 75ch; }
+.rules b { color: var(--fg); }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+</style>
+
+<div class="wrap" dir="rtl" lang="ar">
+  <header>
+    <h1>أول ما العميل يفتح زاد</h1>
+    <p>فوق: الشكل اللي اتبنى فعلاً. تحت: المعاينة اللي وافقت عليها، تصميم «زاد لحظات» متظبط على مقاس موبايل حقيقي: الانترو، والدخول، وإنشاء الحساب، والموافقة على السياسة، وسياسة الخصوصية. كل حاجة هنا بتشتغل، جرّبها.</p>
+  </header>
+  <section class="real" aria-labelledby="real-h">
+    <span class="badge">اتبنى واندمج · PR #599</span>
+    <h2 id="real-h">على الموبايل دلوقتي</h2>
+    <p>صور حقيقية من التطبيق على المحاكي بمقاس موبايل صغير (٣٦٠×٦٤٠)، بعد التنفيذ. الشروط بقت ٢٫٢ ومن غير أي كلام عن قراءة الـSMS، وسطر الإصدار في ورقة الموافقة بقى بالأرقام العربي.</p>
+    <div class="shots">
+      <figure><img src="shots/intro_s1.png" alt="الانترو على المحاكي: زادو والتلاجة والفقاعة «التلاجة دي بتاعتي!»" loading="lazy"><figcaption>الانترو: المشهد المرسوم وزادو بيتكلم.</figcaption></figure>
+      <figure><img src="shots/login_s1.png" alt="شاشة الدخول على المحاكي بالهيرو الأخضر الغامق وزادو" loading="lazy"><figcaption>الدخول: الهيرو الأخضر الغامق وزادو فوق.</figcaption></figure>
+      <figure><img src="shots/signup_s1.png" alt="شاشة إنشاء الحساب على المحاكي" loading="lazy"><figcaption>إنشاء الحساب: نفس الشكل، والبلد قبل الباسورد.</figcaption></figure>
+      <figure><img src="shots/consent_fixed.png" alt="ورقة الموافقة على المحاكي: الشروط ٢٫٢ وسياسة الخصوصية ٤٫٠ · نوفمبر ٢٠٢٦" loading="lazy"><figcaption>الموافقة: «الشروط ٢٫٢ وسياسة الخصوصية ٤٫٠ · نوفمبر ٢٠٢٦».</figcaption></figure>
+    </div>
+  </section>
+
+  <section class="real" aria-labelledby="home-h">
+    <span class="badge">بيتراجع · PR #600</span>
+    <h2 id="home-h">الرئيسية بعد الدخول</h2>
+    <p>نفس شكل الرئيسية اللي عجبك، ومعاه حركة وترتيب: أيقونات المربعات بتتحرك لوحدها، والتسبيحة رجعت، والإعلان المدمج بين أمازون والشيف، و«مكافآت زاد» طلعت تحت الشيف بهدية بتتهز و«+٥». بار «اشتراكاتك وأدويتك» بيظهر بس لما يبقى عندك اشتراكات أو أدوية، وحساب التجربة مفيهوش، فمش باين هنا. اسم التاب في الهيدر لما تنزل وعنوان العروض اتصلحوا بعد الصور دي.</p>
+    <div class="shots">
+      <figure><img src="shots/home_new_1.png" alt="أول الرئيسية: الهيدر فيه «زاد» كامل" loading="lazy"><figcaption>الهيدر: «زاد» كامل بدل «زا».</figcaption></figure>
+      <figure><img src="shots/home_new_5.png" alt="بستان التسبيح تحت مربعات الصيدلية والاشتراكات" loading="lazy"><figcaption>التسبيحة رجعت تحت المربعات.</figcaption></figure>
+      <figure><img src="shots/home_new_7.png" alt="الإعلان المدمج بعد بار أمازون" loading="lazy"><figcaption>الإعلان المدمج (إعلان تجربة من جوجل) بعد أمازون.</figcaption></figure>
+      <figure><img src="shots/home_new_11.png" alt="كارت الشيف ثم مكافآت زاد بزرار الهدية و+٥" loading="lazy"><figcaption>الشيف، وبعده «مكافآت زاد» بالهدية و«+٥».</figcaption></figure>
+    </div>
+  </section>
+
+  <section class="real" aria-labelledby="worlds-h">
+    <span class="badge" style="background:#FFF4DE; color:#7A4E06">معاينة · التطبيق كله · مستنية موافقتك</span>
+    <h2 id="worlds-h">التطبيق كله: عالم واحد متصل</h2>
+    <p>كل صفحة في زاد بقت «عالم» ليه لون واحد ومشهد مرسوم ومتحرك، وزادو جواه بوضع مختلف. وآخر كل صفحة شريط «متصلة بـ» بيوديك للعوالم اللي بتأثر فيها: الفاتورة تملا المخزون، والشيف ياخد من المخزون، والناقص يروح للعروض وقايمة التسوق. دوس على أي عالم وجرّبه.</p>
+    <ol class="rules">
+      <li><b>المشهد فوق:</b> رسمة متحركة بتقول حالة الصفحة من غير كلام (التلاجة بتلمع على الحليب، البرطمانات بتتملي، الجرس بيهتز).</li>
+      <li><b>العنوان والحالة:</b> عنوان كبير تقيل، وتحته سطر واحد بلون العالم («فاضل جرعة واحدة»، «٣ حاجات قربت تخلص»).</li>
+      <li><b>الكروت هادية:</b> بيضا تحت المشهد، والحركة في المشهد ولحظة اللمس بس، عشان الصفحة ماتبقاش دوشة.</li>
+      <li><b>الإيكوسيستم:</b> «متصلة بـ» في آخر كل صفحة، والإشعار بيلبس لون العالم اللي جاي منه ويوديك له.</li>
+      <li><b>عقل زاد:</b> صفحة واحدة. الشبكة اللي بتتسحب فوق بفلاتر (فلوس، ناس، أماكن، حاجات، عادات)، وتحتها تفاصيل النقطة، وبعدين الأرقام والكروت.</li>
+      <li><b>الأزرار:</b> الإعلان بتدرّج ألوان بيتحرك ونبضة ولمعة، وبريميوم دهبي بتاج بيتهز، وصفحة بريميوم فيها زادو بالتاج والمزايا بتلف حواليه.</li>
+      <li><b>من غير إيموجي:</b> منتجات البيت وأمازون والأكل وكل الأيقونات رسومات بنفس الإضاءة وألوان زادو. في التطبيق، صور أمازون الحقيقية بتفضل زي ما هي جوه الكارت المرسوم.</li>
+      <li><b>بستان التسبيح لعبة:</b> كل ٣٣ تسبيحة وردة بتفتّح، وكل ٩٩ الشجرة بتكبر مرحلة، والسما بتبقى ليل أو نهار حسب الوقت، وأشجار العيلة جنب بعض.</li>
+      <li><b>ألعاب زادو التلاتة:</b> مرسومة ومتحركة، بنجوم وبذور لزادو، وفي آخر كل جولة «ضاعف المكافأة» بإعلان العميل بيختاره.</li>
+      <li><b>الصيدلية للعيلة:</b> كل فرد ليه قسم بجدوله، العيلة بتتابع بعض، ورب الأسرة بيضيف ويعدّل ويعلّم الجرعة.</li>
+      <li><b>الإعلانات:</b> المدمج عليه «إعلان» واضح، والمكافأة بإختيار العميل، والشاشة الكاملة في وقفة طبيعية بس. التفاصيل في «خريطة الإعلانات».</li>
+      <li><b>آيفون زي أندرويد:</b> كل شاشة فيها زرار رجوع ظاهر، ومفيش حاجة معتمدة على أندرويد بس.</li>
+    </ol>
+    <a class="open-all" href="pages.html#eco">افتح خريطة زاد وكل الصفحات ←</a>
+    <div class="worlds">
+      <a href="pages.html#home"><span class="disc" style="background:#E6F4EC" data-art="house"></span><span><b>الرئيسية</b><span class="d">منتجات أمازون مرسومة، إعلان مدمج، بستان صغير</span></span></a>
+      <a href="pages.html#tas"><span class="disc" style="background:#E8F8EA" data-art="tree"></span><span><b>بستان التسبيح</b><span class="d">لعبة: ورد بيفتّح وشجرة بتكبر، ليل ونهار</span></span></a>
+      <a href="pages.html#games"><span class="disc" style="background:#F3EEFF" data-art="play"></span><span><b>ألعاب زادو</b><span class="d">الكورة، وخمّن السعر، وذاكرة الأسعار</span></span></a>
+      <a href="pages.html#prices"><span class="disc" style="background:#FFF4DE" data-art="fuel"></span><span><b>أسعار النهارده</b><span class="d">شريط أسعار ورادار صدمات</span></span></a>
+      <a href="pages.html#offers"><span class="disc" style="background:#F3EEFF" data-art="gift"></span><span><b>عروضي</b><span class="d">الكوبونات اللي ملهاش شاشة النهارده</span></span></a>
+      <a href="pages.html#ach"><span class="disc" style="background:#FFF8E1" data-art="star"></span><span><b>إنجازاتي</b><span class="d">شارات بتلمع، ومحتاجة حد يمنحها</span></span></a>
+      <a href="pages.html#ads"><span class="disc" style="background:#FFEFF3" data-art="noads"></span><span><b>خريطة الإعلانات</b><span class="d">كل إعلان: سيبه، قلّله، أو وقّفه</span></span></a>
+      <a href="pages.html#gaps"><span class="disc" style="background:#EEF0F3" data-art="folder"></span><span><b>من غير شاشة</b><span class="d">١٩ جدول وميزة على السيرفر ومكانهم</span></span></a>
+      <a href="pages.html#kit"><span class="disc" style="background:#E6F4EC" data-art="star"></span><span><b>الأيقونات والأزرار</b><span class="d">رسومات بتتنفس، إعلان ملون، بريميوم دهبي</span></span></a>
+      <a href="pages.html#prem"><span class="disc" style="background:#FFF4DE" data-art="crown"></span><span><b>بريميوم</b><span class="d">زادو بالتاج والمزايا بتلف حواليه</span></span></a>
+      <a href="pages.html#ph"><span class="disc" style="background:#EEE9FB" data-art="pill"></span><span><b>الصيدلية</b><span class="d">شريط الحبوب هو المخزون، والحباية بتطلع</span></span></a>
+      <a href="pages.html#brain"><span class="disc" style="background:#0A382C" data-art="brain"></span><span><b>عقل زاد</b><span class="d">الشبكة والعقل في صفحة واحدة</span></span></a>
+      <a href="pages.html#chef"><span class="disc" style="background:#FFF0E6" data-art="pot"></span><span><b>شيف زاد</b><span class="d">الحلة بتغلي، والعروض على الناقص</span></span></a>
+      <a href="pages.html#places"><span class="disc" style="background:#EAF2FD" data-art="pin"></span><span><b>أماكني</b><span class="d">مدار بيلف حوالين البيت</span></span></a>
+      <a href="pages.html#subs"><span class="disc" style="background:#FFF4DE" data-art="repeat"></span><span><b>الاشتراكات</b><span class="d">حلقة بألوان العلامات وخط التجديد</span></span></a>
+      <a href="pages.html#inv"><span class="disc" style="background:#E6F4EC" data-art="pantry"></span><span><b>المخزون</b><span class="d">تلاجة بتلمع على اللي قرّب يخلص</span></span></a>
+      <a href="pages.html#shop"><span class="disc" style="background:#EAF2FD" data-art="cart"></span><span><b>التسوق</b><span class="d">علّم صنف، يطير للمخزن</span></span></a>
+      <a href="pages.html#tx"><span class="disc" style="background:#E6F4EC" data-art="receipt"></span><span><b>المعاملات</b><span class="d">فاتورة بتتطبع، ومصدر كل سطر</span></span></a>
+      <a href="pages.html#budget"><span class="disc" style="background:#FFF4DE" data-art="jar"></span><span><b>الميزانية</b><span class="d">برطمان لكل بند بيتملي</span></span></a>
+      <a href="pages.html#stmt"><span class="disc" style="background:#FBF1DE" data-art="chart"></span><span><b>كشف الحساب</b><span class="d">منحنى بيترسم قدامك</span></span></a>
+      <a href="pages.html#appt"><span class="disc" style="background:#FCE7EF" data-art="calendar"></span><span><b>المواعيد</b><span class="d">نتيجة وساعة، والجاي بعدّاد</span></span></a>
+      <a href="pages.html#maint"><span class="disc" style="background:#EEF0F3" data-art="wrench"></span><span><b>الصيانة</b><span class="d">ترس بيلف جوه البيت</span></span></a>
+      <a href="pages.html#docs"><span class="disc" style="background:#EAF0F8" data-art="folder"></span><span><b>المستندات</b><span class="d">ملفات ولونها على قرب انتهائها</span></span></a>
+      <a href="pages.html#comp"><span class="disc" style="background:#E8F8EA" data-art="sprout"></span><span><b>رفيق زاد</b><span class="d">جنينة زادو والدولاب</span></span></a>
+      <a href="pages.html#chat"><span class="disc" style="background:#E6F4EC" data-art="chat"></span><span><b>الشات</b><span class="d">زادو فوق، وكروت التأكيد جوه الكلام</span></span></a>
+      <a href="pages.html#notif"><span class="disc" style="background:#FFF0E6" data-art="bell"></span><span><b>الإشعارات</b><span class="d">كل إشعار بلون عالمه</span></span></a>
+      <a href="pages.html#profile"><span class="disc" style="background:#F1F2EE" data-art="person"></span><span><b>حسابي</b><span class="d">زادو بلبسك وشارة باقتك</span></span></a>
+    </div>
+  </section>
+
+  <div class="sizes" role="group" aria-label="مقاس الموبايل">
+    <button type="button" id="sz-s" class="on">موبايل صغير ٣٦٠×٦٤٠</button>
+    <button type="button" id="sz-l">موبايل كبير ٤١٢×٩١٥</button>
+  </div>
+
+  <div class="phones">
+    <figure>
+      <div class="phone" id="ph-intro">
+        <section class="intro">
+          <div class="top">
+            <span id="intro-logo"></span>
+            <span style="display:flex; align-items:center; gap:4px"><span class="lang" aria-label="اللغة"><span class="on">العربية</span><span>English</span></span><button type="button" class="skip" id="skip">تخطي</button></span>
+          </div>
+          <div class="stage" id="stage"><svg class="scene" id="scene" viewBox="0 0 430 420" preserveAspectRatio="xMidYMid meet" aria-hidden="true"></svg><span class="bubble" id="bubble" style="top:8px; left:8px"></span></div>
+          <div class="txt"><h2 id="t"></h2><p id="b"></p></div>
+          <div class="dots" id="dots"></div>
+          <button type="button" class="btn" id="next"></button>
+          <button type="button" class="ghost">ليس لديك حساب؟ أنشئ حساباً جديداً</button>
+        </section>
+      </div>
+      <figcaption>الانترو: مشهد مرسوم ومتحرك لكل صفحة، وزادو بيقول جملة. المشهد بيصغر لوحده على الموبايل الصغير، فالعنوان والزراير دايماً ظاهرين.</figcaption>
+    </figure>
+
+    <figure>
+      <div class="phone" id="ph-login">
+        <section class="login">
+          <div class="hero"><div class="z" id="lz"></div><div id="login-logo"></div><span class="bubble" id="lbubble" style="top:18px; left:18px"></span></div>
+          <div class="card">
+            <h3>تسجيل الدخول</h3><p class="sub">أدخل بريدك الإلكتروني وكلمة المرور</p>
+            <label class="field" for="email"><span>البريد الإلكتروني</span><input id="email" type="email" dir="ltr" autocomplete="off" placeholder="name@mail.com"></label>
+            <label class="field" for="pass"><span>كلمة المرور</span><input id="pass" type="password" autocomplete="off" placeholder="••••••••"></label>
+            <div class="forgot"><button type="button">نسيت كلمة المرور؟</button></div>
+            <button type="button" class="btn" id="signin">دخول</button>
+            <p class="hint" id="hint">زادو بيبص على اللي بتكتبه… إلا كلمة السر.</p>
+          </div>
+          <div class="signup"><span>ليس لديك حساب؟</span><button type="button">سجل الآن</button></div>
+        </section>
+      </div>
+      <figcaption>الدخول: زادو فوق على أخضر غامق. بيبص على الإيميل وانت بتكتبه، وبيغطي عينيه وانت بتكتب الباسورد، وبينط لما تدوس «دخول».</figcaption>
+    </figure>
+
+    <figure>
+      <div class="phone" id="ph-signup">
+        <section class="login" id="signup-screen">
+          <div class="hero small"><div class="z" id="sz"></div><div id="signup-logo"></div><span class="bubble" id="sbubble" style="top:14px; left:14px"></span></div>
+          <div class="card signupc">
+            <h3>إنشاء حساب</h3><p class="sub">أدخل بياناتك للمتابعة</p>
+            <label class="field" for="su-name"><span>اسم المستخدم</span><input id="su-name" type="text" autocomplete="off" placeholder="محمد أحمد"></label>
+            <label class="field" for="su-email"><span>البريد الإلكتروني</span><input id="su-email" type="email" dir="ltr" autocomplete="off" placeholder="your.email@gmail.com"></label>
+            <div class="field"><span>البلد</span><button type="button" class="market" id="su-market"><span id="su-market-t" style="color:#5F6258">اختار بلدك</span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5F6258" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></div>
+            <label class="field" for="su-pass"><span>كلمة المرور</span><input id="su-pass" type="password" autocomplete="off" placeholder="••••••••"></label>
+            <div class="consent"><button type="button" class="box" id="su-terms" role="checkbox" aria-checked="false" aria-label="أوافق على الشروط وسياسة الخصوصية"><i><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg></i></button><span>أوافق على</span><button type="button" class="link" id="su-terms-link">الشروط وسياسة الخصوصية</button></div>
+            <button type="button" class="btn" id="su-go" disabled>إنشاء حساب</button>
+          </div>
+          <div class="signup"><span>لديك حساب بالفعل؟</span><button type="button" id="su-signin">تسجيل الدخول</button></div>
+        </section>
+      </div>
+      <figcaption>إنشاء الحساب بنفس شكل الدخول. زادو بيسلّم عليك باسمك، وبيغطي عينيه على الباسورد. الزرار بيصحى لما كل الخانات تتملى وتوافق.</figcaption>
+    </figure>
+
+    <figure>
+      <div class="phone" id="ph-consent">
+        <div class="under" id="consent-under"></div>
+        <div class="dim"></div>
+        <div class="sheet" role="dialog" aria-labelledby="cs-title">
+          <span class="grab"></span>
+          <div class="head"><div class="z" id="cz"></div><div><h3 id="cs-title">قبل ما نبدأ، ده اتفاقنا</h3><span class="ver">الشروط ٢٫٢ وسياسة الخصوصية ٤٫٠ · نوفمبر ٢٠٢٦</span></div></div>
+          <ul class="points">
+            <li><span class="ic" style="background:#E6F4EC"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1B4332" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10"/></svg></span><span><b>بنحفظ اللي بتدخّله بس.</b> حسابك وفلوسك ومخزونك وأدويتك ومواعيدك ورسايل العيلة، عشان زاد يساعدك بيهم.</span></li>
+            <li><span class="ic" style="background:#FFF4DE"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8A5A0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span><span><b>كل إذن بموافقتك.</b> إشعارات البنك والموقع والكاميرا والمايك، كل واحد بيتطلب لما تستخدم الميزة، وتقدر تقفله في أي وقت.</span></li>
+            <li><span class="ic" style="background:#E6F4EC"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1B4332" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"/></svg></span><span><b>مابنبيعش بياناتك لحد.</b> ومابنقراش كلمات سر البنك ولا أرقام الكروت ولا أكواد OTP.</span></li>
+            <li><span class="ic" style="background:#EEE9FB"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5B3FB8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.8 4.6 4.7 1.9-4.7 1.9L12 16l-1.8-4.6-4.7-1.9 4.7-1.9z"/></svg></span><span><b>الذكاء الاصطناعي بيساعد، وممكن يغلط.</b> راجع الأرقام قبل أي قرار؛ زاد مش بنك ولا مستشار مالي.</span></li>
+            <li><span class="ic" style="background:#FDECE8"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#A4361A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8"/></svg></span><span><b>الخطة المجانية فيها إعلانات</b> من Google. حسابات الأطفال مفيهاش إعلانات خالص.</span></li>
+            <li><span class="ic" style="background:#E6F4EC"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1B4332" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg></span><span><b>بياناتك ملكك.</b> تصدّرها في أي وقت، أو تمسح حسابك، والمسح بيتم بعد ١٤ يوم تقدر ترجع فيهم.</span></li>
+            <li><span class="ic" style="background:#F1F2EE"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#374151" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></span><span><b>زاد للكبار من ١٨ سنة.</b> الأطفال بيدخلوا كأفراد في عيلة وليّ أمرهم.</span></li>
+          </ul>
+          <div class="full"><button type="button" id="cs-full">سياسة الخصوصية ↗</button><button type="button" id="cs-terms">شروط الاستخدام ↗</button></div>
+          <div class="acts"><button type="button" class="no" id="cs-no">رفض</button><button type="button" class="btn" id="cs-yes">موافق ومتابعة</button></div>
+        </div>
+      </div>
+      <figcaption>الموافقة: ورقة من تحت فيها أهم ٧ نقط بالعربي، ولينكين لصفحتي السياسة والشروط على Vercel. «موافق» بتعلّم على الخانة في شاشة إنشاء الحساب.</figcaption>
+    </figure>
+
+    <figure>
+      <div class="phone" id="ph-policy">
+        <section class="policy">
+          <div class="pbar web-bar"><button type="button" class="back" aria-label="إغلاق"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1F1F14" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button><span class="url"><b>Zad Privacy Policy</b><span dir="ltr">astralabshq.vercel.app/privacy.html</span></span></div>
+          <div class="pscroll web" id="pscroll" dir="ltr" lang="en">
+  <h1>Privacy Policy</h1>
+  <p class="meta">Effective date: November 13, 2026 · Zad (Android package <code>com.aistudio.zad.wrtqvx</code>) · Data controller: Astra Labs</p>
+
+  <div class="summary">
+    <p>In short: Zad collects only what the features you use need. We do not sell your personal data. Every permission is optional and asked for when you first use the feature. TikTok is connected only if you choose to, and you can disconnect it or delete your whole account at any time.</p>
+  </div>
+
+  <nav class="toc" aria-label="Contents">
+    <strong>Contents</strong>
+    <ol>
+      <li><a href="#pp-collect">What we collect</a></li>
+      <li><a href="#pp-tiktok">TikTok data</a></li>
+      <li><a href="#pp-use">How we use data</a></li>
+      <li><a href="#pp-processors">Who processes your data</a></li>
+      <li><a href="#pp-ads">Ads</a></li>
+      <li><a href="#pp-children">Family and children</a></li>
+      <li><a href="#pp-security">How we protect data</a></li>
+      <li><a href="#pp-retention">Retention</a></li>
+      <li><a href="#pp-deletion">Deleting your account and data</a></li>
+      <li><a href="#pp-rights">Your rights</a></li>
+      <li><a href="#pp-transfers">International transfers</a></li>
+      <li><a href="#pp-changes">Changes</a></li>
+      <li><a href="#pp-contact">Contact</a></li>
+    </ol>
+  </nav>
+
+  <h2 id="pp-collect">1. What we collect</h2>
+  <h3>What you enter</h3>
+  <p>Your account (email or sign-in provider), country and currency, salary day, budgets, expenses and income, obligations and debts, pantry items, shopping lists, pharmacy items and dose times, appointments, subscriptions, documents you choose to scan, family chat messages, family tasks, and what you write or say to Zad's assistant.</p>
+
+  <h3>What you allow through permissions</h3>
+  <p>Each permission is optional and asked for when you first use the feature.</p>
+  <ul>
+    <li><strong>Notification access.</strong> Zad reads the notifications that bank and payment messages arrive in, so it can record a purchase for you. Bank messages usually arrive inside your messaging app's notification, so Zad reads that app's notifications too and keeps only the ones that look like a bank or payment message. A notification Zad cannot classify on the phone is sent to our server to be classified, and is kept only if it is a transaction. Zad never reads bank logins, card numbers, PINs, CVV codes or one-time passwords, and ignores OTP messages.</li>
+    <li><strong>Location.</strong> One approximate fix when you ask for nearby shops and local prices. Only if you turn on store-arrival reminders, location is also used in the background, and only for the shops you saved. You can turn it off in Zad or in Android settings at any time.</li>
+    <li><strong>Camera and photos.</strong> For scanning receipts, pantry items, medicines and documents you choose to photograph.</li>
+    <li><strong>Microphone.</strong> Only while you hold the voice button to speak to Zad.</li>
+    <li><strong>Notifications, exact alarms, battery optimisation exemption.</strong> For reminders (doses, appointments, bills) and to keep bank-message reading working in the background.</li>
+  </ul>
+
+  <h3>Collected automatically</h3>
+  <p>Device model, Android version, app version, crash reports and diagnostics, approximate feature usage, and your IP address. Crash reports are sent without personal data or screenshots. On the free plan, Google AdMob collects the advertising ID and device data to show and measure ads (see <a href="#pp-ads">section 5</a>).</p>
+
+  <h2 id="pp-tiktok">2. TikTok data</h2>
+  <p>Connecting TikTok is optional. Zad uses TikTok's official APIs only (TikTok Login Kit, Content Posting API and, where granted, the Research API). It never scrapes TikTok or uses unofficial libraries, and it never sees your TikTok password.</p>
+
+  <h3>2.1 If you connect your TikTok account</h3>
+  <div class="table">
+    <table>
+      <thead><tr><th>Data</th><th>Why Zad uses it</th></tr></thead>
+      <tbody>
+        <tr><td>Basic profile: open ID, display name, avatar (<code>user.info.basic</code>)</td><td>To show which TikTok account is connected and link it to your Zad account.</td></tr>
+        <tr><td>Access and refresh tokens</td><td>To act on your behalf only when you ask. Stored encrypted on our server, never in the app's code and never shared.</td></tr>
+        <tr><td>Creator posting settings (privacy options, interaction settings, posting limits)</td><td>To show you the correct choices before you share, as TikTok requires.</td></tr>
+        <tr><td>The video, photo and caption you choose to share (<code>video.upload</code> / <code>video.publish</code>)</td><td>To send that one piece of content to TikTok, as a draft in your TikTok inbox or as a post, when you tap to share.</td></tr>
+        <tr><td>Post status and post ID returned by TikTok</td><td>To tell you whether sharing succeeded.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Zad posts <strong>only</strong> after you preview the content and tap to share, with the privacy level and settings you choose. It never posts automatically or in the background, never reads your private messages, followers or watch history, and never uses your TikTok data for advertising.</p>
+
+  <h3>2.2 Public TikTok content and research data</h3>
+  <p>To suggest recipes and local offers, Zad may read public TikTok videos and their descriptions, found through search or, where granted, TikTok's Research API. This data contains nothing from your Zad account. It is used only to find and link to public recipe and deal videos, with credit and a link back to the creator, and for aggregate analysis. It is not used to profile or identify individual TikTok users, is never sold or shared with advertisers or data brokers, and is refreshed or deleted as TikTok's terms require, including when a video is deleted or made private.</p>
+
+  <h3>2.3 Disconnecting and deleting TikTok data</h3>
+  <p>You can disconnect TikTok in Zad's settings or from "Manage app permissions" in your TikTok settings. When you disconnect, Zad deletes your TikTok tokens and the TikTok profile data it stored within 30 days, and usually at once. Deleting your Zad account also deletes all TikTok data linked to it. Content you already posted remains on TikTok, where you control it under <a href="#" data-ext="1" rel="noopener">TikTok's Privacy Policy</a>.</p>
+
+  <h2 id="pp-use">3. How we use data</h2>
+  <p>To run the features you use; to record and categorise your spending; to remind you; to answer you through the assistant; to keep your family's shared data in sync; to share content to TikTok when you ask; to prevent abuse and enforce usage limits; to fix crashes; to process purchases; and, on the free plan, to show ads. <strong>We do not sell your personal data</strong>, and we do not use it to train our own AI models.</p>
+
+  <h2 id="pp-processors">4. Who processes your data</h2>
+  <div class="table">
+    <table>
+      <thead><tr><th>Service</th><th>What it does</th><th>What it receives</th></tr></thead>
+      <tbody>
+        <tr><td>Supabase</td><td>Hosting, database, sign-in, server functions</td><td>All account data, stored with per-user access rules</td></tr>
+        <tr><td>Google Gemini API</td><td>Main AI: chat, receipt and document reading, bank-message classification, voice</td><td>The text, image or audio needed for the request you made</td></tr>
+        <tr><td>Groq</td><td>Backup AI; speech-to-text</td><td>The text or audio needed for that request</td></tr>
+        <tr><td>Microsoft Azure Speech</td><td>Backup voice for spoken replies</td><td>The reply text to be spoken</td></tr>
+        <tr><td>TikTok</td><td>Sign-in with TikTok and content sharing, only if you connect it</td><td>Your authorization, and the content you choose to share</td></tr>
+        <tr><td>Google AdMob</td><td>Ads on the free plan</td><td>Advertising ID, device and usage data, approximate location from IP</td></tr>
+        <tr><td>Google Play Billing</td><td>Subscriptions and purchases</td><td>Purchase details. Zad never sees your card</td></tr>
+        <tr><td>Firebase Cloud Messaging</td><td>Push notifications</td><td>A device token</td></tr>
+        <tr><td>Sentry</td><td>Crash reporting</td><td>Crash data, device and app version, no personal data</td></tr>
+        <tr><td>Google Places</td><td>Nearby shops</td><td>An approximate location when you ask</td></tr>
+        <tr><td>Tavily, Microsoft Bing, Google Custom Search</td><td>Finding prices, offers and recipes</td><td>Product, store and city names. Never your identity</td></tr>
+        <tr><td>Telegram</td><td>Only if you link Zad's Telegram bot</td><td>The messages, photos and voice notes you send the bot</td></tr>
+        <tr><td>Amazon Associates and other affiliate programs</td><td>Product suggestions</td><td>Nothing from your account. Amazon sees you only if you open its link</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p><strong>About the Gemini API.</strong> Zad uses Google's Gemini API on terms under which Google may use content sent to it to improve its products, and human reviewers may read it. Zad therefore sends only what each request needs. Please do not put information in chat or photos that you would not want reviewed.</p>
+
+  <h2 id="pp-ads">5. Ads</h2>
+  <p>The free plan shows ads from Google AdMob: rewarded ads you choose to watch, and occasional full-screen ads at natural pauses. Paid plans show no ads. Child accounts and kids mode show no ads at all. Where the law requires it, Google's consent form asks for your choice before any ad. You can reset or delete your advertising ID in Android settings.</p>
+
+  <h2 id="pp-children">6. Family and children</h2>
+  <p>Zad is for adults (18 and over). An adult can create a family and invite members. A parent may add a child member, who signs in to their own account inside the family, or turn on PIN-protected kids mode on their own phone. Child members and kids mode get no ads and no advertising ID, cannot connect TikTok, and see a reduced app (tasks, savings challenges, family chat). A parent can view and delete a child's data.</p>
+  <p>School zones are optional. A parent can be told when a child leaves a place the parent set, during hours the parent set, only after the child agrees on their own phone. The child's phone shows a permanent notice while it is on, and either side can stop it. Zad sends only "entered" and "left" events and does not store the child's route. Zad does not offer location tracking of any adult.</p>
+
+  <h2 id="pp-security">7. How we protect data</h2>
+  <ul>
+    <li>All data travels over encrypted connections (HTTPS/TLS).</li>
+    <li>Every table on our server is protected by row-level access rules, so only you, and family members you share with, can read your data.</li>
+    <li>Secret keys and third-party tokens, including TikTok tokens, stay on the server and never ship in the app.</li>
+    <li>Access to production systems is limited to the people who run Zad.</li>
+    <li>If a breach affects your personal data, we will tell you and the relevant authorities as the law requires.</li>
+  </ul>
+
+  <h2 id="pp-retention">8. Retention</h2>
+  <p>We keep your data while your account is active. TikTok tokens are kept only while TikTok is connected. Public TikTok content is kept only as long as it is public and TikTok's terms allow. Backups are overwritten within 30 days. Data the law requires us to keep is kept only as long as required.</p>
+
+  <h2 id="pp-deletion">9. Deleting your account and data</h2>
+  <ul>
+    <li><strong>In the app:</strong> Zad → My account → Delete account.</li>
+    <li><strong>By email:</strong> write to <a href="#" data-ext="1">astralabs.supp@gmail.com</a> with the subject "Delete my account" from the email address on your account.</li>
+  </ul>
+  <p>Your account is closed at once and stops receiving messages. You have <strong>14 days</strong> to restore it by signing in again. After 14 days your account and all its data, including any TikTok tokens and TikTok profile data, are erased. A minimal record that a deletion happened (no amounts and no text) is kept for security. Backups are overwritten within 30 days.</p>
+
+  <h2 id="pp-rights">10. Your rights</h2>
+  <p>Depending on where you live (for example under the GDPR, Egypt's Personal Data Protection Law or Saudi Arabia's Personal Data Protection Law), you have the right to access, correct, export and delete your data, to object to or restrict processing, and to withdraw consent at any time. You can do most of this in the app: see and correct your data, export it, withdraw any permission in Android settings, disconnect TikTok or Telegram, and delete your account. For anything else, email <a href="#" data-ext="1">astralabs.supp@gmail.com</a>. We answer within 30 days. You may also complain to your local data protection authority.</p>
+
+  <h2 id="pp-transfers">11. International transfers</h2>
+  <p>Our service providers may process data in countries other than yours, including the United States and the European Union. Where required, we rely on safeguards such as standard contractual clauses offered by those providers.</p>
+
+  <h2 id="pp-changes">12. Changes</h2>
+  <p>If this policy changes, we will update the effective date above and tell you in the app before the change affects you.</p>
+
+  <h2 id="pp-contact">13. Contact</h2>
+  <p>Astra Labs · Zad (<code>com.aistudio.zad.wrtqvx</code>)<br>
+  Privacy, data requests and support: <a href="#" data-ext="1">astralabs.supp@gmail.com</a><br>
+  Website: <a href="#" data-ext="1">astralabshq.vercel.app</a> · <a href="#" data-ext="1">Terms of Service</a></p>
+</div>
+        </section>
+      </div>
+      <figcaption>سياسة الخصوصية: صفحتك الإنجليزي المنشورة على Vercel زي ما هي، بتتفتح جوه التطبيق في تبويب متصفح (وبالمثل صفحة الشروط). المحتوى هنا منقول من الصفحة الحقيقية.</figcaption>
+    </figure>
+  </div>
+
+  <div class="notes">
+    <div><b>اللي هيفضل زي ما هو</b>اللوجو (الجزرة و«زاد»)، والألوان، وخط Cairo، واختيار اللغة، و«نسيت كلمة المرور».</div>
+    <div><b>زادو</b>هو نفس زادو اللي في التطبيق دلوقتي؛ هنزوّد له حركتين بس: يبص على الكلام، ويغطي عينيه.</div>
+    <div><b>الحركة</b>لو الموبايل مقفول عليه الحركة من الإعدادات، المشاهد بتظهر ثابتة.</div>
+    <div><b>اتعمل</b>النقط السبعة اتراجعت. الشروط بقت ٢٫٢ ومفيهاش قراءة الـSMS. وفيه PR جاي بيطلب من العملا القدام يوافقوا على ٢٫٢، واللي يرفض بيخرج وبياناته بتفضل.</div>
+  </div>
+</div>
+
+<script src="art.js"></script>
+<script>
+(() => {
+  try { document.querySelectorAll("[data-art]").forEach((el) => { el.innerHTML = window.ART ? ART.icon(el.dataset.art, 34) : ""; }); } catch (_) {}
+  const $ = (id) => document.getElementById(id);
+  let zn = 0;
+  function zado(o = {}) {
+    const k = "zd" + (++zn), mood = o.mood || "idle", happy = mood === "happy", wow = mood === "wow";
+    const eyes = happy ? `<g fill="none" stroke="#14181F" stroke-width="5" stroke-linecap="round"><path d="M83,154 Q94,138 105,154"/><path d="M135,154 Q146,138 157,154"/></g>`
+      : `<g class="z-blink"><ellipse cx="94" cy="150" rx="${wow ? 11 : 9.5}" ry="${wow ? 14 : 12.5}" fill="#14181F"/><ellipse cx="146" cy="150" rx="${wow ? 11 : 9.5}" ry="${wow ? 14 : 12.5}" fill="#14181F"/><circle cx="97.5" cy="145" r="3.4" fill="#fff"/><circle cx="149.5" cy="145" r="3.4" fill="#fff"/></g>`;
+    const mouth = happy ? `<path d="M106,170 Q120,192 134,170 Z" fill="#7A1F2B" stroke="#14181F" stroke-width="2.5"/>`
+      : wow ? `<ellipse cx="120" cy="180" rx="8" ry="10" fill="#7A1F2B" stroke="#14181F" stroke-width="2.5"/>`
+      : `<path d="M111,172 Q120,181 129,172" fill="none" stroke="#14181F" stroke-width="3.5" stroke-linecap="round"/>`;
+    const crest = `<line x1="120" y1="68" x2="120" y2="50" stroke="#2E8B4A" stroke-width="5" stroke-linecap="round"/><ellipse cx="106" cy="46" rx="15" ry="6.5" fill="#45BF68" transform="rotate(26 106 46)"/><ellipse cx="134" cy="46" rx="15" ry="6.5" fill="#45BF68" transform="rotate(-26 134 46)"/>`;
+    return `<svg viewBox="0 0 240 264" width="100%" height="100%" aria-hidden="true">
+      <defs><radialGradient id="${k}b" cx="36%" cy="28%" r="80%"><stop offset="0%" stop-color="#8BF0C4"/><stop offset="38%" stop-color="#37C98E"/><stop offset="78%" stop-color="#1C9A6E"/><stop offset="100%" stop-color="#0B6B4E"/></radialGradient>
+      <radialGradient id="${k}l" cx="40%" cy="30%" r="75%"><stop offset="0%" stop-color="#6FE3B1"/><stop offset="100%" stop-color="#1C9A6E"/></radialGradient>
+      <radialGradient id="${k}h"><stop offset="0%" stop-color="#fff" stop-opacity=".6"/><stop offset="100%" stop-color="#fff" stop-opacity="0"/></radialGradient></defs>
+      <ellipse cx="120" cy="248" rx="66" ry="9" fill="#000" opacity=".15"/>
+      <g class="z-breathe">
+        <ellipse cx="86" cy="230" rx="20" ry="11" fill="url(#${k}l)"/><ellipse cx="154" cy="230" rx="20" ry="11" fill="url(#${k}l)"/>
+        <path d="M120,66 C170,66 206,104 206,158 C206,206 172,230 120,230 C68,230 34,206 34,158 C34,104 70,66 120,66 Z" fill="url(#${k}b)" stroke="#0B6B4E" stroke-opacity=".35" stroke-width="1.5"/>
+        <ellipse cx="88" cy="102" rx="36" ry="19" fill="url(#${k}h)" transform="rotate(-24 88 102)"/>
+        <ellipse cx="74" cy="172" rx="12" ry="6.5" fill="#FF9DB2" opacity=".85"/><ellipse cx="166" cy="172" rx="12" ry="6.5" fill="#FF9DB2" opacity=".85"/>
+        <g class="z-eyes">${eyes}</g>${mouth}${crest}
+        <g class="z-hands" style="transform:${o.cover ? "translateY(-28px)" : "none"}">
+          <ellipse cx="${o.cover ? 92 : 38}" cy="${o.cover ? 178 : 170}" rx="${o.cover ? 22 : 13}" ry="${o.cover ? 16 : 17}" fill="url(#${k}l)" transform="rotate(${o.cover ? 0 : 18} 38 170)"/>
+          <ellipse cx="${o.cover ? 148 : 202}" cy="${o.cover ? 178 : 170}" rx="${o.cover ? 22 : 13}" ry="${o.cover ? 16 : 17}" fill="url(#${k}l)" transform="rotate(${o.cover ? 0 : -18} 202 170)"/>
+        </g>
+      </g></svg>`;
+  }
+  const look = (host, x, y) => { const g = host.querySelector(".z-eyes"); if (g) g.style.transform = `translate(${x}px, ${y}px)`; };
+  const say = (el, text, ms = 2400) => { el.textContent = text; el.classList.add("show"); clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove("show"), ms); };
+  const logo = (size, ink) => `<span style="display:inline-flex; align-items:center; gap:6px"><svg width="${size}" height="${size}" viewBox="0 0 64 64" aria-hidden="true"><path fill="#F0703D" d="M31,16C36,20 42,30 40,44C39,51 34,58 29,57C24,56 21,50 22,43C24,30 27,21 31,16Z"/><path fill="none" stroke="#FBFAF8" stroke-width="2" stroke-linecap="round" d="M25.5,30.5L34.5,33.5M24,38L33,41M25.5,45.5L31.5,47.5"/><path fill="none" stroke="#3CA06E" stroke-width="3.2" stroke-linecap="round" d="M29,17C27,13 28,9 26,6M32,15C32,11 34,8 33,4M35,17C37,14 40,12 40,8"/></svg><b style="font-weight:900; font-size:${Math.round(size * .9)}px; color:${ink}">زاد</b></span>`;
+
+  /* intro */
+  const SLIDES = [
+    { t: "إدارة المخزون", b: "تتبع كل ما في مطبخك وبيتك بذكاء", say: "التلاجة دي بتاعتي!" },
+    { t: "العائلة كلها", b: "شارك الميزانية والمهام مع عائلتك", say: "البيت كله في إيد واحدة" },
+    { t: "مساعد ذكي", b: "ذكاء اصطناعي يتنبأ باحتياجاتك ويتعلم منك", say: "بتعلّم منك كل يوم" },
+    { t: "الميزانية بذكاء", b: "حلل إنفاقك ووفّر أكثر باقتراحات ذكية", say: "ونوفّر سوا" },
+  ];
+  let slide = 0;
+  function scene(i) {
+    const z = (x, y, s, o) => `<g transform="translate(${x} ${y}) scale(${s})">${zado(o).replace(/^<svg[^>]*>/, "").replace(/<\/svg>$/, "")}</g>`;
+    const ground = `<ellipse cx="215" cy="372" rx="170" ry="22" fill="#DCEFE4"/>`;
+    if (i === 0) return `${ground}
+      <g class="float"><rect x="230" y="96" width="120" height="250" rx="18" fill="#fff" stroke="#DCE6E0" stroke-width="3"/><line x1="230" y1="190" x2="350" y2="190" stroke="#DCE6E0" stroke-width="3"/>
+      <rect x="244" y="118" width="26" height="54" rx="6" fill="#E6F4EC"/><rect x="278" y="128" width="22" height="44" rx="5" fill="#FFE8B8"/><rect x="306" y="110" width="30" height="62" rx="6" fill="#FDEBE3"/>
+      <rect x="248" y="208" width="36" height="40" rx="6" fill="#F2B91E"/><circle cx="312" cy="230" r="18" fill="#E5473C"/><rect x="250" y="270" width="84" height="56" rx="8" fill="#E6F4EC"/></g>
+      ${z(60, 150, .8, { mood: "happy" })}
+      <g class="float b"><circle cx="110" cy="96" r="20" fill="#FFE08A"/><text x="110" y="103" text-anchor="middle" font-size="18" font-weight="800" fill="#9A6410" font-family="Cairo">٤٢</text></g>`;
+    if (i === 1) return `${ground}
+      <path d="M90,200 L215,110 L340,200 V350 H90Z" fill="#fff" stroke="#DCE6E0" stroke-width="3"/><path d="M70,210 L215,100 L360,210" fill="none" stroke="#1B4332" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+      ${[[120, 230, "#FFD27A"], [250, 230, "#FFD27A"], [120, 290, "#E6F4EC"], [250, 290, "#FFD27A"]].map(([x, y, c]) => `<rect x="${x}" y="${y}" width="60" height="46" rx="8" fill="${c}"/>`).join("")}
+      <circle cx="150" cy="252" r="10" fill="#C2416B"/><circle cx="280" cy="252" r="10" fill="#2F7BD8"/><circle cx="280" cy="312" r="8" fill="#C68216"/>
+      ${z(170, 240, .55, { mood: "happy" })}`;
+    if (i === 2) return `${ground}
+      <g class="spin">${[0, 60, 120, 180, 240, 300].map((a) => { const r = 140, x = 215 + r * Math.cos(a * Math.PI / 180), y = 210 + r * Math.sin(a * Math.PI / 180); return `<line x1="215" y1="210" x2="${x}" y2="${y}" stroke="#6EE7B7" stroke-width="2" opacity=".6"/><circle cx="${x}" cy="${y}" r="14" fill="#fff" stroke="#6EE7B7" stroke-width="3"/>`; }).join("")}</g>
+      <circle cx="215" cy="210" r="96" fill="#6EE7B7" opacity=".15"/>
+      ${z(150, 140, .55, { mood: "wow" })}`;
+    return `${ground}
+      ${[60, 110, 160, 210].map((h, k) => `<rect class="grow" style="animation-delay:${k * .12}s" x="${230 + k * 34}" y="${350 - h}" width="24" height="${h}" rx="8" fill="${k === 3 ? "#1B4332" : "#9ED9BC"}"/>`).join("")}
+      ${z(40, 170, .75, { mood: "happy" })}
+      <defs><radialGradient id="coinG" cx="35%" cy="30%"><stop offset="0%" stop-color="#FFE08A"/><stop offset="100%" stop-color="#C68216"/></radialGradient></defs>
+      <g class="float"><circle cx="190" cy="140" r="26" fill="url(#coinG)"/><text x="190" y="148" text-anchor="middle" font-size="20" font-weight="900" fill="#7A4E06" font-family="Cairo">ر</text></g>`;
+  }
+  function renderIntro() {
+    $("scene").innerHTML = scene(slide);
+    $("t").textContent = SLIDES[slide].t; $("b").textContent = SLIDES[slide].b;
+    $("dots").innerHTML = SLIDES.map((_, i) => `<i class="${i === slide ? "on" : ""}"></i>`).join("");
+    $("next").textContent = slide === SLIDES.length - 1 ? "ابدأ مع زاد" : "التالي";
+    $("bubble").classList.remove("show");
+    setTimeout(() => say($("bubble"), SLIDES[slide].say), 450);
+  }
+  const toLogin = () => { const p = $("ph-login"); p.classList.remove("flash"); void p.offsetWidth; p.classList.add("flash"); p.scrollIntoView({ behavior: "smooth", block: "nearest" }); };
+  $("intro-logo").innerHTML = logo(28, "#1B4332");
+  $("next").addEventListener("click", () => { if (slide < SLIDES.length - 1) { slide++; renderIntro(); } else { slide = 0; renderIntro(); toLogin(); } });
+  $("skip").addEventListener("click", toLogin);
+  let sx = null;
+  $("stage").addEventListener("pointerdown", (e) => { sx = e.clientX; });
+  $("stage").addEventListener("pointerup", (e) => { if (sx === null) return; const d = e.clientX - sx; sx = null; if (Math.abs(d) < 40) return; const n = Math.max(0, Math.min(SLIDES.length - 1, slide + (d > 0 ? 1 : -1))); if (n !== slide) { slide = n; renderIntro(); } });
+  renderIntro();
+
+  /* login */
+  function renderZ(cover = false, mood = "happy") { $("lz").innerHTML = zado({ mood: cover ? "idle" : mood, cover }); }
+  $("login-logo").innerHTML = logo(24, "#FFFFFF");
+  renderZ();
+  $("email").addEventListener("focus", () => { renderZ(false, "idle"); look($("lz"), 0, 7); });
+  $("email").addEventListener("input", (e) => { const n = Math.min(e.target.value.length, 24); look($("lz"), 8 - n * .7, 7); });
+  $("email").addEventListener("blur", () => renderZ());
+  $("pass").addEventListener("focus", () => { renderZ(true); $("hint").textContent = "مش باصص، والله"; });
+  $("pass").addEventListener("blur", () => { renderZ(); $("hint").textContent = "زادو بيبص على اللي بتكتبه… إلا كلمة السر."; });
+  $("signin").addEventListener("click", () => { renderZ(false, "happy"); const s = $("lz").querySelector("svg"); s.classList.add("z-hop"); say($("lbubble"), "أهلاً بيك!", 1600); });
+
+  /* sign-up */
+  const flash = (id) => { const p = $(id); p.classList.remove("flash"); void p.offsetWidth; p.classList.add("flash"); p.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" }); };
+  const MARKETS = ["🇪🇬  مصر · ج.م", "🇸🇦  السعودية · ر.س"];
+  let market = -1, agreed = false;
+  function renderS(cover = false, mood = "happy") { $("sz").innerHTML = zado({ mood: cover ? "idle" : mood, cover }); }
+  $("signup-logo").innerHTML = logo(22, "#FFFFFF");
+  $("cz").innerHTML = zado({ mood: "happy" });
+  renderS();
+  const canGo = () => { $("su-go").disabled = !($("su-name").value.trim() && $("su-email").value.trim() && $("su-pass").value.trim() && market >= 0 && agreed); };
+  const setAgreed = (v) => { agreed = v; $("su-terms").classList.toggle("on", v); $("su-terms").setAttribute("aria-checked", String(v)); canGo(); };
+  $("su-name").addEventListener("input", (e) => { canGo(); const n = e.target.value.trim().split(/\s+/)[0]; if (n) say($("sbubble"), "أهلاً يا " + n + "!", 1800); });
+  $("su-email").addEventListener("focus", () => { renderS(false, "idle"); look($("sz"), 0, 7); });
+  $("su-email").addEventListener("input", (e) => { canGo(); const n = Math.min(e.target.value.length, 24); look($("sz"), 8 - n * .7, 7); });
+  $("su-email").addEventListener("blur", () => renderS());
+  $("su-pass").addEventListener("focus", () => renderS(true));
+  $("su-pass").addEventListener("blur", () => renderS());
+  $("su-pass").addEventListener("input", canGo);
+  $("su-market").addEventListener("click", () => { market = (market + 1) % MARKETS.length; $("su-market-t").textContent = MARKETS[market]; $("su-market-t").style.color = "#1F1F14"; canGo(); });
+  $("su-terms").addEventListener("click", () => setAgreed(!agreed));
+  $("su-terms-link").addEventListener("click", () => flash("ph-consent"));
+  $("su-signin").addEventListener("click", () => flash("ph-login"));
+  $("su-go").addEventListener("click", () => { if ($("su-go").disabled) return; renderS(false, "happy"); $("sz").querySelector("svg").classList.add("z-hop"); say($("sbubble"), "نورت زاد!", 1800); });
+
+  /* consent */
+  $("consent-under").innerHTML = $("signup-screen").outerHTML.replace(/ id="[^"]*"/g, "");
+  $("cs-yes").addEventListener("click", () => { setAgreed(true); flash("ph-signup"); });
+  $("cs-no").addEventListener("click", () => { setAgreed(false); flash("ph-signup"); });
+  $("cs-full").addEventListener("click", () => flash("ph-policy"));
+
+  /* policy */
+  document.querySelectorAll("#pscroll a").forEach((a) => a.addEventListener("click", (e) => { e.preventDefault(); const h = a.getAttribute("href"); if (!h || h === "#") return; const t = document.querySelector(h); if (t) $("pscroll").scrollTo({ top: t.offsetTop - $("pscroll").offsetTop - 8, behavior: "smooth" }); }));
+  $("cs-terms").addEventListener("click", () => flash("ph-policy"));
+
+  /* phone size */
+  const setSize = (big) => { document.documentElement.style.setProperty("--phone-h", big ? "915px" : "640px"); document.querySelectorAll(".phone").forEach((p) => p.style.width = big ? "412px" : "360px"); $("sz-s").classList.toggle("on", !big); $("sz-l").classList.toggle("on", big); };
+  $("sz-s").addEventListener("click", () => setSize(false));
+  $("sz-l").addEventListener("click", () => setSize(true));
+})();
+</script>
+

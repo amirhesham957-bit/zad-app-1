@@ -22,6 +22,12 @@ feature):
   like a bank or payment message. A notification Zad cannot classify on the phone is sent to our
   server to be classified, and is kept only if it is a transaction. Zad never reads bank logins,
   card numbers, PINs, CVV codes or one-time passwords. It ignores OTP messages.
+- **Booking, travel and document notices (separate switches, off until you turn them on).** If you
+  turn them on, Zad can also read a doctor-booking notice (to add an appointment), a flight notice
+  (to add a trip) and a government-service notice such as Absher (to add a document due date). Each
+  has its own switch. Zad keeps only the extracted fields (date, time, place) and deletes the raw
+  notification text right after extraction. These notices are never shared with advertisers, are
+  never used to choose or target ads, and never reach Google AdMob.
 - **Location.** Used for nearby shops and local prices (one approximate fix when you ask), and, only
   if you turn on store-arrival reminders, **in the background**, so Zad can remind you of your list
   when you arrive at a shop you saved. Background location is used only for those saved places. You

@@ -45,10 +45,7 @@ void main() {
 
     test('until then an English phone still opens in Arabic', () {
       expect(
-        resolveAppLocale(
-          AppLanguage.system,
-          const Locale('en', 'US'),
-        ),
+        resolveAppLocale(AppLanguage.system, const Locale('en', 'US')),
         const Locale('ar'),
       );
     });

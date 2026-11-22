@@ -1,6 +1,6 @@
 // باب الجرعة والكتم (ZAD_PLAN ٣.٤): نفس سلوك البوت القديم، من مكان واحد.
 import { assert, assertEquals } from "jsr:@std/assert@1";
-import { DOSE_SNOOZE_MINUTES, isDoseAction, muteCheckin, settleDoseReminder } from "./doseDoor.ts";
+import { DOSE_SNOOZE_MINUTES, isDoseAction, muteCheckin, settleDoseReminder, snoozeDose } from "./doseDoor.ts";
 
 const ITEM_A = "11111111-1111-4111-8111-111111111111";
 const ITEM_B = "22222222-2222-4222-8222-222222222222";
@@ -66,23 +66,64 @@ Deno.test("a reminder that is not there writes nothing and says where to log it"
   assertEquals(calls, []);
 });
 
-Deno.test("snooze holds every medicine of the reminder in its own slot", async () => {
+Deno.test("snooze holds every medicine of the reminder in its own slot, through the door", async () => {
   const { sb, calls } = fakeSb({ moment });
   // deno-lint-ignore no-explicit-any
-  const reply = await settleDoseReminder(sb as any, "u1", MOMENT, "snooze");
+  const reply = await settleDoseReminder(sb as any, "u1", MOMENT, "snooze", { source: "telegram", eventKey: "btn-1" });
   assert(reply.includes(String(DOSE_SNOOZE_MINUTES)));
-  const up = calls.find((c) => c.table === "zad_dose_snoozes" && c.op === "upsert");
-  assertEquals((up!.payload as Array<{ item_id: string; scheduled_at: string }>).map((r) => [r.item_id, r.scheduled_at]), [[ITEM_A, SLOT], [ITEM_B, SLOT]]);
+  assert(!calls.some((c) => c.table === "zad_dose_snoozes"), "the snooze table is written by the door only");
+  const intents = calls.filter((c) => c.table === "zad_commit_intent").map((c) => (c.payload as { p_intent: Record<string, unknown> }).p_intent);
+  assertEquals(intents.map((i) => [i.kind, (i.payload as { item_id: string; scheduled_at: string; minutes: number })]),
+    [ITEM_A, ITEM_B].map((id) => ["pharmacy.dose_snoozed", { item_id: id, scheduled_at: SLOT, minutes: DOSE_SNOOZE_MINUTES }]));
+  // مفتاحين مختلفين لنفس الزرار (دوا لكل واحد)، وإلا التاني كان هيتعدّ تكرار.
+  assertEquals(new Set(intents.map((i) => i.client_event_id)).size, 2);
+  assertEquals(intents.map((i) => i.source), ["manual", "manual"]);
+});
+
+Deno.test("a door refusal on the snooze says the reminder stays as it was", async () => {
+  const { sb } = fakeSb({ moment, rpc: { ok: false, reason: "snooze_minutes_invalid" } });
+  // deno-lint-ignore no-explicit-any
+  const reply = await settleDoseReminder(sb as any, "u1", MOMENT, "snooze");
+  assert(reply.includes("مقدرتش أأجّل"), reply);
+});
+
+Deno.test("snoozeDose sends the minutes and slot and returns the door's snooze_until", async () => {
+  const until = "2026-10-25T08:30:00.000Z";
+  const { sb, calls } = fakeSb({ rpc: { ok: true, duplicate: false, row_id: ITEM_A, payload: { after: { snooze_until: until } } } });
+  // deno-lint-ignore no-explicit-any
+  const r = await snoozeDose(sb as any, "u1", ITEM_A, SLOT, 30, { source: "app_chat", runId: crypto.randomUUID() });
+  assertEquals(r, { ok: true, until, duplicate: false });
+  const i = (calls[0].payload as { p_intent: Record<string, unknown> }).p_intent;
+  assertEquals([i.kind, i.source, i.payload], ["pharmacy.dose_snoozed", "model", { item_id: ITEM_A, scheduled_at: SLOT, minutes: 30 }]);
+  // الباب بيرفض مفتاح أطول من ١٠٠ حرف (لفة بـuuid + الدوا بـuuid كانت ١١٠)، وزرار بمعرّف طويل.
+  assert(String(i.client_event_id).length <= 100, String(i.client_event_id).length.toString());
+  const longBtn = fakeSb({ rpc: { ok: true, payload: {} } });
+  // deno-lint-ignore no-explicit-any
+  await snoozeDose(longBtn.sb as any, "u1", ITEM_A, SLOT, 30, { source: "telegram", eventKey: "x".repeat(200) });
+  assert(String((longBtn.calls[0].payload as { p_intent: Record<string, string> }).p_intent.client_event_id).length <= 100);
+  const refused = fakeSb({ rpc: { ok: false, reason: "item_not_found" } });
+  // deno-lint-ignore no-explicit-any
+  const bad = await snoozeDose(refused.sb as any, "u1", ITEM_A, SLOT, 30);
+  assert(!bad.ok && bad.reason === "item_not_found" && bad.refusal!.includes("item_not_found"));
 });
 
 Deno.test("«I skipped it» is an answer, and answering twice is not a failure", async () => {
-  const { sb, calls } = fakeSb({ moment, insertCode: "23505" });
+  // الباب بيرد «اتجاوبت قبل كده» على التانية — ده إجابة مش فشل.
+  const { sb, calls } = fakeSb({ moment, rpc: { ok: false, reason: "dose_already_logged" } });
   // deno-lint-ignore no-explicit-any
   const reply = await settleDoseReminder(sb as any, "u1", MOMENT, "skipped");
   assert(reply.includes("مخدتش جرعة"), reply);
-  const inserts = calls.filter((c) => c.table === "zad_pharmacy_doses");
-  assertEquals(inserts.length, 2);
-  assertEquals((inserts[0].payload as { status: string; units: number }).status, "skipped");
+  const door = calls.filter((c) => c.op === "rpc" && c.table === "zad_commit_intent");
+  assertEquals(door.length, 2);
+  const intent = (door[1].payload as { p_intent: { kind: string; payload: { item_id: string } } }).p_intent;
+  assertEquals([intent.kind, intent.payload.item_id], ["pharmacy.dose_skipped", ITEM_B]);
+  assert(!calls.some((c) => c.table === "zad_pharmacy_doses"), "skip never writes the dose row by hand (م٢.٥)");
+});
+
+Deno.test("a skip the door refuses for a real reason is reported, not thanked", async () => {
+  const { sb } = fakeSb({ moment, rpc: { ok: false, reason: "item_not_found" } });
+  // deno-lint-ignore no-explicit-any
+  assert(!(await settleDoseReminder(sb as any, "u1", MOMENT, "skipped")).includes("مخدتش جرعة"));
 });
 
 Deno.test("«I took it» goes through the one atomic dose RPC, slot by slot", async () => {

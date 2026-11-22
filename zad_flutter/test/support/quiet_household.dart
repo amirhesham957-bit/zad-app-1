@@ -15,10 +15,24 @@ import 'package:zad/shared/family/data/family_repository.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart';
 import 'package:zad/shared/inventory/application/shopping_controller.dart';
 import 'package:zad/shared/modes/application/modes_controller.dart';
+import 'package:zad/shared/orb/application/orb_accessory_controller.dart';
+import 'package:zad/shared/orb/domain/orb_accessory.dart';
 import 'package:zad/shared/pharmacy/application/pharmacy_controller.dart';
 import 'package:zad/shared/pharmacy/domain/dose_slot.dart';
 import 'package:zad/shared/pharmacy/domain/medicine.dart';
 import 'package:zad/shared/sync/live_sync.dart';
+
+/// An orb with no saved accessory: it would read the local store, which a
+/// screen test does not have.
+class QuietAccessory extends OrbAccessoryController {
+  @override
+  OrbAccessory build() => OrbAccessory.none;
+}
+
+/// What a screen that draws the companion (every world) needs.
+List<Override> get quietOrbOverrides => <Override>[
+  orbAccessoryProvider.overrideWith(QuietAccessory.new),
+];
 
 /// A pantry that shows [view] and does nothing else.
 class QuietPantry extends PantryController {
@@ -134,6 +148,8 @@ List<Override> get quietHouseholdOverrides => <Override>[
   liveSyncProvider.overrideWith(
     (ref) => LiveSync(changes: QuietLiveChanges(), onChange: (_) async {}),
   ),
+  // Last: shell_walkthrough_test skips the first two by position.
+  ...quietOrbOverrides,
 ];
 
 /// No server, so nothing ever changes on it.

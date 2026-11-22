@@ -17,6 +17,7 @@ import 'package:zad/shared/inventory/application/shopping_controller.dart';
 import 'package:zad/shared/inventory/data/consumption_observations.dart';
 import 'package:zad/shared/inventory/data/consumption_rates.dart';
 import 'package:zad/shared/inventory/data/inventory_repository.dart';
+import 'package:zad/shared/inventory/data/pantry_learning.dart';
 import 'package:zad/shared/inventory/data/product_names_repository.dart';
 import 'package:zad/shared/inventory/data/restock_cycles.dart';
 import 'package:zad/shared/inventory/data/shopping_list_repository.dart';
@@ -137,12 +138,20 @@ class PantryController extends Notifier<PantryView> {
     String? category,
     double? lowStockThreshold,
     DateTime? expiryDate,
+    String? memberId,
   }) async {
     // The name the home chose («حليب» ⇒ «لبن» once it said they are the
     // same), so the match below finds the row the server would write it to.
     final name = householdProductNames(ref).canonical(itemName);
     final existing = state.items
-        .where((i) => sameItemName(i.itemName, name) && sameUnit(i.unit, unit))
+        .where(
+          (i) =>
+              sameItemName(i.itemName, name) &&
+              sameUnit(i.unit, unit) &&
+              (memberId == null ||
+                  i.memberId == null ||
+                  i.memberId == memberId),
+        )
         .firstOrNull;
     if (existing != null && quantity > 0) {
       await adjust(existing.id, quantity);
@@ -157,6 +166,7 @@ class PantryController extends Notifier<PantryView> {
           category: category,
           lowStockThreshold: lowStockThreshold,
           expiryDate: expiryDate,
+          memberId: memberId,
         );
     // The first level the learner hears of. Without it the first − has
     // nothing to be a drop from.
@@ -178,6 +188,19 @@ class PantryController extends Notifier<PantryView> {
     if (updated != null) await _reading(updated);
     await _reload();
     if (updated != null && delta > 0) await _tickOffRestocked(updated);
+  }
+
+  /// «أسرع / أبطأ» on the estimate of [item] (م٣.٢), then reads the server's
+  /// estimate again.
+  Future<void> correctRate(
+    InventoryItem item, {
+    required double daysLeft,
+    required bool faster,
+  }) async {
+    await ref
+        .read(inventoryRepositoryProvider)
+        .correctRate(item.id, daysLeft: daysLeft, faster: faster);
+    ref.invalidate(pantryLearningProvider);
   }
 
   Future<void> _reading(InventoryItem item) => ref

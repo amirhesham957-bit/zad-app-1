@@ -47,3 +47,9 @@ Deno.test("the reply is the card's summary", () => {
   assertEquals(proposalsReply(["مصروف 50 EGP قهوة"]), "مصروف 50 EGP قهوة — أكّد من الكارت وأنا أسجّله.");
   assert(proposalsReply(["أ", "ب"]).includes("الكروت"));
 });
+
+Deno.test("a delete card says it deletes, not that it logs (Telegram, 21/11)", () => {
+  assertEquals(proposalsReply(["هامسح: عيش — 20 EGP"], ["delete_transaction"]), "هامسح: عيش — 20 EGP — أكّد من الكارت وأنا أمسحها.");
+  assertEquals(proposalsReply(["تعديل معاملة: المبلغ 30"], ["update_transaction"]), "تعديل معاملة: المبلغ 30 — أكّد من الكارت وأنا أعدّلها.");
+  assertEquals(proposalsReply(["مصروف 50 EGP قهوة"], ["log_transaction"]), "مصروف 50 EGP قهوة — أكّد من الكارت وأنا أسجّله.");
+});

@@ -240,6 +240,9 @@ class PantryLearningView {
   /// Stagnant, by the server's rule.
   bool isStagnant(InventoryItem item) => _byId[item.id]?.stagnant ?? false;
 
+  /// The server's estimate for [item] in days, or null with no rate.
+  double? daysLeftOf(InventoryItem item) => _byId[item.id]?.daysLeft;
+
   /// Whole days left, or null with no rate.
   int? predictDaysLeft(String itemName) =>
       _byName[normalizeItemName(itemName)]?.daysLeft?.floor();

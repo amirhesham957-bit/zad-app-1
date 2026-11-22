@@ -49,3 +49,4 @@ app.*.map.json
 
 # Local build configuration (--dart-define-from-file). Never committed.
 env.json
+test/**/failures/

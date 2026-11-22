@@ -1,43 +1,18 @@
-/// "الميزانية والالتزامات" — Kotlin's `FinancesScreen` → `BudgetScreen`:
-/// what is available, the obligations, income against spending against the
-/// budget, the insight strip, category budgets with their smart analysis,
-/// and the subscriptions. The transactions themselves have their own tab in
-/// this client, so the screen ends with a way there rather than a second
-/// copy of the list.
+/// "الميزانية والالتزامات" — Kotlin's `FinancesScreen`: its two tabs, each of
+/// them a world — «الميزانية» (`BudgetWorld`) and «التزاماتي» (the
+/// subscriptions world, embedded). The transactions themselves have their
+/// own tab in this client, so the budget ends with the month's movements
+/// rather than a second copy of the list.
 library;
 
-import 'dart:async';
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart' show NumberFormat;
-import 'package:zad/core/data/providers.dart';
-import 'package:zad/core/design/components/zad_kotlin_surfaces.dart';
-import 'package:zad/core/design/components/zad_pressable.dart';
-import 'package:zad/core/design/components/zad_scroll_away.dart';
-import 'package:zad/core/design/foundation/elevation.dart';
-import 'package:zad/core/design/foundation/squircle.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
-import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
-import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/design/tokens/zad_world_colors.dart';
 import 'package:zad/core/l10n/l10n.dart';
-import 'package:zad/core/money/money.dart';
-import 'package:zad/features/budget/domain/category_budgets.dart';
-import 'package:zad/features/budget/presentation/budget_screen_parts.dart';
-import 'package:zad/shared/budget/application/budget_controller.dart';
-import 'package:zad/shared/budget/application/category_budgets_controller.dart';
-import 'package:zad/shared/budget/data/category_budgets_store.dart';
-import 'package:zad/shared/navigation/shell_navigation.dart';
-import 'package:zad/shared/navigation/zad_screens.dart';
+import 'package:zad/features/budget/presentation/budget_world.dart';
 import 'package:zad/shared/navigation/zad_slots.dart';
-import 'package:zad/shared/scan/domain/scanned_receipt.dart';
-import 'package:zad/shared/settings/application/settings_controller.dart';
-import 'package:zad/shared/transactions/application/transactions_controller.dart';
-import 'package:zad/shared/transactions/domain/transaction.dart';
-
-String _money(double v) => NumberFormat('#,##0.##', 'en').format(v);
+import 'package:zad/shared/worlds/zad_world.dart';
 
 /// Opens the screen on [initialTab] — 0 الحركات والميزانية, 1 الاشتراكات
 /// والأقساط, 2 الديون.
@@ -64,701 +39,84 @@ class FinancesScreen extends StatefulWidget {
   State<FinancesScreen> createState() => _FinancesState();
 }
 
-/// Kotlin's `FinancesScreen`: its tabs over one title.
 class _FinancesState extends State<FinancesScreen> {
   late int _tab = widget.initialTab.clamp(0, 1);
 
   @override
-  Widget build(BuildContext context) => DecoratedBox(
-    decoration: BoxDecoration(gradient: ZadColors.canvas),
-    child: Scaffold(
-      backgroundColor: Colors.transparent,
-      appBar: widget.embedded
-          ? null
-          : AppBar(title: Text(context.l10n.financesTitle)),
-      body: Column(
-        children: <Widget>[
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: ZadSpacing.gutter,
-              vertical: ZadSpacing.xs,
-            ),
-            child: SizedBox(
-              width: double.infinity,
-              child: SegmentedButton<int>(
-                showSelectedIcon: false,
-                segments: <ButtonSegment<int>>[
-                  ButtonSegment<int>(
-                    value: 0,
-                    label: Text(context.l10n.financesTabMoves),
-                  ),
-                  // «التزاماتي»: subscriptions, bills, instalments (BNPL
-                  // too) and loans in one place (owner, 2026-09-30).
-                  ButtonSegment<int>(
-                    value: 1,
-                    label: Text(context.l10n.drawerObligations),
-                  ),
-                ],
-                selected: <int>{_tab},
-                onSelectionChanged: (s) => setState(() => _tab = s.first),
-              ),
-            ),
-          ),
-          Expanded(
-            child: IndexedStack(
-              index: _tab,
-              children: <Widget>[
-                const _DailyTab(),
-                ZadSlots.subscriptionsScreen(
-                  embedded: true,
-                  initialTab: widget.initialTab == 2 ? 4 : 0,
-                ),
-              ],
-            ),
-          ),
-        ],
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    // The page under the tabs is the world's own tint, so the strip above it
+    // reads as part of it.
+    final world = _tab == 0 ? ZadWorld.budget : ZadWorld.subs;
+    final tabs = SegmentedButton<int>(
+      showSelectedIcon: false,
+      segments: <ButtonSegment<int>>[
+        ButtonSegment<int>(value: 0, label: Text(l.financesTabMoves)),
+        // «التزاماتي»: subscriptions, bills, instalments (BNPL too) and
+        // loans in one place (owner, 2026-09-30).
+        ButtonSegment<int>(value: 1, label: Text(l.drawerObligations)),
+      ],
+      selected: <int>{_tab},
+      onSelectionChanged: (s) => setState(() => _tab = s.first),
+    );
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: <Color>[
+            ZadWorldColors.tint(world.color),
+            ZadColors.canvasMid,
+          ],
+        ),
       ),
-    ),
-  );
-}
-
-/// Kotlin's `BudgetScreen` — the «الحركات والميزانية» tab.
-class _DailyTab extends ConsumerWidget {
-  const new();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final budget = ref.watch(budgetControllerProvider);
-    final snapshot = budget.snapshot;
-    final rows = ref.watch(transactionsControllerProvider).rows;
-    final ceilings = ref.watch(categoryBudgetsProvider);
-    final limit = ref.watch(
-      settingsControllerProvider.select((v) => v.settings?.monthlyLimit ?? 0),
-    );
-    final currency = snapshot?.currency ?? '';
-    final spent = snapshot?.spent ?? 0;
-    final income = snapshot?.income ?? 0;
-    final lines = categoryLines(
-      standard: kStandardCategories,
-      budgets: ceilings,
-      spent: spentByCategory(rows),
-    );
-
-    return ZadScrollAwayScope(
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        // Kotlin: the small scan button over «معاملة».
-        floatingActionButton: ZadStepsAside(
+        body: SafeArea(
+          bottom: false,
           child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.end,
             children: <Widget>[
-              FloatingActionButton.small(
-                heroTag: 'finances-scan',
-                onPressed: () => unawaited(ZadScreens.openZadCamera(context)),
-                tooltip: 'Scan',
-                backgroundColor: Theme.of(context).colorScheme.secondary,
-                foregroundColor: Colors.white,
-                shape: const CircleBorder(),
-                child: const Icon(Icons.document_scanner, size: 20),
-              ),
-              const SizedBox(height: 12),
-              FloatingActionButton.extended(
-                heroTag: 'finances-add',
-                onPressed: () => ZadScreens.showAddTransactionSheet(context),
-                icon: const Icon(Icons.add, size: 20),
-                label: Text(
-                  context.l10n.financesAddTx,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
-            ],
-          ),
-        ),
-        body: ListView(
-          padding: const EdgeInsets.fromLTRB(
-            ZadSpacing.gutter,
-            ZadSpacing.sm,
-            ZadSpacing.gutter,
-            // Room for the two floating buttons, so they cover nothing here.
-            132,
-          ),
-          children: <Widget>[
-            // The figures first (emulator, 2026-11-10): the two offers sat
-            // between the balance and the summary of the same money.
-            _Available(view: budget, currency: currency),
-            const SizedBox(height: ZadSpacing.md),
-            _Summary(
-              income: income,
-              spent: spent,
-              budget: limit,
-              currency: currency,
-            ),
-            const SizedBox(height: ZadSpacing.md),
-            // The month's PDF and the dossier moved here from home (ZAD_PLAN
-            // ١٠.٨, owner 11/11): reports belong beside the money they cover.
-            if (snapshot != null) ...<Widget>[
-              ZadSlots.homeReportsRow(
-                spent: spent,
-                spendable: budget.spendable,
-                daysLeft: math.max(1, snapshot.daysLeft),
-                currency: currency,
-              ),
-              const SizedBox(height: ZadSpacing.md),
-            ],
-            _InsightStrip(spent: spent, budget: limit),
-            BudgetSuggestionCard(currency: currency),
-            const SizedBox(height: ZadSpacing.md),
-            ZadSlots.obligationsSection(),
-            const SizedBox(height: ZadSpacing.lg),
-            Row(
-              children: <Widget>[
-                Expanded(
-                  child: Text(
-                    context.l10n.financesCategoryBudgets,
-                    style: ZadType.titleMedium,
-                  ),
-                ),
-                TextButton.icon(
-                  onPressed: () => unawaited(_editCategory(context, ref)),
-                  icon: const Icon(ZadIcons.add, size: 16),
-                  label: Text(context.l10n.financesSetCategory),
-                ),
-              ],
-            ),
-            if (lines.isEmpty)
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: KtEmptyState(
-                  icon: Icons.pie_chart,
-                  title: context.l10n.financesNoCategories,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: ZadSpacing.gutter,
+                  vertical: ZadSpacing.xs,
                 ),
-              )
-            else
-              for (final l in lines) ...<Widget>[
-                _CategoryCard(
-                  line: l,
-                  currency: currency,
-                  onEdit: () => unawaited(
-                    _editCategory(context, ref, category: l.category),
-                  ),
-                  onInsight: () =>
-                      unawaited(_showInsight(context, ref, l.category, rows)),
-                ),
-                const SizedBox(height: ZadSpacing.sm),
-              ],
-            const SizedBox(height: ZadSpacing.md),
-            // The ways out of a tight month, after the money they act on.
-            ZadSlots.brokeModeSlot(offerEntry: true),
-            const SizedBox(height: ZadSpacing.md),
-            ZadSlots.savingsChallengeSlot(offerEntry: true, offerStop: true),
-            const SizedBox(height: ZadSpacing.md),
-            BudgetTransactionsSection(income: income, spent: spent),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// The emerald balance block: المتاح, the pencil, "≈" when unconfirmed,
-/// and "متبقي X · محجوز Y" when something is held back.
-class _Available extends StatelessWidget {
-  const new({required this.view, required this.currency});
-
-  final BudgetView view;
-  final String currency;
-
-  @override
-  Widget build(BuildContext context) {
-    final available = view.spendable;
-    final snapshot = view.snapshot;
-    final unsure = view.isStale || view.pendingSpend > 0;
-    return Container(
-      padding: const EdgeInsets.all(ZadSpacing.lg + 4),
-      // Zad's own gradient and lift, like Home's balance card, instead of a
-      // flat block (emulator, 2026-11-10).
-      decoration: ShapeDecoration(
-        gradient: ZadColors.hero,
-        shape: zadSquircle(ZadRadii.cardLarge),
-        shadows: ZadElevation.card,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Row(
-            children: <Widget>[
-              Expanded(
-                child: Text(
-                  context.l10n.financesAvailable,
-                  style: ZadType.labelLarge.copyWith(
-                    color: Colors.white.withValues(alpha: 0.7),
-                  ),
-                ),
-              ),
-              IconButton(
-                onPressed: () => ZadScreens.showMonthlyLimitSheet(context),
-                tooltip: context.l10n.financesEditBalance,
-                icon: Icon(
-                  ZadIcons.edit,
-                  size: 17,
-                  color: Colors.white.withValues(alpha: 0.8),
-                ),
-              ),
-            ],
-          ),
-          Text(
-            available == null
-                ? context.l10n.financesNoBudget
-                : '${unsure ? '≈ ' : ''}${_money(available)} $currency'.trim(),
-            style: available == null
-                ? ZadType.titleMedium.copyWith(color: Colors.white)
-                : ZadType.figure(34).copyWith(
-                    color: available < 0
-                        ? const Color(0xFFFFA69E)
-                        : Colors.white,
-                  ),
-          ),
-          if (snapshot != null &&
-              snapshot.committed > 0 &&
-              snapshot.remaining != null) ...<Widget>[
-            const SizedBox(height: 6),
-            Text(
-              context.l10n.financesRemainingCommitted(
-                _money(snapshot.remaining!),
-                _money(snapshot.committed),
-              ),
-              style: ZadType.labelSmall.copyWith(
-                color: Colors.white.withValues(alpha: 0.7),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-/// الدخل · المصروفات · الميزانية, side by side.
-class _Summary extends StatelessWidget {
-  const new({
-    required this.income,
-    required this.spent,
-    required this.budget,
-    required this.currency,
-  });
-
-  final double income;
-  final double spent;
-  final double budget;
-  final String currency;
-
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(vertical: ZadSpacing.lg),
-    decoration: ShapeDecoration(
-      color: ZadColors.surface,
-      shape: zadSquircle(ZadRadii.cardLarge),
-    ),
-    child: Row(
-      children: <Widget>[
-        Expanded(
-          child: _SummaryItem(
-            label: context.l10n.txFilterIncome,
-            amount: income,
-            icon: ZadIcons.income,
-            color: ZadColors.green600,
-          ),
-        ),
-        Container(width: 1, height: 50, color: ZadColors.outlineVariant),
-        Expanded(
-          child: _SummaryItem(
-            label: context.l10n.txFilterExpenses,
-            amount: spent,
-            icon: ZadIcons.expense,
-            color: ZadColors.terracottaRust,
-          ),
-        ),
-        Container(width: 1, height: 50, color: ZadColors.outlineVariant),
-        Expanded(
-          child: _SummaryItem(
-            label: context.l10n.sectionBudget,
-            amount: budget,
-            icon: ZadIcons.budget,
-            color: ZadColors.mustardOchre,
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
-class _SummaryItem extends StatelessWidget {
-  const new({
-    required this.label,
-    required this.amount,
-    required this.icon,
-    required this.color,
-  });
-
-  final String label;
-  final double amount;
-  final IconData icon;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) => Column(
-    children: <Widget>[
-      DecoratedBox(
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.15),
-          shape: BoxShape.circle,
-        ),
-        child: SizedBox.square(
-          dimension: 36,
-          child: Icon(icon, size: 18, color: color),
-        ),
-      ),
-      const SizedBox(height: ZadSpacing.xs),
-      FittedBox(
-        child: Text(
-          NumberFormat('#,##0', 'en').format(amount),
-          style: ZadType.titleMedium.copyWith(fontWeight: FontWeight.w700),
-        ),
-      ),
-      Text(label, style: ZadType.labelSmall.copyWith(color: ZadColors.slate)),
-    ],
-  );
-}
-
-/// Kotlin's AI strip: how much of the budget is gone, and a tap to talk it
-/// over with زاد.
-class _InsightStrip extends ConsumerWidget {
-  const new({required this.spent, required this.budget});
-
-  final double spent;
-  final double budget;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final insight = budgetInsight(
-      spent: spent,
-      budget: budget,
-      l10n: context.l10n,
-    );
-    final (icon, color) = switch (insight.tier) {
-      3 => (ZadIcons.failed, ZadColors.terracottaRust),
-      2 => (ZadIcons.failed, ZadColors.mustardOchre),
-      1 => (ZadIcons.memory, ZadColors.forestEmerald),
-      _ => (ZadIcons.selected, ZadColors.forestEmerald),
-    };
-    return ZadPressable(
-      onPressed: () {
-        ref.read(shellNavigationProvider.notifier).open(ShellTab.chat);
-        Navigator.of(context).popUntil((r) => r.isFirst);
-      },
-      semanticLabel: insight.message,
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: ZadSpacing.lg + 4,
-          vertical: 14,
-        ),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(ZadRadii.card),
-        ),
-        child: Row(
-          children: <Widget>[
-            Icon(icon, size: 22, color: color),
-            const SizedBox(width: ZadSpacing.md),
-            Expanded(
-              child: Text(
-                insight.message,
-                style: ZadType.bodyMedium.copyWith(
-                  color: color,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            Icon(ZadIcons.forward, size: 20, color: color),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _CategoryCard extends StatelessWidget {
-  const new({
-    required this.line,
-    required this.currency,
-    required this.onEdit,
-    required this.onInsight,
-  });
-
-  final CategoryLine line;
-  final String currency;
-  final VoidCallback onEdit;
-  final VoidCallback onInsight;
-
-  @override
-  Widget build(BuildContext context) {
-    final budget = line.budget;
-    final spent = line.spent;
-    final pct = budget > 0 ? spent / budget * 100 : 0;
-    final over = budget > 0 && spent > budget;
-    final color = budget <= 0
-        ? ZadColors.inkMuted.withValues(alpha: 0.4)
-        : over
-        ? ZadColors.terracottaRust
-        : pct >= 85
-        ? ZadColors.mustardOchre
-        : ZadColors.forestEmerald;
-    return ZadPressable(
-      onPressed: onEdit,
-      semanticLabel: line.category,
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: ZadColors.surface,
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: <BoxShadow>[
-            BoxShadow(
-              color: color.withValues(alpha: 0.16),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Row(
-          children: <Widget>[
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: <Widget>[
-                  Row(
-                    children: <Widget>[
-                      Expanded(
-                        child: Text(
-                          line.category,
-                          style: ZadType.labelLarge.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
+                child: Row(
+                  children: <Widget>[
+                    // Pushed, the tabs carry the back button; the shell's own
+                    // tab has the shell's header and none.
+                    if (!widget.embedded)
+                      IconButton(
+                        onPressed: () => Navigator.of(context).maybePop(),
+                        tooltip: l.worldBack,
+                        constraints: const BoxConstraints(
+                          minWidth: 44,
+                          minHeight: 44,
                         ),
+                        icon: const Icon(Icons.arrow_back_ios_new_rounded),
                       ),
-                      Text(
-                        budget > 0
-                            ? '${_money(spent)} / ${_money(budget)} $currency'
-                            : context.l10n.financesNoLimit(
-                                '${_money(spent)} $currency',
-                              ),
-                        style: ZadType.labelSmall.copyWith(
-                          color: over
-                              ? ZadColors.terracottaRust
-                              : ZadColors.inkMuted,
-                          fontWeight: over ? FontWeight.w700 : null,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(3),
-                    child: LinearProgressIndicator(
-                      value: budget > 0 ? (spent / budget).clamp(0, 1) : 0,
-                      minHeight: 6,
-                      color: color,
-                      backgroundColor: ZadColors.outlineVariant,
+                    Expanded(
+                      child: SizedBox(width: double.infinity, child: tabs),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            IconButton(
-              onPressed: onInsight,
-              tooltip: context.l10n.financesSmartAnalysis,
-              icon: Icon(
-                ZadIcons.assistant,
-                size: 16,
-                color: ZadColors.forestEmerald,
+              Expanded(
+                child: IndexedStack(
+                  index: _tab,
+                  children: <Widget>[
+                    const BudgetWorld(showBack: false),
+                    ZadSlots.subscriptionsScreen(
+                      embedded: true,
+                      initialTab: widget.initialTab == 2 ? 4 : 0,
+                    ),
+                  ],
+                ),
               ),
-            ),
-            Icon(ZadIcons.edit, size: 16, color: ZadColors.inkMuted),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
-}
-
-/// Kotlin's `CategoryBudgetEditDialog`: a category (chosen when new) and its
-/// monthly ceiling. Saving zero clears it.
-Future<void> _editCategory(
-  BuildContext context,
-  WidgetRef ref, {
-  String? category,
-}) async {
-  final result = await showDialog<(String, double)>(
-    context: context,
-    builder: (_) => _CategoryDialog(
-      category: category,
-      current: category == null
-          ? 0
-          : ref.read(categoryBudgetsProvider)[category] ?? 0,
-    ),
-  );
-  if (result == null) return;
-  await ref.read(categoryBudgetsProvider.notifier).set(result.$1, result.$2);
-}
-
-class _CategoryDialog extends StatefulWidget {
-  const new({required this.category, required this.current});
-
-  final String? category;
-  final double current;
-
-  @override
-  State<_CategoryDialog> createState() => _CategoryDialogState();
-}
-
-class _CategoryDialogState extends State<_CategoryDialog> {
-  late String _category = widget.category ?? kStandardCategories.first;
-  late final TextEditingController _amount = TextEditingController(
-    text: widget.current > 0 ? widget.current.toStringAsFixed(0) : '',
-  );
-
-  @override
-  void dispose() {
-    _amount.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) => AlertDialog(
-    title: Text(
-      widget.category == null
-          ? context.l10n.financesSetCategoryBudget
-          : context.l10n.financesEditCategoryBudget(widget.category!),
-    ),
-    content: Column(
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        if (widget.category == null) ...<Widget>[
-          DropdownButtonFormField<String>(
-            initialValue: _category,
-            decoration: InputDecoration(
-              labelText: context.l10n.financesCategory,
-            ),
-            items: <DropdownMenuItem<String>>[
-              for (final c in kStandardCategories)
-                DropdownMenuItem<String>(value: c, child: Text(c)),
-            ],
-            onChanged: (c) => setState(() => _category = c ?? _category),
-          ),
-          const SizedBox(height: ZadSpacing.md),
-        ],
-        TextField(
-          controller: _amount,
-          keyboardType: TextInputType.number,
-          textDirection: TextDirection.ltr,
-          decoration: InputDecoration(
-            labelText: context.l10n.financesMonthlyBudget,
-          ),
-        ),
-      ],
-    ),
-    actions: <Widget>[
-      TextButton(
-        onPressed: () => Navigator.of(context).pop(),
-        child: Text(context.l10n.commonCancel),
-      ),
-      TextButton(
-        onPressed: () =>
-            Navigator.of(context)
-                .pop((_category, parseMoneyInput(_amount.text) ?? 0.0)),
-        child: Text(context.l10n.commonSave),
-      ),
-    ],
-  );
-}
-
-/// Kotlin's `CategoryInsightDialog`: one `behavior_analysis` call, asked by
-/// the tap, over the category's last fifteen rows.
-Future<void> _showInsight(
-  BuildContext context,
-  WidgetRef ref,
-  String category,
-  List<ZadTransaction> rows,
-) async {
-  final userId = ref.read(signedInUserIdProvider)();
-  if (userId == null) return;
-  final text = rows
-      .where((t) => t.category == category)
-      .take(15)
-      .map((t) => '${t.title}:${t.amount}')
-      .join(', ');
-  final future = ref
-      .read(behaviorAnalysisRemoteProvider)
-      .analyze(userId: userId, category: category, transactions: text);
-  await showDialog<void>(
-    context: context,
-    builder: (c) => AlertDialog(
-      title: Text(c.l10n.financesInsightTitle(category)),
-      content: FutureBuilder<BehaviorAnalysis>(
-        future: future,
-        builder: (context, snap) {
-          if (snap.connectionState != ConnectionState.done) {
-            return Row(
-              children: <Widget>[
-                const SizedBox.square(
-                  dimension: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-                const SizedBox(width: 10),
-                Text(context.l10n.financesAnalysing),
-              ],
-            );
-          }
-          final a = snap.data;
-          if (a == null || a.insight.isEmpty) {
-            return Text(context.l10n.financesInsightEmpty);
-          }
-          return Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Text(a.insight),
-              const SizedBox(height: ZadSpacing.sm),
-              Text(
-                a.trendLabel(context.l10n),
-                style: ZadType.labelMedium.copyWith(
-                  color: ZadColors.forestEmerald,
-                ),
-              ),
-              if (a.predictedNext > 0)
-                Text(
-                  context.l10n.financesPredictedNext(_money(a.predictedNext)),
-                  style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
-                ),
-              if (a.tip.isNotEmpty) ...<Widget>[
-                const SizedBox(height: ZadSpacing.sm),
-                Text(a.tip, style: ZadType.bodySmall),
-              ],
-            ],
-          );
-        },
-      ),
-      actions: <Widget>[
-        TextButton(
-          onPressed: () => Navigator.of(c).pop(),
-          child: Text(c.l10n.commonClose),
-        ),
-      ],
-    ),
-  );
 }

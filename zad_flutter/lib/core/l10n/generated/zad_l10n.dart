@@ -473,7 +473,7 @@ abstract class ZadL10n {
   /// No description provided for @paywallPlusBadge.
   ///
   /// In ar, this message translates to:
-  /// **'الأكثر شعبية ⭐'**
+  /// **'الأكثر شعبية'**
   String get paywallPlusBadge;
 
   /// No description provided for @paywallAllBasicPerks.
@@ -503,7 +503,7 @@ abstract class ZadL10n {
   /// No description provided for @paywallFamilyBadge.
   ///
   /// In ar, this message translates to:
-  /// **'أكبر رصيد 👑'**
+  /// **'أكبر رصيد'**
   String get paywallFamilyBadge;
 
   /// No description provided for @paywallFamilyPerkAttempts.
@@ -631,6 +631,18 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'{price} في الشهر'**
   String paywallPricePerMonth(String price);
+
+  /// Premium world state line when the customer is on a paid plan.
+  ///
+  /// In ar, this message translates to:
+  /// **'خطتك دلوقتي: {plan}'**
+  String paywallStatePlan(String plan);
+
+  /// Premium world state line on the free plan or when the plan is unknown.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختار الباقة اللي تناسب بيتك'**
+  String get paywallStateInvite;
 
   /// No description provided for @navHome.
   ///
@@ -1490,12 +1502,6 @@ abstract class ZadL10n {
   /// **'قرب يخلص'**
   String get amazonLow;
 
-  /// No description provided for @amazonShopEmoji.
-  ///
-  /// In ar, this message translates to:
-  /// **'🛍️ تسوق من أمازون'**
-  String get amazonShopEmoji;
-
   /// No description provided for @amazonNoNeeds.
   ///
   /// In ar, this message translates to:
@@ -1925,13 +1931,13 @@ abstract class ZadL10n {
   /// No description provided for @chatWelcome.
   ///
   /// In ar, this message translates to:
-  /// **'أهلاً بيك! أنا زاد 🤖، مساعدك العائلي الذكي. أقدر أساعدك إزاي النهاردة؟\nاسألني عن الوصفات، أو راجع ثلاجتك، أو ضيف النواقص لقائمة التسوق!'**
+  /// **'أهلاً بيك! أنا زاد، مساعدك العائلي الذكي. أقدر أساعدك إزاي النهاردة؟\nاسألني عن الوصفات، أو راجع ثلاجتك، أو ضيف النواقص لقائمة التسوق!'**
   String get chatWelcome;
 
   /// No description provided for @chatBusy.
   ///
   /// In ar, this message translates to:
-  /// **'الذكاء الاصطناعي مشغول شوية دلوقتي 🙏 جرب تاني بعد لحظات.'**
+  /// **'الذكاء الاصطناعي مشغول شوية دلوقتي جرب تاني بعد لحظات.'**
   String get chatBusy;
 
   /// No description provided for @chatUnexpected.
@@ -2005,6 +2011,42 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'البلاغ ماوصلش — جرّب تاني'**
   String get chatReportFailed;
+
+  /// No description provided for @chatWorldEyebrow.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسأل أي حاجة'**
+  String get chatWorldEyebrow;
+
+  /// No description provided for @chatStateThinking.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيفكّر…'**
+  String get chatStateThinking;
+
+  /// No description provided for @chatStateListening.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيسمعك…'**
+  String get chatStateListening;
+
+  /// No description provided for @chatStateSpeaking.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيتكلم…'**
+  String get chatStateSpeaking;
+
+  /// No description provided for @chatStateEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'أنا سامعك'**
+  String get chatStateEmpty;
+
+  /// Chat world: state line, how many messages are in the conversation.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{رسالة واحدة} =2{رسالتين} few{{count} رسايل} other{{count} رسالة}}'**
+  String chatStateCount(int count);
 
   /// No description provided for @chatThinking.
   ///
@@ -3242,6 +3284,36 @@ abstract class ZadL10n {
   /// **'الاشتراكات والفواتير'**
   String get subsTitle;
 
+  /// No description provided for @subsWorldNone.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش اشتراكات لسه'**
+  String get subsWorldNone;
+
+  /// No description provided for @subsWorldTotal.
+  ///
+  /// In ar, this message translates to:
+  /// **'{amount} في الشهر'**
+  String subsWorldTotal(String amount);
+
+  /// No description provided for @subsWorldNextToday.
+  ///
+  /// In ar, this message translates to:
+  /// **'{amount} في الشهر · {title} بيجدد النهارده'**
+  String subsWorldNextToday(String amount, String title);
+
+  /// No description provided for @subsWorldNext.
+  ///
+  /// In ar, this message translates to:
+  /// **'{amount} في الشهر · {title} بعد {days} يوم'**
+  String subsWorldNext(String amount, String title, int days);
+
+  /// No description provided for @subsEmptyHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'اضغط «إضافة» وزاد يحسب لك التجديد الجاي.'**
+  String get subsEmptyHint;
+
   /// No description provided for @subsBnplTag.
   ///
   /// In ar, this message translates to:
@@ -3275,7 +3347,7 @@ abstract class ZadL10n {
   /// No description provided for @subsPaidMark.
   ///
   /// In ar, this message translates to:
-  /// **'تم الدفع ✓'**
+  /// **'تم الدفع'**
   String get subsPaidMark;
 
   /// No description provided for @subsToggleAuto.
@@ -4886,6 +4958,282 @@ abstract class ZadL10n {
   /// **'ترند دلوقتي'**
   String get recipesTrendingGroup;
 
+  /// Chef world: the state line once there is an answer.
+  ///
+  /// In ar, this message translates to:
+  /// **'{total, plural, =1{وصفة واحدة} =2{وصفتين} few{{total} وصفات} other{{total} وصفة}} · {ready} منها مكتملة'**
+  String chefWorldState(int total, int ready);
+
+  /// No description provided for @chefStateEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'المخزن فاضي — ضيف أكلك وأنا أقترح'**
+  String get chefStateEmpty;
+
+  /// No description provided for @chefStateReady.
+  ///
+  /// In ar, this message translates to:
+  /// **'جاهزة أقترحلك أكلة من مخزنك'**
+  String get chefStateReady;
+
+  /// No description provided for @chefStateThinking.
+  ///
+  /// In ar, this message translates to:
+  /// **'بفكر في أكلة من مخزنك…'**
+  String get chefStateThinking;
+
+  /// No description provided for @chefError.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقدرتش أوصل لشيف زاد. جرّب تاني بعد شوية.'**
+  String get chefError;
+
+  /// No description provided for @chefStale.
+  ///
+  /// In ar, this message translates to:
+  /// **'مخزنك اتغيّر من آخر اقتراحات — اطلب جديدة لو حابب.'**
+  String get chefStale;
+
+  /// No description provided for @chefReadyTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'شيف زاد جاهزة'**
+  String get chefReadyTitle;
+
+  /// No description provided for @chefReadyBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'دوس «وصفات من مخزني» وهتقولك تطبخ إيه من اللي عندك، واللي ناقصه حاجة بسيطة.'**
+  String get chefReadyBody;
+
+  /// No description provided for @chefEmptyTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'المخزن فاضي'**
+  String get chefEmptyTitle;
+
+  /// No description provided for @chefEmptyBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضيف اللي عندك في المخزن، وشيف زاد تقترح أكلات منه.'**
+  String get chefEmptyBody;
+
+  /// No description provided for @chefAskCta.
+  ///
+  /// In ar, this message translates to:
+  /// **'وصفات من مخزني'**
+  String get chefAskCta;
+
+  /// No description provided for @chefAsking.
+  ///
+  /// In ar, this message translates to:
+  /// **'شيف زاد بتفكر…'**
+  String get chefAsking;
+
+  /// No description provided for @chefAskAgain.
+  ///
+  /// In ar, this message translates to:
+  /// **'اقتراحات جديدة'**
+  String get chefAskAgain;
+
+  /// No description provided for @chefGroupPantry.
+  ///
+  /// In ar, this message translates to:
+  /// **'من مخزونك'**
+  String get chefGroupPantry;
+
+  /// No description provided for @chefGroupMore.
+  ///
+  /// In ar, this message translates to:
+  /// **'وجبات تانية'**
+  String get chefGroupMore;
+
+  /// No description provided for @chefComplete.
+  ///
+  /// In ar, this message translates to:
+  /// **'مكتملة'**
+  String get chefComplete;
+
+  /// No description provided for @chefMissingCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'ناقصك {count}'**
+  String chefMissingCount(int count);
+
+  /// No description provided for @chefMinutes.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} دقيقة'**
+  String chefMinutes(int count);
+
+  /// No description provided for @chefHaveHeading.
+  ///
+  /// In ar, this message translates to:
+  /// **'من عندك'**
+  String get chefHaveHeading;
+
+  /// No description provided for @chefMissingHeading.
+  ///
+  /// In ar, this message translates to:
+  /// **'ناقصك'**
+  String get chefMissingHeading;
+
+  /// No description provided for @chefMethodHeading.
+  ///
+  /// In ar, this message translates to:
+  /// **'الطريقة'**
+  String get chefMethodHeading;
+
+  /// No description provided for @chefStepByStep.
+  ///
+  /// In ar, this message translates to:
+  /// **'الوصفة كاملة خطوة بخطوة'**
+  String get chefStepByStep;
+
+  /// No description provided for @chefAddMissing.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضيف الناقص لقايمة التسوق ({count})'**
+  String chefAddMissing(int count);
+
+  /// No description provided for @chefAddedOne.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضفت صنف لقايمة التسوق.'**
+  String get chefAddedOne;
+
+  /// No description provided for @chefAddedMany.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضفت {count} أصناف لقايمة التسوق.'**
+  String chefAddedMany(int count);
+
+  /// No description provided for @chefNothingToAdd.
+  ///
+  /// In ar, this message translates to:
+  /// **'الناقص كله في قايمة التسوق أو المخزن.'**
+  String get chefNothingToAdd;
+
+  /// No description provided for @chefRatePrompt.
+  ///
+  /// In ar, this message translates to:
+  /// **'عجبتك؟ شيف زاد بتفتكر.'**
+  String get chefRatePrompt;
+
+  /// No description provided for @chefLike.
+  ///
+  /// In ar, this message translates to:
+  /// **'عجبتني'**
+  String get chefLike;
+
+  /// No description provided for @chefDislike.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش لذوقي'**
+  String get chefDislike;
+
+  /// No description provided for @chefDetailIngredients.
+  ///
+  /// In ar, this message translates to:
+  /// **'المقادير'**
+  String get chefDetailIngredients;
+
+  /// No description provided for @chefDetailSteps.
+  ///
+  /// In ar, this message translates to:
+  /// **'طريقة التحضير'**
+  String get chefDetailSteps;
+
+  /// No description provided for @chefDetailAddToShopping.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة الناقص للتسوق'**
+  String get chefDetailAddToShopping;
+
+  /// No description provided for @chefDetailClose.
+  ///
+  /// In ar, this message translates to:
+  /// **'إغلاق'**
+  String get chefDetailClose;
+
+  /// No description provided for @chefDetailRetry.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعادة المحاولة'**
+  String get chefDetailRetry;
+
+  /// No description provided for @chefDetailLoading.
+  ///
+  /// In ar, this message translates to:
+  /// **'شيف زاد يجهز لك الوصفة…'**
+  String get chefDetailLoading;
+
+  /// No description provided for @chefDetailEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'شيف زاد مارجّعش الوصفة دي — جرب تاني'**
+  String get chefDetailEmpty;
+
+  /// No description provided for @chefDetailSlow.
+  ///
+  /// In ar, this message translates to:
+  /// **'شيف زاد اتأخر في الرد — جرب تاني'**
+  String get chefDetailSlow;
+
+  /// No description provided for @chefDetailFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'عذراً، حدث خطأ أثناء تحميل الوصفة'**
+  String get chefDetailFailed;
+
+  /// No description provided for @chefHomeTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'شيف زاد (اقتراحات ذكية)'**
+  String get chefHomeTitle;
+
+  /// No description provided for @chefHomeAllDepleted.
+  ///
+  /// In ar, this message translates to:
+  /// **'مخزونك كله خلص — نزّل النواقص في التسوق وأنا أقترحلك أكل.'**
+  String get chefHomeAllDepleted;
+
+  /// No description provided for @chefHomePantryEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضيف أصناف لمخزونك عشان شيف زاد يقترح لك طبق اليوم.'**
+  String get chefHomePantryEmpty;
+
+  /// No description provided for @chefHomeComplete.
+  ///
+  /// In ar, this message translates to:
+  /// **'مكتملة من مخزونك'**
+  String get chefHomeComplete;
+
+  /// No description provided for @chefHomeMinutes.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} د'**
+  String chefHomeMinutes(int count);
+
+  /// No description provided for @chefHomeMissingList.
+  ///
+  /// In ar, this message translates to:
+  /// **'ناقصك: {items}'**
+  String chefHomeMissingList(String items);
+
+  /// No description provided for @chefHomeAddMissing.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضيفهم لقائمة التسوق'**
+  String get chefHomeAddMissing;
+
+  /// No description provided for @chefHomeTapSteps.
+  ///
+  /// In ar, this message translates to:
+  /// **'اضغط للخطوات'**
+  String get chefHomeTapSteps;
+
   /// No description provided for @homeDealsSeeAll.
   ///
   /// In ar, this message translates to:
@@ -5603,7 +5951,7 @@ abstract class ZadL10n {
   /// No description provided for @chefSecrets.
   ///
   /// In ar, this message translates to:
-  /// **'🤫 أسرار الشيف'**
+  /// **'أسرار الشيف'**
   String get chefSecrets;
 
   /// No description provided for @chefSourceLink.
@@ -7292,6 +7640,12 @@ abstract class ZadL10n {
   /// **'نسيان ملاحظة'**
   String get agentToolDeleteMemory;
 
+  /// Brain action log: the chat restored a deleted row from the trash (ZAD_OR_PLAN M1.6).
+  ///
+  /// In ar, this message translates to:
+  /// **'رجّع حاجة اتمسحت'**
+  String get agentToolRestoreDeleted;
+
   /// Brain action log: what a tool the chat ran did (ZAD_PLAN 10.2a).
   ///
   /// In ar, this message translates to:
@@ -7388,6 +7742,36 @@ abstract class ZadL10n {
   /// **'بياناتي من زاد'**
   String get profileExportSubject;
 
+  /// No description provided for @homeCareRenewsToday.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيتجدد النهارده'**
+  String get homeCareRenewsToday;
+
+  /// No description provided for @homeCareRenewsTomorrow.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيتجدد بكرة'**
+  String get homeCareRenewsTomorrow;
+
+  /// No description provided for @homeCareRenewsInDays.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيتجدد بعد {days} يوم'**
+  String homeCareRenewsInDays(Object days);
+
+  /// No description provided for @homeCareDoseAt.
+  ///
+  /// In ar, this message translates to:
+  /// **'الجرعة {time}'**
+  String homeCareDoseAt(Object time);
+
+  /// No description provided for @homeCareDoseNow.
+  ///
+  /// In ar, this message translates to:
+  /// **'جرعتها دلوقتي'**
+  String get homeCareDoseNow;
+
   /// Zado's bubble on the intro's pantry scene.
   ///
   /// In ar, this message translates to:
@@ -7478,6 +7862,18 @@ abstract class ZadL10n {
   /// **'ومابنقراش كلمات سر البنك ولا أرقام الكروت ولا أكواد OTP.'**
   String get consentPoint3Body;
 
+  /// Consent sheet, the third-party AI point: the bold lead. Google Play's User Data policy (2026-07-15) wants this said plainly before any data goes to an outside AI provider.
+  ///
+  /// In ar, this message translates to:
+  /// **'كلامك بيتبعت لذكاء اصطناعي من شركات تانية.'**
+  String get consentPointAiLead;
+
+  /// Consent sheet, the third-party AI point: what is sent, to whom, and for what.
+  ///
+  /// In ar, this message translates to:
+  /// **'عشان زاد يفهمك ويرد عليك، اللي بتكتبه أو بتقوله ورسايل البنك وفواتيرك بتتبعت لمزودي ذكاء اصطناعي خارجيين (زي Google و Groq) يعالجوها، وبس.'**
+  String get consentPointAiBody;
+
   /// Consent sheet, point 4: the bold lead.
   ///
   /// In ar, this message translates to:
@@ -7555,6 +7951,4830 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'نوفمبر ٢٠٢٦'**
   String get consentTermsUpdated;
+
+  /// A world's name, in the links strip and its own title.
+  ///
+  /// In ar, this message translates to:
+  /// **'عقل زاد'**
+  String get worldLabelBrain;
+
+  /// A world's name, in the links strip and its own title.
+  ///
+  /// In ar, this message translates to:
+  /// **'شيف زاد'**
+  String get worldLabelChef;
+
+  /// A world's name, in the links strip and its own title.
+  ///
+  /// In ar, this message translates to:
+  /// **'المخزون'**
+  String get worldLabelInv;
+
+  /// A world's name, in the links strip and its own title.
+  ///
+  /// In ar, this message translates to:
+  /// **'التسوق'**
+  String get worldLabelShop;
+
+  /// A world's name, in the links strip and its own title.
+  ///
+  /// In ar, this message translates to:
+  /// **'المعاملات'**
+  String get worldLabelTx;
+
+  /// A world's name, in the links strip and its own title.
+  ///
+  /// In ar, this message translates to:
+  /// **'الميزانية'**
+  String get worldLabelBudget;
+
+  /// A world's name, in the links strip and its own title.
+  ///
+  /// In ar, this message translates to:
+  /// **'كشف الحساب'**
+  String get worldLabelStmt;
+
+  /// A world's name, in the links strip and its own title.
+  ///
+  /// In ar, this message translates to:
+  /// **'الاشتراكات'**
+  String get worldLabelSubs;
+
+  /// A world's name, in the links strip and its own title.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصيدلية'**
+  String get worldLabelPh;
+
+  /// A world's name, in the links strip and its own title.
+  ///
+  /// In ar, this message translates to:
+  /// **'المواعيد'**
+  String get worldLabelAppt;
+
+  /// A world's name, in the links strip and its own title.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصيانة'**
+  String get worldLabelMaint;
+
+  /// A world's name, in the links strip and its own title.
+  ///
+  /// In ar, this message translates to:
+  /// **'المستندات'**
+  String get worldLabelDocs;
+
+  /// A world's name, in the links strip and its own title.
+  ///
+  /// In ar, this message translates to:
+  /// **'أماكني'**
+  String get worldLabelPlaces;
+
+  /// A world's name, in the links strip and its own title.
+  ///
+  /// In ar, this message translates to:
+  /// **'رفيق زاد'**
+  String get worldLabelComp;
+
+  /// A world's name, in the links strip and its own title.
+  ///
+  /// In ar, this message translates to:
+  /// **'الشات'**
+  String get worldLabelChat;
+
+  /// A world's name, in the links strip and its own title.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإشعارات'**
+  String get worldLabelNotif;
+
+  /// A world's name, in the links strip and its own title.
+  ///
+  /// In ar, this message translates to:
+  /// **'حسابي'**
+  String get worldLabelProfile;
+
+  /// A world's name, in the links strip and its own title.
+  ///
+  /// In ar, this message translates to:
+  /// **'بريميوم'**
+  String get worldLabelPrem;
+
+  /// A world's name, in the links strip and its own title.
+  ///
+  /// In ar, this message translates to:
+  /// **'بستان التسبيح'**
+  String get worldLabelTas;
+
+  /// A world's name, in the links strip and its own title.
+  ///
+  /// In ar, this message translates to:
+  /// **'ألعاب زادو'**
+  String get worldLabelGames;
+
+  /// A world's name, in the links strip and its own title.
+  ///
+  /// In ar, this message translates to:
+  /// **'أسعار النهارده'**
+  String get worldLabelPrices;
+
+  /// A world's name, in the links strip and its own title.
+  ///
+  /// In ar, this message translates to:
+  /// **'عروضي'**
+  String get worldLabelOffers;
+
+  /// A world's name, in the links strip and its own title.
+  ///
+  /// In ar, this message translates to:
+  /// **'إنجازاتي'**
+  String get worldLabelAch;
+
+  /// Links strip heading.
+  ///
+  /// In ar, this message translates to:
+  /// **'متصلة بـ'**
+  String get worldLinksTitle;
+
+  /// Links strip hint.
+  ///
+  /// In ar, this message translates to:
+  /// **'اللي بيحصل هنا بيأثر في:'**
+  String get worldLinksHint;
+
+  /// Back button of a world screen.
+  ///
+  /// In ar, this message translates to:
+  /// **'رجوع'**
+  String get worldBack;
+
+  /// Pantry world: the count above the title.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =0{لسه مفيش أصناف} =1{صنف واحد} =2{صنفين} few{{count} أصناف} other{{count} صنف}}'**
+  String pantryWorldEyebrow(int count);
+
+  /// Pantry world: the state line under the title.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =0{مفيش حاجة قربت تخلص} =1{حاجة واحدة قربت تخلص} =2{حاجتين قربوا يخلصوا} few{{count} حاجات قربت تخلص} other{{count} حاجة قربت تخلص}}'**
+  String pantryWorldState(int count);
+
+  /// Pantry legend: items running out.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} قربت تخلص'**
+  String pantryLegendLow(int count);
+
+  /// Pantry legend: items about to expire.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} هتبوظ قريب'**
+  String pantryLegendExpiring(int count);
+
+  /// Pantry legend: items that are fine.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} تمام'**
+  String pantryLegendOk(int count);
+
+  /// No description provided for @brainWorldState.
+  ///
+  /// In ar, this message translates to:
+  /// **'متصل ويتعلم'**
+  String get brainWorldState;
+
+  /// No description provided for @brainWorldEyebrow.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =0{لسه مفيش عناصر} other{{count} عنصر متصل}}'**
+  String brainWorldEyebrow(int count);
+
+  /// No description provided for @brainFilterAll.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكل'**
+  String get brainFilterAll;
+
+  /// No description provided for @brainFilterLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'فلتر المجالات'**
+  String get brainFilterLabel;
+
+  /// No description provided for @brainNetworkEmptyTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد لسه بيتعلم عنك'**
+  String get brainNetworkEmptyTitle;
+
+  /// No description provided for @brainNetworkEmptyMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجّل مصاريفك أو ضيف مخزون وأدوية، وهتلاقي الشبكة بتكبر هنا.'**
+  String get brainNetworkEmptyMessage;
+
+  /// No description provided for @brainCardsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'جوه عقل زاد'**
+  String get brainCardsTitle;
+
+  /// No description provided for @brainCardStaffTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'فريق زاد'**
+  String get brainCardStaffTitle;
+
+  /// No description provided for @brainCardStaffBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'اللي الموظفين لاحظوه في جولة الصبح على بيتك وفلوسك وعيلتك'**
+  String get brainCardStaffBody;
+
+  /// No description provided for @brainCardMemoryTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد عارف عني إيه'**
+  String get brainCardMemoryTitle;
+
+  /// No description provided for @brainCardMemoryBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'اللي زاد فاكره عنك وبيكلمك على أساسه — صحّحه أو خلّيه ينساه'**
+  String get brainCardMemoryBody;
+
+  /// No description provided for @brainCardGraphTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'شبكة زاد'**
+  String get brainCardGraphTitle;
+
+  /// No description provided for @brainCardGraphBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'الناس والأماكن والحاجات اللي زاد عارفها ومترابطة إزاي — وصدّرها لأوبسيديان'**
+  String get brainCardGraphBody;
+
+  /// No description provided for @brainCardMapTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'خريطة زاد'**
+  String get brainCardMapTitle;
+
+  /// No description provided for @brainCardMapBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'إزاي ميزانيتك واشتراكاتك وبيتك متصلين ببعض — بملء الشاشة'**
+  String get brainCardMapBody;
+
+  /// No description provided for @brainCardLogTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجل تعديلات زاد'**
+  String get brainCardLogTitle;
+
+  /// No description provided for @brainCardLogBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل حاجة زاد سجّلها أو عدّلها لك، وترجع فيها لو غلط'**
+  String get brainCardLogBody;
+
+  /// No description provided for @brainCardHealthTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'صحة عقل زاد'**
+  String get brainCardHealthTitle;
+
+  /// No description provided for @brainCardHealthBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد شغال في الخلفية ولا واقف — ولو واقف، ليه'**
+  String get brainCardHealthBody;
+
+  /// No description provided for @brainTelemetryLinks.
+  ///
+  /// In ar, this message translates to:
+  /// **'الروابط: {active}/{total}'**
+  String brainTelemetryLinks(int active, int total);
+
+  /// No description provided for @brainTelemetryDecisions.
+  ///
+  /// In ar, this message translates to:
+  /// **'قرارات النهارده'**
+  String get brainTelemetryDecisions;
+
+  /// No description provided for @brainTelemetryGauge.
+  ///
+  /// In ar, this message translates to:
+  /// **'مؤشر الثبات'**
+  String get brainTelemetryGauge;
+
+  /// No description provided for @brainTelemetryStable.
+  ///
+  /// In ar, this message translates to:
+  /// **'مستقر'**
+  String get brainTelemetryStable;
+
+  /// No description provided for @brainTelemetryAlert.
+  ///
+  /// In ar, this message translates to:
+  /// **'تنبيه'**
+  String get brainTelemetryAlert;
+
+  /// No description provided for @zadStatusTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'حالة زاد'**
+  String get zadStatusTitle;
+
+  /// No description provided for @zadStatusAllGood.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد شغال وبيتابع'**
+  String get zadStatusAllGood;
+
+  /// No description provided for @zadStatusNeedsFix.
+  ///
+  /// In ar, this message translates to:
+  /// **'في حاجة واقفة ومحتاجة منك خطوة'**
+  String get zadStatusNeedsFix;
+
+  /// No description provided for @zadStatusAllButOne.
+  ///
+  /// In ar, this message translates to:
+  /// **'كله شغال ما عدا: {what}'**
+  String zadStatusAllButOne(String what);
+
+  /// No description provided for @zadStatusWorking.
+  ///
+  /// In ar, this message translates to:
+  /// **'شغال'**
+  String get zadStatusWorking;
+
+  /// No description provided for @zadStatusStopped.
+  ///
+  /// In ar, this message translates to:
+  /// **'واقف'**
+  String get zadStatusStopped;
+
+  /// No description provided for @zadStatusMaybe.
+  ///
+  /// In ar, this message translates to:
+  /// **'ممكن يقف'**
+  String get zadStatusMaybe;
+
+  /// No description provided for @zadStatusBank.
+  ///
+  /// In ar, this message translates to:
+  /// **'قراءة رسائل البنك'**
+  String get zadStatusBank;
+
+  /// No description provided for @zadStatusBankOk.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد بيقرا رسائل البنك ويسجّلها.'**
+  String get zadStatusBankOk;
+
+  /// No description provided for @zadStatusBankOff.
+  ///
+  /// In ar, this message translates to:
+  /// **'قراءة رسائل البنك متوقفة. شغّلها عشان رصيدك ومصاريفك تتحدّث لوحدها.'**
+  String get zadStatusBankOff;
+
+  /// No description provided for @zadStatusBankStalled.
+  ///
+  /// In ar, this message translates to:
+  /// **'الخدمة مابقتش بتشوف إشعارات من فترة. لو هي مفعّلة: اطفيها وشغّلها تاني من الصفحة اللي هتفتح.'**
+  String get zadStatusBankStalled;
+
+  /// No description provided for @zadStatusBankSilent.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفعّلة، بس لسه ماجاتش ولا رسالة. لو مستني رسالة من البنك ومجتش: اطفيها وشغّلها تاني.'**
+  String get zadStatusBankSilent;
+
+  /// No description provided for @zadStatusNotifications.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإشعارات'**
+  String get zadStatusNotifications;
+
+  /// No description provided for @zadStatusNotificationsOk.
+  ///
+  /// In ar, this message translates to:
+  /// **'تنبيهات الجرعات والفواتير والميزانية بتوصلك.'**
+  String get zadStatusNotificationsOk;
+
+  /// No description provided for @zadStatusNotificationsOff.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإشعارات مقفولة، فتنبيهات الجرعات والفواتير مش هتوصلك.'**
+  String get zadStatusNotificationsOff;
+
+  /// No description provided for @zadStatusLocation.
+  ///
+  /// In ar, this message translates to:
+  /// **'الموقع'**
+  String get zadStatusLocation;
+
+  /// No description provided for @zadStatusLocationOk.
+  ///
+  /// In ar, this message translates to:
+  /// **'الموقع شغال، والعروض والمحلات القريبة بتتحسب من مكانك.'**
+  String get zadStatusLocationOk;
+
+  /// No description provided for @zadStatusLocationServiceOff.
+  ///
+  /// In ar, this message translates to:
+  /// **'الموقع مقفول في الموبايل، فالقراءات مش هتبقى من مكانك الحقيقي.'**
+  String get zadStatusLocationServiceOff;
+
+  /// No description provided for @zadStatusLocationDenied.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد مش مسموحله يعرف مكانك، فالعروض والمحلات القريبة مش هتشتغل.'**
+  String get zadStatusLocationDenied;
+
+  /// No description provided for @zadStatusBackground.
+  ///
+  /// In ar, this message translates to:
+  /// **'الموقع طول الوقت'**
+  String get zadStatusBackground;
+
+  /// No description provided for @zadStatusBackgroundOk.
+  ///
+  /// In ar, this message translates to:
+  /// **'تنبيهات الطريق شغالة حتى والتطبيق مقفول.'**
+  String get zadStatusBackgroundOk;
+
+  /// No description provided for @zadStatusBackgroundOff.
+  ///
+  /// In ar, this message translates to:
+  /// **'من غير «طول الوقت» تنبيهات الطريق مش هتشتغل والتطبيق مقفول.'**
+  String get zadStatusBackgroundOff;
+
+  /// No description provided for @zadStatusBattery.
+  ///
+  /// In ar, this message translates to:
+  /// **'توفير البطارية'**
+  String get zadStatusBattery;
+
+  /// No description provided for @zadStatusBatteryOk.
+  ///
+  /// In ar, this message translates to:
+  /// **'الموبايل مش بيقيّد زاد في الخلفية.'**
+  String get zadStatusBatteryOk;
+
+  /// No description provided for @zadStatusBatteryWarn.
+  ///
+  /// In ar, this message translates to:
+  /// **'الموبايل ممكن يوقف زاد في الخلفية. اختار «بدون قيود» عشان القراءة ماتقطعش.'**
+  String get zadStatusBatteryWarn;
+
+  /// No description provided for @zadStatusFixOpenSettings.
+  ///
+  /// In ar, this message translates to:
+  /// **'افتح الإعدادات'**
+  String get zadStatusFixOpenSettings;
+
+  /// No description provided for @zadStatusFixAllow.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسمح'**
+  String get zadStatusFixAllow;
+
+  /// No description provided for @zadStatusFixLocationOn.
+  ///
+  /// In ar, this message translates to:
+  /// **'شغّل الموقع'**
+  String get zadStatusFixLocationOn;
+
+  /// No description provided for @zadStatusFixBattery.
+  ///
+  /// In ar, this message translates to:
+  /// **'فكّ القيود'**
+  String get zadStatusFixBattery;
+
+  /// Care sheet: opens the games hub.
+  ///
+  /// In ar, this message translates to:
+  /// **'ألعاب زادو'**
+  String get gamesHubButton;
+
+  /// Games hub: app bar title.
+  ///
+  /// In ar, this message translates to:
+  /// **'ألعاب زادو'**
+  String get gamesHubTitle;
+
+  /// Games: back button.
+  ///
+  /// In ar, this message translates to:
+  /// **'رجوع'**
+  String get gamesBackTooltip;
+
+  /// Games hub: header line.
+  ///
+  /// In ar, this message translates to:
+  /// **'العب، كمّل السلسلة، اكسب بذور'**
+  String get gamesHubIntro;
+
+  /// Games hub: the daily challenge line.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحدي النهارده: {target} نقطة في «{game}»'**
+  String gamesHubToday(int target, String game);
+
+  /// Games hub: weekly box progress.
+  ///
+  /// In ar, this message translates to:
+  /// **'صندوق الأسبوع: {days} من {goal} أيام ورا بعض'**
+  String gamesHubWeekly(int days, int goal);
+
+  /// Games: the day streak.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =0{ابدأ سلسلتك النهارده} =1{يوم واحد} other{{count} أيام ورا بعض}}'**
+  String gamesHubStreak(int count);
+
+  /// Games: best score.
+  ///
+  /// In ar, this message translates to:
+  /// **'أحسن نتيجة: {score}'**
+  String gamesHubBest(int score);
+
+  /// Games hub: a game with no score yet.
+  ///
+  /// In ar, this message translates to:
+  /// **'لسه ما لعبتش'**
+  String get gamesHubNotPlayed;
+
+  /// Games hub: play button on a game card.
+  ///
+  /// In ar, this message translates to:
+  /// **'العب'**
+  String get gamesHubPlay;
+
+  /// Games hub: challenge met.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحدي النهارده خلص'**
+  String get gamesHubChallengeDone;
+
+  /// Game name.
+  ///
+  /// In ar, this message translates to:
+  /// **'اصطاد الكورة'**
+  String get gameNameBall;
+
+  /// Game name.
+  ///
+  /// In ar, this message translates to:
+  /// **'نطّة زادو'**
+  String get gameNameRun;
+
+  /// Game name.
+  ///
+  /// In ar, this message translates to:
+  /// **'زادو بيرتّب'**
+  String get gameNameSort;
+
+  /// Game name.
+  ///
+  /// In ar, this message translates to:
+  /// **'اصطاد النجوم'**
+  String get gameNameStar;
+
+  /// Game card text.
+  ///
+  /// In ar, this message translates to:
+  /// **'كورة بتهرب، اصطادها بسرعة وكوّن كومبو'**
+  String get gameBlurbBall;
+
+  /// Game card text.
+  ///
+  /// In ar, this message translates to:
+  /// **'انط فوق الصناديق وخد البذور والسرعة بتزيد'**
+  String get gameBlurbRun;
+
+  /// Game card text.
+  ///
+  /// In ar, this message translates to:
+  /// **'ادمج البذور المتشابهة، ولغز جديد كل يوم'**
+  String get gameBlurbSort;
+
+  /// Game card text.
+  ///
+  /// In ar, this message translates to:
+  /// **'حرّك زادو وامسك النجوم قبل ما تقع'**
+  String get gameBlurbStar;
+
+  /// Game end card: best score.
+  ///
+  /// In ar, this message translates to:
+  /// **'أحسن نتيجة: {score}'**
+  String gameBest(int score);
+
+  /// Game end card: best beaten.
+  ///
+  /// In ar, this message translates to:
+  /// **'رقم قياسي جديد!'**
+  String get gameNewBest;
+
+  /// Game end card title.
+  ///
+  /// In ar, this message translates to:
+  /// **'خلصت الجولة'**
+  String get gameEndTitle;
+
+  /// Game end card score.
+  ///
+  /// In ar, this message translates to:
+  /// **'{score} نقطة'**
+  String gameEndScore(int score);
+
+  /// Game end card: challenge.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحدي النهارده: اوصل {target} نقطة'**
+  String gameChallenge(int target);
+
+  /// Game end card: challenge progress.
+  ///
+  /// In ar, this message translates to:
+  /// **'{done} من {target}'**
+  String gameChallengeProgress(int done, int target);
+
+  /// Game end card: challenge met.
+  ///
+  /// In ar, this message translates to:
+  /// **'خلصت التحدي النهارده، برافو!'**
+  String get gameChallengeDone;
+
+  /// Game end card: seeds granted.
+  ///
+  /// In ar, this message translates to:
+  /// **'+{count} بذور'**
+  String gameSeedsGranted(int count);
+
+  /// Game end card: daily allowance left.
+  ///
+  /// In ar, this message translates to:
+  /// **'باقي {count} بذور النهارده'**
+  String gameSeedsLeft(int count);
+
+  /// Game end card: allowance used up.
+  ///
+  /// In ar, this message translates to:
+  /// **'وصلت للحد اليومي للبذور'**
+  String get gameSeedsCapped;
+
+  /// Game end card: rewarded ad to double.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضاعف البذور'**
+  String get gameDouble;
+
+  /// Game end card: under the double button.
+  ///
+  /// In ar, this message translates to:
+  /// **'بإعلان قصير'**
+  String get gameDoubleHint;
+
+  /// Game end card: resume after an ad.
+  ///
+  /// In ar, this message translates to:
+  /// **'كمّل من مكانك'**
+  String get gameContinue;
+
+  /// Game end card: under continue.
+  ///
+  /// In ar, this message translates to:
+  /// **'بإعلان قصير، مرة واحدة في الجولة'**
+  String get gameContinueHint;
+
+  /// Game end card: the ad did not play.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش إعلان متاح دلوقتي'**
+  String get gameAdUnavailable;
+
+  /// Game end card: restart.
+  ///
+  /// In ar, this message translates to:
+  /// **'جولة تانية'**
+  String get gameAgain;
+
+  /// Game end card: leave.
+  ///
+  /// In ar, this message translates to:
+  /// **'خلصت'**
+  String get gameDone;
+
+  /// Game: shown after the app was left.
+  ///
+  /// In ar, this message translates to:
+  /// **'اللعبة واقفة'**
+  String get gamePaused;
+
+  /// Game: resume after a pause.
+  ///
+  /// In ar, this message translates to:
+  /// **'كمّل'**
+  String get gameResume;
+
+  /// Game: score for TalkBack.
+  ///
+  /// In ar, this message translates to:
+  /// **'النقط {score}'**
+  String gameScoreSemantics(int score);
+
+  /// Game: combo multiplier.
+  ///
+  /// In ar, this message translates to:
+  /// **'كومبو ×{n}'**
+  String gameCombo(int n);
+
+  /// Game: level.
+  ///
+  /// In ar, this message translates to:
+  /// **'مستوى {n}'**
+  String gameLevel(int n);
+
+  /// Game: lives for TalkBack.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =0{مفيش محاولات} =1{محاولة واحدة} other{{count} محاولات}}'**
+  String gameLives(int count);
+
+  /// Runner: title.
+  ///
+  /// In ar, this message translates to:
+  /// **'نطّة {name}'**
+  String runGameTitle(String name);
+
+  /// Runner: before the first tap.
+  ///
+  /// In ar, this message translates to:
+  /// **'المس الشاشة عشان {name} ينط'**
+  String runGameHint(String name);
+
+  /// Runner: end card title.
+  ///
+  /// In ar, this message translates to:
+  /// **'{name} خبط!'**
+  String runGameHit(String name);
+
+  /// Runner: seeds for TalkBack.
+  ///
+  /// In ar, this message translates to:
+  /// **'بذور {count}'**
+  String runGameSeedsSemantics(int count);
+
+  /// Sort game: title.
+  ///
+  /// In ar, this message translates to:
+  /// **'زادو بيرتّب'**
+  String get sortGameTitle;
+
+  /// Sort game: hint.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسحب في أي اتجاه أو استخدم الأسهم، وادمج البذور المتشابهة'**
+  String get sortGameHint;
+
+  /// Sort game: the daily puzzle tag.
+  ///
+  /// In ar, this message translates to:
+  /// **'لغز النهارده'**
+  String get sortGameDaily;
+
+  /// Sort game: end card title.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش حركات تانية'**
+  String get sortGameStuck;
+
+  /// Sort game: arrow label.
+  ///
+  /// In ar, this message translates to:
+  /// **'يسار'**
+  String get sortGameLeft;
+
+  /// Sort game: arrow label.
+  ///
+  /// In ar, this message translates to:
+  /// **'يمين'**
+  String get sortGameRight;
+
+  /// Sort game: arrow label.
+  ///
+  /// In ar, this message translates to:
+  /// **'فوق'**
+  String get sortGameUp;
+
+  /// Sort game: arrow label.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحت'**
+  String get sortGameDown;
+
+  /// Sort game: tile for TalkBack.
+  ///
+  /// In ar, this message translates to:
+  /// **'بذرة بمستوى {value}'**
+  String sortGameTile(int value);
+
+  /// Star game: title.
+  ///
+  /// In ar, this message translates to:
+  /// **'اصطاد النجوم'**
+  String get starGameTitle;
+
+  /// Star game: hint.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسحب {name} يمين وشمال عشان يمسك النجوم'**
+  String starGameHint(String name);
+
+  /// Star game: end card title.
+  ///
+  /// In ar, this message translates to:
+  /// **'النجوم خلصت منك'**
+  String get starGameOver;
+
+  /// Shopping world: the count above the title.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =0{مفيش حاجة ناقصة} =1{حاجة واحدة ناقصة} =2{حاجتين ناقصين} few{{count} حاجات ناقصة} other{{count} حاجة ناقصة}}'**
+  String shopWorldEyebrow(int count);
+
+  /// Shopping world: the state line, how many shops the lines are bought at.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{من محل واحد} =2{من محلين} few{من {count} محلات} other{من {count} محل}}'**
+  String shopWorldStores(int count);
+
+  /// Shopping world: the state line when no line names a shop.
+  ///
+  /// In ar, this message translates to:
+  /// **'من أي محل'**
+  String get shopWorldAnyStore;
+
+  /// Shopping world: the state line when nothing is left to buy.
+  ///
+  /// In ar, this message translates to:
+  /// **'القايمة فاضية'**
+  String get shopWorldDone;
+
+  /// Shopping world: the group of lines with no shop named.
+  ///
+  /// In ar, this message translates to:
+  /// **'أي محل'**
+  String get shopGroupAnyStore;
+
+  /// Shopping world: the pantry counter a bought item flies to.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =0{المخزن فاضي} =1{في المخزن صنف واحد} =2{في المخزن صنفين} few{في المخزن {count} أصناف} other{في المخزن {count} صنف}}'**
+  String shopPantryCount(int count);
+
+  /// Appointments world: the line above the title, today's weekday.
+  ///
+  /// In ar, this message translates to:
+  /// **'النهارده {weekday}'**
+  String apptWorldToday(String weekday);
+
+  /// Appointments world: the state line, the next appointment and how far it is.
+  ///
+  /// In ar, this message translates to:
+  /// **'{title} {when}'**
+  String apptWorldNext(String title, String when);
+
+  /// Appointments world: the state line when nothing is coming.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش مواعيد جاية'**
+  String get apptWorldNone;
+
+  /// Appointments world: the label of the next appointment's card.
+  ///
+  /// In ar, this message translates to:
+  /// **'الميعاد الجاي'**
+  String get apptNextLabel;
+
+  /// Appointments world: the next appointment is due this minute.
+  ///
+  /// In ar, this message translates to:
+  /// **'دلوقتي'**
+  String get apptInNow;
+
+  /// Appointments world: minutes left.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{بعد دقيقة} =2{بعد دقيقتين} few{بعد {count} دقايق} other{بعد {count} دقيقة}}'**
+  String apptInMinutes(int count);
+
+  /// Appointments world: hours left.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{بعد ساعة} =2{بعد ساعتين} few{بعد {count} ساعات} other{بعد {count} ساعة}}'**
+  String apptInHours(int count);
+
+  /// Appointments world: days left.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{بعد يوم} =2{بعد يومين} few{بعد {count} أيام} other{بعد {count} يوم}}'**
+  String apptInDays(int count);
+
+  /// Pharmacy world: the count above the title.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{دوا واحد} =2{دواءين} few{{count} أدوية} other{{count} دواء}}'**
+  String phEyebrowCount(int count);
+
+  /// Pharmacy world: the eyebrow on a family member tab.
+  ///
+  /// In ar, this message translates to:
+  /// **'صيدلية العيلة'**
+  String get phFamilyEyebrow;
+
+  /// Pharmacy world: state line on a member tab.
+  ///
+  /// In ar, this message translates to:
+  /// **'جدول {name}'**
+  String phMemberState(String name);
+
+  /// Pharmacy state line: nothing is scheduled.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش جرعات النهارده'**
+  String get phNoDosesToday;
+
+  /// Pharmacy state line: a dose is due.
+  ///
+  /// In ar, this message translates to:
+  /// **'جرعة {name} وقتها دلوقتي'**
+  String phDoseDueNow(String name);
+
+  /// Pharmacy state line: the next dose and when.
+  ///
+  /// In ar, this message translates to:
+  /// **'الجرعة الجاية {when}'**
+  String phNextDose(String when);
+
+  /// Pharmacy state line: a dose was missed.
+  ///
+  /// In ar, this message translates to:
+  /// **'فاتتك جرعة {name}'**
+  String phDoseMissedLine(String name);
+
+  /// Pharmacy state line: all taken.
+  ///
+  /// In ar, this message translates to:
+  /// **'خلصت جرعات النهارده'**
+  String get phDosesDone;
+
+  /// Part of day, after the hour.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصبح'**
+  String get phPeriodMorning;
+
+  /// Part of day, after the hour.
+  ///
+  /// In ar, this message translates to:
+  /// **'الضهر'**
+  String get phPeriodNoon;
+
+  /// Part of day, after the hour.
+  ///
+  /// In ar, this message translates to:
+  /// **'العصر'**
+  String get phPeriodAfternoon;
+
+  /// Part of day, after the hour.
+  ///
+  /// In ar, this message translates to:
+  /// **'بالليل'**
+  String get phPeriodNight;
+
+  /// A dose time said in words.
+  ///
+  /// In ar, this message translates to:
+  /// **'{hour}{minutes} {period}'**
+  String phClockWords(String hour, String minutes, String period);
+
+  /// A dose state.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتاخدت'**
+  String get phDoseTaken;
+
+  /// A dose state.
+  ///
+  /// In ar, this message translates to:
+  /// **'وقتها دلوقتي'**
+  String get phDoseDue;
+
+  /// A dose state.
+  ///
+  /// In ar, this message translates to:
+  /// **'فاتت'**
+  String get phDoseMissed;
+
+  /// A dose state.
+  ///
+  /// In ar, this message translates to:
+  /// **'جاية'**
+  String get phDoseUpcoming;
+
+  /// A dose state.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتأجلت شوية'**
+  String get phDoseSnoozed;
+
+  /// A member dose whose record is not readable.
+  ///
+  /// In ar, this message translates to:
+  /// **'الميعاد عدّى'**
+  String get phDosePassed;
+
+  /// Dose button.
+  ///
+  /// In ar, this message translates to:
+  /// **'بعدين'**
+  String get phSnooze;
+
+  /// Dose button.
+  ///
+  /// In ar, this message translates to:
+  /// **'خدته'**
+  String get phTake;
+
+  /// Head marks a member dose taken.
+  ///
+  /// In ar, this message translates to:
+  /// **'خدها'**
+  String get phTakeFor;
+
+  /// Whose medicine.
+  ///
+  /// In ar, this message translates to:
+  /// **'لـ{name}'**
+  String phForPerson(String name);
+
+  /// Badge.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكورس خلص'**
+  String get phCourseDone;
+
+  /// Badge.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{منتهي من يوم} =2{منتهي من يومين} few{منتهي من {count} أيام} other{منتهي من {count} يوم}}'**
+  String phExpiredAgo(int count);
+
+  /// Badge.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{تنتهي خلال يوم} =2{تنتهي خلال يومين} few{تنتهي خلال {count} أيام} other{تنتهي خلال {count} يوم}}'**
+  String phExpiresIn(int count);
+
+  /// Badge.
+  ///
+  /// In ar, this message translates to:
+  /// **'متبقي {count} {unit}'**
+  String phRemaining(int count, String unit);
+
+  /// Badge.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =0{يكفي أقل من يوم} =1{يكفي يوم} =2{يكفي يومين} few{يكفي {count} أيام} other{يكفي {count} يوم}}'**
+  String phSupplyDays(int count);
+
+  /// Delete button and dialog title.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف'**
+  String get phDelete;
+
+  /// Prompt.
+  ///
+  /// In ar, this message translates to:
+  /// **'وقت جرعة مش مفهوم — عدّله'**
+  String get phBadDoseTime;
+
+  /// Prompt.
+  ///
+  /// In ar, this message translates to:
+  /// **'مالوش مواعيد — مش هفكّرك بيه'**
+  String get phNoSchedule;
+
+  /// Button.
+  ///
+  /// In ar, this message translates to:
+  /// **'حدد مواعيده'**
+  String get phSetTimes;
+
+  /// Badge.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكمية محتاجة تأكيد'**
+  String get phConfirmQtyBadge;
+
+  /// Button.
+  ///
+  /// In ar, this message translates to:
+  /// **'تناول جرعة'**
+  String get phTakeDose;
+
+  /// Button.
+  ///
+  /// In ar, this message translates to:
+  /// **'تجديد الطلب'**
+  String get phRefill;
+
+  /// Button.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضيفه للتسوق'**
+  String get phToShopping;
+
+  /// Button and dialog title.
+  ///
+  /// In ar, this message translates to:
+  /// **'فاضل قد إيه فعلاً؟'**
+  String get phHowMuchLeft;
+
+  /// Snack bar.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضفت {name} لقايمة التسوق'**
+  String phAddedToShopping(String name);
+
+  /// Section heading.
+  ///
+  /// In ar, this message translates to:
+  /// **'جرعات النهارده'**
+  String get phDosesToday;
+
+  /// Note.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش جرعات فاضلة النهارده.'**
+  String get phNoDosesLeft;
+
+  /// Note.
+  ///
+  /// In ar, this message translates to:
+  /// **'ولا دوا ليه مواعيد لسه — حدد مواعيد أي دوا تحت عشان أفكّرك بيه.'**
+  String get phNoTimesYet;
+
+  /// Error state.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقدرتش أجيب الأدوية'**
+  String get phLoadFailed;
+
+  /// Empty state.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد أدوية مسجلة بعد'**
+  String get phEmptyTitle;
+
+  /// Error guidance.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسحب لتحت نجرب تاني.'**
+  String get phPullRetry;
+
+  /// Empty guidance.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضيفه بالزرار، أو صوّر العلبة، أو قول لزاد: \"باخد كونكور قرص الصبح وبالليل\" وهو يسجّله بمواعيده.'**
+  String get phEmptyGuide;
+
+  /// Section heading.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأدوية'**
+  String get phMedicines;
+
+  /// Sheet title.
+  ///
+  /// In ar, this message translates to:
+  /// **'مواعيد {name}'**
+  String phTimesTitle(String name);
+
+  /// Sheet hint.
+  ///
+  /// In ar, this message translates to:
+  /// **'هفكّرك في كل ميعاد، وتقدر تسجّل الجرعة بضغطة.'**
+  String get phTimesHint;
+
+  /// Button.
+  ///
+  /// In ar, this message translates to:
+  /// **'احفظ المواعيد'**
+  String get phSaveTimes;
+
+  /// Stat label.
+  ///
+  /// In ar, this message translates to:
+  /// **'الالتزام بالجرعات'**
+  String get phAdherence;
+
+  /// Stat value.
+  ///
+  /// In ar, this message translates to:
+  /// **'في انتظار أول جرعة'**
+  String get phAdherenceWaiting;
+
+  /// Count label.
+  ///
+  /// In ar, this message translates to:
+  /// **'إجمالي الأدوية'**
+  String get phCountTotal;
+
+  /// Count label.
+  ///
+  /// In ar, this message translates to:
+  /// **'قرب الانتهاء'**
+  String get phCountExpiring;
+
+  /// Count label.
+  ///
+  /// In ar, this message translates to:
+  /// **'مخزون منخفض'**
+  String get phCountLow;
+
+  /// Banner.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{دواء منتهي الصلاحية — تخلص منه بأمان} =2{دواءين منتهيين الصلاحية — تخلص منهم بأمان} few{{count} أدوية منتهية الصلاحية — تخلص منها بأمان} other{{count} دواء منتهي الصلاحية — تخلص منه بأمان}}'**
+  String phExpiredBanner(int count);
+
+  /// Heading.
+  ///
+  /// In ar, this message translates to:
+  /// **'قرب الانتهاء — تخلص منها بأمان'**
+  String get phExpiringHeading;
+
+  /// Cost label.
+  ///
+  /// In ar, this message translates to:
+  /// **'صرف الصحة الشهر ده'**
+  String get phCostSpending;
+
+  /// Cost label.
+  ///
+  /// In ar, this message translates to:
+  /// **'أسعار علب الأدوية'**
+  String get phCostBoxes;
+
+  /// Family tab.
+  ///
+  /// In ar, this message translates to:
+  /// **'أنا'**
+  String get phTabMe;
+
+  /// Family tab with no name.
+  ///
+  /// In ar, this message translates to:
+  /// **'عضو'**
+  String get phTabMember;
+
+  /// A member with no name.
+  ///
+  /// In ar, this message translates to:
+  /// **'العضو'**
+  String get phMemberFallback;
+
+  /// Head card.
+  ///
+  /// In ar, this message translates to:
+  /// **'إنت رب الأسرة — بتشوف جدول {name} وتعدّل فيه وتعلّم الجرعة لو ساعدته'**
+  String phHeadNote(String name);
+
+  /// Non-head card.
+  ///
+  /// In ar, this message translates to:
+  /// **'جدول {name} للمتابعة بس — رب الأسرة هو اللي يعدّل'**
+  String phReadOnlyNote(String name);
+
+  /// Head button and form title.
+  ///
+  /// In ar, this message translates to:
+  /// **'دوا لـ{name}'**
+  String phAddFor(String name);
+
+  /// Error state.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقدرتش أجيب أدوية {name}'**
+  String phMemberLoadFailed(String name);
+
+  /// Empty state.
+  ///
+  /// In ar, this message translates to:
+  /// **'لسه مفيش أدوية تقدر تشوفها'**
+  String get phMemberEmptyTitle;
+
+  /// Empty guidance.
+  ///
+  /// In ar, this message translates to:
+  /// **'أدوية كل فرد بتظهر هنا بعد ما يوافق — اطلب المتابعة من صفحته في «عيلتي»'**
+  String get phMemberEmptyGuide;
+
+  /// Section heading.
+  ///
+  /// In ar, this message translates to:
+  /// **'جرعات {name} النهارده'**
+  String phMemberDoses(String name);
+
+  /// Button.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل'**
+  String get phEdit;
+
+  /// Form title.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعديل {name}'**
+  String phEditTitle(String name);
+
+  /// Dock button.
+  ///
+  /// In ar, this message translates to:
+  /// **'صوّر الدوا'**
+  String get phPhoto;
+
+  /// Dock button tooltip.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة'**
+  String get phAdd;
+
+  /// Snack bar.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذر قراءة العلبة بدقة، يرجى المحاولة بزاوية أوضح'**
+  String get phScanUnclear;
+
+  /// Snack bar.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم استخراج بيانات الدواء بنجاح'**
+  String get phScanOk;
+
+  /// Progress.
+  ///
+  /// In ar, this message translates to:
+  /// **'جاري قراءة علبة الدواء بالذكاء الاصطناعي...'**
+  String get phScanReading;
+
+  /// Button.
+  ///
+  /// In ar, this message translates to:
+  /// **'مسح العبوة بالكاميرا'**
+  String get phScanBtn;
+
+  /// Form title.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة دواء'**
+  String get phAddTitle;
+
+  /// Form title after a scan.
+  ///
+  /// In ar, this message translates to:
+  /// **'راجع الدواء'**
+  String get phReviewTitle;
+
+  /// Form note.
+  ///
+  /// In ar, this message translates to:
+  /// **'قريت ده من العلبة — عدّل أي حاجة غلط قبل ما تحفظ.'**
+  String get phReadFromBox;
+
+  /// Field.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم الدواء'**
+  String get phFieldName;
+
+  /// Field.
+  ///
+  /// In ar, this message translates to:
+  /// **'لمين؟ (سيبها فاضية لو ليك)'**
+  String get phFieldForWhom;
+
+  /// Field hint.
+  ///
+  /// In ar, this message translates to:
+  /// **'ماما، بابا، يوسف…'**
+  String get phHintPeople;
+
+  /// Field.
+  ///
+  /// In ar, this message translates to:
+  /// **'الجرعة (مثال: بعد الأكل)'**
+  String get phFieldDosageNote;
+
+  /// Label.
+  ///
+  /// In ar, this message translates to:
+  /// **'مواعيد الجرعة (اختياري)'**
+  String get phFieldTimesOptional;
+
+  /// Hint.
+  ///
+  /// In ar, this message translates to:
+  /// **'لسه مفيش مواعيد مضافة — مقترح: {times}'**
+  String phTimesSuggested(String times);
+
+  /// Field.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ'**
+  String get phFieldAmount;
+
+  /// Field.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ ({currency})'**
+  String phFieldAmountCur(String currency);
+
+  /// Toggle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تفاصيل إضافية (اختياري)'**
+  String get phMoreDetails;
+
+  /// Button.
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ'**
+  String get phSave;
+
+  /// Button.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلغاء'**
+  String get phCancel;
+
+  /// Button.
+  ///
+  /// In ar, this message translates to:
+  /// **'تأكيد'**
+  String get phConfirm;
+
+  /// Time picker help.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختر ميعاد الجرعة'**
+  String get phPickTime;
+
+  /// Chip.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة ميعاد'**
+  String get phAddTime;
+
+  /// Button.
+  ///
+  /// In ar, this message translates to:
+  /// **'تاريخ الانتهاء — اضغط لاختيار التاريخ'**
+  String get phPickExpiry;
+
+  /// Field.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكمية المتبقية'**
+  String get phFieldQty;
+
+  /// Label.
+  ///
+  /// In ar, this message translates to:
+  /// **'الوحدة'**
+  String get phFieldUnit;
+
+  /// Field.
+  ///
+  /// In ar, this message translates to:
+  /// **'جرعات اليوم'**
+  String get phFieldDailyCount;
+
+  /// Field.
+  ///
+  /// In ar, this message translates to:
+  /// **'الجرعة الواحدة كام {unit}؟'**
+  String phFieldPerDose(String unit);
+
+  /// Dose time preset.
+  ///
+  /// In ar, this message translates to:
+  /// **'صباحاً'**
+  String get phPresetMorning;
+
+  /// Dose time preset.
+  ///
+  /// In ar, this message translates to:
+  /// **'ظهراً'**
+  String get phPresetNoon;
+
+  /// Dose time preset.
+  ///
+  /// In ar, this message translates to:
+  /// **'مساءً'**
+  String get phPresetEvening;
+
+  /// Dose time preset.
+  ///
+  /// In ar, this message translates to:
+  /// **'قبل النوم'**
+  String get phPresetBed;
+
+  /// Field.
+  ///
+  /// In ar, this message translates to:
+  /// **'المادة الفعالة'**
+  String get phFieldIngredient;
+
+  /// Field.
+  ///
+  /// In ar, this message translates to:
+  /// **'الجرعة (مثال: قرص كل 8 ساعات)'**
+  String get phFieldDosageFreq;
+
+  /// Checkbox.
+  ///
+  /// In ar, this message translates to:
+  /// **'دواء مزمن / روشتة متجددة شهرياً'**
+  String get phChronic;
+
+  /// Field.
+  ///
+  /// In ar, this message translates to:
+  /// **'لمين في العائلة'**
+  String get phForFamilyMember;
+
+  /// Dropdown item.
+  ///
+  /// In ar, this message translates to:
+  /// **'بدون'**
+  String get phNone;
+
+  /// Dialog.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف «{name}» من الصيدلية؟'**
+  String phDeleteBody(String name);
+
+  /// Dialog.
+  ///
+  /// In ar, this message translates to:
+  /// **'{name} — الكمية الحالية المسجلة: {count} {unit}'**
+  String phQtyCurrent(String name, int count, String unit);
+
+  /// Dialog helper.
+  ///
+  /// In ar, this message translates to:
+  /// **'من غير الرقم ده مقدرش أحسب المخزون هيكفي كام يوم'**
+  String get phPerDoseHelp;
+
+  /// Dialog.
+  ///
+  /// In ar, this message translates to:
+  /// **'تجديد طلب {name}'**
+  String phRefillTitle(String name);
+
+  /// Field.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكمية المضافة ({unit})'**
+  String phAddedQty(String unit);
+
+  /// Field.
+  ///
+  /// In ar, this message translates to:
+  /// **'السعر'**
+  String get phPrice;
+
+  /// Button.
+  ///
+  /// In ar, this message translates to:
+  /// **'تاريخ الانتهاء'**
+  String get phExpiryDate;
+
+  /// Hint.
+  ///
+  /// In ar, this message translates to:
+  /// **'فعّل \"المنبهات الدقيقة\" من الإعدادات عشان تنبيهات مواعيد الدواء تشتغل بدقة'**
+  String get phAlarmHint;
+
+  /// Refusal.
+  ///
+  /// In ar, this message translates to:
+  /// **'بس رب الأسرة يقدر يعدّل أدوية حد من العيلة.'**
+  String get phErrNotHead;
+
+  /// Offline.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش نت دلوقتي — ما اتحفظش حاجة. جرّب تاني لما يرجع.'**
+  String get phErrOffline;
+
+  /// Server reason.
+  ///
+  /// In ar, this message translates to:
+  /// **'الدوا ده مش موجود عند العضو دلوقتي — حدّث الصفحة.'**
+  String get phErrNotFound;
+
+  /// Server reason.
+  ///
+  /// In ar, this message translates to:
+  /// **'العضو عنده دوا بنفس الاسم ده.'**
+  String get phErrDuplicate;
+
+  /// Server reason.
+  ///
+  /// In ar, this message translates to:
+  /// **'السيرفر رفض الحفظ. جرّب تاني.'**
+  String get phErrRejected;
+
+  /// No description provided for @tasEyebrow.
+  ///
+  /// In ar, this message translates to:
+  /// **'ورد كل ٣٣ · شجرة كل ٩٩'**
+  String get tasEyebrow;
+
+  /// No description provided for @tasStateLine.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} تسبيحة · {flowers} وردة'**
+  String tasStateLine(int count, int flowers);
+
+  /// No description provided for @tasStateEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابدأ أول تسبيحة والورد هيفتّح'**
+  String get tasStateEmpty;
+
+  /// No description provided for @tasTabMine.
+  ///
+  /// In ar, this message translates to:
+  /// **'بستاني'**
+  String get tasTabMine;
+
+  /// No description provided for @tasTabFamily.
+  ///
+  /// In ar, this message translates to:
+  /// **'أشجار العيلة'**
+  String get tasTabFamily;
+
+  /// No description provided for @tasTabChallenges.
+  ///
+  /// In ar, this message translates to:
+  /// **'التحديات'**
+  String get tasTabChallenges;
+
+  /// No description provided for @tasStage1.
+  ///
+  /// In ar, this message translates to:
+  /// **'بذرة'**
+  String get tasStage1;
+
+  /// No description provided for @tasStage2.
+  ///
+  /// In ar, this message translates to:
+  /// **'بذرة نبتت'**
+  String get tasStage2;
+
+  /// No description provided for @tasStage3.
+  ///
+  /// In ar, this message translates to:
+  /// **'شتلة'**
+  String get tasStage3;
+
+  /// No description provided for @tasStage4.
+  ///
+  /// In ar, this message translates to:
+  /// **'شجرة'**
+  String get tasStage4;
+
+  /// No description provided for @tasStage5.
+  ///
+  /// In ar, this message translates to:
+  /// **'شجرة مثمرة'**
+  String get tasStage5;
+
+  /// No description provided for @tasStatLevel.
+  ///
+  /// In ar, this message translates to:
+  /// **'المرحلة'**
+  String get tasStatLevel;
+
+  /// No description provided for @tasStatLevelValue.
+  ///
+  /// In ar, this message translates to:
+  /// **'{level}/5'**
+  String tasStatLevelValue(int level);
+
+  /// No description provided for @tasStatTotal.
+  ///
+  /// In ar, this message translates to:
+  /// **'إجمالي التسبيح'**
+  String get tasStatTotal;
+
+  /// No description provided for @tasStatStreak.
+  ///
+  /// In ar, this message translates to:
+  /// **'السلسلة'**
+  String get tasStatStreak;
+
+  /// No description provided for @tasStatFlowers.
+  ///
+  /// In ar, this message translates to:
+  /// **'الورد'**
+  String get tasStatFlowers;
+
+  /// No description provided for @tasStatSession.
+  ///
+  /// In ar, this message translates to:
+  /// **'في الجلسة دي'**
+  String get tasStatSession;
+
+  /// No description provided for @tasNext.
+  ///
+  /// In ar, this message translates to:
+  /// **'{score} / {next} للمرحلة التالية'**
+  String tasNext(int score, int next);
+
+  /// No description provided for @tasComplete.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتملت!'**
+  String get tasComplete;
+
+  /// No description provided for @tasStreakDays.
+  ///
+  /// In ar, this message translates to:
+  /// **'{days} يوم ورا بعض'**
+  String tasStreakDays(int days);
+
+  /// No description provided for @tasTapLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'سبّح'**
+  String get tasTapLabel;
+
+  /// No description provided for @tasReset.
+  ///
+  /// In ar, this message translates to:
+  /// **'تصفير'**
+  String get tasReset;
+
+  /// No description provided for @tasCycle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الدورة'**
+  String get tasCycle;
+
+  /// No description provided for @tasLevelUp.
+  ///
+  /// In ar, this message translates to:
+  /// **'مبروك! شجرتك كبرت!'**
+  String get tasLevelUp;
+
+  /// No description provided for @tasBloom.
+  ///
+  /// In ar, this message translates to:
+  /// **'وردة جديدة فتّحت!'**
+  String get tasBloom;
+
+  /// No description provided for @tasSeedsGranted.
+  ///
+  /// In ar, this message translates to:
+  /// **'+{seeds} بذور'**
+  String tasSeedsGranted(int seeds);
+
+  /// No description provided for @tasMyTrees.
+  ///
+  /// In ar, this message translates to:
+  /// **'أشجاري ({count})'**
+  String tasMyTrees(int count);
+
+  /// No description provided for @tasNewTree.
+  ///
+  /// In ar, this message translates to:
+  /// **'شجرة جديدة'**
+  String get tasNewTree;
+
+  /// No description provided for @tasNoTreeTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'لسه مفيش شجرة'**
+  String get tasNoTreeTitle;
+
+  /// No description provided for @tasNoTreeMsg.
+  ///
+  /// In ar, this message translates to:
+  /// **'ازرع أول شجرة وابدأ التسبيح.'**
+  String get tasNoTreeMsg;
+
+  /// No description provided for @tasTreeNameLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم الشجرة'**
+  String get tasTreeNameLabel;
+
+  /// No description provided for @tasRenameTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'تسمية الشجرة'**
+  String get tasRenameTitle;
+
+  /// No description provided for @tasNewTreeHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'أضف شجرة جديدة لبستانك!'**
+  String get tasNewTreeHint;
+
+  /// No description provided for @tasTreeNameExample.
+  ///
+  /// In ar, this message translates to:
+  /// **'مثال: شجرة التفاح'**
+  String get tasTreeNameExample;
+
+  /// No description provided for @tasCancel.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلغاء'**
+  String get tasCancel;
+
+  /// No description provided for @tasSave.
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ'**
+  String get tasSave;
+
+  /// No description provided for @tasAdd.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة'**
+  String get tasAdd;
+
+  /// No description provided for @tasLeaderboard.
+  ///
+  /// In ar, this message translates to:
+  /// **'لوحة المتصدرين'**
+  String get tasLeaderboard;
+
+  /// No description provided for @tasShare.
+  ///
+  /// In ar, this message translates to:
+  /// **'شارك الترتيب'**
+  String get tasShare;
+
+  /// No description provided for @tasNoTreesTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد أشجار بعد'**
+  String get tasNoTreesTitle;
+
+  /// No description provided for @tasNoTreesMsg.
+  ///
+  /// In ar, this message translates to:
+  /// **'أول ما حد من العيلة يسبّح، شجرته هتظهر هنا.'**
+  String get tasNoTreesMsg;
+
+  /// No description provided for @tasMemberTrees.
+  ///
+  /// In ar, this message translates to:
+  /// **'{trees} أشجار | {mature} مثمرة'**
+  String tasMemberTrees(int trees, int mature);
+
+  /// No description provided for @tasUnit.
+  ///
+  /// In ar, this message translates to:
+  /// **'تسبيحة'**
+  String get tasUnit;
+
+  /// No description provided for @tasChallengesTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'التحديات العائلية'**
+  String get tasChallengesTitle;
+
+  /// No description provided for @tasChallengesTagline.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحدَ أفراد عائلتك في التسبيحة!'**
+  String get tasChallengesTagline;
+
+  /// No description provided for @tasNewChallenge.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحدي جديد'**
+  String get tasNewChallenge;
+
+  /// No description provided for @tasNoChallengesTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد تحديات حالياً'**
+  String get tasNoChallengesTitle;
+
+  /// No description provided for @tasNoChallengesAdmin.
+  ///
+  /// In ar, this message translates to:
+  /// **'اضغط + وابدأ أول تحدي للعيلة.'**
+  String get tasNoChallengesAdmin;
+
+  /// No description provided for @tasNoChallengesMember.
+  ///
+  /// In ar, this message translates to:
+  /// **'اطلب من المدير إنشاء تحدي جديد!'**
+  String get tasNoChallengesMember;
+
+  /// No description provided for @tasOngoing.
+  ///
+  /// In ar, this message translates to:
+  /// **'مستمر'**
+  String get tasOngoing;
+
+  /// No description provided for @tasChallengeTitleLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'عنوان التحدي'**
+  String get tasChallengeTitleLabel;
+
+  /// No description provided for @tasChallengeDescLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'الوصف (اختياري)'**
+  String get tasChallengeDescLabel;
+
+  /// No description provided for @tasChallengeTargetLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'الهدف (عدد التسبيحات)'**
+  String get tasChallengeTargetLabel;
+
+  /// No description provided for @tasNightSky.
+  ///
+  /// In ar, this message translates to:
+  /// **'ليل البستان'**
+  String get tasNightSky;
+
+  /// No description provided for @tasDaySky.
+  ///
+  /// In ar, this message translates to:
+  /// **'نهار البستان'**
+  String get tasDaySky;
+
+  /// Transactions world: the count above the title.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =0{لسه مفيش معاملات} =1{معاملة واحدة} =2{معاملتين} few{{count} معاملات} other{{count} معاملة}}'**
+  String txWorldEyebrow(int count);
+
+  /// Transactions world: the state line — how many rows the app wrote by itself today (bank message, receipt, voice, statement).
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =0{لسه مفيش حاجة اتسجلت لوحدها النهارده} =1{واحدة اتسجلت لوحدها النهارده} =2{اتنين اتسجلوا لوحدهم النهارده} few{{count} اتسجلوا لوحدهم النهارده} other{{count} اتسجلوا لوحدهم النهارده}}'**
+  String txWorldState(int count);
+
+  /// Transaction source: a bank message, bank unknown.
+  ///
+  /// In ar, this message translates to:
+  /// **'رسالة من البنك'**
+  String get txSourceBank;
+
+  /// Transaction source: a message from a named bank.
+  ///
+  /// In ar, this message translates to:
+  /// **'{bank} · رسالة'**
+  String txSourceBankNamed(String bank);
+
+  /// Transaction source: a receipt photo.
+  ///
+  /// In ar, this message translates to:
+  /// **'فاتورة اتصورت'**
+  String get txSourceReceipt;
+
+  /// Transaction source: voice.
+  ///
+  /// In ar, this message translates to:
+  /// **'قولتها بصوتك'**
+  String get txSourceVoice;
+
+  /// Transaction source: an imported statement.
+  ///
+  /// In ar, this message translates to:
+  /// **'من كشف الحساب'**
+  String get txSourceStatement;
+
+  /// Transaction source: a pharmacy restock the app logged.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعبئة الصيدلية'**
+  String get txSourcePharmacy;
+
+  /// Transaction source: entered by hand.
+  ///
+  /// In ar, this message translates to:
+  /// **'كتبتها بإيدك'**
+  String get txSourceManual;
+
+  /// Budget world: the eyebrow — the day the cycle ends (payday).
+  ///
+  /// In ar, this message translates to:
+  /// **'لحد يوم {day}'**
+  String budgetWorldUntil(int day);
+
+  /// Budget world: the eyebrow when the cycle end date is unknown.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =0{آخر يوم} =1{فاضل يوم واحد} =2{فاضل يومين} few{فاضل {count} أيام} other{فاضل {count} يوم}}'**
+  String budgetWorldDaysLeft(int count);
+
+  /// Budget world: the state line — the real available amount and what it allows per day until payday.
+  ///
+  /// In ar, this message translates to:
+  /// **'متاح {amount} · {perDay} في اليوم'**
+  String budgetWorldState(String amount, String perDay);
+
+  /// Budget world: the state line when nothing is left per day.
+  ///
+  /// In ar, this message translates to:
+  /// **'متاح {amount}'**
+  String budgetWorldAvailable(String amount);
+
+  /// Statement world: the state line when this month is running under last month at the same day.
+  ///
+  /// In ar, this message translates to:
+  /// **'صرفت {pct}٪ أقل من نفس الفترة الشهر اللي فات'**
+  String statementWorldStateLess(int pct);
+
+  /// Statement world: the state line when this month is running over last month at the same day.
+  ///
+  /// In ar, this message translates to:
+  /// **'صرفت {pct}٪ أكتر من نفس الفترة الشهر اللي فات'**
+  String statementWorldStateMore(int pct);
+
+  /// Statement world: the state line when the two months are level.
+  ///
+  /// In ar, this message translates to:
+  /// **'صرفك زي الشهر اللي فات'**
+  String get statementWorldStateSame;
+
+  /// Statement world: the state line when there is no earlier month to compare with.
+  ///
+  /// In ar, this message translates to:
+  /// **'استورد كشفك وشوف فلوسك رايحة فين'**
+  String get statementWorldStateNone;
+
+  /// Statement world: the title of the money in/out card.
+  ///
+  /// In ar, this message translates to:
+  /// **'فلوسك داخلة منين وخارجة فين'**
+  String get statementWorldBreakdownTitle;
+
+  /// Statement world: the income bar.
+  ///
+  /// In ar, this message translates to:
+  /// **'الدخل'**
+  String get statementWorldIn;
+
+  /// Statement world: empty breakdown title.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش حركات الشهر ده لسه'**
+  String get statementWorldEmptyTitle;
+
+  /// Statement world: empty breakdown guidance.
+  ///
+  /// In ar, this message translates to:
+  /// **'استورد كشفك أو سجّل معاملة، وهتلاقي هنا الدخل والمصروف حسب الفئة.'**
+  String get statementWorldEmptyBody;
+
+  /// Statement import: pick step guidance.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختار كشف حسابك: PDF من تطبيق البنك، أو صورة، أو ملف CSV. زاد بيقرا الحركات ويراجعها على رصيد الكشف، ومفيش حاجة بتتسجل غير بعد ما تراجعها.'**
+  String get statementPickBody;
+
+  /// Statement import: shown while the server reads.
+  ///
+  /// In ar, this message translates to:
+  /// **'بقرا الكشف… الكشف الطويل بياخد دقيقة'**
+  String get statementReading;
+
+  /// Statement import: pick button.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختيار الكشف'**
+  String get statementPickButton;
+
+  /// Statement import: column mapping intro.
+  ///
+  /// In ar, this message translates to:
+  /// **'حدد أي عمود من الملف يمثل كل بيانة — الملف مختلف من بنك لبنك'**
+  String get statementMapIntro;
+
+  /// Statement import: date column picker.
+  ///
+  /// In ar, this message translates to:
+  /// **'عمود التاريخ'**
+  String get statementMapDate;
+
+  /// Statement import: description column picker.
+  ///
+  /// In ar, this message translates to:
+  /// **'عمود الوصف/العنوان'**
+  String get statementMapTitle;
+
+  /// Statement import: amount column picker.
+  ///
+  /// In ar, this message translates to:
+  /// **'عمود المبلغ'**
+  String get statementMapAmount;
+
+  /// Statement import: category column picker.
+  ///
+  /// In ar, this message translates to:
+  /// **'عمود التصنيف (اختياري)'**
+  String get statementMapCategory;
+
+  /// Statement import: sign switch.
+  ///
+  /// In ar, this message translates to:
+  /// **'اعكس إشارة المبلغ (لو السالب هنا معناه دخل مش مصروف)'**
+  String get statementMapInvert;
+
+  /// Statement import: go to review.
+  ///
+  /// In ar, this message translates to:
+  /// **'متابعة للمراجعة'**
+  String get statementMapContinue;
+
+  /// Statement import: optional column left empty.
+  ///
+  /// In ar, this message translates to:
+  /// **'بدون'**
+  String get statementMapNone;
+
+  /// Statement import: a header-less column.
+  ///
+  /// In ar, this message translates to:
+  /// **'عمود {n}'**
+  String statementMapColumnN(int n);
+
+  /// Statement import: review count.
+  ///
+  /// In ar, this message translates to:
+  /// **'{rows} صف — {checked} محدد للاستيراد'**
+  String statementPreviewCount(int rows, int checked);
+
+  /// Statement import: empty review title.
+  ///
+  /// In ar, this message translates to:
+  /// **'ما لقيتش أي معاملة في الملف'**
+  String get statementPreviewEmptyTitle;
+
+  /// Statement import: empty review guidance.
+  ///
+  /// In ar, this message translates to:
+  /// **'الملف اتقرا لكن مفيهوش صفوف أقدر أستوردها — اتأكد إنه كشف حساب وإن صيغته CSV أو PDF مقروء.'**
+  String get statementPreviewEmptyBody;
+
+  /// Statement import: row error.
+  ///
+  /// In ar, this message translates to:
+  /// **'تعذّرت قراءة التاريخ أو المبلغ في هذا الصف'**
+  String get statementRowUnreadable;
+
+  /// Statement import: row balance mismatch.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرصيد في الكشف مش متطابق مع الصف ده — راجع المبلغ'**
+  String get statementRowBalance;
+
+  /// Statement import: balance check ok.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأرقام متطابقة مع رصيد الكشف'**
+  String get statementCheckBalanced;
+
+  /// Statement import: balance check mismatch.
+  ///
+  /// In ar, this message translates to:
+  /// **'في أرقام مش متطابقة مع رصيد الكشف — الصفوف دي مش متعلّمة، راجعها'**
+  String get statementCheckMismatch;
+
+  /// Statement import: no balance to check.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكشف مفيهوش رصيد أراجع عليه — راجع كل صف قبل الاستيراد'**
+  String get statementCheckUnknown;
+
+  /// Statement import: banner with unread rows.
+  ///
+  /// In ar, this message translates to:
+  /// **'{text}. وفي {n} صف ماقدرتش أقراه.'**
+  String statementDropped(String text, int n);
+
+  /// Places world: outings count above the title.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =0{لسه مفيش خروجات} =1{خروجة واحدة} =2{خروجتين} few{{count} خروجات} other{{count} خروجة}}'**
+  String placesWorldEyebrow(int count);
+
+  /// Places world state line: saved places and whether street alerts are on.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =0{مفيش أماكن} =1{مكان واحد} =2{مكانين} few{{count} أماكن} other{{count} مكان}} · {alerts, select, on{تنبيهات الشارع شغالة} other{تنبيهات الشارع مقفولة}}'**
+  String placesWorldState(int count, String alerts);
+
+  /// Documents world: the count above the title.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{مستند واحد} =2{مستندين} few{{count} مستندات} other{{count} مستند}}'**
+  String docsEyebrowCount(int count);
+
+  /// Documents world state line with no documents.
+  ///
+  /// In ar, this message translates to:
+  /// **'الدرج فاضي — ضيف أول مستند'**
+  String get docsStateEmpty;
+
+  /// Documents world state line: the document that expires first.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأقرب: {name} — {status}'**
+  String docsStateNearest(String name, String status);
+
+  /// Documents world: what is stored.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد بيحفظ نوع المستند وتاريخ انتهائه بس — من غير رقم ولا صورة — ويفكّرك قبلها.'**
+  String get docsPrivacy;
+
+  /// Documents world: how many are near expiry.
+  ///
+  /// In ar, this message translates to:
+  /// **'مستند واحد محتاج تجديد قريب'**
+  String get docsDueOne;
+
+  /// Documents world: how many are near expiry.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} مستندات محتاجة تجديد قريب'**
+  String docsDueMany(int count);
+
+  /// Documents world empty state title.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش مستندات متسجلة'**
+  String get docsEmptyTitle;
+
+  /// Documents world empty state guidance.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضيف الجواز أو البطاقة أو الرخصة بتاريخ انتهائها، وزاد يفكّرك قبلها بوقت كفاية للتجديد. أو قول لزاد في الشات: «جوازي بينتهي ١٥ مارس ٢٠٢٧».'**
+  String get docsEmptyMessage;
+
+  /// Documents world: the docked add button.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة مستند'**
+  String get docsAdd;
+
+  /// Tooltip of a delete button.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف'**
+  String get docsDelete;
+
+  /// A document's expiry date.
+  ///
+  /// In ar, this message translates to:
+  /// **'بينتهي {date}'**
+  String docsExpires(String date);
+
+  /// Snackbar when an edit fails.
+  ///
+  /// In ar, this message translates to:
+  /// **'ماتحفظش — يمكن فيه مستند بنفس النوع والاسم، أو النت مقطوع.'**
+  String get docsSaveFailedEdit;
+
+  /// Snackbar when an add fails.
+  ///
+  /// In ar, this message translates to:
+  /// **'ماتحفظش — اتأكد من النت.'**
+  String get docsSaveFailedAdd;
+
+  /// Snackbar when a delete fails.
+  ///
+  /// In ar, this message translates to:
+  /// **'ماتشالش — اتأكد من النت.'**
+  String get docsDeleteFailed;
+
+  /// Maintenance world: the count above the title.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{جهاز واحد} =2{جهازين} few{{count} أجهزة} other{{count} جهاز}}'**
+  String maintEyebrowCount(int count);
+
+  /// Maintenance world state line with no items.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش جهاز متسجل لسه'**
+  String get maintStateNone;
+
+  /// Maintenance world state line when no item has an interval.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجّل دورة الصيانة وزاد يفكّرك'**
+  String get maintStateNoSchedule;
+
+  /// Maintenance world state line: the next due task.
+  ///
+  /// In ar, this message translates to:
+  /// **'الجاي: {name} — {status}'**
+  String maintStateNext(String name, String status);
+
+  /// Maintenance world state line: an overdue task.
+  ///
+  /// In ar, this message translates to:
+  /// **'{name} متأخر {days} يوم'**
+  String maintStateOverdue(String name, int days);
+
+  /// A task's status.
+  ///
+  /// In ar, this message translates to:
+  /// **'متأخر {days} يوم'**
+  String maintServiceOverdue(int days);
+
+  /// A task's status.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصيانة خلال {days} يوم'**
+  String maintServiceIn(int days);
+
+  /// A task's status when no interval is known.
+  ///
+  /// In ar, this message translates to:
+  /// **'صيانة قريبة'**
+  String get maintServiceSoon;
+
+  /// A task's warranty line.
+  ///
+  /// In ar, this message translates to:
+  /// **'الضمان منتهي'**
+  String get maintWarrantyEnded;
+
+  /// A task's warranty line.
+  ///
+  /// In ar, this message translates to:
+  /// **'الضمان ينتهي خلال {days} يوم'**
+  String maintWarrantyIn(int days);
+
+  /// Maintenance count label.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأجهزة'**
+  String get maintStatDevices;
+
+  /// Maintenance count label.
+  ///
+  /// In ar, this message translates to:
+  /// **'صيانة قريبة'**
+  String get maintStatSoon;
+
+  /// Maintenance count label.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضمان قارب'**
+  String get maintStatWarranty;
+
+  /// Maintenance overdue banner.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} جهاز متأخر عن موعد الصيانة'**
+  String maintOverdueBanner(int count);
+
+  /// Maintenance empty state title.
+  ///
+  /// In ar, this message translates to:
+  /// **'لا توجد أجهزة مسجلة بعد'**
+  String get maintEmptyTitle;
+
+  /// Maintenance empty state guidance.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجّل التكييف أو السخان أو العربية، وزاد يفكّرك بميعاد صيانتها وضمانها.'**
+  String get maintEmptyMessage;
+
+  /// Maintenance: the docked add button.
+  ///
+  /// In ar, this message translates to:
+  /// **'إضافة جهاز'**
+  String get maintAdd;
+
+  /// Maintenance: mark a task done.
+  ///
+  /// In ar, this message translates to:
+  /// **'تمت الصيانة اليوم'**
+  String get maintServicedToday;
+
+  /// Tooltip of a delete button.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف'**
+  String get maintDelete;
+
+  /// Maintenance: opens the trusted technicians sheet.
+  ///
+  /// In ar, this message translates to:
+  /// **'فنيين بثق فيهم'**
+  String get maintTechnicians;
+
+  /// Maintenance: hint under the technicians row.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتصل أو ابعت واتساب لفني اتجرّبته'**
+  String get maintTechniciansHint;
+
+  /// Snackbar when an add fails.
+  ///
+  /// In ar, this message translates to:
+  /// **'ماتسجلش الجهاز — اتأكد من النت.'**
+  String get maintAddFailed;
+
+  /// Notifications / achievements world.
+  ///
+  /// In ar, this message translates to:
+  /// **'علّم الكل مقروء'**
+  String get notifMarkAllRead;
+
+  /// Notifications / achievements world.
+  ///
+  /// In ar, this message translates to:
+  /// **'كله مقروء'**
+  String get notifAllRead;
+
+  /// Notifications / achievements world.
+  ///
+  /// In ar, this message translates to:
+  /// **'{done} من {total} إنجاز'**
+  String achWorldState(int done, int total);
+
+  /// Notifications / achievements world.
+  ///
+  /// In ar, this message translates to:
+  /// **'المستوى {level}'**
+  String achLevel(int level);
+
+  /// Notifications / achievements world.
+  ///
+  /// In ar, this message translates to:
+  /// **'{points} من {next} نقطة'**
+  String achLevelPoints(int points, int next);
+
+  /// Notifications / achievements world.
+  ///
+  /// In ar, this message translates to:
+  /// **'أنت على الطريق الصحيح!'**
+  String get achOnTrack;
+
+  /// Notifications / achievements world.
+  ///
+  /// In ar, this message translates to:
+  /// **'المساهمات'**
+  String get achContributions;
+
+  /// Notifications / achievements world.
+  ///
+  /// In ar, this message translates to:
+  /// **'التسلسل'**
+  String get achStreak;
+
+  /// Notifications / achievements world.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإنجازات'**
+  String get achShelf;
+
+  /// Notifications / achievements world.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإنجاز التالي'**
+  String get achNext;
+
+  /// Notifications / achievements world.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقفول'**
+  String get achLocked;
+
+  /// Notifications / achievements world.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش قادرين نجيب الإنجازات دلوقتي'**
+  String get achLoadFailed;
+
+  /// Notifications / achievements world.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتأكد من النت وجرّب تاني'**
+  String get achLoadFailedHint;
+
+  /// Notifications / achievements world.
+  ///
+  /// In ar, this message translates to:
+  /// **'جرّب تاني'**
+  String get achRetry;
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'لوحة الأسعار'**
+  String get pricesEyebrow;
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'أسعار السوق من بلاغات الناس'**
+  String get pricesWorldNeutral;
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأسعار ثابتة النهارده'**
+  String get pricesWorldFlat;
+
+  /// No description provided for @pricesWorldUp.
+  ///
+  /// In ar, this message translates to:
+  /// **'{name} طالع'**
+  String pricesWorldUp(String name);
+
+  /// No description provided for @pricesWorldDown.
+  ///
+  /// In ar, this message translates to:
+  /// **'{name} نازل'**
+  String pricesWorldDown(String name);
+
+  /// No description provided for @pricesWorldUpDown.
+  ///
+  /// In ar, this message translates to:
+  /// **'{up} طالع، {down} نازل'**
+  String pricesWorldUpDown(String up, String down);
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'مساهماتك'**
+  String get pricesMine;
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجّل سعر جديد'**
+  String get pricesReportNew;
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'أرخص سعر حواليك'**
+  String get pricesCheapestTitle;
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'من بلاغات مجتمع زاد آخر ١٤ يوم — مش أسعار رسمية'**
+  String get pricesCheapestNote;
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'المدينة أو المنطقة (اختياري)'**
+  String get pricesCityLabel;
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'دوّر'**
+  String get pricesSearch;
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقدرناش نجيب الأسعار دلوقتي'**
+  String get pricesFetchFailed;
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتأكد من النت وجرّب تاني'**
+  String get pricesFetchFailedHint;
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'جرّب تاني'**
+  String get pricesRetry;
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'لسه مفيش بلاغات هنا'**
+  String get pricesNoReportsTitle;
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'كن أول واحد يبلّغ عن سعر — جيرانك هيشكروك'**
+  String get pricesNoReportsHint;
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجّل أول سعر'**
+  String get pricesFirstReport;
+
+  /// No description provided for @pricesRowMeta.
+  ///
+  /// In ar, this message translates to:
+  /// **'{where} · {count} بلاغ'**
+  String pricesRowMeta(String where, int count);
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'ترندات سوقك'**
+  String get pricesTrendsTitle;
+
+  /// No description provided for @pricesTrendsNote.
+  ///
+  /// In ar, this message translates to:
+  /// **'اللي بيوت كتير في بلدك اشترته أو حطّته في قايمة التسوق آخر {days} يوم — من غير أسماء ولا محلات'**
+  String pricesTrendsNote(int days);
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'اختار بلدك الأول'**
+  String get pricesTrendsNoMarket;
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'الترندات بتتحسب لكل بلد لوحده.'**
+  String get pricesTrendsNoMarketHint;
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'لسه مفيش ترند في سوقك'**
+  String get pricesTrendsEmpty;
+
+  /// No description provided for @pricesTrendsEmptyHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصنف بيظهر هنا لما {homes} بيوت مختلفة على الأقل يشتروه أو يحطّوه في قايمتهم — عشان محدش يتعرف من مشترياته. كل فاتورة بتصوّرها بتقرّب اليوم ده.'**
+  String pricesTrendsEmptyHint(int homes);
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيزيد'**
+  String get pricesTrendUp;
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيقل'**
+  String get pricesTrendDown;
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'ثابت'**
+  String get pricesTrendFlat;
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'جديد'**
+  String get pricesTrendFresh;
+
+  /// No description provided for @pricesHomes.
+  ///
+  /// In ar, this message translates to:
+  /// **'{n} بيوت'**
+  String pricesHomes(int n);
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'أكثر المشاركين'**
+  String get pricesTopTitle;
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'لسه مفيش مساهمات'**
+  String get pricesTopNone;
+
+  /// The prices world.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجّل أول سعر شفته في السوق — مساهمتك بتظهر هنا وبتساعد جيرانك يلاقوا أرخص مكان.'**
+  String get pricesTopNoneHint;
+
+  /// No description provided for @pricesContributor.
+  ///
+  /// In ar, this message translates to:
+  /// **'المساهم {rank}'**
+  String pricesContributor(int rank);
+
+  /// No description provided for @pricesContribCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'{n} مساهمات'**
+  String pricesContribCount(int n);
+
+  /// No description provided for @profileGroupMe.
+  ///
+  /// In ar, this message translates to:
+  /// **'أنا وزاد'**
+  String get profileGroupMe;
+
+  /// No description provided for @profileGroupAccount.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحساب والعيلة'**
+  String get profileGroupAccount;
+
+  /// No description provided for @profileGroupMoney.
+  ///
+  /// In ar, this message translates to:
+  /// **'الفلوس'**
+  String get profileGroupMoney;
+
+  /// No description provided for @profileGroupPlan.
+  ///
+  /// In ar, this message translates to:
+  /// **'رفيق زاد والاشتراك'**
+  String get profileGroupPlan;
+
+  /// No description provided for @profilePlanFree.
+  ///
+  /// In ar, this message translates to:
+  /// **'المجانية'**
+  String get profilePlanFree;
+
+  /// No description provided for @profilePlanBasic.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأساسية'**
+  String get profilePlanBasic;
+
+  /// No description provided for @profilePlanPlus.
+  ///
+  /// In ar, this message translates to:
+  /// **'المتقدمة'**
+  String get profilePlanPlus;
+
+  /// No description provided for @profilePlanUltra.
+  ///
+  /// In ar, this message translates to:
+  /// **'العيلة'**
+  String get profilePlanUltra;
+
+  /// No description provided for @profileSettingsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإعدادات'**
+  String get profileSettingsTitle;
+
+  /// No description provided for @profileSettingsSubtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'السقف، الأصوات، الإعلانات والخصوصية'**
+  String get profileSettingsSubtitle;
+
+  /// No description provided for @settingsWorldTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإعدادات'**
+  String get settingsWorldTitle;
+
+  /// No description provided for @settingsGroupMoney.
+  ///
+  /// In ar, this message translates to:
+  /// **'الفلوس'**
+  String get settingsGroupMoney;
+
+  /// No description provided for @settingsGroupCompanion.
+  ///
+  /// In ar, this message translates to:
+  /// **'رفيق زاد'**
+  String get settingsGroupCompanion;
+
+  /// No description provided for @settingsGroupSounds.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأصوات واللغة'**
+  String get settingsGroupSounds;
+
+  /// No description provided for @settingsGroupPrivacy.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإعلانات والخصوصية'**
+  String get settingsGroupPrivacy;
+
+  /// No description provided for @settingsGroupAccount.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحساب'**
+  String get settingsGroupAccount;
+
+  /// No description provided for @settingsAdsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإعلانات'**
+  String get settingsAdsTitle;
+
+  /// No description provided for @settingsAdsBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'مخصّصة ليك؟ تقدر تغيّر اختيارك في أي وقت'**
+  String get settingsAdsBody;
+
+  /// No description provided for @settingsAdsUnavailable.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش اختيارات خصوصية متاحة دلوقتي'**
+  String get settingsAdsUnavailable;
+
+  /// No description provided for @settingsTermsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الشروط والأحكام'**
+  String get settingsTermsTitle;
+
+  /// No description provided for @settingsTermsBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'سياسة الاستخدام والخصوصية'**
+  String get settingsTermsBody;
+
+  /// No description provided for @worldLabelHome.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرئيسية'**
+  String get worldLabelHome;
+
+  /// No description provided for @homeGreetDawn.
+  ///
+  /// In ar, this message translates to:
+  /// **'صباح الخير يا {name}'**
+  String homeGreetDawn(String name);
+
+  /// No description provided for @homeGreetMorning.
+  ///
+  /// In ar, this message translates to:
+  /// **'أهلاً يا {name}'**
+  String homeGreetMorning(String name);
+
+  /// No description provided for @homeGreetNoon.
+  ///
+  /// In ar, this message translates to:
+  /// **'نهارك سعيد يا {name}'**
+  String homeGreetNoon(String name);
+
+  /// No description provided for @homeGreetEvening.
+  ///
+  /// In ar, this message translates to:
+  /// **'مساء الخير يا {name}'**
+  String homeGreetEvening(String name);
+
+  /// No description provided for @homeGreetNight.
+  ///
+  /// In ar, this message translates to:
+  /// **'ليلة هادية يا {name}'**
+  String homeGreetNight(String name);
+
+  /// No description provided for @homeStateMoney.
+  ///
+  /// In ar, this message translates to:
+  /// **'متاح {amount} {currency} · {days}'**
+  String homeStateMoney(String amount, String currency, String days);
+
+  /// No description provided for @homeStateIdle.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيتك كله قدامك'**
+  String get homeStateIdle;
+
+  /// No description provided for @homeWorldsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'عوالمك'**
+  String get homeWorldsTitle;
+
+  /// No description provided for @homeWorldsHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل جزء من بيتك في مكانه'**
+  String get homeWorldsHint;
+
+  /// No description provided for @homeTodayTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'النهارده في بيتك'**
+  String get homeTodayTitle;
+
+  /// No description provided for @homeTodayEmpty.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش نواقص ولا جرعات ولا تجديدات قريبة'**
+  String get homeTodayEmpty;
+
+  /// No description provided for @homeTodayEmptyHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'اليوم هادي. أي حاجة تحتاج انتباهك هتظهر هنا.'**
+  String get homeTodayEmptyHint;
+
+  /// No description provided for @homeTodayShortTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'نواقص بتتجاب'**
+  String get homeTodayShortTitle;
+
+  /// No description provided for @homeTodayShortSub.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count} صنف · أولهم {name}'**
+  String homeTodayShortSub(String name, int count);
+
+  /// No description provided for @homeGreetDawnAnon.
+  ///
+  /// In ar, this message translates to:
+  /// **'صباح الخير'**
+  String get homeGreetDawnAnon;
+
+  /// No description provided for @homeGreetMorningAnon.
+  ///
+  /// In ar, this message translates to:
+  /// **'أهلاً بيك'**
+  String get homeGreetMorningAnon;
+
+  /// No description provided for @homeGreetNoonAnon.
+  ///
+  /// In ar, this message translates to:
+  /// **'نهارك سعيد'**
+  String get homeGreetNoonAnon;
+
+  /// No description provided for @homeGreetEveningAnon.
+  ///
+  /// In ar, this message translates to:
+  /// **'مساء الخير'**
+  String get homeGreetEveningAnon;
+
+  /// No description provided for @homeGreetNightAnon.
+  ///
+  /// In ar, this message translates to:
+  /// **'ليلة هادية'**
+  String get homeGreetNightAnon;
+
+  /// No description provided for @tasbihaHomeStart.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابدأ بستانك بأول تسبيحة'**
+  String get tasbihaHomeStart;
+
+  /// No description provided for @tasbihaHomeMature.
+  ///
+  /// In ar, this message translates to:
+  /// **'الشجرة كبرت · {score} تسبيحة'**
+  String tasbihaHomeMature(int score);
+
+  /// No description provided for @amazonShopEmoji.
+  ///
+  /// In ar, this message translates to:
+  /// **'🛍️ تسوق من أمازون'**
+  String get amazonShopEmoji;
+
+  /// No description provided for @homeCareTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'اشتراكاتك وأدويتك'**
+  String get homeCareTitle;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'المستوى {level}'**
+  String compEyebrow(int level);
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'{name} نايم — ربّت عليه يصحى'**
+  String compStateAsleep(String name);
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'فاضل {n} من مهام النهارده'**
+  String compStateMissions(int n);
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'{name} فرحان — خلّصت مهام النهارده'**
+  String compStateAllDone(String name);
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'زززز… ربّت عليّ أصحى.'**
+  String get compAsleepLine;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'ربّت على {name}'**
+  String compPet(String name);
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرفيق مش قادر يوصل'**
+  String get compUnreachableTitle;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتأكد إنك مسجل دخول وفيه نت، وبعدين ارجع هنا.'**
+  String get compUnreachableMsg;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'جرّب تاني'**
+  String get compRetry;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'لفل {level}'**
+  String compLevel(int level);
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'{xp} / {need}'**
+  String compXpOf(int xp, int need);
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'يوم ورا بعض'**
+  String get compStatStreak;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'بذرة'**
+  String get compStatSeeds;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'نقاط النهارده'**
+  String get compStatToday;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'مهام النهارده'**
+  String get compMissionsTitle;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجّل مصروف أو دخل'**
+  String get compMissionLog;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'حدّث المخزن أو قائمة التسوق'**
+  String get compMissionHome;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'صوّر فاتورة'**
+  String get compMissionScan;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'+{n}'**
+  String compXpGain(int n);
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'خلّصت التلاتة! خدت {n} بذرة النهارده.'**
+  String compMissionsAllDone(int n);
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'خلّص التلاتة وخد {n} بذرة هدية.'**
+  String compMissionsReward(int n);
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'تحدي الأسبوع'**
+  String get compWeekTitle;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'خلّصته! سجّلت {days} أيام الأسبوع ده'**
+  String compWeekDone(int days);
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجّل مصروف في {goal} أيام من ٧ — فاضلك {left}.'**
+  String compWeekLeft(int goal, int left);
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'رحلة {name}'**
+  String compJourney(String name);
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'{name} وصل لأعلى مرحلة: حكيم البيت.'**
+  String compMaxStage(String name);
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'هيكبر ويبقى {next} قريب جداً!'**
+  String compSoon(String next);
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'عشان يبقى {next}: {what}.'**
+  String compNeeds(String next, String what);
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'لفل {n}'**
+  String compNeedLevel(int n);
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'عمره {n} يوم (فاضل {left})'**
+  String compNeedAge(int n, int left);
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **' و'**
+  String get compNeedJoin;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'الدولاب'**
+  String get compWardrobe;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'الشخصيات'**
+  String get compTabPersona;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'اللبس'**
+  String get compTabOutfit;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'الخلفيات'**
+  String get compTabBackground;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'اقلع {outfit}'**
+  String compTakeOff(String outfit);
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'لابسه'**
+  String get compWorn;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'البسه'**
+  String get compWear;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقفول'**
+  String get compLocked;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'أو {price}'**
+  String compOrUsd(String price);
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'تاخد {name}؟'**
+  String compBuyTitle(String name);
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'هيتخصم {price} بذرة من بذورك، ويفضل معاك على طول.'**
+  String compBuyBody(int price);
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش دلوقتي'**
+  String get compBuyNo;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'خده'**
+  String get compBuyYes;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'مبروك! {name} بقى بتاعك'**
+  String compBought(String name);
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'ناقصك {n} بذرة — كمّل مهام اليوم وهتوصل.'**
+  String compMissing(String n);
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'كود صاحبك'**
+  String get compCodeTitle;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلغاء'**
+  String get compCancel;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'تأكيد'**
+  String get compConfirm;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'عندك كود صاحبك؟ اكتبه هنا'**
+  String get compEnterCode;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'تمام! سجّل أول مصروف وانت وصاحبك هتاخدوا بذور'**
+  String get compCodeOk;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'لسه مش معاك — افتحه الأول.'**
+  String get compReasonNotOwned;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'ده معاك بالفعل.'**
+  String get compReasonOwned;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'ده بيظهر في موسمه بس.'**
+  String get compReasonSeason;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'ده مش للبيع بالبذور.'**
+  String get compReasonNotForSeeds;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكود ده مش مظبوط، راجعه تاني.'**
+  String get compReasonWrongCode;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'انت كتبت كود صاحب قبل كده.'**
+  String get compReasonClaimed;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'كود الصاحب بيتكتب في أول ١٤ يوم بس.'**
+  String get compReasonTooLate;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'محاولات كتير — جرّب بعد ساعة.'**
+  String get compReasonTooMany;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش اتصال دلوقتي — جرّب تاني.'**
+  String get compReasonOffline;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'Google Play مش متاح على الموبايل ده.'**
+  String get compPlayUnavailable;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'ده لسه مش متاح على Google Play — جرّب بالبذور.'**
+  String get compPlayNotOnPlay;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'الشراء ماتمّش — جرّب تاني.'**
+  String get compPlayFailed;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'مستعجل؟ اشحن بذور'**
+  String get compSeedShopTitle;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'البذور بتتجمع ببلاش من عاداتك، وده للي مش عايز يستنى.'**
+  String get compSeedShopBody;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل الشخصيات مرة واحدة · {price}'**
+  String compAllCharacters(String price);
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'ادعي صحابك'**
+  String get compInviteTitle;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل صاحب يسجّل أول مصروف = ٢٠٠ بذرة ليك و١٠٠ ليه. صاحب واحد يفتح «فلة»، وتلاتة يفتحوا طاقية التخرج وخلفية «الشلة».'**
+  String get compInviteBody;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'انسخ الكود'**
+  String get compInviteCopy;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتنسخ الكود'**
+  String get compInviteCopied;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابعته'**
+  String get compInviteSend;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'جرّب زاد'**
+  String get compInviteSubject;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجّلوا: {n}'**
+  String compInviteCount(int n);
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'مستنيين أول مصروف: {n}'**
+  String compInvitePending(int n);
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرفيق بيكبر إزاي؟'**
+  String get compHowTitle;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'النقاط بتيجي من عاداتك بس: مصروف +١٠، فاتورة +٢٠، المخزن أو القائمة +٥، يوم في السلسلة +٢٥، فرد عيلة جديد +٢٠٠.'**
+  String get compHowXp;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'البذور: كل لفل جديد +٥٠، مهام اليوم التلاتة +٣٠، ٧ أيام ورا بعض +١٠٠، و٣٠ يوم +٣٠٠.'**
+  String get compHowSeeds;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'البذور للدولاب بس — مش بتتحول لمحاولات ذكاء اصطناعي.'**
+  String get compHowAi;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'لو غبت يومين بينام. ارجع وهيصحى فرحان ومعاه هدية.'**
+  String get compHowSleep;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'عمره ما يزعل منك ولا ينزل لفل.'**
+  String get compHowKind;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'لسه ما لعبتش النهارده'**
+  String get gamesWorldEmpty;
+
+  /// World text.
+  ///
+  /// In ar, this message translates to:
+  /// **'ابدأ بأي لعبة — أول جولة بتبدأ سلسلتك وبتكسب بذور.'**
+  String get gamesWorldEmptyHint;
+
+  /// Offers world eyebrow: how many of the live offers came from the customer's notifications.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{واحد من إشعاراتك} =2{اتنين من إشعاراتك} few{{count} من إشعاراتك} other{{count} من إشعاراتك}}'**
+  String offersEyebrowMine(int count);
+
+  /// Offers world state line: the number of live offers.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{عرض واحد شغال} =2{عرضين شغالين} few{{count} عروض شغالة} other{{count} عرض شغال}}'**
+  String offersStateCount(int count);
+
+  /// Offers world state line with nothing live.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش عروض شغالة دلوقتي'**
+  String get offersStateEmpty;
+
+  /// Section: offers seen in the customer's notifications.
+  ///
+  /// In ar, this message translates to:
+  /// **'من إشعاراتك'**
+  String get offersMineTitle;
+
+  /// Section: partner coupons for the customer's country.
+  ///
+  /// In ar, this message translates to:
+  /// **'كوبونات لبلدك'**
+  String get offersPartnerTitle;
+
+  /// Button: copy the promo code.
+  ///
+  /// In ar, this message translates to:
+  /// **'انسخ'**
+  String get offersCopy;
+
+  /// Snackbar after the code was copied.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتنسخ الكود {code}'**
+  String offersCopied(String code);
+
+  /// Label of an offer that needs no code.
+  ///
+  /// In ar, this message translates to:
+  /// **'من غير كود'**
+  String get offersNoCode;
+
+  /// Offer ends today.
+  ///
+  /// In ar, this message translates to:
+  /// **'بينتهي النهارده'**
+  String get offersExpiresToday;
+
+  /// Offer ends in some days.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{بينتهي بكرة} =2{بينتهي بعد يومين} few{بينتهي بعد {count} أيام} other{بينتهي بعد {count} يوم}}'**
+  String offersExpiresInDays(int count);
+
+  /// Discount in percent.
+  ///
+  /// In ar, this message translates to:
+  /// **'خصم {percent}٪'**
+  String offersPercentOff(String percent);
+
+  /// Discount as an amount.
+  ///
+  /// In ar, this message translates to:
+  /// **'خصم {amount} {currency}'**
+  String offersAmountOff(String amount, String currency);
+
+  /// Title of an offer the source gave no words for.
+  ///
+  /// In ar, this message translates to:
+  /// **'عرض خاص'**
+  String get offersFallbackTitle;
+
+  /// Empty state title of the offers world.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش عروض شغالة'**
+  String get offersEmptyTitle;
+
+  /// Empty state guidance of the offers world.
+  ///
+  /// In ar, this message translates to:
+  /// **'أول ما يظهر كوبون لبلدك أو يوصلك إشعار بخصم من تطبيق تسوق، هتلاقيه هنا. اسحب لتحت عشان تحدّث.'**
+  String get offersEmptyMessage;
+
+  /// Row opening the nearby shops and deals screen.
+  ///
+  /// In ar, this message translates to:
+  /// **'عروض المحلات القريبة'**
+  String get offersNearbyTitle;
+
+  /// Subtitle of the nearby deals row.
+  ///
+  /// In ar, this message translates to:
+  /// **'أسعار الأسبوع ومحلات حواليك'**
+  String get offersNearbyMessage;
+
+  /// Snackbar when an offer link cannot be opened.
+  ///
+  /// In ar, this message translates to:
+  /// **'ماقدرناش نفتح العرض'**
+  String get offersOpenFailed;
+
+  /// No description provided for @worldLabelFamily.
+  ///
+  /// In ar, this message translates to:
+  /// **'العيلة'**
+  String get worldLabelFamily;
+
+  /// No description provided for @familyWorldNone.
+  ///
+  /// In ar, this message translates to:
+  /// **'لسه معندكش عيلة'**
+  String get familyWorldNone;
+
+  /// No description provided for @familyWorldChores.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{مهمة واحدة قدامكم} =2{مهمتين قدامكم} few{{count} مهام قدامكم} other{{count} مهمة قدامكم}}'**
+  String familyWorldChores(num count);
+
+  /// No description provided for @familyWorldRequests.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{طلب مصروف مستني قرارك} =2{طلبين مصروف مستنيين قرارك} few{{count} طلبات مصروف مستنية قرارك} other{{count} طلب مصروف مستني قرارك}}'**
+  String familyWorldRequests(num count);
+
+  /// No description provided for @familyLoadingTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'بنشوف عيلتك'**
+  String get familyLoadingTitle;
+
+  /// No description provided for @familyLoadingMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'أول مرة محتاجة نت. اسحب لتحت لو طوّلت.'**
+  String get familyLoadingMessage;
+
+  /// No description provided for @familyRetry.
+  ///
+  /// In ar, this message translates to:
+  /// **'جرّب تاني'**
+  String get familyRetry;
+
+  /// No description provided for @familyWelcomeTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'أهلاً بك في عائلة زاد'**
+  String get familyWelcomeTitle;
+
+  /// No description provided for @familyWelcomeBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'يمكنك إنشاء عائلة جديدة لتكون أنت المدير، أو الانضمام لعائلة موجودة عبر كود الدعوة.'**
+  String get familyWelcomeBody;
+
+  /// No description provided for @familyCreateButton.
+  ///
+  /// In ar, this message translates to:
+  /// **'إنشاء عائلة جديدة كمدير (Admin)'**
+  String get familyCreateButton;
+
+  /// No description provided for @familyJoinButton.
+  ///
+  /// In ar, this message translates to:
+  /// **'الانضمام للعائلة'**
+  String get familyJoinButton;
+
+  /// No description provided for @familyAliasCardTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسمك في العيلة'**
+  String get familyAliasCardTitle;
+
+  /// No description provided for @familyAliasLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسمك في العيلة (اختياري)'**
+  String get familyAliasLabel;
+
+  /// No description provided for @familyAliasHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'مثال: الابن أحمد'**
+  String get familyAliasHint;
+
+  /// No description provided for @familyJoinCardTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'عندك كود دعوة؟'**
+  String get familyJoinCardTitle;
+
+  /// No description provided for @familyCodeLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'كود الدعوة'**
+  String get familyCodeLabel;
+
+  /// No description provided for @familyCodeHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'مثال: ZAD-1234'**
+  String get familyCodeHint;
+
+  /// No description provided for @familyJoinPasteLink.
+  ///
+  /// In ar, this message translates to:
+  /// **'عندك رابط دعوة؟ افتح نافذة الانضمام'**
+  String get familyJoinPasteLink;
+
+  /// No description provided for @familyTabChat.
+  ///
+  /// In ar, this message translates to:
+  /// **'الشات'**
+  String get familyTabChat;
+
+  /// No description provided for @familyTabTasks.
+  ///
+  /// In ar, this message translates to:
+  /// **'المهام'**
+  String get familyTabTasks;
+
+  /// No description provided for @familyTabMembers.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأعضاء'**
+  String get familyTabMembers;
+
+  /// No description provided for @familyTabGroceries.
+  ///
+  /// In ar, this message translates to:
+  /// **'البقالة'**
+  String get familyTabGroceries;
+
+  /// No description provided for @familyTabKids.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأبناء'**
+  String get familyTabKids;
+
+  /// No description provided for @familyTabGoals.
+  ///
+  /// In ar, this message translates to:
+  /// **'الأهداف'**
+  String get familyTabGoals;
+
+  /// No description provided for @familyMoreTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'كمان للعيلة'**
+  String get familyMoreTitle;
+
+  /// No description provided for @familyToolSavings.
+  ///
+  /// In ar, this message translates to:
+  /// **'صناديق التجميع'**
+  String get familyToolSavings;
+
+  /// No description provided for @familyToolAchievements.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإنجازات والرتب'**
+  String get familyToolAchievements;
+
+  /// No description provided for @familyToolTasbiha.
+  ///
+  /// In ar, this message translates to:
+  /// **'تسبيحة'**
+  String get familyToolTasbiha;
+
+  /// No description provided for @familyFollowStarted.
+  ///
+  /// In ar, this message translates to:
+  /// **'بدأت المتابعة.'**
+  String get familyFollowStarted;
+
+  /// No description provided for @choreSaved.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتحفظ.'**
+  String get choreSaved;
+
+  /// No description provided for @chorePrefNotSaved.
+  ///
+  /// In ar, this message translates to:
+  /// **'ماتحفظش. تفضيلات حد تاني بيغيّرها المسؤول بس.'**
+  String get chorePrefNotSaved;
+
+  /// No description provided for @chorePlanFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقدرتش أوزّع المهام دلوقتي.'**
+  String get chorePlanFailed;
+
+  /// No description provided for @choreServerUnreachable.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقدرتش أوصل للسيرفر. جرّب تاني.'**
+  String get choreServerUnreachable;
+
+  /// No description provided for @choreAdminsOnly.
+  ///
+  /// In ar, this message translates to:
+  /// **'توزيع المهام للمسؤول بس.'**
+  String get choreAdminsOnly;
+
+  /// No description provided for @choreNotOpen.
+  ///
+  /// In ar, this message translates to:
+  /// **'مهمة اتعملت أو اتشالت من ساعتها. وزّع تاني.'**
+  String get choreNotOpen;
+
+  /// No description provided for @chorePlanNotApplied.
+  ///
+  /// In ar, this message translates to:
+  /// **'التوزيع ماتطبّقش.'**
+  String get chorePlanNotApplied;
+
+  /// No description provided for @choreAssignedCount.
+  ///
+  /// In ar, this message translates to:
+  /// **'اتوزعت {count} مهمة.'**
+  String choreAssignedCount(int count);
+
+  /// No description provided for @choreMinutesLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'المدة بالدقايق (اختياري)'**
+  String get choreMinutesLabel;
+
+  /// No description provided for @choreMinutesHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'مثال: ٢٠'**
+  String get choreMinutesHint;
+
+  /// No description provided for @chorePrefsButton.
+  ///
+  /// In ar, this message translates to:
+  /// **'الوقت والتفضيلات'**
+  String get chorePrefsButton;
+
+  /// No description provided for @choreDistributeButton.
+  ///
+  /// In ar, this message translates to:
+  /// **'وزّع المهام'**
+  String get choreDistributeButton;
+
+  /// No description provided for @chorePlanTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'توزيع المهام'**
+  String get chorePlanTitle;
+
+  /// No description provided for @chorePlanSubtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'على مدة كل مهمة ووقت كل فرد واللي بيحبه.'**
+  String get chorePlanSubtitle;
+
+  /// No description provided for @chorePlanEmptyTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش مهام مفتوحة تتوزع'**
+  String get chorePlanEmptyTitle;
+
+  /// No description provided for @chorePlanEmptyMessage.
+  ///
+  /// In ar, this message translates to:
+  /// **'ضيف مهام الأول، أو زوّد وقت الأفراد.'**
+  String get chorePlanEmptyMessage;
+
+  /// No description provided for @choreMinutesValue.
+  ///
+  /// In ar, this message translates to:
+  /// **'{minutes} دقيقة'**
+  String choreMinutesValue(int minutes);
+
+  /// No description provided for @choreNoTimeFor.
+  ///
+  /// In ar, this message translates to:
+  /// **'مافيش وقت ليها عند حد: {titles}'**
+  String choreNoTimeFor(String titles);
+
+  /// No description provided for @choreLoadLine.
+  ///
+  /// In ar, this message translates to:
+  /// **'{name}: {minutes} من {week} دقيقة في الأسبوع'**
+  String choreLoadLine(String name, int minutes, int week);
+
+  /// No description provided for @choreApplyPlan.
+  ///
+  /// In ar, this message translates to:
+  /// **'طبّق التوزيع'**
+  String get choreApplyPlan;
+
+  /// No description provided for @chorePrefsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الوقت والتفضيلات'**
+  String get chorePrefsTitle;
+
+  /// No description provided for @chorePrefsMember.
+  ///
+  /// In ar, this message translates to:
+  /// **'الفرد'**
+  String get chorePrefsMember;
+
+  /// No description provided for @chorePrefsMinutes.
+  ///
+  /// In ar, this message translates to:
+  /// **'دقايق متاحة للمهام في الأسبوع'**
+  String get chorePrefsMinutes;
+
+  /// No description provided for @chorePrefsMinutesHelper.
+  ///
+  /// In ar, this message translates to:
+  /// **'من ٠ لـ ٢٠٠٠'**
+  String get chorePrefsMinutesHelper;
+
+  /// No description provided for @chorePrefsLikes.
+  ///
+  /// In ar, this message translates to:
+  /// **'مهام بيحبها (افصل بفاصلة)'**
+  String get chorePrefsLikes;
+
+  /// No description provided for @chorePrefsLikesHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'كنس الصالة، الطبخ'**
+  String get chorePrefsLikesHint;
+
+  /// No description provided for @chorePrefsDislikes.
+  ///
+  /// In ar, this message translates to:
+  /// **'مهام مابيحبهاش (افصل بفاصلة)'**
+  String get chorePrefsDislikes;
+
+  /// No description provided for @chorePrefsDislikesHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'غسيل المواعين'**
+  String get chorePrefsDislikesHint;
+
+  /// No description provided for @choreCancel.
+  ///
+  /// In ar, this message translates to:
+  /// **'إلغاء'**
+  String get choreCancel;
+
+  /// No description provided for @choreSave.
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ'**
+  String get choreSave;
+
+  /// No description provided for @guardEventsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'صحة العقل'**
+  String get guardEventsTitle;
+
+  /// No description provided for @guardEventsEmptyTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد مارفضش حاجة لحد دلوقتي'**
+  String get guardEventsEmptyTitle;
+
+  /// No description provided for @guardEventsEmptyBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'لما زاد يرفض يكتب حاجة (مبلغ غلط، صنف مش موجود…) السبب هيظهر هنا.'**
+  String get guardEventsEmptyBody;
+
+  /// No description provided for @guardEventsLast7Days.
+  ///
+  /// In ar, this message translates to:
+  /// **'آخر ٧ أيام'**
+  String get guardEventsLast7Days;
+
+  /// No description provided for @guardEventsNone7Days.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش رفض في آخر ٧ أيام'**
+  String get guardEventsNone7Days;
+
+  /// No description provided for @guardEventsRecent.
+  ///
+  /// In ar, this message translates to:
+  /// **'آخر الرفوض'**
+  String get guardEventsRecent;
+
+  /// No description provided for @guardEventsErrorTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقدرتش أجيب الرفوض'**
+  String get guardEventsErrorTitle;
+
+  /// No description provided for @guardEventsErrorBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسحب لتحت نجرب تاني.'**
+  String get guardEventsErrorBody;
+
+  /// No description provided for @settingsGuardEventsSubtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'اللي زاد رفض يكتبه، وأسباب الرفض'**
+  String get settingsGuardEventsSubtitle;
+
+  /// No description provided for @guardReason_item_not_found.
+  ///
+  /// In ar, this message translates to:
+  /// **'السجل ده مش موجود عندك'**
+  String get guardReason_item_not_found;
+
+  /// No description provided for @guardReason_member_not_found.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش فرد بالاسم ده في البيت'**
+  String get guardReason_member_not_found;
+
+  /// No description provided for @guardReason_name_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم الصنف لازم يكون من ٢ لـ١٢٠ حرف'**
+  String get guardReason_name_invalid;
+
+  /// No description provided for @guardReason_qty_not_positive.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكمية لازم تكون أكبر من صفر'**
+  String get guardReason_qty_not_positive;
+
+  /// No description provided for @guardReason_qty_too_large.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكمية كبيرة بشكل مش منطقي — اتأكد من العميل'**
+  String get guardReason_qty_too_large;
+
+  /// No description provided for @guardReason_qty_negative.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكمية مينفعش تبقى بالسالب'**
+  String get guardReason_qty_negative;
+
+  /// No description provided for @guardReason_category_unknown.
+  ///
+  /// In ar, this message translates to:
+  /// **'الفئة مش من الفئات المعروفة'**
+  String get guardReason_category_unknown;
+
+  /// No description provided for @guardReason_expiry_bad_format.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصلاحية لازم تكون YYYY-MM-DD'**
+  String get guardReason_expiry_bad_format;
+
+  /// No description provided for @guardReason_expiry_before_purchase.
+  ///
+  /// In ar, this message translates to:
+  /// **'تاريخ الصلاحية قبل النهارده — اتأكد من العميل'**
+  String get guardReason_expiry_before_purchase;
+
+  /// No description provided for @guardReason_amount_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكمية المستعملة لازم تكون أكبر من صفر'**
+  String get guardReason_amount_invalid;
+
+  /// No description provided for @guardReason_amount_too_large.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكمية المستعملة كبيرة بشكل مش منطقي'**
+  String get guardReason_amount_too_large;
+
+  /// No description provided for @guardReason_restock_mode_unknown.
+  ///
+  /// In ar, this message translates to:
+  /// **'النوع يا staple يا occasional'**
+  String get guardReason_restock_mode_unknown;
+
+  /// No description provided for @guardReason_already_purchased.
+  ///
+  /// In ar, this message translates to:
+  /// **'السطر ده اتشطب من القايمة قبل كده'**
+  String get guardReason_already_purchased;
+
+  /// No description provided for @guardReason_member_not_granted.
+  ///
+  /// In ar, this message translates to:
+  /// **'الفرد ده مش في العيلة أو مش موافق إنك تتابع أدويته'**
+  String get guardReason_member_not_granted;
+
+  /// No description provided for @guardReason_patch_empty.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش حاجة تتعدل'**
+  String get guardReason_patch_empty;
+
+  /// No description provided for @guardReason_patch_field_unknown.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحقل ده مايتعدلش من هنا'**
+  String get guardReason_patch_field_unknown;
+
+  /// No description provided for @guardReason_dose_times_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'مواعيد الجرعات لازم تكون HH:MM مفصولة بفاصلة'**
+  String get guardReason_dose_times_invalid;
+
+  /// No description provided for @guardReason_dose_count_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'عدد الجرعات في اليوم من ١ لـ٢٤'**
+  String get guardReason_dose_count_invalid;
+
+  /// No description provided for @guardReason_qty_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكمية لازم تكون رقم صحيح من ٠ لـ١٠٠٠٠'**
+  String get guardReason_qty_invalid;
+
+  /// No description provided for @guardReason_dosage_too_long.
+  ///
+  /// In ar, this message translates to:
+  /// **'الجرعة مكتوبة طويلة أوي'**
+  String get guardReason_dosage_too_long;
+
+  /// No description provided for @guardReason_dose_already_logged.
+  ///
+  /// In ar, this message translates to:
+  /// **'الجرعة دي متسجلة قبل كده — الكمية ماتخصمتش تاني'**
+  String get guardReason_dose_already_logged;
+
+  /// No description provided for @guardReason_amount_not_positive.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ لازم يكون رقم موجب'**
+  String get guardReason_amount_not_positive;
+
+  /// No description provided for @guardReason_amount_over_cap.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ ده كبير بشكل غير منطقي — تأكد منه'**
+  String get guardReason_amount_over_cap;
+
+  /// No description provided for @guardReason_title_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'اكتب وصف قصير للمعاملة (لحد ٨٠ حرف)'**
+  String get guardReason_title_invalid;
+
+  /// No description provided for @guardReason_title_guessed.
+  ///
+  /// In ar, this message translates to:
+  /// **'الوصف ده تخمين — اسأل العميل الفلوس دي راحت على إيه قبل ما تسجلها'**
+  String get guardReason_title_guessed;
+
+  /// No description provided for @guardReason_txn_kind_unknown.
+  ///
+  /// In ar, this message translates to:
+  /// **'النوع يا expense يا income'**
+  String get guardReason_txn_kind_unknown;
+
+  /// No description provided for @guardReason_wallet_unknown.
+  ///
+  /// In ar, this message translates to:
+  /// **'المحفظة يا cash يا card يا bank'**
+  String get guardReason_wallet_unknown;
+
+  /// No description provided for @guardReason_transfer_to_missing.
+  ///
+  /// In ar, this message translates to:
+  /// **'التحويل لازم يقول رايح فين'**
+  String get guardReason_transfer_to_missing;
+
+  /// No description provided for @guardReason_transfer_change_unsupported.
+  ///
+  /// In ar, this message translates to:
+  /// **'التحويل مايتعملش بالتعديل — سجّله معاملة جديدة'**
+  String get guardReason_transfer_change_unsupported;
+
+  /// No description provided for @guardReason_text_too_long.
+  ///
+  /// In ar, this message translates to:
+  /// **'الفئة أو اسم المحل طويل أوي'**
+  String get guardReason_text_too_long;
+
+  /// No description provided for @guardReason_for_person_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'«لمين» لازم يكون من ١ لـ٤٠ حرف'**
+  String get guardReason_for_person_invalid;
+
+  /// No description provided for @guardReason_date_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'تاريخ العملية مش مفهوم أو في المستقبل أو أقدم من سنة'**
+  String get guardReason_date_invalid;
+
+  /// No description provided for @guardReason_category_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم الفئة لازم يكون من ٢ لـ٤٠ حرف'**
+  String get guardReason_category_invalid;
+
+  /// No description provided for @guardReason_no_category_budget.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش سقف على الفئة دي أصلاً'**
+  String get guardReason_no_category_budget;
+
+  /// No description provided for @guardReason_subscription_title_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم الاشتراك لازم يكون من ٢ لـ١٢٠ حرف'**
+  String get guardReason_subscription_title_invalid;
+
+  /// No description provided for @guardReason_renewal_date_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'تاريخ التجديد لازم يكون تاريخ حقيقي بصيغة YYYY-MM-DD'**
+  String get guardReason_renewal_date_invalid;
+
+  /// No description provided for @guardReason_billing_cycle_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'دورة الدفع يا MONTHLY يا YEARLY'**
+  String get guardReason_billing_cycle_invalid;
+
+  /// No description provided for @guardReason_due_day_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'يوم الاستحقاق لازم يكون من ١ لـ٣١'**
+  String get guardReason_due_day_invalid;
+
+  /// No description provided for @guardReason_is_active_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'التفعيل لازم يكون true أو false'**
+  String get guardReason_is_active_invalid;
+
+  /// No description provided for @guardReason_debt_name_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم الدين لازم يكون من ٢ لـ١٢٠ حرف'**
+  String get guardReason_debt_name_invalid;
+
+  /// No description provided for @guardReason_minimum_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحد الأدنى الشهري لازم يكون رقم مش سالب'**
+  String get guardReason_minimum_invalid;
+
+  /// No description provided for @guardReason_interest_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'نسبة الفايدة لازم تكون من ٠ لـ١٠٠٠'**
+  String get guardReason_interest_invalid;
+
+  /// No description provided for @guardReason_balance_negative.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرصيد المتبقي مينفعش يبقى بالسالب'**
+  String get guardReason_balance_negative;
+
+  /// No description provided for @guardReason_obligation_title_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم الالتزام لازم يكون من ٢ لـ١٢٠ حرف'**
+  String get guardReason_obligation_title_invalid;
+
+  /// No description provided for @guardReason_obligation_kind_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'نوع الالتزام يا rent يا installment يا tuition يا utility يا other'**
+  String get guardReason_obligation_kind_invalid;
+
+  /// No description provided for @guardReason_recurrence_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'التكرار يا monthly يا quarterly يا yearly يا once'**
+  String get guardReason_recurrence_invalid;
+
+  /// No description provided for @guardReason_installments_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'عدد الأقساط لازم يكون رقم صحيح من ١ لـ٦٠٠'**
+  String get guardReason_installments_invalid;
+
+  /// No description provided for @guardReason_already_inactive.
+  ///
+  /// In ar, this message translates to:
+  /// **'الالتزام ده اتلغى قبل كده'**
+  String get guardReason_already_inactive;
+
+  /// No description provided for @guardReason_device_name_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم الجهاز لازم يكون من ٢ لـ١٢٠ حرف'**
+  String get guardReason_device_name_invalid;
+
+  /// No description provided for @guardReason_device_category_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'فئة الجهاز طويلة أوي (٦٠ حرف بالكتير)'**
+  String get guardReason_device_category_invalid;
+
+  /// No description provided for @guardReason_day_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'التاريخ لازم يوم حقيقي بصيغة YYYY-MM-DD'**
+  String get guardReason_day_invalid;
+
+  /// No description provided for @guardReason_interval_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'الفاصل بين الصيانات لازم عدد أيام صحيح موجب'**
+  String get guardReason_interval_invalid;
+
+  /// No description provided for @guardReason_cost_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'التكلفة لازم رقم موجب في الحدود المنطقية'**
+  String get guardReason_cost_invalid;
+
+  /// No description provided for @guardReason_kind_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'النوع مش من الأنواع المعروفة'**
+  String get guardReason_kind_invalid;
+
+  /// No description provided for @guardReason_holder_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم صاحب المستند لازم يكون من غير مسافات زيادة ولحد ٤٠ حرف'**
+  String get guardReason_holder_invalid;
+
+  /// No description provided for @guardReason_label_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم المستند لازم يكون من غير مسافات زيادة ولحد ٤٠ حرف'**
+  String get guardReason_label_invalid;
+
+  /// No description provided for @guardReason_label_required.
+  ///
+  /// In ar, this message translates to:
+  /// **'مستند «other» محتاج اسم'**
+  String get guardReason_label_required;
+
+  /// No description provided for @guardReason_date_out_of_range.
+  ///
+  /// In ar, this message translates to:
+  /// **'تاريخ الانتهاء مش معقول (بين ٢٠٠٠ و٢١٠٠)'**
+  String get guardReason_date_out_of_range;
+
+  /// No description provided for @guardReason_appt_title_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم الميعاد لازم من ٢ لـ١٦٠ حرف'**
+  String get guardReason_appt_title_invalid;
+
+  /// No description provided for @guardReason_starts_at_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'وقت الميعاد مش مفهوم'**
+  String get guardReason_starts_at_invalid;
+
+  /// No description provided for @guardReason_appt_recurrence_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'التكرار لازم once أو hourly أو daily أو weekly أو monthly'**
+  String get guardReason_appt_recurrence_invalid;
+
+  /// No description provided for @guardReason_source_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'مصدر الميعاد مش معروف'**
+  String get guardReason_source_invalid;
+
+  /// No description provided for @guardReason_remind_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'التذكير قبلها لازم دقايق صحيحة من ٠ لـ١٠٠٨٠'**
+  String get guardReason_remind_invalid;
+
+  /// No description provided for @guardReason_place_too_long.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسم المكان طويل أوي (١٢٠ حرف بالكتير)'**
+  String get guardReason_place_too_long;
+
+  /// No description provided for @guardReason_status_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'الحالة لازم upcoming أو done أو cancelled'**
+  String get guardReason_status_invalid;
+
+  /// No description provided for @guardReason_user_not_found.
+  ///
+  /// In ar, this message translates to:
+  /// **'حساب العميل مش موجود'**
+  String get guardReason_user_not_found;
+
+  /// No description provided for @guardReason_cycle_day_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'يوم بداية الدورة رقم صحيح من ١ لـ٣١'**
+  String get guardReason_cycle_day_invalid;
+
+  /// No description provided for @guardReason_currency_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'العملة كود ISO من ٣ حروف كابيتال (مثل EGP) — والتحدي عملته لحد ١٠ حروف'**
+  String get guardReason_currency_invalid;
+
+  /// No description provided for @guardReason_country_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'البلد كود ISO من حرفين كابيتال (مثل EG)'**
+  String get guardReason_country_invalid;
+
+  /// No description provided for @guardReason_balance_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'الرصيد لازم يكون رقم غير سالب'**
+  String get guardReason_balance_invalid;
+
+  /// No description provided for @guardReason_sleep_time_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'المواعيد بصيغة HH:MM (٢٤ ساعة)'**
+  String get guardReason_sleep_time_invalid;
+
+  /// No description provided for @guardReason_sleep_bed_out_of_range.
+  ///
+  /// In ar, this message translates to:
+  /// **'النوم من ٢٠:٠٠ لـ٠٣:٠٠ — شغل ليلي؟ اسأله وماتحفظش'**
+  String get guardReason_sleep_bed_out_of_range;
+
+  /// No description provided for @guardReason_sleep_wake_out_of_range.
+  ///
+  /// In ar, this message translates to:
+  /// **'الصحيان من ٠٤:٠٠ لـ١٢:٠٠'**
+  String get guardReason_sleep_wake_out_of_range;
+
+  /// No description provided for @guardReason_setting_unknown.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإعداد ده يا pet_calls يا food_pattern'**
+  String get guardReason_setting_unknown;
+
+  /// No description provided for @guardReason_goal_title_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'عنوان الهدف من ٤ لـ٢٠٠ حرف'**
+  String get guardReason_goal_title_invalid;
+
+  /// No description provided for @guardReason_metric_too_long.
+  ///
+  /// In ar, this message translates to:
+  /// **'وصف المقياس طويل أوي'**
+  String get guardReason_metric_too_long;
+
+  /// No description provided for @guardReason_target_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ المستهدف لازم رقم موجب منطقي'**
+  String get guardReason_target_invalid;
+
+  /// No description provided for @guardReason_deadline_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'تاريخ الهدف مش مفهوم'**
+  String get guardReason_deadline_invalid;
+
+  /// No description provided for @guardReason_unit_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'unit يا money يا count'**
+  String get guardReason_unit_invalid;
+
+  /// No description provided for @guardReason_goal_not_found.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش هدف بالاسم ده عند العميل'**
+  String get guardReason_goal_not_found;
+
+  /// No description provided for @guardReason_goal_amount_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'المبلغ لازم رقم مش صفر وبحدود المنطق'**
+  String get guardReason_goal_amount_invalid;
+
+  /// No description provided for @guardReason_goal_not_amount.
+  ///
+  /// In ar, this message translates to:
+  /// **'الهدف ده بيتعد بالمهام مش بالفلوس — تقدمه بيتحسب لوحده.'**
+  String get guardReason_goal_not_amount;
+
+  /// No description provided for @guardReason_challenge_already_active.
+  ///
+  /// In ar, this message translates to:
+  /// **'عنده تحدي شغال بالفعل — شجّعه يكمّله أو اسأله لو عايز يقفله الأول (stop_savings_challenge).'**
+  String get guardReason_challenge_already_active;
+
+  /// No description provided for @guardReason_no_active_challenge.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش تحدي شغال أصلاً'**
+  String get guardReason_no_active_challenge;
+
+  /// No description provided for @guardReason_challenge_cap_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'السقف اليومي لازم رقم موجب منطقي'**
+  String get guardReason_challenge_cap_invalid;
+
+  /// No description provided for @guardReason_challenge_length_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'مدة التحدي من ٧ لـ٩٠ يوم'**
+  String get guardReason_challenge_length_invalid;
+
+  /// No description provided for @guardReason_challenge_date_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'تاريخ بداية التحدي مش مفهوم'**
+  String get guardReason_challenge_date_invalid;
+
+  /// No description provided for @guardReason_dose_slot_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'ميعاد الجرعة مش تاريخ مفهوم'**
+  String get guardReason_dose_slot_invalid;
+
+  /// No description provided for @guardReason_snooze_minutes_invalid.
+  ///
+  /// In ar, this message translates to:
+  /// **'التأجيل من ٥ لـ٢٤٠ دقيقة'**
+  String get guardReason_snooze_minutes_invalid;
+
+  /// No description provided for @guardReason_fallback.
+  ///
+  /// In ar, this message translates to:
+  /// **'الكتابة اترفضت'**
+  String get guardReason_fallback;
+
+  /// Pantry add dialog: whose it is in the household.
+  ///
+  /// In ar, this message translates to:
+  /// **'لمين؟'**
+  String get pantryWhoseField;
+
+  /// Pantry add dialog: the account owner's own entry.
+  ///
+  /// In ar, this message translates to:
+  /// **'أنا'**
+  String get pantryWhoseMe;
+
+  /// Pantry edit dialog: the estimate in days.
+  ///
+  /// In ar, this message translates to:
+  /// **'تقديرنا إنه يكفي حوالي {days} يوم'**
+  String pantryRateEstimate(String days);
+
+  /// Pantry edit dialog: correction tap, consumption is faster.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيخلص أسرع'**
+  String get pantryRateFaster;
+
+  /// Pantry edit dialog: correction tap, consumption is slower.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيخلص أبطأ'**
+  String get pantryRateSlower;
+
+  /// Pantry edit dialog: after a correction tap.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجّلنا تصحيحك'**
+  String get pantryRateSaved;
+
+  /// No description provided for @permSheetTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'خلّي زاد يشتغل لبيتك من أول يوم'**
+  String get permSheetTitle;
+
+  /// No description provided for @permSheetBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'عشان زاد ينبّهك ويتابع بيتك من غير ما تفتح التطبيق، محتاج الإذون دي. كل واحد منها اختياري، وتقدر تغيّره من إعدادات الموبايل في أي وقت.'**
+  String get permSheetBody;
+
+  /// No description provided for @permNotificationsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الإشعارات'**
+  String get permNotificationsTitle;
+
+  /// No description provided for @permNotificationsWhy.
+  ///
+  /// In ar, this message translates to:
+  /// **'تنبيهات الجرعات والمواعيد والفواتير وموجز الصبح.'**
+  String get permNotificationsWhy;
+
+  /// No description provided for @permBankTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'قراءة إشعارات البنك'**
+  String get permBankTitle;
+
+  /// No description provided for @permBankWhy.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد بيقرا الإشعارات اللي بتوصلك من البنك ورسايل الدفع عشان يسجّل المشتريات عنك، وبيحتفظ بس بالإشعارات اللي شكلها معاملة.'**
+  String get permBankWhy;
+
+  /// No description provided for @permBatteryTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الشغل في الخلفية'**
+  String get permBatteryTitle;
+
+  /// No description provided for @permBatteryWhy.
+  ///
+  /// In ar, this message translates to:
+  /// **'عشان قراءة الإشعارات والتذكيرات ماتتقفلش لما الموبايل يوفّر البطارية.'**
+  String get permBatteryWhy;
+
+  /// No description provided for @permEnable.
+  ///
+  /// In ar, this message translates to:
+  /// **'فعّل'**
+  String get permEnable;
+
+  /// No description provided for @permLater.
+  ///
+  /// In ar, this message translates to:
+  /// **'مش دلوقتي'**
+  String get permLater;
+
+  /// No description provided for @permDone.
+  ///
+  /// In ar, this message translates to:
+  /// **'تمام'**
+  String get permDone;
+
+  /// No description provided for @permPrivacy.
+  ///
+  /// In ar, this message translates to:
+  /// **'بياناتك عندنا بتتعامل حسب سياسة الخصوصية المنشورة، وزاد مابيوعدش بأكتر منها.'**
+  String get permPrivacy;
+
+  /// No description provided for @permCardBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'فعّلها بضغطة عشان تنبيهات زاد توصلك.'**
+  String get permCardBody;
+
+  /// No description provided for @permCardTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'{count, plural, =1{إذن ناقص} other{{count} إذون ناقصة}}'**
+  String permCardTitle(int count);
+
+  /// No description provided for @tripTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'رحلتك في {country}'**
+  String tripTitle(String country);
+
+  /// No description provided for @tripSpent.
+  ///
+  /// In ar, this message translates to:
+  /// **'صرفت تقريباً {amount} {currency} من أول الرحلة'**
+  String tripSpent(String amount, String currency);
+
+  /// No description provided for @tripLeft.
+  ///
+  /// In ar, this message translates to:
+  /// **'فاضل {amount} {currency} من ميزانية الرحلة'**
+  String tripLeft(String amount, String currency);
+
+  /// No description provided for @tripOver.
+  ///
+  /// In ar, this message translates to:
+  /// **'عدّيت ميزانية الرحلة بـ {amount} {currency}'**
+  String tripOver(String amount, String currency);
+
+  /// No description provided for @tripSetBudget.
+  ///
+  /// In ar, this message translates to:
+  /// **'حدّد ميزانية الرحلة'**
+  String get tripSetBudget;
+
+  /// No description provided for @tripBudgetHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'الميزانية بـ{currency}'**
+  String tripBudgetHint(String currency);
+
+  /// No description provided for @tripBudgetSave.
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ'**
+  String get tripBudgetSave;
+
+  /// No description provided for @notifReadsSwitchesTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'قراءة الإشعارات'**
+  String get notifReadsSwitchesTitle;
+
+  /// No description provided for @notifReadsPrivacy.
+  ///
+  /// In ar, this message translates to:
+  /// **'كل واحد مقفول لحد ما تفتحه بنفسك. وتقدر تقفله في أي وقت.'**
+  String get notifReadsPrivacy;
+
+  /// No description provided for @notifReadsAppointment.
+  ///
+  /// In ar, this message translates to:
+  /// **'حجوزات الدكتور'**
+  String get notifReadsAppointment;
+
+  /// No description provided for @notifReadsTrip.
+  ///
+  /// In ar, this message translates to:
+  /// **'الطيران'**
+  String get notifReadsTrip;
+
+  /// No description provided for @notifReadsDocument.
+  ///
+  /// In ar, this message translates to:
+  /// **'أبشر والخدمات'**
+  String get notifReadsDocument;
+
+  /// No description provided for @notifReadsExplain.
+  ///
+  /// In ar, this message translates to:
+  /// **'بنقرا الإشعار ونطلّع التاريخ والمكان بس، والنص بيتمسح.'**
+  String get notifReadsExplain;
+
+  /// No description provided for @notifReadsSaveFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'ماقدرناش نحفظ التغيير، جرّب تاني'**
+  String get notifReadsSaveFailed;
+
+  /// No description provided for @notifReadsTodayTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد قرا إيه النهارده'**
+  String get notifReadsTodayTitle;
+
+  /// No description provided for @notifReadsEmptyTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'لسه مفيش حاجة اتقرت النهارده'**
+  String get notifReadsEmptyTitle;
+
+  /// No description provided for @notifReadsEmptyBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'أول ما يوصلك إشعار من نوع مفتوح، هتلاقي هنا التاريخ والمكان اللي طلّعناهم منه.'**
+  String get notifReadsEmptyBody;
+
+  /// No description provided for @notifReadsLoadFailed.
+  ///
+  /// In ar, this message translates to:
+  /// **'ماقدرناش نحمّل، اضغط للمحاولة تاني'**
+  String get notifReadsLoadFailed;
+
+  /// No description provided for @notifReadsDate.
+  ///
+  /// In ar, this message translates to:
+  /// **'التاريخ'**
+  String get notifReadsDate;
+
+  /// No description provided for @notifReadsTime.
+  ///
+  /// In ar, this message translates to:
+  /// **'الوقت'**
+  String get notifReadsTime;
+
+  /// No description provided for @notifReadsPlace.
+  ///
+  /// In ar, this message translates to:
+  /// **'المكان'**
+  String get notifReadsPlace;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

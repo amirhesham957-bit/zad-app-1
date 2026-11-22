@@ -17,6 +17,7 @@ import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/env/zad_env.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/family/application/family_controller.dart';
 import 'package:zad/shared/family/data/family_shares_remote.dart';
 import 'package:zad/shared/family/domain/family.dart';
@@ -260,10 +261,34 @@ class FamilyFollowRequestsCard extends ConsumerWidget {
 /// and what the member agreed to share.
 class MemberFollowSection extends ConsumerWidget {
   /// Creates the section.
-  const new({required this.ownerId, required this.currency, super.key});
+  const new({
+    required this.ownerId,
+    required this.currency,
+    super.key,
+    this.kidsGeofencing = ZadEnv.kidsGeofencing,
+    this.followsAutomatically = false,
+  });
+
+  /// The viewer is the admin and the member a child: medicines, spending
+  /// and tasks are followed without the child's answer (location keeps its
+  /// consent flow).
+  final bool followsAutomatically;
+
+  bool _auto(FamilyShareScope s) =>
+      followsAutomatically && s != FamilyShareScope.location;
+
+  FamilyShareStatus? _status(FollowedMember view, FamilyShareScope s) =>
+      _auto(s) &&
+          (view.statusOf(s) == null ||
+              view.statusOf(s) == FamilyShareStatus.pending)
+      ? FamilyShareStatus.granted
+      : view.statusOf(s);
 
   /// The member.
   final String ownerId;
+
+  /// Whether this build offers children's zones ([ZadEnv.kidsGeofencing]).
+  final bool kidsGeofencing;
 
   /// For the spending figures.
   final String currency;
@@ -274,8 +299,10 @@ class MemberFollowSection extends ConsumerWidget {
     FollowedMember view,
   ) async {
     final askable = <FamilyShareScope>{
-      for (final s in view.followable)
-        if (view.statusOf(s) case final st when st == null || st.canAskAgain) s,
+      for (final s in view.followableIn(kidsGeofencing: kidsGeofencing))
+        if (!_auto(s))
+          if (view.statusOf(s) case final st when st == null || st.canAskAgain)
+            s,
     };
     final chosen = await showModalBottomSheet<Set<FamilyShareScope>>(
       context: context,
@@ -283,10 +310,18 @@ class MemberFollowSection extends ConsumerWidget {
     );
     if (chosen == null || chosen.isEmpty) return;
     try {
-      await ref.read(familySharesRemoteProvider).request(ownerId, chosen);
+      final sent = await ref
+          .read(familySharesRemoteProvider)
+          .request(ownerId, chosen);
       ref.invalidate(followedMemberProvider(ownerId));
       if (context.mounted) {
-        _say(context, 'اتبعت الطلب — هيظهرلك لما يوافق.');
+        // The server's word: 'granted' is followed at once, else it waits.
+        _say(
+          context,
+          sent.status == 'granted'
+              ? context.l10n.familyFollowStarted
+              : 'اتبعت الطلب — هيظهرلك لما يوافق.',
+        );
       }
     } on Object {
       if (context.mounted) _say(context, 'مقدرتش أبعت الطلب. جرّب تاني.');
@@ -320,10 +355,12 @@ class MemberFollowSection extends ConsumerWidget {
             spacing: ZadSpacing.sm,
             runSpacing: ZadSpacing.xs,
             children: <Widget>[
-              for (final scope in view.followable)
+              for (final scope in view.followableIn(
+                kidsGeofencing: kidsGeofencing,
+              ))
                 Chip(
                   label: Text(
-                    '${scope.label}: ${switch (view.statusOf(scope)) {
+                    '${scope.label}: ${switch (_status(view, scope)) {
                       null => 'مش متطلبة',
                       FamilyShareStatus.pending => 'مستني موافقته',
                       FamilyShareStatus.granted => 'وافق ✅',
@@ -335,9 +372,13 @@ class MemberFollowSection extends ConsumerWidget {
                 ),
             ],
           ),
-          if (view.followable.any(
-            (s) => view.statusOf(s) == null || view.statusOf(s)!.canAskAgain,
-          ))
+          if (view
+              .followableIn(kidsGeofencing: kidsGeofencing)
+              .any(
+                (s) =>
+                    !_auto(s) &&
+                    (view.statusOf(s) == null || view.statusOf(s)!.canAskAgain),
+              ))
             Align(
               alignment: AlignmentDirectional.centerStart,
               child: TextButton.icon(

@@ -15,21 +15,25 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' show NumberFormat;
 import 'package:zad/core/design/components/zad_network_image.dart';
-import 'package:zad/core/design/components/zad_pressable.dart';
 import 'package:zad/core/design/foundation/compose_shadow.dart';
 import 'package:zad/core/design/tokens/zad_extended_colors.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/design/tokens/zad_world_colors.dart';
 import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/recipes/application/recipes_controller.dart';
 import 'package:zad/features/recipes/domain/recipe.dart';
 import 'package:zad/features/recipes/presentation/recipe_detail_screen.dart';
+import 'package:zad/features/recipes/presentation/recipes_view.dart'
+    show dishArt;
 import 'package:zad/shared/affiliate/presentation/amazon_buy_chip.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart';
 import 'package:zad/shared/modes/application/modes_controller.dart';
 import 'package:zad/shared/navigation/destinations.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
+import 'package:zad/shared/worlds/art/art.dart';
+import 'package:zad/shared/worlds/world_card.dart';
 
 /// The section, with Kotlin's gap below it.
 class HomeChefSection extends ConsumerWidget {
@@ -65,9 +69,9 @@ class HomeChefSection extends ConsumerWidget {
           ZadChefCard(
             suggestion: dish == null || dish.isEmpty ? null : dish,
             emptyHint: allDepleted
-                ? 'مخزونك كله خلص — نزّل النواقص في التسوق وأنا أقترحلك أكل.'
+                ? context.l10n.chefHomeAllDepleted
                 : pantry.isEmpty
-                ? 'ضيف أصناف لمخزونك عشان شيف زاد يقترح لك طبق اليوم.'
+                ? context.l10n.chefHomePantryEmpty
                 : context.l10n.chefHomeTapHint,
             onTap: () {
               if (recipes.isNotEmpty) {
@@ -114,58 +118,44 @@ class ZadChefCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return ZadPressable(
-      scale: 0.98,
-      haptic: false,
-      onPressed: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: scheme.surface,
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: kZadCardShadow,
-        ),
-        child: Row(
-          children: <Widget>[
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                color: const Color(0xFFFDF3E1),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Icon(
-                Icons.restaurant,
-                size: 28,
-                color: context.zadExt.secondaryDark,
-              ),
+    return ZadWorldCard(
+      onTap: onTap,
+      child: Row(
+        children: <Widget>[
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: ZadWorldColors.chef.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(ZadRadii.chip),
             ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    'شيف زاد (اقتراحات ذكية)',
-                    style: ZadType.bodyLarge.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: scheme.onSurface,
-                    ),
+            child: Center(child: ZadArt.icon(ZadIconArt.pot, size: 36)),
+          ),
+          const SizedBox(width: ZadSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  context.l10n.chefHomeTitle,
+                  style: ZadType.bodyLarge.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: ZadWorldColors.chef,
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    suggestion ?? emptyHint,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: ZadType.bodyMedium.copyWith(
-                      color: scheme.onSurfaceVariant,
-                    ),
+                ),
+                const SizedBox(height: ZadSpacing.xs),
+                Text(
+                  suggestion ?? emptyHint,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: ZadType.bodyMedium.copyWith(
+                    color: scheme.onSurfaceVariant,
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -220,9 +210,7 @@ class _ChefRecipeCard extends ConsumerWidget {
     final complete = recipe.missing.isEmpty;
     final badgeColor = complete ? scheme.primary : ext.secondaryDark;
     final url = recipe.imageUrl ?? recipe.thumbUrl;
-    final fallback = Center(
-      child: Icon(Icons.restaurant, size: 32, color: ext.secondaryDark),
-    );
+    final fallback = Center(child: dishArt(recipe.name, 64));
 
     return SizedBox(
       width: 260,
@@ -247,7 +235,7 @@ class _ChefRecipeCard extends ConsumerWidget {
                     height: 120,
                     width: double.infinity,
                     child: ColoredBox(
-                      color: const Color(0xFFFDF3E1),
+                      color: ZadWorldColors.chef.withValues(alpha: 0.08),
                       child: url == null
                           ? fallback
                           : ZadNetworkImage(
@@ -276,8 +264,10 @@ class _ChefRecipeCard extends ConsumerWidget {
                           ),
                           child: Text(
                             complete
-                                ? '✓ مكتملة من مخزونك'
-                                : 'ناقصك ${recipe.missing.length}',
+                                ? context.l10n.chefHomeComplete
+                                : context.l10n.chefMissingCount(
+                                    recipe.missing.length,
+                                  ),
                             style: ZadType.labelSmall.copyWith(
                               fontWeight: FontWeight.w600,
                               color: badgeColor,
@@ -303,7 +293,9 @@ class _ChefRecipeCard extends ConsumerWidget {
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                '${recipe.prepMinutes} د',
+                                context.l10n.chefHomeMinutes(
+                                  recipe.prepMinutes,
+                                ),
                                 style: ZadType.labelSmall.copyWith(
                                   color: scheme.onSurfaceVariant,
                                 ),
@@ -328,7 +320,7 @@ class _ChefRecipeCard extends ConsumerWidget {
                               child: Icon(
                                 Icons.thumb_up,
                                 size: 18,
-                                semanticLabel: 'عجبتني',
+                                semanticLabel: context.l10n.chefLike,
                                 color: liked == true
                                     ? scheme.primary
                                     : scheme.onSurfaceVariant.withValues(
@@ -344,7 +336,7 @@ class _ChefRecipeCard extends ConsumerWidget {
                               child: Icon(
                                 Icons.thumb_down,
                                 size: 18,
-                                semanticLabel: 'معجبتنيش',
+                                semanticLabel: context.l10n.chefDislike,
                                 color: liked == false
                                     ? ext.secondaryDark
                                     : scheme.onSurfaceVariant.withValues(
@@ -357,7 +349,9 @@ class _ChefRecipeCard extends ConsumerWidget {
                         if (recipe.missing.isNotEmpty) ...<Widget>[
                           const SizedBox(height: 8),
                           Text(
-                            'ناقصك: ${recipe.missing.join('، ')}',
+                            context.l10n.chefHomeMissingList(
+                              recipe.missing.join('، '), // l10n: data
+                            ),
                             style: ZadType.labelSmall.copyWith(
                               color: scheme.onSurfaceVariant,
                             ),
@@ -385,7 +379,7 @@ class _ChefRecipeCard extends ConsumerWidget {
                               color: scheme.primary,
                             ),
                             label: Text(
-                              'ضيفهم لقائمة التسوق',
+                              context.l10n.chefHomeAddMissing,
                               style: ZadType.labelMedium.copyWith(
                                 color: scheme.primary,
                               ),
@@ -395,7 +389,7 @@ class _ChefRecipeCard extends ConsumerWidget {
                         if (recipe.steps.isNotEmpty) ...<Widget>[
                           const SizedBox(height: 6),
                           Text(
-                            'اضغط للخطوات',
+                            context.l10n.chefHomeTapSteps,
                             style: ZadType.labelSmall.copyWith(
                               color: scheme.primary,
                             ),

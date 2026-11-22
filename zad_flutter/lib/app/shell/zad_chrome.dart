@@ -143,7 +143,12 @@ class ZadTopHeader extends StatelessWidget {
                       const SizedBox(width: 10),
                       // «زاد», and the tab's name in its place once the large
                       // title has folded (the bar has no room for both).
+                      // flex 100: the Spacer shares free space with this on
+                      // equal terms otherwise, and half of the little room a
+                      // 360dp phone leaves clipped «زاد» to «زا» (emulator,
+                      // 15/11).
                       Flexible(
+                        flex: 100,
                         child: _Folded(
                           fold: fold,
                           builder: (t) {
@@ -160,20 +165,29 @@ class ZadTopHeader extends StatelessWidget {
                               children: <Widget>[
                                 Opacity(
                                   opacity: 1 - p,
-                                  child: Text(
-                                    context.l10n.appTitle,
-                                    maxLines: 1,
-                                    style: style,
+                                  child: FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    alignment: AlignmentDirectional.centerStart,
+                                    child: Text(
+                                      context.l10n.appTitle,
+                                      maxLines: 1,
+                                      style: style,
+                                    ),
                                   ),
                                 ),
+                                // Shrinks rather than cuts: on a 360dp phone
+                                // «الرئيسية» read «الـ...» (emulator, 15/11).
                                 Opacity(
                                   opacity: p,
-                                  child: Text(
-                                    title,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: style.copyWith(
-                                      color: kShellTextPrimary,
+                                  child: FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    alignment: AlignmentDirectional.centerStart,
+                                    child: Text(
+                                      title,
+                                      maxLines: 1,
+                                      style: style.copyWith(
+                                        color: kShellTextPrimary,
+                                      ),
                                     ),
                                   ),
                                 ),

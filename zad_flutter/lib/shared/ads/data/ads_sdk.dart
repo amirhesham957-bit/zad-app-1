@@ -65,6 +65,28 @@ abstract final class AdsSdk {
     return ok;
   }
 
+  /// Opens Google's privacy-choices form (UMP) where the customer's region
+  /// owes one. Answers false when there is none to show or it could not open.
+  static Future<bool> showPrivacyOptions() async {
+    try {
+      final status = await ConsentInformation.instance
+          .getPrivacyOptionsRequirementStatus();
+      if (status != PrivacyOptionsRequirementStatus.required) return false;
+      final done = Completer<void>();
+      unawaited(
+        ConsentForm.showPrivacyOptionsForm((e) {
+          if (e != null) debugPrint('[ads] privacy options: ${e.message}');
+          if (!done.isCompleted) done.complete();
+        }),
+      );
+      await done.future;
+      return true;
+    } on Object catch (e) {
+      debugPrint('[ads] privacy options failed: $e');
+      return false;
+    }
+  }
+
   /// Google's advice: every launch. On an error UMP keeps the last run's
   /// status, which `canRequestAds()` then reads. Answers whether the update
   /// went through.
@@ -89,8 +111,10 @@ abstract final class AdsSdk {
         await ConsentInformation.instance.getConsentStatus() ==
         ConsentStatus.unknown;
     if (unknown) {
-      debugPrint('[ads] consent status unknown after a failed update; '
-          'requesting ads anyway');
+      debugPrint(
+        '[ads] consent status unknown after a failed update; '
+        'requesting ads anyway',
+      );
     }
     return unknown;
   }

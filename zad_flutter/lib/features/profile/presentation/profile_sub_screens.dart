@@ -10,8 +10,10 @@ import 'package:intl/intl.dart' show DateFormat, NumberFormat;
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/components/zad_appear.dart';
 import 'package:zad/core/design/components/zad_kotlin_surfaces.dart';
+import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_extended_colors.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/design/tokens/zad_world_colors.dart';
 import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/shared/alerts/application/local_reminders.dart';
 import 'package:zad/shared/alerts/data/alert_prefs.dart';
@@ -29,6 +31,45 @@ import 'package:zad/shared/navigation/zad_screens.dart';
 import 'package:zad/shared/settings/application/settings_controller.dart';
 import 'package:zad/shared/sleep/application/sleep_sync.dart';
 import 'package:zad/shared/transactions/data/transactions_repository.dart';
+import 'package:zad/shared/worlds/zad_world.dart';
+
+/// The page frame of حسابي's sub-screens: the world's tint behind, a plain
+/// back bar in the world's ink, the body as it was.
+class ProfileSubPage extends StatelessWidget {
+  /// Creates the frame.
+  const new({required this.title, required this.body, super.key});
+
+  /// The screen's title.
+  final String title;
+
+  /// The body.
+  final Widget body;
+
+  @override
+  Widget build(BuildContext context) => DecoratedBox(
+    decoration: BoxDecoration(
+      gradient: LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: <Color>[
+          ZadWorldColors.tint(ZadWorld.profile.color),
+          ZadColors.canvasMid,
+        ],
+      ),
+    ),
+    child: Scaffold(
+      backgroundColor: Colors.transparent,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        title: Text(
+          title,
+          style: ZadType.titleLarge.copyWith(color: ZadWorld.profile.color),
+        ),
+      ),
+      body: body,
+    ),
+  );
+}
 
 Future<void> _push(BuildContext context, Widget screen) =>
     Navigator.of(context)
@@ -74,8 +115,8 @@ class FamilyManagementScreen extends ConsumerWidget {
     final controller = ref.read(familyControllerProvider.notifier);
     final me = family?.me(view.userId);
 
-    return Scaffold(
-      appBar: const SubScreenTopBar(title: 'إدارة العائلة'),
+    return ProfileSubPage(
+      title: 'إدارة العائلة',
       body: ZadAppearOnEntry(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
@@ -245,8 +286,8 @@ class _PaymentState extends ConsumerState<PaymentAndBudgetScreen> {
     final shown = '${NumberFormat('#,##0.##', 'en').format(budget)} $symbol'
         .trim();
 
-    return Scaffold(
-      appBar: const SubScreenTopBar(title: 'طرق الدفع والميزانية'),
+    return ProfileSubPage(
+      title: 'طرق الدفع والميزانية',
       body: ZadAppearOnEntry(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
@@ -670,8 +711,8 @@ class _AlertsState extends ConsumerState<AssistantAlertsScreen> {
     void set(String key, {required bool v}) =>
         setState(() => prefs.setEnabled(key, enabled: v));
 
-    return Scaffold(
-      appBar: const SubScreenTopBar(title: 'تنبيهات المساعد الذكي'),
+    return ProfileSubPage(
+      title: 'تنبيهات المساعد الذكي',
       body: ZadAppearOnEntry(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),

@@ -13,7 +13,9 @@ import 'package:zad/features/inventory/presentation/pantry_view.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart'
     as pantry;
 import 'package:zad/shared/inventory/application/shopping_controller.dart';
+import 'package:zad/shared/inventory/data/household_members.dart';
 import 'package:zad/shared/inventory/domain/inventory_item.dart';
+import 'package:zad/shared/inventory/domain/inventory_rules.dart';
 import 'package:zad/shared/inventory/domain/shortage.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/navigation/destinations.dart';
@@ -46,6 +48,31 @@ final Finder _cards = find.byWidgetPredicate(
 );
 
 void main() {
+  // The world's scene sits above the list, so a screenful holds fewer rows;
+  // a tall surface keeps every row built (a real phone scrolls to them).
+  setUp(() {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    final view =
+        TestWidgetsFlutterBinding.instance.platformDispatcher.implicitView!
+          ..physicalSize = const Size(800, 2800)
+          ..devicePixelRatio = 1;
+    addTearDown(view.reset);
+    // The scene loops for ever, which pumpAndSettle would wait on; a phone
+    // asked for reduced motion holds it still.
+    TestWidgetsFlutterBinding
+        .instance
+        .platformDispatcher
+        .accessibilityFeaturesTestValue = const FakeAccessibilityFeatures(
+      disableAnimations: true,
+    );
+    addTearDown(
+      TestWidgetsFlutterBinding
+          .instance
+          .platformDispatcher
+          .clearAccessibilityFeaturesTestValue,
+    );
+  });
+
   setUpAll(() async {
     tz_data.initializeTimeZones();
     await initializeDateFormatting('ar');
@@ -79,6 +106,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          ...quietOrbOverrides,
           nowProvider.overrideWithValue(() => _now),
           accountTimeZoneProvider.overrideWithValue('Africa/Cairo'),
           pantry.pantryControllerProvider.overrideWith(
@@ -121,6 +149,7 @@ void main() {
     }) => tester.pumpWidget(
       ProviderScope(
         overrides: [
+          ...quietOrbOverrides,
           nowProvider.overrideWithValue(() => _now),
           accountTimeZoneProvider.overrideWithValue('Africa/Cairo'),
           pantry.pantryControllerProvider.overrideWith(
@@ -186,7 +215,7 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('ينتهي قريباً'), findsOneWidget);
-      expect(find.text('باقي 2 يوم'), findsOneWidget);
+      expect(find.textContaining('باقي 2 يوم'), findsOneWidget);
       expect(find.text('اقتراح وصفة'), findsOneWidget);
     });
 
@@ -240,6 +269,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            ...quietOrbOverrides,
             nowProvider.overrideWithValue(() => _now),
             accountTimeZoneProvider.overrideWithValue('Africa/Cairo'),
             pantry.pantryControllerProvider.overrideWith(() => pantryCtl),
@@ -265,7 +295,11 @@ void main() {
         findsOneWidget,
         reason: 'the milk only',
       );
-      expect(find.text('منخفض'), findsOneWidget, reason: 'on the milk only');
+      expect(
+        find.textContaining('منخفض', findRichText: true),
+        findsOneWidget,
+        reason: 'on the milk only',
+      );
     });
 
     testWidgets('the edit dialog says so, and only a change is written', (
@@ -321,6 +355,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          ...quietOrbOverrides,
           nowProvider.overrideWithValue(() => _now),
           accountTimeZoneProvider.overrideWithValue('Africa/Cairo'),
           pantry.pantryControllerProvider.overrideWith(() => pantryCtl),
@@ -348,12 +383,18 @@ void main() {
     // device: the chips must count from the account's day.
     final late = DateTime.utc(2026, 11, 12, 21, 30);
 
-    Future<_AddingPantry> openAdd(WidgetTester tester) async {
-      final pantryCtl = _AddingPantry();
+    Future<_AddingPantry> openAdd(
+      WidgetTester tester, {
+      String? refuse,
+      List<HouseholdMember> members = const <HouseholdMember>[],
+    }) async {
+      final pantryCtl = _AddingPantry(refuse);
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            ...quietOrbOverrides,
             nowProvider.overrideWithValue(() => late),
+            householdMembersProvider.overrideWith((ref) async => members),
             accountTimeZoneProvider.overrideWithValue('Asia/Riyadh'),
             pantry.pantryControllerProvider.overrideWith(() => pantryCtl),
             shoppingControllerProvider.overrideWith(QuietShopping.new),
@@ -393,6 +434,49 @@ void main() {
       await tapVisible(tester, find.widgetWithText(ChoiceChip, 'أسبوع'));
       await tapVisible(tester, find.widgetWithText(FilledButton, 'حفظ'));
       expect(pantryCtl.added.single.expiry, DateTime.utc(2026, 11, 20));
+    });
+
+    testWidgets('«لمين؟» shows only for a home of two or more, and is sent', (
+      tester,
+    ) async {
+      final alone = await openAdd(
+        tester,
+        members: const [HouseholdMember(id: 'me', name: 'أنا', isSelf: true)],
+      );
+      expect(find.text('لمين؟'), findsNothing);
+      expect(alone.added, isEmpty);
+      await tester.pumpWidget(const SizedBox());
+
+      final pantryCtl = await openAdd(
+        tester,
+        members: const [
+          HouseholdMember(id: 'me', name: 'أنا', isSelf: true),
+          HouseholdMember(id: 'sara', name: 'سارة', isSelf: false),
+        ],
+      );
+      expect(find.text('لمين؟'), findsOneWidget);
+      await tester.enterText(find.byType(TextField).first, 'صابون');
+      await tapVisible(
+        tester,
+        find.widgetWithText(DropdownMenu<String>, 'أنا'),
+      );
+      await tester.tap(find.text('سارة').last);
+      await tester.pumpAndSettle();
+      await tapVisible(tester, find.widgetWithText(FilledButton, 'حفظ'));
+      expect(pantryCtl.memberIds.single, 'sara');
+    });
+
+    testWidgets('a write the door would refuse says why and keeps the sheet', (
+      tester,
+    ) async {
+      final pantryCtl = await openAdd(tester, refuse: 'name_invalid');
+      await tester.enterText(find.byType(TextField).first, 'صابون');
+      await tapVisible(tester, find.widgetWithText(FilledButton, 'حفظ'));
+
+      expect(find.byType(SnackBar), findsOneWidget);
+      expect(find.textContaining('٢ لـ١٢٠'), findsOneWidget);
+      expect(find.widgetWithText(FilledButton, 'حفظ'), findsOneWidget);
+      expect(pantryCtl.added, isEmpty);
     });
 
     testWidgets('left empty, the guess is shown as an estimate and saved', (
@@ -445,6 +529,7 @@ void main() {
           ProviderScope(
             key: UniqueKey(),
             overrides: [
+              ...quietOrbOverrides,
               nowProvider.overrideWithValue(() => late),
               accountTimeZoneProvider.overrideWithValue('Asia/Riyadh'),
               pantry.pantryControllerProvider.overrideWith(() => pantryCtl),
@@ -509,7 +594,13 @@ class _EditingPantry extends QuietPantry {
 
 /// A pantry that records what each [add] carried.
 class _AddingPantry extends QuietPantry {
-  new();
+  new([this.refuseWith]);
+
+  /// When set, every add is refused the way the repository refuses what the
+  /// door would: before anything is saved.
+  final String? refuseWith;
+
+  final List<String?> memberIds = <String?>[];
 
   final List<({String name, String? category, DateTime? expiry})> added =
       <({String name, String? category, DateTime? expiry})>[];
@@ -522,6 +613,10 @@ class _AddingPantry extends QuietPantry {
     String? category,
     double? lowStockThreshold,
     DateTime? expiryDate,
-  }) async =>
-      added.add((name: itemName, category: category, expiry: expiryDate));
+    String? memberId,
+  }) async {
+    memberIds.add(memberId);
+    if (refuseWith case final reason?) throw InventoryRuleViolation(reason);
+    added.add((name: itemName, category: category, expiry: expiryDate));
+  }
 }

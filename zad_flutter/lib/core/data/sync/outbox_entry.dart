@@ -26,7 +26,19 @@ abstract final class OutboxKind {
   static const String updateAccountSettings = 'update_account_settings';
 
   /// Insert or update a row in `zad_inventory`.
+  ///
+  /// Still sent, for two things: an entry queued by a build from before
+  /// [commitInventoryIntent] existed, which must not be lost on update, and
+  /// the fields the door has no intent for (name, unit, expiry, restock mode).
   static const String upsertInventory = 'upsert_inventory';
+
+  /// One pantry write — added, consumed or quantity_set — through
+  /// `zad_commit_my_intent`, the wrapper around the one door.
+  ///
+  /// Keyed `inventory_intent:<client_event_id>` and never merged with another:
+  /// they are separate things the customer did, in order, and the door answers
+  /// a replay with `duplicate` instead of applying it twice.
+  static const String commitInventoryIntent = 'commit_inventory_intent';
 
   /// Remove a row from `zad_inventory`.
   ///

@@ -565,3 +565,32 @@ Deno.test("item preferences (10.1 slice 4d): the table's preferred brand wins, a
   assertEquals(kept, ["حليب نادك ١ لتر", "رز المراعي"], "only the milk of the rejected brand goes; its rice stays");
   assertEquals(withoutRejectedBrands(offers, new Map()).length, 3);
 });
+
+Deno.test("m6.1: value = saving x need probability; a short item's deal beats a bigger discount on a non-short one", () => {
+  const raw = [
+    { item: "رز مصرى", store: "سوق أ", price: 90, price_before: 100 },
+    { item: "رز مصرى", store: "سوق ب", price: 70, price_before: 100 },
+  ];
+  assertEquals(pickDeal(raw, ["رز"], [], new Set(), [], false, new Map(), new Set(), ["رز"])?.store, "سوق ب");
+  const mixed = [
+    { item: "رز مصرى", store: "سوق أ", price: 80, price_before: 100 }, // 20% وناقص
+    { item: "شاي ليبتون", store: "سوق ب", price: 50, price_before: 100 }, // 50% ومش ناقص
+  ];
+  // 0.9*20=18 قصاد 0.3*50=15 → الرز الناقص
+  assertEquals(pickDeal(mixed, ["رز", "شاي"], [], new Set(), [], false, new Map(), new Set(), ["رز"])?.item, "رز مصرى");
+  // 0.3*80=24 قصاد 18 → خصم ضخم على غير الناقص بيغلب
+  assertEquals(pickDeal(mixed.map((m, i) => i ? { ...m, price: 20 } : m), ["رز", "شاي"], [], new Set(), [], false, new Map(), new Set(), ["رز"])?.item, "شاي ليبتون");
+});
+
+Deno.test("m6.1: Amazon only for a basic shortage; never for others; flagged commission and says if not the cheapest", () => {
+  const amz = { item: "لبن المراعي", store: "أمازون", price: 60, price_before: 80 };
+  const other = { item: "لبن المراعي", store: "هايبر", price: 50, price_before: 60 };
+  assertEquals(pickDeal([amz], ["لبن"], [], new Set(), [], false, new Map(), new Set(), []), null); // مش ناقص
+  assertEquals(pickDeal([{ ...amz, item: "سماعة بلوتوث" }], ["سماعة"], [], new Set(), [], false, new Map(), new Set(), ["سماعة"]), null); // مش أساسي
+  const solo = pickDeal([amz], ["لبن"], [], new Set(), [], false, new Map(), new Set(), ["لبن"])!;
+  assertEquals(solo.commission, true);
+  assertEquals(solo.note, null);
+  const both = pickDeal([amz, other], ["لبن"], [], new Set(), [], false, new Map(), new Set(), ["لبن"])!;
+  assertEquals(both.store, "أمازون"); // 25% قصاد 16.7%: العمولة مش بتغيّر الترتيب
+  assertStringIncludes(both.note ?? "", "أرخص");
+});

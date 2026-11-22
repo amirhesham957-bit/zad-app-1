@@ -28,13 +28,28 @@ void main() {
       }
     });
 
-    test('not on a table zad_agent_undo answers table_not_undoable for', () {
-      // Real targets on the live project that the function has no branch for.
+    test('on the trash tables the undo learned in M1.6', () {
+      // Deleted through the brain and recorded with the row before the delete.
       for (final table in <String>[
         'zad_appointments',
         'zad_subscriptions',
         'zad_memory',
         'zad_maintenance_items',
+        'zad_debts',
+        'zad_documents',
+        'zad_category_budgets',
+      ]) {
+        expect(_action(table: table).isUndoable, isTrue, reason: table);
+      }
+    });
+
+    test('not on a table zad_agent_undo answers table_not_undoable for', () {
+      // Real targets on the live project that the function has no branch for.
+      for (final table in <String>[
+        'agent_goals',
+        'agent_tasks',
+        'zad_customer_profile',
+        'zad_broke_mode',
       ]) {
         expect(_action(table: table).isUndoable, isFalse, reason: table);
       }
@@ -48,6 +63,8 @@ void main() {
     });
 
     test("the table list is the deployed function's, no more", () {
+      // 20261121140000_undo_knows_every_trash_table: the seven from 2026-09-21
+      // plus the seven trash tables.
       expect(kUndoableTables, <String>{
         'zad_transactions',
         'zad_inventory',
@@ -55,6 +72,13 @@ void main() {
         'zad_pharmacy_doses',
         'zad_shopping_list',
         'zad_obligations',
+        'zad_subscriptions',
+        'zad_debts',
+        'zad_maintenance_items',
+        'zad_documents',
+        'zad_appointments',
+        'zad_memory',
+        'zad_category_budgets',
         'zad_users',
       });
     });
@@ -103,6 +127,12 @@ void main() {
     final en = lookupZadL10n(const Locale('en'));
     expect(agentToolLabel('rate_recipe', en), 'Rated a recipe');
     expect(agentToolLabel('rate_recipe'), 'رأيك في وصفة');
+    // ZAD_OR_PLAN M1.6: the brain's restore from the trash.
+    expect(agentToolLabel('restore_deleted'), 'رجّع حاجة اتمسحت');
+    expect(
+      agentToolLabel('restore_deleted', en),
+      'Brought back something deleted',
+    );
     // The older labels are untouched by the language.
     expect(agentToolLabel('log_transaction', en), 'تسجيل معاملة');
   });

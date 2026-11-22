@@ -274,6 +274,8 @@ export const validateRemember: Validator = (input, snap, ctx) => {
   if ((ctx.counts["remember"] ?? 0) >= 3) return { ok: false, reason: "وصلت لحد أقصى ٣ ملاحظات في المرة" };
   // جواب «صح؟» على ملاحظة حساسة مستنية: الملاحظة نفسها في الصف، والـid بس اللي يهم.
   if (input.pending_id) return { ok: true };
+  // م٩.٢: pause_note_id من غير valid_until = العادة المتوقفة رجعت، والـid بس اللي يهم.
+  if (input.pause_note_id && !(typeof input.valid_until === "string" && input.valid_until.trim())) return { ok: true };
   const len = (input.note ?? "").length;
   if (len < 10) return { ok: false, reason: "الملاحظة قصيرة أوي" };
   if (len > 200) return { ok: false, reason: "طويلة أوي، لخّصها في جملة" };
@@ -1386,6 +1388,8 @@ export const VALIDATORS: Record<string, Validator> = {
  * مش هنا عمداً.
  */
 export const MUTATING_TOOLS = [
+  // ZAD_OR_PLAN م١.٦: بترجّع صف من السلة — كتابة، وتراجعها مسح.
+  "restore_deleted",
   "start_family_poll", "log_decision", "set_life_circumstance", "end_life_circumstance", "confirm_life_shift",
   "remember_occasion", "save_trusted_technician", "answer_same_product",
   "update_inventory_qty", "consume_item", "set_transaction_category", "merge_duplicate_expense",

@@ -13,6 +13,8 @@ import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/auth/presentation/legal_text_expansion.dart';
 import 'package:zad/features/auth/presentation/terms_content.dart';
+import 'package:zad/shared/companion/domain/companion_catalog.dart';
+import 'package:zad/shared/orb/domain/orb_occasion.dart';
 import 'package:zad/shared/orb/presentation/companion_orb.dart';
 
 /// Opens a web page; false when it could not be opened.
@@ -92,6 +94,15 @@ class _ConsentSheet extends StatelessWidget {
         l.consentPoint3Lead,
         l.consentPoint3Body,
       ),
+      // Google Play User Data policy (2026-07-15): data sent to third-party
+      // AI is disclosed before consent, not only in the legal text (§5.3).
+      _Point(
+        Icons.cloud_upload_outlined,
+        const Color(0xFF5B3FB8),
+        const Color(0xFFEEE9FB),
+        l.consentPointAiLead,
+        l.consentPointAiBody,
+      ),
       _Point(
         Icons.auto_awesome,
         const Color(0xFF5B3FB8),
@@ -134,7 +145,13 @@ class _ConsentSheet extends StatelessWidget {
           ),
           child: Row(
             children: <Widget>[
-              const CompanionOrb(size: 72, animated: false),
+              const CompanionOrb(
+                // The intro's Zado, not the classic ball (see auth_hero.dart).
+                look: CompanionLook(),
+                occasion: OrbOccasion.none,
+                size: 72,
+                animated: false,
+              ),
               const SizedBox(width: ZadSpacing.xs),
               Expanded(
                 child: Column(

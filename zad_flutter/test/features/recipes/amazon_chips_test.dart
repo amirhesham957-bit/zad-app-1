@@ -2,9 +2,14 @@
 // list and the full recipe's footer — and only on the missing ones (owner,
 // 2026-11-15). A child sees none.
 
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hive_ce_flutter/hive_flutter.dart';
+import 'package:zad/core/data/local/boxes.dart';
+import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/zad_theme.dart';
 import 'package:zad/features/recipes/application/recipes_controller.dart';
 import 'package:zad/features/recipes/domain/recipe.dart';
@@ -47,6 +52,18 @@ const Recipe _pasta = Recipe(
 );
 
 void main() {
+  late Directory dir;
+  late ZadLocalStore store;
+  setUp(() async {
+    dir = await Directory.systemTemp.createTemp('zad_amazon_recipes');
+    Hive.init(dir.path);
+    store = await ZadLocalStore.open();
+  });
+  tearDown(() async {
+    await Hive.deleteFromDisk();
+    await dir.delete(recursive: true);
+  });
+
   final opened = <Uri>[];
   final logged = <String>[];
 
@@ -59,10 +76,12 @@ void main() {
     opened.clear();
     logged.clear();
     tester.view.physicalSize = const Size(1080, 2400);
-    addTearDown(tester.view.resetPhysicalSize);
+    tester.view.devicePixelRatio = 2;
+    addTearDown(tester.view.reset);
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          localStoreProvider.overrideWithValue(store),
           recipesControllerProvider.overrideWith(
             () => _Recipes(
               RecipesView(
@@ -105,11 +124,14 @@ void main() {
       'what the customer has', (tester) async {
     await pump(tester, const ui.RecipesView());
     await tester.tap(find.text('مكرونة بالصلصة'));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pump(const Duration(seconds: 2));
 
     expect(find.byType(AmazonBuyChip), findsNWidgets(2));
     expect(find.text('روابط أمازون · زاد ممكن ياخد عمولة'), findsOneWidget);
 
+    await tester.ensureVisible(find.byType(AmazonBuyChip).last);
+    await tester.pump();
     await tester.tap(find.byType(AmazonBuyChip).last);
     await tester.pump();
     expect(opened.single.queryParameters['k'], 'جبنة');
@@ -121,7 +143,7 @@ void main() {
     tester,
   ) async {
     await pump(tester, const RecipeDetailDialog(recipe: _pasta), country: 'SA');
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(seconds: 1));
 
     expect(find.byType(AmazonBuyChip), findsNWidgets(2));
     await tester.tap(find.byType(AmazonBuyChip).first);
@@ -136,7 +158,7 @@ void main() {
     tester,
   ) async {
     await pump(tester, const RecipeDetailDialog(recipe: _pasta), kids: true);
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(seconds: 1));
     expect(find.text('من أمازون'), findsNothing);
     expect(find.text('روابط أمازون · زاد ممكن ياخد عمولة'), findsNothing);
   });

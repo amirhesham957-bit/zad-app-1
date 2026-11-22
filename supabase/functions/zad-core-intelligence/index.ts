@@ -1,5 +1,6 @@
 // deno-lint-ignore-file
 import { voiceCountry } from "../_shared/dialect.ts";
+import { chorePlan } from "./chorePlan.ts";
 import { buildTicker, countryForLocation } from "./liveTicker.ts";
 import { asksLatest, bingNewsUrl, cacheTtlMs, englishTwin, type GoldQuote, GOOGLE_CONSENT_COOKIE, goldQuotes, googleNewsUrl, isLiveQuery, keepAnswering, latestFirst, marketOf, topicOf, withTwin } from "./searchQuality.ts";
 import { spokenText, WHISPER_DEFAULT_MODEL, type WhisperOptions, whisperOptions, whisperWithFallback } from "./whisper.ts";
@@ -49,7 +50,7 @@ import { DEAL_SEARCH_CACHE_MS, dealSearchCacheKey, refused, SOURCE_REST_MS, with
 import { tiktokDealHits, tiktokDealsPrompt, tiktokQuery, withPriceFromPercent } from "./tiktokDeals.ts";
 import { isFreshPick, PICK_MIN_LIKES, readSocialPick, type SocialPick, tiktokPostedAt } from "./socialPicks.ts";
 import { readWeekTrends, weekTrendHits, weekTrendsPrompt, weekTrendsQuery } from "./weekTrends.ts";
-import { brochureEntries, OFFICIAL_FLYER_SITES, OFFICIAL_FLYER_UA, officialFlyerDeals, officialFlyerPrompt, robotsAllows, siteForPdf } from "./officialFlyers.ts";
+import { brochureEntries, imageEntries, MAX_FLYERS_PER_SITE, OFFICIAL_FLYER_SITES, OFFICIAL_FLYER_UA, officialFlyerDeals, officialFlyerPrompt, robotsAllows, siteForPdf } from "./officialFlyers.ts";
 import { apifyTokens, flyerLinkSample, renderPageWithApify } from "./apifyPool.ts";
 import { fillMarketCurrency, DEAL_SEARCH_TIMEOUT_MS, dealQuery, dealsFromHitsPrompt, dealSearchItems, readDeals, readReverseCity, readStoreDeals, reverseCityUrl, sameCurrency, cleanCity, searchStoreName, storeDealsPrompt, storeDealsQuery, videoDealsPrompt, youtubeDealVideos, instagramDealPosts, postDealsPrompt, flyerDealsPrompt, readDealCodes, type DealCode } from "./liveDeals.ts";
 import { fuelPricePrompt, fuelPriceQuery, readFuelPrice } from "./fuelPrice.ts";
@@ -57,7 +58,7 @@ import {
   exchangeLongLivedToken, instagramAccountPosts, instagramHandles, instagramHashtagPosts, metaAppKeys, MIN_STORE_FOLLOWERS, instagramProbe, instagramTokenInfo, storeHashtag, tokenDaysLeft, tokenNeedsRefresh,
   youtubeProbe, youtubeSearch,
 } from "./socialSources.ts";
-import { tavilyProbe, tavilySearch } from "./tavily.ts";
+import { tavilyKeys, tavilyProbe, tavilySearchRotating } from "./tavily.ts";
 import { readSocialVideo, recipeAccountQuery, recipeTopicQuery, socialVideoHits, socialVideoPrompt, type SocialVideo } from "./socialRecipes.ts";
 import { instagramRecipeHits, PLATFORM_NAME, recipePlatform, youtubeRecipeHits, youtubeRecipeQuery } from "./socialRecipeSources.ts";
 import { avoidNames, chefAngles, chefDeals, type ChefDeal, type ChefDealRow, chefExpiring, chefPantryLine, chefSecret, dealsBlock, dealsForMissing, dishKey, type ExpiringItem, expiringBlock, NO_REPEAT_DAYS, type PantryRow, pickSocialRecipes, recipeSource, type SocialRecipeRow, socialRecipesBlock, trendBlock, trendCacheKey, trendQuery, withoutRecent } from "./chefInputs.ts";
@@ -612,6 +613,22 @@ async function pictureAsDataUrl(url: string): Promise<string | null> {
     let binary = "";
     for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
     return `data:${type.split(";")[0].trim()};base64,${btoa(binary)}`;
+  } catch {
+    return null;
+  }
+}
+
+/** صورة عرض رسمية من موقع المحل (officialFlyers.ts) كـdata URL: UA بتاعنا، image/* بس، حد ٦ ميجا. الرابط اتحقق قبلها بـsiteForPdf. */
+async function officialFlyerImageAsDataUrl(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(url, { headers: { "User-Agent": OFFICIAL_FLYER_UA }, signal: AbortSignal.timeout(20_000) });
+    const type = (res.headers.get("content-type") ?? "").split(";")[0].trim();
+    if (!res.ok || !/^image\/(jpeg|png|webp)$/.test(type)) { await res.body?.cancel(); return null; }
+    const bytes = new Uint8Array(await res.arrayBuffer());
+    if (bytes.length === 0 || bytes.length > 6_000_000) return null;
+    let binary = "";
+    for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+    return `data:${type};base64,${btoa(binary)}`;
   } catch {
     return null;
   }
@@ -1605,10 +1622,11 @@ const decodeEntities = (v: string) => v
  * the chain while the paid grounding rests ([tavilyFirstWhileGroundingRests]). The call is in tavily.ts.
  */
 async function tavilySnippets(query: string, maxResults: number): Promise<WebHit[]> {
-  const tavily = Deno.env.get("TAVILY_API_KEY");
-  if (!tavily) return [];
-  const r = await tavilySearch(tavily, query, maxResults);
-  lastWebSearchAttempts.push(r.ok ? `tavily:200 hits=${r.items.length}` : r.status === 0 ? `tavily:threw ${r.reason ?? ""}` : `tavily:${r.status}`);
+  const keys = tavilyKeys();
+  if (keys.length === 0) return [];
+  const r = await tavilySearchRotating(keys, query, maxResults);
+  const via = keys.length > 1 ? ` key=${r.tried}/${keys.length}` : "";
+  lastWebSearchAttempts.push(r.ok ? `tavily:200 hits=${r.items.length}${via}` : r.tried === 0 ? `tavily:all ${keys.length} keys resting` : r.status === 0 ? `tavily:threw ${r.reason ?? ""}` : `tavily:${r.status}${via}`);
   return r.items;
 }
 
@@ -2048,7 +2066,7 @@ async function handle(req: Request): Promise<Response> {
           };
         }),
         // ٤.١٤: احتياطي البحث موجود وبيرد؟ (بحث واحد من الألف في الشهر لكل نشر)
-        tavilyProbe(Deno.env.get("TAVILY_API_KEY")),
+        tavilyProbe(tavilyKeys()),
       ]);
       // البحث الحقيقي اللي web_search بتاعة العقل بتعتمد عليه — عدد النتايج بس.
       let webSearch: unknown;
@@ -2114,6 +2132,17 @@ async function handle(req: Request): Promise<Response> {
         model: GEMINI_TTS_MODEL,
         audio_bytes: hasAudio ? data.candidates[0].content.parts[0].inlineData.data.length : 0,
       }, 200);
+    }
+
+    // م٥.٢: توزيع شغل البيت (chorePlan.ts). حساب من غير موديل ومن غير كتابة، فمالوش كوتة.
+    if (action === "chore_plan") {
+      const token = bearerToken(req);
+      const { data: caller, error: authError } = token
+        ? await supabase.auth.getUser(token)
+        : { data: { user: null }, error: new Error("missing token") };
+      if (authError || !caller?.user?.id) return jsonResponse({ error: "unauthorized" }, 401);
+      const out = await chorePlan(supabase, caller.user.id, (payload || {}).family_id);
+      return jsonResponse(out.body, out.status);
     }
 
     if (action === "voice_synthesize") {
@@ -3622,7 +3651,7 @@ async function handle(req: Request): Promise<Response> {
                 }
                 html = await res.text();
               }
-              const entries = brochureEntries(html, site);
+              const entries = [...brochureEntries(html, site), ...imageEntries(html, site)].slice(0, MAX_FLYERS_PER_SITE);
               sites.push({ store: site.store, country: site.country, currency: site.currency, ok: true, entries });
             } catch (e) {
               sites.push({ store: site.store, ok: false, reason: (e as Error).name === "TimeoutError" ? "timeout" : "fetch_failed" });
@@ -3636,8 +3665,23 @@ async function handle(req: Request): Promise<Response> {
         const label = typeof payload?.label === "string" ? payload.label.slice(0, 80) : "";
         const market = marketOf(site.country);
         const now = new Date();
-        const { system, user } = officialFlyerPrompt(site.store, market.name, site.currency, label, now.toISOString().slice(0, 10));
-        const read = await readPdfWithGemini({ pdfUrl, systemPrompt: system, userText: user, deadline: Date.now() + 100_000 });
+        const isImage = !!site.image?.test(pdfUrl);
+        const { system, user } = officialFlyerPrompt(site.store, market.name, site.currency, label, now.toISOString().slice(0, 10), isImage ? "image" : "pdf");
+        let read: { content: string | null; reason: string | null };
+        if (isImage) {
+          // صورة عرض رسمية: بتتنزّل بالـUA بتاعنا (حد ٦ ميجا) وتتقري بنفس نداء جيميناي بتاع store_deals_flyer.
+          const picture = await officialFlyerImageAsDataUrl(pdfUrl);
+          if (!picture) return jsonResponse({ ok: false, reason: "no_image" });
+          const answer = await callGeminiPool({
+            model: VISION_FALLBACK_MODELS[0] ?? GEMINI_MODEL_ROUTINE, systemPrompt: system,
+            content: [{ type: "image_url", image_url: { url: picture } }, { type: "text", text: user }],
+            temperature: 0.1, maxTokens: 3000, jsonMode: true, thinkingBudget: 0, timeoutMs: 45_000,
+            deadline: Date.now() + 50_000, publicContent: true,
+          });
+          read = answer.ok && answer.content ? { content: answer.content, reason: null } : { content: null, reason: "no_model" };
+        } else {
+          read = await readPdfWithGemini({ pdfUrl, systemPrompt: system, userText: user, deadline: Date.now() + 100_000 });
+        }
         if (!read.content) return jsonResponse({ ok: false, reason: read.reason });
         const parsed = (() => { try { return JSON.parse(read.content!); } catch { return null; } })();
         if (parsed === null) return jsonResponse({ ok: false, reason: "bad_json" });

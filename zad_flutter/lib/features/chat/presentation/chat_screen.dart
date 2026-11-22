@@ -16,7 +16,9 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/design/tokens/zad_world_colors.dart';
 import 'package:zad/core/l10n/l10n.dart';
+import 'package:zad/features/chat/presentation/chat_world_header.dart';
 import 'package:zad/features/chat/presentation/reply_report_button.dart';
 import 'package:zad/shared/ads/presentation/ai_wait_ad.dart';
 import 'package:zad/shared/ads/presentation/inline_ad.dart';
@@ -27,9 +29,10 @@ import 'package:zad/shared/chat/domain/agent_turn.dart';
 import 'package:zad/shared/chat/domain/chat_message.dart';
 import 'package:zad/shared/household/domain/home_emergency.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
+import 'package:zad/shared/orb/domain/companion_state.dart';
 import 'package:zad/shared/quota/application/attempts_balance_provider.dart';
-import 'package:zad/shared/quota/presentation/attempts_chip.dart';
 import 'package:zad/shared/voice/application/voice_output_controller.dart';
+import 'package:zad/shared/worlds/zad_world.dart';
 
 /// The chat screen.
 class ChatScreen extends ConsumerStatefulWidget {
@@ -48,6 +51,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   /// emptied by hand, so typing afresh is a typed message again.
   bool _spoken = false;
 
+  /// The header's scene folds away once the conversation is scrolled back, so
+  /// the header never eats the messages.
+  bool _collapsed = false;
+
   /// A home emergency the last message described (الشريحة ٤٣): the card over
   /// the composer opens the trusted technicians with that trade first.
   TechnicianTrade? _emergency;
@@ -55,6 +62,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   @override
   void initState() {
     super.initState();
+    _scroll.addListener(() {
+      final far = _scroll.hasClients && _scroll.offset > 80;
+      if (far != _collapsed) setState(() => _collapsed = far);
+    });
     // A question offered before this screen was open (the home's urgent
     // recipes card pushes it right after offering).
     final pending = ref.read(chatPrefillProvider);
@@ -152,86 +163,125 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       setState(() => _adAfter.add(reply.id));
     });
 
+    const world = ZadWorld.chat;
+    final l = context.l10n;
+    final voiceIn = ref.watch(voiceInputControllerProvider);
+    final speaking = ref.watch(
+      voiceOutputControllerProvider.select((v) => v.isActive),
+    );
+    final CompanionState pose;
+    final String line;
+    if (view.isAwaitingReply) {
+      pose = CompanionState.focused;
+      line = l.chatStateThinking;
+    } else if (voiceIn.isRecording) {
+      pose = CompanionState.listening;
+      line = l.chatStateListening;
+    } else if (speaking) {
+      pose = CompanionState.speaking;
+      line = l.chatStateSpeaking;
+    } else {
+      pose = CompanionState.idle;
+      line = view.isEmpty
+          ? l.chatStateEmpty
+          : l.chatStateCount(view.messages.length);
+    }
+    final keyboard = MediaQuery.viewInsetsOf(context).bottom > 0;
+
     return DecoratedBox(
-      decoration: BoxDecoration(gradient: ZadColors.canvas),
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        appBar: AppBar(
-          title: Text(context.l10n.appTitle),
-          actions: <Widget>[
-            const AttemptsChip(),
-            IconButton(
-              onPressed: () => ZadScreens.showBrainHub(context),
-              icon: const Icon(ZadIcons.brain),
-              tooltip: context.l10n.drawerBrain,
-            ),
-            if (!view.isEmpty)
-              IconButton(
-                onPressed: () => _confirmClear(context),
-                icon: const Icon(ZadIcons.dismiss),
-                tooltip: context.l10n.chatNewTooltip,
-              ),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: <Color>[
+            ZadWorldColors.tint(world.color),
+            ZadColors.canvasMid,
           ],
         ),
-        body: Column(
-          children: <Widget>[
-            Expanded(
-              child: view.isEmpty
-                  ? const _Welcome()
-                  : ListView.builder(
-                      controller: _scroll,
-                      // Reversed, so a new message lands at the visually
-                      // bottom without anyone having to animate a scroll to
-                      // it — and so the keyboard opening does not push the
-                      // conversation out of view.
-                      reverse: true,
-                      padding: const EdgeInsets.all(ZadSpacing.gutter),
-                      itemCount: view.messages.length,
-                      itemBuilder: (_, i) {
-                        final message =
-                            view.messages[view.messages.length - 1 - i];
-                        final bubble = _Bubble(message: message);
-                        // Reply pending: one ad under the thinking indicator;
-                        // the per-answer ad takes over when it lands.
-                        if (message.isStreaming && message.text.isEmpty) {
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: <Widget>[
-                              bubble,
-                              ZadAiWaitAd(
-                                key: ValueKey<String>('pending-${message.id}'),
-                              ),
-                            ],
-                          );
-                        }
-                        // The ad sits under the reply, in its own room —
-                        // never inside the bubble or by its buttons.
-                        return _adAfter.contains(message.id)
-                            ? Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: <Widget>[bubble, const ZadInlineAd()],
-                              )
-                            : bubble;
-                      },
-                    ),
-            ),
-            if (_emergency case final trade?)
-              EmergencyTechniciansCard(
-                trade: trade,
-                onOpen: () => unawaited(
-                  ZadScreens.showTrustedTechnicians(context, trade: trade.wire),
-                ),
-                onDismiss: () => setState(() => _emergency = null),
+      ),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: SafeArea(
+          bottom: false,
+          child: Column(
+            children: <Widget>[
+              ChatWorldHeader(
+                title: l.worldLabelChat,
+                eyebrow: l.chatWorldEyebrow,
+                stateLine: line,
+                pose: pose,
+                collapsed: _collapsed || keyboard,
+                showClear: !view.isEmpty,
+                onClear: () => _confirmClear(context),
               ),
-            _Composer(
-              controller: _composer,
-              busy: view.isAwaitingReply,
-              onChanged: () => setState(() {
-                if (_composer.text.trim().isEmpty) _spoken = false;
-              }),
-              onSend: _send,
-            ),
-          ],
+              Expanded(
+                child: view.isEmpty
+                    ? const _Welcome()
+                    : ListView.builder(
+                        controller: _scroll,
+                        // Reversed, so a new message lands at the visually
+                        // bottom without anyone having to animate a scroll to
+                        // it — and so the keyboard opening does not push the
+                        // conversation out of view.
+                        reverse: true,
+                        padding: const EdgeInsets.all(ZadSpacing.gutter),
+                        itemCount: view.messages.length,
+                        itemBuilder: (_, i) {
+                          final message =
+                              view.messages[view.messages.length - 1 - i];
+                          final bubble = _Bubble(message: message);
+                          // Reply pending: one ad under the thinking
+                          // indicator; the per-answer ad takes over when it
+                          // lands.
+                          if (message.isStreaming && message.text.isEmpty) {
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: <Widget>[
+                                bubble,
+                                ZadAiWaitAd(
+                                  key: ValueKey<String>(
+                                    'pending-${message.id}',
+                                  ),
+                                ),
+                              ],
+                            );
+                          }
+                          // The ad sits under the reply, in its own room —
+                          // never inside the bubble or by its buttons.
+                          return _adAfter.contains(message.id)
+                              ? Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: <Widget>[
+                                    bubble,
+                                    const ZadInlineAd(),
+                                  ],
+                                )
+                              : bubble;
+                        },
+                      ),
+              ),
+              if (_emergency case final trade?)
+                EmergencyTechniciansCard(
+                  trade: trade,
+                  onOpen: () => unawaited(
+                    ZadScreens.showTrustedTechnicians(
+                      context,
+                      trade: trade.wire,
+                    ),
+                  ),
+                  onDismiss: () => setState(() => _emergency = null),
+                ),
+              _Composer(
+                controller: _composer,
+                busy: view.isAwaitingReply,
+                onChanged: () => setState(() {
+                  if (_composer.text.trim().isEmpty) _spoken = false;
+                }),
+                onSend: _send,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -323,7 +373,7 @@ class _Bubble extends ConsumerWidget {
               Flexible(
                 child: DecoratedBox(
                   decoration: ShapeDecoration(
-                    color: mine ? ZadColors.green800 : ZadColors.surface,
+                    color: mine ? ZadWorldColors.chat : ZadColors.surface,
                     shape: zadSquircle(
                       ZadRadii.cardLarge,
                       side: mine
@@ -692,65 +742,79 @@ class _Composer extends ConsumerWidget {
     final voice = ref.watch(voiceInputControllerProvider);
     final canSend = !busy && controller.text.trim().isNotEmpty;
 
-    return SafeArea(
-      top: false,
-      child: Padding(
-        padding: const EdgeInsets.all(ZadSpacing.md),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            if (_hint(voice.stage, context.l10n) case final hint?) ...<Widget>[
-              Padding(
-                padding: const EdgeInsets.only(bottom: ZadSpacing.sm),
-                child: Text(
-                  hint,
-                  style: ZadType.labelSmall.copyWith(
-                    color: voice.stage == VoiceStage.denied
-                        ? ZadColors.terracottaRust
-                        : ZadColors.inkMuted,
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: ZadColors.surface,
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(ZadRadii.cardLarge),
+        ),
+        border: const Border(top: BorderSide(color: ZadColors.hairline)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.all(ZadSpacing.md),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              if (_hint(voice.stage, context.l10n)
+                  case final hint?) ...<Widget>[
+                Padding(
+                  padding: const EdgeInsets.only(bottom: ZadSpacing.sm),
+                  child: Text(
+                    hint,
+                    style: ZadType.labelSmall.copyWith(
+                      color: voice.stage == VoiceStage.denied
+                          ? ZadColors.terracottaRust
+                          : ZadColors.inkMuted,
+                    ),
                   ),
                 ),
-              ),
-            ],
-            if (voice.isRecording)
-              _Recording(amplitude: voice.amplitude)
-            else
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: <Widget>[
-                  Expanded(
-                    child: TextField(
-                      controller: controller,
-                      minLines: 1,
-                      maxLines: 5,
-                      enabled: voice.stage != VoiceStage.transcribing,
-                      textInputAction: TextInputAction.send,
-                      onChanged: (_) => onChanged(),
-                      onSubmitted: (_) => canSend ? onSend() : null,
-                      decoration: InputDecoration(
-                        hintText: voice.stage == VoiceStage.transcribing
-                            ? context.l10n.chatTranscribing
-                            : context.l10n.chatHint,
-                        filled: true,
-                        fillColor: ZadColors.surface,
+              ],
+              if (voice.isRecording)
+                _Recording(amplitude: voice.amplitude)
+              else
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: <Widget>[
+                    Expanded(
+                      child: TextField(
+                        controller: controller,
+                        minLines: 1,
+                        maxLines: 5,
+                        enabled: voice.stage != VoiceStage.transcribing,
+                        textInputAction: TextInputAction.send,
+                        onChanged: (_) => onChanged(),
+                        onSubmitted: (_) => canSend ? onSend() : null,
+                        decoration: InputDecoration(
+                          hintText: voice.stage == VoiceStage.transcribing
+                              ? context.l10n.chatTranscribing
+                              : context.l10n.chatHint,
+                          filled: true,
+                          fillColor: ZadWorldColors.tint(ZadWorldColors.chat),
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: ZadSpacing.sm),
-                  _MicButton(stage: voice.stage),
-                  const SizedBox(width: ZadSpacing.sm),
-                  SizedBox(
-                    width: kZadMinTapTarget,
-                    height: kZadMinTapTarget,
-                    child: IconButton.filled(
-                      onPressed: canSend ? onSend : null,
-                      icon: const Icon(ZadIcons.forward, size: 20),
-                      tooltip: context.l10n.chatSend,
+                    const SizedBox(width: ZadSpacing.sm),
+                    _MicButton(stage: voice.stage),
+                    const SizedBox(width: ZadSpacing.sm),
+                    SizedBox(
+                      width: kZadMinTapTarget,
+                      height: kZadMinTapTarget,
+                      child: IconButton.filled(
+                        onPressed: canSend ? onSend : null,
+                        icon: const Icon(ZadIcons.forward, size: 20),
+                        tooltip: context.l10n.chatSend,
+                        style: IconButton.styleFrom(
+                          backgroundColor: ZadWorldColors.chat,
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
                     ),
-                  ),
-                ],
-              ),
-          ],
+                  ],
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -795,8 +859,8 @@ class _MicButton extends ConsumerWidget {
               icon: const Icon(ZadIcons.voice, size: 20),
               tooltip: context.l10n.voiceRecord,
               style: IconButton.styleFrom(
-                foregroundColor: ZadColors.green800,
-                backgroundColor: ZadColors.mint50,
+                foregroundColor: ZadWorldColors.chat,
+                backgroundColor: ZadWorldColors.tint(ZadWorldColors.chat),
               ),
             ),
     );

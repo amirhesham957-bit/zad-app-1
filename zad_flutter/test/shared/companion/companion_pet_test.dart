@@ -10,9 +10,11 @@ import 'package:timezone/data/latest.dart' as tzdata;
 import 'package:zad/core/data/local/boxes.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/l10n/l10n.dart';
+import 'package:zad/shared/ads/application/ads_policy.dart';
 import 'package:zad/shared/auth/application/session_controller.dart';
 import 'package:zad/shared/companion/application/pet_care_controller.dart';
 import 'package:zad/shared/companion/data/companion_remote.dart';
+import 'package:zad/shared/companion/data/game_reward_remote.dart';
 import 'package:zad/shared/companion/domain/pet_care.dart';
 import 'package:zad/shared/companion/domain/pet_meal.dart';
 import 'package:zad/shared/companion/presentation/companion_pet.dart';
@@ -28,6 +30,11 @@ import 'companion_fakes.dart';
 class _NoAccessory extends OrbAccessoryController {
   @override
   OrbAccessory build() => OrbAccessory.none;
+}
+
+class _NoWire implements GameRewardClient {
+  @override
+  Future<Object?> rpc(String fn, Map<String, Object?> params) async => null;
 }
 
 void main() {
@@ -76,6 +83,10 @@ void main() {
         orbAccessoryProvider.overrideWith(_NoAccessory.new),
         petClockProvider.overrideWithValue(() => now),
         accountTimeZoneProvider.overrideWithValue('Africa/Cairo'),
+        adsAllowedProvider.overrideWithValue(false),
+        gameRewardRepositoryProvider.overrideWithValue(
+          GameRewardRepository(_NoWire()),
+        ),
       ],
     );
     addTearDown(container.dispose);
@@ -222,7 +233,7 @@ void main() {
     expect(find.text('النقط: 3'), findsOneWidget);
     await tester.pump(const Duration(seconds: PetBallGame.seconds + 1));
     expect(find.byKey(const ValueKey<String>('pet-game-ball')), findsNothing);
-    expect(find.byKey(const ValueKey<String>('pet-game-again')), findsOne);
+    expect(find.byKey(const ValueKey<String>('game-again')), findsOne);
     // The round ends with a pat.
     expect(container.read(petCareProvider)!.joy(now), greaterThan(0.9));
     await tester.pump(const Duration(seconds: 2));

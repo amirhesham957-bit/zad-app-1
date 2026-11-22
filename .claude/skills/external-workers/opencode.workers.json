@@ -1,0 +1,40 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "autoupdate": false,
+  "share": "disabled",
+  "provider": {
+    "nvidia": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "NVIDIA NIM",
+      "options": {
+        "baseURL": "https://integrate.api.nvidia.com/v1",
+        "apiKey": "{env:NVIDIA_API_KEY}"
+      },
+      "models": {
+        "moonshotai/kimi-k3.1-pro": { "name": "Kimi (NIM)" },
+        "minimaxai/minimax-m3.1-flash": { "name": "MiniMax flash (NIM)" }
+      }
+    },
+    "google": {
+      "options": { "apiKey": "{env:GEMINI_API_KEY}" }
+    },
+    "groq": {
+      "options": { "apiKey": "{env:GROQ_API_KEY}" }
+    }
+  },
+  "permission": {
+    "edit": "allow",
+    "webfetch": "deny",
+    "bash": {
+      "*": "deny",
+      "deno check *": "allow",
+      "deno test *": "allow",
+      "deno fmt --check *": "allow",
+      "flutter analyze*": "allow",
+      "flutter test*": "allow",
+      "git status*": "allow",
+      "git diff*": "allow",
+      "ls *": "allow"
+    }
+  }
+}

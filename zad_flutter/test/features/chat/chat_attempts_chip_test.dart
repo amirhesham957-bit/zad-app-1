@@ -13,6 +13,8 @@ import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/quota/data/attempts_remote.dart';
 import 'package:zad/shared/quota/domain/attempts_balance.dart';
 
+import '../../support/quiet_household.dart';
+
 class _Chat extends ChatController {
   @override
   ChatView build() => const ChatView();
@@ -53,6 +55,7 @@ void main() {
     final remote = _Remote();
     final container = ProviderContainer(
       overrides: [
+        ...quietOrbOverrides,
         chatControllerProvider.overrideWith(() => chat),
         voiceInputControllerProvider.overrideWith(_Voice.new),
         attemptsRemoteProvider.overrideWithValue(remote),

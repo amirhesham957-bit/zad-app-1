@@ -82,7 +82,7 @@ void main() {
     ZadScreens.showAddShoppingSheet = (_) async => opened++;
     await pump(tester);
 
-    expect(find.text('🛍️ تسوق من أمازون'), findsOneWidget);
+    expect(find.text('تسوق من أمازون'), findsOneWidget);
     expect(find.text('ضيف اللي ناقصك، أو شوف عروض النهارده'), findsOneWidget);
     expect(find.text('إضافة'), findsOneWidget);
     expect(find.text('اقتراح'), findsOneWidget);

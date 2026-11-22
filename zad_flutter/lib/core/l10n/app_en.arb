@@ -62,12 +62,12 @@
   "paywallBasicPerkPriority": "Your place is kept at busy times, and Zad remembers your conversations longer",
   "paywallBasicPerkTelegram": "Photos and voice notes in the Telegram bot",
   "paywallPlusTitle": "Plus",
-  "paywallPlusBadge": "Most popular ⭐",
+  "paywallPlusBadge": "Most popular",
   "paywallAllBasicPerks": "Everything in Basic",
   "paywallPlusPerkAttempts": "1,000 attempts a month (about 33 a day)",
   "paywallPlusPerkDaily": "Enough for receipt scans and a deep analysis every day",
   "paywallFamilyTitle": "Family",
-  "paywallFamilyBadge": "Biggest allowance 👑",
+  "paywallFamilyBadge": "Biggest allowance",
   "paywallFamilyPerkAttempts": "2,500 attempts a month (about 83 a day)",
   "paywallFamilyPerkHeavy": "For whoever leans on Zad most at home",
   "paywallNoPlayTitle": "Google Play isn't available",
@@ -89,6 +89,8 @@
   "paywallSubscribeTo": "Subscribe to {plan} on Google Play",
   "paywallAttemptsPerMonth": "{count} attempts a month",
   "paywallPricePerMonth": "{price} a month",
+  "paywallStatePlan": "Your plan now: {plan}",
+  "paywallStateInvite": "Pick the plan that fits your home",
   "navHome": "Home",
   "navMoney": "My money",
   "navHomeStock": "My home",
@@ -232,7 +234,6 @@
   "amazonDisclosure": "Affiliate link — Zad earns a commission at no extra cost to you",
   "amazonOut": "Ran out",
   "amazonLow": "Running low",
-  "amazonShopEmoji": "🛍️ Shop on Amazon",
   "amazonNoNeeds": "Add what you're missing, or see today's deals",
   "amazonOneNeed": "You're out of {name} — order it from Amazon",
   "amazonManyNeeds": "You're missing {count} things — order each with a tap",
@@ -304,8 +305,8 @@
   "chatNewTitle": "Start a new conversation?",
   "chatNewBody": "The conversation so far is cleared from this phone. What Zad has learned about you stays as it is.",
   "chatClear": "Clear",
-  "chatWelcome": "Welcome! I'm Zad 🤖, your smart family assistant. How can I help you today?\nAsk me about recipes, check your fridge, or add what's missing to the shopping list!",
-  "chatBusy": "The AI is a bit busy right now 🙏 Try again in a moment.",
+  "chatWelcome": "Welcome! I'm Zad, your smart family assistant. How can I help you today?\nAsk me about recipes, check your fridge, or add what's missing to the shopping list!",
+  "chatBusy": "The AI is a bit busy right now Try again in a moment.",
   "chatUnexpected": "Something unexpected went wrong.",
   "chatResend": "Didn't arrive — send it again",
   "chatStopVoice": "Stop the voice",
@@ -318,6 +319,12 @@
   "chatReportOther": "Something else",
   "chatReportSent": "Thanks — we got your report and will review this reply.",
   "chatReportFailed": "The report didn't go through — try again",
+  "chatWorldEyebrow": "Ask anything",
+  "chatStateThinking": "Thinking…",
+  "chatStateListening": "Listening…",
+  "chatStateSpeaking": "Speaking…",
+  "chatStateEmpty": "I'm listening",
+  "chatStateCount": "{count, plural, =1{1 message} other{{count} messages}}",
   "chatThinking": "Thinking…",
   "refillBack": "Your attempts are back — send your message again",
   "refillDays": "Your attempts refill in {days} days",
@@ -524,12 +531,17 @@
   "subsPaid": "Recorded the payment for {title} and moved the date to next month",
   "subsFixed": "Fixed commitments",
   "subsTitle": "Subscriptions and bills",
+  "subsWorldNone": "No subscriptions yet",
+  "subsWorldTotal": "{amount} a month",
+  "subsWorldNextToday": "{amount} a month · {title} renews today",
+  "subsWorldNext": "{amount} a month · {title} in {days} days",
+  "subsEmptyHint": "Tap Add and Zad will track the next renewal.",
   "subsBnplTag": "Buy now pay later · {name}",
   "subsRenewsToday": "Renews today",
   "subsExpiredAgo": "Ended {days} days ago",
   "subsRenewsIn": "Renews in {days} days",
   "subsPerYear": "≈ {amount}/year",
-  "subsPaidMark": "Paid ✓",
+  "subsPaidMark": "Paid",
   "subsToggleAuto": "Turn auto-debit on or off",
   "subsDisable": "Disable",
   "subsEnable": "Enable",
@@ -812,6 +824,105 @@
     }
   },
   "recipesTrendingGroup": "Trending now",
+  "chefWorldState": "{total, plural, =1{1 recipe} other{{total} recipes}} · {ready} complete",
+  "@chefWorldState": {
+    "description": "Chef world: the state line once there is an answer.",
+    "placeholders": {
+      "total": {
+        "type": "int"
+      },
+      "ready": {
+        "type": "int"
+      }
+    }
+  },
+  "chefStateEmpty": "The pantry is empty — add food and I will suggest",
+  "chefStateReady": "Ready to suggest a dish from your pantry",
+  "chefStateThinking": "Thinking of a dish from your pantry…",
+  "chefError": "I could not reach Chef Zad. Try again in a moment.",
+  "chefStale": "Your pantry has changed since the last suggestions — ask for new ones if you like.",
+  "chefReadyTitle": "Chef Zad is ready",
+  "chefReadyBody": "Tap \"Recipes from my pantry\" and Chef Zad tells you what to cook from what you have, and what is only missing a little.",
+  "chefEmptyTitle": "The pantry is empty",
+  "chefEmptyBody": "Add what you have to the pantry and Chef Zad suggests dishes from it.",
+  "chefAskCta": "Recipes from my pantry",
+  "chefAsking": "Chef Zad is thinking…",
+  "chefAskAgain": "New suggestions",
+  "chefGroupPantry": "From your pantry",
+  "chefGroupMore": "More meals",
+  "chefComplete": "Complete",
+  "chefMissingCount": "Missing {count}",
+  "@chefMissingCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "chefMinutes": "{count} min",
+  "@chefMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "chefHaveHeading": "You have",
+  "chefMissingHeading": "Missing",
+  "chefMethodHeading": "Method",
+  "chefStepByStep": "Full recipe, step by step",
+  "chefAddMissing": "Add the missing to the shopping list ({count})",
+  "@chefAddMissing": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "chefAddedOne": "Added 1 item to the shopping list.",
+  "chefAddedMany": "Added {count} items to the shopping list.",
+  "@chefAddedMany": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "chefNothingToAdd": "Everything missing is already on the list or in the pantry.",
+  "chefRatePrompt": "Did you like it? Chef Zad remembers.",
+  "chefLike": "I liked it",
+  "chefDislike": "Not for me",
+  "chefDetailIngredients": "Ingredients",
+  "chefDetailSteps": "Method",
+  "chefDetailAddToShopping": "Add missing to the list",
+  "chefDetailClose": "Close",
+  "chefDetailRetry": "Try again",
+  "chefDetailLoading": "Chef Zad is preparing the recipe…",
+  "chefDetailEmpty": "Chef Zad did not send this recipe — try again",
+  "chefDetailSlow": "Chef Zad is slow to answer — try again",
+  "chefDetailFailed": "Sorry, something went wrong loading the recipe",
+  "chefHomeTitle": "Chef Zad (smart suggestions)",
+  "chefHomeAllDepleted": "Your pantry is all used up — put the shortages on the shopping list and I will suggest food.",
+  "chefHomePantryEmpty": "Add items to your pantry so Chef Zad can suggest today's dish.",
+  "chefHomeComplete": "Complete from your pantry",
+  "chefHomeMinutes": "{count} min",
+  "@chefHomeMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "chefHomeMissingList": "Missing: {items}",
+  "@chefHomeMissingList": {
+    "placeholders": {
+      "items": {
+        "type": "String"
+      }
+    }
+  },
+  "chefHomeAddMissing": "Add them to the shopping list",
+  "chefHomeTapSteps": "Tap for the steps",
   "homeDealsSeeAll": "All deals",
   "homeDealsSearching": "Looking for deals in your stores — tap to see what we found",
   "sheinShop": "Shop on SHEIN",
@@ -993,7 +1104,7 @@
   "shellLanguageShort": "ع",
   "chefHomeTapHint": "Tap and I'll suggest a dish from your pantry.",
   "chefFullRecipe": "Full recipe and chef's secrets",
-  "chefSecrets": "🤫 Chef's secrets",
+  "chefSecrets": "Chef's secrets",
   "chefSourceLink": "See the recipe at its source",
   "chefSourceHandle": "See it at @{handle}",
   "chefAsk": "Ask the chef about this dish",
@@ -1409,6 +1520,10 @@
   "@agentToolDeleteMemory": {
     "description": "Brain action log: what a tool the chat ran did (ZAD_PLAN 10.2a)."
   },
+  "agentToolRestoreDeleted": "Brought back something deleted",
+  "@agentToolRestoreDeleted": {
+    "description": "Brain action log: the chat restored a deleted row from the trash (ZAD_OR_PLAN M1.6)."
+  },
   "agentToolMarkSubscriptionPaid": "Paid a subscription",
   "@agentToolMarkSubscriptionPaid": {
     "description": "Brain action log: what a tool the chat ran did (ZAD_PLAN 10.2a)."
@@ -1446,6 +1561,11 @@
   "profileExportSubtitle": "A copy of everything Zad knows about you",
   "profileExportFailed": "Couldn't prepare the file, try again",
   "profileExportSubject": "My data from Zad",
+  "homeCareRenewsToday": "Renews today",
+  "homeCareRenewsTomorrow": "Renews tomorrow",
+  "homeCareRenewsInDays": "Renews in {days} days",
+  "homeCareDoseAt": "Dose at {time}",
+  "homeCareDoseNow": "Dose due now",
   "introSayPantry": "This fridge is mine!",
   "introSayFamily": "The whole house in one hand",
   "introSayAssistant": "I learn from you every day",
@@ -1478,6 +1598,8 @@
   "consentPoint2Body": "Bank notifications, location, camera and microphone: each one is asked for when you use the feature, and you can switch it off at any time.",
   "consentPoint3Lead": "We never sell your data.",
   "consentPoint3Body": "And we never read bank passwords, card numbers or OTP codes.",
+  "consentPointAiLead": "What you send goes to outside AI providers.",
+  "consentPointAiBody": "To understand you and answer, what you type or say, your bank messages and your receipts are sent to third-party AI providers (such as Google and Groq) to be processed, and for nothing else.",
   "consentPoint4Lead": "The AI helps, and it can be wrong.",
   "consentPoint4Body": "Check the numbers before any decision; Zad is not a bank or a financial adviser.",
   "consentPoint5Lead": "The free plan has ads",
@@ -1490,5 +1612,1396 @@
   "consentPrivacyLink": "Privacy Policy",
   "consentTermsLink": "Terms of Use",
   "consentTermsVersion": "2.2",
-  "consentTermsUpdated": "November 2026"
+  "consentTermsUpdated": "November 2026",
+  "worldLabelBrain": "Zad's brain",
+  "worldLabelChef": "Chef Zad",
+  "worldLabelInv": "Pantry",
+  "worldLabelShop": "Shopping",
+  "worldLabelTx": "Transactions",
+  "worldLabelBudget": "Budget",
+  "worldLabelStmt": "Statement",
+  "worldLabelSubs": "Subscriptions",
+  "worldLabelPh": "Pharmacy",
+  "worldLabelAppt": "Appointments",
+  "worldLabelMaint": "Maintenance",
+  "worldLabelDocs": "Documents",
+  "worldLabelPlaces": "My places",
+  "worldLabelComp": "Zad's companion",
+  "worldLabelChat": "Chat",
+  "worldLabelNotif": "Notifications",
+  "worldLabelProfile": "My account",
+  "worldLabelPrem": "Premium",
+  "worldLabelTas": "Tasbih garden",
+  "worldLabelGames": "Zado's games",
+  "worldLabelPrices": "Today's prices",
+  "worldLabelOffers": "My offers",
+  "worldLabelAch": "Achievements",
+  "worldLinksTitle": "Connected to",
+  "worldLinksHint": "What happens here affects:",
+  "worldBack": "Back",
+  "pantryWorldEyebrow": "{count, plural, =0{No items yet} =1{1 item} other{{count} items}}",
+  "pantryWorldState": "{count, plural, =0{Nothing is running out} =1{1 thing is running out} other{{count} things are running out}}",
+  "pantryLegendLow": "{count} running out",
+  "pantryLegendExpiring": "{count} expiring soon",
+  "pantryLegendOk": "{count} fine",
+  "brainWorldState": "Connected and learning",
+  "brainWorldEyebrow": "{count, plural, =0{Nothing connected yet} =1{1 item connected} other{{count} items connected}}",
+  "@brainWorldEyebrow": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "brainFilterAll": "All",
+  "brainFilterLabel": "Area filters",
+  "brainNetworkEmptyTitle": "Zad is still learning about you",
+  "brainNetworkEmptyMessage": "Log your spending or add pantry items and medicines, and this network grows.",
+  "brainCardsTitle": "Inside Zad's brain",
+  "brainCardStaffTitle": "Zad's team",
+  "brainCardStaffBody": "What the staff noticed on the morning round of your home, money and family",
+  "brainCardMemoryTitle": "What Zad knows about me",
+  "brainCardMemoryBody": "What Zad remembers about you and talks to you from — correct it or let it forget",
+  "brainCardGraphTitle": "Zad's network",
+  "brainCardGraphBody": "The people, places and things Zad knows and how they connect — export to Obsidian",
+  "brainCardMapTitle": "Zad's map",
+  "brainCardMapBody": "How your budget, subscriptions and home connect — full screen",
+  "brainCardLogTitle": "Zad's change log",
+  "brainCardLogBody": "Everything Zad recorded or changed for you, with undo if it got it wrong",
+  "brainCardHealthTitle": "Zad's brain health",
+  "brainCardHealthBody": "Whether Zad is working in the background or stopped, and why",
+  "brainTelemetryLinks": "Links: {active}/{total}",
+  "@brainTelemetryLinks": {
+    "placeholders": {
+      "active": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "brainTelemetryDecisions": "Decisions today",
+  "brainTelemetryGauge": "Stability",
+  "brainTelemetryStable": "Stable",
+  "brainTelemetryAlert": "Alert",
+  "zadStatusTitle": "Zad status",
+  "zadStatusAllGood": "Zad is working and watching",
+  "zadStatusNeedsFix": "Something has stopped and needs one step from you",
+  "zadStatusAllButOne": "All working except: {what}",
+  "zadStatusWorking": "Working",
+  "zadStatusStopped": "Stopped",
+  "zadStatusMaybe": "May stop",
+  "zadStatusBank": "Bank message reading",
+  "zadStatusBankOk": "Zad is reading your bank messages and logging them.",
+  "zadStatusBankOff": "Bank message reading is off. Turn it on so your balance and spending update by themselves.",
+  "zadStatusBankStalled": "The service has not seen a notification for a while. If it is on: switch it off and on again on the screen that opens.",
+  "zadStatusBankSilent": "On, but no message has arrived yet. If you expect a bank message and it did not come: switch it off and on again.",
+  "zadStatusNotifications": "Notifications",
+  "zadStatusNotificationsOk": "Dose, bill and budget alerts reach you.",
+  "zadStatusNotificationsOff": "Notifications are off, so dose and bill alerts will not reach you.",
+  "zadStatusLocation": "Location",
+  "zadStatusLocationOk": "Location is on; deals and nearby shops are worked out from where you are.",
+  "zadStatusLocationServiceOff": "Location is switched off on the phone, so readings will not be from where you really are.",
+  "zadStatusLocationDenied": "Zad is not allowed to know where you are, so deals and nearby shops will not work.",
+  "zadStatusBackground": "Location all the time",
+  "zadStatusBackgroundOk": "Street alerts work even with the app closed.",
+  "zadStatusBackgroundOff": "Without \"all the time\", street alerts will not work while the app is closed.",
+  "zadStatusBattery": "Battery saver",
+  "zadStatusBatteryOk": "The phone is not restricting Zad in the background.",
+  "zadStatusBatteryWarn": "The phone may stop Zad in the background. Choose \"Unrestricted\" so reading does not cut out.",
+  "zadStatusFixOpenSettings": "Open settings",
+  "zadStatusFixAllow": "Allow",
+  "zadStatusFixLocationOn": "Turn location on",
+  "zadStatusFixBattery": "Remove limits",
+  "gamesHubButton": "Zado's games",
+  "gamesHubTitle": "Zado's games",
+  "gamesBackTooltip": "Back",
+  "gamesHubIntro": "Play, keep the streak, earn seeds",
+  "gamesHubToday": "Today's challenge: {target} points in \"{game}\"",
+  "gamesHubWeekly": "Weekly box: {days} of {goal} days in a row",
+  "gamesHubStreak": "{count, plural, =0{Start your streak today} =1{1 day} other{{count} days in a row}}",
+  "gamesHubBest": "Best: {score}",
+  "gamesHubNotPlayed": "Not played yet",
+  "gamesHubPlay": "Play",
+  "gamesHubChallengeDone": "Today's challenge done",
+  "gameNameBall": "Catch the ball",
+  "gameNameRun": "Zado's Hop",
+  "gameNameSort": "Zado Sorts",
+  "gameNameStar": "Catch the Stars",
+  "gameBlurbBall": "A ball keeps dodging: catch it fast and build a combo",
+  "gameBlurbRun": "Jump the crates, grab seeds, the pace keeps rising",
+  "gameBlurbSort": "Merge matching seeds, a new puzzle every day",
+  "gameBlurbStar": "Move Zado and catch the stars before they land",
+  "gameBest": "Best: {score}",
+  "gameNewBest": "New best!",
+  "gameEndTitle": "Round over",
+  "gameEndScore": "{score} points",
+  "gameChallenge": "Today's challenge: reach {target} points",
+  "gameChallengeProgress": "{done} of {target}",
+  "gameChallengeDone": "Challenge done today, well played!",
+  "gameSeedsGranted": "+{count} seeds",
+  "gameSeedsLeft": "{count} seeds left today",
+  "gameSeedsCapped": "Daily seed limit reached",
+  "gameDouble": "Double the seeds",
+  "gameDoubleHint": "With a short ad",
+  "gameContinue": "Continue from here",
+  "gameContinueHint": "With a short ad, once per round",
+  "gameAdUnavailable": "No ad available right now",
+  "gameAgain": "Play again",
+  "gameDone": "Done",
+  "gamePaused": "Game paused",
+  "gameResume": "Resume",
+  "gameScoreSemantics": "Score {score}",
+  "gameCombo": "Combo ×{n}",
+  "gameLevel": "Level {n}",
+  "gameLives": "{count, plural, =0{No lives left} =1{1 life} other{{count} lives}}",
+  "runGameTitle": "{name}'s Hop",
+  "runGameHint": "Tap the screen to make {name} jump",
+  "runGameHit": "{name} bumped!",
+  "runGameSeedsSemantics": "Seeds {count}",
+  "sortGameTitle": "Zado Sorts",
+  "sortGameHint": "Swipe any way or use the arrows, and merge matching seeds",
+  "sortGameDaily": "Today's puzzle",
+  "sortGameStuck": "No moves left",
+  "sortGameLeft": "Left",
+  "sortGameRight": "Right",
+  "sortGameUp": "Up",
+  "sortGameDown": "Down",
+  "sortGameTile": "Seed of level {value}",
+  "starGameTitle": "Catch the Stars",
+  "starGameHint": "Drag {name} left and right to catch the stars",
+  "starGameOver": "The stars got away",
+  "shopWorldEyebrow": "{count, plural, =0{Nothing missing} =1{1 thing missing} other{{count} things missing}}",
+  "shopWorldStores": "{count, plural, =1{From 1 shop} other{From {count} shops}}",
+  "shopWorldAnyStore": "From any shop",
+  "shopWorldDone": "The list is empty",
+  "shopGroupAnyStore": "Any shop",
+  "shopPantryCount": "{count, plural, =0{The pantry is empty} =1{1 item in the pantry} other{{count} items in the pantry}}",
+  "apptWorldToday": "Today is {weekday}",
+  "apptWorldNext": "{title} {when}",
+  "apptWorldNone": "Nothing coming up",
+  "apptNextLabel": "Next up",
+  "apptInNow": "now",
+  "apptInMinutes": "{count, plural, =1{in 1 minute} other{in {count} minutes}}",
+  "apptInHours": "{count, plural, =1{in 1 hour} other{in {count} hours}}",
+  "apptInDays": "{count, plural, =1{in 1 day} other{in {count} days}}",
+  "phEyebrowCount": "{count, plural, =1{1 medicine} other{{count} medicines}}",
+  "phFamilyEyebrow": "Family pharmacy",
+  "phMemberState": "{name}'s schedule",
+  "phNoDosesToday": "No doses today",
+  "phDoseDueNow": "{name} is due now",
+  "phNextDose": "Next dose {when}",
+  "phDoseMissedLine": "You missed {name}",
+  "phDosesDone": "Today's doses are done",
+  "phPeriodMorning": "in the morning",
+  "phPeriodNoon": "at noon",
+  "phPeriodAfternoon": "in the afternoon",
+  "phPeriodNight": "at night",
+  "phClockWords": "{hour}{minutes} {period}",
+  "phDoseTaken": "Taken",
+  "phDoseDue": "Due now",
+  "phDoseMissed": "Missed",
+  "phDoseUpcoming": "Coming up",
+  "phDoseSnoozed": "Snoozed",
+  "phDosePassed": "Time passed",
+  "phSnooze": "Later",
+  "phTake": "Take",
+  "phTakeFor": "Mark taken",
+  "phForPerson": "For {name}",
+  "phCourseDone": "Course finished",
+  "phExpiredAgo": "{count, plural, =1{Expired 1 day ago} other{Expired {count} days ago}}",
+  "phExpiresIn": "{count, plural, =1{Expires in 1 day} other{Expires in {count} days}}",
+  "phRemaining": "{count} {unit} left",
+  "phSupplyDays": "{count, plural, =0{Lasts under a day} =1{Lasts 1 day} other{Lasts {count} days}}",
+  "phDelete": "Delete",
+  "phBadDoseTime": "A dose time is not understood — fix it",
+  "phNoSchedule": "No times — I won't remind you",
+  "phSetTimes": "Set times",
+  "phConfirmQtyBadge": "Quantity needs confirming",
+  "phTakeDose": "Take a dose",
+  "phRefill": "Reorder",
+  "phToShopping": "Add to shopping",
+  "phHowMuchLeft": "How much is really left?",
+  "phAddedToShopping": "Added {name} to the shopping list",
+  "phDosesToday": "Today's doses",
+  "phNoDosesLeft": "No doses left today.",
+  "phNoTimesYet": "No medicine has times yet — set times on one below and I will remind you.",
+  "phLoadFailed": "Couldn't load the medicines",
+  "phEmptyTitle": "No medicines yet",
+  "phPullRetry": "Pull down to try again.",
+  "phEmptyGuide": "Add it with the button, photograph the box, or tell Zad: \"I take Concor one tablet morning and night\" and it will log it with its times.",
+  "phMedicines": "Medicines",
+  "phTimesTitle": "{name} times",
+  "phTimesHint": "I will remind you at each time, and you can log the dose in one tap.",
+  "phSaveTimes": "Save times",
+  "phAdherence": "Dose adherence",
+  "phAdherenceWaiting": "Waiting for the first dose",
+  "phCountTotal": "Medicines",
+  "phCountExpiring": "Expiring soon",
+  "phCountLow": "Low stock",
+  "phExpiredBanner": "{count, plural, =1{1 expired medicine — dispose of it safely} other{{count} expired medicines — dispose of them safely}}",
+  "phExpiringHeading": "Expiring soon — dispose of them safely",
+  "phCostSpending": "Health spending this month",
+  "phCostBoxes": "Medicine box prices",
+  "phTabMe": "Me",
+  "phTabMember": "Member",
+  "phMemberFallback": "the member",
+  "phHeadNote": "You are the family head — you see {name}'s schedule, edit it and mark a dose if you helped",
+  "phReadOnlyNote": "{name}'s schedule is for following only — the family head edits",
+  "phAddFor": "Medicine for {name}",
+  "phMemberLoadFailed": "Couldn't load {name}'s medicines",
+  "phMemberEmptyTitle": "No medicines you can see yet",
+  "phMemberEmptyGuide": "Each person's medicines show here once they agree — ask to follow from their page in My Family",
+  "phMemberDoses": "{name}'s doses today",
+  "phEdit": "Edit",
+  "phEditTitle": "Edit {name}",
+  "phPhoto": "Photograph a medicine",
+  "phAdd": "Add",
+  "phScanUnclear": "Couldn't read the box clearly — try a better angle",
+  "phScanOk": "Medicine details read",
+  "phScanReading": "Reading the medicine box with AI...",
+  "phScanBtn": "Scan the box with the camera",
+  "phAddTitle": "Add a medicine",
+  "phReviewTitle": "Review the medicine",
+  "phReadFromBox": "Read from the box — fix anything wrong before you save.",
+  "phFieldName": "Medicine name",
+  "phFieldForWhom": "For whom? (leave empty if it is yours)",
+  "phHintPeople": "Mum, Dad, Youssef…",
+  "phFieldDosageNote": "Dosage (e.g. after food)",
+  "phFieldTimesOptional": "Dose times (optional)",
+  "phTimesSuggested": "No times yet — suggested: {times}",
+  "phFieldAmount": "Amount",
+  "phFieldAmountCur": "Amount ({currency})",
+  "phMoreDetails": "More details (optional)",
+  "phSave": "Save",
+  "phCancel": "Cancel",
+  "phConfirm": "Confirm",
+  "phPickTime": "Pick a dose time",
+  "phAddTime": "Add a time",
+  "phPickExpiry": "Expiry date — tap to pick",
+  "phFieldQty": "Quantity left",
+  "phFieldUnit": "Unit",
+  "phFieldDailyCount": "Doses a day",
+  "phFieldPerDose": "How many {unit} per dose?",
+  "phPresetMorning": "Morning",
+  "phPresetNoon": "Noon",
+  "phPresetEvening": "Evening",
+  "phPresetBed": "Bedtime",
+  "phFieldIngredient": "Active ingredient",
+  "phFieldDosageFreq": "Dosage (e.g. a tablet every 8 hours)",
+  "phChronic": "Chronic medicine / monthly repeat prescription",
+  "phForFamilyMember": "For which family member",
+  "phNone": "None",
+  "phDeleteBody": "Delete \"{name}\" from the pharmacy?",
+  "phQtyCurrent": "{name} — recorded quantity: {count} {unit}",
+  "phPerDoseHelp": "Without this I can't work out how many days the stock lasts",
+  "phRefillTitle": "Reorder {name}",
+  "phAddedQty": "Quantity added ({unit})",
+  "phPrice": "Price",
+  "phExpiryDate": "Expiry date",
+  "phAlarmHint": "Turn on \"Exact alarms\" in Settings so dose reminders ring on time",
+  "phErrNotHead": "Only the family head can edit a family member's medicines.",
+  "phErrOffline": "No internet right now — nothing was saved. Try again when it is back.",
+  "phErrNotFound": "That medicine is no longer there — refresh the page.",
+  "phErrDuplicate": "This member already has a medicine with that name.",
+  "phErrRejected": "The server refused to save. Try again.",
+  "tasEyebrow": "A flower every 33 · a new tree stage every 99",
+  "tasStateLine": "{count} tasbih · {flowers} flowers",
+  "@tasStateLine": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "flowers": {
+        "type": "int"
+      }
+    }
+  },
+  "tasStateEmpty": "Say your first tasbih and flowers will bloom",
+  "tasTabMine": "My garden",
+  "tasTabFamily": "Family trees",
+  "tasTabChallenges": "Challenges",
+  "tasStage1": "Seed",
+  "tasStage2": "Sprout",
+  "tasStage3": "Sapling",
+  "tasStage4": "Tree",
+  "tasStage5": "Fruiting tree",
+  "tasStatLevel": "Stage",
+  "tasStatLevelValue": "{level}/5",
+  "@tasStatLevelValue": {
+    "placeholders": {
+      "level": {
+        "type": "int"
+      }
+    }
+  },
+  "tasStatTotal": "All-time",
+  "tasStatStreak": "Streak",
+  "tasStatFlowers": "Flowers",
+  "tasStatSession": "This session",
+  "tasNext": "{score} / {next} to the next stage",
+  "@tasNext": {
+    "placeholders": {
+      "score": {
+        "type": "int"
+      },
+      "next": {
+        "type": "int"
+      }
+    }
+  },
+  "tasComplete": "Complete!",
+  "tasStreakDays": "{days} days in a row",
+  "@tasStreakDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "tasTapLabel": "Count",
+  "tasReset": "Reset",
+  "tasCycle": "Cycle",
+  "tasLevelUp": "Your tree grew!",
+  "tasBloom": "A new flower bloomed!",
+  "tasSeedsGranted": "+{seeds} seeds",
+  "@tasSeedsGranted": {
+    "placeholders": {
+      "seeds": {
+        "type": "int"
+      }
+    }
+  },
+  "tasMyTrees": "My trees ({count})",
+  "@tasMyTrees": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tasNewTree": "New tree",
+  "tasNoTreeTitle": "No tree yet",
+  "tasNoTreeMsg": "Plant your first tree and start counting.",
+  "tasTreeNameLabel": "Tree name",
+  "tasRenameTitle": "Name the tree",
+  "tasNewTreeHint": "Add a new tree to your garden!",
+  "tasTreeNameExample": "e.g. the apple tree",
+  "tasCancel": "Cancel",
+  "tasSave": "Save",
+  "tasAdd": "Add",
+  "tasLeaderboard": "Leaderboard",
+  "tasShare": "Share the ranking",
+  "tasNoTreesTitle": "No trees yet",
+  "tasNoTreesMsg": "As soon as someone in the family counts, their tree shows up here.",
+  "tasMemberTrees": "{trees} trees | {mature} fruiting",
+  "@tasMemberTrees": {
+    "placeholders": {
+      "trees": {
+        "type": "int"
+      },
+      "mature": {
+        "type": "int"
+      }
+    }
+  },
+  "tasUnit": "tasbih",
+  "tasChallengesTitle": "Family challenges",
+  "tasChallengesTagline": "Challenge your family to count!",
+  "tasNewChallenge": "New challenge",
+  "tasNoChallengesTitle": "No challenges right now",
+  "tasNoChallengesAdmin": "Tap + to start the family's first challenge.",
+  "tasNoChallengesMember": "Ask the admin to start a new challenge!",
+  "tasOngoing": "Ongoing",
+  "tasChallengeTitleLabel": "Challenge title",
+  "tasChallengeDescLabel": "Description (optional)",
+  "tasChallengeTargetLabel": "Goal (number of tasbih)",
+  "tasNightSky": "The garden at night",
+  "tasDaySky": "The garden by day",
+  "txWorldEyebrow": "{count, plural, =0{No transactions yet} =1{1 transaction} other{{count} transactions}}",
+  "txWorldState": "{count, plural, =0{Nothing logged itself today} =1{1 logged itself today} other{{count} logged themselves today}}",
+  "txSourceBank": "A bank message",
+  "txSourceBankNamed": "{bank} · message",
+  "txSourceReceipt": "A photographed receipt",
+  "txSourceVoice": "You said it",
+  "txSourceStatement": "From a statement",
+  "txSourcePharmacy": "Pharmacy refill",
+  "txSourceManual": "Typed by you",
+  "budgetWorldUntil": "Until day {day}",
+  "budgetWorldDaysLeft": "{count, plural, =0{Last day} =1{1 day left} other{{count} days left}}",
+  "budgetWorldState": "{amount} available · {perDay} a day",
+  "budgetWorldAvailable": "{amount} available",
+  "statementWorldStateLess": "You spent {pct}% less than the same days last month",
+  "statementWorldStateMore": "You spent {pct}% more than the same days last month",
+  "statementWorldStateSame": "Your spending is level with last month",
+  "statementWorldStateNone": "Import a statement to see where your money goes",
+  "statementWorldBreakdownTitle": "Where your money comes from and goes",
+  "statementWorldIn": "Income",
+  "statementWorldEmptyTitle": "Nothing this month yet",
+  "statementWorldEmptyBody": "Import a statement or log a transaction and your income and spending by category show up here.",
+  "statementPickBody": "Choose your statement: a PDF from your bank app, a photo, or a CSV file. Zad reads the entries and checks them against the statement balance, and nothing is saved until you review it.",
+  "statementReading": "Reading the statement… a long one takes a minute",
+  "statementPickButton": "Choose statement",
+  "statementMapIntro": "Say which column of the file is which — files differ from bank to bank",
+  "statementMapDate": "Date column",
+  "statementMapTitle": "Description column",
+  "statementMapAmount": "Amount column",
+  "statementMapCategory": "Category column (optional)",
+  "statementMapInvert": "Flip the amount sign (if negative means money in here)",
+  "statementMapContinue": "Continue to review",
+  "statementMapNone": "None",
+  "statementMapColumnN": "Column {n}",
+  "statementPreviewCount": "{rows} rows — {checked} selected to import",
+  "statementPreviewEmptyTitle": "No transactions found in the file",
+  "statementPreviewEmptyBody": "The file was read but has no rows I can import — make sure it is a statement in CSV or readable PDF form.",
+  "statementRowUnreadable": "The date or amount of this row could not be read",
+  "statementRowBalance": "The statement balance does not match this row — check the amount",
+  "statementCheckBalanced": "The numbers match the statement balance",
+  "statementCheckMismatch": "Some numbers do not match the statement balance — those rows are left unticked, review them",
+  "statementCheckUnknown": "The statement has no balance to check against — review every row before importing",
+  "statementDropped": "{text}. {n} rows could not be read.",
+  "placesWorldEyebrow": "{count, plural, =0{No outings yet} =1{1 outing} other{{count} outings}}",
+  "@placesWorldEyebrow": {
+    "description": "Places world: outings count above the title.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "placesWorldState": "{count, plural, =0{No places} =1{1 place} other{{count} places}} · {alerts, select, on{street alerts on} other{street alerts off}}",
+  "@placesWorldState": {
+    "description": "Places world state line: saved places and whether street alerts are on.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "alerts": {
+        "type": "String"
+      }
+    }
+  },
+  "docsEyebrowCount": "{count, plural, =1{1 document} other{{count} documents}}",
+  "docsStateEmpty": "The drawer is empty — add your first document",
+  "docsStateNearest": "Nearest: {name} — {status}",
+  "docsPrivacy": "Zad keeps only the kind of document and its expiry date — no number, no photo — and reminds you ahead.",
+  "docsDueOne": "One document needs renewing soon",
+  "docsDueMany": "{count} documents need renewing soon",
+  "docsEmptyTitle": "No documents yet",
+  "docsEmptyMessage": "Add your passport, ID or licence with its expiry date and Zad reminds you in good time to renew. Or tell Zad in chat: \"my passport expires 15 March 2027\".",
+  "docsAdd": "Add a document",
+  "docsDelete": "Delete",
+  "docsExpires": "Expires {date}",
+  "docsSaveFailedEdit": "Not saved — a document with the same kind and name may exist, or you are offline.",
+  "docsSaveFailedAdd": "Not saved — check your connection.",
+  "docsDeleteFailed": "Not removed — check your connection.",
+  "maintEyebrowCount": "{count, plural, =1{1 appliance} other{{count} appliances}}",
+  "maintStateNone": "Nothing registered yet",
+  "maintStateNoSchedule": "Set a service interval and Zad reminds you",
+  "maintStateNext": "Next: {name} — {status}",
+  "maintStateOverdue": "{name} is {days} days late",
+  "maintServiceOverdue": "{days} days late",
+  "maintServiceIn": "Service in {days} days",
+  "maintServiceSoon": "Service soon",
+  "maintWarrantyEnded": "Warranty ended",
+  "maintWarrantyIn": "Warranty ends in {days} days",
+  "maintStatDevices": "Appliances",
+  "maintStatSoon": "Service soon",
+  "maintStatWarranty": "Warranty ending",
+  "maintOverdueBanner": "{count} appliances are past their service date",
+  "maintEmptyTitle": "No appliances yet",
+  "maintEmptyMessage": "Add the AC, the water heater or the car and Zad reminds you of its service and warranty.",
+  "maintAdd": "Add an appliance",
+  "maintServicedToday": "Serviced today",
+  "maintDelete": "Delete",
+  "maintTechnicians": "Technicians I trust",
+  "maintTechniciansHint": "Call or WhatsApp a technician you have tried",
+  "maintAddFailed": "The appliance was not saved — check your connection.",
+  "notifMarkAllRead": "Mark all read",
+  "notifAllRead": "All read",
+  "achWorldState": "{done} of {total} achievements",
+  "achLevel": "Level {level}",
+  "achLevelPoints": "{points} of {next} points",
+  "achOnTrack": "You are on the right track!",
+  "achContributions": "Contributions",
+  "achStreak": "Streak",
+  "achShelf": "Achievements",
+  "achNext": "Next achievement",
+  "achLocked": "Locked",
+  "achLoadFailed": "Could not load the achievements",
+  "achLoadFailedHint": "Check your connection and try again",
+  "achRetry": "Try again",
+  "pricesEyebrow": "Price board",
+  "pricesWorldNeutral": "Market prices, reported by people",
+  "pricesWorldFlat": "Prices are steady today",
+  "pricesWorldUp": "{name} is rising",
+  "pricesWorldDown": "{name} is falling",
+  "pricesWorldUpDown": "{up} rising, {down} falling",
+  "pricesMine": "Your reports",
+  "pricesReportNew": "Report a price",
+  "pricesCheapestTitle": "Cheapest near you",
+  "pricesCheapestNote": "From Zad community reports in the last 14 days — not official prices",
+  "pricesCityLabel": "City or area (optional)",
+  "pricesSearch": "Search",
+  "pricesFetchFailed": "Couldn't get prices right now",
+  "pricesFetchFailedHint": "Check your connection and try again",
+  "pricesRetry": "Try again",
+  "pricesNoReportsTitle": "No reports here yet",
+  "pricesNoReportsHint": "Be the first to report a price — your neighbours will thank you",
+  "pricesFirstReport": "Report the first price",
+  "pricesRowMeta": "{where} · {count} reports",
+  "pricesTrendsTitle": "Your market's trends",
+  "pricesTrendsNote": "What many homes in your country bought or listed in the last {days} days — no names, no stores",
+  "pricesTrendsNoMarket": "Pick your country first",
+  "pricesTrendsNoMarketHint": "Trends are worked out per country.",
+  "pricesTrendsEmpty": "No trend in your market yet",
+  "pricesTrendsEmptyHint": "An item shows here once at least {homes} different homes buy or list it — so nobody can be recognised from their purchases. Every receipt you scan brings that day closer.",
+  "pricesTrendUp": "Rising",
+  "pricesTrendDown": "Falling",
+  "pricesTrendFlat": "Steady",
+  "pricesTrendFresh": "New",
+  "pricesHomes": "{n} homes",
+  "pricesTopTitle": "Top contributors",
+  "pricesTopNone": "No contributions yet",
+  "pricesTopNoneHint": "Report the first price you saw in the market — your report shows here and helps neighbours find the cheapest place.",
+  "pricesContributor": "Contributor {rank}",
+  "pricesContribCount": "{n} reports",
+  "profileGroupMe": "Me and Zad",
+  "profileGroupAccount": "Account and family",
+  "profileGroupMoney": "Money",
+  "profileGroupPlan": "Companion and plan",
+  "profilePlanFree": "Free",
+  "profilePlanBasic": "Basic",
+  "profilePlanPlus": "Plus",
+  "profilePlanUltra": "Family",
+  "profileSettingsTitle": "Settings",
+  "profileSettingsSubtitle": "Limit, sounds, ads and privacy",
+  "settingsWorldTitle": "Settings",
+  "settingsGroupMoney": "Money",
+  "settingsGroupCompanion": "Your companion",
+  "settingsGroupSounds": "Sounds and language",
+  "settingsGroupPrivacy": "Ads and privacy",
+  "settingsGroupAccount": "Account",
+  "settingsAdsTitle": "Ads",
+  "settingsAdsBody": "Personalised for you? Change your choice any time",
+  "settingsAdsUnavailable": "No privacy choices are available right now",
+  "settingsTermsTitle": "Terms and conditions",
+  "settingsTermsBody": "Usage and privacy policy",
+  "worldLabelHome": "Home",
+  "homeGreetDawn": "Good morning, {name}",
+  "@homeGreetDawn": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "homeGreetMorning": "Hello, {name}",
+  "@homeGreetMorning": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "homeGreetNoon": "Good day, {name}",
+  "@homeGreetNoon": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "homeGreetEvening": "Good evening, {name}",
+  "@homeGreetEvening": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "homeGreetNight": "A quiet night, {name}",
+  "@homeGreetNight": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "homeStateMoney": "{amount} {currency} available · {days}",
+  "@homeStateMoney": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "currency": {
+        "type": "String"
+      },
+      "days": {
+        "type": "String"
+      }
+    }
+  },
+  "homeStateIdle": "Your whole home, in one place",
+  "homeWorldsTitle": "Your worlds",
+  "homeWorldsHint": "Every part of your home, in its place",
+  "homeTodayTitle": "Today in your home",
+  "homeTodayEmpty": "No shortages, doses or renewals coming up",
+  "homeTodayEmptyHint": "A calm day. Anything that needs you will show here.",
+  "homeTodayShortTitle": "Running short",
+  "homeTodayShortSub": "{count} items · first {name}",
+  "@homeTodayShortSub": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "homeGreetDawnAnon": "Good morning",
+  "homeGreetMorningAnon": "Hello",
+  "homeGreetNoonAnon": "Good day",
+  "homeGreetEveningAnon": "Good evening",
+  "homeGreetNightAnon": "A quiet night",
+  "tasbihaHomeStart": "Plant your garden with a first tasbih",
+  "tasbihaHomeMature": "Fully grown · {score} tasbihs",
+  "@tasbihaHomeMature": {
+    "placeholders": {
+      "score": {
+        "type": "int"
+      }
+    }
+  },
+  "amazonShopEmoji": "🛍️ Shop on Amazon",
+  "homeCareTitle": "Your subscriptions and medicines",
+  "compEyebrow": "Level {level}",
+  "@compEyebrow": {
+    "description": "World text.",
+    "placeholders": {
+      "level": {
+        "type": "int"
+      }
+    }
+  },
+  "compStateAsleep": "{name} is asleep — pat to wake",
+  "@compStateAsleep": {
+    "description": "World text.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "compStateMissions": "{n} of today's tasks left",
+  "@compStateMissions": {
+    "description": "World text.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "compStateAllDone": "{name} is happy — all of today's tasks done",
+  "@compStateAllDone": {
+    "description": "World text.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "compAsleepLine": "Zzz… pat me to wake up.",
+  "@compAsleepLine": {
+    "description": "World text."
+  },
+  "compPet": "Pat {name}",
+  "@compPet": {
+    "description": "World text.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "compUnreachableTitle": "Your companion cannot be reached",
+  "@compUnreachableTitle": {
+    "description": "World text."
+  },
+  "compUnreachableMsg": "Make sure you are signed in and online, then come back.",
+  "@compUnreachableMsg": {
+    "description": "World text."
+  },
+  "compRetry": "Try again",
+  "@compRetry": {
+    "description": "World text."
+  },
+  "compLevel": "Level {level}",
+  "@compLevel": {
+    "description": "World text.",
+    "placeholders": {
+      "level": {
+        "type": "int"
+      }
+    }
+  },
+  "compXpOf": "{xp} / {need}",
+  "@compXpOf": {
+    "description": "World text.",
+    "placeholders": {
+      "xp": {
+        "type": "int"
+      },
+      "need": {
+        "type": "int"
+      }
+    }
+  },
+  "compStatStreak": "days in a row",
+  "@compStatStreak": {
+    "description": "World text."
+  },
+  "compStatSeeds": "seeds",
+  "@compStatSeeds": {
+    "description": "World text."
+  },
+  "compStatToday": "points today",
+  "@compStatToday": {
+    "description": "World text."
+  },
+  "compMissionsTitle": "Today's tasks",
+  "@compMissionsTitle": {
+    "description": "World text."
+  },
+  "compMissionLog": "Log an expense or income",
+  "@compMissionLog": {
+    "description": "World text."
+  },
+  "compMissionHome": "Update the pantry or shopping list",
+  "@compMissionHome": {
+    "description": "World text."
+  },
+  "compMissionScan": "Scan a receipt",
+  "@compMissionScan": {
+    "description": "World text."
+  },
+  "compXpGain": "+{n}",
+  "@compXpGain": {
+    "description": "World text.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "compMissionsAllDone": "All three done! You earned {n} seeds today.",
+  "@compMissionsAllDone": {
+    "description": "World text.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "compMissionsReward": "Finish all three and get {n} seeds.",
+  "@compMissionsReward": {
+    "description": "World text.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "compWeekTitle": "This week's challenge",
+  "@compWeekTitle": {
+    "description": "World text."
+  },
+  "compWeekDone": "Done! You logged on {days} days this week",
+  "@compWeekDone": {
+    "description": "World text.",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "compWeekLeft": "Log an expense on {goal} of 7 days — {left} to go.",
+  "@compWeekLeft": {
+    "description": "World text.",
+    "placeholders": {
+      "goal": {
+        "type": "int"
+      },
+      "left": {
+        "type": "int"
+      }
+    }
+  },
+  "compJourney": "{name}'s journey",
+  "@compJourney": {
+    "description": "World text.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "compMaxStage": "{name} reached the top stage: the house sage.",
+  "@compMaxStage": {
+    "description": "World text.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "compSoon": "Soon it will grow into {next}!",
+  "@compSoon": {
+    "description": "World text.",
+    "placeholders": {
+      "next": {
+        "type": "String"
+      }
+    }
+  },
+  "compNeeds": "To become {next}: {what}.",
+  "@compNeeds": {
+    "description": "World text.",
+    "placeholders": {
+      "next": {
+        "type": "String"
+      },
+      "what": {
+        "type": "String"
+      }
+    }
+  },
+  "compNeedLevel": "level {n}",
+  "@compNeedLevel": {
+    "description": "World text.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "compNeedAge": "{n} days old ({left} to go)",
+  "@compNeedAge": {
+    "description": "World text.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "left": {
+        "type": "int"
+      }
+    }
+  },
+  "compNeedJoin": "  and ",
+  "@compNeedJoin": {
+    "description": "World text."
+  },
+  "compWardrobe": "Wardrobe",
+  "@compWardrobe": {
+    "description": "World text."
+  },
+  "compTabPersona": "Characters",
+  "@compTabPersona": {
+    "description": "World text."
+  },
+  "compTabOutfit": "Outfits",
+  "@compTabOutfit": {
+    "description": "World text."
+  },
+  "compTabBackground": "Backgrounds",
+  "@compTabBackground": {
+    "description": "World text."
+  },
+  "compTakeOff": "Take off {outfit}",
+  "@compTakeOff": {
+    "description": "World text.",
+    "placeholders": {
+      "outfit": {
+        "type": "String"
+      }
+    }
+  },
+  "compWorn": "Wearing",
+  "@compWorn": {
+    "description": "World text."
+  },
+  "compWear": "Wear",
+  "@compWear": {
+    "description": "World text."
+  },
+  "compLocked": "Locked",
+  "@compLocked": {
+    "description": "World text."
+  },
+  "compOrUsd": "or {price}",
+  "@compOrUsd": {
+    "description": "World text.",
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "compBuyTitle": "Get {name}?",
+  "@compBuyTitle": {
+    "description": "World text.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "compBuyBody": "{price} seeds will be spent, and it stays yours for good.",
+  "@compBuyBody": {
+    "description": "World text.",
+    "placeholders": {
+      "price": {
+        "type": "int"
+      }
+    }
+  },
+  "compBuyNo": "Not now",
+  "@compBuyNo": {
+    "description": "World text."
+  },
+  "compBuyYes": "Get it",
+  "@compBuyYes": {
+    "description": "World text."
+  },
+  "compBought": "Congratulations! {name} is yours",
+  "@compBought": {
+    "description": "World text.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "compMissing": "You are {n} seeds short — finish today's tasks to get there.",
+  "@compMissing": {
+    "description": "World text.",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "compCodeTitle": "Your friend's code",
+  "@compCodeTitle": {
+    "description": "World text."
+  },
+  "compCancel": "Cancel",
+  "@compCancel": {
+    "description": "World text."
+  },
+  "compConfirm": "Confirm",
+  "@compConfirm": {
+    "description": "World text."
+  },
+  "compEnterCode": "Have a friend's code? Enter it here",
+  "@compEnterCode": {
+    "description": "World text."
+  },
+  "compCodeOk": "Done! Log your first expense and you and your friend both get seeds",
+  "@compCodeOk": {
+    "description": "World text."
+  },
+  "compReasonNotOwned": "You do not own it yet — unlock it first.",
+  "@compReasonNotOwned": {
+    "description": "World text."
+  },
+  "compReasonOwned": "You already own it.",
+  "@compReasonOwned": {
+    "description": "World text."
+  },
+  "compReasonSeason": "It only shows up in its season.",
+  "@compReasonSeason": {
+    "description": "World text."
+  },
+  "compReasonNotForSeeds": "It is not sold for seeds.",
+  "@compReasonNotForSeeds": {
+    "description": "World text."
+  },
+  "compReasonWrongCode": "That code is not right — check it again.",
+  "@compReasonWrongCode": {
+    "description": "World text."
+  },
+  "compReasonClaimed": "You already entered a friend's code.",
+  "@compReasonClaimed": {
+    "description": "World text."
+  },
+  "compReasonTooLate": "A friend's code can only be entered in the first 14 days.",
+  "@compReasonTooLate": {
+    "description": "World text."
+  },
+  "compReasonTooMany": "Too many tries — try again in an hour.",
+  "@compReasonTooMany": {
+    "description": "World text."
+  },
+  "compReasonOffline": "No connection right now — try again.",
+  "@compReasonOffline": {
+    "description": "World text."
+  },
+  "compPlayUnavailable": "Google Play is not available on this phone.",
+  "@compPlayUnavailable": {
+    "description": "World text."
+  },
+  "compPlayNotOnPlay": "Not on Google Play yet — try seeds.",
+  "@compPlayNotOnPlay": {
+    "description": "World text."
+  },
+  "compPlayFailed": "The purchase did not go through — try again.",
+  "@compPlayFailed": {
+    "description": "World text."
+  },
+  "compSeedShopTitle": "In a hurry? Top up seeds",
+  "@compSeedShopTitle": {
+    "description": "World text."
+  },
+  "compSeedShopBody": "Seeds are free from your habits; this is for those who do not want to wait.",
+  "@compSeedShopBody": {
+    "description": "World text."
+  },
+  "compAllCharacters": "All characters at once · {price}",
+  "@compAllCharacters": {
+    "description": "World text.",
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "compInviteTitle": "Invite your friends",
+  "@compInviteTitle": {
+    "description": "World text."
+  },
+  "compInviteBody": "Each friend who logs a first expense = 200 seeds for you and 100 for them. One friend unlocks Felfool, three unlock the graduation cap and the crew background.",
+  "@compInviteBody": {
+    "description": "World text."
+  },
+  "compInviteCopy": "Copy the code",
+  "@compInviteCopy": {
+    "description": "World text."
+  },
+  "compInviteCopied": "Code copied",
+  "@compInviteCopied": {
+    "description": "World text."
+  },
+  "compInviteSend": "Send it",
+  "@compInviteSend": {
+    "description": "World text."
+  },
+  "compInviteSubject": "Try Zad",
+  "@compInviteSubject": {
+    "description": "World text."
+  },
+  "compInviteCount": "Signed up: {n}",
+  "@compInviteCount": {
+    "description": "World text.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "compInvitePending": "Waiting for a first expense: {n}",
+  "@compInvitePending": {
+    "description": "World text.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "compHowTitle": "How does the companion grow?",
+  "@compHowTitle": {
+    "description": "World text."
+  },
+  "compHowXp": "Points come from your habits only: expense +10, receipt +20, pantry or list +5, a streak day +25, a new family member +200.",
+  "@compHowXp": {
+    "description": "World text."
+  },
+  "compHowSeeds": "Seeds: each new level +50, the three daily tasks +30, 7 days in a row +100, and 30 days +300.",
+  "@compHowSeeds": {
+    "description": "World text."
+  },
+  "compHowAi": "Seeds are for the wardrobe only — they do not turn into AI attempts.",
+  "@compHowAi": {
+    "description": "World text."
+  },
+  "compHowSleep": "If you are away two days it sleeps. Come back and it wakes up happy with a gift.",
+  "@compHowSleep": {
+    "description": "World text."
+  },
+  "compHowKind": "It never gets upset with you and never drops a level.",
+  "@compHowKind": {
+    "description": "World text."
+  },
+  "gamesWorldEmpty": "You have not played yet",
+  "@gamesWorldEmpty": {
+    "description": "World text."
+  },
+  "gamesWorldEmptyHint": "Start with any game — your first round begins your streak and earns seeds.",
+  "@gamesWorldEmptyHint": {
+    "description": "World text."
+  },
+  "offersEyebrowMine": "{count, plural, =1{1 from your notifications} other{{count} from your notifications}}",
+  "offersStateCount": "{count, plural, =1{1 live offer} other{{count} live offers}}",
+  "offersStateEmpty": "No live offers right now",
+  "offersMineTitle": "From your notifications",
+  "offersPartnerTitle": "Coupons for your country",
+  "offersCopy": "Copy",
+  "offersCopied": "Code {code} copied",
+  "offersNoCode": "No code needed",
+  "offersExpiresToday": "Ends today",
+  "offersExpiresInDays": "{count, plural, =1{Ends tomorrow} other{Ends in {count} days}}",
+  "offersPercentOff": "{percent}% off",
+  "offersAmountOff": "{amount} {currency} off",
+  "offersFallbackTitle": "Special offer",
+  "offersEmptyTitle": "No live offers",
+  "offersEmptyMessage": "When a coupon for your country shows up, or a shopping app sends you a discount notification, it lands here. Pull down to refresh.",
+  "offersNearbyTitle": "Nearby shop deals",
+  "offersNearbyMessage": "This week's prices and shops around you",
+  "offersOpenFailed": "Could not open the offer",
+  "worldLabelFamily": "Family",
+  "familyWorldNone": "No family yet",
+  "familyWorldChores": "{count, plural, =1{1 task ahead} other{{count} tasks ahead}}",
+  "familyWorldRequests": "{count, plural, =1{1 money request waiting on you} other{{count} money requests waiting on you}}",
+  "familyLoadingTitle": "Looking for your family",
+  "familyLoadingMessage": "The first time needs internet. Pull down if it takes long.",
+  "familyRetry": "Try again",
+  "familyWelcomeTitle": "Welcome to your Zad family",
+  "familyWelcomeBody": "Create a new family and be its admin, or join an existing one with an invite code.",
+  "familyCreateButton": "Create a new family as admin",
+  "familyJoinButton": "Join the family",
+  "familyAliasCardTitle": "Your name in the family",
+  "familyAliasLabel": "Your name in the family (optional)",
+  "familyAliasHint": "For example: Ahmed",
+  "familyJoinCardTitle": "Have an invite code?",
+  "familyCodeLabel": "Invite code",
+  "familyCodeHint": "For example: ZAD-1234",
+  "familyJoinPasteLink": "Have an invite link? Open the join window",
+  "familyTabChat": "Chat",
+  "familyTabTasks": "Tasks",
+  "familyTabMembers": "Members",
+  "familyTabGroceries": "Groceries",
+  "familyTabKids": "Kids",
+  "familyTabGoals": "Goals",
+  "familyMoreTitle": "More for the family",
+  "familyToolSavings": "Savings funds",
+  "familyToolAchievements": "Achievements and ranks",
+  "familyToolTasbiha": "Tasbiha",
+  "familyFollowStarted": "Following started.",
+  "choreSaved": "Saved.",
+  "chorePrefNotSaved": "Not saved. Only an admin can change someone else's preferences.",
+  "chorePlanFailed": "Couldn't distribute the chores right now.",
+  "choreServerUnreachable": "Couldn't reach the server. Try again.",
+  "choreAdminsOnly": "Only an admin can distribute chores.",
+  "choreNotOpen": "A chore was done or removed since. Distribute again.",
+  "chorePlanNotApplied": "The distribution wasn't applied.",
+  "choreAssignedCount": "{count} chores assigned.",
+  "@choreAssignedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "choreMinutesLabel": "Duration in minutes (optional)",
+  "choreMinutesHint": "e.g. 20",
+  "chorePrefsButton": "Time & preferences",
+  "choreDistributeButton": "Distribute chores",
+  "chorePlanTitle": "Chore distribution",
+  "chorePlanSubtitle": "By each chore's duration and each member's time and taste.",
+  "chorePlanEmptyTitle": "No open chores to distribute",
+  "chorePlanEmptyMessage": "Add chores first, or give members more time.",
+  "choreMinutesValue": "{minutes} min",
+  "@choreMinutesValue": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "choreNoTimeFor": "Nobody has time for: {titles}",
+  "@choreNoTimeFor": {
+    "placeholders": {
+      "titles": {
+        "type": "String"
+      }
+    }
+  },
+  "choreLoadLine": "{name}: {minutes} of {week} minutes a week",
+  "@choreLoadLine": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "minutes": {
+        "type": "int"
+      },
+      "week": {
+        "type": "int"
+      }
+    }
+  },
+  "choreApplyPlan": "Apply",
+  "chorePrefsTitle": "Time & preferences",
+  "chorePrefsMember": "Member",
+  "chorePrefsMinutes": "Minutes a week for chores",
+  "chorePrefsMinutesHelper": "0 to 2000",
+  "chorePrefsLikes": "Chores they like (comma separated)",
+  "chorePrefsLikesHint": "Sweeping, cooking",
+  "chorePrefsDislikes": "Chores they dislike (comma separated)",
+  "chorePrefsDislikesHint": "Dishes",
+  "choreCancel": "Cancel",
+  "choreSave": "Save",
+  "guardEventsTitle": "Mind health",
+  "guardEventsEmptyTitle": "Zad hasn't refused anything yet",
+  "guardEventsEmptyBody": "When Zad refuses to write something (a wrong amount, an item that doesn't exist…) the reason will show here.",
+  "guardEventsLast7Days": "Last 7 days",
+  "guardEventsNone7Days": "No refusals in the last 7 days",
+  "guardEventsRecent": "Latest refusals",
+  "guardEventsErrorTitle": "Couldn't load the refusals",
+  "guardEventsErrorBody": "Pull down to try again.",
+  "settingsGuardEventsSubtitle": "What Zad refused to write, and why",
+  "guardReason_item_not_found": "This record isn’t in your account",
+  "guardReason_member_not_found": "That person isn’t in your household",
+  "guardReason_name_invalid": "The item name must be 2 to 120 characters",
+  "guardReason_qty_not_positive": "The quantity must be more than zero",
+  "guardReason_qty_too_large": "The quantity is unreasonably large — check with the customer",
+  "guardReason_qty_negative": "The quantity can’t be negative",
+  "guardReason_category_unknown": "The category isn’t one of the known categories",
+  "guardReason_expiry_bad_format": "The expiry date must be YYYY-MM-DD",
+  "guardReason_expiry_before_purchase": "The expiry date is before today — check with the customer",
+  "guardReason_amount_invalid": "The amount used must be more than zero",
+  "guardReason_amount_too_large": "The amount used is unreasonably large",
+  "guardReason_restock_mode_unknown": "The type must be staple or occasional",
+  "guardReason_already_purchased": "This line was already crossed off the list",
+  "guardReason_member_not_granted": "This person isn’t in the family, or hasn’t agreed to let you follow their medicines",
+  "guardReason_patch_empty": "There’s nothing to change",
+  "guardReason_patch_field_unknown": "This field can’t be changed from here",
+  "guardReason_dose_times_invalid": "Dose times must be HH:MM, separated by commas",
+  "guardReason_dose_count_invalid": "The number of doses a day must be 1 to 24",
+  "guardReason_qty_invalid": "The quantity must be a whole number from 0 to 10,000",
+  "guardReason_dosage_too_long": "The dosage text is too long",
+  "guardReason_dose_already_logged": "This dose was already logged — the quantity wasn’t deducted again",
+  "guardReason_amount_not_positive": "The amount must be a positive number",
+  "guardReason_amount_over_cap": "This amount is unreasonably large — please double-check it",
+  "guardReason_title_invalid": "Write a short description for the transaction (up to 80 characters)",
+  "guardReason_title_guessed": "This description is a guess — ask the customer what the money was spent on before you record it",
+  "guardReason_txn_kind_unknown": "The type must be expense or income",
+  "guardReason_wallet_unknown": "The wallet must be cash, card or bank",
+  "guardReason_transfer_to_missing": "The transfer must say where it’s going",
+  "guardReason_transfer_change_unsupported": "A transfer can’t be edited — record it as a new transaction",
+  "guardReason_text_too_long": "The category or shop name is too long",
+  "guardReason_for_person_invalid": "“For whom” must be 1 to 40 characters",
+  "guardReason_date_invalid": "The transaction date isn’t valid, is in the future, or is more than a year old",
+  "guardReason_category_invalid": "The category name must be 2 to 40 characters",
+  "guardReason_no_category_budget": "This category has no budget limit to begin with",
+  "guardReason_subscription_title_invalid": "The subscription name must be 2 to 120 characters",
+  "guardReason_renewal_date_invalid": "The renewal date must be a real date in YYYY-MM-DD format",
+  "guardReason_billing_cycle_invalid": "The billing cycle must be MONTHLY or YEARLY",
+  "guardReason_due_day_invalid": "The due day must be 1 to 31",
+  "guardReason_is_active_invalid": "Active must be true or false",
+  "guardReason_debt_name_invalid": "The debt name must be 2 to 120 characters",
+  "guardReason_minimum_invalid": "The monthly minimum must be a non-negative number",
+  "guardReason_interest_invalid": "The interest rate must be 0 to 1,000",
+  "guardReason_balance_negative": "The remaining balance can’t be negative",
+  "guardReason_obligation_title_invalid": "The obligation name must be 2 to 120 characters",
+  "guardReason_obligation_kind_invalid": "The obligation type must be rent, installment, tuition, utility or other",
+  "guardReason_recurrence_invalid": "The recurrence must be monthly, quarterly, yearly or once",
+  "guardReason_installments_invalid": "The number of installments must be a whole number from 1 to 600",
+  "guardReason_already_inactive": "This obligation was already cancelled",
+  "guardReason_device_name_invalid": "The device name must be 2 to 120 characters",
+  "guardReason_device_category_invalid": "The device category is too long (60 characters at most)",
+  "guardReason_day_invalid": "The date must be a real day in YYYY-MM-DD format",
+  "guardReason_interval_invalid": "The gap between maintenance visits must be a positive whole number of days",
+  "guardReason_cost_invalid": "The cost must be a positive number within a reasonable range",
+  "guardReason_kind_invalid": "The type isn’t one of the known types",
+  "guardReason_holder_invalid": "The document holder’s name must have no extra spaces and be up to 40 characters",
+  "guardReason_label_invalid": "The document name must have no extra spaces and be up to 40 characters",
+  "guardReason_label_required": "A document marked “other” needs a name",
+  "guardReason_date_out_of_range": "The expiry date isn’t reasonable (between 2000 and 2100)",
+  "guardReason_appt_title_invalid": "The appointment name must be 2 to 160 characters",
+  "guardReason_starts_at_invalid": "The appointment time isn’t clear",
+  "guardReason_appt_recurrence_invalid": "The recurrence must be once, hourly, daily, weekly or monthly",
+  "guardReason_source_invalid": "The appointment’s source isn’t known",
+  "guardReason_remind_invalid": "The reminder before it must be a whole number of minutes from 0 to 10,080",
+  "guardReason_place_too_long": "The place name is too long (120 characters at most)",
+  "guardReason_status_invalid": "The status must be upcoming, done or cancelled",
+  "guardReason_user_not_found": "The customer’s account wasn’t found",
+  "guardReason_cycle_day_invalid": "The cycle start day must be a whole number from 1 to 31",
+  "guardReason_currency_invalid": "The currency must be a 3-letter uppercase ISO code (such as EGP)",
+  "guardReason_country_invalid": "The country must be a 2-letter uppercase ISO code (such as EG)",
+  "guardReason_balance_invalid": "The balance must be a non-negative number",
+  "guardReason_sleep_time_invalid": "Times must be in HH:MM format (24-hour)",
+  "guardReason_sleep_bed_out_of_range": "Bedtime must be between 20:00 and 03:00 — night shift? Ask, and don’t save it",
+  "guardReason_sleep_wake_out_of_range": "Wake-up must be between 04:00 and 12:00",
+  "guardReason_setting_unknown": "The setting must be pet_calls or food_pattern",
+  "guardReason_goal_title_invalid": "The goal title must be 4 to 200 characters",
+  "guardReason_metric_too_long": "The measure description is too long",
+  "guardReason_target_invalid": "The target amount must be a reasonable positive number",
+  "guardReason_deadline_invalid": "The goal date isn’t clear",
+  "guardReason_unit_invalid": "The unit must be money or count",
+  "guardReason_goal_not_found": "The customer has no goal with that name",
+  "guardReason_goal_amount_invalid": "The amount must be a non-zero number within reason",
+  "guardReason_goal_not_amount": "This goal is counted by tasks, not money — its progress is worked out on its own.",
+  "guardReason_challenge_already_active": "They already have a challenge running — encourage them to finish it, or ask if they want to stop it first (stop_savings_challenge).",
+  "guardReason_no_active_challenge": "There’s no challenge running to begin with",
+  "guardReason_challenge_cap_invalid": "The daily cap must be a reasonable positive number",
+  "guardReason_challenge_length_invalid": "The challenge length must be 7 to 90 days",
+  "guardReason_challenge_date_invalid": "The challenge start date isn’t clear",
+  "guardReason_dose_slot_invalid": "The dose time isn’t a clear date",
+  "guardReason_snooze_minutes_invalid": "The snooze must be 5 to 240 minutes",
+  "guardReason_fallback": "The write was refused",
+  "pantryWhoseField": "Whose is it?",
+  "pantryWhoseMe": "Me",
+  "pantryRateEstimate": "We estimate it lasts about {days} days",
+  "pantryRateFaster": "Runs out faster",
+  "pantryRateSlower": "Runs out slower",
+  "pantryRateSaved": "Your correction is saved",
+  "permSheetTitle": "Let Zad work for your home from day one",
+  "permSheetBody": "So Zad can alert you and follow your home without opening the app, it needs these permissions. Each is optional and you can change it in phone settings any time.",
+  "permNotificationsTitle": "Notifications",
+  "permNotificationsWhy": "Alerts for doses, appointments, bills and the morning brief.",
+  "permBankTitle": "Reading bank notifications",
+  "permBankWhy": "Zad reads the notifications bank and payment messages arrive in, to record purchases for you, and keeps only the ones that look like a transaction.",
+  "permBatteryTitle": "Background work",
+  "permBatteryWhy": "So notification reading and reminders are not stopped when the phone saves battery.",
+  "permEnable": "Enable",
+  "permLater": "Not now",
+  "permDone": "Done",
+  "permPrivacy": "Your data is handled as the published privacy policy says; Zad promises nothing beyond it.",
+  "permCardBody": "Turn them on in one tap so Zad's alerts reach you.",
+  "permCardTitle": "{count, plural, =1{One permission missing} other{{count} permissions missing}}",
+  "@permCardTitle": {"placeholders": {"count": {"type": "int"}}},
+  "tripTitle": "Your trip to {country}",
+  "tripSpent": "You've spent about {amount} {currency} since the trip began",
+  "tripLeft": "{amount} {currency} left of the trip budget",
+  "tripOver": "Over the trip budget by {amount} {currency}",
+  "tripSetBudget": "Set a trip budget",
+  "tripBudgetHint": "Budget in {currency}",
+  "tripBudgetSave": "Save",
+  "notifReadsSwitchesTitle": "Notification reading",
+  "notifReadsPrivacy": "Each one stays off until you turn it on yourself. You can turn it off any time.",
+  "notifReadsAppointment": "Doctor bookings",
+  "notifReadsTrip": "Flights",
+  "notifReadsDocument": "Absher and services",
+  "notifReadsExplain": "We read the notification and pull out only the date and place; the text is deleted.",
+  "notifReadsSaveFailed": "Could not save the change, try again",
+  "notifReadsTodayTitle": "What Zad read today",
+  "notifReadsEmptyTitle": "Nothing read yet today",
+  "notifReadsEmptyBody": "When a notification of a kind you turned on arrives, the date and place we pulled out of it will show here.",
+  "notifReadsLoadFailed": "Could not load, tap to try again",
+  "notifReadsDate": "Date",
+  "notifReadsTime": "Time",
+  "notifReadsPlace": "Place"
 }

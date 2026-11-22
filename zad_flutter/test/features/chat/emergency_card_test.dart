@@ -11,6 +11,8 @@ import 'package:zad/shared/chat/application/voice_input_controller.dart';
 import 'package:zad/shared/household/domain/home_emergency.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
 
+import '../../support/quiet_household.dart';
+
 class _Chat extends ChatController {
   final List<String> sent = <String>[];
 
@@ -42,6 +44,7 @@ void main() {
   Future<void> pump(WidgetTester tester) => tester.pumpWidget(
     ProviderScope(
       overrides: [
+        ...quietOrbOverrides,
         chatControllerProvider.overrideWith(_Chat.new),
         voiceInputControllerProvider.overrideWith(_Voice.new),
       ],

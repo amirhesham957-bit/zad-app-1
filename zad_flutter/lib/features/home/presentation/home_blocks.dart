@@ -25,7 +25,6 @@ import 'package:zad/shared/companion/domain/companion_status.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
 import 'package:zad/shared/orb/application/pet_sound.dart';
-import 'package:zad/shared/profile/application/call_name.dart';
 import 'package:zad/shared/transactions/application/transactions_controller.dart';
 import 'package:zad/shared/transactions/domain/transaction.dart';
 
@@ -117,8 +116,8 @@ class HomeOfflineBanner extends ConsumerWidget {
 // ── 0b. the companion header ─────────────────────────────────────────────────
 
 /// Kotlin's 0b row: a white 20dp card with the mic (the companion itself sits
-/// on the header since 2026-10-13), «أهلاً يا
-/// …! 👋» over the pulsing «عقل زاد نشط», and the 40dp camera circle.
+/// on the header since 2026-10-13), «كلّم زاد»
+/// over the pulsing «عقل زاد نشط», and the 40dp camera circle.
 /// Tapping the card talks to زاد; the circle opens the camera.
 class HomeCompanionHeader extends ConsumerWidget {
   /// Creates the row.
@@ -132,7 +131,6 @@ class HomeCompanionHeader extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final name = ref.watch(customerCallNameProvider);
     // A seasonal campaign rims the card in its colour and pins its badge to
     // the orb; without one the row is exactly as it was.
     final campaign = ref.watch(homeCampaignProvider)?.campaign;
@@ -211,7 +209,7 @@ class HomeCompanionHeader extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     Text(
-                      context.l10n.homeHello(name ?? '...'),
+                      context.l10n.homeTalkToZad,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: ZadType.titleMedium.copyWith(
@@ -290,9 +288,9 @@ class HomeCompanionHeader extends ConsumerWidget {
 }
 
 String _companionLine(CompanionStatus c, ZadL10n l10n) {
-  final streak = c.streak > 0 ? ' · 🔥 ${c.streak}' : '';
+  final streak = c.streak > 0 ? ' · ${c.streak}' : '';
   return '${l10n.shellCompanionTag(c.persona.name, c.level)}'
-      '$streak · 🌱 ${c.seeds}';
+      '$streak · ${c.seeds}';
 }
 
 // ── recent transactions ──────────────────────────────────────────────────────

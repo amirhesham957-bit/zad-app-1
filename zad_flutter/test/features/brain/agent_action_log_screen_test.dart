@@ -10,11 +10,26 @@ import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/zad_theme.dart';
 import 'package:zad/features/brain/application/agent_actions_controller.dart';
+import 'package:zad/features/brain/application/knowledge_map_controller.dart';
 import 'package:zad/features/brain/data/agent_actions_repository.dart';
 import 'package:zad/features/brain/domain/agent_action.dart';
+import 'package:zad/features/brain/domain/knowledge_map.dart';
 import 'package:zad/features/brain/presentation/agent_action_log_screen.dart';
 import 'package:zad/features/brain/presentation/brain_hub_screen.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
+
+import '../../support/quiet_household.dart';
+
+class _EmptyMap extends KnowledgeMapController {
+  @override
+  KnowledgeMapView build() => KnowledgeMapView(
+    map: buildKnowledgeMap(const MapInputs()),
+    currency: 'EGP',
+  );
+
+  @override
+  Future<void> refresh() async {}
+}
 
 class _Actions extends AgentActionsController {
   new(this.items, {this.outcome = const Undone('zad_transactions')});
@@ -71,6 +86,8 @@ void main() {
       ProviderScope(
         overrides: [
           agentActionsControllerProvider.overrideWith(() => fake),
+          ...quietOrbOverrides,
+          knowledgeMapControllerProvider.overrideWith(_EmptyMap.new),
           nowProvider.overrideWithValue(() => DateTime.utc(2026, 9, 21, 12)),
           accountTimeZoneProvider.overrideWithValue('Africa/Cairo'),
         ],
@@ -101,7 +118,7 @@ void main() {
   testWidgets('undo only where the server can undo', (tester) async {
     await pump(tester, <AgentAction>[
       _a('1', 'log_transaction'),
-      _a('2', 'add_appointment', table: 'zad_appointments'),
+      _a('2', 'set_life_goal', table: 'agent_goals'),
       _a('3', 'log_transaction', status: 'undone'),
     ]);
 
@@ -151,6 +168,7 @@ void main() {
   testWidgets('the hub opens the log', (tester) async {
     await pump(tester, <AgentAction>[], home: const BrainHubScreen());
 
+    await tester.scrollUntilVisible(find.text('سجل تعديلات زاد'), 300);
     await tester.tap(find.text('سجل تعديلات زاد'));
     await tester.pumpAndSettle();
     expect(find.text('لسه مفيش تعديلات'), findsOneWidget);

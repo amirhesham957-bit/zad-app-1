@@ -11,6 +11,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart' show TemplateType;
+import 'package:intl/intl.dart' show NumberFormat;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/components/zad_appear.dart';
@@ -18,8 +20,10 @@ import 'package:zad/core/design/components/zad_balance_card.dart';
 import 'package:zad/core/design/components/zad_empty_state.dart';
 import 'package:zad/core/design/components/zad_scroll_shrink.dart';
 import 'package:zad/core/design/components/zad_trailing_gap.dart';
+import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
+import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/l10n/app_language.dart';
 import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/core/period/budget_period.dart';
@@ -31,21 +35,26 @@ import 'package:zad/features/home/presentation/campaign_stories.dart';
 import 'package:zad/features/home/presentation/close_day_card.dart';
 import 'package:zad/features/home/presentation/coverage_note.dart';
 import 'package:zad/features/home/presentation/daily_brief_card.dart';
+import 'package:zad/features/home/presentation/essential_permissions.dart';
 import 'package:zad/features/home/presentation/grocery_purchase_prompt.dart';
 import 'package:zad/features/home/presentation/home_activation_card.dart';
 import 'package:zad/features/home/presentation/home_amazon_strip.dart';
 import 'package:zad/features/home/presentation/home_blocks.dart';
-import 'package:zad/features/home/presentation/home_glance_widgets.dart';
+import 'package:zad/features/home/presentation/home_today_card.dart';
+import 'package:zad/features/home/presentation/home_world_scene.dart';
 import 'package:zad/features/home/presentation/inventory_check_in_card.dart';
 import 'package:zad/features/home/presentation/metrics_duo.dart';
 import 'package:zad/features/home/presentation/occasion_card.dart';
-import 'package:zad/features/home/presentation/permission_banners.dart';
 import 'package:zad/features/home/presentation/quiet_banner.dart';
 import 'package:zad/features/home/presentation/sections_grid.dart';
 import 'package:zad/features/home/presentation/subscribe_pulse_card.dart';
+import 'package:zad/features/home/presentation/tasbiha_home_widget.dart';
 import 'package:zad/features/home/presentation/travel_banner.dart';
+import 'package:zad/features/home/presentation/trip_card.dart';
 import 'package:zad/features/home/presentation/urgent_recipe_card.dart';
 import 'package:zad/features/home/presentation/who_are_you_card.dart';
+import 'package:zad/features/home/presentation/zad_status_card.dart';
+import 'package:zad/shared/ads/presentation/native_ad.dart';
 import 'package:zad/shared/brain/data/home_signals_controller.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/budget/data/upcoming_outings.dart';
@@ -56,18 +65,20 @@ import 'package:zad/shared/day_close/presentation/close_day_sheet.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
 import 'package:zad/shared/navigation/zad_slots.dart';
+import 'package:zad/shared/profile/application/call_name.dart';
 import 'package:zad/shared/quota/presentation/ad_week_card.dart';
 import 'package:zad/shared/quota/presentation/out_of_attempts_card.dart';
 import 'package:zad/shared/quota/presentation/rewards_card.dart';
+import 'package:zad/shared/worlds/world_card.dart';
+import 'package:zad/shared/worlds/world_scaffold.dart';
+import 'package:zad/shared/worlds/zad_world.dart';
 
-/// Home.
-///
-/// زاد's home: the companion row and the occasion's banner, the wallet card
-/// and its two metrics, the brain's daily brief, the sections, the bank's
-/// waiting proposals, the modes, the bank channel, the latest transactions,
-/// and what the brain noticed. Each
-/// block enters the way Kotlin's `AppearOnEntry` does, with Kotlin's
-/// per-block delays.
+/// Home, as a world: a sky that follows the account's hour with the
+/// companion in it, a greeting by name with one line of the money, then white
+/// cards — the live prices, the money, «عوالمك», «النهارده في بيتك», the
+/// tasbih and the offers — and under them everything else Home has always
+/// carried. Each block enters the way Kotlin's `AppearOnEntry` does, with
+/// Kotlin's per-block delays.
 class HomeScreen extends ConsumerWidget {
   /// Creates the screen.
   const new({this.onOpenVoice, this.onOpenCamera, super.key});
@@ -80,9 +91,33 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
     final view = ref.watch(budgetControllerProvider);
+    final phase = homeDayPhaseNow(ref);
+    final name = ref.watch(customerCallNameProvider)?.trim() ?? '';
+    final named = name.isNotEmpty;
 
-    return RefreshIndicator(
+    return ZadWorldScaffold(
+      world: ZadWorld.home,
+      // Keeps the offset if the shell rebuilds this subtree (the budget
+      // gate, kids mode) instead of starting over at the top.
+      scrollKey: const PageStorageKey<String>('home'),
+      showBack: false,
+      title: switch (phase) {
+        HomeDayPhase.dawn =>
+          named ? l10n.homeGreetDawn(name) : l10n.homeGreetDawnAnon,
+        HomeDayPhase.morning =>
+          named ? l10n.homeGreetMorning(name) : l10n.homeGreetMorningAnon,
+        HomeDayPhase.noon =>
+          named ? l10n.homeGreetNoon(name) : l10n.homeGreetNoonAnon,
+        HomeDayPhase.evening =>
+          named ? l10n.homeGreetEvening(name) : l10n.homeGreetEveningAnon,
+        HomeDayPhase.night =>
+          named ? l10n.homeGreetNight(name) : l10n.homeGreetNightAnon,
+      },
+      stateLine: _stateLine(context, ref, view),
+      scene: (loop) => HomeWorldScene(loop, phase: phase),
+      zado: ZadWorldZado(left: 30, top: 58, state: phase.pose),
       // force: the cooldown exists to stop *automatic* refetching on every
       // re-entry. A user who pulled the screen down asked for it, and being
       // told "not yet" would just make them pull again.
@@ -93,132 +128,203 @@ class HomeScreen extends ConsumerWidget {
         );
         await ref.read(budgetControllerProvider.notifier).refresh(force: true);
       },
-      child: ListView(
-        // Keeps the offset if the shell rebuilds this subtree (the budget
-        // gate, kids mode) instead of starting over at the top.
-        key: const PageStorageKey<String>('home'),
-        // Always scrollable, so the pull gesture exists even when the content
-        // is one card and does not fill the screen.
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-        children: <Widget>[
-          // A quiet period the customer asked for, with the way out of it.
-          const QuietModeBanner(),
-          // The day's occasion first: it is there one day a year.
-          const OccasionCardSlot(),
-          // The customer's own birthday opens with the cake, once a year.
-          const BirthdayCelebration(),
-          // Kotlin's order: the travel suggestion, then the offline banner.
-          const TravelBannerSlot(),
-          const GroceryPurchasePromptHost(),
-          const HomeOfflineBanner(),
-          // «قراءة رسائل البنك متوقفة» / «موقعك غير مفعّل» (owner 7/11): at
-          // the top, each one tap from the screen that fixes it.
-          const PermissionBanners(),
-          // Live prices at the top (owner, 2026-11-09).
-          ZadAppearOnEntry(child: ZadSlots.liveMarketTickerSlot()),
-          ZadAppearOnEntry(
-            child: HomeCompanionHeader(
-              onOpenVoice: onOpenVoice ?? () {},
-              onOpenCamera: onOpenCamera ?? () {},
-            ),
+      bottomInset: 128,
+      slivers: <Widget>[
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(
+            ZadSpacing.gutter,
+            ZadSpacing.lg,
+            ZadSpacing.gutter,
+            0,
           ),
-          const SizedBox(height: 16),
-          // ZAD_PLAN ١٠.٨ (owner 11/11): one clear thing per level, in this
-          // order — the money, the four glance tiles, then four sideways bars
-          // (deals, the shops near you, Amazon, the chef), the brief and the
-          // latest transactions. Everything else follows them.
-          // The money right under the greeting (owner, 2026-10-05; emulator,
-          // 2026-11-10: six blocks above it pushed it off the first screen).
-          _Budget(view: view),
-          // The occasion's banner (app_campaigns), when one runs; the balance
-          // card already wears the occasion's colours.
-          const ZadAppearOnEntry(child: CampaignBannerSlot()),
-          // «حكايات زاد», the occasion's story, when it has one. The tour
-          // that shared its line moved to the profile.
-          const ZadAppearOnEntry(child: CampaignStoriesStrip()),
-          const FxExcludedNotice(),
-          // The pantry, the shortages, the pharmacy and the subscriptions at
-          // a look (owner, 2026-11-09), each opening its own page.
-          const ZadAppearOnEntry(delayMs: 25, child: HomeGlanceWidgets()),
-          // Every other section behind one line — the grid's first two rows
-          // were the four tiles above a second time.
-          const ZadAppearOnEntry(
-            delayMs: 25,
-            child: SectionsGrid(compact: true),
+          sliver: SliverList(
+            delegate: SliverChildListDelegate(<Widget>[
+              // A quiet period the customer asked for, with the way out of it.
+              const QuietModeBanner(),
+              // The day's occasion first: it is there one day a year.
+              const OccasionCardSlot(),
+              // The customer's own birthday opens with the cake, once a year.
+              const BirthdayCelebration(),
+              // Kotlin's order: the travel suggestion, then the offline banner.
+              const TravelBannerSlot(),
+              const TripCardSlot(),
+              const GroceryPurchasePromptHost(),
+              const HomeOfflineBanner(),
+              // «حالة زاد» (owner 20/11): every permission and whether it
+              // works now, each broken one with its fix; one green line when
+              // all is well.
+              const ZadStatusCard(),
+              // 1. Live prices at the top (owner, 2026-11-09).
+              ZadAppearOnEntry(child: ZadSlots.liveMarketTickerSlot()),
+              ZadAppearOnEntry(
+                child: HomeCompanionHeader(
+                  onOpenVoice: onOpenVoice ?? () {},
+                  onOpenCamera: onOpenCamera ?? () {},
+                ),
+              ),
+              const SizedBox(height: ZadSpacing.lg),
+              // 2. The money.
+              _Budget(view: view),
+              // The occasion's banner (app_campaigns), when one runs; the
+              // balance card already wears the occasion's colours.
+              const ZadAppearOnEntry(child: CampaignBannerSlot()),
+              // «حكايات زاد», the occasion's story, when it has one.
+              const ZadAppearOnEntry(child: CampaignStoriesStrip()),
+              const FxExcludedNotice(),
+              // 3. «عوالمك»: every section, drawn in its world's colour.
+              const ZadAppearOnEntry(delayMs: 25, child: _WorldsCard()),
+              const SizedBox(height: ZadSpacing.lg),
+              // 4. «النهارده في بيتك».
+              const ZadAppearOnEntry(delayMs: 25, child: HomeTodayCard()),
+              const SizedBox(height: ZadSpacing.lg),
+              // 5. The tasbih is back on Home (owner, 15/11).
+              const ZadAppearOnEntry(delayMs: 25, child: TasbihaHomeSlot()),
+              // 6. Offers: «عروض على نواقصك» (Shein with its code and the
+              // deals on what the home is short of), the shops near the
+              // customer, then Amazon.
+              ZadAppearOnEntry(
+                delayMs: 30,
+                child: ZadSlots.homeDealsCarousel(
+                  // The occasion's mark beside the title (HOME_REVIEW ٢),
+                  // when its colours read on white.
+                  occasion: switch (ref.watch(homeCampaignProvider)?.campaign) {
+                    final c? when c.readableOnWhite => c,
+                    _ => null,
+                  },
+                ),
+              ),
+              ZadAppearOnEntry(delayMs: 35, child: ZadSlots.homeNearbyStores()),
+              // «تسوق من أمازون»: a card per thing the home is short of.
+              const ZadAppearOnEntry(delayMs: 40, child: HomeAmazonStrip()),
+              // One native ad (owner, 15/11), between two reading sections —
+              // never beside a task or a button (owner 11/11). It takes no
+              // room until an ad loads, and none for subscribers, kids or
+              // where ads are off.
+              const ZadNativeAd(templateType: TemplateType.medium),
+              // شيف زاد: the last recipes asked for, a tap to ask.
+              ZadAppearOnEntry(delayMs: 45, child: ZadSlots.homeChefSection()),
+              // Out of attempts: the ad button where it can be found, then
+              // «مكافآت زاد». OutOfAttemptsCard must stay immediately before
+              // RewardsCard.
+              const OutOfAttemptsCard(),
+              const RewardsCard(),
+              // «موجز زاد النهارده»: the brain says what matters today.
+              const ZadAppearOnEntry(delayMs: 50, child: DailyBriefCard()),
+              const SizedBox(height: ZadSpacing.lg),
+              // The bank channel's state, then what it brought.
+              const BankListeningPill(),
+              const SizedBox(height: 18),
+              ZadSlots.stuckNotificationsSlot(),
+              const HomeRecentTransactions(),
+              const SizedBox(height: 18),
+              // What waits on the customer, after the agreed blocks.
+              ZadSlots.homeProposalsSection(),
+              // ZAD_PLAN ٣.٢: in the evening, close the day.
+              const ZadTrailingGap(
+                gap: 16,
+                child: ZadAppearOnEntry(delayMs: 30, child: CloseDayCard()),
+              ),
+              // «اشترك» (ZAD_PLAN ٨ب.٣): free customers, once a session.
+              const SubscribePulseCard(),
+              // «شفت ١٥ إعلان الأسبوع ده» — once a week, free customers only.
+              const AdWeekCard(),
+              ZadTrailingGap(gap: 16, child: ZadSlots.brokeModeSlot()),
+              ZadTrailingGap(gap: 16, child: ZadSlots.savingsChallengeSlot()),
+              const EssentialPermissionsCard(),
+              const HomeActivationSlot(),
+              const WhoAreYouCard(),
+              const InventoryCheckInSlot(),
+              // The bot's link, while it is missing (owner, 2026-10-13).
+              ZadAppearOnEntry(
+                delayMs: 40,
+                child: ZadSlots.homeTelegramBlocks(),
+              ),
+              const SizedBox(height: ZadSpacing.lg),
+              ZadTrailingGap(
+                gap: 18,
+                child: ZadSlots.homeInsightsSection(onOpenCamera: onOpenCamera),
+              ),
+              // Kotlin: the alert banner, then «العقل → الوصفات».
+              const AiAlertBannerSlot(),
+              const UrgentRecipeSlot(),
+            ]),
           ),
-          const SizedBox(height: ZadSpacing.sm),
-          // «عروض على نواقصك» (owner 4/11, a sideways bar with pictures since
-          // 11/11): real deals on what the home is short of.
-          ZadAppearOnEntry(
-            delayMs: 30,
-            child: ZadSlots.homeDealsCarousel(
-              // The occasion's mark beside the title (HOME_REVIEW ٢), when
-              // its colours read on white.
-              occasion: switch (ref.watch(homeCampaignProvider)?.campaign) {
-                final c? when c.readableOnWhite => c,
-                _ => null,
-              },
-            ),
-          ),
-          // The supermarkets and pharmacies near the customer, from the list
-          // «أماكني» kept — it was buried there.
-          ZadAppearOnEntry(delayMs: 35, child: ZadSlots.homeNearbyStores()),
-          // «تسوق من أمازون»: a card per thing the home is short of.
-          const ZadAppearOnEntry(delayMs: 40, child: HomeAmazonStrip()),
-          // شيف زاد: the last recipes asked for, a tap to ask.
-          ZadAppearOnEntry(delayMs: 45, child: ZadSlots.homeChefSection()),
-          // «موجز زاد النهارده»: the brain says what matters today.
-          const ZadAppearOnEntry(delayMs: 50, child: DailyBriefCard()),
-          const SizedBox(height: 16),
-          // The bank channel's state, then what it brought.
-          const BankListeningPill(),
-          const SizedBox(height: 18),
-          ZadSlots.stuckNotificationsSlot(),
-          const HomeRecentTransactions(),
-          const SizedBox(height: 18),
-          // What waits on the customer, after the agreed blocks.
-          ZadSlots.homeProposalsSection(),
-          // ZAD_PLAN ٣.٢: in the evening, close the day.
-          const ZadTrailingGap(
-            gap: 16,
-            child: ZadAppearOnEntry(delayMs: 30, child: CloseDayCard()),
-          ),
-          // Attempts ran out: the ad button where it can be found (owner 6/11).
-          const OutOfAttemptsCard(),
-          // «مكافآت زاد» (owner 13/11): the ad, the plans and the bot always
-          // have a way in, not only when attempts run low or the bot is
-          // unlinked. Hides itself while the card above shows.
-          const RewardsCard(),
-          // «اشترك» (ZAD_PLAN ٨ب.٣): free customers, once a session.
-          const SubscribePulseCard(),
-          // «شفت ١٥ إعلان الأسبوع ده» — once a week, free customers only.
-          const AdWeekCard(),
-          ZadTrailingGap(gap: 16, child: ZadSlots.brokeModeSlot()),
-          ZadTrailingGap(gap: 16, child: ZadSlots.savingsChallengeSlot()),
-          const HomeActivationSlot(),
-          const WhoAreYouCard(),
-          const InventoryCheckInSlot(),
-          // The bot's link, while it is missing (owner, 2026-10-13: the
-          // reminders come from Telegram). Lower than before, not gone — it
-          // also raises the first-visit link sheet.
-          ZadAppearOnEntry(delayMs: 40, child: ZadSlots.homeTelegramBlocks()),
-          const SizedBox(height: 16),
-          ZadTrailingGap(
-            gap: 18,
-            child: ZadSlots.homeInsightsSection(onOpenCamera: onOpenCamera),
-          ),
-          // The tasbih lives in the drawer's «المزيد» (ZAD_PLAN ١٠.٨).
-          // Kotlin: the alert banner, then «العقل → الوصفات», then the gap.
-          const AiAlertBannerSlot(),
-          const UrgentRecipeSlot(),
-          // Kotlin: room under the last card for the floating companion.
-          const SizedBox(height: 128),
-        ],
-      ),
+        ),
+      ],
+    );
+  }
+
+  /// One line of real money: what can be spent and how long it has to last.
+  String _stateLine(BuildContext context, WidgetRef ref, BudgetView view) {
+    final l10n = context.l10n;
+    final snapshot = view.snapshot;
+    final spendable = view.spendable;
+    if (snapshot == null ||
+        snapshot.cycleStart == null ||
+        snapshot.cycleEnd == null ||
+        spendable == null) {
+      return l10n.homeStateIdle;
+    }
+    final days = math.max(
+      1,
+      _periodOf(snapshot).daysToLiveOn(ref.read(nowProvider)()),
+    );
+    return l10n.homeStateMoney(
+      NumberFormat('#,##0.##', 'en').format(spendable < 0 ? 0 : spendable),
+      snapshot.currency,
+      l10n.metricsDays(days),
     );
   }
 }
+
+/// The part of the day it is in the **account's** market zone, never the
+/// device's (a customer in Cairo travelling through Dubai still wakes to
+/// Cairo's morning).
+HomeDayPhase homeDayPhaseNow(WidgetRef ref) {
+  final now = ref.read(nowProvider)().toUtc();
+  try {
+    final zone = tz.getLocation(ref.watch(accountTimeZoneProvider));
+    return homeDayPhaseOf(tz.TZDateTime.from(now, zone).hour);
+  } on Object {
+    // The SQL's own fallback zone (Africa/Cairo), as a fixed offset.
+    return homeDayPhaseOf(now.add(const Duration(hours: 2)).hour);
+  }
+}
+
+/// «عوالمك»: the sections, drawn per world.
+class _WorldsCard extends StatelessWidget {
+  const new();
+
+  @override
+  Widget build(BuildContext context) => ZadWorldCard(
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Text(
+          context.l10n.homeWorldsTitle,
+          style: ZadType.titleMedium.copyWith(fontWeight: FontWeight.w800),
+        ),
+        Text(
+          context.l10n.homeWorldsHint,
+          style: ZadType.labelMedium.copyWith(color: ZadColors.inkMuted),
+        ),
+        const SizedBox(height: ZadSpacing.md),
+        const SectionsGrid(),
+      ],
+    ),
+  );
+}
+
+/// The card's period, taken from the snapshot the money came from.
+///
+/// Deliberately not recomputed: the server's `days_left` is what its
+/// `daily_allowance_left` was divided by, and a card showing a different
+/// number of days beside those figures would be quietly inconsistent.
+BudgetPeriod _periodOf(BudgetSnapshot snapshot) => BudgetPeriod.fromServer(
+  cycleStart: snapshot.cycleStart!,
+  cycleEnd: snapshot.cycleEnd!,
+  timeZone: snapshot.timeZone,
+);
 
 class _Budget extends ConsumerWidget {
   const new({required this.view});
@@ -363,15 +469,4 @@ class _Budget extends ConsumerWidget {
       ),
     );
   }
-
-  /// The card's period, taken from the snapshot the money came from.
-  ///
-  /// Deliberately not recomputed: the server's `days_left` is what its
-  /// `daily_allowance_left` was divided by, and a card showing a different
-  /// number of days beside those figures would be quietly inconsistent.
-  BudgetPeriod _periodOf(BudgetSnapshot snapshot) => BudgetPeriod.fromServer(
-    cycleStart: snapshot.cycleStart!,
-    cycleEnd: snapshot.cycleEnd!,
-    timeZone: snapshot.timeZone,
-  );
 }

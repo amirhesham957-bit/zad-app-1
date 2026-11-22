@@ -12,6 +12,8 @@ import 'package:zad/shared/ads/data/ad_reward_preview.dart';
 import 'package:zad/shared/ads/data/rewarded_ads.dart';
 import 'package:zad/shared/auth/application/session_controller.dart';
 
+import '../../support/quiet_household.dart';
+
 class _SignedIn extends SessionController {
   @override
   String? build() => 'user-1';
@@ -47,6 +49,7 @@ Future<void> _pump(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        ...quietOrbOverrides,
         adsAllowedProvider.overrideWithValue(ads),
         if (ads) ...[
           sessionControllerProvider.overrideWith(_SignedIn.new),
@@ -99,12 +102,10 @@ void main() {
     await _leave(tester);
   });
 
-  testWidgets('each plan is a pane of frosted glass over the backdrop', (
-    tester,
-  ) async {
+  testWidgets('each plan is a white card of the world', (tester) async {
     await _pump(tester);
     for (final plan in <String>['basic', 'plus', 'ultra']) {
-      expect(find.byKey(ValueKey<String>('plan-glass-$plan')), findsOneWidget);
+      expect(find.byKey(ValueKey<String>('plan-card-$plan')), findsOneWidget);
     }
     await _leave(tester);
   });

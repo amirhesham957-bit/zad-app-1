@@ -32,7 +32,15 @@ function fakePharmacy() {
     };
     return b;
   };
-  return { sb: { from, rpc: () => Promise.resolve({ data: null, error: null }) } as any, deleted };
+  // The delete goes through the door now (zad_commit_intent, M2.5); the fake records it the same way.
+  const rpc = (fn: string, args: { p_intent?: { kind?: string; payload?: { item_id?: string } } }) => {
+    if (fn === "zad_commit_intent" && args.p_intent?.kind === "pharmacy.deleted" && args.p_intent.payload?.item_id) {
+      deleted.push(args.p_intent.payload.item_id);
+      return Promise.resolve({ data: { ok: true, duplicate: false, row_id: args.p_intent.payload.item_id }, error: null });
+    }
+    return Promise.resolve({ data: null, error: null });
+  };
+  return { sb: { from, rpc } as any, deleted };
 }
 
 Deno.test("a name that fits two medicines deletes nothing and asks", async () => {

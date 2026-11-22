@@ -20,6 +20,7 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/core/design/tokens/zad_world_colors.dart';
 import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/recipes/domain/recipe.dart';
 import 'package:zad/features/recipes/presentation/cooked_sheet.dart';
@@ -33,6 +34,8 @@ import 'package:zad/shared/inventory/application/pantry_controller.dart';
 import 'package:zad/shared/inventory/application/shopping_controller.dart';
 import 'package:zad/shared/inventory/domain/quantity.dart';
 import 'package:zad/shared/navigation/zad_slots.dart';
+import 'package:zad/shared/worlds/art/art.dart';
+import 'package:zad/shared/worlds/world_card.dart';
 
 /// Opens the full recipe.
 Future<void> showRecipeDetail(BuildContext context, Recipe recipe) =>
@@ -53,6 +56,7 @@ final RegExp _numbered = RegExp(r'^\d+[.)\-]+\s*');
 /// Kotlin's `parseRecipeContent`: sections by their Arabic headings, bullets
 /// and numbers stripped; everything as steps when no heading is found.
 @visibleForTesting
+// l10n: data-begin
 RecipeParts parseRecipeContent(String text) {
   final lines = text.split('\n');
   final ingredients = <String>[];
@@ -107,8 +111,11 @@ RecipeParts parseRecipeContent(String text) {
   return (ingredients: ingredients, steps: steps, secrets: secrets);
 }
 
+// l10n: data-end
+
 /// Kotlin's `recipeTextFromKnown`: the card's own steps in the parser's
 /// shape, so no network call is needed to show them.
+// l10n: data-begin
 String? _knownText(Recipe r) {
   if (r.steps.isEmpty) return null;
   final ingredients = <String>[...r.used, ...r.missing];
@@ -126,6 +133,7 @@ String? _knownText(Recipe r) {
   }
   return b.toString().trim();
 }
+// l10n: data-end
 
 /// The dialog.
 class RecipeDetailDialog extends ConsumerStatefulWidget {
@@ -186,7 +194,9 @@ class _RecipeDetailState extends ConsumerState<RecipeDetailDialog> {
               'user_id': client.auth.currentUser?.id,
               'payload': <String, dynamic>{
                 'recipe_name': widget.recipe.name,
-                'inventory': pantry.isEmpty ? 'لا يوجد مخزون حاليا' : pantry,
+                'inventory': pantry.isEmpty
+                    ? 'لا يوجد مخزون حاليا' // l10n: data
+                    : pantry,
               },
             },
           )
@@ -199,7 +209,7 @@ class _RecipeDetailState extends ConsumerState<RecipeDetailDialog> {
       if (t is! String || t.trim().isEmpty) {
         if (!mounted) return;
         setState(() {
-          _error = 'شيف زاد مارجّعش الوصفة دي — جرب تاني';
+          _error = context.l10n.chefDetailEmpty;
           _loading = false;
         });
         return;
@@ -208,14 +218,14 @@ class _RecipeDetailState extends ConsumerState<RecipeDetailDialog> {
     } on TimeoutException {
       if (!mounted) return;
       setState(() {
-        _error = 'شيف زاد اتأخر في الرد — جرب تاني';
+        _error = context.l10n.chefDetailSlow;
         _loading = false;
       });
       return;
     } on Object {
       if (!mounted) return;
       setState(() {
-        _error = 'عذراً، حدث خطأ أثناء تحميل الوصفة';
+        _error = context.l10n.chefDetailFailed;
         _loading = false;
       });
       return;
@@ -254,9 +264,10 @@ class _RecipeDetailState extends ConsumerState<RecipeDetailDialog> {
     unawaited(HapticFeedback.lightImpact());
     if (!mounted) return;
     final messenger = ScaffoldMessenger.maybeOf(context);
+    final l = context.l10n;
     Navigator.of(context).pop();
     messenger?.showSnackBar(
-      SnackBar(content: Text('ضفت ${toAdd.length} أصناف لقايمة التسوق.')),
+      SnackBar(content: Text(l.chefAddedMany(toAdd.length))),
     );
   }
 
@@ -286,6 +297,7 @@ class _RecipeDetailState extends ConsumerState<RecipeDetailDialog> {
         horizontal: size.width * 0.04,
         vertical: size.height * 0.075,
       ),
+      backgroundColor: ZadWorldColors.tint(ZadWorldColors.chef),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
       clipBehavior: Clip.antiAlias,
       child: Column(
@@ -301,11 +313,14 @@ class _RecipeDetailState extends ConsumerState<RecipeDetailDialog> {
                     children: <Widget>[
                       const SizedBox.square(
                         dimension: 48,
-                        child: CircularProgressIndicator(strokeWidth: 4),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 4,
+                          color: ZadWorldColors.chef,
+                        ),
                       ),
                       const SizedBox(height: 20),
                       Text(
-                        'شيف زاد يجهز لك الوصفة…',
+                        l.chefDetailLoading,
                         style: ZadType.bodyLarge.copyWith(
                           color: ZadColors.inkMuted,
                         ),
@@ -324,7 +339,11 @@ class _RecipeDetailState extends ConsumerState<RecipeDetailDialog> {
                 ? Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[
-                      const Text('⚠️', style: ZadType.headlineLarge),
+                      Icon(
+                        ZadIcons.failed,
+                        size: 40,
+                        color: ZadColors.terracottaRust,
+                      ),
                       const SizedBox(height: ZadSpacing.md),
                       Padding(
                         padding: const EdgeInsets.symmetric(
@@ -345,7 +364,7 @@ class _RecipeDetailState extends ConsumerState<RecipeDetailDialog> {
                           unawaited(_load());
                         },
                         icon: const Icon(ZadIcons.retry, size: 16),
-                        label: const Text('إعادة المحاولة'),
+                        label: Text(l.chefDetailRetry),
                       ),
                     ],
                   )
@@ -367,18 +386,23 @@ class _RecipeDetailState extends ConsumerState<RecipeDetailDialog> {
                           label: Text(l.chefFullRecipe),
                           style: FilledButton.styleFrom(
                             minimumSize: const Size(0, 48),
+                            foregroundColor: ZadWorldColors.chef,
+                            backgroundColor: ZadWorldColors.chef.withValues(
+                              alpha: 0.12,
+                            ),
                           ),
                         ),
                         const SizedBox(height: ZadSpacing.md),
                       ],
                       if (parsed.ingredients.isNotEmpty)
                         _Section(
-                          title: '🥐 المقادير',
-                          color: ZadColors.green700,
+                          title: l.chefDetailIngredients,
+                          art: ZadIconArt.jar,
                           children: <Widget>[
                             for (final (i, item) in parsed.ingredients.indexed)
                               CheckboxListTile(
                                 dense: true,
+                                activeColor: ZadWorldColors.chef,
                                 contentPadding: EdgeInsets.zero,
                                 controlAffinity:
                                     ListTileControlAffinity.leading,
@@ -405,8 +429,8 @@ class _RecipeDetailState extends ConsumerState<RecipeDetailDialog> {
                       if (parsed.steps.isNotEmpty) ...<Widget>[
                         const SizedBox(height: ZadSpacing.lg),
                         _Section(
-                          title: '👨‍🍳 طريقة التحضير',
-                          color: ZadColors.mustardOchre,
+                          title: l.chefDetailSteps,
+                          art: ZadIconArt.pot,
                           children: <Widget>[
                             for (final (i, step) in parsed.steps.indexed)
                               Padding(
@@ -420,15 +444,17 @@ class _RecipeDetailState extends ConsumerState<RecipeDetailDialog> {
                                       width: 26,
                                       height: 26,
                                       alignment: Alignment.center,
-                                      decoration: const BoxDecoration(
+                                      decoration: BoxDecoration(
                                         shape: BoxShape.circle,
-                                        color: ZadColors.mint100,
+                                        color: ZadWorldColors.chef.withValues(
+                                          alpha: 0.12,
+                                        ),
                                       ),
                                       child: Text(
                                         '${i + 1}',
                                         style: ZadType.labelSmall.copyWith(
                                           fontWeight: FontWeight.w700,
-                                          color: ZadColors.green800,
+                                          color: ZadWorldColors.chef,
                                         ),
                                       ),
                                     ),
@@ -454,7 +480,7 @@ class _RecipeDetailState extends ConsumerState<RecipeDetailDialog> {
                         const SizedBox(height: ZadSpacing.lg),
                         _Section(
                           title: l.chefSecrets,
-                          color: ZadColors.terracottaRust,
+                          art: ZadIconArt.star,
                           children: <Widget>[
                             for (final secret in parsed.secrets)
                               Padding(
@@ -487,6 +513,7 @@ class _RecipeDetailState extends ConsumerState<RecipeDetailDialog> {
                           ),
                           style: OutlinedButton.styleFrom(
                             minimumSize: const Size(0, 48),
+                            foregroundColor: ZadWorldColors.chef,
                           ),
                         ),
                       const SizedBox(height: ZadSpacing.sm),
@@ -496,6 +523,7 @@ class _RecipeDetailState extends ConsumerState<RecipeDetailDialog> {
                         label: Text(l.chefAsk),
                         style: OutlinedButton.styleFrom(
                           minimumSize: const Size(0, 48),
+                          foregroundColor: ZadWorldColors.chef,
                         ),
                       ),
                       const SizedBox(height: ZadSpacing.lg),
@@ -509,8 +537,8 @@ class _RecipeDetailState extends ConsumerState<RecipeDetailDialog> {
             DecoratedBox(
               decoration: BoxDecoration(
                 color: ZadColors.surface,
-                border: Border(
-                  top: BorderSide(color: ZadColors.outlineVariant),
+                border: const Border(
+                  top: BorderSide(color: ZadColors.hairline),
                 ),
               ),
               child: Padding(
@@ -523,8 +551,7 @@ class _RecipeDetailState extends ConsumerState<RecipeDetailDialog> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: <Widget>[
                     // «من أمازون» per missing ingredient (owner, 2026-11-15);
-                    // scrolls past ~two rows so the footer never eats the
-                    // recipe.
+                    // scrolls past ~two rows so the footer never eats it.
                     if (widget.recipe.missing.isNotEmpty) ...<Widget>[
                       ConstrainedBox(
                         constraints: const BoxConstraints(maxHeight: 112),
@@ -544,15 +571,16 @@ class _RecipeDetailState extends ConsumerState<RecipeDetailDialog> {
                       const AmazonChipsNote(),
                       const SizedBox(height: ZadSpacing.sm),
                     ],
-                    SizedBox(
-                      height: 48,
-                      width: double.infinity,
-                      child: Row(
-                        children: <Widget>[
-                          // ZAD_PLAN 10.1 slice 4c: what the dish used comes
-                          // off the pantry, after the amounts are checked.
-                          OutlinedButton.icon(
-                            style: OutlinedButton.styleFrom(
+                    Row(
+                      children: <Widget>[
+                        // The primary action, in the thumb zone. ZAD_PLAN 10.1
+                        // slice 4c: what the dish used comes off the pantry,
+                        // after the customer checks the amounts.
+                        Expanded(
+                          flex: 2,
+                          child: FilledButton.icon(
+                            style: FilledButton.styleFrom(
+                              backgroundColor: ZadWorldColors.chef,
                               minimumSize: const Size(0, 48),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(
@@ -568,30 +596,32 @@ class _RecipeDetailState extends ConsumerState<RecipeDetailDialog> {
                             ),
                             label: Text(l.cookDone, style: ZadType.labelLarge),
                           ),
-                          const SizedBox(width: ZadSpacing.sm),
-                          Expanded(
-                            child: FilledButton.icon(
-                              style: FilledButton.styleFrom(
-                                minimumSize: const Size(0, 48),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(
-                                    ZadRadii.chip,
-                                  ),
+                        ),
+                        const SizedBox(width: ZadSpacing.sm),
+                        Expanded(
+                          flex: 3,
+                          child: OutlinedButton.icon(
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: ZadWorldColors.chef,
+                              minimumSize: const Size(0, 48),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(
+                                  ZadRadii.chip,
                                 ),
                               ),
-                              onPressed: () =>
-                                  unawaited(_addToShopping(parsed.ingredients)),
-                              icon: const Icon(ZadIcons.shopping, size: 18),
-                              label: const Text(
-                                'إضافة النواقص لقائمة التسوق',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: ZadType.labelLarge,
-                              ),
+                            ),
+                            onPressed: () =>
+                                unawaited(_addToShopping(parsed.ingredients)),
+                            icon: const Icon(ZadIcons.shopping, size: 18),
+                            label: Text(
+                              l.chefDetailAddToShopping,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: ZadType.labelLarge,
                             ),
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -603,7 +633,6 @@ class _RecipeDetailState extends ConsumerState<RecipeDetailDialog> {
   }
 }
 
-/// «اسم المكوّن» and its «من أمازون» chip, for the footer's wrap.
 class _MissingBuy extends StatelessWidget {
   const new({required this.name});
 
@@ -631,17 +660,19 @@ class _Header extends StatelessWidget {
     final glyph = DecoratedBox(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: <Color>[
-            ZadColors.green800,
-            ZadColors.green700,
-            ZadColors.mintGlow,
-          ],
+          colors: <Color>[ZadWorldColors.chef, Color(0xFFFF9A5C)],
         ),
       ),
       child: Center(
-        child: Text(
-          dishEmoji(recipe.name),
-          style: const TextStyle(fontSize: 72),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(ZadRadii.cardLarge),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(ZadSpacing.md),
+            child: dishArt(recipe.name, 84),
+          ),
         ),
       ),
     );
@@ -656,21 +687,22 @@ class _Header extends StatelessWidget {
             glyph
           else
             ZadNetworkImage(url, fit: BoxFit.cover, fallback: glyph),
-          const DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                stops: <double>[0.4, 1],
-                colors: <Color>[Colors.transparent, Color(0x80000000)],
+          if (url != null)
+            const DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  stops: <double>[0.4, 1],
+                  colors: <Color>[Colors.transparent, Color(0x80000000)],
+                ),
               ),
             ),
-          ),
           PositionedDirectional(
             top: ZadSpacing.sm,
             start: ZadSpacing.sm,
             child: IconButton(
-              tooltip: 'إغلاق',
+              tooltip: context.l10n.chefDetailClose,
               style: IconButton.styleFrom(
                 backgroundColor: Colors.black.withValues(alpha: 0.3),
               ),
@@ -699,47 +731,41 @@ class _Header extends StatelessWidget {
 }
 
 class _Section extends StatelessWidget {
-  const new({required this.title, required this.color, required this.children});
+  const new({required this.title, required this.art, required this.children});
 
   final String title;
-  final Color color;
+  final ZadIconArt art;
   final List<Widget> children;
 
   @override
-  Widget build(BuildContext context) => DecoratedBox(
-    decoration: BoxDecoration(
-      color: ZadColors.surface,
-      borderRadius: BorderRadius.circular(20),
-      boxShadow: const <BoxShadow>[
-        BoxShadow(
-          color: ZadColors.shadowSpot,
-          blurRadius: 6,
-          offset: Offset(0, 2),
-        ),
-      ],
-    ),
-    // The ingredients are CheckboxListTiles, and a ListTile's ink needs a
-    // Material above this box's colour: without one, debug builds threw
-    // "ListTile background color or ink splashes may be invisible" for every
-    // recipe with ingredients — a red error in place of the list.
+  // The ingredients are CheckboxListTiles, and a ListTile's ink needs a
+  // Material above this box's colour: without one, debug builds threw
+  // "ListTile background color or ink splashes may be invisible" for every
+  // recipe with ingredients — a red error in place of the list.
+  Widget build(BuildContext context) => ZadWorldCard(
     child: Material(
       type: MaterialType.transparency,
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text(
-              title,
-              style: ZadType.titleMedium.copyWith(
-                fontWeight: FontWeight.w700,
-                color: color,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              ZadArt.icon(art, size: 28),
+              const SizedBox(width: ZadSpacing.sm),
+              Expanded(
+                child: Text(
+                  title,
+                  style: ZadType.titleMedium.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: ZadWorldColors.chef,
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(height: ZadSpacing.md),
-            ...children,
-          ],
-        ),
+            ],
+          ),
+          const SizedBox(height: ZadSpacing.md),
+          ...children,
+        ],
       ),
     ),
   );

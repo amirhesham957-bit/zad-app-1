@@ -1,0 +1,39 @@
+name: Flutter PR check
+
+# Quick gate for pull requests only: analyze + test. APKs and the AAB are built
+# by build-debug-apk.yml on merge to main or by hand (workflow_dispatch).
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'zad_flutter/**'
+      - '.github/workflows/flutter-pr-check.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          # Same pin as build-debug-apk.yml; bump both together.
+          flutter-version: '3.47.9'
+          cache: true
+      - name: Install dependencies
+        run: flutter pub get
+        working-directory: zad_flutter
+      - name: Analyze
+        run: flutter analyze
+        working-directory: zad_flutter
+      - name: Test
+        run: flutter test
+        working-directory: zad_flutter

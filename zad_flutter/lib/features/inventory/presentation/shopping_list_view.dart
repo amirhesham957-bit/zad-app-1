@@ -14,7 +14,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' show NumberFormat;
 import 'package:share_plus/share_plus.dart';
 import 'package:zad/core/data/providers.dart';
-import 'package:zad/core/design/components/zad_card.dart';
 import 'package:zad/core/design/components/zad_celebration.dart';
 import 'package:zad/core/design/components/zad_empty_state.dart';
 import 'package:zad/core/design/foundation/squircle.dart';
@@ -25,6 +24,8 @@ import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/core/money/money.dart';
 import 'package:zad/features/inventory/data/shopping_ai_remote.dart';
+import 'package:zad/features/inventory/presentation/art_flight.dart';
+import 'package:zad/features/inventory/presentation/shopping_world_scene.dart';
 import 'package:zad/shared/ads/presentation/inline_ad.dart';
 import 'package:zad/shared/affiliate/application/affiliate_match_controller.dart';
 import 'package:zad/shared/affiliate/presentation/amazon_buy_chip.dart';
@@ -37,6 +38,11 @@ import 'package:zad/shared/inventory/domain/shopping_item.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/market/domain/market.dart';
 import 'package:zad/shared/navigation/zad_slots.dart';
+import 'package:zad/shared/worlds/art/art.dart';
+import 'package:zad/shared/worlds/world_card.dart';
+import 'package:zad/shared/worlds/world_row.dart';
+import 'package:zad/shared/worlds/world_scaffold.dart';
+import 'package:zad/shared/worlds/zad_world.dart';
 
 String _money(double v) => NumberFormat('#,##0.##', 'en').format(v);
 
@@ -98,6 +104,8 @@ class ShoppingListView extends ConsumerStatefulWidget {
 
 class _ShoppingListViewState extends ConsumerState<ShoppingListView> {
   final TextEditingController _entry = TextEditingController();
+  // Where a bought item's drawing lands: the pantry counter.
+  final GlobalKey _counter = GlobalKey();
   ShoppingPriority? _priority;
   List<GrocerySuggestion> _suggestions = const <GrocerySuggestion>[];
   bool _filling = false;
@@ -199,6 +207,7 @@ class _ShoppingListViewState extends ConsumerState<ShoppingListView> {
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     // The last line ticked off: confetti, once, for that list.
     ref.listen(shoppingControllerProvider, (previous, next) {
       if (shoppingJustFinished(previous, next)) celebrate(context);
@@ -215,236 +224,358 @@ class _ShoppingListViewState extends ConsumerState<ShoppingListView> {
     // عندي الماية قد إيه»).
     final pantry = ref.watch(pantryControllerProvider.select((v) => v.items));
 
-    return Column(
-      children: <Widget>[
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-            ZadSpacing.gutter,
-            ZadSpacing.md,
-            ZadSpacing.gutter,
-            0,
-          ),
-          child: Row(
-            children: <Widget>[
-              Expanded(
-                child: TextField(
-                  controller: _entry,
-                  textInputAction: TextInputAction.done,
-                  onChanged: (_) => setState(() {}),
-                  onSubmitted: (_) => unawaited(_add()),
-                  // A rounded box like the cards under it, as tall as the
-                  // buttons beside it: the bare underline sat flush at the
-                  // top and read as broken (owner, 2026-10-05).
-                  decoration: InputDecoration(
-                    hintText: context.l10n.shopAddHint,
-                    filled: true,
-                    fillColor: ZadColors.surface,
-                    isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: ZadSpacing.lg,
-                      vertical: ZadSpacing.md,
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(ZadRadii.card),
-                      borderSide: BorderSide(
-                        color: ZadColors.outline.withValues(alpha: 0.4),
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(ZadRadii.card),
-                      borderSide: BorderSide(
-                        color: ZadColors.forestEmerald,
-                        width: 1.5,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: ZadSpacing.sm),
-              IconButton.filled(
-                onPressed: _entry.text.trim().isEmpty
-                    ? null
-                    : () => unawaited(_add()),
-                icon: const Icon(ZadIcons.add),
-                tooltip: context.l10n.shopAddTooltip,
-              ),
-              IconButton(
-                onPressed: () => unawaited(showAddShoppingSheet(context)),
-                icon: const Icon(ZadIcons.edit),
-                tooltip: context.l10n.shopAddProduct,
-              ),
-            ],
-          ),
-        ),
-        Expanded(
-          child: RefreshIndicator(
-            onRefresh: controller.refresh,
-            child: ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.all(ZadSpacing.gutter),
+    // The lines by the shop each one is bought at; a line with no shop
+    // waits under «أي محل» at the end.
+    final byStore = <String, List<ShoppingGroup>>{};
+    for (final g in groupShoppingLines(outstanding)) {
+      final store = g.lines
+          .map((i) => (i.store ?? '').trim())
+          .firstWhere((s) => s.isNotEmpty, orElse: () => '');
+      (byStore[store] ??= <ShoppingGroup>[]).add(g);
+    }
+    final stores = <String>[
+      for (final s in byStore.keys)
+        if (s.isNotEmpty) s,
+    ]..sort((a, b) => byStore[b]!.length.compareTo(byStore[a]!.length));
+    if (byStore.containsKey('')) stores.add('');
+    final storeCount = view.outstanding
+        .map((i) => (i.store ?? '').trim())
+        .where((s) => s.isNotEmpty)
+        .toSet()
+        .length;
+
+    final slivers = <Widget>[
+      SliverPadding(
+        padding: const EdgeInsets.symmetric(horizontal: ZadSpacing.gutter),
+        sliver: SliverList.list(
+          children: <Widget>[
+            _BudgetCard(
+              total: basketTotal(view.outstanding),
+              priced: view.outstanding
+                  .where((i) => i.estimatedPrice > 0)
+                  .length,
+              lines: view.outstanding.length,
+              remaining: budget.spendable,
+              limit: budget.snapshot?.openingBalance,
+              currency: currency,
+            ),
+            const SizedBox(height: ZadSpacing.md),
+            // The pantry counter: a bought item's drawing lands here.
+            Row(
+              key: _counter,
               children: <Widget>[
-                _BudgetHeader(
-                  total: basketTotal(view.outstanding),
-                  priced: view.outstanding
-                      .where((i) => i.estimatedPrice > 0)
-                      .length,
-                  lines: view.outstanding.length,
-                  remaining: budget.spendable,
-                  limit: budget.snapshot?.openingBalance,
-                  currency: currency,
-                ),
-                const SizedBox(height: ZadSpacing.md),
-                Row(
-                  children: <Widget>[
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: _filling
-                            ? null
-                            : () => unawaited(_smartFill()),
-                        icon: _filling
-                            ? const SizedBox.square(
-                                dimension: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Icon(ZadIcons.assistant, size: 16),
-                        label: Text(context.l10n.shopSmartFill),
-                        style: OutlinedButton.styleFrom(
-                          shape: const StadiumBorder(),
-                          minimumSize: const Size(0, 44),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: ZadSpacing.sm),
-                    Expanded(
-                      child: FilledButton.icon(
-                        onPressed: view.outstanding.isEmpty
-                            ? null
-                            : () => unawaited(
-                                SharePlus.instance.share(
-                                  ShareParams(
-                                    text: shoppingShareText(
-                                      context.l10n,
-                                      view.outstanding,
-                                      currency,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                        icon: const Icon(ZadIcons.send, size: 16),
-                        label: Text(context.l10n.shopWhatsApp),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: const Color(0xFF25D366),
-                          foregroundColor: Colors.white,
-                          shape: const StadiumBorder(),
-                          minimumSize: const Size(0, 44),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                if (_suggestions.isNotEmpty) ...<Widget>[
-                  const SizedBox(height: ZadSpacing.md),
-                  _Suggestions(
-                    suggestions: _suggestions,
-                    onAdd: (s) {
-                      setState(
-                        () => _suggestions = <GrocerySuggestion>[
-                          for (final x in _suggestions)
-                            if (x != s) x,
-                        ],
-                      );
-                      unawaited(controller.add(s.name));
-                    },
+                ZadArt.icon(ZadIconArt.pantry, size: 24),
+                const SizedBox(width: ZadSpacing.sm),
+                Text(
+                  l.shopPantryCount(pantry.length),
+                  style: ZadType.labelMedium.copyWith(
+                    color: ZadColors.inkMuted,
+                    fontWeight: FontWeight.w700,
                   ),
-                  // One ad per AI request (owner, 11/11), under the card.
-                  ZadInlineAd(key: ValueKey<int>(_fills)),
-                ],
-                const SizedBox(height: ZadSpacing.md),
-                Wrap(
-                  spacing: ZadSpacing.sm,
-                  children: <Widget>[
-                    for (final (p, label) in <(ShoppingPriority?, String)>[
-                      (null, context.l10n.txFilterAll),
-                      (ShoppingPriority.high, context.l10n.shopPriorityHigh),
-                      (
-                        ShoppingPriority.medium,
-                        context.l10n.shopPriorityMedium,
-                      ),
-                      (ShoppingPriority.low, context.l10n.shopPriorityLow),
-                    ])
-                      ChoiceChip(
-                        label: Text(label),
-                        selected: _priority == p,
-                        showCheckmark: false,
-                        onSelected: (_) => setState(() => _priority = p),
-                      ),
-                  ],
                 ),
-                const SizedBox(height: ZadSpacing.md),
-                if (view.isEmpty)
-                  ZadEmptyState(
-                    icon: ZadIcons.shopping,
-                    title: context.l10n.shopEmptyTitle,
-                    message: context.l10n.shopEmptyBody,
-                  )
-                else if (outstanding.isEmpty && view.outstanding.isNotEmpty)
-                  ZadEmptyState(
-                    icon: ZadIcons.search,
-                    title: context.l10n.shopFilterEmptyTitle,
-                    message: context.l10n.shopFilterEmptyBody,
-                  ),
-                for (final group in groupShoppingLines(
-                  outstanding,
-                )) ...<Widget>[
-                  if (group.isFamily)
-                    _FamilyLine(
-                      group: group,
-                      currency: currency,
-                      stock: pantryStockFor(group.name, pantry),
-                    )
-                  else
-                    _Line(
-                      item: group.lines.first,
-                      currency: currency,
-                      stock: pantryStockFor(group.name, pantry),
-                    ),
-                  const SizedBox(height: ZadSpacing.sm),
-                ],
-                if (outstanding.isNotEmpty) const AmazonChipsNote(),
-                ZadSlots.affiliateSuggestionSection(),
-                // The live deals for what is short, next to the list it is
-                // short on — it used to sit under «الديون».
-                const SizedBox(height: ZadSpacing.md),
-                ZadSlots.liveDealsCard(),
-                if (view.bought.isNotEmpty) ...<Widget>[
-                  const SizedBox(height: ZadSpacing.lg),
-                  Text(
-                    context.l10n.shopBought,
-                    style: ZadType.labelMedium.copyWith(
-                      color: ZadColors.inkMuted,
-                    ),
-                  ),
-                  const SizedBox(height: ZadSpacing.sm),
-                  for (final item in view.bought) ...<Widget>[
-                    _Line(item: item, currency: currency),
-                    const SizedBox(height: ZadSpacing.sm),
-                  ],
-                ],
-                const SizedBox(height: 88),
               ],
             ),
-          ),
+            const SizedBox(height: ZadSpacing.md),
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _filling ? null : () => unawaited(_smartFill()),
+                    icon: _filling
+                        ? const SizedBox.square(
+                            dimension: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(ZadIcons.assistant, size: 16),
+                    label: Text(l.shopSmartFill),
+                    style: OutlinedButton.styleFrom(
+                      shape: const StadiumBorder(),
+                      minimumSize: const Size(0, 44),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: ZadSpacing.sm),
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: view.outstanding.isEmpty
+                        ? null
+                        : () => unawaited(
+                            SharePlus.instance.share(
+                              ShareParams(
+                                text: shoppingShareText(
+                                  l,
+                                  view.outstanding,
+                                  currency,
+                                ),
+                              ),
+                            ),
+                          ),
+                    icon: const Icon(ZadIcons.send, size: 16),
+                    label: Text(l.shopWhatsApp),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFF25D366),
+                      foregroundColor: Colors.white,
+                      shape: const StadiumBorder(),
+                      minimumSize: const Size(0, 44),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            if (_suggestions.isNotEmpty) ...<Widget>[
+              const SizedBox(height: ZadSpacing.md),
+              _Suggestions(
+                suggestions: _suggestions,
+                onAdd: (s) {
+                  setState(
+                    () => _suggestions = <GrocerySuggestion>[
+                      for (final x in _suggestions)
+                        if (x != s) x,
+                    ],
+                  );
+                  unawaited(controller.add(s.name));
+                },
+              ),
+              // One ad per AI request (owner, 11/11), under the card.
+              ZadInlineAd(key: ValueKey<int>(_fills)),
+            ],
+            const SizedBox(height: ZadSpacing.md),
+            Wrap(
+              spacing: ZadSpacing.sm,
+              children: <Widget>[
+                for (final (p, label) in <(ShoppingPriority?, String)>[
+                  (null, l.txFilterAll),
+                  (ShoppingPriority.high, l.shopPriorityHigh),
+                  (ShoppingPriority.medium, l.shopPriorityMedium),
+                  (ShoppingPriority.low, l.shopPriorityLow),
+                ])
+                  ChoiceChip(
+                    label: Text(label),
+                    selected: _priority == p,
+                    showCheckmark: false,
+                    onSelected: (_) => setState(() => _priority = p),
+                  ),
+              ],
+            ),
+            const SizedBox(height: ZadSpacing.md),
+            if (view.isEmpty)
+              ZadEmptyState(
+                icon: ZadIcons.shopping,
+                title: l.shopEmptyTitle,
+                message: l.shopEmptyBody,
+              )
+            else if (outstanding.isEmpty && view.outstanding.isNotEmpty)
+              ZadEmptyState(
+                icon: ZadIcons.search,
+                title: l.shopFilterEmptyTitle,
+                message: l.shopFilterEmptyBody,
+              ),
+            if (outstanding.isNotEmpty) const AmazonChipsNote(),
+            for (final store in stores) ...<Widget>[
+              _StoreHeader(
+                name: store.isEmpty ? l.shopGroupAnyStore : store,
+                count: byStore[store]!.length,
+              ),
+              ZadWorldCard(
+                child: Column(
+                  children: <Widget>[
+                    for (final (i, group)
+                        in byStore[store]!.indexed) ...<Widget>[
+                      if (i > 0) const ZadWorldDivider(),
+                      if (group.isFamily)
+                        _FamilyLine(
+                          group: group,
+                          currency: currency,
+                          stock: pantryStockFor(group.name, pantry),
+                          pantryCounter: _counter,
+                        )
+                      else
+                        _Line(
+                          item: group.lines.first,
+                          currency: currency,
+                          stock: pantryStockFor(group.name, pantry),
+                          pantryCounter: _counter,
+                        ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(height: ZadSpacing.md),
+            ],
+            ZadSlots.affiliateSuggestionSection(),
+            // The live deals for what is short, next to the list it is
+            // short on — it used to sit under «الديون».
+            const SizedBox(height: ZadSpacing.md),
+            ZadSlots.liveDealsCard(),
+            if (view.bought.isNotEmpty) ...<Widget>[
+              const SizedBox(height: ZadSpacing.lg),
+              Text(
+                l.shopBought,
+                style: ZadType.labelMedium.copyWith(color: ZadColors.inkMuted),
+              ),
+              const SizedBox(height: ZadSpacing.sm),
+              ZadWorldCard(
+                child: Column(
+                  children: <Widget>[
+                    for (final (i, item) in view.bought.indexed) ...<Widget>[
+                      if (i > 0) const ZadWorldDivider(),
+                      _Line(
+                        item: item,
+                        currency: currency,
+                        pantryCounter: _counter,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ],
         ),
-      ],
+      ),
+    ];
+
+    return ZadWorldScaffold(
+      world: ZadWorld.shop,
+      // The household page owns the back button (its app bar).
+      showBack: false,
+      eyebrow: l.shopWorldEyebrow(view.outstanding.length),
+      title: l.worldLabelShop,
+      stateLine: view.outstanding.isEmpty
+          ? l.shopWorldDone
+          : storeCount > 0
+          ? l.shopWorldStores(storeCount)
+          : l.shopWorldAnyStore,
+      scene: (loop) =>
+          ShopWorldScene(loop, filled: view.outstanding.isNotEmpty),
+      zado: const ZadWorldZado(left: 30, top: 50, size: 140),
+      onRefresh: controller.refresh,
+      // The add row docks in its own strip under the list (the thumb zone),
+      // so it never covers a line.
+      dockHeight: 72,
+      overlay: Positioned(
+        left: 0,
+        right: 0,
+        bottom: 0,
+        child: _AddBar(
+          controller: _entry,
+          onChanged: () => setState(() {}),
+          onAdd: () => unawaited(_add()),
+          onManual: () => unawaited(showAddShoppingSheet(context)),
+        ),
+      ),
+      slivers: slivers,
     );
   }
 }
 
+/// The add row, docked at the bottom: a name and «+», or the full sheet.
+class _AddBar extends StatelessWidget {
+  const new({
+    required this.controller,
+    required this.onChanged,
+    required this.onAdd,
+    required this.onManual,
+  });
+
+  final TextEditingController controller;
+  final VoidCallback onChanged;
+  final VoidCallback onAdd;
+  final VoidCallback onManual;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.fromLTRB(
+      ZadSpacing.gutter,
+      ZadSpacing.sm,
+      ZadSpacing.gutter,
+      ZadSpacing.md,
+    ),
+    child: Row(
+      children: <Widget>[
+        Expanded(
+          child: TextField(
+            controller: controller,
+            textInputAction: TextInputAction.done,
+            onChanged: (_) => onChanged(),
+            onSubmitted: (_) => onAdd(),
+            // A rounded box like the cards over it, as tall as the buttons
+            // beside it (owner, 2026-10-05).
+            decoration: InputDecoration(
+              hintText: context.l10n.shopAddHint,
+              filled: true,
+              fillColor: ZadColors.surface,
+              isDense: true,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: ZadSpacing.lg,
+                vertical: ZadSpacing.md,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(ZadRadii.card),
+                borderSide: BorderSide(
+                  color: ZadColors.outline.withValues(alpha: 0.4),
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(ZadRadii.card),
+                borderSide: BorderSide(
+                  color: ZadColors.forestEmerald,
+                  width: 1.5,
+                ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: ZadSpacing.sm),
+        IconButton.filled(
+          onPressed: controller.text.trim().isEmpty ? null : onAdd,
+          icon: const Icon(ZadIcons.add),
+          tooltip: context.l10n.shopAddTooltip,
+        ),
+        IconButton(
+          onPressed: onManual,
+          icon: const Icon(ZadIcons.edit),
+          tooltip: context.l10n.shopAddProduct,
+        ),
+      ],
+    ),
+  );
+}
+
+/// A shop's name over the lines bought there.
+class _StoreHeader extends StatelessWidget {
+  const new({required this.name, required this.count});
+
+  final String name;
+  final int count;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: ZadSpacing.sm),
+    child: Row(
+      children: <Widget>[
+        ZadArt.icon(ZadIconArt.store, size: 20),
+        const SizedBox(width: ZadSpacing.sm),
+        Expanded(
+          child: Text(
+            name,
+            style: ZadType.labelMedium.copyWith(
+              color: ZadWorld.shop.color,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+        Text(
+          '$count',
+          style: ZadType.labelSmall.copyWith(color: ZadColors.inkMuted),
+        ),
+      ],
+    ),
+  );
+}
+
 /// "سلة زاد الذكية": the basket, what is left to spend, the share of the
 /// budget, and a warning when the basket is more than is left.
-class _BudgetHeader extends StatelessWidget {
+class _BudgetCard extends StatelessWidget {
   const new({
     required this.total,
     required this.remaining,
@@ -473,42 +604,43 @@ class _BudgetHeader extends StatelessWidget {
         ? (basket / cap * 100).clamp(0, 100).toInt()
         : 0;
     final over = basket != null && left != null && basket > left;
-    return Container(
-      padding: const EdgeInsets.all(ZadSpacing.lg),
-      decoration: ShapeDecoration(
-        gradient: ZadColors.wallet,
-        shape: zadSquircle(ZadRadii.cardLarge),
-      ),
+    final color = over ? ZadColors.terracottaRust : ZadWorld.shop.color;
+    return ZadWorldCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Text(
             context.l10n.shopBasketTitle,
-            style: ZadType.labelLarge.copyWith(
-              color: Colors.white.withValues(alpha: 0.8),
-            ),
+            style: ZadType.labelMedium.copyWith(color: ZadColors.inkMuted),
           ),
           const SizedBox(height: ZadSpacing.xs),
           // An empty list says so instead of «— EGP» (emulator, 2026-11-10).
           if (basket == null && lines == 0)
-            Text(
-              context.l10n.shoppingBasketEmpty,
-              style: ZadType.titleMedium.copyWith(color: Colors.white),
-            )
+            Text(context.l10n.shoppingBasketEmpty, style: ZadType.titleMedium)
           else
             Text(
               basket == null
                   ? '— $currency'.trim()
                   : '${_money(basket)} $currency',
-              style: ZadType.figure(28).copyWith(color: Colors.white),
+              style: ZadType.figure(28).copyWith(color: color),
             ),
           if (basket != null && priced < lines)
             Text(
               context.l10n.shopBasketPartial(priced, lines),
-              style: ZadType.labelSmall.copyWith(
-                color: Colors.white.withValues(alpha: 0.8),
+              style: ZadType.labelSmall.copyWith(color: ZadColors.inkMuted),
+            ),
+          if (basket != null && cap != null && cap > 0) ...<Widget>[
+            const SizedBox(height: ZadSpacing.sm),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(ZadRadii.pill),
+              child: LinearProgressIndicator(
+                value: pct / 100,
+                minHeight: 6,
+                color: color,
+                backgroundColor: color.withValues(alpha: 0.14),
               ),
             ),
+          ],
           const SizedBox(height: ZadSpacing.sm),
           Row(
             children: <Widget>[
@@ -520,14 +652,17 @@ class _BudgetHeader extends StatelessWidget {
                           '${_money(left)} $currency',
                         ),
                   style: ZadType.labelMedium.copyWith(
-                    color: Colors.white.withValues(alpha: 0.85),
+                    color: ZadColors.inkMuted,
                   ),
                 ),
               ),
               if (basket != null && cap != null && cap > 0)
                 Text(
                   context.l10n.shopBudgetPct(pct),
-                  style: ZadType.labelMedium.copyWith(color: Colors.white),
+                  style: ZadType.labelMedium.copyWith(
+                    color: color,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
             ],
           ),
@@ -536,7 +671,7 @@ class _BudgetHeader extends StatelessWidget {
             Text(
               context.l10n.shopOverBudget,
               style: ZadType.labelMedium.copyWith(
-                color: const Color(0xFFFFA69E),
+                color: ZadColors.terracottaRust,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -554,8 +689,7 @@ class _Suggestions extends StatelessWidget {
   final ValueChanged<GrocerySuggestion> onAdd;
 
   @override
-  Widget build(BuildContext context) => ZadCard(
-    color: ZadColors.mint50,
+  Widget build(BuildContext context) => ZadWorldCard(
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
@@ -564,6 +698,12 @@ class _Suggestions extends StatelessWidget {
         for (final s in suggestions)
           Row(
             children: <Widget>[
+              ZadWorldTile(
+                color: ZadWorld.shop.color,
+                size: 36,
+                child: zadItemArt(s.name, size: 28),
+              ),
+              const SizedBox(width: ZadSpacing.md),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -604,10 +744,49 @@ String? _stockNote(ZadL10n l, ({double total, bool isLow})? stock) =>
     ? l.shopStockLow(formatQuantity(stock.total))
     : l.shopStockEnough(formatQuantity(stock.total));
 
+Color _priorityColor(ShoppingPriority p) => switch (p) {
+  ShoppingPriority.high => ZadColors.terracottaRust,
+  ShoppingPriority.medium => ZadColors.mustardOchre,
+  ShoppingPriority.low => ZadColors.green700,
+};
+
+String _priorityLabel(ZadL10n l, ShoppingPriority p) => switch (p) {
+  ShoppingPriority.high => l.shopPriorityHigh,
+  ShoppingPriority.medium => l.shopPriorityMedium,
+  ShoppingPriority.low => l.shopPriorityLow,
+};
+
+/// The round tick of a line: a real checkbox, so a screen reader hears it.
+class _Tick extends StatelessWidget {
+  const new({
+    required this.value,
+    required this.onChanged,
+    required this.label,
+  });
+
+  final bool value;
+  final ValueChanged<bool> onChanged;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    label: label,
+    child: SizedBox.square(
+      dimension: 44,
+      child: Checkbox(
+        value: value,
+        shape: const CircleBorder(),
+        onChanged: (v) => onChanged(v ?? false),
+      ),
+    ),
+  );
+}
+
 class _Line extends ConsumerWidget {
   const new({
     required this.item,
     required this.currency,
+    required this.pantryCounter,
     this.stock,
     this.showBuy = true,
   });
@@ -619,143 +798,94 @@ class _Line extends ConsumerWidget {
   final ShoppingItem item;
   final String currency;
 
+  /// The pantry counter a bought line's drawing flies to.
+  final GlobalKey pantryCounter;
+
   /// The pantry's stock of it, when the pantry has any.
   final ({double total, bool isLow})? stock;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = context.l10n;
     final controller = ref.read(shoppingControllerProvider.notifier);
-    final (tag, tagColor) = switch (item.priority) {
-      ShoppingPriority.high => (
-        context.l10n.shopPriorityHigh,
-        ZadColors.terracottaRust,
-      ),
-      ShoppingPriority.medium => (
-        context.l10n.shopPriorityMedium,
-        ZadColors.mustardOchre,
-      ),
-      ShoppingPriority.low => (
-        context.l10n.shopPriorityLow,
-        ZadColors.green600,
-      ),
-    };
+    final bought = item.isPurchased;
+    final color = bought ? ZadColors.inkMuted : _priorityColor(item.priority);
     final details = <String>[
+      if (!bought) _priorityLabel(l, item.priority),
       if (item.estimatedPrice > 0)
         '${_money(item.estimatedPrice * item.quantity)} $currency'.trim(),
       if (item.store case final s? when s.isNotEmpty) s,
-      if (item.predictedDaysLeft case final d? when !item.isPurchased)
-        context.l10n.shopRunsOutIn(d),
-      if (!item.isPurchased) ?_stockNote(context.l10n, stock),
+      if (item.predictedDaysLeft case final d? when !bought) l.shopRunsOutIn(d),
+      if (!bought) ?_stockNote(l, stock),
     ];
+
+    void toggle({required bool purchased}) {
+      unawaited(controller.toggle(item.id, purchased: purchased));
+      if (purchased) {
+        // The drawing goes to the pantry counter.
+        flyArt(context, pantryCounter, zadItemArt(item.itemName, size: 32));
+        // Kotlin's onCheck: matchProduct on the tick.
+        unawaited(
+          ref.read(affiliateMatchProvider.notifier).onPurchased(item.itemName),
+        );
+        ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+          SnackBar(content: Text(l.shopBoughtItem(item.itemName))),
+        );
+      }
+    }
 
     return Dismissible(
       key: ValueKey<String>(item.id),
       direction: DismissDirection.endToStart,
       onDismissed: (_) => unawaited(controller.remove(item.id)),
-      child: ZadCard(
-        padding: const EdgeInsets.symmetric(horizontal: ZadSpacing.sm),
-        // The tile paints its ink on the nearest Material; the card is a
-        // decorated box, so one is put between them.
-        child: Material(
-          type: MaterialType.transparency,
-          child: Row(
-            children: <Widget>[
-              Expanded(
-                child: CheckboxListTile(
-                  value: item.isPurchased,
-                  onChanged: (v) {
-                    final bought = v ?? false;
-                    unawaited(controller.toggle(item.id, purchased: bought));
-                    if (bought) {
-                      // Kotlin's onCheck: matchProduct on the tick.
-                      unawaited(
-                        ref
-                            .read(affiliateMatchProvider.notifier)
-                            .onPurchased(item.itemName),
-                      );
-                      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            context.l10n.shopBoughtItem(item.itemName),
-                          ),
-                        ),
-                      );
-                    }
-                  },
-                  controlAffinity: ListTileControlAffinity.leading,
-                  contentPadding: EdgeInsets.zero,
-                  title: Row(
-                    children: <Widget>[
-                      Flexible(
-                        child: Text(
-                          item.quantity > 1
-                              ? '${item.itemName} × ${item.quantity}'
-                              : item.itemName,
-                          style: ZadType.titleSmall.copyWith(
-                            color: item.isPurchased
-                                ? ZadColors.inkMuted
-                                : ZadColors.ink,
-                            decoration: item.isPurchased
-                                ? TextDecoration.lineThrough
-                                : TextDecoration.none,
-                          ),
-                        ),
-                      ),
-                      if (!item.isPurchased) ...<Widget>[
-                        const SizedBox(width: ZadSpacing.sm),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 1,
-                          ),
-                          decoration: BoxDecoration(
-                            color: tagColor.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(ZadRadii.pill),
-                          ),
-                          child: Text(
-                            tag,
-                            style: ZadType.labelSmall.copyWith(color: tagColor),
-                          ),
-                        ),
-                      ],
-                    ],
+      child: Column(
+        children: <Widget>[
+          ZadWorldRow(
+            leading: ZadWorldTile(
+              color: color,
+              child: zadItemArt(item.itemName, size: 32),
+            ),
+            title: item.quantity > 1
+                ? '${item.itemName} × ${item.quantity}'
+                : item.itemName,
+            titleStyle: ZadType.titleSmall.copyWith(
+              color: bought ? ZadColors.inkMuted : ZadColors.ink,
+              decoration: bought
+                  ? TextDecoration.lineThrough
+                  : TextDecoration.none,
+            ),
+            subtitle: details.isEmpty ? null : details.join(' · '),
+            stateColor: color,
+            onTap: () => toggle(purchased: !bought),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                IconButton(
+                  onPressed: () => unawaited(controller.remove(item.id)),
+                  tooltip: l.commonDelete,
+                  icon: Icon(
+                    ZadIcons.delete,
+                    size: 18,
+                    color: ZadColors.inkMuted,
                   ),
-                  subtitle: details.isEmpty && (item.isPurchased || !showBuy)
-                      ? null
-                      : Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: <Widget>[
-                            if (details.isNotEmpty)
-                              Text(
-                                details.join(' · '),
-                                style: ZadType.labelSmall.copyWith(
-                                  color: ZadColors.inkMuted,
-                                ),
-                              ),
-                            if (!item.isPurchased && showBuy)
-                              Align(
-                                alignment: AlignmentDirectional.centerStart,
-                                child: AmazonBuyChip(
-                                  itemName: item.itemName,
-                                  sourceScreen: 'shopping_row',
-                                ),
-                              ),
-                          ],
-                        ),
                 ),
-              ),
-              IconButton(
-                onPressed: () => unawaited(controller.remove(item.id)),
-                tooltip: context.l10n.commonDelete,
-                icon: Icon(
-                  ZadIcons.delete,
-                  size: 18,
-                  color: ZadColors.inkMuted,
+                _Tick(
+                  value: bought,
+                  onChanged: (v) => toggle(purchased: v),
+                  label: item.itemName,
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
+          if (!bought && showBuy)
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: AmazonBuyChip(
+                itemName: item.itemName,
+                sourceScreen: 'shopping_row',
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -764,10 +894,16 @@ class _Line extends ConsumerWidget {
 /// A staple's lines as one: «مياه · 7 أنواع», one tick for all of them, the
 /// house's stock, and the brands on a tap.
 class _FamilyLine extends ConsumerStatefulWidget {
-  const new({required this.group, required this.currency, this.stock});
+  const new({
+    required this.group,
+    required this.currency,
+    required this.pantryCounter,
+    this.stock,
+  });
 
   final ShoppingGroup group;
   final String currency;
+  final GlobalKey pantryCounter;
   final ({double total, bool isLow})? stock;
 
   @override
@@ -803,7 +939,7 @@ class _FamilyLineState extends ConsumerState<_FamilyLine> {
     }
   }
 
-  void _tickAll(bool bought) {
+  void _tickAll({required bool bought}) {
     final controller = ref.read(shoppingControllerProvider.notifier);
     for (final line in widget.group.lines) {
       if (line.isPurchased != bought) {
@@ -811,6 +947,11 @@ class _FamilyLineState extends ConsumerState<_FamilyLine> {
       }
     }
     if (bought) {
+      flyArt(
+        context,
+        widget.pantryCounter,
+        zadItemArt(widget.group.name, size: 32),
+      );
       unawaited(
         ref
             .read(affiliateMatchProvider.notifier)
@@ -824,6 +965,7 @@ class _FamilyLineState extends ConsumerState<_FamilyLine> {
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     final group = widget.group;
     final brands = group.lines
         .map((l) => brandWithinFamily(l.itemName))
@@ -831,119 +973,84 @@ class _FamilyLineState extends ConsumerState<_FamilyLine> {
         .toList();
     final shown = brands.take(3).join(' · ');
     final more = brands.length > 3 ? ' +${brands.length - 3}' : '';
-    final note = _stockNote(context.l10n, widget.stock);
+    final note = _stockNote(l, widget.stock);
     final urgent = group.lines.any((l) => l.priority == ShoppingPriority.high);
-    return ZadCard(
-      padding: const EdgeInsets.symmetric(horizontal: ZadSpacing.sm),
-      child: Material(
-        type: MaterialType.transparency,
-        child: Column(
-          children: <Widget>[
-            Row(
-              children: <Widget>[
-                Expanded(
-                  child: CheckboxListTile(
-                    value: group.allPurchased,
-                    onChanged: (v) => _tickAll(v ?? false),
-                    controlAffinity: ListTileControlAffinity.leading,
-                    contentPadding: EdgeInsets.zero,
-                    title: Row(
-                      children: <Widget>[
-                        Flexible(
-                          child: Text(
-                            context.l10n.shopGroupKinds(
-                              group.name,
-                              group.lines.length,
-                            ),
-                            style: ZadType.titleSmall,
-                          ),
-                        ),
-                        if (urgent) ...<Widget>[
-                          const SizedBox(width: ZadSpacing.sm),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 1,
-                            ),
-                            decoration: BoxDecoration(
-                              color: ZadColors.terracottaRust.withValues(
-                                alpha: 0.12,
-                              ),
-                              borderRadius: BorderRadius.circular(
-                                ZadRadii.pill,
-                              ),
-                            ),
-                            child: Text(
-                              context.l10n.shopPriorityHigh,
-                              style: ZadType.labelSmall.copyWith(
-                                color: ZadColors.terracottaRust,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Text(
-                          <String>['$shown$more', ?note].join(' · '),
-                          style: ZadType.labelSmall.copyWith(
-                            color: ZadColors.inkMuted,
-                          ),
-                        ),
-                        if (!group.allPurchased)
-                          Align(
-                            alignment: AlignmentDirectional.centerStart,
-                            child: AmazonBuyChip(
-                              itemName: group.name,
-                              sourceScreen: 'shopping_row',
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ),
-                IconButton(
-                  onPressed: () => setState(() => _open = !_open),
-                  tooltip: _open
-                      ? context.l10n.shopHideKinds
-                      : context.l10n.shopShowKinds,
-                  icon: Icon(
-                    _open ? Icons.expand_less : Icons.expand_more,
-                    color: ZadColors.inkMuted,
-                  ),
-                ),
-                IconButton(
-                  onPressed: () => unawaited(_removeAll()),
-                  tooltip: context.l10n.commonDelete,
-                  icon: Icon(
-                    ZadIcons.delete,
-                    size: 18,
-                    color: ZadColors.inkMuted,
-                  ),
-                ),
-              ],
-            ),
-            if (_open)
-              Padding(
-                padding: const EdgeInsets.only(bottom: ZadSpacing.sm),
-                child: Column(
-                  children: <Widget>[
-                    for (final line in group.lines) ...<Widget>[
-                      _Line(
-                        item: line,
-                        currency: widget.currency,
-                        showBuy: false,
-                      ),
-                      const SizedBox(height: ZadSpacing.xs),
-                    ],
-                  ],
+    final color = group.allPurchased
+        ? ZadColors.inkMuted
+        : urgent
+        ? ZadColors.terracottaRust
+        : ZadWorld.shop.color;
+    return Column(
+      children: <Widget>[
+        ZadWorldRow(
+          leading: ZadWorldTile(
+            color: color,
+            child: zadItemArt(group.name, size: 32),
+          ),
+          title: l.shopGroupKinds(group.name, group.lines.length),
+          subtitle: <String>[
+            if (urgent) l.shopPriorityHigh,
+            '$shown$more',
+            ?note,
+          ].join(' · '),
+          stateColor: color,
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              IconButton(
+                onPressed: () => setState(() => _open = !_open),
+                tooltip: _open ? l.shopHideKinds : l.shopShowKinds,
+                icon: Icon(
+                  _open ? Icons.expand_less : Icons.expand_more,
+                  color: ZadColors.inkMuted,
                 ),
               ),
-          ],
+              IconButton(
+                onPressed: () => unawaited(_removeAll()),
+                tooltip: l.commonDelete,
+                icon: Icon(
+                  ZadIcons.delete,
+                  size: 18,
+                  color: ZadColors.inkMuted,
+                ),
+              ),
+              _Tick(
+                value: group.allPurchased,
+                onChanged: (v) => _tickAll(bought: v),
+                label: group.name,
+              ),
+            ],
+          ),
         ),
-      ),
+        if (!group.allPurchased)
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: AmazonBuyChip(
+              itemName: group.name,
+              sourceScreen: 'shopping_row',
+            ),
+          ),
+        if (_open)
+          Padding(
+            padding: const EdgeInsetsDirectional.only(
+              start: ZadSpacing.xl,
+              top: ZadSpacing.sm,
+            ),
+            child: Column(
+              children: <Widget>[
+                for (final line in group.lines) ...<Widget>[
+                  _Line(
+                    item: line,
+                    currency: widget.currency,
+                    pantryCounter: widget.pantryCounter,
+                    showBuy: false,
+                  ),
+                  const SizedBox(height: ZadSpacing.xs),
+                ],
+              ],
+            ),
+          ),
+      ],
     );
   }
 }

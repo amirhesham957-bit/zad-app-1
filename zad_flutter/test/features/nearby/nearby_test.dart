@@ -11,6 +11,7 @@ import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:geolocator/geolocator.dart' show LocationAccuracy;
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -460,6 +461,35 @@ void main() {
 
         expect(c.read(nearbyControllerProvider).access, LocationAccess.granted);
         expect(shops.asked, isEmpty);
+      });
+
+      test(
+        'a tap with no new fix falls back only to a recent last fix',
+        () async {
+          final c = await opened();
+          phone.last = (
+            at: _home,
+            takenAt: now.subtract(const Duration(hours: 2)),
+          );
+
+          await c.read(nearbyControllerProvider.notifier).locate();
+
+          expect(c.read(nearbyControllerProvider).noFix, isTrue);
+          expect(shops.asked, isEmpty, reason: 'two hours old is not "here"');
+
+          phone.last = (
+            at: _home,
+            takenAt: now.subtract(const Duration(minutes: 5)),
+          );
+          await c.read(nearbyControllerProvider.notifier).locate();
+
+          expect(c.read(nearbyControllerProvider).noFix, isFalse);
+          expect(shops.asked, hasLength(2));
+        },
+      );
+
+      test('the one fix a tap takes asks for GPS', () {
+        expect(GeolocatorSource.accuracy, LocationAccuracy.high);
       });
 
       test('no fix in time says so, and fetches nothing', () async {

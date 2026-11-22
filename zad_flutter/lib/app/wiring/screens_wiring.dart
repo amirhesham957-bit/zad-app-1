@@ -2,6 +2,7 @@
 /// and section. Called by `wireZad`.
 library;
 
+import 'package:flutter/material.dart';
 import 'package:zad/app/shell/zad_tour.dart';
 import 'package:zad/features/achievements/presentation/achievements_screen.dart';
 import 'package:zad/features/affiliate/presentation/affiliate_product_card.dart';
@@ -15,6 +16,7 @@ import 'package:zad/features/bank/presentation/stuck_notifications.dart';
 import 'package:zad/features/brain/presentation/agent_action_log_screen.dart';
 import 'package:zad/features/brain/presentation/brain_health_screen.dart';
 import 'package:zad/features/brain/presentation/brain_hub_screen.dart';
+import 'package:zad/features/brain/presentation/guard_events_screen.dart';
 import 'package:zad/features/brain/presentation/knowledge_map_screen.dart';
 import 'package:zad/features/brain/presentation/memory_screen.dart';
 import 'package:zad/features/brain/presentation/profile_sheet.dart';
@@ -24,6 +26,7 @@ import 'package:zad/features/budget/presentation/finances_screen.dart';
 import 'package:zad/features/chat/presentation/chat_screen.dart';
 import 'package:zad/features/chat/presentation/intelligence_chat_card.dart';
 import 'package:zad/features/companion/presentation/companion_studio_screen.dart';
+import 'package:zad/features/companion/presentation/games_hub.dart';
 import 'package:zad/features/debts/presentation/debts_tab.dart';
 import 'package:zad/features/documents/presentation/documents_screen.dart';
 import 'package:zad/features/family/presentation/family_screen.dart';
@@ -43,10 +46,12 @@ import 'package:zad/features/nearby/presentation/home_deals_carousel.dart';
 import 'package:zad/features/nearby/presentation/home_nearby_stores.dart';
 import 'package:zad/features/nearby/presentation/nearby_deals_screen.dart';
 import 'package:zad/features/nearby/presentation/nearby_view.dart';
+import 'package:zad/features/notification_reads/presentation/notification_reads_screens.dart';
 import 'package:zad/features/notifications/presentation/notification_center_screen.dart';
 import 'package:zad/features/obligations/application/obligations_controller.dart';
 import 'package:zad/features/obligations/domain/obligation.dart';
 import 'package:zad/features/obligations/presentation/obligations_section.dart';
+import 'package:zad/features/offers/presentation/offers_screen.dart';
 import 'package:zad/features/paywall/presentation/paywall_screen.dart';
 import 'package:zad/features/pharmacy/presentation/pharmacy_view.dart';
 import 'package:zad/features/places/presentation/keep_alive_guide.dart';
@@ -73,8 +78,11 @@ import 'package:zad/features/telegram/presentation/telegram_binding.dart';
 import 'package:zad/features/transactions/presentation/add_transaction_sheet.dart';
 import 'package:zad/features/transactions/presentation/edit_transaction_sheet.dart';
 import 'package:zad/features/transactions/presentation/quick_expense_sheet.dart';
+import 'package:zad/features/transactions/presentation/transactions_screen.dart';
+import 'package:zad/shared/navigation/destinations.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
 import 'package:zad/shared/navigation/zad_slots.dart';
+import 'package:zad/shared/worlds/zad_world.dart';
 
 /// Binds the screens.
 void wireScreens() {
@@ -86,6 +94,7 @@ void wireScreens() {
   ZadScreens.openBankReading = openBankReading;
   ZadScreens.showAgentActionLog = showAgentActionLog;
   ZadScreens.showBrainHealth = showBrainHealth;
+  ZadScreens.showGuardEvents = showGuardEvents;
   ZadScreens.showBrainHub = showBrainHub;
   ZadScreens.showKnowledgeMap = showKnowledgeMap;
   ZadScreens.showMemoryScreen = showMemoryScreen;
@@ -115,8 +124,12 @@ void wireScreens() {
             dueDay: dueDay,
           );
   ZadScreens.showNearbyDealsScreen = showNearbyDealsScreen;
+  ZadScreens.showOffersScreen = showOffersScreen;
   ZadScreens.showNotificationCenter = showNotificationCenter;
+  ZadScreens.showNotificationReadsSwitches = showNotificationReadsSwitches;
+  ZadScreens.showNotificationReadsToday = showNotificationReadsToday;
   ZadScreens.showCompanionStudio = showCompanionStudio;
+  ZadScreens.showGamesHub = showGamesHub;
   ZadScreens.showPaywallScreen = showPaywallScreen;
   ZadScreens.showTelegramBotSheet = showTelegramBotSheet;
   ZadScreens.showAddMedicineSheet = showAddMedicineSheet;
@@ -127,6 +140,7 @@ void wireScreens() {
   ZadScreens.openZadCamera = openZadCamera;
   ZadScreens.showCameraScreen = showCameraScreen;
   ZadScreens.showPantryPhotoSheet = showPantryPhotoSheet;
+  ZadScreens.showMedicinePhotoSheet = showMedicinePhotoSheet;
   ZadScreens.showReceiptScanSheet = showReceiptScanSheet;
   ZadScreens.showMonthlyLimitSheet = showMonthlyLimitSheet;
   ZadScreens.showSettingsScreen = showSettingsScreen;
@@ -153,7 +167,55 @@ void wireScreens() {
     return await permission.request() == AlertPermission.granted;
   };
   ZadScreens.showCashExpenseSheet = showCashExpenseSheet;
+  ZadScreens.worldScreen = _worldScreen;
 }
+
+/// The screen each world opens, or null while it has none (the «متصلة بـ»
+/// strip hides that chip).
+OpenScreen? _worldScreen(ZadWorld world) => switch (world) {
+  ZadWorld.brain => ZadScreens.showBrainHub,
+  ZadWorld.chef => (c) => ZadScreens.showHouseholdSection(
+    c,
+    HouseholdSection.recipes,
+  ),
+  ZadWorld.inv => (c) => ZadScreens.showHouseholdSection(
+    c,
+    HouseholdSection.pantry,
+  ),
+  ZadWorld.shop => (c) => ZadScreens.showHouseholdSection(
+    c,
+    HouseholdSection.shopping,
+  ),
+  ZadWorld.tx => (c) => Navigator.of(c).push<void>(
+    MaterialPageRoute<void>(builder: (_) => const TransactionsScreen()),
+  ),
+  ZadWorld.budget => (c) => ZadScreens.showFinancesScreen(c),
+  ZadWorld.stmt => ZadScreens.showStatementImportScreen,
+  ZadWorld.subs => ZadScreens.showSubscriptionsScreen,
+  ZadWorld.ph => (c) => ZadScreens.showHouseholdSection(
+    c,
+    HouseholdSection.pharmacy,
+  ),
+  ZadWorld.appt => ZadScreens.showAppointmentsScreen,
+  ZadWorld.maint => ZadScreens.showMaintenanceScreen,
+  ZadWorld.docs => ZadScreens.showDocumentsScreen,
+  ZadWorld.places => ZadScreens.showMyPlaces,
+  ZadWorld.comp => ZadScreens.showCompanionStudio,
+  ZadWorld.chat => (c) => Navigator.of(
+    c,
+  ).push<void>(MaterialPageRoute<void>(builder: (_) => const ChatScreen())),
+  ZadWorld.notif => ZadScreens.showNotificationCenter,
+  ZadWorld.profile => ZadScreens.showProfileScreen,
+  ZadWorld.prem => ZadScreens.showPaywallScreen,
+  ZadWorld.tas => ZadScreens.showTasbihaScreen,
+  ZadWorld.prices => ZadScreens.showPricesScreen,
+  ZadWorld.ach => ZadScreens.showAchievementsScreen,
+  // Home is where the shell already is: no chip opens it.
+  ZadWorld.home => null,
+  ZadWorld.games => ZadScreens.showGamesHub,
+  ZadWorld.offers => ZadScreens.showOffersScreen,
+  ZadWorld.family => (c) => ZadScreens.showFamilyScreen(c),
+};
 
 /// Binds the slots.
 void wireSlots() {

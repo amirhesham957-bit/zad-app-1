@@ -36,6 +36,8 @@ import 'package:zad/shared/inventory/presentation/item_photo.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/modes/application/modes_controller.dart';
 import 'package:zad/shared/navigation/zad_screens.dart';
+import 'package:zad/shared/worlds/art/zad_art.dart';
+import 'package:zad/shared/worlds/art/zad_art_kinds.dart';
 
 /// One card: what is needed and why.
 typedef AmazonNeed = ({String name, String reason});
@@ -112,11 +114,19 @@ class HomeAmazonStrip extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: <Widget>[
-                    Text(
-                      context.l10n.amazonShopEmoji,
-                      style: ZadType.titleMedium.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+                    Row(
+                      children: <Widget>[
+                        ZadArt.icon(ZadIconArt.cart, size: 22),
+                        const SizedBox(width: ZadSpacing.sm),
+                        Expanded(
+                          child: Text(
+                            context.l10n.amazonShop,
+                            style: ZadType.titleMedium.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: ZadSpacing.xs),
                     Text(

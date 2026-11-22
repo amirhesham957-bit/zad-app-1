@@ -171,11 +171,20 @@ class _HomeDealsCarouselState extends ConsumerState<HomeDealsCarousel> {
         children: <Widget>[
           Row(
             children: <Widget>[
+              // flex 100 and one line: sharing the room equally with the
+              // Spacer broke the title over three lines on a 360dp phone
+              // (emulator, 15/11).
               Flexible(
-                child: Text(
-                  l.homeDealsTitle,
-                  style: ZadType.titleLarge.copyWith(
-                    fontWeight: FontWeight.w800,
+                flex: 100,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: AlignmentDirectional.centerStart,
+                  child: Text(
+                    l.homeDealsTitle,
+                    maxLines: 1,
+                    style: ZadType.titleLarge.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                 ),
               ),
@@ -187,7 +196,7 @@ class _HomeDealsCarouselState extends ConsumerState<HomeDealsCarousel> {
               TextButton(
                 style: TextButton.styleFrom(minimumSize: const Size(44, 44)),
                 onPressed: () =>
-                    unawaited(ZadScreens.showNearbyDealsScreen(context)),
+                    unawaited(ZadScreens.showOffersScreen(context)),
                 child: Text(l.homeDealsSeeAll),
               ),
             ],

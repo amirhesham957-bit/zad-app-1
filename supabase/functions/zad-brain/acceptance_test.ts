@@ -87,3 +87,11 @@ Deno.test("acceptance: a thousands separator is a separator, whatever the model 
   const reply = "ناوي تصرف 20 000 ريال، لكن المتاح عندك الآن 6 000 ريال بس. يعني الفارق 14 000 ريال، أي تقريبًا 3.3 مرّة.";
   assertEquals(pushback.check({ reply, executed: [], proposals: [] } as never, { appointmentsCreated: 0 }), null);
 });
+
+Deno.test("acceptance: a dollar rate in Arabic-Indic digits is a rate (deploy 21/11)", () => {
+  const dollar = ACCEPTANCE_CASES.find((c) => c.id === "2_dollar")!;
+  const check = (reply: string) => dollar.check({ reply, executed: [], proposals: [] } as never, { appointmentsCreated: 0 });
+  assertEquals(check("الدولار بحوالي ٣.٧٥ ريال (حسب أسعار زاد النهاردة)."), null);
+  assertEquals(check("الدولار النهارده بـ 50.6 جنيه"), null);
+  assertEquals(check("مش لاقي سعر الدولار دلوقتي"), "no rate");
+});

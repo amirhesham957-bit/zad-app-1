@@ -8,6 +8,7 @@
 //   اللي بيخلي "مين عالج الرسالة دي" مثبت في الداتابيز مش ادعاء.
 // - الأدوات نفسها بتتحقق في validators.ts زي ما هي — التوجيه ما بيغيرش صلاحيات.
 
+import { RESTORE_INTENT } from "./restoreDeleted.ts";
 import { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { bareMoneyLog } from "./forcedLog.ts";
 
@@ -176,6 +177,16 @@ const FX_INTENT = /(دولار|يورو|استرليني|ريال|درهم|دي�
 const OCCASION_INTENT = /عيد ميلاد|عيد ميلادي|ذكري (ال)?جواز|ذكري جوازنا|عيد جوازنا/;
 const MEMORY_INTENT = /افتكر|افتكري|خليك فاكر|خليكي فاكره|متنساش|متنسيش|احفظ|اعرف ان|خد بالك ان|خدي بالك ان/;
 // نوايا الأدوات اللي خرجت من الأساسي (٢٠٢٦-١٠-٠٢). النص متطبّع (normalize): ة→ه، أ/إ/آ→ا، ى→ي.
+// م٥.٥: «معايا ٣٠٠ جنيه أجيب إيه؟»، «الفلوس قليلة إيه الأهم في الطلبات؟» ⇒ restock_on_budget.
+const RESTOCK_BUDGET_INTENT = /(معايا|معي|فاضل معايا|في حدود|ميزانيتي|بميزانيه)\s*[\d٠-٩]+.{0,40}(اجيب|اشتري|اشتريه|الطلبات|البيت|السوبر|المخزن|القايمه)|(اجيب|اشتري) (ايه|اي) (الاول|بالاول)|(الفلوس|الميزانيه) (قليله|علي القد|مش مكفيه).{0,40}(اجيب|اشتري|الاهم|الطلبات|القايمه)|اولويات (الشرا|المشتريات|الطلبات|القايمه)/;
+// م٥.٢: «عاوز منيو الأسبوع بـ٤٠٠ جنيه»، «جدول اكل الاسبوع» ⇒ plan_menu (menuTool.ts).
+const MENU_PLAN_INTENT = /منيو|جدول (ال)?اكل|خطه (ال)?(اكل|غدا|اسبوع)|اكل (ال)?اسبوع|(غدا|عشا) (ال)?اسبوع/;
+// م٥.٢: «امتى نتجمع كلنا؟»، «وقت اللمة» ⇒ plan_gathering_time (gatheringTool.ts).
+const GATHERING_TIME_INTENT = /(امتي|وقت|ميعاد|يوم) (ال)?(نتجمع|لمه|لمتنا|نقعد سوا|نقعد مع بعض)|نتجمع كلنا|لمه (العيله|الاسره)|نقعد سوا/;
+// م٣.٤: «الدوا هيخلص امتى؟»، «اطلب الدوا امتى» ⇒ check_medicine_reorder (pharmacyReorderTool.ts).
+const MEDICINE_REORDER_INTENT = /(الدوا|الدواء|ادويه|ادويتي|العلاج|الحبوب).{0,25}(هيخلص|يخلص|خلص|كفايه|يكفي|اطلبه|اجيبه|اعيد طلب)|(اطلب|اعيد طلب|اجيب).{0,15}(الدوا|الدواء|العلاج) (امتي|ميعاد)|نقطه اعاده الطلب/;
+// م٣.٥: «اصرف كام النهارده؟»، «المصروف الآمن» ⇒ safe_daily_spend (safeSpendTool.ts).
+const SAFE_SPEND_INTENT = /(اصرف|اقدر اصرف|ينفع اصرف) (كام|قد ايه) (النهارده|اليوم)|مصروف (ال)?(نهارده|يوم|اليوم) (ال)?امن|(ال)?مصروف (ال)?امن|هوصل (ل)?(لاخر الشهر|للقبض)|هكمل (ال)?شهر/;
 const BROKE_INTENT = /مفلس|طفران|خلصت فلوسي|فلوسي خلصت|مفيش فلوس|معيش فلوس|معنديش فلوس|ماعنديش فلوس|مخلص فلوسي/;
 const RECIPE_INTENT = /اطبخ|نطبخ|تطبخ|طبخه|وصفه|وصفات|(اعمل|نعمل|ناكل|اكل)\s*(اكل)?\s*ايه|(غدا|عشا|فطار|سحور)\s*(ايه|النهارده)|شيف/;
 // «هاتلي عروض كيتا»، «فيه عروض إيه؟»، «في كود خصم لطلبات؟» (طلب المالك ٧/١١): من غيرها الوكيل كان بيرد بنصيحة ميزانية.
@@ -281,6 +292,11 @@ export function intentToolHints(message: string, priorReply = ""): string[] {
   else if (WEB_PRICE_INTENT.test(norm) && !OWN_MONEY.test(norm)) tools.push("web_search");
   else if (RECENT_FACT_INTENT.test(norm)) tools.push("web_search");
   if (BROKE_INTENT.test(norm)) tools.push("set_broke_mode");
+  if (RESTOCK_BUDGET_INTENT.test(norm)) tools.push("restock_on_budget");
+  if (MENU_PLAN_INTENT.test(norm)) tools.push("plan_menu");
+  if (GATHERING_TIME_INTENT.test(norm)) tools.push("plan_gathering_time");
+  if (MEDICINE_REORDER_INTENT.test(norm)) tools.push("check_medicine_reorder");
+  if (SAFE_SPEND_INTENT.test(norm)) tools.push("safe_daily_spend");
   if (SAVINGS_CHALLENGE_INTENT.test(norm)) tools.push("start_savings_challenge", "stop_savings_challenge");
   if (RECIPE_INTENT.test(norm)) tools.push("suggest_recipes");
   if (NEARBY_INTENT.test(norm)) tools.push("find_nearby_stores");
@@ -298,6 +314,8 @@ export function intentToolHints(message: string, priorReply = ""): string[] {
   if (SLEEP_INTENT.test(norm)) tools.push("set_sleep_window");
   if (APP_SETTING_INTENT.test(norm)) tools.push("set_app_setting");
   if (FORGET_INTENT.test(norm)) tools.push("delete_memory", "remember");
+  // ZAD_OR_PLAN م١.٦: «رجّع اللي اتمسح» — من سلة zad_trash (restoreDeleted.ts).
+  if (RESTORE_INTENT.test(norm)) tools.push("restore_deleted");
   if (FAMILY_SHARE_INTENT.test(norm)) tools.push("share_memory_with_family");
   if (GOAL_PROGRESS_INTENT.test(norm) || (GOAL_PROGRESS_ASKED.test(normalize(priorReply)) && /[0-9٠-٩]/.test(norm))) {
     tools.push("add_goal_progress");
@@ -497,7 +515,7 @@ export async function recordSpecialistTrace(
 }
 
 /** خرائط أدوات كل وكيل — مستخدمة في الأساسي *وفي* اتحاد أدوات الاستشاري (31.6). */
-const SPECIALIST_TOOL_SCOPE: Record<Exclude<SpecialistId, "general">, string[]> = {
+export const SPECIALIST_TOOL_SCOPE: Record<Exclude<SpecialistId, "general">, string[]> = {
   finance: [
     "log_transaction", "allocate_income", "update_transaction", "delete_transaction",
     "set_monthly_limit", "set_category_budget", "add_debt", "update_debt", "delete_debt",
@@ -512,12 +530,12 @@ const SPECIALIST_TOOL_SCOPE: Record<Exclude<SpecialistId, "general">, string[]> 
     "add_shopping_item", "complete_shopping_item", "delete_shopping_item",
     "suggest_product", "check_price_online", "find_nearby_stores", "web_search", "where_to_buy",
     "suggest_recipes", "area_trends", "plan_gathering", "add_gathering_to_list",
-    "answer_same_product",
+    "answer_same_product", "restock_on_budget", "plan_menu", "plan_gathering_time",
   ],
   pharmacy: [
     "add_pharmacy_item", "update_pharmacy_item", "delete_pharmacy_item",
     "log_pharmacy_dose", "find_nearby_stores", "web_search", "emergency_card", "medicine_price",
-    "set_life_circumstance", "end_life_circumstance",
+    "check_medicine_reorder", "set_life_circumstance", "end_life_circumstance",
   ],
   family: [
     "schedule_task", "query_family", "family_digest", "family_mediation", "emergency_card", "start_family_poll", "handover_card",
@@ -532,6 +550,19 @@ const SPECIALIST_TOOL_SCOPE: Record<Exclude<SpecialistId, "general">, string[]> 
     "set_life_circumstance", "end_life_circumstance",
   ],
 };
+
+/**
+ * الأدوات العابرة للنطاقات — متاحة مع أي وكيل متخصص (م٤.٦: اتفصلت في ثابت عشان toolDomains يشاور عليها).
+ * سبب كل أداة فيها: أسباب رجيم السياق ٣.٢ والمواعيد (add_appointment وupdate_appointment) والبروفايل.
+ */
+export const CROSS_DOMAIN_TOOLS: readonly string[] = [
+  "remember", "link_memory", "web_search", "set_market", "set_transaction_category",
+  "update_emergency_fund_balance", "app_command", "learn_skill",
+  "add_appointment", "update_appointment", "add_place_reminder", "cancel_place_reminder",
+  "update_customer_profile",
+  // بيانات البيت التقيلة بتتقري عند الحاجة، مش بتتبعت مع كل رسالة.
+  "read_house",
+];
 
 /**
  * تقليل الأدوات المعروضة حسب الوكيل — سر سرعة الردود:
@@ -573,24 +604,8 @@ export function scopeToolsForSpecialist<T extends { name: string }>(
   const allowed = new Set([
     ...(SPECIALIST_TOOL_SCOPE[specialist as Exclude<SpecialistId, "general">] ?? []),
     ...(secondary ? SPECIALIST_TOOL_SCOPE[secondary as Exclude<SpecialistId, "general">] ?? [] : []),
-    // الأدوات العابرة للنطاقات — متاحة دايمًا
-    "remember", "link_memory", "web_search", "set_market", "set_transaction_category",
-    // رجيم السياق ٣.٢ (٢/١١): الدهب والعملات والشكوى والمناسبات و«أنا مفلس» بيجوا بنية الرسالة (intentToolHints)،
-    // والصيانة وhome_health_score في نطاق وكيل البيت/المال — كانوا ٩ أدوات مع كل رسالة لأي وكيل، و٣٠ يوم من
-    // agent_actions: صفر نداء لـ٨ منهم ونداء واحد لـset_broke_mode.
-    "update_emergency_fund_balance", "app_command", "learn_skill",
-    // المواعيد عابرة للنطاقات: «ميعاد» بيتوجّه لوكيل العيلة، «دكتور» للصيدلية، «اجتماع بنك»
-    // للمال — لو كانت في نطاق واحد، التذكير كان هيختفي في باقي الحالات.
-    // find_appointments وdelete_appointment (٨ج.٣) بيجوا بالنية (AGENDA_INTENT/reminderIntent) مش هنا: اتنين
-    // زيادة مع كل رسالة نزّلوا وكيل المال على Groq من ٤٢ أداة لـ٣٨ (promptBudget_test).
-    "add_appointment", "update_appointment",
-    "add_place_reminder", "cancel_place_reminder",
-    // start/stop_savings_challenge بيجوا بالنية (SAVINGS_CHALLENGE_INTENT) أو بتحدي شغال (index.ts) — صفر نداء
-    // في agent_actions من أول يوم، وكانوا التنين اللي بيخلّوا وكيل المال ٤١ أداة (رجيم ٣.٢، ٣/١١).
-    // العميل ممكن يقول عن نفسه حاجة في أي موضوع.
-    "update_customer_profile",
-    // بيانات البيت التقيلة (الحركات، صفوف المخزون…) بتتقري عند الحاجة، مش بتتبعت مع كل رسالة.
-    "read_house",
+    // الأدوات العابرة للنطاقات (CROSS_DOMAIN_TOOLS) — متاحة دايمًا
+    ...CROSS_DOMAIN_TOOLS,
     ...extra,
   ]);
   return tools.filter((t) => allowed.has(t.name));

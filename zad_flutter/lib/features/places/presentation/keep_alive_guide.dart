@@ -7,11 +7,11 @@
 /// the Chinese brands, turn on auto-start. This card says so, per brand, and
 /// opens the app's system page.
 ///
-/// While battery optimisation is on, the button asks for the exemption with
-/// the system dialog (REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, owner's decision
-/// 2026-10-26, ZAD_PLAN 2.1) and falls back to the app's page when that is
-/// refused or unavailable. Once off, it opens the app's page for auto-start,
-/// which no permission covers.
+/// While battery optimisation is on, the button opens the system's
+/// battery-optimisation list, where the customer switches Zad to "not
+/// optimised". The system dialog (REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, owner
+/// 2026-10-26) was dropped for Google Play on 2026-11-22. Once off, it opens
+/// the app's page for auto-start, which no permission covers.
 library;
 
 import 'dart:async';
@@ -22,6 +22,8 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/l10n/l10n.dart';
+import 'package:zad/shared/bank/data/battery_settings.dart';
+import 'package:zad/shared/worlds/world_card.dart';
 
 /// The steps, per brand. UI text.
 const List<(String, String)> kKeepAliveSteps = <(String, String)>[
@@ -52,16 +54,6 @@ const List<(String, String)> kKeepAliveSteps = <(String, String)>[
   ),
   ('باقي الأجهزة', 'معلومات التطبيق ← البطارية ← «بدون قيود».'),
 ];
-
-/// Whether battery optimisation is already off for Zad; null when it cannot
-/// be told (a test host, a platform without it).
-Future<bool?> batteryUnrestricted() async {
-  try {
-    return await Permission.ignoreBatteryOptimizations.isGranted;
-  } on Object {
-    return null;
-  }
-}
 
 /// The card.
 class KeepAliveGuide extends StatefulWidget {
@@ -109,107 +101,93 @@ class _KeepAliveGuideState extends State<KeepAliveGuide>
     }
   }
 
-  /// The system's «السماح لزاد بالعمل في الخلفية؟» dialog; the app's page if
-  /// the customer says no or the phone has no such dialog.
+  /// The system's battery-optimisation list (the app's page on a phone
+  /// without it). The card looks again when the customer comes back.
   Future<void> _askExemption() async {
-    var granted = false;
-    try {
-      granted = await Permission.ignoreBatteryOptimizations.request().isGranted;
-    } on Object {
-      // No plugin (a test host).
-    }
-    if (!granted) await _openSettings();
+    if (!await openBatterySettings()) await _openSettings();
     await _check();
   }
 
   @override
   Widget build(BuildContext context) {
     final ok = _unrestricted ?? false;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: ok ? ZadColors.mint100 : ZadColors.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: ZadColors.outlineVariant),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(ZadSpacing.lg),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            Row(
-              children: <Widget>[
-                Icon(
-                  ok ? Icons.battery_full : Icons.battery_saver,
-                  color: ok ? ZadColors.green700 : ZadColors.mustardOchre,
-                ),
-                const SizedBox(width: ZadSpacing.sm),
-                Expanded(
-                  child: Text(
-                    ok
-                        ? 'البطارية مش هتقفل زاد'
-                        : 'عشان زاد يفضل صاحي في الخلفية',
-                    style: ZadType.titleSmall.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
+    return ZadWorldCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              Icon(
+                ok ? Icons.battery_full : Icons.battery_saver,
+                color: ok ? ZadColors.green700 : ZadColors.mustardOchre,
+              ),
+              const SizedBox(width: ZadSpacing.sm),
+              Expanded(
+                child: Text(
+                  ok
+                      ? 'البطارية مش هتقفل زاد'
+                      : 'عشان زاد يفضل صاحي في الخلفية',
+                  style: ZadType.titleSmall.copyWith(
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: ZadSpacing.xs),
-            Text(
-              ok
-                  ? 'لو موبايلك شاومي أو أوبو أو ريلمي أو فيفو، اتأكد كمان إن '
-                        '«التشغيل التلقائي» شغّال.'
-                  : 'موبايلات كتير بتقفل التطبيقات لتوفير البطارية، فتنبيهات '
-                        'الشارع والتذكيرات وقراءة البنك تقف. خطوة واحدة من '
-                        'الإعدادات بتحل ده.',
-              style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
-            ),
-            if (_open) ...<Widget>[
-              const SizedBox(height: ZadSpacing.md),
-              for (final (brand, steps) in kKeepAliveSteps)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: ZadSpacing.sm),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(
-                        brand,
-                        style: ZadType.bodyMedium.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      Text(
-                        steps,
-                        style: ZadType.bodySmall.copyWith(
-                          color: ZadColors.inkMuted,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+              ),
             ],
-            const SizedBox(height: ZadSpacing.sm),
-            Wrap(
-              alignment: WrapAlignment.end,
-              spacing: ZadSpacing.sm,
-              children: <Widget>[
-                TextButton(
-                  onPressed: () => setState(() => _open = !_open),
-                  child: Text(_open ? 'اخفي الخطوات' : 'الخطوات لموبايلي'),
+          ),
+          const SizedBox(height: ZadSpacing.xs),
+          Text(
+            ok
+                ? 'لو موبايلك شاومي أو أوبو أو ريلمي أو فيفو، اتأكد كمان إن '
+                      '«التشغيل التلقائي» شغّال.'
+                : 'موبايلات كتير بتقفل التطبيقات لتوفير البطارية، فتنبيهات '
+                      'الشارع والتذكيرات وقراءة البنك تقف. خطوة واحدة من '
+                      'الإعدادات بتحل ده.',
+            style: ZadType.bodySmall.copyWith(color: ZadColors.inkMuted),
+          ),
+          if (_open) ...<Widget>[
+            const SizedBox(height: ZadSpacing.md),
+            for (final (brand, steps) in kKeepAliveSteps)
+              Padding(
+                padding: const EdgeInsets.only(bottom: ZadSpacing.sm),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      brand,
+                      style: ZadType.bodyMedium.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    Text(
+                      steps,
+                      style: ZadType.bodySmall.copyWith(
+                        color: ZadColors.inkMuted,
+                      ),
+                    ),
+                  ],
                 ),
-                FilledButton(
-                  onPressed: () =>
-                      unawaited(ok ? _openSettings() : _askExemption()),
-                  style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
-                  child: Text(
-                    ok ? 'افتح إعدادات زاد' : context.l10n.keepAliveAllow,
-                  ),
-                ),
-              ],
-            ),
+              ),
           ],
-        ),
+          const SizedBox(height: ZadSpacing.sm),
+          Wrap(
+            alignment: WrapAlignment.end,
+            spacing: ZadSpacing.sm,
+            children: <Widget>[
+              TextButton(
+                onPressed: () => setState(() => _open = !_open),
+                child: Text(_open ? 'اخفي الخطوات' : 'الخطوات لموبايلي'),
+              ),
+              FilledButton(
+                onPressed: () =>
+                    unawaited(ok ? _openSettings() : _askExemption()),
+                style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
+                child: Text(
+                  ok ? 'افتح إعدادات زاد' : context.l10n.keepAliveAllow,
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

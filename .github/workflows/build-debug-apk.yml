@@ -3,16 +3,19 @@ name: Build Flutter Debug APK
 on:
   push:
     branches: [ main ]
-  pull_request:
-    branches: [ main ]
   workflow_dispatch:
 
-# 1. إلغاء أي بناء قديم/معلق تلقائياً عند الدفع الجديد لمنع زحمة الطوابير — في الـPR بس.
-# على main كل push بيستنى دوره: رن 1.0.8+9 [closed-testing] (fb22af25، ١٣/١١) اتلغى لما
-# اندمج بعده PR تاني بدقايق، فالإصدار اللي فيه تصليح الإعلانات ماتبناش ولا اترفع.
+# الـPRs مابتشغّلش الملف ده خالص (فحصها السريع في flutter-pr-check.yml).
+# على main أي دمج جديد بيلغي البناء الشغال وبيبدأ بناء على آخر كومِت، فالطابور مايتراكمش.
+# تنبيه: رن 1.0.8+9 [closed-testing] (fb22af25، ١٣/١١) اتلغى بالطريقة دي لما اندمج بعده PR، فالإصدار
+# اللي فيه تصليح الإعلانات ماتبناش. اللي بيتبنى دايماً هو آخر main، فلازم أي إصدار يتحط عليه رقم
+# ويتدمج لوحده لو عايزه يتبنى.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
   # The app's own gates before any APK is built (ZAD_DREAM_PLAN.md ش١): 1,636 tests
@@ -43,8 +46,6 @@ jobs:
 
   build:
     needs: verify
-    # A pull request is verified only; APKs and the AAB are built from main.
-    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 25 # 2. تحديد وقت أقصى للبناء حتى لا يتعطل السيرفر
 

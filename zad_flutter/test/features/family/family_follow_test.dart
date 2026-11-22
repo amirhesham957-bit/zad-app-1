@@ -11,12 +11,15 @@ import 'package:timezone/timezone.dart' as tz;
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/zad_theme.dart';
 import 'package:zad/features/family/presentation/family_follow.dart';
+import 'package:zad/shared/alerts/data/push_platform.dart';
 import 'package:zad/shared/family/application/family_controller.dart';
 import 'package:zad/shared/family/data/family_shares_remote.dart';
 import 'package:zad/shared/family/domain/family_share.dart';
 import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/nearby/data/location_source.dart';
 import 'package:zad/shared/nearby/domain/nearby.dart';
+import 'package:zad/shared/places/application/child_zones.dart';
+import 'package:zad/shared/places/application/place_engine.dart';
 import 'package:zad/shared/places/data/background_location.dart';
 import 'package:zad/shared/places/domain/places.dart';
 
@@ -59,9 +62,12 @@ class _Remote implements FamilySharesRemote {
   Future<void> revoke(String shareId) async => calls.add('revoke $shareId');
 
   @override
-  Future<int> request(String ownerId, Set<FamilyShareScope> scopes) async {
+  Future<({int requested, String? status})> request(
+    String ownerId,
+    Set<FamilyShareScope> scopes,
+  ) async {
     calls.add('request $ownerId ${scopes.map((s) => s.wire).join(',')}');
-    return scopes.length;
+    return (requested: scopes.length, status: null);
   }
 
   @override
@@ -202,6 +208,16 @@ void main() {
           signedInUserIdProvider.overrideWithValue(() => 'me'),
           locationSourceProvider.overrideWithValue(_Phone()),
           backgroundLocationProvider.overrideWithValue(always),
+          // These tests cover a build with children's zones on; the default
+          // build has them off (ZadEnv.kidsGeofencing).
+          childZonesSyncProvider.overrideWith(
+            (ref) => ChildZonesSync(
+              remote: ref.watch(familySharesRemoteProvider),
+              engine: ref.watch(placeEngineProvider),
+              notice: ref.watch(sharingNoticeProvider),
+              enabled: true,
+            ),
+          ),
           accountTimeZoneProvider.overrideWithValue('Africa/Cairo'),
           nowProvider.overrideWithValue(() => DateTime.utc(2026, 10, 3, 9)),
         ],
@@ -245,7 +261,11 @@ void main() {
         ),
       ],
     );
-    await pump(tester, remote, const FamilyFollowRequestsCard());
+    await pump(
+      tester,
+      remote,
+      const FamilyFollowRequestsCard(kidsGeofencing: true),
+    );
     await tester.pump();
 
     expect(find.text('حد من العيلة عايز يتابع الأدوية'), findsOneWidget);
@@ -259,6 +279,30 @@ void main() {
     expect(remote.calls, <String>['answer p1 true', 'revoke g1']);
   });
 
+  testWidgets('an admin following a child needs no answer except location', (
+    tester,
+  ) async {
+    final remote = _Remote(view: FollowedMember.fromJson(_dryRun));
+    await pump(
+      tester,
+      remote,
+      const MemberFollowSection(
+        ownerId: 'son',
+        currency: 'EGP',
+        kidsGeofencing: true,
+        followsAutomatically: true,
+      ),
+    );
+    await tester.pump();
+
+    // Spending was pending: shown as followed, not as waiting.
+    expect(find.text('المصروف: وافق ✅'), findsOneWidget);
+    expect(find.text('المصروف: مستني موافقته'), findsNothing);
+    expect(find.text('المهام والمواعيد: وافق ✅'), findsOneWidget);
+    // Nothing left to ask for the scopes followed at once.
+    expect(find.text('اطلب متابعة'), findsNothing);
+  });
+
   testWidgets('the admin sees what was granted, and can ask for the rest', (
     tester,
   ) async {
@@ -266,7 +310,11 @@ void main() {
     await pump(
       tester,
       remote,
-      const MemberFollowSection(ownerId: 'son', currency: 'EGP'),
+      const MemberFollowSection(
+        ownerId: 'son',
+        currency: 'EGP',
+        kidsGeofencing: true,
+      ),
     );
     await tester.pump();
 
@@ -303,11 +351,11 @@ void main() {
 
   test('location is followable for a child only — Play forbids an adult', () {
     expect(
-      FollowedMember.fromJson(_dryRun).followable,
+      FollowedMember.fromJson(_dryRun).followableIn(kidsGeofencing: true),
       isNot(contains(FamilyShareScope.location)),
     );
     expect(
-      FollowedMember.fromJson(_childView).followable,
+      FollowedMember.fromJson(_childView).followableIn(kidsGeofencing: true),
       contains(FamilyShareScope.location),
     );
   });
@@ -327,7 +375,11 @@ void main() {
           ),
         ],
       );
-      await pump(tester, remote, const FamilyFollowRequestsCard());
+      await pump(
+        tester,
+        remote,
+        const FamilyFollowRequestsCard(kidsGeofencing: true),
+      );
       await tester.pump();
       expect(
         find.textContaining('عايز يعرف لما تدخل أو تخرج من أماكن'),
@@ -365,7 +417,11 @@ void main() {
         ),
       ],
     );
-    await pump(tester, remote, const FamilyFollowRequestsCard());
+    await pump(
+      tester,
+      remote,
+      const FamilyFollowRequestsCard(kidsGeofencing: true),
+    );
     await tester.pump();
     await tester.tap(find.text('إلغاء'));
     await tester.pumpAndSettle();
@@ -379,7 +435,11 @@ void main() {
     await pump(
       tester,
       remote,
-      const MemberFollowSection(ownerId: 'son', currency: 'EGP'),
+      const MemberFollowSection(
+        ownerId: 'son',
+        currency: 'EGP',
+        kidsGeofencing: true,
+      ),
     );
     await tester.pump();
 
@@ -402,7 +462,11 @@ void main() {
     await pump(
       tester,
       remote,
-      const MemberFollowSection(ownerId: 'son', currency: 'EGP'),
+      const MemberFollowSection(
+        ownerId: 'son',
+        currency: 'EGP',
+        kidsGeofencing: true,
+      ),
     );
     await tester.pump();
     await tester.tap(find.text('ضيف نطاق'));
@@ -521,11 +585,7 @@ void main() {
         ),
       ],
     );
-    await pump(
-      tester,
-      remote,
-      const FamilyFollowRequestsCard(kidsGeofencing: false),
-    );
+    await pump(tester, remote, const FamilyFollowRequestsCard());
     await tester.pump();
     expect(find.textContaining('عايز يعرف لما تدخل'), findsNothing);
     expect(find.text('إلغاء'), findsOneWidget);
