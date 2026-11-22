@@ -1,5 +1,5 @@
 import { assert, assertEquals } from "jsr:@std/assert@1";
-import { brochureEntries, OFFICIAL_FLYER_SITES, officialFlyerDeals, officialFlyerPrompt, regionCity, robotsAllows, siteForPdf } from "./officialFlyers.ts";
+import { brochureEntries, imageEntries, OFFICIAL_FLYER_SITES, officialFlyerDeals, officialFlyerPrompt, regionCity, robotsAllows, siteForPdf } from "./officialFlyers.ts";
 
 const danube = OFFICIAL_FLYER_SITES[0];
 const pdf = (n: number, h = "eb451686178e2e801614341cbb0ff8fd") =>
@@ -75,4 +75,18 @@ Deno.test("officialFlyerDeals: the model's list as it came, objects only", () =>
   assertEquals(officialFlyerDeals({ deals: [{ item: "رز", price: 39.95, currency: "⃁" }, "x", null, [1]] }).length, 1);
   assertEquals(officialFlyerDeals([{ item: "سكر" }]).length, 1);
   assertEquals(officialFlyerDeals({ nope: 1 }), []);
+});
+
+Deno.test("imageEntries: matching urls only, deduped, other hosts ignored; siteForPdf matches image url", () => {
+  const site = OFFICIAL_FLYER_SITES.find((s) => s.store === "سبينيس")!;
+  const ok = "https://mcprod.spinneys-egypt.com/media/offers/1234567890123.jpg";
+  const ok2 = "https://mcprod.spinneys-egypt.com/media/offers/9876543210123.webp?format=webp";
+  const html = `<img src="${ok}"><img data-src="${ok}"><img srcset="${ok2} 1x, https://evil.com/media/offers/1234567890123.jpg 2x">` +
+    `<meta property="og:image" content="https://mcprod.spinneys-egypt.com/media/logo.jpg"><img src="https://evil.com/${ok.slice(8)}">`;
+  const out = imageEntries(html, site);
+  assertEquals(out.map((e) => e.pdf_url), [ok, ok2]);
+  assertEquals(out[0].kind, "image");
+  assertEquals(imageEntries(html, OFFICIAL_FLYER_SITES[0]), []);
+  assertEquals(siteForPdf(ok)?.store, "سبينيس");
+  assertEquals(siteForPdf("https://evil.com/media/offers/1234567890123.jpg"), null);
 });
