@@ -16,6 +16,7 @@ import 'package:zad/features/bank/presentation/stuck_notifications.dart';
 import 'package:zad/features/brain/presentation/agent_action_log_screen.dart';
 import 'package:zad/features/brain/presentation/brain_health_screen.dart';
 import 'package:zad/features/brain/presentation/brain_hub_screen.dart';
+import 'package:zad/features/brain/presentation/guard_events_screen.dart';
 import 'package:zad/features/brain/presentation/knowledge_map_screen.dart';
 import 'package:zad/features/brain/presentation/memory_screen.dart';
 import 'package:zad/features/brain/presentation/profile_sheet.dart';
@@ -92,6 +93,7 @@ void wireScreens() {
   ZadScreens.openBankReading = openBankReading;
   ZadScreens.showAgentActionLog = showAgentActionLog;
   ZadScreens.showBrainHealth = showBrainHealth;
+  ZadScreens.showGuardEvents = showGuardEvents;
   ZadScreens.showBrainHub = showBrainHub;
   ZadScreens.showKnowledgeMap = showKnowledgeMap;
   ZadScreens.showMemoryScreen = showMemoryScreen;
