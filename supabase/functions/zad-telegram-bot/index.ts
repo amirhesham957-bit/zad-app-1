@@ -17,6 +17,7 @@
 import { decideLifeEvent } from "../_shared/lifeEventDecide.ts";
 import { secretMatches } from "../_shared/cronSecret.ts";
 import { type DealLogRow, decideSearchAlert, type RestRow } from "../_shared/searchHealthAlert.ts";
+import { decideFlyerAlert, type FlyerReadRow } from "../_shared/flyerHealthAlert.ts";
 import { recentOutbound } from "../_shared/outbound.ts";
 import { type ForecastInput, lastAskedDaysAgo, weeklyGateClosed, weeklyPick } from "./weeklyCheckin.ts";
 import { proactiveTurn, recordConversation, trimProactive } from "../_shared/conversationLog.ts";
@@ -3547,6 +3548,44 @@ Deno.serve(async (req: Request) => {
       return new Response(JSON.stringify({ ok: true, alert: true, delivered: true, reason: d.reason }), { headers: { "Content-Type": "application/json" } });
     } catch (e) {
       console.error("search_health failed:", e);
+      return new Response(JSON.stringify({ ok: false, error: String(e) }), { status: 500 });
+    }
+  }
+
+  // قراية النشرات الأسبوعية فشلت أو رجّعت صفر عروض ⇒ تنبيه لشات الأدمن بس، مرة كل ٢٤ ساعة (flyerHealthAlert.ts).
+  // الحالة في zad_admin_alert_log (kind='flyer_health').
+  if (req.method === "POST" && new URL(req.url).searchParams.get("job") === "flyer_health") {
+    if (!(await secretMatches(req.headers.get("X-Realtime-Push-Secret"), "ZAD_REALTIME_PUSH_SECRET"))) {
+      return new Response("unauthorized", { status: 401 });
+    }
+    try {
+      const sb = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+      const now = new Date();
+      const [reads, last] = await Promise.all([
+        sb.from("zad_flyer_reads").select("store,ok,deals,reason,read_at").gte("read_at", new Date(now.getTime() - 48 * 3600_000).toISOString()).limit(500),
+        sb.from("zad_admin_alert_log").select("last_sent").eq("kind", "flyer_health").maybeSingle(),
+      ]);
+      if (reads.error || last.error) {
+        console.error("[flyer_health] read failed:", reads.error?.message ?? last.error?.message);
+        return new Response(JSON.stringify({ ok: false, reason: "read_failed" }), { status: 500 });
+      }
+      const lastSent = (last.data as { last_sent?: string } | null)?.last_sent;
+      const d = decideFlyerAlert({ reads: (reads.data ?? []) as FlyerReadRow[], now, lastAlertAt: lastSent ? new Date(lastSent) : null });
+      if (!d.alert) return new Response(JSON.stringify({ ok: true, alert: false, reason: d.reason }), { headers: { "Content-Type": "application/json" } });
+      const chatId = adminChatId(Deno.env.get("ZAD_ADMIN_CHAT_ID"));
+      if (chatId === null) {
+        console.warn("[flyer_health] ZAD_ADMIN_CHAT_ID not set — not sent");
+        return new Response(JSON.stringify({ ok: true, alert: true, delivered: false, reason: "no admin chat" }), { headers: { "Content-Type": "application/json" } });
+      }
+      if (await resolveUserId(sb, chatId)) {
+        console.error("[flyer_health] ZAD_ADMIN_CHAT_ID is a customer chat — refused");
+        return new Response(JSON.stringify({ ok: false, delivered: false, reason: "admin chat is a customer chat" }), { status: 409 });
+      }
+      await sendTelegramMessage(chatId, `📰 صحة النشرات\n\n${d.message}`);
+      await sb.from("zad_admin_alert_log").upsert({ kind: "flyer_health", last_sent: now.toISOString() });
+      return new Response(JSON.stringify({ ok: true, alert: true, delivered: true, reason: d.reason }), { headers: { "Content-Type": "application/json" } });
+    } catch (e) {
+      console.error("flyer_health failed:", e);
       return new Response(JSON.stringify({ ok: false, error: String(e) }), { status: 500 });
     }
   }
