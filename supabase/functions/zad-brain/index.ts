@@ -122,7 +122,8 @@ import { secretMatches } from "../_shared/cronSecret.ts";
 import { HABIT_TRIAL_KINDS, habitTrialForTask, habitTrialPush } from "./habitTrialPush.ts";
 import { HOUSE_LEARNING_KIND, houseLearningForTask, houseLearningPush } from "./houseLearningPush.ts";
 import { INITIATIVE_RULE, childToneBlock, conversationProfile, dropServiceCloser, nameAskedIn, purchaseCheckBlock, voiceModeInstruction } from "./persona.ts";
-import { dialectPromptBlock, dialectReminder } from "../_shared/dialect.ts";
+import { type DialectCode, dialectPromptBlock, dialectReminder } from "../_shared/dialect.ts";
+import { memoryPhraseStore, proactiveTitle } from "./proactiveTemplates.ts";
 import { customerCard, IDENTITY_MEMORY_SCOPES, identityOverwrites, sanitizeProfilePatch } from "../_shared/customerProfile.ts";
 import { rateConfidence } from "../_shared/consumptionRate.ts";
 import { type LevelReading, pantryForecast } from "../_shared/or/pantryForecast.ts";
@@ -8122,7 +8123,11 @@ async function processDueAgentTasks(sb: SupabaseClient): Promise<{ processed: nu
         }
       }
       // العنوان بيفرّق بين طلب العميل (reminder) ومبادرة زاد — كان «مهمة كنت طلبتها» للكل.
-      const notice = agentTaskNotice(task.kind);
+      const baseNotice = agentTaskNotice(task.kind);
+      // م٤.٤: عنوان المبادرة بلهجة العميل (قالب اللهجة أو صياغتها المخزنة، وإلا الأساس). طلب العميل مالوش لهجة.
+      const notice = baseNotice.proactive
+        ? { ...baseNotice, title: await proactiveTitleFor(sb, task.user_id, task.kind) }
+        : baseNotice;
       // المحادثة الواحدة: المبادرة بعلامتها (زاد عارف إنه هو اللي بدأ)، وطلب العميل كرد عادي.
       await recordConversation(sb, task.user_id, [{
         role: "assistant",
@@ -9978,6 +9983,20 @@ function getAssistantName(_snap: any): { nameAr: string; nameEn: string } {
 }
 
 /** البرومبت المختصر لـ Groq بنفس لهجة البرومبت الكامل (groqPrompt.ts، الفجوة ١٣). */
+const proactivePhrases = memoryPhraseStore();
+/** عنوان مبادرة زاد بلهجة العميل؛ أي فشل في قراية اللهجة = القالب الأساسي. */
+async function proactiveTitleFor(sb: any, userId: string, kind: string | null | undefined): Promise<string> {
+  let dialect: DialectCode = "EG";
+  try {
+    const [{ data: u }, { data: p }] = await Promise.all([
+      sb.from("zad_users").select("country,currency").eq("id", userId).maybeSingle(),
+      sb.from("zad_customer_profile").select("dialect,dialect_region,city").eq("user_id", userId).maybeSingle(),
+    ]);
+    dialect = conversationProfile(u?.country, { preferred: p?.dialect, currency: u?.currency, city: p?.city, region: p?.dialect_region }).dialect;
+  } catch { /* القالب الأساسي */ }
+  return await proactiveTitle(proactivePhrases, kind, dialect);
+}
+
 export function groqSystemFor(snap: any, dialectHintText?: string): string {
   const profile = conversationProfile(snap?.country, {
     preferred: snap?.customer?.dialect,
