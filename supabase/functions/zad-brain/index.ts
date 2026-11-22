@@ -8247,6 +8247,21 @@ const FIRST_CALL_FULL_TOOLS = [
   "log_transaction", "web_search", "read_house", "add_shopping_item", "add_appointment",
   "add_pharmacy_item", "log_pharmacy_dose", "add_inventory_item", "update_inventory_qty", "add_obligation",
 ];
+/**
+ * م٤.٣ — تحميل عند الطلب (ZAD_ONDEMAND_PROMPT=1، الافتراضي مقفول لحد ما ليلة الـeval تعدّي): أول لفة بتبعت كامل
+ * الأدوات اللي نية الرسالة بتشاور عليها بس + log_transaction (فلوس: مفيش مجازفة)، والباقي خفيف بنفس الـschema.
+ * وقواعد النوايا (طوارئ، تحدي، عروض، شيف، تفضيل صنف) بتدخل بس لما النية موجودة.
+ */
+export const ONDEMAND_FIRST_CALL_FULL_TOOLS = ["log_transaction"];
+export const INTENT_RULE_TOOLS: ReadonlySet<string> = new Set([
+  "set_broke_mode", "start_savings_challenge", "set_item_preference", "find_deals", "suggest_recipes",
+]);
+export const onDemandPrompt = (): boolean => Deno.env.get("ZAD_ONDEMAND_PROMPT") === "1";
+/** الأدوات اللي قواعدها تتكتب في اللفة: كل المعروضة، ومعاها قواعد النوايا بس لو النية اتلقطت (أو الوضع شغال في snap). */
+export function ruleToolsFor(scoped: readonly { name: string }[], hinted: readonly string[], onDemand = onDemandPrompt()): Set<string> {
+  const h = new Set(hinted);
+  return new Set(scoped.map((t) => t.name).filter((n) => !onDemand || !INTENT_RULE_TOOLS.has(n) || h.has(n)));
+}
 /** الملف: كامل لو الرسالة فيها حقيقة عن حياته (mentionsLifeFact) — غير كده الاستخلاص بعد اللفة بيلقطها. */
 const LIFE_FACT_FULL_TOOLS = ["update_customer_profile", "remember"];
 /** كاملين دايماً على Groq: أقسام read_house وفئات log_transaction جوه الوصف. */
@@ -8262,7 +8277,7 @@ export function toolsForCall<T extends ToolDef>(
   tools: T[], hinted: string[], called: string[], turn: number, lifeFact = false,
 ): T[] {
   if (turn > 0) return leanTools(tools, new Set([...hinted, ...called]));
-  return leanTools(tools, new Set([...FIRST_CALL_FULL_TOOLS, ...hinted, ...(lifeFact ? LIFE_FACT_FULL_TOOLS : [])]));
+  return leanTools(tools, new Set([...(onDemandPrompt() ? ONDEMAND_FIRST_CALL_FULL_TOOLS : FIRST_CALL_FULL_TOOLS), ...hinted, ...(lifeFact ? LIFE_FACT_FULL_TOOLS : [])]));
 }
 
 /**
@@ -8705,7 +8720,7 @@ async function handleAgentTurnInLane(
       : "",
     // «هشتري موبايل بـ٢٠ ألف»: الحساب بالكود (persona.ts) — الاعتراض برقم مايتسابش لحساب الموديل.
     purchase: purchaseCheckBlock(message, snap?.available, snap?.currency),
-    chat: buildChatSystemPrompt(chatSnap, body.voice_mode === true, new Set(scopedTools.map((t) => t.name))),
+    chat: buildChatSystemPrompt(chatSnap, body.voice_mode === true, ruleToolsFor(scopedTools, intentToolHints(message, priorAssistantText(history)))),
   };
   const systemPrompt = Object.values(promptParts).join("");
   const promptSnap = promptSnapshot(chatSnap);
