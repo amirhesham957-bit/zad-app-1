@@ -132,6 +132,7 @@ import { type PinnedInput, pinnedFacts, pinnedFactsBlock } from "./pinnedFacts.t
 import { ANSWER_FROM_RESULTS_NOTE, historyForAnswer, isWrite, needsAnswerAfterTools, recordCall, silentWriteFallback, visibleReceipts } from "./receipts.ts";
 import { decideGate, GATE_RESPONSE_SCHEMA, gatePrompt, type GateVerdict, knownFinancialSender, looksLikeMoneyMoved, parseGateVerdict, proposalFieldsFromVerdict, proposalTitle, ruleGate, txnKindFor } from "./notificationGate.ts";
 import { decideLifeEvent } from "../_shared/lifeEventDecide.ts";
+import { readNotificationEvent } from "./notificationEvents.ts";
 import { isOfferApp, OFFER_SCHEMA, offerExpiresAt, offerPrompt, parseOffer, storeFromPackage } from "./notificationOffers.ts";
 import { eventInstant, LIFE_EVENT_SCHEMA, type LifeEvent, type LifeKind, lifeEventCard, lifeEventPrompt, lifeKindOf, parseLifeEvent } from "./lifeEvents.ts";
 // المرحلة ٣ — الوكلاء المتخصصون: توجيه + هوية في البرومبت + trace في zad_brain_runs.
@@ -9613,6 +9614,33 @@ async function handleNotificationIngest(sb: SupabaseClient, userId: string, body
       })
       .eq("user_id", userId).eq("dedupe_hash", dedupeHash);
   };
+
+  // م٦.٤: أحداث الإشعارات (موعد دكتور، طيران، أبشر) — مقفولة افتراضياً بمفتاح لكل نوع. من غير مفتاح مفتوح مفيش قراءة.
+  // النص الخام مابيتخزنش ولا بيتسجل؛ الاستخراج المنظّم بس بيتكتب في zad_notification_reads.
+  try {
+    const nowCtx = localNowContext(await accountTimeZone(sb, userId));
+    const ev = await readNotificationEvent({
+      async enabledKinds(uid) {
+        const { data } = await sb.from("zad_notification_switches").select("kind").eq("user_id", uid).eq("enabled", true);
+        return new Set(((data ?? []) as { kind: string }[]).map((r) => r.kind)) as Set<any>;
+      },
+      async insertRead(row) {
+        const { error } = await sb.from("zad_notification_reads").insert(row);
+        if (error) console.error("[notification_event] insert failed:", error.message);
+        return !error;
+      },
+      async commitIntent(intent) {
+        const { data, error } = await sb.rpc("zad_commit_intent", { p_intent: intent });
+        return { ok: !error && (data as { ok?: boolean } | null)?.ok === true };
+      },
+    }, { userId, ingestEventId, title, text, utcOffset: nowCtx.utc_offset });
+    if (ev) {
+      await mark("ignored", `notification_event:${ev.kind}`);
+      return new Response(JSON.stringify({ ok: true, status: "notification_event", classification: "informational_only", kind: ev.kind, stored: ev.stored, intent: ev.intent }), { headers: CORS_HEADERS });
+    }
+  } catch (e) {
+    console.warn("[notification_event] failed:", (e as Error)?.message);
+  }
 
   // ١٠.١٤: تطبيق تسوق أو توصيل — كلمات الإعلان عنده هي العرض نفسه، مش ضجيج.
   const offerSource = isOfferApp(packageName);
