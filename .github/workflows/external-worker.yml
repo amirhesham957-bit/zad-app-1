@@ -84,16 +84,26 @@ jobs:
           prompt="Read TASK_WORKER.md in the repo root and do exactly what it says. Edit only the files it lists. Do not commit, push or merge. When finished, run the commands under 'Done means' and print their last lines."
           changed() { [ -n "$(git status --porcelain)" ]; }
           used=""
+          # First model gets 12 min so a hung Kimi still leaves time for the fallback (25 min).
+          limit=720
           for m in "$MODEL" "$FALLBACK"; do
             [ -z "$m" ] && continue
-            echo "### model=$m" | tee -a worker.log
-            timeout 1500 opencode run -m "$m" --title "$SLICE" "$prompt" >> worker.log 2>&1
+            echo "### model=$m timeout=${limit}s" | tee -a worker.log
+            # The step runs under bash -e: without set +e a non-zero exit (or timeout 124)
+            # killed the step here and the fallback never ran (every run on 2026-11-22).
+            set +e
+            timeout "$limit" opencode run -m "$m" --title "$SLICE" "$prompt" >> worker.log 2>&1
             rc=$?
+            set -e
+            limit=1500
             echo "### exit=$rc" | tee -a worker.log
             if [ $rc -eq 0 ] && changed; then used="$m"; break; fi
             git checkout -- . && git clean -fdq -e worker.log
           done
           echo "used=$used" >> "$GITHUB_OUTPUT"
+          echo "::group::worker.log (last 80 lines)"
+          tail -n 80 worker.log | sed 's/\x1b\[[0-9;]*m//g'
+          echo "::endgroup::"
           [ -n "$used" ] || { echo "::error::no model produced a change"; exit 1; }
 
       - name: Check what the worker wrote
@@ -118,6 +128,14 @@ jobs:
           git add -A
           git commit -m "worker($SLICE): $USED — unreviewed, do not merge as is"
           git push --force-with-lease origin "worker/$SLICE"
+
+      - name: Upload worker.log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: worker-log-${{ inputs.slice }}
+          path: worker.log
+          if-no-files-found: ignore
 
       - name: Summary
         if: always()
