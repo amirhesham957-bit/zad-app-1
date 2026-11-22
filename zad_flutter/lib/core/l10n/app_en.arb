@@ -2958,5 +2958,7 @@
   "guardReason_challenge_date_invalid": "The challenge start date isn’t clear",
   "guardReason_dose_slot_invalid": "The dose time isn’t a clear date",
   "guardReason_snooze_minutes_invalid": "The snooze must be 5 to 240 minutes",
-  "guardReason_fallback": "The write was refused"
+  "guardReason_fallback": "The write was refused",
+  "pantryWhoseField": "Whose is it?",
+  "pantryWhoseMe": "Me"
 }
