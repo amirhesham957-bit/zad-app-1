@@ -64,6 +64,10 @@ verify_jwt = false
 [functions.zad-fx-refresh]
 verify_jwt = false
 
+# الكرون مابيحملش JWT، والحارس هيدر X-Restock-Alert-Cron-Secret جوه الدالة.
+[functions.zad-restock-alerts]
+verify_jwt = false
+
 # نفس النمط: الكرون مابيحملش JWT، والحارس هيدر X-Admitad-Cron-Secret جوه الدالة.
 [functions.sync-admitad-offers]
 verify_jwt = false

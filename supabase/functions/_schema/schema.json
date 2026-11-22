@@ -1280,6 +1280,12 @@
     "recipe_name",
     "user_id"
   ],
+  "zad_restock_alert_log": [
+    "id",
+    "item_key",
+    "sent_at",
+    "user_id"
+  ],
   "zad_restock_observations": [
     "area_lat",
     "area_lng",
