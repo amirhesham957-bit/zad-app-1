@@ -87,3 +87,11 @@ Deno.test("find_deals is offered on SHEIN or clothes and home asked for", () => 
   }
   assert(!intentToolHints("لبست الجاكيت النهارده").includes("find_deals"));
 });
+
+Deno.test("م٦.١: عرض الصنف الناقص بيتقدّم، ومن غير ناقص الترتيب زي ما هو", async () => {
+  const { matchOwnOffers } = await import("./chatDeals.ts");
+  const row = (item: string, pct: number) => ({ store: "نون", item, discount_percent: pct, discount_amount: null, currency: null, code: null, link: null, expires_at: "2099-01-01" });
+  const rows = [row("شاي", 20), row("رز", 10)];
+  assertEquals(matchOwnOffers(rows, "", "").map((r) => r.item), ["شاي", "رز"]);
+  assertEquals(matchOwnOffers(rows, "", "", 5, ["رز"]).map((r) => r.item), ["رز", "شاي"]);
+});
