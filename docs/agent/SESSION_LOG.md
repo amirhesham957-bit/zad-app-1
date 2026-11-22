@@ -769,6 +769,11 @@ related:
 - **ماتجرّبش:** تست SQL ما اتشغلش محلياً (مفيش Postgres)، والتأكيد من الـCI. `days_left` المصحَّح مفيش تست SQL له (محتاج سقالة كبيرة).
 - **فاضل:** الـoverride مابيتمسحش لما قراءات حقيقية تكفي (بيتمسح بس مع الصف).
 
+## ٢٠٢٦-١١-٢٢ — م٤.٦ (مجال لكل أداة)
+- **اتعمل:** `zad-brain/toolDomains.ts` (جدول tool→domain لكل أدوات `CHAT_TOOLS`) و`toolDomains_test.ts` (كل أداة ليها مجال، مفيش اسم قديم، مفيش أداة من غير مسار للموديل، ونطاق كل وكيل بيعرض أدواته ومافيهوش تسريب). في `specialists.ts`: `SPECIALIST_TOOL_SCOPE` اتصدّر، والأدوات العابرة اتفصلت في `CROSS_DOMAIN_TOOLS` (نفس القايمة بالظبط).
+- **اتقاس:** deno check EXIT=0، deno test EXIT=0 (١٩٧٩ نجحوا، صفر فشل)، وeval الـ٢٠٠ حالة: lostRule=0. فلاج التحميل عند الطلب لسه مقفول.
+- **لقيت:** `check_price_trend` و`get_nearby_deals` معرّفين ومافيش مسار بيعرضهم للموديل (اتبدّلوا بـ`where_to_buy`)؛ اتسجلوا في `UNREACHABLE_TOOLS` والتست بيفشل لو زادت أداة غيرهم.
+- **فاضل:** قرار مسح الأداتين دول، وفتح `ZAD_ONDEMAND_PROMPT` بعد ليلة الـeval الحية.
 ## ٢٠٢٦-١١-٢٢ — ج٢.٤ (كارت الرحلة)
 - **اتعمل:** `shared/trip/domain/trip_summary.dart` (دالة صافية: مصاريف من `travel_since` بعملة الحساب وعملة البلد بـ`convertCurrency`، من غير 1:1 لو العملة مجهولة) و`features/home/presentation/trip_card.dart` (كارت «رحلتك في X» + ميزانية بتتحفظ على الجهاز لكل رحلة). ٧ نصوص ar/en. تست `test/shared/trip/trip_summary_test.dart` (٣ حالات).
 - **اتقاس:** `flutter analyze` نضيف، والتست المخصوص نجح.
