@@ -29,6 +29,7 @@ import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/inventory/domain/pantry_categories.dart';
 import 'package:zad/features/inventory/presentation/pantry_starter_card.dart';
 import 'package:zad/features/inventory/presentation/pantry_world_scene.dart';
+import 'package:zad/shared/affiliate/presentation/amazon_buy_chip.dart';
 import 'package:zad/shared/brain/domain/guard_reason_label.dart';
 import 'package:zad/shared/chat/application/chat_controller.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart'
@@ -518,6 +519,17 @@ class _PantryViewState extends ConsumerState<PantryView> {
             padding: const EdgeInsets.symmetric(horizontal: ZadSpacing.gutter),
             sliver: SliverList.list(
               children: <Widget>[
+                if (rows.any(
+                  (r) =>
+                      r.$1 != null &&
+                      !r.$3 &&
+                      !r.$1!.isOccasional &&
+                      r.$1!.isLowStock,
+                ))
+                  const Padding(
+                    padding: EdgeInsets.only(bottom: ZadSpacing.sm),
+                    child: AmazonChipsNote(),
+                  ),
                 ZadWorldCard(
                   child: Column(
                     children: <Widget>[
@@ -897,6 +909,14 @@ class _StockRow extends StatelessWidget {
                             ),
                           ),
                         ),
+                        if (isLow)
+                          Padding(
+                            padding: const EdgeInsets.only(top: ZadSpacing.xs),
+                            child: AmazonBuyChip(
+                              itemName: item.itemName,
+                              sourceScreen: 'pantry_low',
+                            ),
+                          ),
                       ],
                     ),
                   ),

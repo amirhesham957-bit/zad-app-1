@@ -28,6 +28,7 @@ import 'package:zad/features/inventory/presentation/art_flight.dart';
 import 'package:zad/features/inventory/presentation/shopping_world_scene.dart';
 import 'package:zad/shared/ads/presentation/inline_ad.dart';
 import 'package:zad/shared/affiliate/application/affiliate_match_controller.dart';
+import 'package:zad/shared/affiliate/presentation/amazon_buy_chip.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart';
 import 'package:zad/shared/inventory/application/shopping_controller.dart';
@@ -369,6 +370,7 @@ class _ShoppingListViewState extends ConsumerState<ShoppingListView> {
                 title: l.shopFilterEmptyTitle,
                 message: l.shopFilterEmptyBody,
               ),
+            if (outstanding.isNotEmpty) const AmazonChipsNote(),
             for (final store in stores) ...<Widget>[
               _StoreHeader(
                 name: store.isEmpty ? l.shopGroupAnyStore : store,
@@ -786,7 +788,12 @@ class _Line extends ConsumerWidget {
     required this.currency,
     required this.pantryCounter,
     this.stock,
+    this.showBuy = true,
   });
+
+  /// Whether an unticked line offers «من أمازون» (off for the brands inside
+  /// a staple's group, which has its own).
+  final bool showBuy;
 
   final ShoppingItem item;
   final String currency;
@@ -831,36 +838,54 @@ class _Line extends ConsumerWidget {
       key: ValueKey<String>(item.id),
       direction: DismissDirection.endToStart,
       onDismissed: (_) => unawaited(controller.remove(item.id)),
-      child: ZadWorldRow(
-        leading: ZadWorldTile(
-          color: color,
-          child: zadItemArt(item.itemName, size: 32),
-        ),
-        title: item.quantity > 1
-            ? '${item.itemName} × ${item.quantity}'
-            : item.itemName,
-        titleStyle: ZadType.titleSmall.copyWith(
-          color: bought ? ZadColors.inkMuted : ZadColors.ink,
-          decoration: bought ? TextDecoration.lineThrough : TextDecoration.none,
-        ),
-        subtitle: details.isEmpty ? null : details.join(' · '),
-        stateColor: color,
-        onTap: () => toggle(purchased: !bought),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            IconButton(
-              onPressed: () => unawaited(controller.remove(item.id)),
-              tooltip: l.commonDelete,
-              icon: Icon(ZadIcons.delete, size: 18, color: ZadColors.inkMuted),
+      child: Column(
+        children: <Widget>[
+          ZadWorldRow(
+            leading: ZadWorldTile(
+              color: color,
+              child: zadItemArt(item.itemName, size: 32),
             ),
-            _Tick(
-              value: bought,
-              onChanged: (v) => toggle(purchased: v),
-              label: item.itemName,
+            title: item.quantity > 1
+                ? '${item.itemName} × ${item.quantity}'
+                : item.itemName,
+            titleStyle: ZadType.titleSmall.copyWith(
+              color: bought ? ZadColors.inkMuted : ZadColors.ink,
+              decoration: bought
+                  ? TextDecoration.lineThrough
+                  : TextDecoration.none,
             ),
-          ],
-        ),
+            subtitle: details.isEmpty ? null : details.join(' · '),
+            stateColor: color,
+            onTap: () => toggle(purchased: !bought),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                IconButton(
+                  onPressed: () => unawaited(controller.remove(item.id)),
+                  tooltip: l.commonDelete,
+                  icon: Icon(
+                    ZadIcons.delete,
+                    size: 18,
+                    color: ZadColors.inkMuted,
+                  ),
+                ),
+                _Tick(
+                  value: bought,
+                  onChanged: (v) => toggle(purchased: v),
+                  label: item.itemName,
+                ),
+              ],
+            ),
+          ),
+          if (!bought && showBuy)
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: AmazonBuyChip(
+                itemName: item.itemName,
+                sourceScreen: 'shopping_row',
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -997,6 +1022,14 @@ class _FamilyLineState extends ConsumerState<_FamilyLine> {
             ],
           ),
         ),
+        if (!group.allPurchased)
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: AmazonBuyChip(
+              itemName: group.name,
+              sourceScreen: 'shopping_row',
+            ),
+          ),
         if (_open)
           Padding(
             padding: const EdgeInsetsDirectional.only(
@@ -1010,6 +1043,7 @@ class _FamilyLineState extends ConsumerState<_FamilyLine> {
                     item: line,
                     currency: widget.currency,
                     pantryCounter: widget.pantryCounter,
+                    showBuy: false,
                   ),
                   const SizedBox(height: ZadSpacing.xs),
                 ],

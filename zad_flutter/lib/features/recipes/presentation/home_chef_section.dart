@@ -26,6 +26,7 @@ import 'package:zad/features/recipes/domain/recipe.dart';
 import 'package:zad/features/recipes/presentation/recipe_detail_screen.dart';
 import 'package:zad/features/recipes/presentation/recipes_view.dart'
     show dishArt;
+import 'package:zad/shared/affiliate/presentation/amazon_buy_chip.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart';
 import 'package:zad/shared/modes/application/modes_controller.dart';
@@ -355,6 +356,17 @@ class _ChefRecipeCard extends ConsumerWidget {
                               color: scheme.onSurfaceVariant,
                             ),
                           ),
+                          Wrap(
+                            spacing: ZadSpacing.sm,
+                            children: <Widget>[
+                              for (final name in recipe.missing)
+                                AmazonBuyChip(
+                                  itemName: name,
+                                  sourceScreen: 'chef_missing',
+                                ),
+                            ],
+                          ),
+                          const AmazonChipsNote(),
                           TextButton.icon(
                             style: TextButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 4),

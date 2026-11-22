@@ -846,6 +846,17 @@ class ZadL10nAr extends ZadL10n {
   String get amazonOrder => '🛒 اطلبه';
 
   @override
+  String get amazonBuyChip => 'من أمازون';
+
+  @override
+  String amazonBuyChipLabel(String name) {
+    return 'اطلب $name من أمازون';
+  }
+
+  @override
+  String get amazonChipsNote => 'روابط أمازون · زاد ممكن ياخد عمولة';
+
+  @override
   String get homeOffline => 'مفيش اتصال بالإنترنت';
 
   @override

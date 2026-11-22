@@ -1538,6 +1538,24 @@ abstract class ZadL10n {
   /// **'🛒 اطلبه'**
   String get amazonOrder;
 
+  /// No description provided for @amazonBuyChip.
+  ///
+  /// In ar, this message translates to:
+  /// **'من أمازون'**
+  String get amazonBuyChip;
+
+  /// No description provided for @amazonBuyChipLabel.
+  ///
+  /// In ar, this message translates to:
+  /// **'اطلب {name} من أمازون'**
+  String amazonBuyChipLabel(String name);
+
+  /// No description provided for @amazonChipsNote.
+  ///
+  /// In ar, this message translates to:
+  /// **'روابط أمازون · زاد ممكن ياخد عمولة'**
+  String get amazonChipsNote;
+
   /// No description provided for @homeOffline.
   ///
   /// In ar, this message translates to:
