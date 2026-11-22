@@ -2986,5 +2986,19 @@
   "tripOver": "Over the trip budget by {amount} {currency}",
   "tripSetBudget": "Set a trip budget",
   "tripBudgetHint": "Budget in {currency}",
-  "tripBudgetSave": "Save"
+  "tripBudgetSave": "Save",
+  "notifReadsSwitchesTitle": "Notification reading",
+  "notifReadsPrivacy": "Each one stays off until you turn it on yourself. You can turn it off any time.",
+  "notifReadsAppointment": "Doctor bookings",
+  "notifReadsTrip": "Flights",
+  "notifReadsDocument": "Absher and services",
+  "notifReadsExplain": "We read the notification and pull out only the date and place; the text is deleted.",
+  "notifReadsSaveFailed": "Could not save the change, try again",
+  "notifReadsTodayTitle": "What Zad read today",
+  "notifReadsEmptyTitle": "Nothing read yet today",
+  "notifReadsEmptyBody": "When a notification of a kind you turned on arrives, the date and place we pulled out of it will show here.",
+  "notifReadsLoadFailed": "Could not load, tap to try again",
+  "notifReadsDate": "Date",
+  "notifReadsTime": "Time",
+  "notifReadsPlace": "Place"
 }

@@ -7546,6 +7546,51 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get tripBudgetSave => 'حفظ';
+
+  @override
+  String get notifReadsSwitchesTitle => 'قراءة الإشعارات';
+
+  @override
+  String get notifReadsPrivacy =>
+      'كل واحد مقفول لحد ما تفتحه بنفسك. وتقدر تقفله في أي وقت.';
+
+  @override
+  String get notifReadsAppointment => 'حجوزات الدكتور';
+
+  @override
+  String get notifReadsTrip => 'الطيران';
+
+  @override
+  String get notifReadsDocument => 'أبشر والخدمات';
+
+  @override
+  String get notifReadsExplain =>
+      'بنقرا الإشعار ونطلّع التاريخ والمكان بس، والنص بيتمسح.';
+
+  @override
+  String get notifReadsSaveFailed => 'ماقدرناش نحفظ التغيير، جرّب تاني';
+
+  @override
+  String get notifReadsTodayTitle => 'زاد قرا إيه النهارده';
+
+  @override
+  String get notifReadsEmptyTitle => 'لسه مفيش حاجة اتقرت النهارده';
+
+  @override
+  String get notifReadsEmptyBody =>
+      'أول ما يوصلك إشعار من نوع مفتوح، هتلاقي هنا التاريخ والمكان اللي طلّعناهم منه.';
+
+  @override
+  String get notifReadsLoadFailed => 'ماقدرناش نحمّل، اضغط للمحاولة تاني';
+
+  @override
+  String get notifReadsDate => 'التاريخ';
+
+  @override
+  String get notifReadsTime => 'الوقت';
+
+  @override
+  String get notifReadsPlace => 'المكان';
 }
 
 /// The translations for Arabic, as used in Saudi Arabia (`ar_SA`).
@@ -10735,4 +10780,49 @@ class ZadL10nArSa extends ZadL10nAr {
 
   @override
   String get permLater => 'مو الحين';
+
+  @override
+  String get notifReadsSwitchesTitle => 'قراءة الإشعارات';
+
+  @override
+  String get notifReadsPrivacy =>
+      'كل خيار مقفل لين تفتحه بنفسك. وتقدر تقفله في أي وقت.';
+
+  @override
+  String get notifReadsAppointment => 'حجوزات الدكتور';
+
+  @override
+  String get notifReadsTrip => 'الطيران';
+
+  @override
+  String get notifReadsDocument => 'أبشر والخدمات';
+
+  @override
+  String get notifReadsExplain =>
+      'نقرا الإشعار ونطلّع التاريخ والمكان بس، والنص ينمسح.';
+
+  @override
+  String get notifReadsSaveFailed => 'ما قدرنا نحفظ التغيير، حاول مرة ثانية';
+
+  @override
+  String get notifReadsTodayTitle => 'وش قرا زاد اليوم';
+
+  @override
+  String get notifReadsEmptyTitle => 'للحين ما انقرا شي اليوم';
+
+  @override
+  String get notifReadsEmptyBody =>
+      'أول ما يوصلك إشعار من نوع مفتوح، بتلقى هنا التاريخ والمكان اللي طلعناهم منه.';
+
+  @override
+  String get notifReadsLoadFailed => 'ما قدرنا نحمّل، اضغط للمحاولة مرة ثانية';
+
+  @override
+  String get notifReadsDate => 'التاريخ';
+
+  @override
+  String get notifReadsTime => 'الوقت';
+
+  @override
+  String get notifReadsPlace => 'المكان';
 }

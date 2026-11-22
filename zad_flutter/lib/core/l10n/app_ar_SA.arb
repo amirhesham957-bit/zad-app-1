@@ -861,5 +861,19 @@
   "pantryRateSlower": "يخلص أبطأ",
   "pantryRateSaved": "سجّلنا تصحيحك",
   "permSheetBody": "عشان زاد ينبّهك ويتابع بيتك من دون ما تفتح التطبيق، نحتاج هذي الأذونات. كل واحد منها اختياري، وتقدر تغيّره من إعدادات الجوال في أي وقت.",
-  "permLater": "مو الحين"
+  "permLater": "مو الحين",
+  "notifReadsSwitchesTitle": "قراءة الإشعارات",
+  "notifReadsPrivacy": "كل خيار مقفل لين تفتحه بنفسك. وتقدر تقفله في أي وقت.",
+  "notifReadsAppointment": "حجوزات الدكتور",
+  "notifReadsTrip": "الطيران",
+  "notifReadsDocument": "أبشر والخدمات",
+  "notifReadsExplain": "نقرا الإشعار ونطلّع التاريخ والمكان بس، والنص ينمسح.",
+  "notifReadsSaveFailed": "ما قدرنا نحفظ التغيير، حاول مرة ثانية",
+  "notifReadsTodayTitle": "وش قرا زاد اليوم",
+  "notifReadsEmptyTitle": "للحين ما انقرا شي اليوم",
+  "notifReadsEmptyBody": "أول ما يوصلك إشعار من نوع مفتوح، بتلقى هنا التاريخ والمكان اللي طلعناهم منه.",
+  "notifReadsLoadFailed": "ما قدرنا نحمّل، اضغط للمحاولة مرة ثانية",
+  "notifReadsDate": "التاريخ",
+  "notifReadsTime": "الوقت",
+  "notifReadsPlace": "المكان"
 }

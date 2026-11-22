@@ -135,3 +135,7 @@ loading in `data/`. One job per file. No file over 300 lines. Check for an exist
 before writing a new one. Clean up one folder at a time without changing behaviour. Legal
 sources only: official APIs and the search pool, no scraping of TikTok or Instagram, no
 proxy rotation. Zero-cost infrastructure. Keep the `admob-ssv` verification.
+
+## م٦.٤ Flutter (2026-11-22, `worktree-agent-af341907c24a18648`)
+
+`features/notification_reads`: three switches (appointment, trip, document_due), all off by default, each with the one-line honest explanation, and the screen «زاد قرا إيه النهارده» (day starts at midnight in `accountTimeZoneProvider`). Data goes through `NotificationReadsRepository` (Supabase impl on `zad_notification_switches` / `zad_notification_reads`, the server half owns the migration; tests use a fake). Not yet wired to a route or to Settings, and م٦.٤ is not ticked until the server half is merged and a real notification is read end to end.

@@ -809,3 +809,7 @@ related:
 ## ٢٠٢٦-١١-٢٢ — م٦.٦ (مراجعة مصادر السوشيال)
 - **اتعمل:** قريت `socialSources.ts` و`tiktokDeals.ts` وكرونات `deals-instagram-weekly`/`deals-tiktok-daily`: كلهم رسمي (Graph API، محرك بحث، YouTube Data API). مفيش كود اتغيّر.
 - **فاضل:** المالك يجدّد توكن إنستجرام. الكرون هيفضل يفشل لحد ما يتجدد.
+
+## 2026-11-22 م٦.٤ Flutter half
+
+Added `zad_flutter/lib/features/notification_reads` (repository interface + Supabase impl, switches screen, today screen), strings in ar / ar_SA / en, 7 tests. Not measured against the real tables (the migration is the other agent's). Left: wire the screen into Settings, tick م٦.٤ after the server half lands.
