@@ -297,6 +297,7 @@ jobs:
           supabase/sql/tests/scratch_scaffold.sql supabase/sql/tests/worlds_scaffold.sql supabase/migrations/20261116030000_worlds_read_access.sql supabase/sql/tests/worlds_read_access_test.sql
           supabase/sql/tests/scratch_scaffold.sql supabase/sql/tests/worlds_scaffold.sql supabase/migrations/20261116040000_family_head_pharmacy.sql supabase/sql/tests/family_head_pharmacy_test.sql
           supabase/sql/tests/scratch_scaffold.sql supabase/sql/tests/worlds_scaffold.sql supabase/migrations/20261001130000_family_shares_by_consent.sql supabase/migrations/20261116060000_family_shared_read_doses.sql supabase/sql/tests/family_shared_read_doses_test.sql
+          supabase/sql/tests/core_constraints_scaffold.sql supabase/migrations/20261122200000_core_constraints.sql supabase/sql/tests/core_constraints_test.sql
           LIST
 
   # النشر من الريبو، بعد ما الفحص يعدي — مش من على جهاز حد.
