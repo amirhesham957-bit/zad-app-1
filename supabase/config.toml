@@ -69,6 +69,10 @@ verify_jwt = false
 verify_jwt = false
 
 # نفس النمط: الكرون مابيحملش JWT، والحارس هيدر X-Admitad-Cron-Secret جوه الدالة.
+# م٦.٣: كرون يومي لتسجيل قفزات الترند المجمّعة. الحارس هيدر X-Trend-Cron-Secret جوه الدالة.
+[functions.zad-trend-surge]
+verify_jwt = false
+
 [functions.sync-admitad-offers]
 verify_jwt = false
 

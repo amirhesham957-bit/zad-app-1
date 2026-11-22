@@ -17,6 +17,8 @@ export interface Surge {
   z: number;
   count: number;
   baseline: number;
+  /** عدد البيوت المختلفة (دايماً ≥ ٥). */
+  houses: number;
   /** الهايب لوحده مش سبب ترشيح شرا: دايماً false. */
   recommendBuy: false;
 }
@@ -36,7 +38,7 @@ export function detectSurges(inputs: readonly SurgeInput[]): Surge[] {
   for (const i of inputs) {
     if (i.houses < MIN_HOUSES) continue;
     const z = poissonZ(i.count, i.baseline);
-    if (z >= Z_THRESHOLD) out.push({ item: i.item, z, count: i.count, baseline: i.baseline, recommendBuy: false });
+    if (z >= Z_THRESHOLD) out.push({ item: i.item, z, count: i.count, baseline: i.baseline, houses: i.houses, recommendBuy: false });
   }
   return out.sort((a, b) => b.z - a.z || a.item.localeCompare(b.item));
 }
