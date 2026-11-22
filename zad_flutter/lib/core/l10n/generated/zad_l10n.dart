@@ -12523,6 +12523,30 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'أنا'**
   String get pantryWhoseMe;
+
+  /// Pantry edit dialog: the estimate in days.
+  ///
+  /// In ar, this message translates to:
+  /// **'تقديرنا إنه يكفي حوالي {days} يوم'**
+  String pantryRateEstimate(String days);
+
+  /// Pantry edit dialog: correction tap, consumption is faster.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيخلص أسرع'**
+  String get pantryRateFaster;
+
+  /// Pantry edit dialog: correction tap, consumption is slower.
+  ///
+  /// In ar, this message translates to:
+  /// **'بيخلص أبطأ'**
+  String get pantryRateSlower;
+
+  /// Pantry edit dialog: after a correction tap.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجّلنا تصحيحك'**
+  String get pantryRateSaved;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {
