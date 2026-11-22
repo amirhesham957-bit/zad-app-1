@@ -165,7 +165,7 @@ related:
 
 الأدوات: **HiGHS** (`highs` على npm، WASM) للـLP والـMILP، و**pgmq** (Supabase Queues، مش متثبت على الحي ٢٠/١١) للمهام.
 
-- [ ] م٥.٠ تجربة HiGHS (WASM) في Deno: وقت وذاكرة. لو فشل: `javascript-lp-solver`.
+- [x] م٥.٠ تجربة HiGHS (WASM) في Deno: وقت وذاكرة. لو فشل: `javascript-lp-solver`. **نتيجة (٢٢/١١، Deno 2.9.8، highs 1.16.0):** knapsack ٥٠ متغير، الحل ١٩٢٧ = DP ١٩٢٧، ٢٨ مختار، ١٦٩.٧ مللي ثانية (كولد، شامل تحميل WASM)، RSS ٣٨.٧ ← ١٠٧.٤ ميجا (`experiments/highsProbe.ts`).
 - [x] م٥.١ جدولة الانتباه: knapsack يومي بميزانية رسايل، والحارة الحرجة برا الميزانية.
       **اتنفذ ٢٢/١١:** `attentionDecisions` في `zad-brain/shared.ts` فوق `planMessages`: الخانتين (`PACING_DAILY_CAP`) للأعلى قيمة من المستحقين في اللفة، والتكلفة ١ لكل رسالة. `dailyCapDecision` فاضل شبكة أمان.
 - [ ] م٥.٢ «خطة الجمعة»: LP للمنيو، وHungarian لشغل البيت، ووقت للّمّة.
