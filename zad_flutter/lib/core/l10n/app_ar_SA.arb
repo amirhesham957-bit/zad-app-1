@@ -859,5 +859,7 @@
   "pantryRateEstimate": "تقديرنا إنه يكفي قرابة {days} يوم",
   "pantryRateFaster": "يخلص أسرع",
   "pantryRateSlower": "يخلص أبطأ",
-  "pantryRateSaved": "سجّلنا تصحيحك"
+  "pantryRateSaved": "سجّلنا تصحيحك",
+  "permSheetBody": "عشان زاد ينبّهك ويتابع بيتك من دون ما تفتح التطبيق، نحتاج هذي الأذونات. كل واحد منها اختياري، وتقدر تغيّره من إعدادات الجوال في أي وقت.",
+  "permLater": "مو الحين"
 }
