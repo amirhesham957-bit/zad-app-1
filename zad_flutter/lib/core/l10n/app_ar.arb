@@ -6894,5 +6894,17 @@
   "permPrivacy": "بياناتك عندنا بتتعامل حسب سياسة الخصوصية المنشورة، وزاد مابيوعدش بأكتر منها.",
   "permCardBody": "فعّلها بضغطة عشان تنبيهات زاد توصلك.",
   "permCardTitle": "{count, plural, =1{إذن ناقص} other{{count} إذون ناقصة}}",
-  "@permCardTitle": {"placeholders": {"count": {"type": "int"}}}
+  "@permCardTitle": {"placeholders": {"count": {"type": "int"}}},
+  "tripTitle": "رحلتك في {country}",
+  "tripSpent": "صرفت تقريباً {amount} {currency} من أول الرحلة",
+  "tripLeft": "فاضل {amount} {currency} من ميزانية الرحلة",
+  "tripOver": "عدّيت ميزانية الرحلة بـ {amount} {currency}",
+  "tripSetBudget": "حدّد ميزانية الرحلة",
+  "tripBudgetHint": "الميزانية بـ{currency}",
+  "tripBudgetSave": "حفظ",
+  "@tripTitle": {"placeholders": {"country": {"type": "String"}}},
+  "@tripSpent": {"placeholders": {"amount": {"type": "String"}, "currency": {"type": "String"}}},
+  "@tripLeft": {"placeholders": {"amount": {"type": "String"}, "currency": {"type": "String"}}},
+  "@tripOver": {"placeholders": {"amount": {"type": "String"}, "currency": {"type": "String"}}},
+  "@tripBudgetHint": {"placeholders": {"currency": {"type": "String"}}}
 }

@@ -12631,6 +12631,48 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'{count, plural, =1{إذن ناقص} other{{count} إذون ناقصة}}'**
   String permCardTitle(int count);
+
+  /// No description provided for @tripTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'رحلتك في {country}'**
+  String tripTitle(String country);
+
+  /// No description provided for @tripSpent.
+  ///
+  /// In ar, this message translates to:
+  /// **'صرفت تقريباً {amount} {currency} من أول الرحلة'**
+  String tripSpent(String amount, String currency);
+
+  /// No description provided for @tripLeft.
+  ///
+  /// In ar, this message translates to:
+  /// **'فاضل {amount} {currency} من ميزانية الرحلة'**
+  String tripLeft(String amount, String currency);
+
+  /// No description provided for @tripOver.
+  ///
+  /// In ar, this message translates to:
+  /// **'عدّيت ميزانية الرحلة بـ {amount} {currency}'**
+  String tripOver(String amount, String currency);
+
+  /// No description provided for @tripSetBudget.
+  ///
+  /// In ar, this message translates to:
+  /// **'حدّد ميزانية الرحلة'**
+  String get tripSetBudget;
+
+  /// No description provided for @tripBudgetHint.
+  ///
+  /// In ar, this message translates to:
+  /// **'الميزانية بـ{currency}'**
+  String tripBudgetHint(String currency);
+
+  /// No description provided for @tripBudgetSave.
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ'**
+  String get tripBudgetSave;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

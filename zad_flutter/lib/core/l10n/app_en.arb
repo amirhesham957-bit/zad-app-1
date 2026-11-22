@@ -2979,5 +2979,12 @@
   "permPrivacy": "Your data is handled as the published privacy policy says; Zad promises nothing beyond it.",
   "permCardBody": "Turn them on in one tap so Zad's alerts reach you.",
   "permCardTitle": "{count, plural, =1{One permission missing} other{{count} permissions missing}}",
-  "@permCardTitle": {"placeholders": {"count": {"type": "int"}}}
+  "@permCardTitle": {"placeholders": {"count": {"type": "int"}}},
+  "tripTitle": "Your trip to {country}",
+  "tripSpent": "You've spent about {amount} {currency} since the trip began",
+  "tripLeft": "{amount} {currency} left of the trip budget",
+  "tripOver": "Over the trip budget by {amount} {currency}",
+  "tripSetBudget": "Set a trip budget",
+  "tripBudgetHint": "Budget in {currency}",
+  "tripBudgetSave": "Save"
 }
