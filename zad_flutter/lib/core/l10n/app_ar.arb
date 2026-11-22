@@ -3792,6 +3792,14 @@
   "@consentPoint3Body": {
     "description": "Consent sheet, point 3: the text after the lead."
   },
+  "consentPointAiLead": "كلامك بيتبعت لذكاء اصطناعي من شركات تانية.",
+  "@consentPointAiLead": {
+    "description": "Consent sheet, the third-party AI point: the bold lead. Google Play's User Data policy (2026-07-15) wants this said plainly before any data goes to an outside AI provider."
+  },
+  "consentPointAiBody": "عشان زاد يفهمك ويرد عليك، اللي بتكتبه أو بتقوله ورسايل البنك وفواتيرك بتتبعت لمزودي ذكاء اصطناعي خارجيين (زي Google و Groq) يعالجوها، وبس.",
+  "@consentPointAiBody": {
+    "description": "Consent sheet, the third-party AI point: what is sent, to whom, and for what."
+  },
   "consentPoint4Lead": "الذكاء الاصطناعي بيساعد، وممكن يغلط.",
   "@consentPoint4Lead": {
     "description": "Consent sheet, point 4: the bold lead."

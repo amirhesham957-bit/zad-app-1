@@ -4567,6 +4567,14 @@ class ZadL10nEn extends ZadL10n {
       'And we never read bank passwords, card numbers or OTP codes.';
 
   @override
+  String get consentPointAiLead =>
+      'What you send goes to outside AI providers.';
+
+  @override
+  String get consentPointAiBody =>
+      'To understand you and answer, what you type or say, your bank messages and your receipts are sent to third-party AI providers (such as Google and Groq) to be processed, and for nothing else.';
+
+  @override
   String get consentPoint4Lead => 'The AI helps, and it can be wrong.';
 
   @override

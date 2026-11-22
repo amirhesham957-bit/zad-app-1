@@ -7844,6 +7844,18 @@ abstract class ZadL10n {
   /// **'ومابنقراش كلمات سر البنك ولا أرقام الكروت ولا أكواد OTP.'**
   String get consentPoint3Body;
 
+  /// Consent sheet, the third-party AI point: the bold lead. Google Play's User Data policy (2026-07-15) wants this said plainly before any data goes to an outside AI provider.
+  ///
+  /// In ar, this message translates to:
+  /// **'كلامك بيتبعت لذكاء اصطناعي من شركات تانية.'**
+  String get consentPointAiLead;
+
+  /// Consent sheet, the third-party AI point: what is sent, to whom, and for what.
+  ///
+  /// In ar, this message translates to:
+  /// **'عشان زاد يفهمك ويرد عليك، اللي بتكتبه أو بتقوله ورسايل البنك وفواتيرك بتتبعت لمزودي ذكاء اصطناعي خارجيين (زي Google و Groq) يعالجوها، وبس.'**
+  String get consentPointAiBody;
+
   /// Consent sheet, point 4: the bold lead.
   ///
   /// In ar, this message translates to:

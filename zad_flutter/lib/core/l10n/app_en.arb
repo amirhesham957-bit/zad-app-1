@@ -1595,6 +1595,8 @@
   "consentPoint2Body": "Bank notifications, location, camera and microphone: each one is asked for when you use the feature, and you can switch it off at any time.",
   "consentPoint3Lead": "We never sell your data.",
   "consentPoint3Body": "And we never read bank passwords, card numbers or OTP codes.",
+  "consentPointAiLead": "What you send goes to outside AI providers.",
+  "consentPointAiBody": "To understand you and answer, what you type or say, your bank messages and your receipts are sent to third-party AI providers (such as Google and Groq) to be processed, and for nothing else.",
   "consentPoint4Lead": "The AI helps, and it can be wrong.",
   "consentPoint4Body": "Check the numbers before any decision; Zad is not a bank or a financial adviser.",
   "consentPoint5Lead": "The free plan has ads",
