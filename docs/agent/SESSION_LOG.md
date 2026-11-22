@@ -751,3 +751,10 @@ related:
   - الكودسبيس مساحته ٣٢ جيجا والـNDK مش متثبت. `~/.gradle` و`~/android-sdk/ndk` و`.temp` بقوا symlinks على `/tmp`، ولو الـ`/tmp` اتمسح هيتعادوا من الأول.
   - حد أدوات Groq (`promptBudget_test`، lean ≥ full+15) كان على الحرف، فأي باراميتر جديد في أداة finance بيكسره.
   - `arabic_literals_test` مابيسمحش بنص عربي جديد برا الـARB، و`saudi_coverage_test` بيطلب نسخة سعودي لأي كلمة مصري.
+
+## ٢٠٢٦-١١-٢٢ — م٢.٦ (`member_id` إلزامي) وفصل بناء الـAPK عن الـPRs
+- **اتعمل:** ميجريشن `20261122230000_member_id_required` (مخزن، تفضيلات، أهداف) + `member_not_found` في `REASONS` + `memberId` في المخزن بالموبايل. الـworkflow: `build-debug-apk.yml` على main ويدوي بس، و`flutter-pr-check.yml` (analyze + test) على الـPRs (#668).
+- **اتقاس:** deno check EXIT=0، deno test ١٩٦١ نجحوا، سلسلة SQL EXIT=0، والـmutation (من غير الميجريشن) EXIT=1 «member_id is NOT NULL on all three»، flutter analyze «No issues found!»، flutter test EXIT=0 (+٢٤٠٥).
+- **المالك:** هيكو للتشغيل وسونت بيلدر للكتابة بإشراف Claude؛ وقف أوبس.
+- **فاضل:** اختيار الفرد في الواجهة، ودالة مجال للتفضيلات والأهداف، وتحديث اسم الـcheck المطلوب في حماية `main` لو موجود (`Flutter PR check / verify`).
+- **فخاخ:** هيكو مالوش SendMessage فمابيبعتش للبيلدر؛ البيلدر خلّص من غير نتيجة تحقق. الـmutation لازم يتشغّل على سلسلة من غير الميجريشن.

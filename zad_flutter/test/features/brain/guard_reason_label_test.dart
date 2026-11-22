@@ -22,6 +22,17 @@ void main() {
     );
   });
 
+  test('member_not_found has words in each language', () {
+    expect(
+      guardReasonLabel(ar, 'member_not_found'),
+      isNot(ar.guardReason_fallback),
+    );
+    expect(
+      guardReasonLabel(en, 'member_not_found'),
+      isNot(en.guardReason_fallback),
+    );
+  });
+
   test('an unknown code shows the fallback, never the raw code', () {
     expect(guardReasonLabel(ar, 'no_such_code'), ar.guardReason_fallback);
     expect(guardReasonLabel(en, 'no_such_code'), en.guardReason_fallback);

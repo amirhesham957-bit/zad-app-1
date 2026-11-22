@@ -72,6 +72,7 @@ class InventoryItem {
     this.lowStockThreshold,
     this.expiryDate,
     this.familyId,
+    this.memberId,
     this.createdAt,
     this.restockMode,
     this.restockCycleDays,
@@ -91,6 +92,7 @@ class InventoryItem {
     lowStockThreshold: (json['low_stock_threshold'] as num?)?.toDouble(),
     expiryDate: _date(json['expiry_date']),
     familyId: json['family_id'] as String?,
+    memberId: json['member_id'] as String?,
     createdAt: switch (json['created_at']) {
       final String s => DateTime.parse(s).toUtc(),
       _ => null,
@@ -142,6 +144,10 @@ class InventoryItem {
 
   /// Set by a trigger when the row is shared with the household. Read only.
   final String? familyId;
+
+  /// Whose it is in the household (`zad_household_members.id`). Null: not
+  /// chosen, and the server defaults it to the account's own member.
+  final String? memberId;
 
   /// When the row was created.
   final DateTime? createdAt;
@@ -239,6 +245,7 @@ class InventoryItem {
     lowStockThreshold: lowStockThreshold ?? this.lowStockThreshold,
     expiryDate: clearExpiry ? null : (expiryDate ?? this.expiryDate),
     familyId: familyId,
+    memberId: memberId,
     createdAt: createdAt,
     restockMode: restockMode ?? this.restockMode,
     restockCycleDays: restockCycleDays ?? this.restockCycleDays,
@@ -258,6 +265,7 @@ class InventoryItem {
     lowStockThreshold: lowStockThreshold,
     expiryDate: expiryDate,
     familyId: familyId,
+    memberId: memberId,
     createdAt: createdAt,
     restockMode: restockMode,
     clearsRestockCycle: true,
@@ -278,6 +286,7 @@ class InventoryItem {
     'user_id': userId,
     'item_name': itemName,
     'quantity': quantity,
+    if (memberId != null) 'member_id': memberId,
     if (unit != null) 'unit': unit,
     if (category != null) 'category': category,
     if (lowStockThreshold != null) 'low_stock_threshold': lowStockThreshold,

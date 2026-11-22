@@ -86,6 +86,7 @@ export async function commitIntent(
 
 const REASONS: Record<string, string> = {
   item_not_found: "السجل ده مش موجود عندك",
+  member_not_found: "الفرد ده مش من البيت عندك",
   name_invalid: "اسم الصنف لازم يكون من ٢ لـ١٢٠ حرف",
   qty_not_positive: "الكمية لازم تكون أكبر من صفر",
   qty_too_large: "الكمية كبيرة بشكل مش منطقي — اتأكد من العميل",

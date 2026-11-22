@@ -2,7 +2,7 @@
 
 ملخص مضغوط لأي جلسة أو عامل جديد. **حدّثه في نفس الكومِت** لما حاجة هنا تتغير.
 التفاصيل والتاريخ في `docs/agent/CLAUDE_HISTORY.md` (بالـgrep) و`docs/agent/ZAD_OR_PLAN.md` و`docs/agent/SESSION_LOG.md`. افتحهم لما تحتاج تفصيلة، مش في أول الجلسة.
-آخر تحديث: ٢٠٢٦-١١-٢٢.
+آخر تحديث: ٢٠٢٦-١١-٢٢ (م٢.٦: member_id إلزامي).
 
 ## المنتج والريبو
 
@@ -28,6 +28,7 @@
 - في TS: `commitIntent(sb, userId, scope, tool, input, kind, payload)` في `zad-brain/commitIntent.ts`. الرفض بيرجع `refusalText(reason)`، والكود لازم يتضاف لـ`REASONS` بالعربي، **ومن غير تكرار مفاتيح**. التكرار بيرجع `DUPLICATE_REPLY`.
 - المصدر من `intentSource(scope)`: لفة شات = `model`، كرون = `cron`، زرار أو تأكيد = `manual`. أدوات الفلوس (`CONFIRM_REQUIRED_TOOLS`) بتتسجل `manual`.
 - `recordAction(...)` لازم يفضل بنفس الجدول والـid والـprevious/next، عشان `zad_agent_undo` يعرف يرجّع.
+- `member_id` إلزامي على المخزن والتفضيلات والأهداف (م٢.٦): trigger بيملاه بصف «أنا» لو مااتبعتش، و`payload.member_id` لازم يكون لنفس المستخدم وإلا `member_not_found` (بيتفحص عند إضافة صف جديد بس).
 - `oneDoor_test.ts` بيفشل لو أي ملف في `zad-brain` (أو `_shared/doseDoor.ts`) كتب مباشرة في جدول من الـ١٦ اللي ورا الباب.
 
 ## التستات (محلي، قبل أي كومِت)

@@ -7219,6 +7219,10 @@ class ZadL10nEn extends ZadL10n {
   String get guardReason_item_not_found => 'This record isn’t in your account';
 
   @override
+  String get guardReason_member_not_found =>
+      'That person isn’t in your household';
+
+  @override
   String get guardReason_name_invalid =>
       'The item name must be 2 to 120 characters';
 

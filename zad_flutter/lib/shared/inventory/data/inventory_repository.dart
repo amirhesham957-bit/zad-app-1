@@ -103,6 +103,7 @@ class InventoryRepository {
     String? category,
     double? lowStockThreshold,
     DateTime? expiryDate,
+    String? memberId,
   }) async {
     final userId = _requireUserId();
     final now = _now();
@@ -126,6 +127,7 @@ class InventoryRepository {
       lowStockThreshold:
           lowStockThreshold ?? defaultLowStockThreshold(quantity, unit),
       expiryDate: expiryDate,
+      memberId: memberId,
       isPending: true,
     );
     await _cache.put(item.id, jsonEncode(item.toCacheJson()));
@@ -134,6 +136,7 @@ class InventoryRepository {
       'item_name': item.itemName,
       'quantity': item.quantity,
       'category': item.category,
+      'member_id': ?memberId,
       if (unit != null && unit.trim().isNotEmpty) 'unit': unit.trim(),
       if (expiryDate != null) 'expiry_date': _day(expiryDate),
     }, now);

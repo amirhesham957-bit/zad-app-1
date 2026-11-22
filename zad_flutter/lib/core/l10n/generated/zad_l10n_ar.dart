@@ -7125,6 +7125,9 @@ class ZadL10nAr extends ZadL10n {
   String get guardReason_item_not_found => 'السجل ده مش موجود عندك';
 
   @override
+  String get guardReason_member_not_found => 'مفيش فرد بالاسم ده في البيت';
+
+  @override
   String get guardReason_name_invalid => 'اسم الصنف لازم يكون من ٢ لـ١٢٠ حرف';
 
   @override
@@ -10282,6 +10285,9 @@ class ZadL10nArSa extends ZadL10nAr {
 
   @override
   String get guardReason_item_not_found => 'السجل هذا مو موجود عندك';
+
+  @override
+  String get guardReason_member_not_found => 'ما فيه فرد بهذا الاسم في البيت';
 
   @override
   String get guardReason_name_invalid => 'اسم الصنف لازم يكون من ٢ لـ١٢٠ حرف';
