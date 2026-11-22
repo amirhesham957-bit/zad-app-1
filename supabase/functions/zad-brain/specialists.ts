@@ -183,6 +183,8 @@ const RESTOCK_BUDGET_INTENT = /(معايا|معي|فاضل معايا|في حد�
 const MENU_PLAN_INTENT = /منيو|جدول (ال)?اكل|خطه (ال)?(اكل|غدا|اسبوع)|اكل (ال)?اسبوع|(غدا|عشا) (ال)?اسبوع/;
 // م٥.٢: «امتى نتجمع كلنا؟»، «وقت اللمة» ⇒ plan_gathering_time (gatheringTool.ts).
 const GATHERING_TIME_INTENT = /(امتي|وقت|ميعاد|يوم) (ال)?(نتجمع|لمه|لمتنا|نقعد سوا|نقعد مع بعض)|نتجمع كلنا|لمه (العيله|الاسره)|نقعد سوا/;
+// م٣.٤: «الدوا هيخلص امتى؟»، «اطلب الدوا امتى» ⇒ check_medicine_reorder (pharmacyReorderTool.ts).
+const MEDICINE_REORDER_INTENT = /(الدوا|الدواء|ادويه|ادويتي|العلاج|الحبوب).{0,25}(هيخلص|يخلص|خلص|كفايه|يكفي|اطلبه|اجيبه|اعيد طلب)|(اطلب|اعيد طلب|اجيب).{0,15}(الدوا|الدواء|العلاج) (امتي|ميعاد)|نقطه اعاده الطلب/;
 // م٣.٥: «اصرف كام النهارده؟»، «المصروف الآمن» ⇒ safe_daily_spend (safeSpendTool.ts).
 const SAFE_SPEND_INTENT = /(اصرف|اقدر اصرف|ينفع اصرف) (كام|قد ايه) (النهارده|اليوم)|مصروف (ال)?(نهارده|يوم|اليوم) (ال)?امن|(ال)?مصروف (ال)?امن|هوصل (ل)?(لاخر الشهر|للقبض)|هكمل (ال)?شهر/;
 const BROKE_INTENT = /مفلس|طفران|خلصت فلوسي|فلوسي خلصت|مفيش فلوس|معيش فلوس|معنديش فلوس|ماعنديش فلوس|مخلص فلوسي/;
@@ -293,6 +295,7 @@ export function intentToolHints(message: string, priorReply = ""): string[] {
   if (RESTOCK_BUDGET_INTENT.test(norm)) tools.push("restock_on_budget");
   if (MENU_PLAN_INTENT.test(norm)) tools.push("plan_menu");
   if (GATHERING_TIME_INTENT.test(norm)) tools.push("plan_gathering_time");
+  if (MEDICINE_REORDER_INTENT.test(norm)) tools.push("check_medicine_reorder");
   if (SAFE_SPEND_INTENT.test(norm)) tools.push("safe_daily_spend");
   if (SAVINGS_CHALLENGE_INTENT.test(norm)) tools.push("start_savings_challenge", "stop_savings_challenge");
   if (RECIPE_INTENT.test(norm)) tools.push("suggest_recipes");
@@ -532,7 +535,7 @@ const SPECIALIST_TOOL_SCOPE: Record<Exclude<SpecialistId, "general">, string[]> 
   pharmacy: [
     "add_pharmacy_item", "update_pharmacy_item", "delete_pharmacy_item",
     "log_pharmacy_dose", "find_nearby_stores", "web_search", "emergency_card", "medicine_price",
-    "set_life_circumstance", "end_life_circumstance",
+    "check_medicine_reorder", "set_life_circumstance", "end_life_circumstance",
   ],
   family: [
     "schedule_task", "query_family", "family_digest", "family_mediation", "emergency_card", "start_family_poll", "handover_card",

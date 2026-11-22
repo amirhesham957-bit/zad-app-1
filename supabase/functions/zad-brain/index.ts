@@ -176,6 +176,7 @@ import { eventDayBudget, eventDayBudgetRule } from "./eventDayBudget.ts";
 import { describeSafeSpend } from "./safeSpendTool.ts";
 import { paydayOdds, paydayOddsRule, type SpendRow } from "./paydayOdds.ts";
 import { medicineDaysLeft, medicineLow } from "./medicineStock.ts";
+import { describeReorder, parseReorderInput } from "./pharmacyReorderTool.ts";
 import { budgetAtStart, circumstanceBudget, circumstanceBudgetLine, circumstanceBudgetRule, circumstanceCost } from "./circumstanceBudget.ts";
 import { homeEmergencyRule, technicianFollowUp, techniciansForSnapshot } from "./homeEmergency.ts";
 import { loadWhileAway, whileAwayBlock } from "./whileAway.ts";
@@ -5271,6 +5272,15 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       return describeMenu(menu, costs, snap?.currency ?? "");
     }
 
+    case "check_medicine_reorder": {
+      // م٣.٤: رصيد الدوا ونقطة إعادة الطلب بأيام التوريد وميعاد الجرعة الجاية (pharmacyReorderTool.ts). قراءة بس.
+      const parsed = parseReorderInput(input);
+      if ("error" in parsed) return parsed.error;
+      const { data: meds } = await sb.from("zad_pharmacy_items")
+        .select("name,for_person,remaining_quantity,daily_dose_count,units_per_dose,dose_times").eq("user_id", userId).limit(100);
+      return describeReorder(meds ?? [], parsed.value, new Date().toISOString(), snap?.now_local?.time_zone ?? "UTC");
+    }
+
     case "plan_gathering_time": {
       // م٥.٢: أحسن وقت تقعد فيه العيلة سوا (gatheringTool.ts). المشغول من كلام العميل بس.
       const parsed = parseGatheringInput(input);
@@ -7261,6 +7271,22 @@ export const CHAT_TOOLS: ToolDef[] = [
         },
       },
       required: ["budget", "days", "dishes"],
+    },
+  },
+  {
+    name: "check_medicine_reorder",
+    description:
+      "رصيد الأدوية بعد الجرعات المتسجلة، وكام يوم يكفي، ونقطة إعادة الطلب بأيام التوريد، وميعاد الجرعة الجاية. نادِها لما " +
+      "يسأل «الدوا هيخلص امتى؟» أو «أطلب الدوا إمتى؟». lead_time_days (أيام توريد الصيدلية) من كلام العميل، مش تخمين. " +
+      "الأرقام من الأداة بس.",
+    input_schema: {
+      type: "object",
+      properties: {
+        name: { type: "string", description: "اسم دواء واحد (اختياري، من غيره كل الأدوية)" },
+        lead_time_days: { type: "number", description: "أيام توريد الصيدلية (افتراضي ٣)" },
+        safety_days: { type: "number", description: "أيام أمان (افتراضي ٢)" },
+        time_zone: { type: "string", description: "منطقة الفرد الزمنية لو غير العميل، مثلاً Africa/Cairo" },
+      },
     },
   },
   {
