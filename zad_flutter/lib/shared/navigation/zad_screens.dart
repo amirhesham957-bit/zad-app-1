@@ -61,6 +61,9 @@ abstract final class ZadScreens {
   /// صحة عقل زاد.
   static late OpenScreen showBrainHealth;
 
+  /// صحة العقل: الرفوض وأسبابها.
+  static late OpenScreen showGuardEvents;
+
   /// عقل زاد's hub.
   static late OpenScreen showBrainHub;
 

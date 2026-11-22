@@ -754,5 +754,14 @@
   "familyJoinPasteLink": "عندك رابط دعوة؟ افتح نافذة الانضمام",
   "familyFollowStarted": "بدأت المتابعة.",
   "chorePlanFailed": "ما قدرت أوزّع المهام الحين.",
-  "chorePlanEmptyTitle": "ما فيه مهام مفتوحة تتوزع"
+  "chorePlanEmptyTitle": "ما فيه مهام مفتوحة تتوزع",
+  "guardEventsTitle": "صحة العقل",
+  "guardEventsEmptyTitle": "زاد ما رفض شي لين الحين",
+  "guardEventsEmptyBody": "لما زاد يرفض يكتب شي (مبلغ غلط، صنف مو موجود…) يظهر السبب هنا.",
+  "guardEventsLast7Days": "آخر ٧ أيام",
+  "guardEventsNone7Days": "ما فيه رفض في آخر ٧ أيام",
+  "guardEventsRecent": "آخر الرفوض",
+  "guardEventsErrorTitle": "ما قدرت أجيب الرفوض",
+  "guardEventsErrorBody": "اسحب لتحت نجرب مرة ثانية.",
+  "settingsGuardEventsSubtitle": "اللي رفض زاد يكتبه، وأسباب الرفض"
 }

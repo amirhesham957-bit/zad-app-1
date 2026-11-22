@@ -2859,5 +2859,14 @@
   "chorePrefsDislikes": "Chores they dislike (comma separated)",
   "chorePrefsDislikesHint": "Dishes",
   "choreCancel": "Cancel",
-  "choreSave": "Save"
+  "choreSave": "Save",
+  "guardEventsTitle": "Mind health",
+  "guardEventsEmptyTitle": "Zad hasn't refused anything yet",
+  "guardEventsEmptyBody": "When Zad refuses to write something (a wrong amount, an item that doesn't exist…) the reason will show here.",
+  "guardEventsLast7Days": "Last 7 days",
+  "guardEventsNone7Days": "No refusals in the last 7 days",
+  "guardEventsRecent": "Latest refusals",
+  "guardEventsErrorTitle": "Couldn't load the refusals",
+  "guardEventsErrorBody": "Pull down to try again.",
+  "settingsGuardEventsSubtitle": "What Zad refused to write, and why"
 }

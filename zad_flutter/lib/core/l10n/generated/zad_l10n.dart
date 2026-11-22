@@ -11917,6 +11917,60 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'حفظ'**
   String get choreSave;
+
+  /// No description provided for @guardEventsTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'صحة العقل'**
+  String get guardEventsTitle;
+
+  /// No description provided for @guardEventsEmptyTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'زاد مارفضش حاجة لحد دلوقتي'**
+  String get guardEventsEmptyTitle;
+
+  /// No description provided for @guardEventsEmptyBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'لما زاد يرفض يكتب حاجة (مبلغ غلط، صنف مش موجود…) السبب هيظهر هنا.'**
+  String get guardEventsEmptyBody;
+
+  /// No description provided for @guardEventsLast7Days.
+  ///
+  /// In ar, this message translates to:
+  /// **'آخر ٧ أيام'**
+  String get guardEventsLast7Days;
+
+  /// No description provided for @guardEventsNone7Days.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش رفض في آخر ٧ أيام'**
+  String get guardEventsNone7Days;
+
+  /// No description provided for @guardEventsRecent.
+  ///
+  /// In ar, this message translates to:
+  /// **'آخر الرفوض'**
+  String get guardEventsRecent;
+
+  /// No description provided for @guardEventsErrorTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'مقدرتش أجيب الرفوض'**
+  String get guardEventsErrorTitle;
+
+  /// No description provided for @guardEventsErrorBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'اسحب لتحت نجرب تاني.'**
+  String get guardEventsErrorBody;
+
+  /// No description provided for @settingsGuardEventsSubtitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'اللي زاد رفض يكتبه، وأسباب الرفض'**
+  String get settingsGuardEventsSubtitle;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

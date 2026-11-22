@@ -157,6 +157,14 @@ class SettingsScreen extends ConsumerWidget {
                               .setFoodPatternEnabled(on: on),
                         ),
                       ),
+                      ZadWorldMenuRow(
+                        art: ZadIconArt.brain,
+                        color: color,
+                        title: l.guardEventsTitle,
+                        subtitle: l.settingsGuardEventsSubtitle,
+                        onTap: () =>
+                            unawaited(ZadScreens.showGuardEvents(context)),
+                      ),
                     ],
                   ),
                   // Alerts from زاد: their own sections, owned by the alerts
