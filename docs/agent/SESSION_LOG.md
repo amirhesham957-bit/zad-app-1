@@ -809,3 +809,9 @@ related:
 ## ٢٠٢٦-١١-٢٢ — م٦.٦ (مراجعة مصادر السوشيال)
 - **اتعمل:** قريت `socialSources.ts` و`tiktokDeals.ts` وكرونات `deals-instagram-weekly`/`deals-tiktok-daily`: كلهم رسمي (Graph API، محرك بحث، YouTube Data API). مفيش كود اتغيّر.
 - **فاضل:** المالك يجدّد توكن إنستجرام. الكرون هيفضل يفشل لحد ما يتجدد.
+
+## ٢٠٢٦-١١-٢٣ — م٦.٤ (نص السيرفر والداتابيز)
+- **اتعمل:** `20261123060000_notification_events.sql`: `zad_notification_switches` (مفتاح لكل نوع، الافتراضي مقفول، العميل يقرا ويكتب صفوفه بس من غير مسح) و`zad_notification_reads` (الاستخراج date/time/place/title بس، مفيش عمود نص خام، الكتابة service role). `_shared/notificationEvents.ts` تصنيف صافي (عربي وإنجليزي، سعودي ومصري) بيرجّع حقول منظّمة وعنوان ثابت. `zad-brain/notificationEvents.ts` موصّل في `handleNotificationIngest` قبل بوابة الفلوس: مفيش مفتاح مفتوح = مفيش قراية ولا كتابة. الموعد (تاريخ ووقت موجودين) بيتعمل من `zad_commit_intent` بمصدر `model`؛ الرحلة والمستند بيتسجلوا قراية بس. السطرين في `_schema/schema.json` وسطر الـCI.
+- **اتقاس:** تست SQL على zadpg EXIT=0، وبدون الميجريشن بيفشل EXIT=3. `deno check` EXIT=0، و`deno test -A zad-brain/ _shared/ _schema/` EXIT=0 (٢٠٣٧ نجحوا). mutation: شيل فحص المفتاح بيوقّع تست. مفيش تشغيل على الحي.
+- **فاضل:** الواجهة (م٦.٤ مش متعلّمة)، ومسح الاستخراجات القديمة، ومستند أبشر ما بيتحوّلش نية (محتاج صاحب ونوع).
+- **فخاخ:** `default privileges` بتدّي authenticated مسح على أي جدول جديد، فلازم `revoke all … from authenticated` قبل `grant`. التست كشفها. تست `_schema` بيفشل لو جدول جديد مش في `schema.json`.
