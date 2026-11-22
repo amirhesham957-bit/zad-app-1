@@ -805,3 +805,7 @@ related:
 - **اتعمل:** `tavilyKeys` (من `TAVILY_API_KEY` بفاصلة، و`TAVILY_API_KEY_1..20`، من غير تكرار) و`tavilySearchRotating`: دور بالتناوب، ومفتاح ردّ ٤٣٢/٤٣٣ بيرتاح ١٥ يوم، و٤٢٩ ساعة، و٤٠١/٤٠٣ يوم. `provider_health` بيقول كام مفتاح وكام شغال (أرقام بس).
 - **اتقاس:** `deno check` EXIT=0، و`deno test -A zad-brain/ _shared/ _schema/ zad-core-intelligence/` EXIT=0 (٢٣٠٥ نجحوا). مفيش تشغيل على الحي.
 - **فاضل:** المالك يضيف المفاتيح في أسرار Supabase. الراحة في ذاكرة النسخة بس.
+
+## ٢٠٢٦-١١-٢٢ — م٦.٦ (مراجعة مصادر السوشيال)
+- **اتعمل:** قريت `socialSources.ts` و`tiktokDeals.ts` وكرونات `deals-instagram-weekly`/`deals-tiktok-daily`: كلهم رسمي (Graph API، محرك بحث، YouTube Data API). مفيش كود اتغيّر.
+- **فاضل:** المالك يجدّد توكن إنستجرام. الكرون هيفضل يفشل لحد ما يتجدد.
