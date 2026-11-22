@@ -1,4 +1,4 @@
--- 20261123130000: every app notification of a bound user reaches the bot once; the writers that already push themselves do not double.
+-- 20261123140000: every app notification of a bound user reaches the bot once; the writers that already push themselves do not double.
 --   psql < scratch_scaffold.sql; psql < bot_speaks_scaffold.sql; psql < the migration; psql < this file
 \set ON_ERROR_STOP on
 do $$ begin
