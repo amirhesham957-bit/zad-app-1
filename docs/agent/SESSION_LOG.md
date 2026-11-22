@@ -809,3 +809,10 @@ related:
 ## ٢٠٢٦-١١-٢٢ — م٦.٦ (مراجعة مصادر السوشيال)
 - **اتعمل:** قريت `socialSources.ts` و`tiktokDeals.ts` وكرونات `deals-instagram-weekly`/`deals-tiktok-daily`: كلهم رسمي (Graph API، محرك بحث، YouTube Data API). مفيش كود اتغيّر.
 - **فاضل:** المالك يجدّد توكن إنستجرام. الكرون هيفضل يفشل لحد ما يتجدد.
+
+## ٢٠٢٦-١١-٢٣ — م٦.٣ (إشارات الترند الحقيقية، مش متعلّمة)
+- **اتعمل:** ميجريشن `zad_trend_signals(p_days)` (إضافات قايمة الشراء من `zad_events`، تجميع صنف+بلد+يوم، حد ≥٥ بيوت جوه الـSQL، من غير user/family/member، revoke وgrant لـ`service_role` بس) + تست SQL في سلسلة `edge-functions.yml` + `_shared/or/trendSignals.ts` (يحسب المعتاد من الأيام اللي قبل ويغذّي `detectSurges`، وحد الـ٥ تاني في TS، `recommendBuy` false دايماً).
+- **اتقاس:** `deno check` EXIT=0، و`deno test -A zad-brain/ _shared/ _schema/` EXIT=0 (٢٠٣٥ نجحوا). تست الـSQL على Postgres محلي نجح؛ وبشيل الميجريشن من السلسلة فشل. تست Deno بيفشل لو الميجريشن اتشالت أو الحد اتغيّر لـ١ (EXIT=1 للاتنين).
+- **فاضل:** م٦.٣ مش متعلّمة: مفيش كرون ولا رسالة بتستهلك `readTrendSurges`، والميجريشن مااتنشرتش.
+- **فخاخ:** المعتاد بيعتبر الأيام اللي تحت ٥ بيوت صفر (محافظ). التجميع بـUTC مش بتوقيت السوق. البلد من `zad_users.country` (حرفين).
+
