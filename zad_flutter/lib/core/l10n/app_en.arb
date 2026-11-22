@@ -2870,6 +2870,7 @@
   "guardEventsErrorBody": "Pull down to try again.",
   "settingsGuardEventsSubtitle": "What Zad refused to write, and why",
   "guardReason_item_not_found": "This record isn’t in your account",
+  "guardReason_member_not_found": "That person isn’t in your household",
   "guardReason_name_invalid": "The item name must be 2 to 120 characters",
   "guardReason_qty_not_positive": "The quantity must be more than zero",
   "guardReason_qty_too_large": "The quantity is unreasonably large — check with the customer",

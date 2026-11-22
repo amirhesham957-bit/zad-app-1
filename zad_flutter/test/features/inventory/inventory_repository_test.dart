@@ -253,6 +253,45 @@ void main() {
       expect(intent.containsKey('user_id'), isFalse);
     });
 
+    test(
+      'member_id rides the intent only when chosen, and reads back',
+      () async {
+        await pantry.add(itemName: 'لبن');
+        final bare =
+            queued(OutboxKind.commitInventoryIntent).single.payload['payload']
+                as Map;
+        expect(bare.containsKey('member_id'), isFalse);
+
+        final item = await pantry.add(itemName: 'جبنة', memberId: 'm-1');
+        final intent =
+            queued(OutboxKind.commitInventoryIntent).last.payload['payload']
+                as Map;
+        expect(intent['member_id'], 'm-1');
+        expect(
+          pantry.cached().firstWhere((i) => i.id == item.id).memberId,
+          'm-1',
+        );
+        expect(
+          InventoryItem.fromJson(<String, dynamic>{
+            ...serverRow('x'),
+            'member_id': 'm-2',
+          }).memberId,
+          'm-2',
+        );
+
+        await pantry.adjustQuantity(item.id, 1);
+        final plus =
+            queued(OutboxKind.commitInventoryIntent).last.payload['payload']
+                as Map;
+        // A top-up lands on the existing row, whose owner is already set.
+        expect(plus.containsKey('member_id'), isFalse);
+        expect(
+          pantry.cached().firstWhere((i) => i.id == item.id).memberId,
+          'm-1',
+        );
+      },
+    );
+
     test('refuses to write with nobody signed in', () async {
       final orphan = InventoryRepository(
         cache: pantryBox,

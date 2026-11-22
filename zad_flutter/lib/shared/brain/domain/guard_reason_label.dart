@@ -17,6 +17,7 @@ String guardReasonLabel(ZadL10n l, String reason) {
   if (trimmed.isEmpty) return l.guardReason_fallback;
   if (!_snakeCode.hasMatch(trimmed)) return trimmed;
   return switch (trimmed) {
+    'member_not_found' => l.guardReason_member_not_found,
     'item_not_found' => l.guardReason_item_not_found,
     'name_invalid' => l.guardReason_name_invalid,
     'qty_not_positive' => l.guardReason_qty_not_positive,

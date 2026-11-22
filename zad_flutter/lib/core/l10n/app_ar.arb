@@ -6779,6 +6779,7 @@
   "guardEventsErrorBody": "اسحب لتحت نجرب تاني.",
   "settingsGuardEventsSubtitle": "اللي زاد رفض يكتبه، وأسباب الرفض",
   "guardReason_item_not_found": "السجل ده مش موجود عندك",
+  "guardReason_member_not_found": "مفيش فرد بالاسم ده في البيت",
   "guardReason_name_invalid": "اسم الصنف لازم يكون من ٢ لـ١٢٠ حرف",
   "guardReason_qty_not_positive": "الكمية لازم تكون أكبر من صفر",
   "guardReason_qty_too_large": "الكمية كبيرة بشكل مش منطقي — اتأكد من العميل",

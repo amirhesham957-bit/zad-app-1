@@ -11978,6 +11978,12 @@ abstract class ZadL10n {
   /// **'السجل ده مش موجود عندك'**
   String get guardReason_item_not_found;
 
+  /// No description provided for @guardReason_member_not_found.
+  ///
+  /// In ar, this message translates to:
+  /// **'مفيش فرد بالاسم ده في البيت'**
+  String get guardReason_member_not_found;
+
   /// No description provided for @guardReason_name_invalid.
   ///
   /// In ar, this message translates to:
