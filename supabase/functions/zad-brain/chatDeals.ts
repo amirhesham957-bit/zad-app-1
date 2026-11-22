@@ -8,9 +8,10 @@
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { codeStoreKey } from "./dealCodes.ts";
 import { isGroceryTerm } from "../_shared/groceryLexicon.ts";
+import { offerValue } from "../_shared/or/offerValue.ts";
 import { offerMatchesNeed } from "./productIdentity.ts";
 import { itemKey } from "./shared.ts";
-import { customerCity, dealCountry, dealsForCity } from "./tasteDeals.ts";
+import { customerCity, dealCountry, dealsForCity, runningOutNames } from "./tasteDeals.ts";
 
 export const CHAT_DEALS_MAX = 8;
 export const CHAT_CODES_MAX = 4;
@@ -43,13 +44,32 @@ export interface OwnOfferRow {
 export const CHAT_OWN_MAX = 5;
 
 /** عروض الإشعارات اللي تطابق الطلب: المحل لو اتطلب، والصنف لو اتقال (أو العرض على المحل كله). الأحدث الأول. نقي. */
-export function matchOwnOffers(rows: readonly OwnOfferRow[], store: string, item: string, max = CHAT_OWN_MAX): OwnOfferRow[] {
+export function matchOwnOffers(
+  rows: readonly OwnOfferRow[], store: string, item: string, max = CHAT_OWN_MAX, needed: readonly string[] = [],
+): OwnOfferRow[] {
   const wantItem = isGroceryTerm(item) ? "" : item.trim();
-  return rows
+  const matched = rows
     .filter((r) => r.store)
     .filter((r) => !store.trim() || sameStore(store, r.store))
-    .filter((r) => !wantItem || !r.item || offerMatchesNeed(wantItem, r.item))
-    .slice(0, max);
+    .filter((r) => !wantItem || !r.item || offerMatchesNeed(wantItem, r.item));
+  return rankOwnOffers(matched, needed).slice(0, max);
+}
+
+/**
+ * م٦.١: العرض على صنف قرّب يخلص من المخزن (needed) بيتقدّم. القيمة = التوفير × احتمال الاحتياج (٠٫٩ لو الصنف
+ * ناقص، ٠٫٣ غير كده)؛ التوفير بالنسبة المئوية لو معروفة (وإلا المبلغ). مفيش بيانات سعر معتاد هنا فالتوفير بوحدة العرض
+ * نفسها، ومن غير `needed` الترتيب بالأحدث زي ما كان (الفرز ثابت). مابيخبّيش عرض، بس بيرتّب.
+ */
+export function rankOwnOffers(rows: readonly OwnOfferRow[], needed: readonly string[]): OwnOfferRow[] {
+  if (!needed.length) return rows.slice();
+  const scored = rows.map((r, i) => {
+    const pct = Number(r.discount_percent);
+    const amt = Number(r.discount_amount);
+    const saving = Number.isFinite(pct) && pct > 0 ? pct : Number.isFinite(amt) && amt > 0 ? amt : 0;
+    const isNeeded = !!r.item && needed.some((n) => offerMatchesNeed(n, r.item as string));
+    return { r, i, v: offerValue({ id: String(i), price: 0, usualPrice: saving, needProb: isNeeded ? 0.9 : 0.3, annoyance: 0 }) };
+  });
+  return scored.sort((a, b) => b.v - a.v || a.i - b.i).map((x) => x.r);
 }
 
 /** البلاد اللي SHEIN بتروحلها؛ مصر على أمازون. */
@@ -293,9 +313,12 @@ export async function findChatDeals(sb: SupabaseClient, userId: string, store: s
     .select("store,item,discount_percent,discount_amount,currency,code,link,expires_at")
     .eq("user_id", userId).gt("expires_at", new Date(now).toISOString()).order("created_at", { ascending: false }).limit(40)
     .then((r) => r, () => ({ data: null }));
+  const { data: home } = await sb.from("zad_home_state").select("state").eq("user_id", userId).maybeSingle()
+    .then((r) => r, () => ({ data: null }));
+  const needed = runningOutNames((home as { state?: unknown } | null)?.state);
   return describeChatDeals({
     ...found,
-    own: matchOwnOffers((own ?? []) as OwnOfferRow[], store, item),
+    own: matchOwnOffers((own ?? []) as OwnOfferRow[], store, item, CHAT_OWN_MAX, needed),
     picks: matchChatPicks((picks ?? []) as ChatPickRow[], store, item),
     shein: matchSheinOffers((shein ?? []) as SheinOfferRow[], store, item),
   }, store, item);
