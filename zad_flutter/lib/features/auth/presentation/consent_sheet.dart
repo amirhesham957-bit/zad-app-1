@@ -94,6 +94,15 @@ class _ConsentSheet extends StatelessWidget {
         l.consentPoint3Lead,
         l.consentPoint3Body,
       ),
+      // Google Play User Data policy (2026-07-15): data sent to third-party
+      // AI is disclosed before consent, not only in the legal text (§5.3).
+      _Point(
+        Icons.cloud_upload_outlined,
+        const Color(0xFF5B3FB8),
+        const Color(0xFFEEE9FB),
+        l.consentPointAiLead,
+        l.consentPointAiBody,
+      ),
       _Point(
         Icons.auto_awesome,
         const Color(0xFF5B3FB8),

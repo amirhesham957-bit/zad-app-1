@@ -7,11 +7,11 @@
 /// the Chinese brands, turn on auto-start. This card says so, per brand, and
 /// opens the app's system page.
 ///
-/// While battery optimisation is on, the button asks for the exemption with
-/// the system dialog (REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, owner's decision
-/// 2026-10-26, ZAD_PLAN 2.1) and falls back to the app's page when that is
-/// refused or unavailable. Once off, it opens the app's page for auto-start,
-/// which no permission covers.
+/// While battery optimisation is on, the button opens the system's
+/// battery-optimisation list, where the customer switches Zad to "not
+/// optimised". The system dialog (REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, owner
+/// 2026-10-26) was dropped for Google Play on 2026-11-22. Once off, it opens
+/// the app's page for auto-start, which no permission covers.
 library;
 
 import 'dart:async';
@@ -22,6 +22,7 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/l10n/l10n.dart';
+import 'package:zad/shared/bank/data/battery_settings.dart';
 import 'package:zad/shared/worlds/world_card.dart';
 
 /// The steps, per brand. UI text.
@@ -53,16 +54,6 @@ const List<(String, String)> kKeepAliveSteps = <(String, String)>[
   ),
   ('باقي الأجهزة', 'معلومات التطبيق ← البطارية ← «بدون قيود».'),
 ];
-
-/// Whether battery optimisation is already off for Zad; null when it cannot
-/// be told (a test host, a platform without it).
-Future<bool?> batteryUnrestricted() async {
-  try {
-    return await Permission.ignoreBatteryOptimizations.isGranted;
-  } on Object {
-    return null;
-  }
-}
 
 /// The card.
 class KeepAliveGuide extends StatefulWidget {
@@ -110,16 +101,10 @@ class _KeepAliveGuideState extends State<KeepAliveGuide>
     }
   }
 
-  /// The system's «السماح لزاد بالعمل في الخلفية؟» dialog; the app's page if
-  /// the customer says no or the phone has no such dialog.
+  /// The system's battery-optimisation list (the app's page on a phone
+  /// without it). The card looks again when the customer comes back.
   Future<void> _askExemption() async {
-    var granted = false;
-    try {
-      granted = await Permission.ignoreBatteryOptimizations.request().isGranted;
-    } on Object {
-      // No plugin (a test host).
-    }
-    if (!granted) await _openSettings();
+    if (!await openBatterySettings()) await _openSettings();
     await _check();
   }
 

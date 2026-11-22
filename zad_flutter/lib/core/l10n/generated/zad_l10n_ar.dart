@@ -4455,6 +4455,13 @@ class ZadL10nAr extends ZadL10n {
       'ومابنقراش كلمات سر البنك ولا أرقام الكروت ولا أكواد OTP.';
 
   @override
+  String get consentPointAiLead => 'كلامك بيتبعت لذكاء اصطناعي من شركات تانية.';
+
+  @override
+  String get consentPointAiBody =>
+      'عشان زاد يفهمك ويرد عليك، اللي بتكتبه أو بتقوله ورسايل البنك وفواتيرك بتتبعت لمزودي ذكاء اصطناعي خارجيين (زي Google و Groq) يعالجوها، وبس.';
+
+  @override
   String get consentPoint4Lead => 'الذكاء الاصطناعي بيساعد، وممكن يغلط.';
 
   @override
@@ -8355,6 +8362,13 @@ class ZadL10nArSa extends ZadL10nAr {
 
   @override
   String get consentPoint3Lead => 'ما نبيع بياناتك لأحد.';
+
+  @override
+  String get consentPointAiLead => 'كلامك يُرسل لذكاء اصطناعي من شركات ثانية.';
+
+  @override
+  String get consentPointAiBody =>
+      'عشان زاد يفهمك ويرد عليك، اللي تكتبه أو تقوله ورسائل البنك وفواتيرك تُرسل لمزودي ذكاء اصطناعي خارجيين (مثل Google و Groq) يعالجونها، وبس.';
 
   @override
   String get consentPoint4Body =>

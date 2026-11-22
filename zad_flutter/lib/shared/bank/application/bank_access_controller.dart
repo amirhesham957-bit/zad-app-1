@@ -14,9 +14,9 @@ library;
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/shared/bank/data/bank_capture_marker.dart';
+import 'package:zad/shared/bank/data/battery_settings.dart';
 import 'package:zad/shared/bank/data/device_send_key.dart';
 import 'package:zad/shared/bank/data/notification_drain.dart';
 import 'package:zad/shared/session/product_events.dart';
@@ -63,29 +63,17 @@ String bankPulseEvent(BankAccessHealth health) => switch (health) {
 /// cannot be told (a test host, a platform without it). A provider so tests
 /// say the answer.
 final batteryUnrestrictedProvider = Provider<Future<bool?> Function()>(
-  (ref) => () async {
-    try {
-      return await Permission.ignoreBatteryOptimizations.isGranted;
-    } on Object {
-      return null;
-    }
-  },
+  (ref) => batteryUnrestricted,
 );
 
-/// Asks Android to exempt Zad from battery optimisation — its own dialog,
-/// and the app's settings page when the customer says no or the phone has no
-/// such dialog. Returns whether the exemption stands afterwards. A provider so
-/// tests say the answer.
+/// Opens the system's battery-optimisation list so the customer exempts Zad
+/// there (no REQUEST_IGNORE_BATTERY_OPTIMIZATIONS: Play, owner 2026-11-22).
+/// Returns whether the exemption already stands; the card looks again when
+/// the customer comes back. A provider so tests say the answer.
 final batteryExemptionRequestProvider = Provider<Future<bool> Function()>(
   (ref) => () async {
-    try {
-      if (await Permission.ignoreBatteryOptimizations.request().isGranted) {
-        return true;
-      }
-      await openAppSettings();
-    } on Object {
-      // No plugin (a test host).
-    }
+    if (await batteryUnrestricted() ?? false) return true;
+    await openBatterySettings();
     return false;
   },
 );

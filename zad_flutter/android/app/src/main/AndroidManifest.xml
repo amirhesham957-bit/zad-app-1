@@ -24,8 +24,10 @@
       customer choose precise, which a shop 400 m away needs. Street alerts
       (packages/zad_geofence) add ACCESS_BACKGROUND_LOCATION from their own
       manifest: geofences, which Android watches itself — still no stream.
-      Asked only when the customer turns them on; the app is sideloaded, not
-      on Play (the owner's decision), so Play's review of it does not apply.
+      Asked only when the customer turns them on, after a prominent disclosure
+      that says it works with the app closed (family_follow.dart, the street
+      alerts card). The app ships on Google Play (owner, 2026-11-22): background
+      and precise location each need their Play Console declaration (ZAD_PLAN 0.6).
     -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
@@ -42,13 +44,15 @@
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <!--
-      The bank reading (ZAD_PLAN 2.1): the owner's phone revoked or stalled the
-      notification listener four times in 21 days. The «خلّي زاد شغال» card
-      asks for the exemption with the system dialog instead of only pointing
-      at settings (owner's decision 2026-10-26). Play-sensitive: declare it in
-      the Play Console (ZAD_PLAN 0.6) as needed for the bank reading.
+      No REQUEST_IGNORE_BATTERY_OPTIMIZATIONS (owner, 2026-11-22): Google Play
+      rejects it unless the app's core use breaks without it. The «خلّي زاد
+      شغال» card reads the state with PowerManager and opens the system's
+      battery-optimisation list instead (MainActivity, channel zad/battery),
+      neither of which needs it. Removed here too in case a plugin adds it.
     -->
-    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
+    <uses-permission
+        android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"
+        tools:node="remove"/>
 
     <application
         android:label="@string/app_name"
