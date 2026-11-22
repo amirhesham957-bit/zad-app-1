@@ -7446,6 +7446,20 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get pantryWhoseMe => 'أنا';
+
+  @override
+  String pantryRateEstimate(String days) {
+    return 'تقديرنا إنه يكفي حوالي $days يوم';
+  }
+
+  @override
+  String get pantryRateFaster => 'بيخلص أسرع';
+
+  @override
+  String get pantryRateSlower => 'بيخلص أبطأ';
+
+  @override
+  String get pantryRateSaved => 'سجّلنا تصحيحك';
 }
 
 /// The translations for Arabic, as used in Saudi Arabia (`ar_SA`).
@@ -10614,4 +10628,18 @@ class ZadL10nArSa extends ZadL10nAr {
 
   @override
   String get pantryWhoseMe => 'أنا';
+
+  @override
+  String pantryRateEstimate(String days) {
+    return 'تقديرنا إنه يكفي قرابة $days يوم';
+  }
+
+  @override
+  String get pantryRateFaster => 'يخلص أسرع';
+
+  @override
+  String get pantryRateSlower => 'يخلص أبطأ';
+
+  @override
+  String get pantryRateSaved => 'سجّلنا تصحيحك';
 }

@@ -25,6 +25,10 @@ import 'package:zad/shared/inventory/data/inventory_remote.dart';
 import 'package:zad/shared/inventory/domain/inventory_item.dart';
 import 'package:zad/shared/inventory/domain/inventory_rules.dart';
 
+/// What one «أسرع / أبطأ» tap multiplies (or divides) the rate by: the same
+/// number as `TAP_FACTOR` in `_shared/or/rateCorrection.ts`.
+const double kRateTapFactor = 1.3;
+
 /// Holds the pantry.
 class InventoryRepository {
   /// Creates a repository.
@@ -238,6 +242,25 @@ class InventoryRepository {
       }, now);
     }
     return _read(_cache.get(id) ?? '');
+  }
+
+  /// «أسرع / أبطأ» on the estimate (ZAD_OR_PLAN م٣.٢): the rate the estimate
+  /// implies (the count over [daysLeft]) moved by [kRateTapFactor], sent as
+  /// `inventory.rate_corrected`. The server keeps it on the row and the
+  /// estimate follows it. Does nothing without a positive count and estimate.
+  Future<void> correctRate(
+    String id, {
+    required double daysLeft,
+    required bool faster,
+  }) async {
+    final current = _read(_cache.get(id) ?? '');
+    if (current == null || current.quantity <= 0 || daysLeft <= 0) return;
+    final rate = current.quantity / daysLeft;
+    final next = faster ? rate * kRateTapFactor : rate / kRateTapFactor;
+    await _queueIntent('inventory.rate_corrected', id, <String, dynamic>{
+      'item_id': id,
+      'rate_per_day': double.parse(next.toStringAsFixed(4)),
+    }, _now());
   }
 
   /// Removes a row from the pantry.

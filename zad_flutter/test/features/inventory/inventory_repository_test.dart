@@ -483,6 +483,41 @@ void main() {
     });
   });
 
+  group('«أسرع / أبطأ» (م٣.٢)', () {
+    Map<String, dynamic> lastRate() => Map<String, dynamic>.from(
+      queued(OutboxKind.commitInventoryIntent)
+              .where((e) => e.payload['kind'] == 'inventory.rate_corrected')
+              .last
+              .payload['payload']
+          as Map,
+    );
+
+    test('the rate the estimate implies is moved by the tap factor', () async {
+      final item = await pantry.add(itemName: 'لبن', quantity: 6);
+
+      // 6 over 10 days = 0.6 a day.
+      await pantry.correctRate(item.id, daysLeft: 10, faster: true);
+      expect(lastRate()['item_id'], item.id);
+      expect(lastRate()['rate_per_day'], closeTo(0.6 * kRateTapFactor, 1e-4));
+
+      await pantry.correctRate(item.id, daysLeft: 10, faster: false);
+      expect(lastRate()['rate_per_day'], closeTo(0.6 / kRateTapFactor, 1e-4));
+    });
+
+    test('nothing to correct, nothing queued', () async {
+      final empty = await pantry.add(itemName: 'لبن');
+      await pantry.adjustQuantity(empty.id, -1);
+      final full = await pantry.add(itemName: 'رز', quantity: 2);
+      final before = outbox.entries().length;
+
+      await pantry.correctRate(empty.id, daysLeft: 10, faster: true);
+      await pantry.correctRate('nope', daysLeft: 10, faster: true);
+      await pantry.correctRate(full.id, daysLeft: 0, faster: true);
+
+      expect(outbox.entries(), hasLength(before));
+    });
+  });
+
   group('changing a count', () {
     test('clamps at zero rather than going negative', () async {
       final item = await pantry.add(itemName: 'لبن', quantity: 3);

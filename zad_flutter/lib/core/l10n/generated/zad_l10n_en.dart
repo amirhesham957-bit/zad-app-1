@@ -7571,4 +7571,18 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get pantryWhoseMe => 'Me';
+
+  @override
+  String pantryRateEstimate(String days) {
+    return 'We estimate it lasts about $days days';
+  }
+
+  @override
+  String get pantryRateFaster => 'Runs out faster';
+
+  @override
+  String get pantryRateSlower => 'Runs out slower';
+
+  @override
+  String get pantryRateSaved => 'Your correction is saved';
 }

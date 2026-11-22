@@ -6871,5 +6871,13 @@
   "pantryWhoseField": "لمين؟",
   "pantryWhoseMe": "أنا",
   "@pantryWhoseField": {"description": "Pantry add dialog: whose it is in the household."},
-  "@pantryWhoseMe": {"description": "Pantry add dialog: the account owner's own entry."}
+  "@pantryWhoseMe": {"description": "Pantry add dialog: the account owner's own entry."},
+  "pantryRateEstimate": "تقديرنا إنه يكفي حوالي {days} يوم",
+  "pantryRateFaster": "بيخلص أسرع",
+  "pantryRateSlower": "بيخلص أبطأ",
+  "pantryRateSaved": "سجّلنا تصحيحك",
+  "@pantryRateEstimate": {"description": "Pantry edit dialog: the estimate in days.", "placeholders": {"days": {"type": "String"}}},
+  "@pantryRateFaster": {"description": "Pantry edit dialog: correction tap, consumption is faster."},
+  "@pantryRateSlower": {"description": "Pantry edit dialog: correction tap, consumption is slower."},
+  "@pantryRateSaved": {"description": "Pantry edit dialog: after a correction tap."}
 }

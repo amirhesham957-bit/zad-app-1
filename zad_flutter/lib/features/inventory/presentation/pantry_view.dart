@@ -1405,6 +1405,56 @@ class _EditState extends ConsumerState<_EditInventoryDialog> {
     super.dispose();
   }
 
+  bool _rateTapped = false;
+
+  /// «أسرع / أبطأ» (م٣.٢): only where the server has an estimate to correct.
+  List<Widget> _rateTap() {
+    final days = ref.watch(pantryLearningViewProvider).daysLeftOf(widget.item);
+    if (days == null || days <= 0 || widget.item.quantity <= 0) {
+      return const <Widget>[];
+    }
+    final l = context.l10n;
+    Future<void> tap({required bool faster}) async {
+      setState(() => _rateTapped = true);
+      await ref
+          .read(pantryControllerProvider.notifier)
+          .correctRate(widget.item, daysLeft: days, faster: faster);
+    }
+
+    return <Widget>[
+      Align(
+        alignment: AlignmentDirectional.centerStart,
+        child: Text(
+          _rateTapped
+              ? l.pantryRateSaved
+              : l.pantryRateEstimate(days.round().toString()),
+          style: ZadType.bodySmall,
+        ),
+      ),
+      const SizedBox(height: ZadSpacing.xs),
+      Row(
+        children: <Widget>[
+          Expanded(
+            child: OutlinedButton(
+              key: const ValueKey<String>('pantry-rate-faster'),
+              onPressed: _rateTapped ? null : () => tap(faster: true),
+              child: Text(l.pantryRateFaster),
+            ),
+          ),
+          const SizedBox(width: ZadSpacing.sm),
+          Expanded(
+            child: OutlinedButton(
+              key: const ValueKey<String>('pantry-rate-slower'),
+              onPressed: _rateTapped ? null : () => tap(faster: false),
+              child: Text(l.pantryRateSlower),
+            ),
+          ),
+        ],
+      ),
+      const SizedBox(height: ZadSpacing.sm),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     // Zero is a count here — an item that ran out is still renamed or marked
@@ -1487,6 +1537,7 @@ class _EditState extends ConsumerState<_EditInventoryDialog> {
               onChanged: (d) => setState(() => _expiry = d),
             ),
             const SizedBox(height: ZadSpacing.sm),
+            ..._rateTap(),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
               value: _occasional,
