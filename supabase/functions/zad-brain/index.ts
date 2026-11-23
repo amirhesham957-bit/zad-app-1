@@ -8205,6 +8205,21 @@ async function answerFastPath(
       executed: [{ tool: "add_appointment", ok: true, summary: result }],
     };
   }
+  if (intent.kind === "shopping_add") {
+    // نفس add_shopping_item اللي الموديل بينادي عليها: نفس التحقق، وكتابتها من zad_commit_intent
+    // («shopping.added»). مفتاح التكرار بالدقيقة: الكلاينت لو أعاد الطلب مايزودش الكمية.
+    const result = await runTool(sb, userId, "add_shopping_item", { item_name: intent.item, quantity: 1 }, {},
+      freshContext(userId), { source, runId: null, eventKey: `fast:${intent.item}:${Math.floor(Date.now() / 60_000)}` });
+    if (result.startsWith("مرفوض")) {
+      console.warn("fast path shopping refused, the model takes it:", result.slice(0, 160));
+      return null;
+    }
+    return {
+      reply: `تمام 🛒 «${intent.item}»: ${result}.`,
+      proposals: [],
+      executed: [{ tool: "add_shopping_item", ok: true, summary: result }],
+    };
+  }
   if (intent.kind === "balance") {
     // Same call buildSnapshot makes — p_tz defaults inside the function, which derives the
     // zone from the account's country. Passing one from here would be a second source of
