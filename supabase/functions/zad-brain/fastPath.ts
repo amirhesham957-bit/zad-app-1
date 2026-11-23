@@ -27,7 +27,8 @@
 export type FastIntent =
   | { kind: "balance" }
   | { kind: "log_expense"; amount: number; title: string; wallet: "cash" | "card" | null }
-  | { kind: "relative_reminder"; minutes: number; title: string };
+  | { kind: "relative_reminder"; minutes: number; title: string }
+  | { kind: "shopping_add"; item: string };
 
 const ARABIC_INDIC = "٠١٢٣٤٥٦٧٨٩";
 const EASTERN_ARABIC_INDIC = "۰۱۲۳۴۵۶۷۸۹";
@@ -121,6 +122,9 @@ export function parseFastPath(raw: string): FastIntent | null {
   // A balance question with a question mark is still just a balance question, but
   // "سجل ٥٠ قهوة و٣٠ شاي" must never be read as one transaction.
   if (MULTI_CLAUSE.test(message)) return null;
+
+  const shopping = parseShoppingAdd(message);
+  if (shopping) return shopping;
 
   if (!LOG_VERB.test(lowered)) return null;
   // «ضيف لبن 2» is two bottles of milk, not a 2-pound expense, and «ضيف موعد الدكتور 5» is
@@ -230,4 +234,31 @@ export function parseRelativeReminder(message: string): FastIntent | null {
   const title = m[2].trim().replace(/^(?:إني|اني|أني|ب)\s*/, "").trim();
   if (title.length < 2 || REMINDER_TAIL_REFUSE.test(title)) return null;
   return { kind: "relative_reminder", minutes, title };
+}
+
+
+// ── «ضيف لبن للقايمة» (م٤.١، ٢٣/١١) ───────────────────────────────────────────────────────────
+// صنف واحد، من غير كمية ولا وحدة، على قايمة التسوق — والكتابة بتعدي من نفس الباب (add_shopping_item ←
+// zad_commit_intent «shopping.added»). أي لبس (رقم، وحدة، حرف عطف، كلمة مخزن/دوا/ميعاد) = الموديل.
+
+const SHOPPING_ADD_RE = new RegExp(
+  "^(?:ضيف|أضف|زود|حط)\\s+(.{2,40}?)\\s+" +
+  "(?:لل?(?:قايمة|قائمة|لستة|ليستة)|في (?:ال)?(?:قايمة|قائمة|لستة|ليستة)|للتسوق)" +
+  "(?:\\s+(?:التسوق|المشتريات|الشراء))?$",
+);
+/** وحدة أو كمية أو مخزن/صيدلية/ميعاد: شغل أدوات تانية أو كمية محتاجة فهم، فللموديل. */
+const SHOPPING_ITEM_REFUSE = new RegExp(
+  "\\d|" + AR_START + "(?:كيلو|لتر|علبة|علب|كرتونة|دستة|حبة|حبات|شوية|كام|كمان|مخزن|مخزون|صيدلية|دوا|دواء|موعد|ميعاد|قايمة|قائمة)" +
+    AR_END + "|pantry|inventory",
+  "i",
+);
+
+export function parseShoppingAdd(message: string): FastIntent | null {
+  const m = SHOPPING_ADD_RE.exec(stripTashkeel(message));
+  if (!m) return null;
+  if (MULTI_CLAUSE.test(message)) return null;
+  const item = m[1].replace(/\s+/g, " ").trim();
+  if (item.length < 2 || item.split(" ").length > 4) return null;
+  if (SHOPPING_ITEM_REFUSE.test(item) || MONEY_WORD.test(item)) return null;
+  return { kind: "shopping_add", item };
 }
