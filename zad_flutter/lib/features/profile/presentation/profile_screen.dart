@@ -1056,6 +1056,7 @@ class _KidsModeCard extends ConsumerWidget {
     final isAdmin = family.isAdmin;
     final isChild = ref.watch(isChildRoleProvider);
     final unlocked = ref.watch(kidsModeProvider.select((s) => s.pinUnlocked));
+    final manual = ref.watch(kidsModeProvider.select((s) => s.manual));
     if (isChild && unlocked) {
       return _KidsCard(
         child: ZadWorldMenuRow(
@@ -1085,7 +1086,7 @@ class _KidsModeCard extends ConsumerWidget {
         subtitle: 'لما تدي الجهاز لطفلك مؤقتاً — الخروج محتاج PIN',
         onTap: () => unawaited(enter()),
         trailing: Switch(
-          value: false,
+          value: manual,
           onChanged: (on) => on ? unawaited(enter()) : null,
         ),
       ),
