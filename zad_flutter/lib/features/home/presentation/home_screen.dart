@@ -35,7 +35,6 @@ import 'package:zad/features/home/presentation/campaign_stories.dart';
 import 'package:zad/features/home/presentation/close_day_card.dart';
 import 'package:zad/features/home/presentation/coverage_note.dart';
 import 'package:zad/features/home/presentation/daily_brief_card.dart';
-import 'package:zad/features/home/presentation/essential_permissions.dart';
 import 'package:zad/features/home/presentation/grocery_purchase_prompt.dart';
 import 'package:zad/features/home/presentation/home_activation_card.dart';
 import 'package:zad/features/home/presentation/home_amazon_strip.dart';
@@ -211,9 +210,8 @@ class HomeScreen extends ConsumerWidget {
               // «موجز زاد النهارده»: the brain says what matters today.
               const ZadAppearOnEntry(delayMs: 50, child: DailyBriefCard()),
               const SizedBox(height: ZadSpacing.lg),
-              // The bank channel's state, then what it brought.
-              const BankListeningPill(),
-              const SizedBox(height: 18),
+              // The bank channel's state lives in «حالة زاد» at the top (one
+              // place for every permission); here only what it brought.
               ZadSlots.stuckNotificationsSlot(),
               const HomeRecentTransactions(),
               const SizedBox(height: 18),
@@ -230,7 +228,6 @@ class HomeScreen extends ConsumerWidget {
               const AdWeekCard(),
               ZadTrailingGap(gap: 16, child: ZadSlots.brokeModeSlot()),
               ZadTrailingGap(gap: 16, child: ZadSlots.savingsChallengeSlot()),
-              const EssentialPermissionsCard(),
               const HomeActivationSlot(),
               const WhoAreYouCard(),
               const InventoryCheckInSlot(),
