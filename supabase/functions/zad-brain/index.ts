@@ -293,6 +293,8 @@ function gateCall(g: { system: string; user: string }, model = MODEL_ROUTINE) {
 // بنتيجة الأداة التانية. ٨ لفات كحد أقصى (مش ٦ زي ما مقترحات تانية بتقول — طلب المستخدم
 // صراحة "up to 8").
 const MAX_AGENT_TURNS = 8;
+/** مهلة البث قبل ما نرجع للنداء العادي (كانت ٣٠ ثانية). رد الشات ١٢٠٠ توكن بالكتير، فمفيش بث سليم بياخد أكتر. */
+const STREAM_TIMEOUT_MS = 8_000;
 // حارس منفصل عن سقف اللفات: لفة هربانة (الموديل بينادي أدوات باستمرار من غير ما يوصل
 // لسبب واضح يوقف عنده) بتتوقف بيه قبل ما توصل للفة الـ٨ وهي مستهلكة تكلفة فعلية. الرقم
 // أكبر بكتير من أي حوار طبيعي (لفة أو اتنين، ~1200-2500 توكن) عشان مايأثرش على أي طلب
@@ -1512,7 +1514,8 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
   // النوع بيتقري ومابيتحطش في السياق، والاسم مابيتقراش خالص.
   const [{ data: profileRow, error: profileErr }, { data: nameRow }] = await early.profile;
   // الجو (weather.ts، الموجة ٤): مدينة الملف وإلا عاصمة البلد — من الكاش ٣ ساعات. null = مش عارفين.
-  const weatherFacts = await loadWeather(sb, {
+  // مش بنستنى الجو هنا: بيشتغل جنب باقي الاستعلامات وبنقراه عند أول استخدام (loadWeather عمرها ما بترمي).
+  const weatherPromise = loadWeather(sb, {
     country: userRes.data?.country,
     city: (profileRow as { city?: string | null } | null)?.city ?? null,
     point: await early.homePoint,
@@ -1854,7 +1857,7 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
       appointmentsToday: houseAppointmentsToday, householdLevel: houseLoad.level,
     }),
     trusted_technicians: techniciansForSnapshot((technicianRows ?? []) as Array<Record<string, unknown>>),
-    weather: weatherForSnapshot(weatherFacts),
+    weather: weatherForSnapshot(await weatherPromise),
     // null = مفيش حملة النهارده (أو القراية فشلت).
     home_campaign: pickHomeCampaign(
       (campaignRows ?? []) as CampaignRow[],
@@ -5532,7 +5535,7 @@ const TOOLS: ToolDef[] = [
     name: "salary_plan",
     description:
       "وضع الراتب وصل: أول ما يتسجل دخل كبير (راتب)، احسب خطة الشهر في ٣ نقاط: " +
-      "١- الالتزامات الثابتة اللي جاية، ٢- المعدل اليومي الآمن بعد حجزها، ٣- أعلى فئة صرف لازم ينتبه لها. " +
+      "١- الالتزامات الثابتة اللي جاية، ٢- المعدل اليومي الآمن بعد حجزها (نادِ safe_daily_spend وقول رقمها زي ما رجع — ماتحسبوش بنفسك)، ٣- أعلى فئة صرف لازم ينتبه لها. " +
       "نادِها تلقائياً لما تشوف معاملة income كبيرة (أكبر من متوسط الدخل) أو لما العميل يقول الراتب وصل.",
     input_schema: {
       type: "object",
@@ -7322,7 +7325,7 @@ export const CHAT_TOOLS: ToolDef[] = [
     name: "safe_daily_spend",
     description:
       "مصروف النهارده الآمن (المتاح بعد الالتزامات ÷ أيام لحد القبض) واحتمال إنه يوصل للقبض (محاكاة على صرف آخر ٢٨ يوم). " +
-      "نادِها لما يسأل «أصرف كام النهارده؟» أو «هكمّل الشهر؟». من غير مدخلات: كله من ميزانيته. قبل ١٤ يوم صرف بترجّع الرقم «تقريباً» " +
+      "نادِها لما يسأل «أصرف كام النهارده؟» أو «هكمّل الشهر؟» — لازم تناديها، ماتحسبش الرقم ده بنفسك من الـsnapshot (المتاح ÷ الأيام) ولا تقدّره. من غير مدخلات: كله من ميزانيته. قبل ١٤ يوم صرف بترجّع الرقم «تقريباً» " +
       "من غير احتمال. الأرقام من الأداة بس.",
     input_schema: { type: "object", properties: {} },
   },
@@ -8324,7 +8327,7 @@ async function callAgentModel(
   // بث حقيقي (تشخيص زاد ٢.٢): أول لفة بس، ولما الرسالة مش بتشير لأداة — رسالة فيها تلميح
   // أداة ممكن تتعاد بأدوات أضيق تحت، والنص اللي اتبث كان هيتشال. أي فشل في البث ⇒ النداء العادي.
   const first = turn === 0 && onText && narrowed.length === 0
-    ? await streamGeminiTurn({ model: MODEL_ROUTINE, system, tools, history, maxTokens: 1200, onText })
+    ? await streamGeminiTurn({ model: MODEL_ROUTINE, system, tools, history, maxTokens: 1200, onText, timeoutMs: STREAM_TIMEOUT_MS })
       .catch((e) => {
         console.warn("[agent_turn] streaming fell back:", (e as Error)?.message ?? e);
         return plain();
@@ -8833,6 +8836,8 @@ async function handleAgentTurnInLane(
     let reply;
     try {
       reply = await callAgentModel(systemPrompt, scopedTools, history, message, turn, groqSystem, onText);
+      // الوقت من بداية اللفة لحد آخر نداء موديل في اللفة دي (الفرق بين علامتين = الزمن بتاعها).
+      turnClock.lap(`model_${turn}`);
       calls.loops++;
       calls.model += reply.calls;
       // اسم الموديل اللي رد فعلاً (تراجع التذكير ١٨/١٠ ماكانش ينفع يتشخّص من غيره).
@@ -8965,6 +8970,7 @@ async function handleAgentTurnInLane(
     }
 
     history.push({ role: "tool", results: toolResults });
+    turnClock.lap(`tools_${turn}`);
     // كل نداءات اللفة بقت كروت «أكّد؟» ومفيش طلب تاني ⇒ الرد من الاقتراحات، من غير ما البرومبت كله يتبعت تاني.
     if (endsOnProposals({
       calledTools: reply.toolCalls.map((c) => c.name), proposedInRound: proposals.length - proposalsBefore,

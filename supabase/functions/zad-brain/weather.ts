@@ -118,6 +118,9 @@ export function placeKey(lat: number, lon: number): string {
   return `${lat.toFixed(2)},${lon.toFixed(2)}`;
 }
 
+/** مهلة أي نداء شبكة للجو (كانت ٦ و٨ ثواني، والشات كان واقف عليها). */
+export const WEATHER_FETCH_TIMEOUT_MS = 1500;
+
 type Fetch = (input: string, init?: RequestInit) => Promise<Response>;
 
 /** الشبكة اللي loadWeather بيستعملها لو ماتبعتلوش fetcher. التستات بتقفلها عشان مايكلموش Open-Meteo الحقيقي. */
@@ -129,7 +132,7 @@ export async function geocodeCity(city: string, country: string, fetcher: Fetch 
   if (name.length < 2 || !/^[A-Z]{2}$/.test(country)) return null;
   const url = "https://geocoding-api.open-meteo.com/v1/search?" +
     new URLSearchParams({ name, count: "5", language: "ar", countryCode: country }).toString();
-  const res = await fetcher(url, { signal: AbortSignal.timeout(6000) });
+  const res = await fetcher(url, { signal: AbortSignal.timeout(WEATHER_FETCH_TIMEOUT_MS) });
   if (!res.ok) return null;
   const body = await res.json() as { results?: Array<{ name?: string; latitude?: number; longitude?: number; country_code?: string; population?: number }> };
   const hit = (body.results ?? [])
@@ -207,8 +210,10 @@ export async function loadWeather(
     if (c && Array.isArray(c.days) && c.days.length && now - Date.parse(c.fetched_at) < WEATHER_TTL_MS) {
       return { place: place.name, from, days: c.days, fetched_at: c.fetched_at };
     }
-    const res = await fetcher(forecastUrl(place.lat, place.lon, input.timeZone), { signal: AbortSignal.timeout(8000) });
-    const days = res.ok ? parseForecast(await res.json()) : null;
+    // مهلة قصيرة والكاش القديم احتياطي: الجو معلومة جانبية، مايعطّلش الشات.
+    const res = await fetcher(forecastUrl(place.lat, place.lon, input.timeZone), { signal: AbortSignal.timeout(WEATHER_FETCH_TIMEOUT_MS) })
+      .catch(() => null);
+    const days = res?.ok ? parseForecast(await res.json()) : null;
     if (!days) {
       // المصدر وقع: كاش أقدم من ٣ ساعات أحسن من مفيش، بس من غير ما يتعدى يوم.
       return c && Array.isArray(c.days) && c.days.length && now - Date.parse(c.fetched_at) < 24 * 3_600_000
