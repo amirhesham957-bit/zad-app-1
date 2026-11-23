@@ -124,6 +124,10 @@ String _drawerNotifications(ZadL10n l) => l.drawerNotifications;
 String _sectionStatement(ZadL10n l) => l.sectionStatement;
 String _sectionPlans(ZadL10n l) => l.sectionPlans;
 String _drawerAccount(ZadL10n l) => l.drawerAccount;
+String _worldGames(ZadL10n l) => ZadWorld.games.label(l);
+String _worldPrices(ZadL10n l) => ZadWorld.prices.label(l);
+String _worldOffers(ZadL10n l) => ZadWorld.offers.label(l);
+String _worldAch(ZadL10n l) => ZadWorld.ach.label(l);
 
 /// The sections, in Kotlin's order (`zadAppSections`, ZadSectionsGrid.kt) —
 /// the same fifteen, with the same Material glyphs and accents. «نصايح زاد»
@@ -260,6 +264,36 @@ final List<ZadSection> zadSections = <ZadSection>[
     accent: ZadSectionAccent.slate,
     open: ZadScreens.showProfileScreen,
   ),
+  // Worlds that had a screen but no way in from Home (release audit,
+  // 2026-11-22). chef/tx/chat are already reached by the bar's tabs.
+  ZadSection(
+    id: 'prices',
+    icon: Icons.sell,
+    label: _worldPrices,
+    accent: ZadSectionAccent.green,
+    open: ZadScreens.showPricesScreen,
+  ),
+  ZadSection(
+    id: 'offers',
+    icon: Icons.card_giftcard,
+    label: _worldOffers,
+    accent: ZadSectionAccent.amber,
+    open: ZadScreens.showOffersScreen,
+  ),
+  ZadSection(
+    id: 'achievements',
+    icon: Icons.star,
+    label: _worldAch,
+    accent: ZadSectionAccent.amber,
+    open: ZadScreens.showAchievementsScreen,
+  ),
+  ZadSection(
+    id: 'games',
+    icon: Icons.sports_esports,
+    label: _worldGames,
+    accent: ZadSectionAccent.blue,
+    open: ZadScreens.showGamesHub,
+  ),
 ];
 
 // بيتي is a tab of the bar, so its tile switches the tab instead of pushing a
@@ -297,7 +331,7 @@ const Map<String, (ZadIconArt, ZadWorld?)> _sectionArt =
       'shopping': (ZadIconArt.cart, ZadWorld.shop),
       'appointments': (ZadIconArt.calendar, ZadWorld.appt),
       'places': (ZadIconArt.pin, ZadWorld.places),
-      'family': (ZadIconArt.family, null),
+      'family': (ZadIconArt.family, ZadWorld.family),
       'budget': (ZadIconArt.coin, ZadWorld.budget),
       'subscriptions': (ZadIconArt.repeat, ZadWorld.subs),
       'pharmacy': (ZadIconArt.pill, ZadWorld.ph),
@@ -311,6 +345,10 @@ const Map<String, (ZadIconArt, ZadWorld?)> _sectionArt =
       'statement': (ZadIconArt.chart, ZadWorld.stmt),
       'premium': (ZadIconArt.crown, ZadWorld.prem),
       'profile': (ZadIconArt.person, ZadWorld.profile),
+      'prices': (ZadIconArt.tag, ZadWorld.prices),
+      'offers': (ZadIconArt.gift, ZadWorld.offers),
+      'achievements': (ZadIconArt.star, ZadWorld.ach),
+      'games': (ZadIconArt.play, ZadWorld.games),
     };
 
 /// How many columns the grid has.
