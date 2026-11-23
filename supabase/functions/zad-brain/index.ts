@@ -176,6 +176,7 @@ import {
 import { type BookingConflict, bookingConflicts, bookingQuestion, CLASH_WINDOW_MINUTES, type ScheduledLike } from "./scheduleGuard.ts";
 import { eventDayBudget, eventDayBudgetRule } from "./eventDayBudget.ts";
 import { describeSafeSpend } from "./safeSpendTool.ts";
+import { describeConflicts, parseConflictInput } from "./constraintConflicts.ts";
 import { paydayOdds, paydayOddsRule, type SpendRow } from "./paydayOdds.ts";
 import { medicineDaysLeft, medicineLow } from "./medicineStock.ts";
 import { describeReorder, parseReorderInput } from "./pharmacyReorderTool.ts";
@@ -5306,6 +5307,30 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       return describeSafeSpend(state.data as Parameters<typeof describeSafeSpend>[0], (txns.data ?? []) as SpendRow[], localNowContext(timeZone).date, timeZone);
     }
 
+    case "check_constraint_conflicts": {
+      // م٥: كاشف تعارض القيود — قراءة بس (constraintConflicts.ts). كل تعارض معاه مصدره.
+      const timeZone = snap?.cycle?.timezone ?? "UTC";
+      const today = localNowContext(timeZone).date;
+      const parsed = parseConflictInput(input, today);
+      if ("error" in parsed) return parsed.error;
+      const [state, obl, debts, subs, meds, appts] = await Promise.all([
+        sb.rpc("zad_budget_state", { p_user: userId, p_tz: timeZone }),
+        sb.from("zad_obligations").select("id,title,amount,due_day,due_date").eq("user_id", userId).eq("active", true).limit(200),
+        sb.from("zad_debts").select("id,name,minimum_payment,due_day").eq("user_id", userId).eq("is_active", true).limit(200),
+        sb.from("zad_subscriptions").select("id,title,amount,renewal_date,due_day").eq("user_id", userId).eq("is_active", true).limit(200),
+        sb.from("zad_pharmacy_items").select("id,name,for_person,remaining_quantity,daily_dose_count,units_per_dose").eq("user_id", userId).limit(100),
+        sb.from("zad_appointments").select("id,title,starts_at,expected_cost,status").eq("user_id", userId).eq("status", "upcoming")
+          .gte("starts_at", new Date(Date.now() - 86_400_000).toISOString()).limit(300),
+      ]);
+      if (state.error || obl.error || debts.error || subs.error || meds.error || appts.error) return "مقدرتش أقرا التزاماتك أو ميزانيتك دلوقتي — قول للعميل كده.";
+      return describeConflicts(parsed.value, {
+        today, timeZone,
+        budget: state.data as Parameters<typeof describeConflicts>[1]["budget"],
+        obligations: obl.data ?? [], debts: debts.data ?? [], subscriptions: subs.data ?? [],
+        pharmacy: meds.data ?? [], appointments: appts.data ?? [],
+      });
+    }
+
     case "where_to_buy": {
       // «ألاقيه فين بسعر كويس؟» — صنف واحد: عروض المحلات + فواتير عملاء زاد في مدينته (whereToBuy.ts، أرضية ٣ بيوت).
       const item = String(input?.item_name ?? "").trim().slice(0, 60);
@@ -7328,6 +7353,22 @@ export const CHAT_TOOLS: ToolDef[] = [
       "نادِها لما يسأل «أصرف كام النهارده؟» أو «هكمّل الشهر؟» — لازم تناديها، ماتحسبش الرقم ده بنفسك من الـsnapshot (المتاح ÷ الأيام) ولا تقدّره. من غير مدخلات: كله من ميزانيته. قبل ١٤ يوم صرف بترجّع الرقم «تقريباً» " +
       "من غير احتمال. الأرقام من الأداة بس.",
     input_schema: { type: "object", properties: {} },
+  },
+  {
+    name: "check_constraint_conflicts",
+    description:
+      "قراءة بس: لو العميل هيلتزم بمبلغ أو يشتري حاجة (وممكن بتاريخ)، بتطابقه على المتاح في ميزانية الشهر وأقساطه والتزاماته " +
+      "واشتراكاته وديونه ومواعيد الدوا والمواعيد، وبترجّع التعارضات الفعلية كل واحد بمصدره. نادِها لما يسأل «ينفع أشتري/أقسّط X؟» أو " +
+      "«ده هيتعارض مع حاجة؟». amount من كلامه (مش تخمين) وdate بصيغة YYYY-MM-DD لو قالها. الأرقام من الأداة بس، وماتكتبش تسجيل.",
+    input_schema: {
+      type: "object",
+      properties: {
+        amount: { type: "number", description: "المبلغ اللي هيلتزم بيه، بعملة حسابه" },
+        date: { type: "string", description: "YYYY-MM-DD (اختياري، من غيره دلوقتي)" },
+        label: { type: "string", description: "إيه هو (اختياري)، مثلاً «غسالة»" },
+      },
+      required: ["amount"],
+    },
   },
   {
     name: "where_to_buy",

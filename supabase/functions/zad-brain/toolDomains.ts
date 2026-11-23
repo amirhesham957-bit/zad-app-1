@@ -11,7 +11,7 @@ export const TOOL_DOMAIN: Record<string, ToolDomain> = {
   add_subscription: "finance", update_subscription: "finance", delete_subscription: "finance", mark_subscription_paid: "finance",
   forward_ledger: "finance", check_price_online: "finance", weekly_savings_plan: "finance",
   home_health_score: "finance", propose_next_month_budget: "finance", decision_impact: "finance", log_decision: "finance",
-  household_resilience: "finance", confirm_life_shift: "finance", safe_daily_spend: "finance",
+  household_resilience: "finance", confirm_life_shift: "finance", safe_daily_spend: "finance", check_constraint_conflicts: "finance",
   start_savings_challenge: "finance", stop_savings_challenge: "finance", set_broke_mode: "finance",
   set_life_goal: "finance", add_goal_progress: "finance", gold_price: "finance", fetch_current_exchange_rate: "finance",
   // المخزن والتسوق والأكل
