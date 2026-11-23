@@ -29,6 +29,7 @@ import 'package:zad/features/home/presentation/home_today_card.dart';
 import 'package:zad/features/home/presentation/home_world_scene.dart';
 import 'package:zad/features/home/presentation/metrics_duo.dart';
 import 'package:zad/features/home/presentation/tasbiha_home_widget.dart';
+import 'package:zad/features/home/presentation/zad_status_card.dart';
 import 'package:zad/features/settings/presentation/monthly_limit_sheet.dart';
 import 'package:zad/features/transactions/presentation/quick_expense_sheet.dart';
 import 'package:zad/shared/ads/presentation/native_ad.dart';
@@ -588,6 +589,31 @@ void main() {
     await tester.pumpWidget(const SizedBox());
     await tester.pump(const Duration(seconds: 2));
   }, skip: Platform.environment['ZAD_SCREENS'] != '1');
+
+  testWidgets('the money card is above the status card and the hero', (
+    tester,
+  ) async {
+    final container = containerWith();
+    addTearDown(container.dispose);
+
+    await pumpHome(tester, container);
+
+    final money = tester.getTopLeft(find.byType(ZadBalanceCard)).dy;
+    // The status card sits in the body, under the hero scene; it draws
+    // nothing here (no phone state), so it is only compared when it shows.
+    final scene = find.byWidgetPredicate(
+      (w) => w is CustomPaint && w.painter is ScaledScene,
+    );
+    expect(money, lessThan(tester.getTopLeft(scene.first).dy));
+    for (final status in find.byType(ZadStatusCard).evaluate()) {
+      expect(
+        money,
+        lessThan(
+          tester.getTopLeft(find.byElementPredicate((e) => e == status)).dy,
+        ),
+      );
+    }
+  });
 
   testWidgets('the two small cards sit under the green one', (tester) async {
     final container = containerWith();

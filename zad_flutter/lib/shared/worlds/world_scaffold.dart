@@ -70,6 +70,7 @@ class ZadWorldScaffold extends ConsumerStatefulWidget {
     required this.world,
     required this.title,
     required this.slivers,
+    this.topSlivers = const <Widget>[],
     this.scene,
     this.stage,
     this.eyebrow,
@@ -113,6 +114,9 @@ class ZadWorldScaffold extends ConsumerStatefulWidget {
 
   /// The body.
   final List<Widget> slivers;
+
+  /// Slivers above the title and the scene (Home's money card).
+  final List<Widget> topSlivers;
 
   /// Show the back button; null shows it when the route can pop.
   final bool? showBack;
@@ -174,6 +178,7 @@ class _ZadWorldScaffoldState extends ConsumerState<ZadWorldScaffold>
     Widget scroll = CustomScrollView(
       key: widget.scrollKey,
       slivers: <Widget>[
+        ...widget.topSlivers,
         SliverToBoxAdapter(child: _header(context, back, look)),
         ...widget.slivers,
         SliverPadding(
