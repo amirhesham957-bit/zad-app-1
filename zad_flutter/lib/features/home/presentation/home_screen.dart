@@ -128,6 +128,18 @@ class HomeScreen extends ConsumerWidget {
         await ref.read(budgetControllerProvider.notifier).refresh(force: true);
       },
       bottomInset: 128,
+      // The money first (owner): above the title and the hero scene.
+      topSlivers: <Widget>[
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(
+            ZadSpacing.gutter,
+            ZadSpacing.lg,
+            ZadSpacing.gutter,
+            0,
+          ),
+          sliver: SliverToBoxAdapter(child: _Budget(view: view)),
+        ),
+      ],
       slivers: <Widget>[
         SliverPadding(
           padding: const EdgeInsets.fromLTRB(
@@ -162,8 +174,6 @@ class HomeScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: ZadSpacing.lg),
-              // 2. The money.
-              _Budget(view: view),
               // The occasion's banner (app_campaigns), when one runs; the
               // balance card already wears the occasion's colours.
               const ZadAppearOnEntry(child: CampaignBannerSlot()),
