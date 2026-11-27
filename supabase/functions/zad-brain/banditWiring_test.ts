@@ -58,14 +58,20 @@ Deno.test("under-18 and child mode never get an experiment (and the store is not
   assertEquals(loads.length, 0);
 });
 
-Deno.test("critical lane (medicine, money, safety) is outside any choice", async () => {
+Deno.test("critical lane (medicine/health, safety/emergency, severe weather) is outside any choice", async () => {
   const { s, loads } = store({ m: { warm: { successes: 99, failures: 0 } } });
-  for (const k of ["med_followup", "listener_gap_alert", "spending_ahead", "bill_reminder"]) {
+  for (const k of ["med_followup", "health_alert", "safety_alert", "emergency_alert", "severe_weather_alert"]) {
     assertEquals(CRITICAL_KINDS.has(k), true, k);
     const v = { [k]: { warm: "x" } };
     assertEquals(await chooseTone(s, "u", { memberId: "m", age: 40 }, k, "base", seededRng(1), v), null, k);
   }
   assertEquals(loads.length, 0);
+});
+
+Deno.test("non-critical kinds (bills, warranty, budget, goals, restock) are open to tone change", () => {
+  for (const k of ["bill_reminder", "warranty_reminder", "spending_ahead", "habit_budget", "goal_review", "spend_forecast", "restock_link"]) {
+    assertEquals(CRITICAL_KINDS.has(k), false, k);
+  }
 });
 
 Deno.test("read failure falls back to the base template (null)", async () => {

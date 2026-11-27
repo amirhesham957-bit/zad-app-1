@@ -1,6 +1,6 @@
 // م٨.٢/م٨.٥: توصيل الـbandit بعنوان الرسالة الاستباقية. مقفول افتراضياً (ZAD_BANDIT_TONE=1 يفتحه).
 // الاختيار من قوالب معتمدة بس (APPROVED_VARIANTS، فاضية لحد ما المالك يعتمد صياغة)، وبالفرد لوحده.
-// الحارة الحرجة (دوا، فلوس، أمان) والطفل والقاصر برا أي اختيار: القالب الأساسي. أي فشل = القالب الأساسي.
+// الحارة الحرجة (دوا/صحة، أمان/طوارئ، طقس قاسي) والطفل والقاصر برا أي اختيار: القالب الأساسي. أي فشل = القالب الأساسي.
 
 import {
   type ArmStat,
@@ -14,17 +14,13 @@ import { isMinor as isChildMode } from "../_shared/or/minorGuard.ts";
 export const BANDIT_TONE_FLAG = "ZAD_BANDIT_TONE";
 export const BASE_ARM = "base";
 
-/** أنواع مابتدخلش أي تجربة: دوا، فلوس، أمان. قالب ثابت دايماً. */
+/** أنواع مابتدخلش أي تجربة: دوا/صحة، أمان/طوارئ، طقس قاسي بس (قرار المالك ٢٧/١١). الباقي (فواتير، ضمان، ميزانية، أهداف، ريستوك) بيتفتح لتغيير النبرة مع الفلاج في v2. */
 export const CRITICAL_KINDS: ReadonlySet<string> = new Set([
   "med_followup",
-  "listener_gap_alert",
-  "spending_ahead",
-  "bill_reminder",
-  "warranty_reminder",
-  "habit_budget",
-  "goal_review",
-  "spend_forecast",
-  "restock_link",
+  "health_alert",
+  "safety_alert",
+  "emergency_alert",
+  "severe_weather_alert",
 ]);
 
 /** نوع -> {معرّف القالب: العنوان}. القالب الأساسي (BASE_ARM) بيتضاف تلقائياً. فاضية: مفيش صياغة معتمدة لسه. */
