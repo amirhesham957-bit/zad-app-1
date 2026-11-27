@@ -332,7 +332,7 @@ Deno.test("the prompt carries what was said last time, to be avoided", () => {
   assert(!none.user.includes("ماتكرريش"));
 });
 
-import { isStillRelevant, MEDICINE_NAMED_MOMENTS } from "./voiceMoments.ts";
+import { isStillRelevant, MEDICINE_NAMED_MOMENTS, memberLeaks } from "./voiceMoments.ts";
 
 Deno.test("a guardian's missed-dose alert: only with consent, and only while the dose is still missing (2026-10-01)", async () => {
   const row = {
@@ -508,4 +508,13 @@ Deno.test("a moment's push carries the offer's own link, https only (ZAD_PLAN 4.
   assertEquals(momentSourceUrl({ deal_code: { url: "javascript:alert(1)" } }), null);
   assertEquals(momentSourceUrl({ taste_deal: { source: { url: null } } }), null);
   assertEquals(momentSourceUrl(null), null);
+});
+
+// م٧.٩: تنبيهات ولي الأمر عن فرد بتعدّي من crossMemberLeak. mutation check: شيل الاستدعاء ⇒ الفحص يقع.
+Deno.test("member privacy (م٧.٩): a guardian's alert about a member leaks unless the member consented", () => {
+  assertEquals(memberLeaks("dad", "son", false), true);
+  assertEquals(memberLeaks("dad", "son", true), false);
+  assertEquals(memberLeaks("son", "son", false), false, "own content is never a leak");
+  const src = Deno.readTextFileSync(new URL("./voiceMoments.ts", import.meta.url));
+  assertEquals(src.split("memberLeaks(row.user_id, memberId,").length - 1, 2, "both family-alert branches are guarded");
 });
