@@ -926,3 +926,5 @@ Added `zad_flutter/lib/features/notification_reads` (repository interface + Supa
 - **اتحقق:** `deno test meter_test.ts` EXIT=0 (17)، `deno check index.ts` EXIT=0، تست SQL على postgres:17 EXIT=0، وأربع mutations وقّعت التست (EXIT=3).
 - **ماتشغّلش:** الـCI الحقيقي، وpg_cron على الإنتاج. ثغرة معروفة: لو `zad_energy_done` فشلت مرتين (عطل DB وسط الطلب) الـcron هيرجّع طاقة لنتيجة اتسلّمت، وده في صالح العميل.
 - **بعد الدمج في main:** يتأكد إن المايجريشن نزلت وإن `energy-settle-5min` ظاهر في `cron.job`.
+
+- **P0.4 بيلد محلي (٢٠٢٦-١١-٢٧): ماخلصش.** `flutter build apk --release --obfuscate --split-debug-info` وقع بـ`No space left on device` (القرص ٣٢GB كله مليان: `~/.gradle` ٥٫٧GB، Android SDK ٣٫١GB، worktrees الوكلاء ٤GB). الكود ماوقعش، بس مفيش EXIT=0، فـP0.4 فضلت `[~]`. التحقق الحقيقي على CI بعد الدمج في main (بيلد-debug-apk بيشتغل على main).
