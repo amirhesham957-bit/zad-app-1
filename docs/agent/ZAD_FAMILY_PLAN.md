@@ -123,7 +123,7 @@ related:
 | P1.2 | `[x]` | (موجود أصلاً: `InterstitialPacer.minGap` ٤ دقايق و٤ في الساعة، والأطفال بيمنعهم `adsAllowedProvider`، وتستاتهم في `interstitial_pacer_test.dart` و`ads_policy_test.dart`؛ مفيش تغيير كود) عدّاد Interstitial مركزي: ≤ ١ كل ٣ دقايق، نهاية مهمة، مش للأطفال | `shared/ads/application/interstitials.dart` | `flutter test` على العدّاد |
 | P1.3 | `[x]` | دوال عرض `zad_view_home/money/house/family(member_id)` بأرقام بمصدر و`available_actions` | مايجريشن + تست SQL | الرقم في الشاشة = رقم البوت لنفس العميل |
 | P1.4 | `[ ]` | توليد موديلات Dart من السكيما ودوال العرض + فحص اختلاف في الـCI (المولّد يقرا أسماء `available_actions` المعتمدة ويرفض أي اسم مؤقت وقت الكومبايل) | سكريبت + workflow | الـCI يوقع لو عمود اتغير |
-| P1.3b | `[ ]` | ربط الأدوية والجرعات الفايتة في `zad_view_family` للولي (`zad_pharmacy_items.family_member_id` بيشاور على `family_members` مش `zad_household_members`) | مايجريشن + تست SQL | الولي يشوف أدوية الأم/الطفل وجرعة فايتة، وغيره لا |
+| P1.3b | `[x]` | ربط الأدوية والجرعات الفايتة في `zad_view_family` للولي (`zad_pharmacy_items.family_member_id` بيشاور على `family_members` مش `zad_household_members`) | مايجريشن + تست SQL | الولي يشوف أدوية الأم/الطفل وجرعة فايتة، وغيره لا |
 | P1.1b | `[x]` | تكملة P1.1: الصوت والتخطيط والاستريم على نفس البوابة `gate.ts` | `zad-brain/gate.ts`، `index.ts` | نفس تستات P1.1 + الاستريم |
 | P1.5 | `[ ]` | ٤ تبويبات (الرئيسية، فلوسي، بيتي، عيلتي) + زرار المساعد. الجداول المدفونة كروت في الشات | `app/shell/zad_bottom_nav_bar.dart` | `flutter analyze` + `flutter test` |
 | P1.6 | `[ ]` | اختبار ساندوتش لكل زرار ظاهر: زرار ← `zad_events` ← البوت ← الإشعار | مبني على `supabase/sql/e2e/run_commit_intent_e2e.sh` | `e2e: all checks passed` |
