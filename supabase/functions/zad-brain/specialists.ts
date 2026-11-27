@@ -11,6 +11,7 @@
 import { RESTORE_INTENT } from "./restoreDeleted.ts";
 import { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { bareMoneyLog } from "./forcedLog.ts";
+import { nativeAlarmEnabled } from "./nativeAlarm.ts";
 
 export type SpecialistId = "finance" | "pantry" | "pharmacy" | "family" | "home" | "general";
 
@@ -181,6 +182,8 @@ const MEMORY_INTENT = /افتكر|افتكري|خليك فاكر|خليكي فا
 const RESTOCK_BUDGET_INTENT = /(معايا|معي|فاضل معايا|في حدود|ميزانيتي|بميزانيه)\s*[\d٠-٩]+.{0,40}(اجيب|اشتري|اشتريه|الطلبات|البيت|السوبر|المخزن|القايمه)|(اجيب|اشتري) (ايه|اي) (الاول|بالاول)|(الفلوس|الميزانيه) (قليله|علي القد|مش مكفيه).{0,40}(اجيب|اشتري|الاهم|الطلبات|القايمه)|اولويات (الشرا|المشتريات|الطلبات|القايمه)/;
 // م٥.٢: «عاوز منيو الأسبوع بـ٤٠٠ جنيه»، «جدول اكل الاسبوع» ⇒ plan_menu (menuTool.ts).
 const MENU_PLAN_INTENT = /منيو|جدول (ال)?اكل|خطه (ال)?(اكل|غدا|اسبوع)|اكل (ال)?اسبوع|(غدا|عشا) (ال)?اسبوع/;
+// v2-2: «ظبطلي منبه الساعة ٦»، «صحيني ٧» ⇒ set_native_alarm (nativeAlarm.ts، خلف ZAD_NATIVE_ALARM).
+const NATIVE_ALARM_INTENT = /(منبه|صحيني|اصحيني|alarm)/;
 // م٥.٢: «امتى نتجمع كلنا؟»، «وقت اللمة» ⇒ plan_gathering_time (gatheringTool.ts).
 const GATHERING_TIME_INTENT = /(امتي|وقت|ميعاد|يوم) (ال)?(نتجمع|لمه|لمتنا|نقعد سوا|نقعد مع بعض)|نتجمع كلنا|لمه (العيله|الاسره)|نقعد سوا/;
 // م٣.٤: «الدوا هيخلص امتى؟»، «اطلب الدوا امتى» ⇒ check_medicine_reorder (pharmacyReorderTool.ts).
@@ -319,6 +322,8 @@ export function intentToolHints(message: string, priorReply = ""): string[] {
   if (RESTOCK_BUDGET_INTENT.test(norm)) tools.push("restock_on_budget");
   if (MENU_PLAN_INTENT.test(norm)) tools.push("plan_menu");
   if (GATHERING_TIME_INTENT.test(norm)) tools.push("plan_gathering_time");
+  // v2-2: منبّه النظام بس لو ZAD_NATIVE_ALARM مفتوح.
+  if (nativeAlarmEnabled() && NATIVE_ALARM_INTENT.test(norm)) tools.push("set_native_alarm");
   if (MEDICINE_REORDER_INTENT.test(norm)) tools.push("check_medicine_reorder");
   if (SAFE_SPEND_INTENT.test(norm)) tools.push("safe_daily_spend");
   if (CONFLICT_INTENT.test(norm)) tools.push("check_constraint_conflicts");
@@ -584,7 +589,7 @@ export const CROSS_DOMAIN_TOOLS: readonly string[] = [
   "remember", "link_memory", "web_search", "set_market", "set_transaction_category",
   "update_emergency_fund_balance", "app_command", "learn_skill",
   "add_appointment", "update_appointment", "add_place_reminder", "cancel_place_reminder",
-  "update_customer_profile",
+  "update_customer_profile", "set_native_alarm",
   // بيانات البيت التقيلة بتتقري عند الحاجة، مش بتتبعت مع كل رسالة.
   "read_house",
 ];

@@ -223,6 +223,7 @@ import { RECURRING_HINT } from "./toolHints.ts";
 import { EXPECTED_COST_HINT } from "./toolHints.ts";
 import { TOOLS } from "./toolDefs.ts";
 import { CHAT_TOOLS } from "./chatTools.ts";
+import { NATIVE_ALARM_FLAG_OFF_REFUSAL, nativeAlarmEnabled, setNativeAlarm } from "./nativeAlarm.ts";
 export { CHAT_TOOLS };
 import { kidsPlaces, familyChat, travelField } from "./snapshotFields.ts";
 export { kidsPlaces, familyChat, travelField };
@@ -5119,6 +5120,12 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       const { data: meds } = await sb.from("zad_pharmacy_items")
         .select("name,for_person,remaining_quantity,daily_dose_count,units_per_dose,dose_times").eq("user_id", userId).limit(100);
       return describeReorder(meds ?? [], parsed.value, new Date().toISOString(), snap?.now_local?.time_zone ?? "UTC");
+    }
+
+    case "set_native_alarm": {
+      // v2-2: منبّه النظام عبر FCM data-only (nativeAlarm.ts). الفلاج مقفول ⇒ رفض. مابيكتبش في أي جدول.
+      if (!nativeAlarmEnabled()) return NATIVE_ALARM_FLAG_OFF_REFUSAL;
+      return await setNativeAlarm(sb, userId, input);
     }
 
     case "plan_gathering_time": {

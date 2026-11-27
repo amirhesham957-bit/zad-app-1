@@ -2,6 +2,7 @@
 // SPECIALIST_TOOL_SCOPE وCROSS_DOMAIN_TOOLS وintentToolHints في specialists.ts)؛ التست في toolDomains_test.ts
 // بيفشل لو أداة جديدة اتضافت من غير مجال، أو بقت من غير أي طريق توصل بيه للموديل.
 export type ToolDomain = "finance" | "pantry" | "pharmacy" | "family" | "home" | "cross";
+import { nativeAlarmEnabled } from "./nativeAlarm.ts";
 
 export const TOOL_DOMAIN: Record<string, ToolDomain> = {
   // الفلوس
@@ -38,6 +39,7 @@ export const TOOL_DOMAIN: Record<string, ToolDomain> = {
   update_customer_profile: "cross", read_house: "cross", dismiss_insight: "cross",
   add_appointment: "cross", update_appointment: "cross", delete_appointment: "cross", find_appointments: "cross",
   add_place_reminder: "cross", cancel_place_reminder: "cross",
+  ...(nativeAlarmEnabled() ? { set_native_alarm: "cross" as ToolDomain } : {}),
 };
 
 /**

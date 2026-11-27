@@ -3,6 +3,7 @@ import { REMEMBER_ABOUT_AND_UNTIL } from "./toolSchemas.ts";
 import { EXPECTED_COST_HINT, RECURRING_HINT } from "./toolHints.ts";
 import { APP_COMMAND_SCREENS } from "./validators.ts";
 import { DOCUMENT_KINDS } from "./documents.ts";
+import { NATIVE_ALARM_TOOL, nativeAlarmEnabled } from "./nativeAlarm.ts";
 
 export const CHAT_TOOLS: ToolDef[] = [
   {
@@ -1612,3 +1613,6 @@ export const CHAT_TOOLS: ToolDef[] = [
     },
   },
 ];
+
+// v2-2: خلف ZAD_NATIVE_ALARM (مقفول): لما الفلاج مقفول الأداة مش في القايمة خالص.
+if (nativeAlarmEnabled()) CHAT_TOOLS.push(NATIVE_ALARM_TOOL);
