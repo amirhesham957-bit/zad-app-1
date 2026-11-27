@@ -54,7 +54,15 @@ export async function proactiveTitle(
   kind: string | null | undefined,
   dialect: DialectCode,
   rephrase?: (base: string, dialect: DialectCode) => Promise<string | null>,
+  /** م٨.٢: اختيار نبرة bandit من قوالب معتمدة؛ null أو فشل = المسار القديم بالظبط. مش بيتكاش (بيتغير بالفرد). */
+  tone?: (base: string) => Promise<string | null>,
 ): Promise<string> {
+  if (tone) {
+    try {
+      const t = (await tone(pickTemplate(kind, dialect).title))?.trim();
+      if (t) return t;
+    } catch { /* المسار القديم */ }
+  }
   const key = phraseCacheKey(kind, dialect);
   const cached = store.get(key);
   if (cached) return cached;

@@ -826,6 +826,12 @@ Added `zad_flutter/lib/features/notification_reads` (repository interface + Supa
 - **مؤجل لـv2 بعد الإطلاق:** الربط المجمّع للوحدات الصرفة، وم٤.٥ تقسيم `zad-brain/index.ts` (١٢٬١٢٦ سطر). المحاولة الأولى (نقل `CHAT_TOOLS` لـ`chatTools.ts`) في git stash باسم «wip: m4.5 chatTools split»: `deno check` عدّى EXIT=0، لكن الاختبارات الكاملة ماخلصتش (اتوقفت)، ومفيش كومِت ولا PR.
 - **لسه مفتوح:** ج١.٣ وج١.٥ وج٢.٢ (إيد المالك)، وم١.٤، وم٤.١، وم٤.٣. الدوكس بس اتغيّرت في الكومِت ده، ومفيش اختبار اتشغّل عليه.
 
+## ٢٠٢٦-١١-٢٧ — م٨.٢/م٨.٥ توصيل الـbandit (آمن، مقفول) على `feat/m8-bandit-wiring`
+- **اتعمل:** `20261127100000_bandit_state.sql` (`zad_bandit_state`، RLS، service_role بس) + `zad-brain/banditWiring.ts` (store وchooseTone) + خامس باراميتر `tone` في `proactiveTitle` + استدعاء في `proactiveTitleFor` خلف `ZAD_BANDIT_TONE`. الحارة الحرجة (دوا، فلوس، أمان، عادات وأهداف) والطفل وأقل من ١٨ وفشل القراية = القالب الأساسي. مفيش كاش للنبرة.
+- **اتقاس:** تست SQL على zadpg EXIT=0، وبدون الميجريشن EXIT=3. `deno check` EXIT=0، و`deno test -A zad-brain/ _shared/ _schema/` EXIT=0 (٢٣٤٢ نجحوا). mutation: شيل الحارة الحرجة والقاصر بيوقّع تستين.
+- **فاضل:** `APPROVED_VARIANTS` فاضية (محتاجة صياغات من المالك، من غيرها مفيش اختيار)؛ مفيش تغذية مكافأة (مفيش إشارة فتح/رد للإشعار ينفع تتربط من غير تخمين، و`store.record` جاهزة ومش مستخدمة)؛ التوقيت مش متغطي؛ م٨.٢/م٨.٥ مش متعلّمين.
+- **فخاخ:** الرسالة الاستباقية للحساب، فالفرد = صف «أنا». ومايجريشن الحي بتتنشر من الـCI بس عند الدمج.
+
 ## ٢٠٢٦-١١-٢٧ — م٧.١٢ (اتقفل) وم٧.٩ (جزئي)
 - **اتعمل:** م٧.١٢: `_shared/or/healthInferenceGuard.ts` بيشيل جمل استنتاج المرض/الحمل والتشخيص غير المعلنة (عربي وإنجليزي)، والمعلن = كلام العميل. موصّل في رد الشات وفي `pushToDevice`/`pushToTelegram`. م٧.٩: `crossMemberLeak` موصّل كحارس على تنبيهات ولي الأمر عن فرد (`family_dose_missed` ونطاقات الأولاد) عبر `memberLeaks` في `voiceMoments.ts`.
 - **اتقاس:** `deno check` EXIT=0، و`deno test -A zad-brain/ _shared/ _schema/` EXIT=0 (٢٣٣٩ نجحوا). mutation: تعطيل الحارسين بيوقّع التستات. مفيش تشغيل على الحي.
