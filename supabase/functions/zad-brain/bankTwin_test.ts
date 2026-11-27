@@ -11,7 +11,7 @@ Deno.test("the merged reply says it is the bank's own row, not a second one", ()
 });
 
 Deno.test("log_transaction asks for the bank twin before the ten-minute guard", async () => {
-  const src = await Deno.readTextFile(new URL("./index.ts", import.meta.url));
+  const src = await Deno.readTextFile(new URL("./execTransactions.ts", import.meta.url));
   const twin = src.indexOf('rpc("zad_bank_twin_service"');
   const guard = src.indexOf("const windowStart = new Date(Date.now() - 10 * 60 * 1000)");
   assertEquals(twin > 0 && twin < guard, true);
