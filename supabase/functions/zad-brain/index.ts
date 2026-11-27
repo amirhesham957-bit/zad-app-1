@@ -230,6 +230,8 @@ import { pharmacyUnit } from "./pharmacyUnit.ts";
 export { pharmacyUnit };
 import { turnTimer } from "./turnTimer.ts";
 export { turnTimer };
+import { prefetch } from "./prefetch.ts";
+export { prefetch };
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
@@ -869,15 +871,6 @@ async function buildDriftLessons(sb: SupabaseClient, userId: string): Promise<st
   }
 }
 
-/**
- * يبدأ استعلام دلوقتي (بناة supabase كسالى: مابيتبعتوش غير لما حد يعمل then)، ويعلّم الرفض إنه متعامل معاه عشان
- * لو خطوة قبله وقعت، Deno مايطلعش «Uncaught (in promise)». اللي بيستنى الوعد بيشوف الرفض زي ما هو.
- */
-export function prefetch<T>(query: PromiseLike<T>): Promise<T> {
-  const started = Promise.resolve(query);
-  started.catch(() => {});
-  return started;
-}
 
 async function buildSnapshot(sb: SupabaseClient, userId: string) {
   const snapshotStartedMs = Date.now();
