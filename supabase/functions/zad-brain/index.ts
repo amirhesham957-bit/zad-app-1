@@ -217,6 +217,7 @@ import { proactiveTurn, recordConversation } from "../_shared/conversationLog.ts
 
 import { REMEMBER_ABOUT_AND_UNTIL } from "./toolSchemas.ts";
 import { RECURRING_HINT } from "./toolHints.ts";
+import { EXPECTED_COST_HINT } from "./toolHints.ts";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
@@ -5769,9 +5770,6 @@ async function appointmentMemory(sb: SupabaseClient, userId: string, parts: unkn
   return notes.length ? `\nفاكر عن الميعاد ده: ${notes.join("، ")} — لو فيها حاجة تنفعه (يجهّزها، ياخدها معاه) قولها في جملة.` : "";
 }
 
-/** تكلفة الميعاد (20261010190000) — الوصف في الأداتين. */
-const EXPECTED_COST_HINT =
-  "تكلفة الميعاد اللي العميل قالها بالرقم («الكشف بـ٤٠٠») — بتتحجز من المتاح لحد الميعاد وبعده بتقع. ماتقدّرهاش أبداً.";
 
 export const CHAT_TOOLS: ToolDef[] = [
   {
