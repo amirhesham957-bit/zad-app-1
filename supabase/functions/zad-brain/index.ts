@@ -121,6 +121,7 @@ import { resolveDeviceKeyUser } from "./deviceKey.ts";
 import { secretMatches } from "../_shared/cronSecret.ts";
 import { HABIT_TRIAL_KINDS, habitTrialForTask, habitTrialPush } from "./habitTrialPush.ts";
 import { HOUSE_LEARNING_KIND, houseLearningForTask, houseLearningPush } from "./houseLearningPush.ts";
+import { familyPersonaBlock, familyPersonaEnabled, redactFamilyForPersona } from "./familyPersona.ts";
 import { INITIATIVE_RULE, childToneBlock, conversationProfile, dropServiceCloser, nameAskedIn, purchaseCheckBlock, voiceModeInstruction } from "./persona.ts";
 import { type DialectCode, dialectPromptBlock, dialectReminder } from "../_shared/dialect.ts";
 import { memoryPhraseStore, proactiveTitle } from "./proactiveTemplates.ts";
@@ -6648,6 +6649,8 @@ async function handleAgentTurnInLane(
   // كل بلوك باسمه عشان ميزان اللفة (promptBudget.ts) يقيسه — الترتيب هو ترتيب البرومبت.
   const chatSnap = {
     ...snap,
+    // v2-3: خصوصية البيت خلف ZAD_FAMILY_PERSONA (مقفول): أرقام باقي الأفراد بتتشال من اللقطة.
+    ...(familyPersonaEnabled((k) => Deno.env.get(k)) && snap?.family ? { family: redactFamilyForPersona(snap.family) } : {}),
     // «أناديك بإيه؟» اتسأل في رد من ردود المحادثة دي ⇒ قاعدة السؤال مابتتبعتش اللفة دي (١٨/١٠: اتسأل
     // في ردّين ورا بعض، بعد سؤال الدهب وبعد سؤال الدولار — كلام آلة).
     name_asked_in_conversation: nameAskedIn(history),
@@ -8011,7 +8014,7 @@ export function groqSystemFor(snap: any, dialectHintText?: string): string {
     city: snap?.customer?.city,
     region: snap?.customer?.dialect_region,
   });
-  return buildGroqSystemPrompt(snap, dialectPromptBlock(profile.dialect, profile.region) + childToneBlock(snap), dialectReminder(profile.dialect, profile.region));
+  return buildGroqSystemPrompt(snap, dialectPromptBlock(profile.dialect, profile.region) + childToneBlock(snap) + familyPersonaBlock(snap, (k) => Deno.env.get(k)), dialectReminder(profile.dialect, profile.region));
 }
 
 /**
@@ -8102,7 +8105,7 @@ export function buildChatSystemPrompt(snap: any, voiceMode = false, offered?: Re
     city: snap?.customer?.city,
     region: snap?.customer?.dialect_region,
   });
-  return `${dialectPromptBlock(profile.dialect, profile.region)}${childToneBlock(snap)}
+  return `${dialectPromptBlock(profile.dialect, profile.region)}${childToneBlock(snap)}${familyPersonaBlock(snap, (k) => Deno.env.get(k))}
 
 أنت "${assistant.nameAr}" — واحد من البيت: فاهم أهله وفلوسهم ومطبخهم ودواهم، وبيكلّمهم زي صاحب قريب مش زي برنامج.
 
