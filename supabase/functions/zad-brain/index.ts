@@ -115,7 +115,8 @@ import { AgentSource, AuditScope, recordAction, writeRows } from "./audit.ts";
 import { commitIntent, DUPLICATE_REPLY, isDoorRefusal, logGuard, refusalText } from "./commitIntent.ts";
 import { redactNotificationText } from "./redact.ts";
 import { type LearnedFormat, learnedCases, learnedSenders, senderKnown } from "./learnedFormats.ts";
-import { classifyMessage, consume as consumeEntitlement, lockedReply, quotaExempt } from "./entitlement.ts";
+import { classifyMessage, lockedReply, quotaExempt } from "./entitlement.ts";
+import { type ChatCharge, openChatCharge, withChargeSettlement } from "./gate.ts";
 import { hasServiceRoleAuthorization, resolveAuthedUserId } from "./auth.ts";
 import { resolveDeviceKeyUser } from "./deviceKey.ts";
 import { secretMatches } from "../_shared/cronSecret.ts";
@@ -2195,6 +2196,8 @@ async function handleAgentTurn(
       rate_limited: true, gate: gateResult.reason,
     }), { headers: CORS_HEADERS });
   }
+  // الحجز بيتفتح جوه اللفة (handleAgentTurnInLane) وبيتقفل هنا على نتيجتها (gate.ts).
+  const charge: ChatCharge = {};
   try {
     // حساب فحص القبول (ZAD_DREAM_PLAN.md ذ٤): مفاتيح الخلفية، ومابيتعدّش في ميزانية المجاني اليومية.
     // ١٨/١٠ عمل ٨٩ لفة و١٫٨ مليون توكن من حارة العملاء، وكل لفة منهم كانت بتخصم من zad_free_load_take
@@ -2212,7 +2215,7 @@ async function handleAgentTurn(
         }
       }
       // قرار المالك ٢/١١: لما المدفوع متحط، الحساب ده على المجاني (حارة internal)؛ من غيره زي الخلفية.
-      return await inLane("internal", () => handleAgentTurnInLane(sb, userId, body, paid, onText));
+      return await withChargeSettlement(sb, userId, charge, () => inLane("internal", () => handleAgentTurnInLane(sb, userId, body, paid, onText, charge)));
     }
     let lane: Lane = "paid";
     if (!paid) {
@@ -2225,7 +2228,7 @@ async function handleAgentTurn(
         }), { headers: CORS_HEADERS });
       }
     }
-    return await inLane(lane, () => handleAgentTurnInLane(sb, userId, body, paid, onText));
+    return await withChargeSettlement(sb, userId, charge, () => inLane(lane, () => handleAgentTurnInLane(sb, userId, body, paid, onText, charge)));
   } finally {
     if (!gateErr) {
       const { error } = await sb.rpc("zad_turn_end", { p_user: userId });
@@ -2236,6 +2239,7 @@ async function handleAgentTurn(
 
 async function handleAgentTurnInLane(
   sb: SupabaseClient, userId: string, body: any, isPaidSubscriber: boolean, onText?: (delta: string) => void,
+  charge: ChatCharge = {},
 ): Promise<Response> {
   const message: string = String(body.message ?? "").trim();
   if (!message) {
@@ -2332,7 +2336,7 @@ async function handleAgentTurnInLane(
     ? { allowed: true, reason: "routine_free" }
     : quotaExempt(userId, [ACCEPTANCE_USER_ID, Deno.env.get("ZAD_EVAL_CHILD_USER_ID")])
     ? { allowed: true, reason: "test_account" }
-    : await consumeEntitlement(sb, userId, entitlementKind, String(body.tz ?? "UTC"));
+    : await openChatCharge(sb, userId, entitlementKind, String(body.tz ?? "UTC"), charge);
   if (!entitlement.allowed) {
     // ok:true مش خطأ: ده رد فعلي للعميل، والتطبيق بيعرضه في نفس فقاعة الشات. الكتلة
     // entitlement جنبه هي اللي الواجهة بتقرا منها عشان تفتح شاشة الباقات/الإعلانات.
