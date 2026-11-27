@@ -91,6 +91,8 @@ export interface GateResult {
   refusal?: { status: number; body: Record<string, unknown> };
   /** اتخصم من الرصيد فعلاً — يرجع لو الأكشن رجع فاضي. */
   charged?: "scan" | "voice";
+  /** صف الدفتر (zad_energy_ledger) للخصم ده — لو اتسجّل. من غيره الرجوع بالطريقة القديمة. */
+  chargeId?: string;
 }
 
 /** حد العميل، وبعده الخصم. الحد اللي فشل في الداتابيز مفتوح؛ الخصم اللي فشل مقفول. */
@@ -139,5 +141,31 @@ export async function openGate(rpc: Rpc, userId: string, meter: Meter): Promise<
     };
   }
   // 'quota' بس معناها إن فيه خصم حصل؛ media_pass و unlimited مابيخصموش.
-  return c.reason === "quota" ? { charged: meter.kind } : {};
+  if (c.reason !== "quota") return {};
+  // الدفتر: الخصم من غير نتيجة أو الرجوع الفاشل بيتسوّى بالكرون بعد ١٠ دقايق (zad_energy_settle).
+  // تسجيل الدفتر فشل = نفس السلوك القديم، مايوقفش الأكشن.
+  const { data: id, error: ledgerErr } = await rpc("zad_energy_open", { p_user: userId, p_kind: meter.kind });
+  if (ledgerErr) console.error("[meter] zad_energy_open failed:", ledgerErr.message);
+  return typeof id === "string" && id && !ledgerErr ? { charged: meter.kind, chargeId: id } : { charged: meter.kind };
+}
+
+/**
+ * بعد الأكشن: فاضي يرجّع المحاولة، وغير كده يقفل الخصم. الرجوع الفاشل بيفضل مفتوح في الدفتر
+ * والكرون يعيده. قفل 'done' الفاشل بيتعاد مرة، عشان الكرون مايرجّعش نتيجة اتسلّمت.
+ */
+export async function settleCharge(rpc: Rpc, gate: GateResult, userId: string, empty: boolean): Promise<void> {
+  if (!gate.charged) return;
+  if (empty) {
+    const { error } = gate.chargeId
+      ? await rpc("zad_energy_refund", { p_id: gate.chargeId, p_by: "function" })
+      : await rpc("zad_entitlement_refund", { p_user: userId, p_kind: gate.charged });
+    if (error) console.error("[meter] refund failed:", error.message);
+    return;
+  }
+  if (!gate.chargeId) return;
+  for (let i = 0; i < 2; i++) {
+    const { error } = await rpc("zad_energy_done", { p_id: gate.chargeId });
+    if (!error) return;
+    console.error("[meter] zad_energy_done failed:", error.message);
+  }
 }

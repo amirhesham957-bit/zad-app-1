@@ -26,7 +26,7 @@ import { mealSuggestionsCacheKey, mealSuggestionsCachePattern } from "../_shared
 import { receiptPaymentMethod, receiptPurchaseDate } from "./receiptDate.ts";
 import { RECEIPT_SYSTEM_PROMPT } from "./receiptPrompt.ts";
 import { inventoryPrompt, medicinePrompt } from "./visionPrompts.ts";
-import { meterFor, openGate, scanCameBackEmpty } from "./meter.ts";
+import { meterFor, openGate, scanCameBackEmpty, settleCharge } from "./meter.ts";
 
 /**
  * بلد العميل لبرومبتات الرؤية (visionPrompts.ts): بس لو user_id هو صاحب التوكن (نفس حراسة PERSONAL_ACTIONS)، أو النداء
@@ -1981,10 +1981,10 @@ Deno.serve(async (req: Request) => {
         empty = true;
       }
     }
-    if (empty) {
-      const { error } = await supabase.rpc("zad_entitlement_refund", { p_user: userId, p_kind: gate.charged });
-      if (error) console.error("[meter] refund failed:", error.message);
-    }
+    await settleCharge(async (fn, args) => {
+      const { data, error } = await supabase.rpc(fn, args);
+      return { data, error };
+    }, gate, userId, empty);
   }
   return res;
 });
