@@ -80,8 +80,9 @@ Deno.test("base dialect, failure and empty output use the template and store not
 
 Deno.test("the agent-task sender takes proactive titles through proactiveTitle (wired, م٤.٤)", async () => {
   const src = await Deno.readTextFile(new URL("./index.ts", import.meta.url));
+  const runner = await Deno.readTextFile(new URL("./agentTasksRunner.ts", import.meta.url));
   assertEquals(
-    src.includes("proactiveTitleFor(sb, task.user_id, task.kind)"),
+    runner.includes("proactiveTitleFor(sb, task.user_id, task.kind)"),
     true,
   );
   assertEquals(
