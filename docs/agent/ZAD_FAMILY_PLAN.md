@@ -120,7 +120,7 @@ related:
 | ID | الحالة | الشريحة | الملفات | التحقق |
 |---|---|---|---|---|
 | P1.1 | `[ ]` | بوابة صلاحيات واحدة على السيرفر للشات والصوت والتخطيط زي الماسح: حجز ثم تأكيد أو رجوع، وكوتة المالك | `zad-brain/index.ts:2169,2255`، `entitlement.ts`، `freeLane.ts`، `meter.ts` | e2e: نجاح بيخصم، فشل بيرجّع، طلبين متوازيين مايعدّوش الرصيد |
-| P1.2 | `[ ]` | عدّاد Interstitial مركزي: ≤ ١ كل ٣ دقايق، نهاية مهمة، مش للأطفال | `shared/ads/application/interstitials.dart` | `flutter test` على العدّاد |
+| P1.2 | `[x]` | (موجود أصلاً: `InterstitialPacer.minGap` ٤ دقايق و٤ في الساعة، والأطفال بيمنعهم `adsAllowedProvider`، وتستاتهم في `interstitial_pacer_test.dart` و`ads_policy_test.dart`؛ مفيش تغيير كود) عدّاد Interstitial مركزي: ≤ ١ كل ٣ دقايق، نهاية مهمة، مش للأطفال | `shared/ads/application/interstitials.dart` | `flutter test` على العدّاد |
 | P1.3 | `[ ]` | دوال عرض `zad_view_home/money/house/family(member_id)` بأرقام بمصدر و`available_actions` | مايجريشن + تست SQL | الرقم في الشاشة = رقم البوت لنفس العميل |
 | P1.4 | `[ ]` | توليد موديلات Dart من السكيما ودوال العرض + فحص اختلاف في الـCI | سكريبت + workflow | الـCI يوقع لو عمود اتغير |
 | P1.5 | `[ ]` | ٤ تبويبات (الرئيسية، فلوسي، بيتي، عيلتي) + زرار المساعد. الجداول المدفونة كروت في الشات | `app/shell/zad_bottom_nav_bar.dart` | `flutter analyze` + `flutter test` |
