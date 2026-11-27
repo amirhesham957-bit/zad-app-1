@@ -85,7 +85,7 @@ Deno.test("the agent-task sender takes proactive titles through proactiveTitle (
     true,
   );
   assertEquals(
-    src.includes("proactiveTitle(proactivePhrases, kind, dialect)"),
+    src.includes("proactiveTitle(proactivePhrases, kind, dialect, undefined, tone)"),
     true,
   );
 });
