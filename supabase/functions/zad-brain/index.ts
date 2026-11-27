@@ -108,7 +108,7 @@ import { foodProfile } from "./foodProfile.ts";
 import { seasonFor, seasonInstruction, upcomingSeason, upcomingSeasonInstruction } from "../_shared/season.ts";
 import { SEASON_PLAN_DAYS, seasonPlanInstruction, upcomingCalendarSeasons } from "../_shared/seasonCalendar.ts";
 import { buildMenu, describeMenu, feedbackMap, parseMenuDishes } from "./menuTool.ts";
-import { describeGatherings, findGatherings, parseGatheringInput } from "./gatheringTool.ts";
+import { appointmentsBusy, describeGatherings, findGatherings, mergeBusy, parseGatheringInput } from "./gatheringTool.ts";
 import { guardEngineReply, type EngineOutput } from "./engineGuard.ts";
 import { type FastIntent, formatBalanceReply, parseFastPath } from "./fastPath.ts";
 import { AgentSource, AuditScope, recordAction, writeRows } from "./audit.ts";
@@ -5262,7 +5262,18 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       const parsed = parseGatheringInput(input);
       if ("error" in parsed) return parsed.error;
       const today = snap?.now_local?.date ?? new Date().toISOString().slice(0, 10);
-      return describeGatherings(findGatherings(parsed.value), parsed.value, today);
+      // م٥.٢: مواعيد العميل الفعلية بتتقرا service-side بـuser_id بتاعه بس، وفشل القراية = كلام العميل بس (احتياطي).
+      let apptBusy: ReturnType<typeof appointmentsBusy> = [];
+      try {
+        const tz = snap?.now_local?.time_zone ?? snap?.cycle?.timezone ?? "UTC";
+        const from = new Date(`${today}T00:00:00Z`).getTime() - 86_400_000;
+        const { data: appts, error: apptErr } = await sb.from("zad_appointments").select("title,starts_at,for_person")
+          .eq("user_id", userId).eq("status", "upcoming")
+          .gte("starts_at", new Date(from).toISOString()).lt("starts_at", new Date(from + 9 * 86_400_000).toISOString()).limit(200);
+        if (!apptErr) apptBusy = appointmentsBusy(appts ?? [], parsed.value.members, today, tz);
+      } catch { /* احتياطي */ }
+      const v = { ...parsed.value, busy: mergeBusy(apptBusy, parsed.value.busy) };
+      return describeGatherings(findGatherings(v), v, today, apptBusy.length);
     }
 
     case "safe_daily_spend": {

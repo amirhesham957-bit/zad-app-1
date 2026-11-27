@@ -1,5 +1,5 @@
 import { assert, assertEquals } from "jsr:@std/assert@1";
-import { dayLabel, describeGatherings, findGatherings, parseClock, parseGatheringInput } from "./gatheringTool.ts";
+import { appointmentsBusy, dayLabel, describeGatherings, findGatherings, mergeBusy, parseClock, parseGatheringInput } from "./gatheringTool.ts";
 import { guardEngineReply } from "./engineGuard.ts";
 import { intentToolHints, scopeToolsForSpecialist } from "./specialists.ts";
 
@@ -85,4 +85,26 @@ Deno.test("«امتى نتجمع» reaches plan_gathering_time; the pantry/famil
   assertEquals(intentToolHints("صباح الخير").includes("plan_gathering_time"), false);
   const tools = scopeToolsForSpecialist([{ name: "plan_gathering_time" } as never, { name: "log_transaction" } as never], "pantry", null, []);
   assertEquals(tools.some((t: { name: string }) => t.name === "plan_gathering_time"), true);
+});
+
+Deno.test("م٥.٢: appointmentsBusy يحط ميعاد الفرد بالاسم، وبدون for_person = أنا، ويتجاهل غير المطلوبين", () => {
+  const rows = [
+    { starts_at: "2026-11-28T10:00:00+02:00", for_person: "ماما" },
+    { starts_at: "2026-11-27T09:00:00+02:00", for_person: null },
+    { starts_at: "2026-11-27T09:00:00+02:00", for_person: "غريب" },
+  ];
+  const b = appointmentsBusy(rows, ["أنا", "ماما"], "2026-11-27", "Africa/Cairo");
+  assertEquals(b, [
+    { member: "أنا", start: 540, end: 600 },
+    { member: "ماما", start: 1440 + 600, end: 1440 + 660 },
+  ]);
+});
+
+Deno.test("م٥.٢: المواعيد بتشيل وقت من الاقتراحات، وmergeBusy بيشيل التكرار", () => {
+  const m = ["أنا", "ماما"];
+  const appts = appointmentsBusy([{ starts_at: "2026-11-27T10:00:00+02:00", for_person: "ماما" }], m, "2026-11-27", "Africa/Cairo");
+  assertEquals(mergeBusy(appts, appts).length, 1);
+  const slots = findGatherings({ members: m, minutes: 120, earliest: 600, latest: 720, busy: mergeBusy(appts, []) });
+  assert(slots.every((s) => !(s.start < 660 && s.end > 600 && s.missing.length === 0))); // ماما مشغولة ١٠-١١ يوم ٠
+  assert(describeGatherings(slots, { members: m, minutes: 120, earliest: 600, latest: 720, busy: [] }, "2026-11-27", 1).includes("ميعاد مسجّل"));
 });

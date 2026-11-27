@@ -4,6 +4,8 @@
 // `_shared/or/gatheringTime.ts`. اليوم ٠ = النهارده بتوقيت العميل، والأسبوع ٧ أيام من النهارده.
 
 import { type Busy, bestGatherings, type GatheringSlot } from "../_shared/or/gatheringTime.ts";
+import { eventsToBusy, type MemberEvent } from "../_shared/or/memberBusy.ts";
+import { tzOffsetMin } from "../_shared/or/travelCompanion.ts";
 
 const DAYS_AR = ["الأحد", "الاتنين", "التلات", "الأربع", "الخميس", "الجمعة", "السبت"];
 
@@ -73,7 +75,43 @@ export function dayLabel(todayIso: string, offset: number): string {
   return `${DAYS_AR[d.getUTCDay()]} ${d.getUTCDate()}/${d.getUTCMonth() + 1}`;
 }
 
-export function describeGatherings(slots: readonly GatheringSlot[], v: GatheringInput, todayIso: string): string {
+export interface ApptRow { title?: string | null; starts_at: string; for_person: string | null }
+
+/** بداية اليوم ٠ (منتصف ليل مدني) بصيغة ISO بإزاحة منطقة الحساب. */
+export function weekStartIso(todayIso: string, tz: string): string {
+  let off = 0;
+  try { off = tzOffsetMin(new Date(`${todayIso}T12:00:00Z`), tz); } catch { /* UTC */ }
+  const a = Math.abs(off);
+  return `${todayIso}T00:00:00${off < 0 ? "-" : "+"}${String(Math.floor(a / 60)).padStart(2, "0")}:${String(a % 60).padStart(2, "0")}`;
+}
+
+/**
+ * م٥.٢: مواعيد العميل الفعلية (zad_appointments بتاعته هو، service-side) ⇒ مشغول لكل فرد من أفراد المطلوب.
+ * الفرد = for_person بالاسم بالظبط؛ الميعاد من غير for_person بتاع «أنا». مواعيد حسابات تانية مابتتقراش أصلاً
+ * (مفيش مشاركة zad_family_shares بنطاق مواعيد)، فمفيش تسريب بين أفراد. مفيش وقت نهاية فالمدة ٦٠ دقيقة.
+ */
+export function appointmentsBusy(rows: readonly ApptRow[], members: readonly string[], todayIso: string, tz: string): Busy[] {
+  const events: MemberEvent[] = [];
+  for (const r of rows) {
+    const who = (r.for_person ?? "").trim() || "أنا";
+    if (!members.includes(who)) continue;
+    events.push({ member: who, startIso: r.starts_at });
+  }
+  return eventsToBusy(events, weekStartIso(todayIso, tz));
+}
+
+/** مشغول المواعيد + مشغول كلام العميل (الاتنين، من غير تكرار). كلام العميل بيفضل احتياطي لما مفيش مواعيد. */
+export function mergeBusy(fromAppts: readonly Busy[], fromClient: readonly Busy[]): Busy[] {
+  const seen = new Set<string>();
+  const out: Busy[] = [];
+  for (const b of [...fromAppts, ...fromClient]) {
+    const k = `${b.member}|${b.start}|${b.end}`;
+    if (!seen.has(k)) { seen.add(k); out.push(b); }
+  }
+  return out;
+}
+
+export function describeGatherings(slots: readonly GatheringSlot[], v: GatheringInput, todayIso: string, apptCount = 0): string {
   if (slots.length === 0) return "مفيش وقت يتسع للّمّة في الحدود دي — قول للعميل كده ووسّع الساعات.";
   const lines = [`وقت اللمّة (${v.minutes} دقيقة) لـ${v.members.length} أفراد، من النهارده لـ٧ أيام:`];
   slots.forEach((s, i) => {
@@ -81,7 +119,11 @@ export function describeGatherings(slots: readonly GatheringSlot[], v: Gathering
     const when = `${dayLabel(todayIso, day)} من ${clock(s.start)} لـ${clock(s.end)}`;
     lines.push(`${i + 1}. ${when} — ${s.missing.length === 0 ? "الكل موجود" : `ناقص: ${s.missing.join("، ")}`}`);
   });
-  lines.push("المشغول من كلام العميل بس، ومفيش جدول مواعيد لكل فرد. اعرض تحط الميعاد (add_appointment).");
+  lines.push(
+    apptCount > 0
+      ? `المشغول من ${apptCount} ميعاد مسجّل عند العميل + كلامه (المواعيد من غير وقت نهاية محسوبة ساعة). مواعيد باقي أفراد البيت اللي عندهم حسابات مش داخلة. اعرض تحط الميعاد (add_appointment).`
+      : "المشغول من كلام العميل بس، ومفيش جدول مواعيد لكل فرد. اعرض تحط الميعاد (add_appointment).",
+  );
   lines.push("الأرقام دي بس اللي تتقال.");
   return lines.join("\n");
 }
