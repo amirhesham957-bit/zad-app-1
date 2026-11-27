@@ -139,3 +139,18 @@ proxy rotation. Zero-cost infrastructure. Keep the `admob-ssv` verification.
 ## م٦.٤ Flutter (2026-11-22, `worktree-agent-af341907c24a18648`)
 
 `features/notification_reads`: three switches (appointment, trip, document_due), all off by default, each with the one-line honest explanation, and the screen «زاد قرا إيه النهارده» (day starts at midnight in `accountTimeZoneProvider`). Data goes through `NotificationReadsRepository` (Supabase impl on `zad_notification_switches` / `zad_notification_reads`, the server half owns the migration; tests use a fake). Not yet wired to a route or to Settings, and م٦.٤ is not ticked until the server half is merged and a real notification is read end to end.
+
+## جرد الميزات (P0.5، ٢٠٢٦-١١-٢٧)
+
+٤٧ مجلد تحت `zad_flutter/lib/features/` (الخطة قالت ٤٦). الفحص وجود بس: كل جدول وRPC وedge function بتشاور عليه الميزات موجود في `supabase/migrations` و`supabase/functions`. مفيش ميزة بتشاور على حاجة ناقصة، فمفيش حاجة تتقفل بفلاج دلوقتي.
+الوصول بيتم من `ZadScreens.*` (`lib/app/wiring/screens_wiring.dart`) و`ZadSlots.*` وقايمة `zadSections` (`sections_grid.dart`).
+
+| الميزة | الحالة | ملاحظة |
+|---|---|---|
+| brain_family | وصول ضعيف | بتتفتح من `zad_shell` بس، و`ZadScreens.showBrainFamily` مابتتنادى من برا الـwiring |
+| goals | من غير تست | بتتفتح من `home_activation_card.dart:124`، ومفيش تست |
+| affiliate | جزئي | مفيش شاشة ليها، بتتستخدم من مركز الإشعارات |
+| proposals | وصول ما اتأكدش | الشاشة في `wiring:63` |
+| باقي الـ٤٣ | سليمة | شاشة متوصلة، وbackend موجود، وتست واحد على الأقل |
+
+**ماتفحصش:** وصول كل ميزة من الرئيسية، والسلوك وقت التشغيل، والكيانات اللي اتحذفت بعد ما اتعملت (ده بيغطيه `_schema/from_tables_test.ts` للجداول).
