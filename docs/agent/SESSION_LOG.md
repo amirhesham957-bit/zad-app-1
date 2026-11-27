@@ -872,3 +872,8 @@ Added `zad_flutter/lib/features/notification_reads` (repository interface + Supa
 ## ٢٧/١١ v2-3 بيرسونا العيلة
 - **اتعمل:** `familyPersona.ts` + تست، موصّل في بناء البرومبت (الموديلين) واللقطة، خلف `ZAD_FAMILY_PERSONA` (مقفول). مفيش مايجريشن.
 - **فاضل:** لقطة أهداف/مصروف الفرد نفسه من `zad_events` لو اتطلبت، وقياس الأثر قبل فتح الفلاج.
+
+## ٢٧/١١ v2-2 منبّه أندرويد حقيقي
+- **اتعمل:** `nativeAlarm.ts` + تست، وأداة `set_native_alarm` خلف `ZAD_NATIVE_ALARM` (مقفول): FCM data-only `{action:SET_NATIVE_ALARM,hour,minute,label,days}`، مُرسِل قابل للحقن. مفيش جهاز/FCM مش متظبط/فشل الإرسال = `fallback_to_inapp_reminder` + تعليمة تذكير جوه التطبيق. نجاح = `sent` (اتبعت، مش مضمون اتظبط). `push.ts` صدّر `getAccessToken` و`parseServiceAccount` و`FCM_V1_ENDPOINT` بس. مفيش مايجريشن.
+- **فاضل:** مستقبِل SET_ALARM Intent في Flutter (`ZadFirebaseMessagingService`)؛ من غيره الفلاج يفضل مقفول. الأيام ISO (١=الاتنين … ٧=الأحد) والمستقبِل لازم يحوّلها لـCalendar.
+- **فخ:** الأداة بتتضاف لـ`CHAT_TOOLS` وقت تحميل الموديول حسب الفلاج، فتغيير الـsecret محتاج ريستارت للفانكشن (النشر بيعمله).

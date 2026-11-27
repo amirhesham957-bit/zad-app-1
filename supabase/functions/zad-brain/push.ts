@@ -13,19 +13,19 @@
 import { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { guardHealthInference } from "../_shared/or/healthInferenceGuard.ts";
 
-const FCM_V1_ENDPOINT = "https://fcm.googleapis.com/v1/projects/{project_id}/messages:send";
+export const FCM_V1_ENDPOINT = "https://fcm.googleapis.com/v1/projects/{project_id}/messages:send";
 const TOKEN_CACHE_TTL_MS = 50 * 60 * 1000; // توكن OAuth2 صالح ساعة — نجدده قبلها بـ10 دقايق
 
 let cachedToken: { value: string; expiresAt: number } | null = null;
 let cachedProjectId = "";
 
-interface ServiceAccount {
+export interface ServiceAccount {
   project_id: string;
   client_email: string;
   private_key: string;
 }
 
-function parseServiceAccount(raw: string): ServiceAccount | null {
+export function parseServiceAccount(raw: string): ServiceAccount | null {
   try {
     const parsed = JSON.parse(raw);
     if (parsed?.project_id && parsed?.client_email && parsed?.private_key) {
@@ -43,7 +43,7 @@ function base64UrlEncode(data: Uint8Array): string {
   return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
-async function getAccessToken(sa: ServiceAccount): Promise<string> {
+export async function getAccessToken(sa: ServiceAccount): Promise<string> {
   const now = Date.now();
   if (cachedToken && cachedProjectId === sa.project_id && cachedToken.expiresAt > now) {
     return cachedToken.value;
