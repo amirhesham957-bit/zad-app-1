@@ -228,6 +228,8 @@ export { streamTail };
 import { normalizeClientClassification, sha256Hex } from "./notificationHelpers.ts";
 import { pharmacyUnit } from "./pharmacyUnit.ts";
 export { pharmacyUnit };
+import { turnTimer } from "./turnTimer.ts";
+export { turnTimer };
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
@@ -827,18 +829,6 @@ export async function writeSingleCopyMemory(
   return { error: null };
 }
 
-/**
- * ساعة اللفة: كل lap بيسجل الوقت من البداية لحد العلامة دي بالملي ثانية، وdone بيضيف الإجمالي.
- * الأرقام بتتخزن في zad_brain_runs.prompt_sizes.timings، فالبطء بيتقاس بمراحله من الداتابيز.
- */
-export function turnTimer(now: () => number = Date.now): { lap: (name: string) => void; done: () => Record<string, number> } {
-  const t0 = now();
-  const marks: Record<string, number> = {};
-  return {
-    lap: (name) => { marks[`${name}_ms`] = now() - t0; },
-    done: () => ({ ...marks, total_ms: now() - t0 }),
-  };
-}
 
 /** PostgREST بيرد PGRST202 لما الدالة مش موجودة، وPostgres بيرد 42883. */
 export function isMissingFunction(error: { code?: string } | null | undefined): boolean {
