@@ -1,5 +1,5 @@
 import { assert, assertEquals } from "jsr:@std/assert@1";
-import { meterFor, openGate, type Rpc, scanCameBackEmpty } from "./meter.ts";
+import { meterFor, openGate, type Rpc, scanCameBackEmpty, settleCharge } from "./meter.ts";
 
 /** A fake database: answers per function name and records every call. */
 function fakeRpc(answers: Record<string, { data: unknown; error?: { message: string } }>) {
@@ -159,4 +159,34 @@ Deno.test("the rate table failing lets the call through; the charge failing does
     zad_entitlement_consume: { data: null, error: { message: "down" } },
   });
   assertEquals((await openGate(chargeDown.rpc, "u1", meterFor("analyze_receipt")!)).refusal?.status, 503);
+});
+
+Deno.test("a charge is written to the energy ledger; settling an empty result refunds through the ledger, a good one closes it", async () => {
+  const db = fakeRpc({
+    zad_rate_take: { data: { ok: true } },
+    zad_entitlement_consume: { data: { allowed: true, reason: "quota" } },
+    zad_energy_open: { data: "led-1" },
+  });
+  const g = await openGate(db.rpc, "u1", meterFor("analyze_receipt")!);
+  assertEquals(g, { charged: "scan", chargeId: "led-1" });
+  await settleCharge(db.rpc, g, "u1", true);
+  assertEquals(db.calls.at(-1), { fn: "zad_energy_refund", args: { p_id: "led-1", p_by: "function" } });
+  await settleCharge(db.rpc, g, "u1", false);
+  assertEquals(db.calls.at(-1), { fn: "zad_energy_done", args: { p_id: "led-1" } });
+});
+
+Deno.test("no ledger row (open failed): an empty result still refunds the old way, a good one calls nothing", async () => {
+  const db = fakeRpc({});
+  await settleCharge(db.rpc, { charged: "voice" }, "u1", true);
+  assertEquals(db.calls, [{ fn: "zad_entitlement_refund", args: { p_user: "u1", p_kind: "voice" } }]);
+  await settleCharge(db.rpc, { charged: "voice" }, "u1", false);
+  assertEquals(db.calls.length, 1);
+  await settleCharge(db.rpc, {}, "u1", true);
+  assertEquals(db.calls.length, 1);
+});
+
+Deno.test("a failed done is retried once so the cron never refunds a delivered result", async () => {
+  const db = fakeRpc({ zad_energy_done: { data: null, error: { message: "boom" } } });
+  await settleCharge(db.rpc, { charged: "scan", chargeId: "led-2" }, "u1", false);
+  assertEquals(db.calls.filter((c) => c.fn === "zad_energy_done").length, 2);
 });

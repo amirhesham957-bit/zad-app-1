@@ -21,6 +21,9 @@ class _SignedIn extends SessionController {
 
 class _Ads implements RewardedAds {
   @override
+  Future<void> preload() async {}
+
+  @override
   Future<RewardedOutcome> watch({required String userId}) async =>
       RewardedOutcome.earned;
 }

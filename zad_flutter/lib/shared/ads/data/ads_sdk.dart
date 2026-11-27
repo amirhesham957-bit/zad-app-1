@@ -130,10 +130,22 @@ abstract final class AdsSdk {
     return done.future;
   }
 
+  /// This phone's id for AdMob test ads (logcat prints it as "Use
+  /// RequestConfiguration…setTestDeviceIds"); passed as
+  /// `--dart-define=ZAD_ADMOB_TEST_DEVICE=<id>`, and never in release.
+  static const String _testDevice = String.fromEnvironment(
+    'ZAD_ADMOB_TEST_DEVICE',
+  );
+  static List<String>? get _testDevices =>
+      kReleaseMode || _testDevice.isEmpty ? null : <String>[_testDevice];
+
   static Future<bool> _start() async {
     try {
       await MobileAds.instance.updateRequestConfiguration(
-        RequestConfiguration(maxAdContentRating: MaxAdContentRating.pg),
+        RequestConfiguration(
+          maxAdContentRating: MaxAdContentRating.pg,
+          testDeviceIds: _testDevices,
+        ),
       );
       await MobileAds.instance.initialize();
       return true;

@@ -909,3 +909,34 @@ Added `zad_flutter/lib/features/notification_reads` (repository interface + Supa
 - **اتعمل:** ميجريشن `20261127120000_bandit_failure.sql`: عمود `outcome` (reward/failure، الصفوف القديمة المقفولة اتعلّمت reward)، و`zad_bandit_settle_failure` (security definer، service_role بس) بتفشّل الإشعار لو عمره +٢٤ ساعة وغير مقروء ومااتحسبش، وبتقفله. `zad_bandit_settle_read` اتحدّثت عشان تعلّم `outcome='reward'`. `settleIgnoredNotifications` في `banditReward.ts` بيتنده بعد كنس المكافأة في `processDueAgentTasks` خلف `ZAD_BANDIT_TONE`.
 - **اتقاس:** سلسلة SQL على postgres:17 (`bandit_failure_test.sql` وbandit_reward_test بعد الميجريشن الجديدة نجحوا)؛ mutation: شيل شرط العمر يوقع التست، وشيل شرط `is_read` يوقعه، ومن غير الميجريشن يوقع. `deno check` EXIT 0 و`deno test -A zad-brain/ _shared/ _schema/` EXIT 0 (فيها oneDoor_test).
 - **فاضل / فخاخ:** الفلاج مقفول و`APPROVED_VARIANTS` فاضية. الصفوف أقدم من ٧ أيام مابتتحسبش. «قراية الكل» بتتحسب فتح (مكافأة كاذبة). إشعار اتمسح = مفيش فشل ولا مكافأة.
+
+## ٢٠٢٦-١١-٢٧: خطة زاد v2 — العقل العائلي (`docs/family-plan`)
+
+- **اتعمل:** `docs/agent/ZAD_FAMILY_PLAN.md` بقت الخطة الشغالة (شرايح P0…P4 بحالات، قرارات المالك، المرفوض، حقائق مقاسة بالـgrep، فريق التنفيذ). CLAUDE.md وAGENTS_CONTEXT بيشاوروا عليها. الدوك المرئي: https://claude.ai/artifact/FpvL9vVYFGmvmADHUTfWBW
+- **اتقاس:** grep بس على الريبو، مفيش قراية من الحي. مفيش كود اتغير.
+- **المالك قال:** القرارات في قسم «قرارات المالك» في الخطة، وإذن دائم بـ٢ Haiku + ١ Sonnet لتنفيذها.
+- **فاضل:** P0.0 خطوة المالك (`ZAD_WEATHER_ALERTS=1`، `app-ads.txt`، 1.1.3+16)، وبعدها P0.1.
+- **فخاخ:** `ZAD_V2_MASTER_PLAN.md` و`ZAD_SUPER_AGENT.md` ملفات قديمة متلغية، مش الخطة دي. الأرقام في «حقائق مقاسة» من grep بالاسم، يعني تقريبية.
+
+## ٢٠٢٦-١١-٢٧ — المرحلة ٠: P0.1/P0.2/P0.4/P0.5 اتقفلوا، P0.6 اتقاس (خط الأساس)
+
+- **اتغيّر:** P0.1 الـRewarded بيتحمّل قبل الضغط (`fc1a44c8`)، P0.2 تست `_schema/from_tables_test.ts` (الجدول `zad_waste_log` راجع من ٢٠٢٦٠٩١٣ والقراية سليمة)، P0.4 `--obfuscate` في `build-debug-apk.yml`، P0.5 جرد ٤٧ ميزة في `UI_OVERHAUL_STATUS.md`.
+- **P0.6 — خط الأساس، SELECT مجمّع بس على الإنتاج ٢٠٢٦-١١-٢٧** (`zad_forecasts`، الصفوف اللي `settled_at` فيها قيمة و`recorded > 0`):
+
+| النوع | كل التوقعات | اتقفلت | اتحسبت في الدقة | MAE | MAPE | متوسط الفعلي |
+|---|---|---|---|---|---|---|
+| `weekly_spend` | ٢٢ | ١٧ | ٣ | ١٧٤٧٫٠٨ | ٨٣٫٣٪ | ٢٢٦٢٫٠٠ |
+| `runs_out` | ١٠٠ | ٨٢ | ٧ | ٠٫٤٧ | ٣٨٫٨٪ | ٢٫١٣ |
+
+- **القراية:** العينة صغيرة (٣ و٧ بس اتحسبوا؛ الباقي `recorded = 0` اتشال من الدقة بقاعدة الدفتر). `weekly_spend` خطؤه كبير (MAPE ٨٣٪) فمايتعرضش كرقم واثق. `runs_out` أقرب (MAPE ٣٩٪). أي تحسين بيتقاس على الأرقام دي.
+- **`zad_inventory_observations`:** ١٦٢ قراية، ١٠ عملاء، ٧٩ صنف، من ٢٠٢٦-٠٨-٠٣ لـ٢٠٢٦-١١-٢٧.
+- **مستني:** P0.3 (وكيل شغال في worktree)، بيلد CI حقيقي لـP0.4 عشان تتحول `[x]`، وتجربة جهاز لـP0.1.
+
+## ٢٠٢٦-١١-٢٧ (كمّل) — P0.3 تسوية الطاقة
+
+- **اتغيّر:** مايجريشن `20261127121500_energy_settlement.sql` (جدول `zad_energy_ledger`: open/done/refunded، دوال `zad_energy_open/done/refund/settle`، cron `energy-settle-5min`)، و`meter.ts` (`openGate` بيسجّل الخصم، و`settleCharge`)، وسطور في `index.ts` بتنادي `settleCharge`، وتست SQL في `edge-functions.yml`.
+- **اتحقق:** `deno test meter_test.ts` EXIT=0 (17)، `deno check index.ts` EXIT=0، تست SQL على postgres:17 EXIT=0، وأربع mutations وقّعت التست (EXIT=3).
+- **ماتشغّلش:** الـCI الحقيقي، وpg_cron على الإنتاج. ثغرة معروفة: لو `zad_energy_done` فشلت مرتين (عطل DB وسط الطلب) الـcron هيرجّع طاقة لنتيجة اتسلّمت، وده في صالح العميل.
+- **بعد الدمج في main:** يتأكد إن المايجريشن نزلت وإن `energy-settle-5min` ظاهر في `cron.job`.
+
+- **P0.4 بيلد محلي (٢٠٢٦-١١-٢٧): ماخلصش.** `flutter build apk --release --obfuscate --split-debug-info` وقع بـ`No space left on device` (القرص ٣٢GB كله مليان: `~/.gradle` ٥٫٧GB، Android SDK ٣٫١GB، worktrees الوكلاء ٤GB). الكود ماوقعش، بس مفيش EXIT=0، فـP0.4 فضلت `[~]`. التحقق الحقيقي على CI بعد الدمج في main (بيلد-debug-apk بيشتغل على main).

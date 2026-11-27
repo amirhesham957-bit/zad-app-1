@@ -40,16 +40,60 @@ enum RewardedOutcome {
 
 /// Rewarded ads, behind an interface for tests.
 abstract interface class RewardedAds {
-  /// Loads and shows one ad for [userId].
+  /// Loads one ahead if none is ready, so the tap shows it at once.
+  Future<void> preload();
+
+  /// Shows the ready ad (or loads one if none is) for [userId].
   Future<RewardedOutcome> watch({required String userId});
 }
 
 /// AdMob.
 class AdMobRewardedAds implements RewardedAds {
+  RewardedAd? _ready;
+  DateTime? _readyAt;
+  Future<RewardedAd?>? _loading;
+
+  /// AdMob's own expiry for a loaded ad is an hour.
+  static const Duration _keep = Duration(minutes: 50);
+
+  bool get _fresh =>
+      _ready != null &&
+      _readyAt != null &&
+      DateTime.now().difference(_readyAt!) < _keep;
+
+  @override
+  Future<void> preload() async {
+    if (_fresh || _loading != null) return;
+    if (!await AdsSdk.prepare(askConsent: false)) return;
+    await _fetch();
+  }
+
+  /// One load at a time; the result is kept for the next tap.
+  Future<RewardedAd?> _fetch() {
+    final running = _loading;
+    if (running != null) return running;
+    final next = _load().then((ad) {
+      if (ad != null) {
+        unawaited(_ready?.dispose());
+        _ready = ad;
+        _readyAt = DateTime.now();
+      }
+      return ad;
+    }).whenComplete(() => _loading = null);
+    return _loading = next;
+  }
+
   @override
   Future<RewardedOutcome> watch({required String userId}) async {
     if (!await AdsSdk.prepare()) return RewardedOutcome.unavailable;
-    final ad = await _load();
+    RewardedAd? ad;
+    if (_fresh) {
+      ad = _ready;
+      _ready = null;
+    } else {
+      ad = await _fetch();
+      if (identical(ad, _ready)) _ready = null;
+    }
     if (ad == null) return RewardedOutcome.unavailable;
 
     final done = Completer<RewardedOutcome>();
@@ -57,6 +101,7 @@ class AdMobRewardedAds implements RewardedAds {
     ad.fullScreenContentCallback = FullScreenContentCallback<RewardedAd>(
       onAdDismissedFullScreenContent: (a) {
         unawaited(a.dispose());
+        unawaited(preload());
         if (!done.isCompleted) {
           done.complete(
             earned ? RewardedOutcome.earned : RewardedOutcome.dismissed,

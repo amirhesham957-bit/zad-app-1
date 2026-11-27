@@ -39,6 +39,9 @@ class _FakeAds implements RewardedAds {
   int watched = 0;
 
   @override
+  Future<void> preload() async {}
+
+  @override
   Future<RewardedOutcome> watch({required String userId}) async {
     watched++;
     return outcome;
