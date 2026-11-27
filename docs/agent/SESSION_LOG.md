@@ -919,3 +919,10 @@ Added `zad_flutter/lib/features/notification_reads` (repository interface + Supa
 - **القراية:** العينة صغيرة (٣ و٧ بس اتحسبوا؛ الباقي `recorded = 0` اتشال من الدقة بقاعدة الدفتر). `weekly_spend` خطؤه كبير (MAPE ٨٣٪) فمايتعرضش كرقم واثق. `runs_out` أقرب (MAPE ٣٩٪). أي تحسين بيتقاس على الأرقام دي.
 - **`zad_inventory_observations`:** ١٦٢ قراية، ١٠ عملاء، ٧٩ صنف، من ٢٠٢٦-٠٨-٠٣ لـ٢٠٢٦-١١-٢٧.
 - **مستني:** P0.3 (وكيل شغال في worktree)، بيلد CI حقيقي لـP0.4 عشان تتحول `[x]`، وتجربة جهاز لـP0.1.
+
+## ٢٠٢٦-١١-٢٧ (كمّل) — P0.3 تسوية الطاقة
+
+- **اتغيّر:** مايجريشن `20261127120000_energy_settlement.sql` (جدول `zad_energy_ledger`: open/done/refunded، دوال `zad_energy_open/done/refund/settle`، cron `energy-settle-5min`)، و`meter.ts` (`openGate` بيسجّل الخصم، و`settleCharge`)، وسطور في `index.ts` بتنادي `settleCharge`، وتست SQL في `edge-functions.yml`.
+- **اتحقق:** `deno test meter_test.ts` EXIT=0 (17)، `deno check index.ts` EXIT=0، تست SQL على postgres:17 EXIT=0، وأربع mutations وقّعت التست (EXIT=3).
+- **ماتشغّلش:** الـCI الحقيقي، وpg_cron على الإنتاج. ثغرة معروفة: لو `zad_energy_done` فشلت مرتين (عطل DB وسط الطلب) الـcron هيرجّع طاقة لنتيجة اتسلّمت، وده في صالح العميل.
+- **بعد الدمج في main:** يتأكد إن المايجريشن نزلت وإن `energy-settle-5min` ظاهر في `cron.job`.
