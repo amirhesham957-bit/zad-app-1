@@ -23,6 +23,7 @@
    - م٥.٢: `plan_gathering_time` بتقرا `zad_appointments` بتاعة العميل (مش حسابات تانية) وتدمجها مع كلامه. م٧.٨: `memberGoalWiring.ts` بيحط حالة الهدف الأسبوعية واقتراح التمديد في `life_goals` خلف `ZAD_MEMBER_GOALS` (مقفول)، قراية واقتراح بس.
    - v2-3: `zad-brain/familyPersona.ts` بيرسونا العيلة خلف `ZAD_FAMILY_PERSONA` (مقفول، صفر توكن): بلوك برومبت + شيل أرقام باقي الأفراد من لقطة الشات (خصوصية م٧.٩).
    - v2-2: `zad-brain/nativeAlarm.ts` أداة `set_native_alarm` (FCM data-only `action:SET_NATIVE_ALARM` لأجهزة العميل) خلف `ZAD_NATIVE_ALARM` (مقفول لحد ما مستقبِل SET_ALARM Intent في Flutter يتشحن). مقفول = الأداة مش في القايمة والمنفّذ بيرفض؛ فشل/مفيش جهاز = `fallback_to_inapp_reminder`. بتقرا `zad_fcm_tokens` بس.
+   - v2: `zad-brain/weatherDrift.ts` تنبيه الجو الاستباقي خلف `ZAD_WEATHER_ALERTS` (مقفول: صفر شبكة)، من أول `processDueAgentTasks`: لوكيشن `zad_users` الحديث + Open-Meteo بالساعة للـ٣ ساعات الجاية (مطر > ٤٠٪، حر/برد شديد) ⇒ لحظة `weather_alert` في `zad_voice_moments` (المعالج بيحترم الهدوء والسقف)، ومنع تكرار ٦ ساعات للنوع. مفيش جدول جديد.
 4. **العقل المتكلم:** `supabase/functions/zad-brain/index.ts` (حوالي ١٠٬٠٠٠ سطر، والأدوات بقت في `toolDefs.ts` و`chatTools.ts`)، بيحكي النتيجة. أي رقم في الرد لازم يكون ليه مصدر.
 
 ## الباب الوحيد (م٢.٥ خلص ٢٢/١١)
