@@ -594,11 +594,30 @@ export const GENERAL_CORE_TOOLS: readonly string[] = [
 // الشيف، المحلات القريبة — ٧ أدوات (~٣ آلاف حرف) كانت بتتبعت مع كل «مرحبا». بتيجي بنية الرسالة
 // (intentToolHints) أو بالوكيل المتخصص، وقواعدها في البرومبت معاها (buildChatSystemPrompt).
 
+/**
+ * م٤.٣ — نطاق أضيق لكل تخصص بالنية (ZAD_ONDEMAND_PROMPT=1، مقفول افتراضياً). أدوات التعديل والمسح (update و delete)
+ * وبعض الأدوات النادرة بتتحمّل بس لو الرسالة فيها فعل تعديل/مسح، أو النية (extra) جابتها، أو عندها قاعدة في البرومبت
+ * بتتحسب بـoffers(). الباقي زي ما هو. من غير الرسالة (message غايب) النطاق كامل.
+ */
+export const ONDEMAND_EDIT_VERBS = /(شيل|شيلي|شلها|امسح|امسحي|احذف|احذفي|الغي|الغيها|الغاء|عدل|عدّل|عدلي|غير|غيّر|غيري|صحح|صلح|بدل|بدّل|تعديل|مسح|حذف)/;
+export const ONDEMAND_DEFERRED_TOOLS: Record<Exclude<SpecialistId, "general">, readonly string[]> = {
+  finance: [
+    "update_debt", "delete_debt", "update_obligation", "delete_obligation", "update_subscription", "delete_subscription",
+    "check_price_online",
+  ],
+  pantry: ["delete_inventory_item", "delete_shopping_item", "check_price_online"],
+  pharmacy: ["update_pharmacy_item", "delete_pharmacy_item"],
+  family: [],
+  home: ["update_maintenance_item", "delete_maintenance_item", "delete_document", "update_obligation", "delete_obligation"],
+};
+const onDemandScope = (): boolean => Deno.env.get("ZAD_ONDEMAND_PROMPT") === "1";
+
 export function scopeToolsForSpecialist<T extends { name: string }>(
   tools: T[],
   specialist: SpecialistId,
   secondary?: SpecialistId | null,
   extra: readonly string[] = [],
+  message?: string,
 ): T[] {
   if (specialist === "general") {
     const core = new Set([...GENERAL_CORE_TOOLS, ...extra]);
@@ -611,6 +630,14 @@ export function scopeToolsForSpecialist<T extends { name: string }>(
     ...CROSS_DOMAIN_TOOLS,
     ...extra,
   ]);
+  if (message !== undefined && onDemandScope() && !ONDEMAND_EDIT_VERBS.test(normalize(message))) {
+    const keep = new Set([...extra, ...CROSS_DOMAIN_TOOLS]);
+    const defer = new Set<string>();
+    for (const sp of [specialist, secondary]) {
+      if (sp && sp !== "general") for (const n of ONDEMAND_DEFERRED_TOOLS[sp]) defer.add(n);
+    }
+    return tools.filter((t) => allowed.has(t.name) && (keep.has(t.name) || !defer.has(t.name)));
+  }
   return tools.filter((t) => allowed.has(t.name));
 }
 

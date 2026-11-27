@@ -6611,6 +6611,7 @@ async function handleAgentTurnInLane(
       // «صلحت الحنفية» — الأداة جاهزة لو قال الاسم والرقم في نفس الرسالة.
       ...(technicianFollowUp(message, snap?.trusted_technicians, []) ? ["save_trusted_technician"] : []),
     ],
+    message,
   );
   // SOUL + المهارات المتعلمة — هوية مدير الحياة الكامل قبل برومبت الوكيل المتخصص.
   const learnedSkills = await learnedSkillsEarly;
