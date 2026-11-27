@@ -132,6 +132,7 @@ jobs:
       - name: Build release APK
         run: |
           flutter build apk --release --split-per-abi \
+            --obfuscate --split-debug-info=build/symbols/apk \
             --dart-define=SUPABASE_URL="${{ secrets.SUPABASE_URL }}" \
             --dart-define=SUPABASE_ANON_KEY="${{ secrets.SUPABASE_ANON_KEY }}" \
             --dart-define=ADMOB_INTERSTITIAL_UNIT="${{ secrets.ADMOB_INTERSTITIAL_UNIT }}" \
@@ -162,6 +163,7 @@ jobs:
                  STORE_PASSWORD="$UPLOAD_PASSWORD" KEY_PASSWORD="$UPLOAD_PASSWORD"
           keytool -list -keystore "$KEYSTORE_PATH" -storepass "$STORE_PASSWORD" -alias "$KEY_ALIAS" | grep -i fingerprint
           flutter build appbundle --release \
+            --obfuscate --split-debug-info=build/symbols/aab \
             --dart-define=SUPABASE_URL="${{ secrets.SUPABASE_URL }}" \
             --dart-define=SUPABASE_ANON_KEY="${{ secrets.SUPABASE_ANON_KEY }}" \
             --dart-define=ADMOB_INTERSTITIAL_UNIT="${{ secrets.ADMOB_INTERSTITIAL_UNIT }}" \
@@ -176,6 +178,12 @@ jobs:
         with:
           name: app-release-aab
           path: zad_flutter/build/app/outputs/bundle/release/app-release.aab
+
+      # Obfuscation symbols (--split-debug-info) — needed to read stack traces from the release builds.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-symbols
+          path: zad_flutter/build/symbols
 
       # Google Play: the AAB goes to the internal testing track (owner 6/11 — the service account
       # google-play-auto-publisher was added in Play Console and its JSON key is PLAY_CONFIG_JSON).

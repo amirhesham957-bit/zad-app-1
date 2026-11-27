@@ -47,9 +47,9 @@ related:
 
 ## دلوقتي
 
-- **الشريحة الجاية:** P0.1 (إعلان المكافأة يتحمّل قبل الضغط).
-- **شغال:** مفيش.
-- **مستني المالك:** P0.0 (`ZAD_WEATHER_ALERTS=1` في secrets، ومراجعة `app-ads.txt` ونسخة 1.1.3+16).
+- **الشريحة الجاية:** P0.3 (تسوية الطاقة) وP0.6 (قياس الدقة، SELECT بس). P0.5 شغالة (جرد). P0.4 مستنية بيلد CI حقيقي. P0.1 مستنية تجربة جهاز.
+- **شغال:** P0.5 (haiku-scout).
+- **مستني المالك:** P0.0 (`ZAD_WEATHER_ALERTS=1` في secrets، ومراجعة `app-ads.txt` ونسخة 1.1.3+16، وتأكيد إن دالة الطقس مجدولة في pg_cron/zad_jobs وإن lat/lng بيتحدّث).
 - **آخر تحديث:** ٢٠٢٦-١١-٢٧.
 
 ## قرارات المالك (٢٠٢٦-١١-٢٧، ماتتفتحش تاني)
@@ -106,10 +106,10 @@ related:
 | ID | الحالة | الشريحة | الملفات | التحقق |
 |---|---|---|---|---|
 | P0.0 | `[!]` | خطوة المالك: `ZAD_WEATHER_ALERTS=1`، `app-ads.txt` مطابق لناشر AdMob، 1.1.3+16 مرفوعة | Supabase secrets، `website/public/app-ads.txt` | المالك يأكد |
-| P0.1 | `[ ]` | الـRewarded يتحمّل مسبقاً ويتحمّل اللي بعده بعد العرض، و`testDeviceIds` في الديباج | `zad_flutter/lib/shared/ads/data/rewarded_ads.dart` | `flutter analyze` (No issues) + `flutter test` + الإعلان يظهر فور الضغط على جهاز |
-| P0.2 | `[ ]` | إصلاح قراية `zad_waste_log` + تست CI يقارن كل `.from('x')` بالجداول الموجودة بعد كل المايجريشنز | `zad-brain/voiceMoments.ts:471`، تست جديد في `_schema/` | `deno test` أخضر، والتست يوقع لو الإصلاح اتشال |
+| P0.1 | `[x]` | الـRewarded يتحمّل مسبقاً ويتحمّل اللي بعده بعد العرض، و`testDeviceIds` في الديباج | `zad_flutter/lib/shared/ads/data/rewarded_ads.dart` | `flutter analyze` (No issues) + `flutter test` + الإعلان يظهر فور الضغط على جهاز |
+| P0.2 | `[x]` | (الجدول رجع في 20260913002000، القراية سليمة، فاتضاف التست بس) إصلاح قراية `zad_waste_log` + تست CI يقارن كل `.from('x')` بالجداول الموجودة بعد كل المايجريشنز | `zad-brain/voiceMoments.ts:471`، تست جديد في `_schema/` | `deno test` أخضر، والتست يوقع لو الإصلاح اتشال |
 | P0.3 | `[ ]` | تسوية الطاقة: خصم من غير نتيجة أو رجوع فاشل > ١٠ دقايق بيرجع بالـcron | مايجريشن + `zad-core-intelligence/meter.ts` | تست SQL في سلسلة `edge-functions.yml` + mutation |
-| P0.4 | `[ ]` | `--obfuscate --split-debug-info` والرموز artifact في الـCI | `.github/workflows/build-debug-apk.yml:134,164` | `EXIT=0` الحقيقي للبيلد |
+| P0.4 | `[~]` | `--obfuscate --split-debug-info` والرموز artifact في الـCI | `.github/workflows/build-debug-apk.yml:134,164` | `EXIT=0` الحقيقي للبيلد |
 | P0.5 | `[ ]` | جرد الـ٤٦ ميزة: اللي مابيكملش الساندوتش يتقفل بفلاج سيرفر | `zad_flutter/lib/features/`، `docs/agent/UI_OVERHAUL_STATUS.md` | جدول الميزات وحالتها في `UI_OVERHAUL_STATUS.md` |
 | P0.6 | `[ ]` | قياس دقة التنبؤ الحالية على الحي (SELECT بس) | `zad_forecasts`، `zad_inventory_observations` | رقم الخطأ لكل نوع في `SESSION_LOG.md` = خط الأساس |
 
