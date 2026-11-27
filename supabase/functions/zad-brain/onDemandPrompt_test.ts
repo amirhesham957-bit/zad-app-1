@@ -2,7 +2,7 @@
 // الأداة المتوقعة لازم تفضل معروضة، وقاعدتها تفضل في البرومبت، وحجم السياق ينزل. الدقة الحقيقية (الموديل بيستجيب
 // صح؟) بتتقاس بليلة الـeval الحية (acceptance probe) قبل ما ZAD_ONDEMAND_PROMPT يتفتح في الإنتاج.
 import { assert, assertEquals } from "jsr:@std/assert@1";
-import { buildChatSystemPrompt, CHAT_TOOLS, INTENT_RULE_TOOLS, ruleToolsFor, toolsForCall } from "./index.ts";
+import { buildChatSystemPrompt, CHAT_TOOLS, INTENT_RULE_TOOLS, lazyToolsForCall, ruleToolsFor, toolsForCall } from "./index.ts";
 import { intentToolHints, routeSpecialists, scopeToolsForSpecialist, specialistPromptBlock } from "./specialists.ts";
 import type { SpecialistId } from "./specialists.ts";
 import { soulBlock } from "./soul.ts";
@@ -23,7 +23,7 @@ function turn(message: string, on: boolean) {
     const scoped = scopeToolsForSpecialist(CHAT_TOOLS, primary, secondary, hinted, message);
     const rules = ruleToolsFor(scoped, hinted, undefined, message);
     const chat = buildChatSystemPrompt(SNAP, false, rules);
-    const tools = toolsForCall(scoped, hinted, [], 0);
+    const tools = lazyToolsForCall(scoped, hinted, [], [], false) ?? toolsForCall(scoped, hinted, [], 0);
     const chars = JSON.stringify(tools).length + chat.length + soulBlock(undefined).length + (specialistPromptBlock(primary, secondary) ?? "").length;
     return { scoped, hinted, rules, chat, tools, tok: Math.round(chars / 3.5) };
   });
@@ -51,6 +51,7 @@ Deno.test("م٤.٣ on-demand: expected tools stay offered, rules for them stay, 
   console.log(`[م٤.٣ ondemand] cases=${EVAL_CASES.length} expectedTool=${expectedTools} leanExpected=${leanExpected} lostRule=${lostRule}\n  off p50=${q(off, .5)} p90=${q(off, .9)}  on p50=${q(on, .5)} p90=${q(on, .9)} (tok, no snapshot)`);
   assertEquals(lostRule, 0);
   assert(q(on, .5) < q(off, .5), "on-demand must shrink the median turn");
+  assert(q(on, .5) < 4600, `م٤.٣ج: per-turn p50 regressed above 4600 tok (${q(on, .5)})`);
 });
 
 Deno.test("م٤.٣ on-demand: money tool and hinted tools stay full; flag off = unchanged", () => {
