@@ -1,7 +1,7 @@
 import { assertEquals } from "jsr:@std/assert@1";
 import { chooseArm, seededRng, update } from "../_shared/or/banditTone.ts";
 import { banditEnabled } from "./banditWiring.ts";
-import { noteShown, rewardEligible, settleOpenedNotifications, unambiguousMember } from "./banditReward.ts";
+import { noteShown, rewardEligible, settleIgnoredNotifications, settleOpenedNotifications, unambiguousMember } from "./banditReward.ts";
 
 type Tables = Record<string, Array<Record<string, unknown>>>;
 
@@ -13,10 +13,17 @@ function fakeSb(t: Tables) {
   const sb = {
     from(table: string) {
       calls.push(table);
+      let lo = -Infinity, hi = Infinity;
       const q: any = {
-        select: () => q, is: () => q, gte: () => q, order: () => q, eq: () => q, in: () => q,
+        select: () => q, is: () => q, order: () => q, eq: () => q, in: () => q,
+        gte: (col: string, v: string) => { if (col === "shown_at") lo = Date.parse(v); return q; },
+        lte: (col: string, v: string) => { if (col === "shown_at") hi = Date.parse(v); return q; },
         limit: () => q,
-        then: (res: (v: unknown) => void) => res({ data: t[table] ?? [], error: null }),
+        then: (res: (v: unknown) => void) =>
+          res({
+            data: (t[table] ?? []).filter((r) => typeof r.shown_at !== "string" || (Date.parse(r.shown_at) >= lo && Date.parse(r.shown_at) <= hi)),
+            error: null,
+          }),
       };
       return q;
     },
@@ -130,4 +137,84 @@ Deno.test("noteShown goes through the rpc and swallows failures", async () => {
 Deno.test("a sweep failure never throws", async () => {
   const boom = { from: () => { throw new Error("db down"); }, rpc: () => Promise.resolve({ data: null, error: null }) };
   assertEquals(await settleOpenedNotifications(boom, true), { rewarded: 0, skipped: 0 });
+});
+
+// قاعدة الفشل (م٨): إشعار معروض من +٢٤ ساعة وغير مقروء = فشل للقالب.
+const NOW = Date.parse("2026-11-27T12:00:00Z");
+const hoursAgo = (h: number) => new Date(NOW - h * 3600 * 1000).toISOString();
+const failBase = (shownHoursAgo: number, isRead: boolean | null = false): Tables => ({
+  zad_bandit_shown: [{ ...shownRow, shown_at: hoursAgo(shownHoursAgo) }],
+  app_notifications: [{ id: "n1", is_read: isRead }],
+  zad_household_members: [adult],
+  family_members: [],
+});
+
+Deno.test("failure: unread after 24h is recorded as a failure through the rpc", async () => {
+  const { sb, rpcs } = fakeSb(failBase(25));
+  assertEquals(await settleIgnoredNotifications(sb, true, NOW), { failed: 1, skipped: 0 });
+  assertEquals(rpcs, [{ fn: "zad_bandit_settle_failure", args: { p_user: "u1", p_notification: "n1" } }]);
+  // الـposterior: فشل واحد بيقلّل فرصة القالب قدام قالب جديد
+  const after = update({}, { memberId: "m1", age: 35 }, "warm", ["base", "warm"], false);
+  assertEquals(after.m1.warm, { successes: 0, failures: 1 });
+});
+
+Deno.test("failure: not before 24h", async () => {
+  const { sb, rpcs } = fakeSb(failBase(23));
+  assertEquals(await settleIgnoredNotifications(sb, true, NOW), { failed: 0, skipped: 0 });
+  assertEquals(rpcs.length, 0);
+});
+
+Deno.test("failure: read in time is never failed (it rewards instead)", async () => {
+  const t = failBase(25, true);
+  const f = fakeSb(t);
+  assertEquals(await settleIgnoredNotifications(f.sb, true, NOW), { failed: 0, skipped: 0 });
+  assertEquals(f.rpcs.length, 0);
+  assertEquals(await settleOpenedNotifications(f.sb, true, NOW), { rewarded: 1, skipped: 0 });
+  assertEquals(f.rpcs.map((r) => r.fn), ["zad_bandit_settle_read"]);
+});
+
+Deno.test("failure: already settled rows are not even read", async () => {
+  // الاستعلام بيفلتر settled_at is null؛ الفيك مابيرجّعش حاجة لو الجدول فاضي من المفتوح
+  const t = failBase(25);
+  t.zad_bandit_shown = [];
+  const f = fakeSb(t);
+  assertEquals(await settleIgnoredNotifications(f.sb, true, NOW), { failed: 0, skipped: 0 });
+  assertEquals(f.rpcs.length, 0);
+  // إشعار اتمسح: مفيش إشارة
+  const gone = failBase(25);
+  gone.app_notifications = [];
+  const g = fakeSb(gone);
+  assertEquals(await settleIgnoredNotifications(g.sb, true, NOW), { failed: 0, skipped: 0 });
+  assertEquals(g.rpcs.length, 0);
+});
+
+Deno.test("failure: flag closed is a no-op (zero reads, zero writes)", async () => {
+  const f = fakeSb(failBase(30));
+  assertEquals(await settleIgnoredNotifications(f.sb, false, NOW), { failed: 0, skipped: 0 });
+  assertEquals(f.calls.length, 0);
+  assertEquals(f.rpcs.length, 0);
+});
+
+Deno.test("failure: same exclusions as the reward (critical, child, minor, ambiguous)", async () => {
+  const crit = failBase(30);
+  crit.zad_bandit_shown = [{ ...shownRow, kind: "med_followup", shown_at: hoursAgo(30) }];
+  const kid = failBase(30);
+  kid.family_members = [{ user_id: "u1" }];
+  const minor = failBase(30);
+  minor.zad_household_members = [{ ...adult, birth_year: new Date().getUTCFullYear() - 16 }];
+  const multi = failBase(30);
+  multi.zad_household_members = [adult, { id: "m2", user_id: "u1", kind: "adult", birth_year: 1992, archived_at: null }];
+  for (const t of [crit, kid, minor, multi]) {
+    const f = fakeSb(t);
+    assertEquals(await settleIgnoredNotifications(f.sb, true, NOW), { failed: 0, skipped: 1 });
+    assertEquals(f.rpcs.length, 0);
+  }
+});
+
+Deno.test("failure: rpc error is skipped, and a sweep failure never throws", async () => {
+  const f = fakeSb(failBase(30));
+  const errSb = { ...f.sb, rpc: () => Promise.resolve({ data: null, error: { message: "x" } }) };
+  assertEquals(await settleIgnoredNotifications(errSb, true, NOW), { failed: 0, skipped: 1 });
+  const boom = { from: () => { throw new Error("db down"); }, rpc: () => Promise.resolve({ data: null, error: null }) };
+  assertEquals(await settleIgnoredNotifications(boom, true, NOW), { failed: 0, skipped: 0 });
 });

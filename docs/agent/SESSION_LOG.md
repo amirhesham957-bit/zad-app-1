@@ -905,3 +905,7 @@ Added `zad_flutter/lib/features/notification_reads` (repository interface + Supa
 - **فاضل:** «اتعرض فعلاً» = اللقطة اتبنت، مش إن الرد وصل (مفيش إثبات من رد الموديل). فلاج `ZAD_MEMBER_GOALS` لسه مقفول ومش مقاس.
 - **فخ:** الميجريشن بتتنشر مع الدمج في `main`؛ الجدول مفيش حاجة بتكتب فيه غير الدوال التلاتة.
 
+## ٢٠٢٦-١١-٢٧: م٨ قاعدة الفشل للـbandit (`feat/m8-bandit-failure`)
+- **اتعمل:** ميجريشن `20261127120000_bandit_failure.sql`: عمود `outcome` (reward/failure، الصفوف القديمة المقفولة اتعلّمت reward)، و`zad_bandit_settle_failure` (security definer، service_role بس) بتفشّل الإشعار لو عمره +٢٤ ساعة وغير مقروء ومااتحسبش، وبتقفله. `zad_bandit_settle_read` اتحدّثت عشان تعلّم `outcome='reward'`. `settleIgnoredNotifications` في `banditReward.ts` بيتنده بعد كنس المكافأة في `processDueAgentTasks` خلف `ZAD_BANDIT_TONE`.
+- **اتقاس:** سلسلة SQL على postgres:17 (`bandit_failure_test.sql` وbandit_reward_test بعد الميجريشن الجديدة نجحوا)؛ mutation: شيل شرط العمر يوقع التست، وشيل شرط `is_read` يوقعه، ومن غير الميجريشن يوقع. `deno check` EXIT 0 و`deno test -A zad-brain/ _shared/ _schema/` EXIT 0 (فيها oneDoor_test).
+- **فاضل / فخاخ:** الفلاج مقفول و`APPROVED_VARIANTS` فاضية. الصفوف أقدم من ٧ أيام مابتتحسبش. «قراية الكل» بتتحسب فتح (مكافأة كاذبة). إشعار اتمسح = مفيش فشل ولا مكافأة.
