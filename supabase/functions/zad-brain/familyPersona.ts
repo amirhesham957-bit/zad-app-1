@@ -12,11 +12,24 @@ export function familyPersonaEnabled(get: (k: string) => string | undefined): bo
 interface FamilyMemberView { alias?: string; role?: string; balance?: number; savings_goal?: number; online_now?: boolean }
 interface FamilySnap { mine?: unknown; members?: FamilyMemberView[]; [k: string]: unknown }
 
+/** يعلّم عنصر إنه بتاع العميل من غير ما يظهر في الـJSON (غير enumerable): صفر توكن والفلاج مقفول. */
+export function markOwn<T extends object>(item: T, own: boolean): T {
+  Object.defineProperty(item, "own", { value: own, enumerable: false });
+  return item;
+}
+
 /** أفراد العيلة بدون أي رقم فردي: الاسم والدور وحالة الاتصال بس. أرقام «أنا» (`mine`) والإجماليات بتفضل. */
 export function redactFamilyForPersona<T extends FamilySnap | null | undefined>(family: T): T {
   if (!family || !Array.isArray(family.members)) return family;
   const members = family.members.map((m) => ({ alias: m.alias, role: m.role, online_now: m.online_now }));
-  return { ...family, members } as T;
+  // أشجار التسبيحة فردية (family_tasbiha.user_id): بتاعة فرد تاني بتتشال. مفيش علامة ملكية = بتتشال (الأمان أولاً).
+  // المهام والأهداف مشتركة على مستوى البيت (مفيهاش مالك خاص، والمهمة بتتعرض بدون المُسنَد إليه).
+  // ملاحظات الأفراد التانيين: من familySharedMemory بس (shared-only بسياسة الداتابيز)، وأحداث zad_events مش في اللقطة.
+  const out: Record<string, unknown> = { ...family, members };
+  if (Array.isArray(family.tasbiha)) {
+    out.tasbiha = (family.tasbiha as Array<{ own?: boolean }>).filter((t) => t.own === true);
+  }
+  return out as T;
 }
 
 /** "" لو الفلاج مقفول، أو مفيش عيلة، أو الحساب طفل (له بلوكه)، أو العيلة فرد واحد. */
