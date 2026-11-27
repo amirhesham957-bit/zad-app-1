@@ -47,6 +47,13 @@ class _WatchAdButtonState extends ConsumerState<WatchAdButton> {
   Timer? _waitOver;
 
   @override
+  void initState() {
+    super.initState();
+    // Loaded before the tap, so the ad shows the moment it is pressed.
+    unawaited(ref.read(rewardedAdsProvider).preload());
+  }
+
+  @override
   void dispose() {
     for (final t in _timers) {
       t.cancel();

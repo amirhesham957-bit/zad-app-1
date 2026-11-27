@@ -24,6 +24,9 @@ class _Ads implements RewardedAds {
   final List<String> users = <String>[];
 
   @override
+  Future<void> preload() async {}
+
+  @override
   Future<RewardedOutcome> watch({required String userId}) async {
     users.add(userId);
     return outcome;
