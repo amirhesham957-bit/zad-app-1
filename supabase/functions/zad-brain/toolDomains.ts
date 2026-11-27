@@ -3,6 +3,7 @@
 // بيفشل لو أداة جديدة اتضافت من غير مجال، أو بقت من غير أي طريق توصل بيه للموديل.
 export type ToolDomain = "finance" | "pantry" | "pharmacy" | "family" | "home" | "cross";
 import { nativeAlarmEnabled } from "./nativeAlarm.ts";
+import { memberGoalsOn } from "./memberGoalApply.ts";
 
 export const TOOL_DOMAIN: Record<string, ToolDomain> = {
   // الفلوس
@@ -40,6 +41,7 @@ export const TOOL_DOMAIN: Record<string, ToolDomain> = {
   add_appointment: "cross", update_appointment: "cross", delete_appointment: "cross", find_appointments: "cross",
   add_place_reminder: "cross", cancel_place_reminder: "cross",
   ...(nativeAlarmEnabled() ? { set_native_alarm: "cross" as ToolDomain } : {}),
+  ...(memberGoalsOn() ? { apply_goal_adjustment: "finance" as ToolDomain } : {}),
 };
 
 /**
