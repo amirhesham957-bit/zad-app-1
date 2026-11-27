@@ -4396,6 +4396,7 @@ async function handleRequest(req: Request): Promise<Response> {
     // توصيل" اللي realtime_push بيشتغل بيه.
     // لحظات صوت زاد (20260914003000): الكرون بيسجّل المواقف في zad_voice_moments وبينادي هنا
     // بس لو فيه حاجة مستنية. نفس سيكريت الفحص الاستباقي.
+    // gate: service/cron بسر الكرون، من غير خصم من العميل (لحظات الصوت بتتسجّل من السيرفر، مش طلب عميل). مفيش حاجة تترجّع.
     if (body.action === "process_voice_moments") {
       if (!(await secretMatches(req.headers.get("ZAD-PROACTIVE-CRON-SECRET"), "ZAD_PROACTIVE_CRON_SECRET"))) {
         return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: CORS_HEADERS });
@@ -4518,6 +4519,7 @@ async function handleRequest(req: Request): Promise<Response> {
     // المتناقضة اللي فاتت على كتابة الوقت، وتلخيص أسبوعي وحيد بدل الملاحظة اليومية المكررة.
     // الصلاحية: service-role bearer (للاستدعاء اليدوي/الإداري) أو ZAD-PROACTIVE-CRON-SECRET
     // (لـ pg_cron — نفس سيكريت الفحص الاستباقي المختوم في vault، بنفس نمط W9 بالظبط).
+    // gate: service/cron بسر الكرون، من غير خصم من العميل.
     if (body.action === "nightly_dream_reflection") {
       const dreamCronAuthorized = await secretMatches(
         req.headers.get("ZAD-PROACTIVE-CRON-SECRET"), "ZAD_PROACTIVE_CRON_SECRET",
@@ -4860,6 +4862,7 @@ async function handleRequest(req: Request): Promise<Response> {
       return new Response(JSON.stringify(out), { status: out.ok ? 200 : out.status === "not_found" ? 404 : 500, headers: CORS_HEADERS });
     }
 
+    // gate: service (webhook/DB trigger)، من غير خصم من العميل.
     if (body.action === "place_event") {
       const placeUserId = await resolveRequestUserId(req, body);
       if (!placeUserId) {
@@ -4907,6 +4910,7 @@ async function handleRequest(req: Request): Promise<Response> {
       return new Response(JSON.stringify({ ok: true, status: "processed", ...outing, ...summary }), { headers: CORS_HEADERS });
     }
 
+    // gate: service (webhook/DB trigger)، من غير خصم من العميل.
     if (body.action === "moment_event") {
       const eventUserId = await resolveRequestUserId(req, body);
       if (!eventUserId) {
@@ -4987,6 +4991,7 @@ async function handleRequest(req: Request): Promise<Response> {
 
     // «اشرحلي ده» من شاشات التطبيق (الصمود، سلوك الصرف، خطة القروض) بصوت زاد نفسه — قبل كده كل
     // شاشة كانت بتكلم الموديل بشخصية لوحدها (explain.ts). سياق صغير: الشرح مش محتاج البيت كله.
+    // gate: مجاني لحد دلوقتي (JWT العميل، موديل routine، ٤٠٠ توكن، من غير خصم ولا رجوع). إضافة خصم هنا قرار منتج، مش P1.1.
     if (body.action === "explain") {
       const uid = await resolveRequestUserId(req, body);
       if (!uid) return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: CORS_HEADERS });
@@ -5025,6 +5030,8 @@ async function handleRequest(req: Request): Promise<Response> {
       return new Response(JSON.stringify({ ok: true, conflicts: conflicts.map(({ kind, say }) => ({ kind, say })) }), { headers: CORS_HEADERS });
     }
 
+    // gate: agent_turn وagent_turn_stream بيعدّوا على openChatCharge/withChargeSettlement جوه handleAgentTurn (الاستريم بينادي handleAgentTurn نفسه).
+    // agent_confirm وagent_execute مابيكلموش موديل (runTool بس) فمفيش خصم. notification_ingest وstore_arrival مجانيين (موديل routine من غير خصم) = قرار منتج.
     if (body.action === "agent_turn" || body.action === "agent_turn_stream" || body.action === "agent_confirm" || body.action === "agent_execute" || body.action === "notification_ingest" || body.action === "store_arrival") {
       // ٢.٧(ب): محرك الخلفية جلسته منتهية عن قصد (١.٣) — مفتاح الجهاز بيفتح
       // notification_ingest بس، والحساب من صف المفتاح مش من الـbody.
@@ -5068,6 +5075,7 @@ async function handleRequest(req: Request): Promise<Response> {
       return await handleAgentExecute(sbChat, authedUserId, body);
     }
 
+    // gate: مسار trigger (daily/event/geofence) مجاني من غير خصم: بيشتغل من الكرون أو من التطبيق بـJWT العميل. إضافة خصم قرار منتج.
     // التحليل اليومي/الحدثي يقرأ ويكتب بيانات العميل أيضاً، لذلك هويته لازم تكون من
     // JWT موثوق مثل مسار المحادثة. service-role فقط مسموح له اختيار user_id صراحة.
     const userId = await resolveRequestUserId(req, body);

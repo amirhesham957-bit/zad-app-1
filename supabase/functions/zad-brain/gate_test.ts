@@ -148,3 +148,22 @@ Deno.test("chatBodyEmpty", () => {
   assertEquals(chatBodyEmpty(500, null), true);
   assertEquals(chatBodyEmpty(200, "x"), false);
 });
+
+// تغطية البوابة (P1.1b): أي مسار في index.ts بيكلم موديل لحساب عميل يا بيعدّي على البوابة يا عليه تعليق
+// `// gate:` فوقه بيبرّر إنه service/cron أو مجاني. مسار جديد من غير واحد منهم يكسر التست ده.
+Deno.test("coverage: every model-calling action is gated or carries a documented gate: note", async () => {
+  const src = await Deno.readTextFile(new URL("./index.ts", import.meta.url));
+  const lines = src.split("\n");
+  for (const a of ["process_voice_moments", "nightly_dream_reflection", "place_event", "moment_event", "explain"]) {
+    const i = lines.findIndex((l) => l.includes(`if (body.action === "${a}")`));
+    assertEquals(i > 0, true, `${a} handler missing`);
+    assertEquals(lines[i - 1].includes("// gate:"), true, `${a} needs a // gate: note above it`);
+  }
+  const chat = lines.findIndex((l) => l.includes('if (body.action === "agent_turn" || body.action === "agent_turn_stream"'));
+  assertEquals(lines.slice(Math.max(0, chat - 3), chat).some((l) => l.includes("// gate:")), true);
+  const trig = lines.findIndex((l) => l.includes("التحليل اليومي/الحدثي يقرأ ويكتب"));
+  assertEquals(lines[trig - 1].includes("// gate:"), true);
+  // الاستريم بيعدّي على handleAgentTurn (فيه البوابة)، والحجز بيتفتح من مكان واحد.
+  assertEquals(/handleAgentTurnStream[\s\S]*?await handleAgentTurn\(sb, userId/.test(src), true);
+  assertEquals(src.split("openChatCharge(").length - 1, 1);
+});
