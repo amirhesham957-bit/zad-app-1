@@ -940,3 +940,13 @@ Added `zad_flutter/lib/features/notification_reads` (repository interface + Supa
 - **بعد الدمج في main:** يتأكد إن المايجريشن نزلت وإن `energy-settle-5min` ظاهر في `cron.job`.
 
 - **P0.4 بيلد محلي (٢٠٢٦-١١-٢٧): ماخلصش.** `flutter build apk --release --obfuscate --split-debug-info` وقع بـ`No space left on device` (القرص ٣٢GB كله مليان: `~/.gradle` ٥٫٧GB، Android SDK ٣٫١GB، worktrees الوكلاء ٤GB). الكود ماوقعش، بس مفيش EXIT=0، فـP0.4 فضلت `[~]`. التحقق الحقيقي على CI بعد الدمج في main (بيلد-debug-apk بيشتغل على main).
+
+## ٢٠٢٦-١١-٢٧ (آخر الليل) — P0.4 اتحقق، والمرحلة ١ (P1.1 وP1.1b وP1.2 وP1.3)
+
+- **P0.4:** رن `46081260076` على main (`Build Flutter Debug APK`): `Build release APK` و`Build Play bundle (AAB)` success، وartifact `app-symbols` (١٦٫٣MB) اتحفظ. P0.4 مقفولة.
+- **P0.3 على الإنتاج:** SELECT أكّد `energy-settle-5min` في `cron.job` وجدول `zad_energy_ledger` والمايجريشنين.
+- **P1.1:** `zad-brain/gate.ts` (حجز → done أو رجوع على دفتر `zad_energy_*`)، `handleAgentTurn` مغلّف بيه. P1.1b: باقي مسارات الموديل موثّقة بتعليق `// gate:`، وماحدش محتاج توصيل. **مسارات مجانية بتكلم موديل لحساب عميل (قرار منتج، مااتضفش عليها خصم):** `explain` وnotification_ingest وstore_arrival ومسار trigger العام (الأغلى، وفيه حارس ١٢ ساعة بس).
+- **P1.2:** موجودة أصلاً (`InterstitialPacer.minGap` ٤ دقايق).
+- **P1.3:** `zad_view_home/money/house/family` في `20261127140000_view_rpcs.sql`. فجوة: عرض الولي مافيهوش أدوية (P1.3b).
+- **P1.4 خريطة:** مفيش مولّد ولا `*.g.dart`؛ ٥٢ `fromJson` يدوي؛ `schema.json` يدوي؛ مفيش CI لفحص الاختلاف. P1.4 بناء من الصفر.
+- **فخ:** worktrees الوكلاء ملت القرص (٣٠GB/٣٢GB) والـworktree الجديد وقع بـ"unable to write file". اتمسحت ٢٦ worktree نضيفة.

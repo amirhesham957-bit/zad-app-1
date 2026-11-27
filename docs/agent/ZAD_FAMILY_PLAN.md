@@ -47,7 +47,7 @@ related:
 
 ## دلوقتي
 
-- **الشريحة الجاية:** P0.3 خلصت (جدول `zad_energy_ledger` وcron كل ٥ دقايق، تست SQL + mutation). المرحلة ١ بعد قفل P0.4 على CI حقيقي (بيلد-debug-apk مابيشتغلش على PR، بس على main أو workflow_dispatch). P0.6 خلصت، والأرقام في SESSION_LOG.md. P0.5 خلصت (٤ ميزات بملاحظات في UI_OVERHAUL_STATUS.md). P0.4 مستنية بيلد CI حقيقي. P0.1 مستنية تجربة جهاز.
+- **الشريحة الجاية:** P1.4 (مولّد Dart صغير لدوال العرض، من الصفر) وP1.3b.  P0.3 خلصت (جدول `zad_energy_ledger` وcron كل ٥ دقايق، تست SQL + mutation). المرحلة ١ بعد قفل P0.4 على CI حقيقي (بيلد-debug-apk مابيشتغلش على PR، بس على main أو workflow_dispatch). P0.6 خلصت، والأرقام في SESSION_LOG.md. P0.5 خلصت (٤ ميزات بملاحظات في UI_OVERHAUL_STATUS.md). P0.4 مستنية بيلد CI حقيقي. P0.1 مستنية تجربة جهاز.
 - **شغال:** مفيش.
 - **مستني المالك:** P0.0 (`ZAD_WEATHER_ALERTS=1` في secrets، ومراجعة `app-ads.txt` ونسخة 1.1.3+16، وتأكيد إن دالة الطقس مجدولة في pg_cron/zad_jobs وإن lat/lng بيتحدّث).
 - **آخر تحديث:** ٢٠٢٦-١١-٢٧.
@@ -109,7 +109,7 @@ related:
 | P0.1 | `[~]` | الـRewarded يتحمّل مسبقاً ويتحمّل اللي بعده بعد العرض، و`testDeviceIds` في الديباج | `zad_flutter/lib/shared/ads/data/rewarded_ads.dart` | `flutter analyze` (No issues) + `flutter test` + الإعلان يظهر فور الضغط على جهاز |
 | P0.2 | `[x]` | (الجدول رجع في 20260913002000، القراية سليمة، فاتضاف التست بس) إصلاح قراية `zad_waste_log` + تست CI يقارن كل `.from('x')` بالجداول الموجودة بعد كل المايجريشنز | `zad-brain/voiceMoments.ts:471`، تست جديد في `_schema/` | `deno test` أخضر، والتست يوقع لو الإصلاح اتشال |
 | P0.3 | `[x]` | تسوية الطاقة: خصم من غير نتيجة أو رجوع فاشل > ١٠ دقايق بيرجع بالـcron | مايجريشن + `zad-core-intelligence/meter.ts` | تست SQL في سلسلة `edge-functions.yml` + mutation |
-| P0.4 | `[~]` | `--obfuscate --split-debug-info` والرموز artifact في الـCI | `.github/workflows/build-debug-apk.yml:134,164` | `EXIT=0` الحقيقي للبيلد |
+| P0.4 | `[x]` | `--obfuscate --split-debug-info` والرموز artifact في الـCI | `.github/workflows/build-debug-apk.yml:134,164` | `EXIT=0` الحقيقي للبيلد |
 | P0.5 | `[x]` | جرد الـ٤٦ ميزة: اللي مابيكملش الساندوتش يتقفل بفلاج سيرفر | `zad_flutter/lib/features/`، `docs/agent/UI_OVERHAUL_STATUS.md` | جدول الميزات وحالتها في `UI_OVERHAUL_STATUS.md` |
 | P0.6 | `[x]` | قياس دقة التنبؤ الحالية على الحي (SELECT بس) | `zad_forecasts`، `zad_inventory_observations` | رقم الخطأ لكل نوع في `SESSION_LOG.md` = خط الأساس |
 
@@ -119,10 +119,12 @@ related:
 
 | ID | الحالة | الشريحة | الملفات | التحقق |
 |---|---|---|---|---|
-| P1.1 | `[ ]` | بوابة صلاحيات واحدة على السيرفر للشات والصوت والتخطيط زي الماسح: حجز ثم تأكيد أو رجوع، وكوتة المالك | `zad-brain/index.ts:2169,2255`، `entitlement.ts`، `freeLane.ts`، `meter.ts` | e2e: نجاح بيخصم، فشل بيرجّع، طلبين متوازيين مايعدّوش الرصيد |
-| P1.2 | `[ ]` | عدّاد Interstitial مركزي: ≤ ١ كل ٣ دقايق، نهاية مهمة، مش للأطفال | `shared/ads/application/interstitials.dart` | `flutter test` على العدّاد |
-| P1.3 | `[ ]` | دوال عرض `zad_view_home/money/house/family(member_id)` بأرقام بمصدر و`available_actions` | مايجريشن + تست SQL | الرقم في الشاشة = رقم البوت لنفس العميل |
-| P1.4 | `[ ]` | توليد موديلات Dart من السكيما ودوال العرض + فحص اختلاف في الـCI | سكريبت + workflow | الـCI يوقع لو عمود اتغير |
+| P1.1 | `[x]` | بوابة صلاحيات واحدة على السيرفر للشات والصوت والتخطيط زي الماسح: حجز ثم تأكيد أو رجوع، وكوتة المالك | `zad-brain/index.ts:2169,2255`، `entitlement.ts`، `freeLane.ts`، `meter.ts` | e2e: نجاح بيخصم، فشل بيرجّع، طلبين متوازيين مايعدّوش الرصيد |
+| P1.2 | `[x]` | (موجود أصلاً: `InterstitialPacer.minGap` ٤ دقايق و٤ في الساعة، والأطفال بيمنعهم `adsAllowedProvider`، وتستاتهم في `interstitial_pacer_test.dart` و`ads_policy_test.dart`؛ مفيش تغيير كود) عدّاد Interstitial مركزي: ≤ ١ كل ٣ دقايق، نهاية مهمة، مش للأطفال | `shared/ads/application/interstitials.dart` | `flutter test` على العدّاد |
+| P1.3 | `[x]` | دوال عرض `zad_view_home/money/house/family(member_id)` بأرقام بمصدر و`available_actions` | مايجريشن + تست SQL | الرقم في الشاشة = رقم البوت لنفس العميل |
+| P1.4 | `[ ]` | توليد موديلات Dart من السكيما ودوال العرض + فحص اختلاف في الـCI (المولّد يقرا أسماء `available_actions` المعتمدة ويرفض أي اسم مؤقت وقت الكومبايل) | سكريبت + workflow | الـCI يوقع لو عمود اتغير |
+| P1.3b | `[ ]` | ربط الأدوية والجرعات الفايتة في `zad_view_family` للولي (`zad_pharmacy_items.family_member_id` بيشاور على `family_members` مش `zad_household_members`) | مايجريشن + تست SQL | الولي يشوف أدوية الأم/الطفل وجرعة فايتة، وغيره لا |
+| P1.1b | `[x]` | تكملة P1.1: الصوت والتخطيط والاستريم على نفس البوابة `gate.ts` | `zad-brain/gate.ts`، `index.ts` | نفس تستات P1.1 + الاستريم |
 | P1.5 | `[ ]` | ٤ تبويبات (الرئيسية، فلوسي، بيتي، عيلتي) + زرار المساعد. الجداول المدفونة كروت في الشات | `app/shell/zad_bottom_nav_bar.dart` | `flutter analyze` + `flutter test` |
 | P1.6 | `[ ]` | اختبار ساندوتش لكل زرار ظاهر: زرار ← `zad_events` ← البوت ← الإشعار | مبني على `supabase/sql/e2e/run_commit_intent_e2e.sh` | `e2e: all checks passed` |
 | P1.7 | `[ ]` | Sentry + `trace_id` من الزرار للـedge function لـ`zad_events` | Flutter + `_shared` | عطل تجريبي يتتبع لمصدره |
