@@ -40,6 +40,8 @@ export interface MemberGoalView {
   adjustment: GoalAdjustment;
   /** نص اقتراح للعقل يعرضه على الفرد؛ null لو ماشي/اتحقق. */
   proposal: string | null;
+  /** الميعاد الجديد اللي السيرفر هيسجله عرض (zad_goal_offers)؛ null لو مفيش اقتراح. */
+  offerDeadline: string | null;
 }
 
 /** أهداف العدّ (progress_kind = tasks): كل مهمة منجزة مرتبطة بالهدف = ١ في أسبوع إنجازها (agent_tasks.updated_at وهي done). */
@@ -63,10 +65,11 @@ export function memberGoalView(
   const input = { target, weeks, weeklyProgress: weeklyProgress(goal.id, goal.created_at, events, now) };
   const status = goalStatus(input);
   const adjustment = adjustStalledGoal(input);
-  const proposal = adjustment.kind === "extend_deadline"
-    ? `الهدف واقف (أسبوعين تحت نص الحصة). اقتراح: مدّ الميعاد لـ${adjustment.weeks} أسبوع من أول الهدف، فالخطوة الأسبوعية تبقى ${Math.ceil(adjustment.stepPerWeek)}. الرقم المستهدف ثابت. اعرضه على العميل كسؤال، ولو وافق صراحة (أيوه/موافق) نادِ apply_goal_adjustment بعنوان الهدف؛ السيرفر هو اللي بيحسب الميعاد الجديد. ماتنفّذش من غير موافقته.`
+  const offerDeadline = adjustment.kind === "extend_deadline" ? extendedDeadline(goal.created_at, adjustment.weeks) : null;
+  const proposal = adjustment.kind === "extend_deadline" && offerDeadline
+    ? `الهدف «${goal.title}» (goal_id=${goal.id}) واقف (أسبوعين تحت نص الحصة). اقتراح محدد: مدّ ميعاده لـ${offerDeadline}، فالخطوة الأسبوعية تبقى ${Math.ceil(adjustment.stepPerWeek)}. الرقم المستهدف ثابت. اعرضه على العميل كسؤال بالاسم والميعاد ده بالظبط واستنى رده في رسالته الجاية (مش في نفس الرد). لو وافق صراحة على العرض ده نادِ apply_goal_adjustment بـgoal_id ده بالظبط؛ السيرفر بيرفض لو العرض مش مسجّل عنده أو انتهى أو اتنفّذ. «أيوه» من غير عرض مش موافقة.`
     : null;
-  return { status, adjustment, proposal };
+  return { status, adjustment, proposal, offerDeadline: proposal ? offerDeadline : null };
 }
 
 /** الميعاد الجديد (YYYY-MM-DD) = تاريخ إنشاء الهدف + عدد الأسابيع الجديد من adjustStalledGoal. السيرفر بيحسبه، مش الموديل. */

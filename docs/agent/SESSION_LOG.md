@@ -898,6 +898,13 @@ Added `zad_flutter/lib/features/notification_reads` (repository interface + Supa
 - **فاضل:** قيم البروتين للأصناف (مفيش عمود تغذية في `zad_inventory`)، تصنيف «جيم» للموعد (دلوقتي regex على العنوان)، مصروف/بدل الفرد منفصل لميزانية البنت (مفيش جدول)، توصيل الأمثلة بأدوات القراية، موافقة من الواجهة (الموافقة دلوقتي من نص الرسالة، مش زرار)، تشغيل الفلاج وقياسه.
 - **فخ:** الموافقة مبنية على رسالة اللفة الحالية بس؛ لو العميل قال «أيوه» على سؤال تاني والهدف واقف فعلاً، التنفيذ ممكن (محدود بالهدف اللي اسمه بالظبط، وتخفيف مش حذف).
 
+## ٢٧/١١ — م٧.٨ تشديد الموافقة (فرع `feat/m7-8-bound-approval`، من غير PR/دمج)
+
+- **اتعمل:** «أيوه» لوحدها مابتنفّذش مدّ الهدف. جدول `zad_goal_offers` + `zad_goal_offer_record/consume/release` (security definer، service_role بس، RLS، الطفل برا). اللقطة (`index.ts`) بتسجل العرض قبل ما `life_goals[].proposal` يظهر (فشل التسجيل أو الطفل = من غير اقتراح). `apply_goal_adjustment` بـ`goal_id` إلزامي: موافقة صريحة + عرض مفتوح غير منتهي وغير مستهلك ومش جديد في نفس اللفة (`freshOffers` في الذاكرة بتتكتب فوق مع كل لقطة) ← `goal.set` من الباب بميعاد العرض. الرفض نصوص ثابتة في `memberGoalApply.ts` (مش `REASONS`)، مفيش تكرار مفاتيح.
+- **اتقاس:** `deno check` EXIT=0، `deno test -A zad-brain/ _shared/ _schema/` EXIT=0 (٢٤٢٦ ناجح)، `oneDoor_test` ناجح، `goal_offers_test.sql` على بوستجرس مؤقت (اتشال) «all checks passed». الميجريشن اتضافت لسلسلة LIST في `edge-functions.yml`.
+- **فاضل:** «اتعرض فعلاً» = اللقطة اتبنت، مش إن الرد وصل (مفيش إثبات من رد الموديل). فلاج `ZAD_MEMBER_GOALS` لسه مقفول ومش مقاس.
+- **فخ:** الميجريشن بتتنشر مع الدمج في `main`؛ الجدول مفيش حاجة بتكتب فيه غير الدوال التلاتة.
+
 ## ٢٠٢٦-١١-٢٧: م٨ قاعدة الفشل للـbandit (`feat/m8-bandit-failure`)
 - **اتعمل:** ميجريشن `20261127120000_bandit_failure.sql`: عمود `outcome` (reward/failure، الصفوف القديمة المقفولة اتعلّمت reward)، و`zad_bandit_settle_failure` (security definer، service_role بس) بتفشّل الإشعار لو عمره +٢٤ ساعة وغير مقروء ومااتحسبش، وبتقفله. `zad_bandit_settle_read` اتحدّثت عشان تعلّم `outcome='reward'`. `settleIgnoredNotifications` في `banditReward.ts` بيتنده بعد كنس المكافأة في `processDueAgentTasks` خلف `ZAD_BANDIT_TONE`.
 - **اتقاس:** سلسلة SQL على postgres:17 (`bandit_failure_test.sql` وbandit_reward_test بعد الميجريشن الجديدة نجحوا)؛ mutation: شيل شرط العمر يوقع التست، وشيل شرط `is_read` يوقعه، ومن غير الميجريشن يوقع. `deno check` EXIT 0 و`deno test -A zad-brain/ _shared/ _schema/` EXIT 0 (فيها oneDoor_test).

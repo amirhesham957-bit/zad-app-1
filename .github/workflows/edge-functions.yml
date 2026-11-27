@@ -315,6 +315,7 @@ jobs:
           supabase/sql/tests/scratch_scaffold.sql supabase/sql/tests/restock_alert_dispatch_scaffold.sql supabase/migrations/20261123120000_restock_alert_dispatch.sql supabase/sql/tests/restock_alert_dispatch_test.sql
           supabase/sql/tests/scratch_scaffold.sql supabase/sql/tests/bot_speaks_scaffold.sql supabase/migrations/20261123160000_bot_speaks_with_notifications.sql supabase/sql/tests/bot_speaks_with_notifications_test.sql
           supabase/sql/tests/scratch_scaffold.sql supabase/migrations/20261127100000_bandit_state.sql supabase/migrations/20261127110000_bandit_reward_shown.sql supabase/sql/tests/bandit_reward_test.sql
+          supabase/sql/tests/events_ledger_scaffold.sql supabase/migrations/20261121160000_events_ledger.sql supabase/sql/tests/goal_offers_scaffold.sql supabase/migrations/20261127130000_goal_offers.sql supabase/sql/tests/goal_offers_test.sql
           supabase/sql/tests/scratch_scaffold.sql supabase/migrations/20261127100000_bandit_state.sql supabase/migrations/20261127110000_bandit_reward_shown.sql supabase/migrations/20261127120000_bandit_failure.sql supabase/sql/tests/bandit_failure_test.sql
           LIST
 
