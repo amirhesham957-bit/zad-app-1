@@ -1421,6 +1421,8 @@ export const MUTATING_TOOLS = [
   "share_memory_with_family",
   // ١٠.٢(د): تقدم هدف فلوس بكلام العميل.
   "add_goal_progress",
+  // م٧.٨: مدّ هدف واقف بموافقة (خلف ZAD_MEMBER_GOALS).
+  "apply_goal_adjustment",
   // مواعيد العميل (20260914004000)
   "add_appointment", "update_appointment", "delete_appointment",
   "add_place_reminder", "cancel_place_reminder",
@@ -1465,6 +1467,8 @@ export const CHILD_BLOCKED_TOOLS = [
   "add_debt", "update_debt", "delete_debt",
   "add_obligation", "update_obligation", "delete_obligation",
   "update_emergency_fund_balance", "set_broke_mode",
+  // أهداف الأفراد قرار صاحبها (م٧.٨).
+  "apply_goal_adjustment",
   // كارت التسليم فيه المصروف والمستحقات — حاجة ولي الأمر.
   "handover_card",
 ];

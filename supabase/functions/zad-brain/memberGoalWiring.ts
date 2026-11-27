@@ -42,8 +42,19 @@ export interface MemberGoalView {
   proposal: string | null;
 }
 
-export function memberGoalView(goal: GoalRow, events: readonly GoalEventRow[], now: Date = new Date()): MemberGoalView | null {
-  if (goal.progress_kind !== "amount" || !goal.created_at || !goal.deadline_date) return null;
+/** أهداف العدّ (progress_kind = tasks): كل مهمة منجزة مرتبطة بالهدف = ١ في أسبوع إنجازها (agent_tasks.updated_at وهي done). */
+export interface GoalTaskRow { goal_id: string; updated_at: string }
+export function taskEventsFor(goalId: string, tasks: readonly GoalTaskRow[]): GoalEventRow[] {
+  return tasks.filter((t) => t.goal_id === goalId).map((t) => ({ occurred_at: t.updated_at, payload: { row_id: goalId, amount: 1 } }));
+}
+
+/** أهداف المبلغ بتقرا goal.progress من zad_events، وأهداف العدّ من المهام المنجزة (taskEvents). غير كده null. */
+export function memberGoalView(
+  goal: GoalRow, events: readonly GoalEventRow[], now: Date = new Date(), taskEvents: readonly GoalEventRow[] | null = null,
+): MemberGoalView | null {
+  const isCount = goal.progress_kind === "tasks";
+  if ((goal.progress_kind !== "amount" && !(isCount && taskEvents)) || !goal.created_at || !goal.deadline_date) return null;
+  if (isCount) events = taskEvents!;
   const target = Number(goal.target_value);
   const created = Date.parse(goal.created_at);
   const end = Date.parse(`${goal.deadline_date}T23:59:59Z`);
@@ -53,7 +64,25 @@ export function memberGoalView(goal: GoalRow, events: readonly GoalEventRow[], n
   const status = goalStatus(input);
   const adjustment = adjustStalledGoal(input);
   const proposal = adjustment.kind === "extend_deadline"
-    ? `الهدف واقف (أسبوعين تحت نص الحصة). اقتراح: مدّ الميعاد لـ${adjustment.weeks} أسبوع من أول الهدف، فالخطوة الأسبوعية تبقى ${Math.ceil(adjustment.stepPerWeek)}. الرقم المستهدف ثابت. اعرضه على العميل كسؤال، ولو وافق نفّذه بـset_life_goal بميعاد جديد (deadline_date)؛ ماتنفّذش من غير موافقته.`
+    ? `الهدف واقف (أسبوعين تحت نص الحصة). اقتراح: مدّ الميعاد لـ${adjustment.weeks} أسبوع من أول الهدف، فالخطوة الأسبوعية تبقى ${Math.ceil(adjustment.stepPerWeek)}. الرقم المستهدف ثابت. اعرضه على العميل كسؤال، ولو وافق صراحة (أيوه/موافق) نادِ apply_goal_adjustment بعنوان الهدف؛ السيرفر هو اللي بيحسب الميعاد الجديد. ماتنفّذش من غير موافقته.`
     : null;
   return { status, adjustment, proposal };
+}
+
+/** الميعاد الجديد (YYYY-MM-DD) = تاريخ إنشاء الهدف + عدد الأسابيع الجديد من adjustStalledGoal. السيرفر بيحسبه، مش الموديل. */
+export function extendedDeadline(createdAtIso: string, weeks: number): string | null {
+  const c = Date.parse(createdAtIso);
+  if (!Number.isFinite(c) || !(weeks > 0)) return null;
+  return new Date(c + weeks * WEEK_MS).toISOString().slice(0, 10);
+}
+
+const AFFIRM = new Set(["ايوه", "ايوة", "أيوه", "أيوة", "اه", "آه", "اة", "موافق", "موافقة", "تمام", "ماشي", "نفذ", "نفّذ", "اعمل", "يلا", "اكيد", "أكيد", "yes", "ok", "okay", "sure"]);
+const NEGATE = new Set(["لا", "لأ", "لاا", "مش", "ماتعدل", "متعدل", "بلاش", "استنى", "لسه", "no", "not", "dont", "don't"]);
+
+/** موافقة صريحة في رسالة العميل في اللفة دي: كلمة موافقة وكلمة نفي مفيش، ورسالة قصيرة (≤ ٨ كلمات). */
+export function isExplicitApproval(said: string | undefined): boolean {
+  if (!said) return false;
+  const words = said.toLowerCase().replace(/[\u064B-\u065F]/g, "").split(/[^\p{L}\p{N}']+/u).filter(Boolean);
+  if (words.length === 0 || words.length > 8) return false;
+  return words.some((w) => AFFIRM.has(w)) && !words.some((w) => NEGATE.has(w));
 }
