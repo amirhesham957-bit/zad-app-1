@@ -158,7 +158,7 @@ import { conflictAction, type HouseholdMember, memberIdFor, memoryTimeRefusal, t
 import { PENDING_TTL_MS, pendingAnswerable, SENSITIVE_TOPIC_LABEL, type SensitiveTopic, sensitiveTopic } from "./sensitiveMemory.ts";
 import { type ForwardLedger, simulatePurchase } from "./whatIf.ts";
 import { goalPace, stepPerWeek } from "./goalPace.ts";
-import { type GoalEventRow, memberGoalsEnabled, memberGoalView } from "./memberGoalWiring.ts";
+import { type GoalEventRow, type GoalTaskRow, memberGoalsEnabled, memberGoalView, taskEventsFor } from "./memberGoalWiring.ts";
 import { appointmentsOnLocalDay, householdLoad, householdLoadRule } from "./householdLoad.ts";
 import { appointmentAgenda, type AppointmentRow, matchesAppointmentQuery, searchAppointments } from "./appointmentsQuery.ts";
 import { toneFromState, toneRule, toneWithMessage, type ToneTxn } from "./tone.ts";
@@ -974,6 +974,15 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
       if (!error) goalEvents = (data ?? []) as GoalEventRow[];
     } catch { /* من غير الحقل */ }
   }
+  // أهداف العدّ: مهامها المنجزة (قراية بس، نفس الفلاج).
+  let goalTaskRows: GoalTaskRow[] | null = null;
+  if (memberGoalsEnabled((k) => Deno.env.get(k)) && lifeGoals.some((g) => g.progress_kind === "tasks")) {
+    try {
+      const { data, error } = await sb.from("agent_tasks").select("goal_id,updated_at")
+        .eq("user_id", userId).eq("status", "done").in("goal_id", lifeGoals.filter((g) => g.progress_kind === "tasks").map((g) => g.id)).limit(2000);
+      if (!error) goalTaskRows = (data ?? []) as GoalTaskRow[];
+    } catch { /* من غير الحقل */ }
+  }
 
   const transactions = txRes.data ?? [];
   const now = new Date();
@@ -1478,7 +1487,7 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
         ...(step !== null ? { step_per_week: step } : {}),
         ...(p ? { pace: p.pace, expected_by_now: p.expected_by_now, days_left: p.days_left } : {}),
         ...(() => {
-          const mv = goalEvents ? memberGoalView(g, goalEvents) : null;
+          const mv = g.progress_kind === "tasks" ? (goalTaskRows ? memberGoalView(g, [], new Date(), taskEventsFor(g.id, goalTaskRows)) : null) : goalEvents ? memberGoalView(g, goalEvents) : null;
           return mv ? { weekly: { done: mv.status.done, weeks_left: mv.status.weeksLeft, stalled: mv.status.stalled }, ...(mv.proposal ? { proposal: mv.proposal } : {}) } : {};
         })(),
       };

@@ -13,6 +13,8 @@ import { commitIntent, DUPLICATE_REPLY, refusalText } from "./commitIntent.ts";
 import { identityOverwrites, sanitizeProfilePatch } from "../_shared/customerProfile.ts";
 import { daysLeft } from "./documents.ts";
 import { stepPerWeek } from "./goalPace.ts";
+import { APPLY_GOAL_ADJUSTMENT, GOAL_ADJUST_FLAG_OFF, GOAL_ADJUST_NEEDS_APPROVAL, memberGoalsOn, planGoalAdjustment } from "./memberGoalApply.ts";
+import { isExplicitApproval } from "./memberGoalWiring.ts";
 import { appointmentAgenda, type AppointmentRow, matchesAppointmentQuery, searchAppointments } from "./appointmentsQuery.ts";
 import { bookingConflicts, bookingQuestion } from "./scheduleGuard.ts";
 
@@ -438,6 +440,27 @@ export async function execCalendarGoals(name: string, sb: SupabaseClient, userId
       const step = stepPerWeek(a);
       return `status=recorded — «${goalTitle}» بقى ${Number(a.current_value)} من ${Number(a.target_value ?? 0)}.` +
         (step !== null ? ` الباقي على الأسبوع: ${step} لحد ${a.deadline_date}.` : Number(a.current_value) >= Number(a.target_value ?? Infinity) ? " وصل الهدف 🎉 — هنّيه." : "");
+    }
+    case "apply_goal_adjustment": {
+      // م٧.٨: مدّ ميعاد هدف واقف بعد موافقة صريحة في رسالة اللفة دي. الميعاد من السيرفر، والكتابة من الباب (goal.set).
+      if (!memberGoalsOn()) return GOAL_ADJUST_FLAG_OFF;
+      if (!isExplicitApproval(ctx.said)) return GOAL_ADJUST_NEEDS_APPROVAL;
+      const plan = await planGoalAdjustment(sb, userId, String(input.goal_title ?? "").trim());
+      if (!plan.ok) return `مرفوض: ${plan.reason}`;
+      const goal = plan.goal as { id: string; title: string; metric: string | null; target_value: number | null; deadline_date: string | null; progress_kind: string | null };
+      const w = await commitIntent(sb, userId, scope, name, input, "goal.set", {
+        title: goal.title, metric: goal.metric, target_value: goal.target_value, deadline_date: plan.deadline,
+        unit: goal.progress_kind === "amount" ? "money" : "count",
+      });
+      if (!w.ok) return refusalText(w.reason);
+      if (w.duplicate) return DUPLICATE_REPLY;
+      ctx.mutationCount++;
+      ctx.mutations.push({ tool: name, old: { deadline_date: goal.deadline_date }, new: { deadline_date: plan.deadline } });
+      await recordAction(sb, userId, scope, {
+        tool: name, input, table: "agent_goals", targetId: goal.id,
+        previous: { deadline_date: goal.deadline_date }, next: { deadline_date: plan.deadline },
+      });
+      return `تمام، ميعاد «${goal.title}» اتمدّ لـ${plan.deadline}، والخطوة الأسبوعية بقت حوالي ${plan.step}. الرقم المستهدف زي ما هو.`;
     }
     case "set_life_goal": {
       const title = String(input.title).trim();
