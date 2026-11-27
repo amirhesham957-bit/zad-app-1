@@ -71,3 +71,4 @@ local.properties
 
 # AdMob verifies the developer site (ZAD_PLAN 10.3); *.txt above would hide it.
 !website/public/app-ads.txt
+.claude/settings.local.json
