@@ -216,6 +216,7 @@ import { recentOutbound } from "../_shared/outbound.ts";
 import { proactiveTurn, recordConversation } from "../_shared/conversationLog.ts";
 
 import { REMEMBER_ABOUT_AND_UNTIL } from "./toolSchemas.ts";
+import { RECURRING_HINT } from "./toolHints.ts";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
@@ -5691,11 +5692,6 @@ const TOOLS: ToolDef[] = [
   },
 ];
 
-/** متجدد ولا كورس — بيقرر هل الدوا ينزل قايمة البقالة لوحده لما يقرب يخلص (قرار المالك ٢٠٢٦-١٠-٠١). */
-const RECURRING_HINT =
-  "true لو دوا مزمن أو مستمر بيتجدد (ضغط، سكر، غدة، «باخده على طول»، «كل شهر»). false لو كورس ليه نهاية " +
-  "(مضاد حيوي، «لمدة ٥ أيام»، مسكن وقت اللزوم، كريم لفترة). سيبه فاضي لو العميل ماقالش ومش باين. " +
-  "المتجدد بس هو اللي بينزل قايمة التسوق لوحده لما يقرب يخلص.";
 
 // ═══════════════════════════════════════════════════════════
 // المرحلة ٢-ب — أدوات المحادثة (agent_turn بس، مش التشغيل الخلفي).
