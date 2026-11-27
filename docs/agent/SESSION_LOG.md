@@ -842,3 +842,8 @@ Added `zad_flutter/lib/features/notification_reads` (repository interface + Supa
 - **اتعمل:** `_shared/or/memberBusy.ts` + تست (٣ تستات، منهم واحد بيغذي `bestGatherings`). دالة صافية، مفيش سلوك إنتاج اتغيّر.
 - **اتقاس:** `deno test` للملفين EXIT=0 (٩ نجحوا مع م٧.٨). مفيش تشغيل على الحي.
 - **فاضل:** توصيلها بقراية `appointments` لكل فرد في `plan_gathering_time`. م٥.٢ مفتوح.
+
+## ٢٠٢٦-١١-٢٧ — م٧.٨ هدف الفرد (جزئي)
+- **اتعمل:** `_shared/or/memberGoal.ts` + تست (٦ تستات: وقف/ماشي/اتحقق، المدّ، سقف ٨ أسابيع). دوال صافية، مفيش ميجريشن ولا سلوك إنتاج.
+- **اتقاس:** `deno test -A zad-brain/ _shared/` EXIT=0 (٢٣٤٨ نجحوا؛ أول تشغيل وقع EXIT=1 على `AddrInUse` في `areaTrends_test` من منفذ مشغول بعملية تانية، وبعد كده نجح).
+- **فاضل:** التوصيل بـ`agent_goals` وكتابة التعديل بنية goal بموافقة الفرد، وأمثلة البنت والأخ. م٧.٨ مفتوح.
