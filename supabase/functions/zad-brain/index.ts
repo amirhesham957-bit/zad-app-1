@@ -6654,6 +6654,10 @@ async function handleAgentTurnInLane(
   const heldBackRead = intentToolHints(message, priorAssistantText(history)).includes("what_i_held_back")
     ? await runTool(sb, userId, "what_i_held_back", { days: 7 }, snap, ctx, { source: declaredSource })
     : "";
+  // م٤.٣ (خيار أ): اللقطة حسب النية، خلف نفس فلاج التحميل عند الطلب (مقفول افتراضياً).
+  const snapScope: SnapshotScope | undefined = onDemandPrompt()
+    ? { specialist, secondary: specialistConsult, lifeFact: mentionsLifeFact(message) }
+    : undefined;
   const promptParts: Record<string, string> = {
     soul: soulBlock(snap?.customer?.zad_voice),
     held_back: heldBackRead
@@ -6674,10 +6678,10 @@ async function handleAgentTurnInLane(
       : "",
     // «هشتري موبايل بـ٢٠ ألف»: الحساب بالكود (persona.ts) — الاعتراض برقم مايتسابش لحساب الموديل.
     purchase: purchaseCheckBlock(message, snap?.available, snap?.currency),
-    chat: buildChatSystemPrompt(chatSnap, body.voice_mode === true, ruleToolsFor(scopedTools, intentToolHints(message, priorAssistantText(history)))),
+    chat: buildChatSystemPrompt(chatSnap, body.voice_mode === true, ruleToolsFor(scopedTools, intentToolHints(message, priorAssistantText(history))), snapScope),
   };
   const systemPrompt = Object.values(promptParts).join("");
-  const promptSnap = promptSnapshot(chatSnap);
+  const promptSnap = promptSnapshot(chatSnap, snapScope);
   const promptSnapChars = JSON.stringify(promptSnap).length;
   const turnSizes = promptSizes({
     parts: { ...promptParts, chat: undefined },
@@ -7991,12 +7995,46 @@ const HOUSE_SECTIONS_ON_REQUEST = [
 ];
 
 /** الملخص اللي بيتبعت مع الرسالة: البيت من غير الأجزاء اللي بتتقري عند الحاجة. */
-export function promptSnapshot(snap: any): Record<string, unknown> {
+export function promptSnapshot(snap: any, scope?: SnapshotScope): Record<string, unknown> {
   const out: Record<string, unknown> = { ...(snap ?? {}) };
   for (const key of HOUSE_SECTIONS_ON_REQUEST) delete out[key];
   // م٩.٣: ليها بلوك لوحدها فوق (pinnedFactsBlock)، مش مرتين.
   delete out.pinned_facts;
+  if (scope) scopeSnapshotByIntent(out, scope);
   return out;
+}
+
+/**
+ * م٤.٣ (خيار أ): اللقطة حسب نية اللفة. النية = الوكيل المتخصص (primary + secondary من routeSpecialists)، ومعاه إن الرسالة
+ * كلام عن حياة العميل. النواة (العميل، العملة، الدورة، الميزانية، الوقت، العيلة...) دايماً موجودة، وأي مفتاح مش مذكور
+ * هنا بيفضل (الأمان: مفتاح جديد مايختفيش بالغلط). الذاكرة: ملاحظات الهوية الأول (الترتيب جاي من chatSnap) وبعدها الأقرب
+ * للرسالة لحد سقف: وكيل متخصص ٨، عام أو كلام عن الحياة ١٢. الأرقام والقواعد المالية والسول ماتتغيرش.
+ */
+export type SnapshotScope = { specialist: string; secondary?: string | null; lifeFact?: boolean };
+export const SNAPSHOT_KEY_SCOPE: Record<string, readonly string[]> = {
+  medicines: ["pharmacy", "family"],
+  appointments: ["family", "pharmacy", "home"],
+  byCategory: ["finance"],
+  life_goals: ["finance"],
+  shopping_list_pending: ["pantry"],
+  stock_totals: ["pantry"],
+  trusted_technicians: ["home"],
+};
+export const MEMORY_CAP_SPECIALIST = 8;
+export const MEMORY_CAP_GENERAL = 12;
+
+function scopeSnapshotByIntent(out: Record<string, unknown>, scope: SnapshotScope): void {
+  const general = scope.specialist === "general";
+  if (!general) {
+    for (const [key, owners] of Object.entries(SNAPSHOT_KEY_SCOPE)) {
+      if (!(key in out)) continue;
+      if (!owners.includes(scope.specialist) && !(scope.secondary && owners.includes(scope.secondary))) delete out[key];
+    }
+  }
+  if (Array.isArray(out.memory)) {
+    const cap = general || scope.lifeFact ? MEMORY_CAP_GENERAL : MEMORY_CAP_SPECIALIST;
+    out.memory = out.memory.slice(0, cap);
+  }
 }
 
 /**
@@ -8019,7 +8057,7 @@ export const CHAT_PROMPT_VERSION = "2026-11-14.1";
  * رجيم السياق ٣.٢ الشريحة ٢ (٣/١١): تأكيد أدوات الفلوس لوكيل معاه أداة فلوس بس، وتسجيل الجرعة لو log_pharmacy_dose
  * معروضة، وstock_totals لو البيت فيه — قواعد سلامة الأدوية التلاتة و«متحكيش نتايج الأدوات» لكل الوكلا دايماً.
  */
-export function buildChatSystemPrompt(snap: any, voiceMode = false, offered?: ReadonlySet<string>): string {
+export function buildChatSystemPrompt(snap: any, voiceMode = false, offered?: ReadonlySet<string>, scope?: SnapshotScope): string {
   const offers = (tool: string) => !offered || offered.has(tool);
   const assistant = getAssistantName(snap);
   const profile = conversationProfile(snap?.country, {
@@ -8094,7 +8132,7 @@ ${(offers("set_item_preference")) ? `15ب. **تفضيلات الصنف (set_item
 ${pinnedFactsBlock(snap?.pinned_facts)}
 
 === SNAPSHOT ===
-${JSON.stringify(promptSnapshot(snap))}
+${JSON.stringify(promptSnapshot(snap, scope))}
 === نهاية SNAPSHOT ===
 (أجزاء تانية من البيت بتتقري بـ read_house لما تحتاجها.)
 
