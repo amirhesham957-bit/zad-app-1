@@ -228,6 +228,28 @@ export { streamTail };
 import { normalizeClientClassification, sha256Hex } from "./notificationHelpers.ts";
 import { pharmacyUnit } from "./pharmacyUnit.ts";
 export { pharmacyUnit };
+import { turnTimer } from "./turnTimer.ts";
+export { turnTimer };
+import { prefetch } from "./prefetch.ts";
+export { prefetch };
+import { isMissingFunction } from "./missingFunction.ts";
+export { isMissingFunction };
+import { isoWeekKey } from "./weekKey.ts";
+export { isoWeekKey };
+import { hashKey } from "./hashKey.ts";
+export { hashKey };
+import { detectCycleStartDay } from "./cycleStart.ts";
+export { detectCycleStartDay };
+import { detectObligationCandidate } from "./obligationCandidate.ts";
+export { detectObligationCandidate };
+import type { ObligationRow } from "./obligationCandidate.ts";
+export type { ObligationRow };
+import { BNPL_PROVIDERS, detectBnplObligationCandidate } from "./bnplObligation.ts";
+export { BNPL_PROVIDERS, detectBnplObligationCandidate };
+import { CORS_HEADERS } from "./corsHeaders.ts";
+export { CORS_HEADERS };
+import { DIRECT_INGRESS_TOOLS, NO_SNAPSHOT_INGRESS_TOOLS } from "./ingressTools.ts";
+export { DIRECT_INGRESS_TOOLS, NO_SNAPSHOT_INGRESS_TOOLS };
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
@@ -358,10 +380,6 @@ async function recordPromiseDrift(
   if (error) console.error("agent_drift_events insert failed:", error.message);
 }
 
-const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
 
 type Trigger = "daily" | "event" | "chat";
 
@@ -371,20 +389,6 @@ type Trigger = "daily" | "event" | "chat";
 // the device doesn't have reason to carry.
 // ═══════════════════════════════════════════════════════════
 
-/**
- * Task 19.5 — مفتاح ثابت لكل أسبوع تقويمي (ISO week)، محسوب هنا في الكود مش من الموديل،
- * عشان upsert بـ (user_id, dedupe_key) يبقى idempotent فعلاً لو الموديل قرر يسأل أكتر
- * من مرة في نفس الأسبوع (بيرجع نفس الصف pending، مش يكرره)، ونفس المبدأ اللي
- * suggest_budget_change بيستخدمه لمفتاحه الشهري — الموديل ميحسبش مفاتيح زمنية بنفسه.
- */
-function isoWeekKey(d: Date): string {
-  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-  const dayNum = date.getUTCDay() || 7;
-  date.setUTCDate(date.getUTCDate() + 4 - dayNum);
-  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
-  const weekNo = Math.ceil((((date.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
-  return `cash_reconciliation_${date.getUTCFullYear()}_w${weekNo}`;
-}
 
 // Task 25 (PRODUCT_PLAN.md) — دورة الراتب بدل الشهر التقويمي.
 //
@@ -396,142 +400,9 @@ function isoWeekKey(d: Date): string {
 // anchor. Both now read zad_cycle_bounds() in Postgres, which honours the anchor and the
 // account's own timezone (migration 20260809120000).
 
-// Task 26 (PRODUCT_PLAN.md) — dedupe_key محسوب هنا (مش من الموديل) نفس مبدأ isoWeekKey/
-// cycle_start_confirm_ فوق: مفتاح ثابت لكل (تاجر، مبلغ)، مش hash عشوائي، عشان upsert/رفض
-// يبقى idempotent. FNV-1a-ish بسيط، مش لأمان — بس عشان ascii ثابت من نص عربي حر.
-function hashKey(s: string): string {
-  let h = 5381;
-  for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0;
-  return h.toString(36);
-}
 
-interface ObligationRow {
-  id: string; title: string; amount: number; kind: string;
-  due_day: number | null; due_date: string | null; recurrence: string;
-  confirmed: boolean; active: boolean; provider?: string | null;
-}
 
-// nextDueDate() moved to Postgres as zad_obligation_next_due() — same rules ('once' that
-// already passed is assumed paid; a recurring obligation with no due_day is refused
-// rather than guessed; quarterly/yearly step 3/12 months off due_day because the table
-// has no due_month), but now shared with the `committed` total instead of being a second
-// copy that could select a different set of obligations than the sum it sat next to.
 
-/**
- * تجميع مصاريف بنفس (تاجر، مبلغ) على ٣ شهور مختلفة على الأقل خلال آخر ٤ شهور = مرشح
- * التزام ثابت (إيجار/قسط). بيرجع أقوى مرشح واحد بس (نفس قيد "سؤال واحد في المرة" اللي
- * validateAskUser بيفرضه أصلاً)، ومستبعد أي حاجة مسجلة كـ zad_obligations أو
- * zad_subscriptions فعلاً — مش هيكرر التزام موجود ولا يبلّغ عن اشتراك.
- */
-function detectObligationCandidate(
-  expenseTx: Array<{ title: string; merchant_name: string | null; amount: number; created_at: string }>,
-  existingObligations: ObligationRow[],
-  activeSubscriptions: Array<{ title: string; amount: number }>,
-  now: Date,
-): { title: string; amount: number; due_day: number; dedupe_key: string } | null {
-  const fourMonthsAgo = new Date(now.getTime() - 120 * 86400000);
-  const known = new Set([
-    ...existingObligations.map((o) => `${o.title}_${o.amount}`),
-    ...activeSubscriptions.map((s) => `${s.title}_${s.amount}`),
-  ]);
-  const groups = new Map<string, { title: string; amount: number; dates: Date[] }>();
-  for (const t of expenseTx) {
-    const merchant = (t.merchant_name ?? t.title ?? "").trim();
-    if (!merchant) continue;
-    const d = new Date(t.created_at);
-    if (d < fourMonthsAgo) continue;
-    const key = `${merchant}_${t.amount}`;
-    if (known.has(key)) continue;
-    if (!groups.has(key)) groups.set(key, { title: merchant, amount: t.amount, dates: [] });
-    groups.get(key)!.dates.push(d);
-  }
-  let best: { title: string; amount: number; dates: Date[] } | null = null;
-  for (const g of groups.values()) {
-    const distinctMonths = new Set(g.dates.map((d) => `${d.getFullYear()}_${d.getMonth()}`));
-    if (distinctMonths.size < 3) continue;
-    if (!best || g.dates.length > best.dates.length) best = g;
-  }
-  if (!best) return null;
-  const mostRecent = best.dates.reduce((a, b) => (b > a ? b : a));
-  return {
-    title: best.title,
-    amount: best.amount,
-    due_day: mostRecent.getDate(),
-    dedupe_key: `obligation_confirm_${hashKey(`${best.title}_${best.amount}`)}`,
-  };
-}
-
-// شركات "اشتري دلوقتي وادفع بعدين" في كل سوق — نفس قايمة التطبيق
-// (zad_flutter/lib/shared/subscriptions/domain/bnpl.dart). مصر كانت فاليو بس، والعميل
-// المصري بيدفع سيمبل وسهولة وكونتكت وأمان وحالاً كمان (٢٠٢٦-٠٩-٣٠).
-const BNPL_PROVIDERS = new Set([
-  "تابي", "تمارة", "تمارا", "فاليو", "سيمبل", "سهولة", "كونتكت", "أمان", "حالا", "مدفوع", "تالي",
-  "tabby", "tamara", "valu", "sympl", "souhoola", "contact", "aman", "halan", "madfu", "mispay",
-  "postpay", "cashew", "taly",
-]);
-
-/**
- * بند 32.1 — نسخة أسرع من detectObligationCandidate مخصوصة لتابي/تمارة/فاليو: مرتين
- * بس مش ٣ شهور متفرقة. خطة تقسيط عادةً ٣-٤ دفعات شهرية — لو استنينا نفس عتبة الالتزام
- * العادي (٣ شهور)، هنكتشفها وهي خلصت أو قربت تخلص، مش وهي لسه بادئة.
- *
- * false positive مش مستبعد نظريًا (عميل اشترى مرتين بنفس المزوّد وصدفة نفس المبلغ من
- * غير خطة فعلية) لكنه نادر عمليًا: bank_name هنا هوية مُصنَّفة من التطبيق المُرسِل
- * (SaBankParser)، مش تخمين نصي على اسم تاجر غامض، والمطابقة على المبلغ **بالظبط** مش
- * بتقريب — تقاطع الاتنين ضيق. زي detectObligationCandidate تمامًا: بيستبعد أي حاجة
- * متسجلة كالتزام بالفعل، ومرشح واحد بس في المرة.
- */
-export function detectBnplObligationCandidate(
-  expenseTx: Array<{ bank_name: string | null; amount: number; created_at: string }>,
-  existingObligations: ObligationRow[],
-): { title: string; amount: number; provider: string; due_day: number; dedupe_key: string } | null {
-  const known = new Set(existingObligations.filter((o) => o.provider).map((o) => `${o.provider}_${o.amount}`));
-  const groups = new Map<string, { provider: string; amount: number; dates: Date[] }>();
-  for (const t of expenseTx) {
-    const provider = (t.bank_name ?? "").trim().toLowerCase();
-    if (!BNPL_PROVIDERS.has(provider)) continue;
-    const key = `${provider}_${t.amount}`;
-    if (known.has(key)) continue;
-    if (!groups.has(key)) groups.set(key, { provider: t.bank_name!.trim(), amount: t.amount, dates: [] });
-    groups.get(key)!.dates.push(new Date(t.created_at));
-  }
-  let best: { provider: string; amount: number; dates: Date[] } | null = null;
-  for (const g of groups.values()) {
-    if (g.dates.length < 2) continue;
-    if (!best || g.dates.length > best.dates.length) best = g;
-  }
-  if (!best) return null;
-  const mostRecent = best.dates.reduce((a, b) => (b > a ? b : a));
-  return {
-    title: `قسط ${best.provider}`,
-    amount: best.amount,
-    provider: best.provider,
-    due_day: mostRecent.getDate(),
-    dedupe_key: `obligation_confirm_bnpl_${hashKey(`${best.provider}_${best.amount}`)}`,
-  };
-}
-
-/**
- * راتب متجمّع على يوم معين ± ٣ أيام على مدار آخر ٤ شهور = مرشح قوي لدورة راتب. بيرجع null
- * لو مفيش تجمّع واضح (أقل من نصف معاملات الدخل المرصودة، أو أقل من معاملتين) — بلا تخمين
- * ضعيف. الاختيار هنا بسيط عمداً (mode-like clustering)، مش إحصاء متقدم — العميل بيأكد
- * بنفسه قبل ما الرقم يتسجل، فمفيش داعي لدقة زايدة هنا.
- */
-function detectCycleStartDay(incomeTx: Array<{ created_at: string }>): number | null {
-  if (incomeTx.length < 2) return null;
-  const days = incomeTx.map((t) => new Date(t.created_at).getDate());
-  let bestDay: number | null = null;
-  let bestCount = 0;
-  for (const candidate of days) {
-    const count = days.filter((d) => Math.abs(d - candidate) <= 3).length;
-    if (count > bestCount) {
-      bestCount = count;
-      bestDay = candidate;
-    }
-  }
-  if (bestDay === null || bestCount < 2 || bestCount < days.length / 2) return null;
-  return bestDay;
-}
 
 /**
  * نداء zad-core-intelligence من جوّه العقل.
@@ -827,23 +698,7 @@ export async function writeSingleCopyMemory(
   return { error: null };
 }
 
-/**
- * ساعة اللفة: كل lap بيسجل الوقت من البداية لحد العلامة دي بالملي ثانية، وdone بيضيف الإجمالي.
- * الأرقام بتتخزن في zad_brain_runs.prompt_sizes.timings، فالبطء بيتقاس بمراحله من الداتابيز.
- */
-export function turnTimer(now: () => number = Date.now): { lap: (name: string) => void; done: () => Record<string, number> } {
-  const t0 = now();
-  const marks: Record<string, number> = {};
-  return {
-    lap: (name) => { marks[`${name}_ms`] = now() - t0; },
-    done: () => ({ ...marks, total_ms: now() - t0 }),
-  };
-}
 
-/** PostgREST بيرد PGRST202 لما الدالة مش موجودة، وPostgres بيرد 42883. */
-export function isMissingFunction(error: { code?: string } | null | undefined): boolean {
-  return error?.code === "PGRST202" || error?.code === "42883";
-}
 
 /**
  * دروس من الأخطاء — آخر ١٤ يوم من agent_drift_events بتتلخص في سطرين:
@@ -879,15 +734,6 @@ async function buildDriftLessons(sb: SupabaseClient, userId: string): Promise<st
   }
 }
 
-/**
- * يبدأ استعلام دلوقتي (بناة supabase كسالى: مابيتبعتوش غير لما حد يعمل then)، ويعلّم الرفض إنه متعامل معاه عشان
- * لو خطوة قبله وقعت، Deno مايطلعش «Uncaught (in promise)». اللي بيستنى الوعد بيشوف الرفض زي ما هو.
- */
-export function prefetch<T>(query: PromiseLike<T>): Promise<T> {
-  const started = Promise.resolve(query);
-  started.catch(() => {});
-  return started;
-}
 
 async function buildSnapshot(sb: SupabaseClient, userId: string) {
   const snapshotStartedMs = Date.now();
@@ -7356,20 +7202,6 @@ async function handleAgentConfirm(sb: SupabaseClient, userId: string, body: any)
   }), { headers: CORS_HEADERS });
 }
 
-/**
- * Deterministic ingress for trusted channel parsers (Telegram voice/receipt and
- * Android notification listeners).  It deliberately accepts only non-financial
- * household tools: money continues to require agent_confirm, so an OCR or speech
- * mistake can never create a financial entry without the user's confirmation.
- */
-const DIRECT_INGRESS_TOOLS = new Set([
-  "add_inventory_item", "update_inventory_qty", "delete_inventory_item",
-  "add_pharmacy_item", "update_pharmacy_item", "delete_pharmacy_item",
-  "add_shopping_item", "complete_shopping_item", "delete_shopping_item",
-  "answer_dose_reminder", "mute_checkin",
-]);
-// زرار في تليجرام مستني رد (ZAD_PLAN ٣.٤): الأدوات دي بتقرا اللي محتاجاه بنفسها، فمالهاش لقطة البيت كلها.
-const NO_SNAPSHOT_INGRESS_TOOLS = new Set(["answer_dose_reminder", "mute_checkin"]);
 
 async function handleAgentExecute(sb: SupabaseClient, userId: string, body: any): Promise<Response> {
   const tool = String(body.tool ?? "");
