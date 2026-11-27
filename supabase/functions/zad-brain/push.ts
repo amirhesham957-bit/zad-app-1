@@ -11,6 +11,7 @@
 // الفشل fire-and-forget: الإشعار ده تحسين، مش مسار حياة — لو وقع مفيش حاجة تتكسر.
 
 import { SupabaseClient } from "jsr:@supabase/supabase-js@2";
+import { guardHealthInference } from "../_shared/or/healthInferenceGuard.ts";
 
 const FCM_V1_ENDPOINT = "https://fcm.googleapis.com/v1/projects/{project_id}/messages:send";
 const TOKEN_CACHE_TTL_MS = 50 * 60 * 1000; // توكن OAuth2 صالح ساعة — نجدده قبلها بـ10 دقايق
@@ -137,6 +138,9 @@ export async function pushToDevice(
   // عشان يتكلم بصوت زاد (ZadFirebaseMessagingService).
   dataOnly = false,
 ): Promise<PushDelivery> {
+  // م٧.١٢: ولا إشعار استباقي بيستنتج مرض أو حمل العميل ماقالوش.
+  title = guardHealthInference(title).text;
+  body = guardHealthInference(body).text;
   try {
     const saRaw = Deno.env.get("FIREBASE_SERVICE_ACCOUNT") ?? "";
     if (!saRaw) return "no_credentials";
@@ -250,6 +254,9 @@ export async function pushToTelegram(
   // حدث حياة من إشعار (ZAD_PLAN ٢.٨): البوت بيحط [✅ سجّله وفكّرني] [🙅 لأ] لو فيه ميعاد جاي، وزرار الرابط لو https.
   lifeEvent?: { id: string; offered: boolean; link: string | null },
 ): Promise<TelegramDelivery> {
+  // م٧.١٢: نفس حارس الاستنتاج الصحي على قناة تليجرام.
+  title = guardHealthInference(title).text;
+  body = guardHealthInference(body).text;
   const secret = Deno.env.get("ZAD_REALTIME_PUSH_SECRET");
   const baseUrl = Deno.env.get("SUPABASE_URL");
   if (!secret || !baseUrl) {

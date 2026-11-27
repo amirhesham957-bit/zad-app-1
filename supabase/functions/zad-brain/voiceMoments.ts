@@ -9,6 +9,7 @@
 //
 // كل الاعتماديات (الموديل، FCM، تليجرام) بتتحقن، فالمنطق كله متغطّي بتست من غير شبكة.
 
+import { isCrossMemberLeak } from "../_shared/or/crossMemberLeak.ts";
 import { latestOutboundMs, recentOutbound } from "../_shared/outbound.ts";
 import { proactiveTurn, recordConversation } from "../_shared/conversationLog.ts";
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
@@ -1047,6 +1048,11 @@ export async function cameBackSince(sb: SupabaseClient, userId: string, lastSeen
   return (opened.data ?? []).length > 0 || (said.data ?? []).length > 0;
 }
 
+/** م٧.٩: رسالة لـ[viewerId] فيها محتوى [ownerId]؟ تسريب لو الفرد ما وافقش. */
+export function memberLeaks(viewerId: string, ownerId: string, ownerConsented: boolean): boolean {
+  return isCrossMemberLeak({ toMemberId: viewerId, text: "", sourceMemberIds: [ownerId] }, { [ownerId]: ownerConsented });
+}
+
 /** الجرعة لسه ماتاخدتش؟ (ممكن العميل داس "خدته" بعد ما اللحظة اتسجلت) */
 export async function isStillRelevant(sb: SupabaseClient, row: VoiceMomentRow): Promise<boolean> {
   // ميعاد اتلغى أو خلص بعد ما التذكير اتسجل = مفيش تذكير.
@@ -1078,7 +1084,8 @@ export async function isStillRelevant(sb: SupabaseClient, row: VoiceMomentRow): 
     if (!memberId) return false;
     const { data: share } = await sb.from("zad_family_shares").select("id")
       .eq("owner_id", memberId).eq("viewer_id", row.user_id).eq("scope", "medicines").eq("status", "granted").limit(1);
-    if (!share || (share as unknown[]).length === 0) return false;
+    // م٧.٩: تنبيه لولي الأمر بيحمل محتوى الفرد، فيعدّي بس لو الفرد وافق (crossMemberLeak، fail closed).
+    if (memberLeaks(row.user_id, memberId, !!share && (share as unknown[]).length > 0)) return false;
     return await isStillRelevant(sb, { ...row, user_id: memberId, moment: "dose_missed" });
   }
   // رجع بلده (أو راح بلد تالتة) قبل ما الترحيب يتبعت = مفيش ترحيب.
@@ -1094,7 +1101,7 @@ export async function isStillRelevant(sb: SupabaseClient, row: VoiceMomentRow): 
     const { data: granted } = await sb.rpc("zad_family_share_granted", {
       p_viewer: row.user_id, p_owner: memberId, p_scope: "location",
     });
-    return granted === true;
+    return !memberLeaks(row.user_id, memberId, granted === true);
   }
   // الدورة اتنقلت لنفس اليوم من مكان تاني (ملفي، الشات) قبل ما السؤال يطلع = مفيش سؤال.
   if (row.moment === SALARY_CYCLE_MOMENT) {

@@ -204,6 +204,7 @@ import { newPollMetadata, type PollMember, type PollRow, type PollSummary, pollS
 import { schoolDay, type TimetableRow, weekdayOfDate } from "./school.ts";
 // FCM — إشعار فوري للجهاز (الوعي اللحظي حتى والتطبيق مقفول).
 import { proposalPushText, pushToDevice, pushToTelegram } from "./push.ts";
+import { guardHealthInference } from "../_shared/or/healthInferenceGuard.ts";
 import { familyPushText } from "./familyPush.ts";
 import { inventoryOwnerFilter, pickInventoryRow } from "./inventoryRow.ts";
 import { householdFamilyId, householdFilter } from "../_shared/household.ts";
@@ -9193,6 +9194,12 @@ async function handleAgentTurnInLane(
     if (!warnsScam(reply)) reply = SCAM_REPLY;
   }
   if (snapshotLeak(reply)) reply = SNAPSHOT_REFUSAL_REPLY;
+  // م٧.١٢: ممنوع استنتاج مرض أو حمل من المشتريات. المعلن = كلام العميل نفسه (رسالته ورسايله السابقة).
+  const healthVerdict = guardHealthInference(reply, [message, ...history.filter((t) => t.role === "user").map((t) => t.text ?? "")].join("\n"));
+  if (healthVerdict.removed.length > 0) {
+    console.warn("[agent_turn] health inference removed:", healthVerdict.removed.length);
+    reply = healthVerdict.text;
+  }
   reply = silentWriteFallback(reply, executed, proposals.length);
   // م٤.٢: رقم في رد على أداة محرك مش جاي من نتيجتها ولا من العميل ⇒ نص الأداة نفسه بدل كلام الموديل.
   const numberVerdict = guardEngineReply(reply, message, engineOutputs);
