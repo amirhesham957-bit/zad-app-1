@@ -246,6 +246,8 @@ import type { ObligationRow } from "./obligationCandidate.ts";
 export type { ObligationRow };
 import { BNPL_PROVIDERS, detectBnplObligationCandidate } from "./bnplObligation.ts";
 export { BNPL_PROVIDERS, detectBnplObligationCandidate };
+import { CORS_HEADERS } from "./corsHeaders.ts";
+export { CORS_HEADERS };
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
@@ -376,10 +378,6 @@ async function recordPromiseDrift(
   if (error) console.error("agent_drift_events insert failed:", error.message);
 }
 
-const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
 
 type Trigger = "daily" | "event" | "chat";
 
