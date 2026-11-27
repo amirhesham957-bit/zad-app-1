@@ -3,7 +3,8 @@
 import { assert } from "jsr:@std/assert@1";
 
 const MIGRATION = new URL("../../migrations/20260816130000_a_notification_asks_before_it_counts.sql", import.meta.url);
-const SOURCE = new URL("./index.ts", import.meta.url);
+// m4.5 pass3b: the ingest handler moved to notificationIngest.ts, so its status writes are read from there too.
+const SOURCES = [new URL("./index.ts", import.meta.url), new URL("./notificationIngest.ts", import.meta.url)];
 
 Deno.test("every status written to an ingest event is allowed by its check constraint", async () => {
   const sql = await Deno.readTextFile(MIGRATION);
@@ -11,7 +12,7 @@ Deno.test("every status written to an ingest event is allowed by its check const
   assert(check, "status_check not found in the migration");
   const allowed = new Set([...check[1].matchAll(/'([a-z_]+)'/g)].map((m) => m[1]));
 
-  const src = await Deno.readTextFile(SOURCE);
+  const src = (await Promise.all(SOURCES.map((u) => Deno.readTextFile(u)))).join("\n");
   const written = new Set<string>();
   for (const m of src.matchAll(/\bmark\("([a-z_]+)"/g)) written.add(m[1]);
   for (const m of src.matchAll(/from\("zad_notification_ingest_events"\)\s*\.update\(\{\s*status:\s*"([a-z_]+)"/g)) written.add(m[1]);
