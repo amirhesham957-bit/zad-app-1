@@ -124,6 +124,7 @@ import { HOUSE_LEARNING_KIND, houseLearningForTask, houseLearningPush } from "./
 import { INITIATIVE_RULE, childToneBlock, conversationProfile, dropServiceCloser, nameAskedIn, purchaseCheckBlock, voiceModeInstruction } from "./persona.ts";
 import { type DialectCode, dialectPromptBlock, dialectReminder } from "../_shared/dialect.ts";
 import { memoryPhraseStore, proactiveTitle } from "./proactiveTemplates.ts";
+import { banditEnabled, chooseTone, supabaseBanditStore } from "./banditWiring.ts";
 import { customerCard, IDENTITY_MEMORY_SCOPES, identityOverwrites, sanitizeProfilePatch } from "../_shared/customerProfile.ts";
 import { rateConfidence } from "../_shared/consumptionRate.ts";
 import { type LevelReading, pantryForecast } from "../_shared/or/pantryForecast.ts";
@@ -204,6 +205,7 @@ import { newPollMetadata, type PollMember, type PollRow, type PollSummary, pollS
 import { schoolDay, type TimetableRow, weekdayOfDate } from "./school.ts";
 // FCM — إشعار فوري للجهاز (الوعي اللحظي حتى والتطبيق مقفول).
 import { proposalPushText, pushToDevice, pushToTelegram } from "./push.ts";
+import { guardHealthInference } from "../_shared/or/healthInferenceGuard.ts";
 import { familyPushText } from "./familyPush.ts";
 import { inventoryOwnerFilter, pickInventoryRow } from "./inventoryRow.ts";
 import { householdFamilyId, householdFilter } from "../_shared/household.ts";
@@ -9193,6 +9195,12 @@ async function handleAgentTurnInLane(
     if (!warnsScam(reply)) reply = SCAM_REPLY;
   }
   if (snapshotLeak(reply)) reply = SNAPSHOT_REFUSAL_REPLY;
+  // م٧.١٢: ممنوع استنتاج مرض أو حمل من المشتريات. المعلن = كلام العميل نفسه (رسالته ورسايله السابقة).
+  const healthVerdict = guardHealthInference(reply, [message, ...history.filter((t) => t.role === "user").map((t) => t.text ?? "")].join("\n"));
+  if (healthVerdict.removed.length > 0) {
+    console.warn("[agent_turn] health inference removed:", healthVerdict.removed.length);
+    reply = healthVerdict.text;
+  }
   reply = silentWriteFallback(reply, executed, proposals.length);
   // م٤.٢: رقم في رد على أداة محرك مش جاي من نتيجتها ولا من العميل ⇒ نص الأداة نفسه بدل كلام الموديل.
   const numberVerdict = guardEngineReply(reply, message, engineOutputs);
@@ -10084,7 +10092,18 @@ async function proactiveTitleFor(sb: any, userId: string, kind: string | null | 
     ]);
     dialect = conversationProfile(u?.country, { preferred: p?.dialect, currency: u?.currency, city: p?.city, region: p?.dialect_region }).dialect;
   } catch { /* القالب الأساسي */ }
-  return await proactiveTitle(proactivePhrases, kind, dialect);
+  // م٨.٢: نبرة bandit للفرد (صاحب الحساب)، خلف ZAD_BANDIT_TONE (مقفول افتراضياً). أي فشل = القالب الأساسي.
+  const tone = banditEnabled((k) => Deno.env.get(k)) ? async (base: string): Promise<string | null> => {
+    const [{ data: me }, { data: fm }] = await Promise.all([
+      sb.from("zad_household_members").select("id,birth_year").eq("user_id", userId).eq("kind", "self").is("archived_at", null).maybeSingle(),
+      sb.from("family_members").select("role").eq("user_id", userId).eq("role", "child").limit(1),
+    ]);
+    if (!me?.id) return null;
+    const age = typeof me.birth_year === "number" ? new Date().getUTCFullYear() - me.birth_year : null;
+    const pick = await chooseTone(supabaseBanditStore(sb), userId, { memberId: me.id, age, isChild: (fm ?? []).length > 0 }, kind, base, Math.random);
+    return pick?.title ?? null;
+  } : undefined;
+  return await proactiveTitle(proactivePhrases, kind, dialect, undefined, tone);
 }
 
 export function groqSystemFor(snap: any, dialectHintText?: string): string {
