@@ -248,6 +248,8 @@ import { BNPL_PROVIDERS, detectBnplObligationCandidate } from "./bnplObligation.
 export { BNPL_PROVIDERS, detectBnplObligationCandidate };
 import { CORS_HEADERS } from "./corsHeaders.ts";
 export { CORS_HEADERS };
+import { DIRECT_INGRESS_TOOLS, NO_SNAPSHOT_INGRESS_TOOLS } from "./ingressTools.ts";
+export { DIRECT_INGRESS_TOOLS, NO_SNAPSHOT_INGRESS_TOOLS };
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
@@ -7199,20 +7201,6 @@ async function handleAgentConfirm(sb: SupabaseClient, userId: string, body: any)
   }), { headers: CORS_HEADERS });
 }
 
-/**
- * Deterministic ingress for trusted channel parsers (Telegram voice/receipt and
- * Android notification listeners).  It deliberately accepts only non-financial
- * household tools: money continues to require agent_confirm, so an OCR or speech
- * mistake can never create a financial entry without the user's confirmation.
- */
-const DIRECT_INGRESS_TOOLS = new Set([
-  "add_inventory_item", "update_inventory_qty", "delete_inventory_item",
-  "add_pharmacy_item", "update_pharmacy_item", "delete_pharmacy_item",
-  "add_shopping_item", "complete_shopping_item", "delete_shopping_item",
-  "answer_dose_reminder", "mute_checkin",
-]);
-// زرار في تليجرام مستني رد (ZAD_PLAN ٣.٤): الأدوات دي بتقرا اللي محتاجاه بنفسها، فمالهاش لقطة البيت كلها.
-const NO_SNAPSHOT_INGRESS_TOOLS = new Set(["answer_dose_reminder", "mute_checkin"]);
 
 async function handleAgentExecute(sb: SupabaseClient, userId: string, body: any): Promise<Response> {
   const tool = String(body.tool ?? "");
