@@ -21,6 +21,7 @@ import { sendAgentReport } from "./agentMail.ts";
 import { soulBlock } from "./soul.ts";
 import { pushToDevice, pushToTelegram } from "./push.ts";
 import { UNCOUNTED_MOMENTS } from "./voiceMoments.ts";
+import { runWeatherDrift, weatherAlertsEnabled } from "./weatherDrift.ts";
 import { recentOutbound } from "../_shared/outbound.ts";
 import { proactiveTurn, recordConversation } from "../_shared/conversationLog.ts";
 
@@ -37,6 +38,8 @@ export type AgentTaskDeps = {
 
 export async function processDueAgentTasks(sb: SupabaseClient, deps: AgentTaskDeps): Promise<{ processed: number; failed: number; postponed: number }> {
   const { buildSnapshot, buildChatSystemPrompt, groqSystemFor, runTool, proactiveTitleFor, accountTimeZone, modelRoutine: MODEL_ROUTINE, maxAgentTurns: MAX_AGENT_TURNS } = deps;
+  // تنبيه الجو الاستباقي: خلف ZAD_WEATHER_ALERTS (مقفول = ولا قراية ولا شبكة). بيسجل لحظات بس، ومابيرميش.
+  if (weatherAlertsEnabled()) await runWeatherDrift(sb, { accountTimeZone });
   const { data: due } = await sb.from("agent_tasks")
     .select("id,user_id,task_description,goal_id,recurrence,scheduled_for,kind,created_at,held_count")
     .eq("status", "pending")

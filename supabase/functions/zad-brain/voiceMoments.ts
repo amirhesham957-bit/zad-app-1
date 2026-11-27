@@ -57,9 +57,9 @@ export interface ComposedMoment {
 }
 
 /** لحظات بتتقال مكتوبة بس — "والباقي كتابي عادي". كل اللي مش هنا بيتقال بصوتها. */
-export const TEXT_ONLY_MOMENTS: ReadonlySet<string> = new Set(["dose_nudge", "close_day", "salary_cycle", "rain_soon"]);
+export const TEXT_ONLY_MOMENTS: ReadonlySet<string> = new Set(["dose_nudge", "close_day", "salary_cycle", "rain_soon", "weather_alert"]);
 /** بتتقال بالقالب بس، من غير صياغة موديل. */
-export const TEMPLATE_MOMENTS: ReadonlySet<string> = new Set(["newcomer_question", "close_day", "salary_cycle", "rain_soon"]);
+export const TEMPLATE_MOMENTS: ReadonlySet<string> = new Set(["newcomer_question", "close_day", "salary_cycle", "rain_soon", "weather_alert"]);
 
 /** «احتمال مطر في الساعات الجاية» (20261115010000، المالك ١٥/١١): مرة في اليوم بالكتير، مكتوبة، من غير موديل. */
 export const RAIN_SOON_MOMENT = "rain_soon";
@@ -528,6 +528,12 @@ export function momentFallback(moment: string, facts: Record<string, unknown>): 
     case RAIN_SOON_MOMENT: {
       const line = str((facts.rain as { line?: unknown } | undefined)?.line, 300) || "فيه احتمال مطر في الساعات الجاية — لو نازل خد شمسية.";
       return { title: "🌧️ احتمال مطر", text: line, speech: "" };
+    }
+    case "weather_alert": {
+      // weatherDrift.ts (ZAD_WEATHER_ALERTS): السطر والرقم من رد Open-Meteo، بيتسجل وقت الفحص.
+      const a = facts.alert as { kind?: unknown; line?: unknown } | undefined;
+      const title = a?.kind === "heat" ? "🌡️ حر شديد" : a?.kind === "cold" ? "🥶 برد شديد" : "🌧️ احتمال مطر";
+      return { title, text: str(a?.line, 300) || "الجو هيتغير في الساعات الجاية — خد بالك.", speech: "" };
     }
     case "dose_due": {
       // تذكير مجموعة (أدوية بينها ≤٣٠ دقيقة، 20260926120000): مواعيد كل واحد في نفس الرسالة.
