@@ -226,6 +226,8 @@ export { kidsPlaces, familyChat, travelField };
 import { streamTail } from "./streamTail.ts";
 export { streamTail };
 import { normalizeClientClassification, sha256Hex } from "./notificationHelpers.ts";
+import { pharmacyUnit } from "./pharmacyUnit.ts";
+export { pharmacyUnit };
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
@@ -8141,16 +8143,6 @@ export function promptSnapshot(snap: any): Record<string, unknown> {
  * وحدة الدوا زي zad_pharmacy_unit في الداتابيز بالظبط (migration 20261001220000): المعروف بيتوحّد والباقي بيفضل زي
  * ما اتكتب. قبل ١٣/١١ اللي مش معروف كان بيبقى «قرص»، فـ«علبة» و«شريط» من الفاتورة كانوا بيتسجلوا قرص واحد.
  */
-export function pharmacyUnit(raw: unknown): string {
-  const unit = String(raw ?? "").trim();
-  if (!unit) return "قرص";
-  const u = unit.toLowerCase();
-  if (/^(حب|قرص|أقراص|اقراص|tab|pill)/.test(u)) return "قرص";
-  if (/^(كريم|مرهم|جل|جيل|دهان|لوشن|cream|ointment|gel|lotion)/.test(u)) return "دهان";
-  if (/^(كبسول|cap)/.test(u)) return "كبسولة";
-  if (/^(نقط|نقطة|قطر)/.test(u)) return "نقطة";
-  return unit.slice(0, 30);
-}
 
 /** سطور قواعد اختيارية: اللي فاضي مابيتكتبش (٣.٢ — «مفيش tone.» وأخواتها كانوا بيتبعتوا مع كل لفة). */
 function ruleLines(...rules: Array<string | null | undefined>): string {
