@@ -232,6 +232,8 @@ import { turnTimer } from "./turnTimer.ts";
 export { turnTimer };
 import { prefetch } from "./prefetch.ts";
 export { prefetch };
+import { isMissingFunction } from "./missingFunction.ts";
+export { isMissingFunction };
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
@@ -832,10 +834,6 @@ export async function writeSingleCopyMemory(
 }
 
 
-/** PostgREST بيرد PGRST202 لما الدالة مش موجودة، وPostgres بيرد 42883. */
-export function isMissingFunction(error: { code?: string } | null | undefined): boolean {
-  return error?.code === "PGRST202" || error?.code === "42883";
-}
 
 /**
  * دروس من الأخطاء — آخر ١٤ يوم من agent_drift_events بتتلخص في سطرين:
