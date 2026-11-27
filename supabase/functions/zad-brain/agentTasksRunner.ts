@@ -22,7 +22,7 @@ import { soulBlock } from "./soul.ts";
 import { pushToDevice, pushToTelegram } from "./push.ts";
 import { UNCOUNTED_MOMENTS } from "./voiceMoments.ts";
 import { runWeatherDrift, weatherAlertsEnabled } from "./weatherDrift.ts";
-import { noteShown, type ShownChoice, settleOpenedNotifications } from "./banditReward.ts";
+import { noteShown, type ShownChoice, settleIgnoredNotifications, settleOpenedNotifications } from "./banditReward.ts";
 import { banditEnabled } from "./banditWiring.ts";
 import { recentOutbound } from "../_shared/outbound.ts";
 import { proactiveTurn, recordConversation } from "../_shared/conversationLog.ts";
@@ -44,6 +44,8 @@ export async function processDueAgentTasks(sb: SupabaseClient, deps: AgentTaskDe
   if (weatherAlertsEnabled()) await runWeatherDrift(sb, { accountTimeZone });
   // م٨.٢: مكافأة الـbandit للإشعارات اللي اتفتحت (ZAD_BANDIT_TONE مقفول = صفر). مابيرميش.
   await settleOpenedNotifications(sb, banditEnabled((k) => Deno.env.get(k)));
+  // قاعدة الفشل: إشعار اتعرض من +٢٤ ساعة ولسه مااتقراش = فشل للقالب. بعد المكافأة عشان المقروء ياخد الأولوية. مابيرميش.
+  await settleIgnoredNotifications(sb, banditEnabled((k) => Deno.env.get(k)));
   const { data: due } = await sb.from("agent_tasks")
     .select("id,user_id,task_description,goal_id,recurrence,scheduled_for,kind,created_at,held_count")
     .eq("status", "pending")
