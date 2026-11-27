@@ -1,0 +1,4 @@
+{
+  "_note": "Allowlist of available_actions ids. The generator fails on any id in zad_view_* that is not here. Adding an id needs review of this file.",
+  "actions": ["add_expense", "review_budget", "pay_debt", "restock", "use_expiring", "add_item", "add_goal"]
+}

@@ -8,6 +8,7 @@ on:
     paths:
       - 'zad_flutter/**'
       - '.github/workflows/flutter-pr-check.yml'
+      - 'supabase/migrations/**'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -28,6 +29,14 @@ jobs:
           # Same pin as build-debug-apk.yml; bump both together.
           flutter-version: '3.47.9'
           cache: true
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Generated view models are up to date
+        run: |
+          deno test -A tool/gen_views/gen_views_test.ts
+          deno run -A tool/gen_views/gen_views.ts --check
+        working-directory: zad_flutter
       - name: Install dependencies
         run: flutter pub get
         working-directory: zad_flutter
