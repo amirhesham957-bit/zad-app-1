@@ -20,7 +20,7 @@
    - م٧.٨: `_shared/or/memberGoal.ts` (حالة هدف الفرد وتعديله لو وقف)، دوال صافية مش موصّلة لسه.
    - الـbandit (م٨): `zad-brain/banditWiring.ts` + `zad_bandit_state`، متوصّل في `proactiveTitle` خلف `ZAD_BANDIT_TONE` (مقفول)، من `APPROVED_VARIANTS` (فاضية). الحارة الحرجة (دوا/صحة، أمان/طوارئ، طقس قاسي بس) والطفل وأقل من ١٨ برا. مفيش تغذية مكافأة لسه.
    - م٥.٢: `plan_gathering_time` بتقرا `zad_appointments` بتاعة العميل (مش حسابات تانية) وتدمجها مع كلامه. م٧.٨: `memberGoalWiring.ts` بيحط حالة الهدف الأسبوعية واقتراح التمديد في `life_goals` خلف `ZAD_MEMBER_GOALS` (مقفول)، قراية واقتراح بس.
-4. **العقل المتكلم:** `supabase/functions/zad-brain/index.ts` (حوالي ١٠٬١٠٠ سطر، والأدوات بقت في `toolDefs.ts` و`chatTools.ts`)، بيحكي النتيجة. أي رقم في الرد لازم يكون ليه مصدر.
+4. **العقل المتكلم:** `supabase/functions/zad-brain/index.ts` (حوالي ١٠٬٠٠٠ سطر، والأدوات بقت في `toolDefs.ts` و`chatTools.ts`)، بيحكي النتيجة. أي رقم في الرد لازم يكون ليه مصدر.
 
 ## الباب الوحيد (م٢.٥ خلص ٢٢/١١)
 
