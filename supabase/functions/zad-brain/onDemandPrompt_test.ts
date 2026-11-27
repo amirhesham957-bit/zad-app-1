@@ -4,6 +4,7 @@
 import { assert, assertEquals } from "jsr:@std/assert@1";
 import { buildChatSystemPrompt, CHAT_TOOLS, INTENT_RULE_TOOLS, ruleToolsFor, toolsForCall } from "./index.ts";
 import { intentToolHints, routeSpecialists, scopeToolsForSpecialist, specialistPromptBlock } from "./specialists.ts";
+import type { SpecialistId } from "./specialists.ts";
 import { soulBlock } from "./soul.ts";
 import { EVAL_CASES } from "./evals/cases.ts";
 
@@ -20,10 +21,11 @@ function turn(message: string, on: boolean) {
     const { primary, secondary } = routeSpecialists(message);
     const hinted = intentToolHints(message, "");
     const scoped = scopeToolsForSpecialist(CHAT_TOOLS, primary, secondary, hinted, message);
-    const chat = buildChatSystemPrompt(SNAP, false, ruleToolsFor(scoped, hinted));
+    const rules = ruleToolsFor(scoped, hinted, undefined, message);
+    const chat = buildChatSystemPrompt(SNAP, false, rules);
     const tools = toolsForCall(scoped, hinted, [], 0);
     const chars = JSON.stringify(tools).length + chat.length + soulBlock(undefined).length + (specialistPromptBlock(primary, secondary) ?? "").length;
-    return { scoped, hinted, chat, tools, tok: Math.round(chars / 3.5) };
+    return { scoped, hinted, rules, chat, tools, tok: Math.round(chars / 3.5) };
   });
 }
 
@@ -42,7 +44,7 @@ Deno.test("م٤.٣ on-demand: expected tools stay offered, rules for them stay, 
     const sent = b.tools.find((t) => t.name === want)!;
     assert(sent.input_schema, `${c.id}: ${want} lost its schema`);
     if (sent.description !== CHAT_TOOLS.find((t) => t.name === want)!.description) leanExpected++;
-    if (INTENT_RULE_TOOLS.has(want) && a.scoped.some((t) => t.name === want) && !b.hinted.includes(want)) lostRule++;
+    if (INTENT_RULE_TOOLS.has(want) && a.scoped.some((t) => t.name === want) && !b.rules.has(want)) lostRule++;
   }
   off.sort((x, y) => x - y); on.sort((x, y) => x - y);
   const q = (r: number[], p: number) => r[Math.min(r.length - 1, Math.floor(r.length * p))];
@@ -81,4 +83,61 @@ Deno.test("م٤.٣ specialty scope: flag closed = identical tool set; open defer
   assert(names("امسح القسط ده").includes("delete_obligation"), "edit verb brings delete back");
   assert(names("عدل القسط بتاعي").includes("update_obligation"));
   assert(withFlag(true, () => scopeToolsForSpecialist(CHAT_TOOLS, "finance", null, []).some((t) => t.name === "delete_obligation")), "no message = full scope");
+});
+
+// م٤.٣ب — قواعد بالنية: كل قاعدة بتظهر لما رسالتها تطلبها وماتظهرش من غيرها، والمقفول = القواعد كلها زي ما كانت.
+const FULL = { currency: "EGP", country: "EG", name_asked_in_conversation: true, family: { kids_places: [], polls: [], chat_recent: [] }, life_goals: [{ title: "عمرة" }] };
+function rulesFor(message: string, on: boolean, snap: Record<string, unknown> = FULL, force?: SpecialistId) {
+  return withFlag(on, () => {
+    const routed = routeSpecialists(message);
+    const primary = force ?? routed.primary, secondary = force ? null : routed.secondary;
+    const hinted = intentToolHints(message, "");
+    const scoped = scopeToolsForSpecialist(CHAT_TOOLS, primary, secondary, hinted, message);
+    const p = buildChatSystemPrompt(snap, false, ruleToolsFor(scoped, hinted, undefined, message));
+    return p.slice(0, p.lastIndexOf("=== SNAPSHOT ==="));
+  });
+}
+const MARKERS: Record<string, string> = {
+  decision: "**القرارات الكبيرة**", resilience: "**شهر صعب**", circumstance: "**حالة البيت (circumstance)**",
+  occasion: "**المناسبات**", location: "**لوكيشن المحل**", channels: "**قدراتك في كل قناة**", ticket: "**شكوى أو مشكلة محتاجة إنسان**",
+  goals: "**أهداف حياة العميل (life_goals)**", kids: "**family.kids_places**", polls: "**family.polls**",
+};
+Deno.test("م٤.٣ب rules by intent: each rule loads on its intent, absent otherwise, closed flag keeps all", () => {
+  // الأدوات دي بتتعرض لوكيل المال (general مابيعرضهاش أصلاً، فمفيش قاعدة تتحمّل له في الحالتين).
+  const FIN: Record<string, SpecialistId> = { decision: "finance", resilience: "finance", circumstance: "pharmacy" };
+  const cases: Array<[string, string]> = [
+    ["لو اشتريت عربية بـ٣٠٠ ألف ينفع؟", "decision"], ["الشهر ده تقيل ومش هنعدي", "resilience"],
+    ["ابويا عيان في المستشفى هدي التنبيهات", "circumstance"], ["عيد ميلاد مراتي ١٢ مارس", "occasion"],
+    ["هات اللوكيشن بتاع المحل", "location"], ["ترد عليا فويس في تليجرام؟", "channels"],
+    ["عايز اكلم حد من الدعم", "ticket"], ["عايز اعدل هدف العمرة بتاعي", "goals"],
+    ["ابني وصل المدرسة؟ فين عمر", "kids"], ["العيلة قالت ايه في التصويت", "polls"],
+  ];
+  for (const [msg, key] of cases) {
+    assert(rulesFor(msg, true, FULL, FIN[key]).includes(MARKERS[key]), `${key} must load for: ${msg}`);
+    assert(rulesFor(msg, false, FULL, FIN[key]).includes(MARKERS[key]), `closed flag keeps ${key}`);
+    // نفس الوكيل بنفس القاعدة من غير النية = مش موجودة.
+    if (FIN[key]) assert(!rulesFor("صرفت ٥٠ على القهوة", true, FULL, FIN[key]).includes(MARKERS[key]), `${key} absent without intent`);
+  }
+  const neutral = rulesFor("صرفت ٥٠ على القهوة", true, FULL, "finance");
+  for (const [k, m] of Object.entries(MARKERS)) assert(!neutral.includes(m), `${k} must be absent on a plain expense`);
+  // قواعد السلامة والتنفيذ ماتتشالش بأي نية.
+  for (const m of ["ممنوع منعاً باتاً تذكر أو تقترح أو تجدول أي دوا", "**الدكتور أو الصيدلي**", "**متحكيش نتايج الأدوات", "**التنفيذ الفوري**", "**family.chat_recent**"]) {
+    assert(neutral.includes(m), `safety rule kept: ${m}`);
+  }
+});
+
+Deno.test("م٤.٣ب rules by intent: no eval case loses the rule of its expected tool, token estimate", () => {
+  const off: number[] = [], on: number[] = [];
+  for (const c of EVAL_CASES) {
+    off.push(rulesFor(c.message, false).length); on.push(rulesFor(c.message, true).length);
+    const e = c.expect as { proposes?: string; executes?: string };
+    const want = e.proposes ?? e.executes;
+    if (want === "decision_impact") assert(rulesFor(c.message, true).includes(MARKERS.decision), c.id);
+    if (want === "store_location") assert(rulesFor(c.message, true).includes(MARKERS.location), c.id);
+    if (want === "remember_occasion") assert(rulesFor(c.message, true).includes(MARKERS.occasion), c.id);
+    if (want === "open_support_ticket") assert(rulesFor(c.message, true).includes(MARKERS.ticket), c.id);
+  }
+  const med = (r: number[]) => [...r].sort((a, b) => a - b)[Math.floor(r.length / 2)];
+  console.log(`[م٤.٣ب rules] full-snapshot rules chars p50 off=${med(off)} (~${Math.round(med(off) / 3.5)} tok) on=${med(on)} (~${Math.round(med(on) / 3.5)} tok)`);
+  assert(med(on) < med(off));
 });

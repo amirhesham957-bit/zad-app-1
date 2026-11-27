@@ -4,7 +4,7 @@
 // ملحوظة: buildSnapshot محتاج داتابيز؛ اللقطة هنا بشكل مفاتيحه الحقيقية (الأجزاء اللي HOUSE_SECTIONS_ON_REQUEST
 // بتشيلها موجودة كمان عشان نتأكد إنها مابتتبعتش).
 import { assert } from "jsr:@std/assert@1";
-import { buildChatSystemPrompt, CHAT_TOOLS, promptSnapshot, toolsForCall } from "./index.ts";
+import { buildChatSystemPrompt, CHAT_TOOLS, promptSnapshot, ruleToolsFor, toolsForCall } from "./index.ts";
 import { soulBlock } from "./soul.ts";
 import { homeStateFrom, homeStateLines } from "./homeState.ts";
 import { scopeToolsForSpecialist } from "./specialists.ts";
@@ -96,4 +96,22 @@ Deno.test("م٤.٣: chat-turn context token budget by section (prints table)", (
   // الأجزاء اللي بتتقري عند الطلب مابتتبعتش.
   for (const k of ["recent_transactions", "stock", "observations", "notifications_sent"]) assert(!(k in m.keys), k);
   assert(total > 0);
+});
+
+// م٤.٣ب: نفس اللقطة، بس ZAD_ONDEMAND_PROMPT=1 وقواعد بالنية (رسالة عادية من غير نية): القواعد لازم تنزل عن المقفول.
+Deno.test("م٤.٣ب: chat rules shrink with on-demand rules by intent (same snapshot, no intent)", () => {
+  // deno-lint-ignore no-explicit-any
+  const snap: any = { ...SNAP, dialect_hint_text: "صرفت كام على الأكل", name_asked_in_conversation: true };
+  const scoped = scopeToolsForSpecialist(CHAT_TOOLS, "general", null, []);
+  const rulesChars = (on: boolean) => {
+    const prev = Deno.env.get("ZAD_ONDEMAND_PROMPT");
+    if (on) Deno.env.set("ZAD_ONDEMAND_PROMPT", "1"); else Deno.env.delete("ZAD_ONDEMAND_PROMPT");
+    try {
+      const chat = buildChatSystemPrompt(snap, false, ruleToolsFor(scoped, [], on, "صرفت كام على الأكل"));
+      return chat.length - JSON.stringify(promptSnapshot(snap)).length;
+    } finally { if (prev === undefined) Deno.env.delete("ZAD_ONDEMAND_PROMPT"); else Deno.env.set("ZAD_ONDEMAND_PROMPT", prev); }
+  };
+  const off = rulesChars(false), on = rulesChars(true);
+  console.log(`[م٤.٣ب] rules chars off=${off} (~${tok(off)} tok) on=${on} (~${tok(on)} tok), saved ~${tok(off - on)} tok`);
+  assert(on < off);
 });

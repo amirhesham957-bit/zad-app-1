@@ -275,6 +275,28 @@ const MEDICINE_DELETE_ASKED = /(احذف|اشيل|امسح|اشيله|اشيله
 // «إيه اللي ماقولتليش عليه؟» (ZAD_PLAN ٣.٥): اللي الحراس مسكوه الأسبوع ده وليه.
 const HELD_INTENT = /(ما|م) ?(قولتليش|قلتليش|قولتلناش|بعتليش|بلغتنيش)|(ما|م)قولتهوش|سكت(ت)? عن|سكتت?ش ليه|خبيت عني|اللي (ما|م)قولتهوش|ليه (ما|م) ?(قولتش|بتقولش|بعتش|بتبعتش)|الحاجات اللي (ما|م)وصلتنيش/;
 
+// م٤.٣ب — قواعد البرومبت اللي بتدخل بنية الرسالة (مش بأداة): ZAD_ONDEMAND_PROMPT=1 بس. المفاتيح الوهمية `rule:*`
+// بتتحط في نفس مجموعة `offered` عشان buildChatSystemPrompt يسألها بـoffers().
+const DECISION_RULE_INTENT = /لو (اشتريت|اشتري|هشتري|نقلت|انقل|هنقل|غيرت|استقلت)|افكر (اشتري|انقل|اغير|استقيل)|(اشتريه|اشتريها|انقل|نغير|اخده|اخدها)\s*(ولا|ام) ?لا|ينفع (اشتري|ننقل|نشتري|اخد)|قررت|قررنا|خلاص (اشتريت|اشترينا|نقلنا|قررت)|عملت القرار|قرار (كبير|مهم)|هتاثر|هيأثر|هيوثر/;
+const RESILIENCE_RULE_INTENT = /الشهر ده (تقيل|صعب|وحش)|مش هنعدي|مش هعدي|مخنوق|ضايق ماديا|الدنيا (ضيقه|صعبه)|مش هقدر اكمل الشهر|قلقان|قلقانه/;
+const CIRCUMSTANCE_RULE_INTENT = /(عيان|تعبان|مريض|مستشفي|وفاه|طوارئ|امتحانات|ثانويه عامه|ظرف|ظروف)|هدي (التنبيهات|الاشعارات)|وقف التنبيهات|رجع (التنبيهات|الوضع|عادي)|خلاص (الظرف|رجعنا)/;
+const CHANNELS_RULE_INTENT = /فويس|صوت|صوتي|تليجرام|تيليجرام|telegram|تكست|text|اكلمك|تكلمني|ترد عليا (كلام|بصوت)|مكالمه/;
+const GOALS_RULE_INTENT = /هدف|اهداف|احلامي|حلم|عمره|حج|جهاز|تحويشه|حصاله|ادخر|احوش|خطه (توفير|ادخار)|وفرت|حوشت|حطيت.{0,20}(علي جنب|للهدف)/;
+const FAMILY_DETAIL_RULE_INTENT = /تصويت|صوت(ت|وا|نا)|العيله (قالت|رايها)|رايهم|مدرس|دخل|خرج|وصل|فين (ابني|بنتي|الولاد|العيال|عمر|يوسف)|(ابني|بنتي|الاطفال|الولاد|العيال)\s*(فين|وصل|خرج)|شات العيله|ماما قالت|بابا قال/;
+
+/** مفاتيح القواعد اللي نية الرسالة بتطلبها (أسماء أدوات للأدوات، و`rule:*` لباقي البلوكات). */
+export function ruleIntentKeys(message: string): string[] {
+  const norm = normalize(message);
+  const keys: string[] = [];
+  if (DECISION_RULE_INTENT.test(norm)) keys.push("decision_impact", "log_decision");
+  if (RESILIENCE_RULE_INTENT.test(norm)) keys.push("household_resilience");
+  if (CIRCUMSTANCE_RULE_INTENT.test(norm)) keys.push("set_life_circumstance", "end_life_circumstance");
+  if (CHANNELS_RULE_INTENT.test(norm)) keys.push("rule:channels");
+  if (GOALS_RULE_INTENT.test(norm)) keys.push("rule:goals");
+  if (FAMILY_DETAIL_RULE_INTENT.test(norm)) keys.push("rule:family_detail");
+  return keys;
+}
+
 /** [priorReply]: رد زاد اللي قبل الرسالة دي مباشرة، لو فيه — بيكمّل نية الرسالة لما تكون رد على سؤال. */
 export function intentToolHints(message: string, priorReply = ""): string[] {
   const norm = normalize(message);
