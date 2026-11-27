@@ -159,6 +159,7 @@ import { PENDING_TTL_MS, pendingAnswerable, SENSITIVE_TOPIC_LABEL, type Sensitiv
 import { type ForwardLedger, simulatePurchase } from "./whatIf.ts";
 import { goalPace, stepPerWeek } from "./goalPace.ts";
 import { type GoalEventRow, type GoalTaskRow, memberGoalsEnabled, memberGoalView, taskEventsFor } from "./memberGoalWiring.ts";
+import { recordGoalOffers } from "./memberGoalApply.ts";
 import { appointmentsOnLocalDay, householdLoad, householdLoadRule } from "./householdLoad.ts";
 import { appointmentAgenda, type AppointmentRow, matchesAppointmentQuery, searchAppointments } from "./appointmentsQuery.ts";
 import { toneFromState, toneRule, toneWithMessage, type ToneTxn } from "./tone.ts";
@@ -984,6 +985,18 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
     } catch { /* من غير الحقل */ }
   }
 
+  // م٧.٨: العرض بيتسجل من السيرفر قبل ما الاقتراح يظهر في life_goals. التسجيل فشل/الطفل = من غير اقتراح.
+  const goalViews = new Map<string, ReturnType<typeof memberGoalView>>();
+  const offeredGoals = new Set<string>();
+  if (goalEvents || goalTaskRows) {
+    for (const g of lifeGoals) {
+      const mv = g.progress_kind === "tasks" ? (goalTaskRows ? memberGoalView(g, [], new Date(), taskEventsFor(g.id, goalTaskRows)) : null) : goalEvents ? memberGoalView(g, goalEvents) : null;
+      goalViews.set(g.id, mv);
+    }
+    const offers = [...goalViews].flatMap(([goalId, mv]) => mv?.offerDeadline ? [{ goalId, deadline: mv.offerDeadline }] : []);
+    for (const id of await recordGoalOffers(sb, userId, offers)) offeredGoals.add(id);
+  }
+
   const transactions = txRes.data ?? [];
   const now = new Date();
   // كل تسجيل الجرعات الحالي هنا، مش في zad_dose_log (doseAdherence في shared.ts).
@@ -1487,8 +1500,8 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
         ...(step !== null ? { step_per_week: step } : {}),
         ...(p ? { pace: p.pace, expected_by_now: p.expected_by_now, days_left: p.days_left } : {}),
         ...(() => {
-          const mv = g.progress_kind === "tasks" ? (goalTaskRows ? memberGoalView(g, [], new Date(), taskEventsFor(g.id, goalTaskRows)) : null) : goalEvents ? memberGoalView(g, goalEvents) : null;
-          return mv ? { weekly: { done: mv.status.done, weeks_left: mv.status.weeksLeft, stalled: mv.status.stalled }, ...(mv.proposal ? { proposal: mv.proposal } : {}) } : {};
+          const mv = goalViews.get(g.id) ?? null;
+          return mv ? { weekly: { done: mv.status.done, weeks_left: mv.status.weeksLeft, stalled: mv.status.stalled }, ...(mv.proposal && offeredGoals.has(g.id) ? { proposal: mv.proposal } : {}) } : {};
         })(),
       };
     }),

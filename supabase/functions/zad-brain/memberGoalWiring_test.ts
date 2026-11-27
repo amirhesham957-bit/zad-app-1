@@ -20,9 +20,11 @@ Deno.test("view: stalled goal -> proposal only, mentions consent; on-track -> no
   const now = new Date(t0 + 15 * D);
   const stalled = memberGoalView(goal, [ev(1, 10), ev(8, 5)], now)!;
   assertEquals(stalled.status.stalled, true);
-  assert(stalled.proposal!.includes("ماتنفّذش من غير موافقته"));
+  assert(stalled.proposal!.includes("goal_id=g1") && stalled.proposal!.includes("«توفير»"));
+  assert(stalled.proposal!.includes(stalled.offerDeadline!) && /^\d{4}-\d{2}-\d{2}$/.test(stalled.offerDeadline!));
+  assert(stalled.proposal!.includes("«أيوه» من غير عرض مش موافقة"));
   const ok = memberGoalView(goal, [ev(1, 130), ev(8, 130)], now)!;
-  assertEquals(ok.proposal, null);
+  assertEquals([ok.proposal, ok.offerDeadline], [null, null]);
   assertEquals(memberGoalView({ ...goal, progress_kind: "tasks" }, [], now), null);
   assertEquals(memberGoalView({ ...goal, deadline_date: null }, [], now), null);
 });

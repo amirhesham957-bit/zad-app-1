@@ -13,7 +13,11 @@ import { commitIntent, DUPLICATE_REPLY, refusalText } from "./commitIntent.ts";
 import { identityOverwrites, sanitizeProfilePatch } from "../_shared/customerProfile.ts";
 import { daysLeft } from "./documents.ts";
 import { stepPerWeek } from "./goalPace.ts";
-import { APPLY_GOAL_ADJUSTMENT, GOAL_ADJUST_FLAG_OFF, GOAL_ADJUST_NEEDS_APPROVAL, memberGoalsOn, planGoalAdjustment } from "./memberGoalApply.ts";
+import {
+  APPLY_GOAL_ADJUSTMENT, GOAL_ADJUST_CHILD, GOAL_ADJUST_DEADLINE_MISMATCH, GOAL_ADJUST_FLAG_OFF, GOAL_ADJUST_NEEDS_APPROVAL,
+  GOAL_ADJUST_NEEDS_GOAL_ID, GOAL_ADJUST_NO_OFFER, GOAL_ADJUST_OFFER_EXPIRED, GOAL_ADJUST_OFFER_SAME_TURN, GOAL_ADJUST_OFFER_USED,
+  isFreshGoalOffer, memberGoalsOn, planGoalAdjustment,
+} from "./memberGoalApply.ts";
 import { isExplicitApproval } from "./memberGoalWiring.ts";
 import { appointmentAgenda, type AppointmentRow, matchesAppointmentQuery, searchAppointments } from "./appointmentsQuery.ts";
 import { bookingConflicts, bookingQuestion } from "./scheduleGuard.ts";
@@ -445,14 +449,28 @@ export async function execCalendarGoals(name: string, sb: SupabaseClient, userId
       // م٧.٨: مدّ ميعاد هدف واقف بعد موافقة صريحة في رسالة اللفة دي. الميعاد من السيرفر، والكتابة من الباب (goal.set).
       if (!memberGoalsOn()) return GOAL_ADJUST_FLAG_OFF;
       if (!isExplicitApproval(ctx.said)) return GOAL_ADJUST_NEEDS_APPROVAL;
-      const plan = await planGoalAdjustment(sb, userId, String(input.goal_title ?? "").trim());
+      const goalId = String(input.goal_id ?? "").trim();
+      if (!goalId) return GOAL_ADJUST_NEEDS_GOAL_ID;
+      if (isFreshGoalOffer(userId, goalId)) return GOAL_ADJUST_OFFER_SAME_TURN;
+      const plan = await planGoalAdjustment(sb, userId, goalId);
       if (!plan.ok) return `مرفوض: ${plan.reason}`;
+      // العرض من السيرفر بس: بيتستهلك ذرياً (مرة واحدة)، ولو الباب رفض بنرجّعه.
+      const { data: claimed } = await sb.rpc("zad_goal_offer_consume", { p_user: userId, p_goal: goalId });
+      const c = (claimed ?? {}) as { status?: string; deadline?: string; offer_id?: string };
+      if (c.status !== "ok" || !c.deadline || !c.offer_id) {
+        return c.status === "expired" ? GOAL_ADJUST_OFFER_EXPIRED : c.status === "consumed" ? GOAL_ADJUST_OFFER_USED
+          : c.status === "child_member" ? GOAL_ADJUST_CHILD : GOAL_ADJUST_NO_OFFER;
+      }
+      const release = async () => { await sb.rpc("zad_goal_offer_release", { p_user: userId, p_offer: c.offer_id }); };
+      const stated = input.deadline_date != null ? String(input.deadline_date).trim().slice(0, 10) : "";
+      if (stated && stated !== c.deadline) { await release(); return GOAL_ADJUST_DEADLINE_MISMATCH; }
+      plan.deadline = c.deadline;
       const goal = plan.goal as { id: string; title: string; metric: string | null; target_value: number | null; deadline_date: string | null; progress_kind: string | null };
       const w = await commitIntent(sb, userId, scope, name, input, "goal.set", {
         title: goal.title, metric: goal.metric, target_value: goal.target_value, deadline_date: plan.deadline,
         unit: goal.progress_kind === "amount" ? "money" : "count",
       });
-      if (!w.ok) return refusalText(w.reason);
+      if (!w.ok) { await release(); return refusalText(w.reason); }
       if (w.duplicate) return DUPLICATE_REPLY;
       ctx.mutationCount++;
       ctx.mutations.push({ tool: name, old: { deadline_date: goal.deadline_date }, new: { deadline_date: plan.deadline } });

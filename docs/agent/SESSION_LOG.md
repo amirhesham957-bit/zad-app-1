@@ -897,3 +897,11 @@ Added `zad_flutter/lib/features/notification_reads` (repository interface + Supa
 - **الأمثلة (دوال صافية بس):** `_shared/or/memberGoalExamples.ts`: بروتين من المخزن (`proteinFromPantry`)، نفاد المكمّل (`supplementRunout`)، جلسات الجيم من المواعيد (`gymSessionsInWindow`)، ومشتريات البنت في حدود مصروفها بذوقها (`tasteScore` وَ`pickWithinAllowance`)، وفلتر الخصوصية `ownedOrShared`. **مش موصّلة** بالأدوات ولا اللقطة.
 - **فاضل:** قيم البروتين للأصناف (مفيش عمود تغذية في `zad_inventory`)، تصنيف «جيم» للموعد (دلوقتي regex على العنوان)، مصروف/بدل الفرد منفصل لميزانية البنت (مفيش جدول)، توصيل الأمثلة بأدوات القراية، موافقة من الواجهة (الموافقة دلوقتي من نص الرسالة، مش زرار)، تشغيل الفلاج وقياسه.
 - **فخ:** الموافقة مبنية على رسالة اللفة الحالية بس؛ لو العميل قال «أيوه» على سؤال تاني والهدف واقف فعلاً، التنفيذ ممكن (محدود بالهدف اللي اسمه بالظبط، وتخفيف مش حذف).
+
+## ٢٧/١١ — م٧.٨ تشديد الموافقة (فرع `feat/m7-8-bound-approval`، من غير PR/دمج)
+
+- **اتعمل:** «أيوه» لوحدها مابتنفّذش مدّ الهدف. جدول `zad_goal_offers` + `zad_goal_offer_record/consume/release` (security definer، service_role بس، RLS، الطفل برا). اللقطة (`index.ts`) بتسجل العرض قبل ما `life_goals[].proposal` يظهر (فشل التسجيل أو الطفل = من غير اقتراح). `apply_goal_adjustment` بـ`goal_id` إلزامي: موافقة صريحة + عرض مفتوح غير منتهي وغير مستهلك ومش جديد في نفس اللفة (`freshOffers` في الذاكرة بتتكتب فوق مع كل لقطة) ← `goal.set` من الباب بميعاد العرض. الرفض نصوص ثابتة في `memberGoalApply.ts` (مش `REASONS`)، مفيش تكرار مفاتيح.
+- **اتقاس:** `deno check` EXIT=0، `deno test -A zad-brain/ _shared/ _schema/` EXIT=0 (٢٤٢٦ ناجح)، `oneDoor_test` ناجح، `goal_offers_test.sql` على بوستجرس مؤقت (اتشال) «all checks passed». الميجريشن اتضافت لسلسلة LIST في `edge-functions.yml`.
+- **فاضل:** «اتعرض فعلاً» = اللقطة اتبنت، مش إن الرد وصل (مفيش إثبات من رد الموديل). فلاج `ZAD_MEMBER_GOALS` لسه مقفول ومش مقاس.
+- **فخ:** الميجريشن بتتنشر مع الدمج في `main`؛ الجدول مفيش حاجة بتكتب فيه غير الدوال التلاتة.
+
