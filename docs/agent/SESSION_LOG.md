@@ -853,3 +853,13 @@ Added `zad_flutter/lib/features/notification_reads` (repository interface + Supa
 - **اتعمل:** `_shared/or/memberGoal.ts` + تست (٦ تستات: وقف/ماشي/اتحقق، المدّ، سقف ٨ أسابيع). دوال صافية، مفيش ميجريشن ولا سلوك إنتاج.
 - **اتقاس:** `deno test -A zad-brain/ _shared/` EXIT=0 (٢٣٤٨ نجحوا؛ أول تشغيل وقع EXIT=1 على `AddrInUse` في `areaTrends_test` من منفذ مشغول بعملية تانية، وبعد كده نجح).
 - **فاضل:** التوصيل بـ`agent_goals` وكتابة التعديل بنية goal بموافقة الفرد، وأمثلة البنت والأخ. م٧.٨ مفتوح.
+
+## ٢٠٢٦-١١-٢٧ — م٥.٢ توصيل المواعيد بـ`plan_gathering_time` على `feat/wire-m5-2-m7-8`
+- **اتعمل:** `gatheringTool.ts`: `weekStartIso` و`appointmentsBusy` و`mergeBusy`؛ والأداة في `index.ts` بتقرا `zad_appointments` (user_id بتاع العميل، upcoming، ٩ أيام) وتدمجها مع المشغول من كلامه. فشل القراية = كلام العميل بس. نص الرد بيقول مصدر المشغول. مفيش ميجريشن.
+- **اتقاس:** `gatheringTool_test` ١٢ نجحوا (٢ جداد).
+- **فاضل:** أفراد البيت اللي ليهم حسابات (محتاج نطاق مشاركة `appointments` وموافقة الفرد). مواعيد من غير وقت نهاية = ساعة. م٥.٢ مفتوح.
+
+## ٢٠٢٦-١١-٢٧ — م٧.٨ توصيل الهدف بـagent_goals (مقفول)
+- **اتعمل:** `zad-brain/memberGoalWiring.ts` + تست (٣): `weeklyProgress` من `zad_events` (`payload.row_id`/`amount`)، و`memberGoalView` فوق `goalStatus`/`adjustStalledGoal`. في اللقطة `life_goals[].weekly` و`proposal` خلف `ZAD_MEMBER_GOALS` (مقفول افتراضياً). مفيش كتابة ولا ميجريشن؛ التعديل اقتراح والتنفيذ بعد الموافقة عبر `set_life_goal` -> `goal.set`.
+- **فاضل:** أهداف العدّ، واجهة الموافقة، أمثلة البنت والأخ، فتح الفلاج بعد قياس. م٧.٨ مفتوح.
+- **فخ (م٧.٨):** `zad_events` (ميجريشن `20261121160000`) كان ناقص من `_schema/schema.json`، فعقد السكيما وقف الـCI أول ما الكود قرا منه. اتضاف (٢٧/١١).

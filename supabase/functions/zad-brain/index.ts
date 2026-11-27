@@ -108,7 +108,7 @@ import { foodProfile } from "./foodProfile.ts";
 import { seasonFor, seasonInstruction, upcomingSeason, upcomingSeasonInstruction } from "../_shared/season.ts";
 import { SEASON_PLAN_DAYS, seasonPlanInstruction, upcomingCalendarSeasons } from "../_shared/seasonCalendar.ts";
 import { buildMenu, describeMenu, feedbackMap, parseMenuDishes } from "./menuTool.ts";
-import { describeGatherings, findGatherings, parseGatheringInput } from "./gatheringTool.ts";
+import { appointmentsBusy, describeGatherings, findGatherings, mergeBusy, parseGatheringInput } from "./gatheringTool.ts";
 import { guardEngineReply, type EngineOutput } from "./engineGuard.ts";
 import { type FastIntent, formatBalanceReply, parseFastPath } from "./fastPath.ts";
 import { AgentSource, AuditScope, recordAction, writeRows } from "./audit.ts";
@@ -156,6 +156,7 @@ import { conflictAction, type HouseholdMember, memberIdFor, memoryTimeRefusal, t
 import { PENDING_TTL_MS, pendingAnswerable, SENSITIVE_TOPIC_LABEL, type SensitiveTopic, sensitiveTopic } from "./sensitiveMemory.ts";
 import { type ForwardLedger, simulatePurchase } from "./whatIf.ts";
 import { goalPace, stepPerWeek } from "./goalPace.ts";
+import { type GoalEventRow, memberGoalsEnabled, memberGoalView } from "./memberGoalWiring.ts";
 import { appointmentsOnLocalDay, householdLoad, householdLoadRule } from "./householdLoad.ts";
 import { appointmentAgenda, type AppointmentRow, matchesAppointmentQuery, searchAppointments } from "./appointmentsQuery.ts";
 import { toneFromState, toneRule, toneWithMessage, type ToneTxn } from "./tone.ts";
@@ -1110,6 +1111,17 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
     created_at: string | null; progress_kind?: string | null;
   }>;
 
+  // م٧.٨: حالة الهدف الأسبوعية من zad_events (قراية بس) خلف ZAD_MEMBER_GOALS (مقفول). أي فشل = من غير الحقل.
+  let goalEvents: GoalEventRow[] | null = null;
+  if (memberGoalsEnabled((k) => Deno.env.get(k)) && lifeGoals.some((g) => g.progress_kind === "amount")) {
+    try {
+      const { data, error } = await sb.from("zad_events").select("occurred_at,payload")
+        .eq("user_id", userId).eq("kind", "goal.progress")
+        .gte("occurred_at", new Date(Date.now() - 400 * 86_400_000).toISOString()).limit(2000);
+      if (!error) goalEvents = (data ?? []) as GoalEventRow[];
+    } catch { /* من غير الحقل */ }
+  }
+
   const transactions = txRes.data ?? [];
   const now = new Date();
   // كل تسجيل الجرعات الحالي هنا، مش في zad_dose_log (doseAdherence في shared.ts).
@@ -1612,6 +1624,10 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
         ...(amount ? { kind: "amount" } : {}),
         ...(step !== null ? { step_per_week: step } : {}),
         ...(p ? { pace: p.pace, expected_by_now: p.expected_by_now, days_left: p.days_left } : {}),
+        ...(() => {
+          const mv = goalEvents ? memberGoalView(g, goalEvents) : null;
+          return mv ? { weekly: { done: mv.status.done, weeks_left: mv.status.weeksLeft, stalled: mv.status.stalled }, ...(mv.proposal ? { proposal: mv.proposal } : {}) } : {};
+        })(),
       };
     }),
     // الوقت المحلي دلوقتي — المصدر الوحيد لـ"النهارده/بكرة/الساعة ٥" في أي أداة فيها وقت.
@@ -5108,7 +5124,18 @@ export async function executeTool(sb: SupabaseClient, userId: string, name: stri
       const parsed = parseGatheringInput(input);
       if ("error" in parsed) return parsed.error;
       const today = snap?.now_local?.date ?? new Date().toISOString().slice(0, 10);
-      return describeGatherings(findGatherings(parsed.value), parsed.value, today);
+      // م٥.٢: مواعيد العميل الفعلية بتتقرا service-side بـuser_id بتاعه بس، وفشل القراية = كلام العميل بس (احتياطي).
+      let apptBusy: ReturnType<typeof appointmentsBusy> = [];
+      try {
+        const tz = snap?.now_local?.time_zone ?? snap?.cycle?.timezone ?? "UTC";
+        const from = new Date(`${today}T00:00:00Z`).getTime() - 86_400_000;
+        const { data: appts, error: apptErr } = await sb.from("zad_appointments").select("title,starts_at,for_person")
+          .eq("user_id", userId).eq("status", "upcoming")
+          .gte("starts_at", new Date(from).toISOString()).lt("starts_at", new Date(from + 9 * 86_400_000).toISOString()).limit(200);
+        if (!apptErr) apptBusy = appointmentsBusy(appts ?? [], parsed.value.members, today, tz);
+      } catch { /* احتياطي */ }
+      const v = { ...parsed.value, busy: mergeBusy(apptBusy, parsed.value.busy) };
+      return describeGatherings(findGatherings(v), v, today, apptBusy.length);
     }
 
     case "safe_daily_spend": {
