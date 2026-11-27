@@ -7,6 +7,8 @@
 المقاسة، والنشر، وقواعد الواجهة والترجمة، وقناة البنك) في [`docs/agent/CLAUDE_HISTORY.md`](./docs/agent/CLAUDE_HISTORY.md).
 **ماتقراهاش كلها.** دوّر بـgrep على العنوان اللي محتاجه واقرا الجزء ده بس. ونفس الكلام على `ZAD_OR_PLAN.md` و`SESSION_LOG.md`.
 
+**الخطة الشغالة:** [`docs/agent/ZAD_FAMILY_PLAN.md`](./docs/agent/ZAD_FAMILY_PLAN.md). اقرا قسم «دلوقتي» بس وكمّل منه.
+
 ## أهم ٨ حاجات
 
 1. **الدمج في `main` بينشر على الإنتاج** (المايجريشنز والـedge functions من الـCI). ماتدمجش من غير طلب المالك.
@@ -16,6 +18,6 @@
 5. **الأدوات مش موجودة دايماً في الكونتينر.** اتأكد الأول، ولو ناقصة نزّلها:
    - Deno: `curl -fsSL https://deno.land/install.sh | DENO_INSTALL=$HOME/.deno sh`
    - Flutter و Android SDK: في `CLAUDE_HISTORY.md`، دوّر على «Flutter + Android SDK».
-6. **ماتستعملش agents غير لو المالك طلب** (بتصرف كوتة كتير). الشرايح اللي كلها كود ومحددة كويس تروح للعمّال الخارجيين: `.claude/skills/external-workers/SKILL.md`.
+6. **ماتستعملش agents غير لو المالك طلب** (بتصرف كوتة كتير). الشرايح اللي كلها كود ومحددة كويس تروح للعمّال الخارجيين: `.claude/skills/external-workers/SKILL.md`. **استثناء دائم:** شغل `ZAD_FAMILY_PLAN.md` بيستعمل ٢ Haiku + ١ Sonnet بإذن المالك (القسم «فريق التنفيذ» فيها).
 7. **الردود قصيرة:** إيه اللي اتغير وليه. من غير مقدمات، ومن غير إعادة الطلب.
 8. لو اللي مكتوب في الدوكس عكس الكود: وقّف واسأل.

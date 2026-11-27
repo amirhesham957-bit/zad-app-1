@@ -2,7 +2,7 @@
 
 ملخص مضغوط لأي جلسة أو عامل جديد. **حدّثه في نفس الكومِت** لما حاجة هنا تتغير.
 التفاصيل والتاريخ في `docs/agent/CLAUDE_HISTORY.md` (بالـgrep) و`docs/agent/ZAD_OR_PLAN.md` و`docs/agent/SESSION_LOG.md`. افتحهم لما تحتاج تفصيلة، مش في أول الجلسة.
-آخر تحديث: ٢٠٢٦-١١-٢٢ (م٢.٦: member_id إلزامي).
+آخر تحديث: ٢٠٢٦-١١-٢٧ (الخطة الشغالة بقت ZAD_FAMILY_PLAN).
 
 ## المنتج والريبو
 
@@ -71,7 +71,8 @@ E2E_DB=t_e2e_x E2E_PORT=39xx E2E_REST=zad-e2e-rest-x bash supabase/sql/e2e/run_c
 
 | الحاجة | المكان |
 |---|---|
-| الخطة الأولى (أرقام المربعات م١…م٩، ج١، ج٢) | `docs/agent/ZAD_OR_PLAN.md`: «الحالة دلوقتي» وأول مربع فاضي |
+| **الخطة الشغالة** (شرايح P0…P4، القرارات، المرفوض، الحقائق المقاسة، فريق التنفيذ) | `docs/agent/ZAD_FAMILY_PLAN.md`: قسم «دلوقتي» بس |
+| الخطة القديمة (م١…م٩، اتقفلت ٢٧/١١) | `docs/agent/ZAD_OR_PLAN.md` (مرجع) |
 | آخر جلسة وفخاخها | آخر قيد في `docs/agent/SESSION_LOG.md` |
 | شغل الواجهة | `docs/agent/UI_OVERHAUL_STATUS.md` (حدّثه في نفس الكومِت) |
 | Flutter: الاتفاقات والفجوات | `docs/agent/FLUTTER_MIGRATION.md` |
