@@ -121,7 +121,7 @@ import { resolveDeviceKeyUser } from "./deviceKey.ts";
 import { secretMatches } from "../_shared/cronSecret.ts";
 import { HABIT_TRIAL_KINDS, habitTrialForTask, habitTrialPush } from "./habitTrialPush.ts";
 import { HOUSE_LEARNING_KIND, houseLearningForTask, houseLearningPush } from "./houseLearningPush.ts";
-import { familyPersonaBlock, familyPersonaEnabled, redactFamilyForPersona } from "./familyPersona.ts";
+import { markOwn, familyPersonaBlock, familyPersonaEnabled, redactFamilyForPersona } from "./familyPersona.ts";
 import { INITIATIVE_RULE, childToneBlock, conversationProfile, dropServiceCloser, nameAskedIn, purchaseCheckBlock, voiceModeInstruction } from "./persona.ts";
 import { type DialectCode, dialectPromptBlock, dialectReminder } from "../_shared/dialect.ts";
 import { memoryPhraseStore, proactiveTitle } from "./proactiveTemplates.ts";
@@ -1030,7 +1030,7 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
         .eq("family_id", familyId).order("created_at", { ascending: false }).limit(40),
       sb.from("family_goals").select("target_amount,current_amount,month_year,reward_suggestion")
         .eq("family_id", familyId).order("created_at", { ascending: false }).limit(12),
-      sb.from("family_tasbiha").select("tree_name,level,score,total_clicks,streak_days,is_mature,last_tasbih_at")
+      sb.from("family_tasbiha").select("user_id,tree_name,level,score,total_clicks,streak_days,is_mature,last_tasbih_at")
         .eq("family_id", familyId).order("last_tasbih_at", { ascending: false, nullsFirst: false }).limit(10),
       sb.from("zad_memory").select("id,user_id,scope,note,confidence,evidence_count,last_seen,valid_until")
         .eq("family_id", familyId).neq("user_id", userId)
@@ -1090,10 +1090,10 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
         target: g.target_amount ?? 0, current: g.current_amount ?? 0,
         month: g.month_year ?? "", reward: g.reward_suggestion ?? null,
       })),
-      tasbiha: ((tasRes.data ?? []) as any[]).map((t) => ({
+      tasbiha: ((tasRes.data ?? []) as any[]).map((t) => markOwn({
         name: t.tree_name ?? "", level: t.level ?? 1, score: t.score ?? 0,
         clicks: t.total_clicks ?? 0, streak: t.streak_days ?? 0, mature: !!t.is_mature,
-      })),
+      }, t.user_id === userId)),
       ...kidsPlaces(kidsPlacesRes),
       ...familyChat(familyChatRes),
       // تصويت العيلة (familyPolls.ts، 20261004130000): المفتوح واللي اتقفل آخر ١٤ يوم.
