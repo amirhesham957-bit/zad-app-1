@@ -223,6 +223,8 @@ import { CHAT_TOOLS } from "./chatTools.ts";
 export { CHAT_TOOLS };
 import { kidsPlaces, familyChat, travelField } from "./snapshotFields.ts";
 export { kidsPlaces, familyChat, travelField };
+import { streamTail } from "./streamTail.ts";
+export { streamTail };
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
@@ -10155,15 +10157,6 @@ async function handleRequest(req: Request): Promise<Response> {
   }
 }
 
-/**
- * What still has to be sent as `{t}` chunks once the turn is over: the whole reply when
- * nothing streamed (a tool turn, a fast reply), the rest when the reply grew past what
- * streamed, and nothing when a guard changed it — the `done` frame's `reply` carries that.
- */
-export function streamTail(streamed: string, finalReply: string): string {
-  if (!streamed) return finalReply;
-  return finalReply.startsWith(streamed) ? finalReply.slice(streamed.length) : "";
-}
 
 /**
  * agent_turn_stream — الرد بيتبث وهو بيتكتب (تشخيص زاد ٢.٢، ٢٠٢٦-١٠-٠١).
