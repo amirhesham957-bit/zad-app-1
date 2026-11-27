@@ -156,6 +156,7 @@ import { conflictAction, type HouseholdMember, memberIdFor, memoryTimeRefusal, t
 import { PENDING_TTL_MS, pendingAnswerable, SENSITIVE_TOPIC_LABEL, type SensitiveTopic, sensitiveTopic } from "./sensitiveMemory.ts";
 import { type ForwardLedger, simulatePurchase } from "./whatIf.ts";
 import { goalPace, stepPerWeek } from "./goalPace.ts";
+import { type GoalEventRow, memberGoalsEnabled, memberGoalView } from "./memberGoalWiring.ts";
 import { appointmentsOnLocalDay, householdLoad, householdLoadRule } from "./householdLoad.ts";
 import { appointmentAgenda, type AppointmentRow, matchesAppointmentQuery, searchAppointments } from "./appointmentsQuery.ts";
 import { toneFromState, toneRule, toneWithMessage, type ToneTxn } from "./tone.ts";
@@ -1264,6 +1265,17 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
     created_at: string | null; progress_kind?: string | null;
   }>;
 
+  // م٧.٨: حالة الهدف الأسبوعية من zad_events (قراية بس) خلف ZAD_MEMBER_GOALS (مقفول). أي فشل = من غير الحقل.
+  let goalEvents: GoalEventRow[] | null = null;
+  if (memberGoalsEnabled((k) => Deno.env.get(k)) && lifeGoals.some((g) => g.progress_kind === "amount")) {
+    try {
+      const { data, error } = await sb.from("zad_events").select("occurred_at,payload")
+        .eq("user_id", userId).eq("kind", "goal.progress")
+        .gte("occurred_at", new Date(Date.now() - 400 * 86_400_000).toISOString()).limit(2000);
+      if (!error) goalEvents = (data ?? []) as GoalEventRow[];
+    } catch { /* من غير الحقل */ }
+  }
+
   const transactions = txRes.data ?? [];
   const now = new Date();
   // كل تسجيل الجرعات الحالي هنا، مش في zad_dose_log (doseAdherence في shared.ts).
@@ -1766,6 +1778,10 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
         ...(amount ? { kind: "amount" } : {}),
         ...(step !== null ? { step_per_week: step } : {}),
         ...(p ? { pace: p.pace, expected_by_now: p.expected_by_now, days_left: p.days_left } : {}),
+        ...(() => {
+          const mv = goalEvents ? memberGoalView(g, goalEvents) : null;
+          return mv ? { weekly: { done: mv.status.done, weeks_left: mv.status.weeksLeft, stalled: mv.status.stalled }, ...(mv.proposal ? { proposal: mv.proposal } : {}) } : {};
+        })(),
       };
     }),
     // الوقت المحلي دلوقتي — المصدر الوحيد لـ"النهارده/بكرة/الساعة ٥" في أي أداة فيها وقت.
