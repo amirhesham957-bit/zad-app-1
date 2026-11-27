@@ -74,3 +74,25 @@ Deno.test("soul tone: both voices keep the same shape, and no flirting survives 
   assertEquals(ZAD_SOUL_MALE.length, ZAD_SOUL.length);
   for (const [, block] of voices) assertStringIncludes(block, "مفيش مغازلة ولا كلام رومانسي");
 });
+
+Deno.test("soul diet (م٤.٣ ب): SOUL stays under budget and keeps the safety/identity clauses in both voices", () => {
+  // قبل التشديد: أنثى ٣٦٠٧ حرف (~١٠٣١ توكن)، ذكر ٣٦٣٤. الحد = chars/3.5 (نفس contextBudget_test).
+  assert(Math.round(soulBlock("female").length / 3.5) <= 930, "female SOUL regressed above ~930 tokens");
+  assert(Math.round(soulBlock("male").length / 3.5) <= 940, "male SOUL regressed above ~940 tokens");
+  for (const [, block] of voices) {
+    for (const clause of [
+      "تأكيد العميل الأول",
+      "learn_skill",
+      "data_errors = مجهول مش صفر",
+      "مصدرها نتايج الأدوات",
+      "من غير تريقة",
+      "لهجة العميل",
+      "ممنوع الفصحى المهذبة",
+      "رد بهزار خفيف يرجّع الكلام لطبيعته",
+      "الرفض بس لما فيه خطر",
+      "عمرها ما تتنازل|عمرك ما تتنازل",
+    ]) {
+      assert(new RegExp(clause).test(block), `missing SOUL clause: ${clause}`);
+    }
+  }
+});
