@@ -1,6 +1,6 @@
--- P0.3 تسوية الطاقة (20261127120000_energy_settlement). Scratch only.
+-- P0.3 تسوية الطاقة (20261127121500_energy_settlement). Scratch only.
 --   psql < supabase/sql/tests/scratch_scaffold.sql
---   psql < supabase/migrations/20261127120000_energy_settlement.sql   (مرتين: لازم يعدّي من غير خطأ، idempotent)
+--   psql < supabase/migrations/20261127121500_energy_settlement.sql   (مرتين: لازم يعدّي من غير خطأ، idempotent)
 --   psql < supabase/sql/tests/energy_settlement_test.sql
 -- zad_entitlement_refund هنا بديل بسيط (scan_left + 1): اللي بيتختبر هو التسوية مش جدول الباقات.
 \set ON_ERROR_STOP on
