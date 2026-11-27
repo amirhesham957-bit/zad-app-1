@@ -108,3 +108,58 @@ export async function settleOpenedNotifications(
   }
   return out;
 }
+
+const FAILURE_AFTER_MS = 24 * 3600 * 1000;
+
+/**
+ * قاعدة الفشل: إشعار معروض من أكتر من ٢٤ ساعة ولسه غير مقروء ومااتحسبش = فشل للقالب (reward 0، failures+1).
+ * الدالة في الداتابيز بتتأكد تاني من العمر وis_read، وبتقفل الصف فقراية متأخرة مابتكافئش. [enabled] مقفول = صفر.
+ * نفس الاستثناءات بتاعة المكافأة. مابيرميش أبداً.
+ */
+export async function settleIgnoredNotifications(
+  sb: any,
+  enabled: boolean,
+  now = Date.now(),
+): Promise<{ failed: number; skipped: number }> {
+  const out = { failed: 0, skipped: 0 };
+  if (!enabled) return out;
+  try {
+    const { data: shown } = await sb.from("zad_bandit_shown")
+      .select("notification_id,user_id,member_id,kind,arm")
+      .is("settled_at", null)
+      .lte("shown_at", new Date(now - FAILURE_AFTER_MS).toISOString())
+      .gte("shown_at", new Date(now - OPEN_WINDOW_MS).toISOString())
+      .order("shown_at", { ascending: true })
+      .limit(SWEEP_LIMIT);
+    const rows = (shown ?? []) as Array<{ notification_id: string; user_id: string; member_id: string; kind: string; arm: string }>;
+    if (rows.length === 0) return out;
+    const users = [...new Set(rows.map((r) => r.user_id))];
+    const [{ data: notifs }, { data: mem }, { data: kids }] = await Promise.all([
+      sb.from("app_notifications").select("id,is_read").in("id", rows.map((r) => r.notification_id)),
+      sb.from("zad_household_members").select("id,user_id,kind,birth_year,archived_at").in("user_id", users),
+      sb.from("family_members").select("user_id").eq("role", "child").in("user_id", users),
+    ]);
+    const unread = new Set(
+      ((notifs ?? []) as Array<{ id: string; is_read: boolean | null }>).filter((n) => n.is_read === false).map((n) => n.id),
+    );
+    const byUser = new Map<string, HouseholdMemberRow[]>();
+    for (const m of (mem ?? []) as Array<HouseholdMemberRow & { user_id: string }>) {
+      byUser.set(m.user_id, [...(byUser.get(m.user_id) ?? []), m]);
+    }
+    const withChild = new Set(((kids ?? []) as Array<{ user_id: string }>).map((k) => k.user_id));
+    for (const r of rows) {
+      if (!unread.has(r.notification_id)) continue; // اتقرا (المكافأة بتتولاه) أو اتمسح: مفيش فشل
+      const only = unambiguousMember(byUser.get(r.user_id) ?? []);
+      if (!only || only.id !== r.member_id || !rewardEligible(r.kind, only, withChild.has(r.user_id))) {
+        out.skipped++;
+        continue;
+      }
+      const { data, error } = await sb.rpc("zad_bandit_settle_failure", { p_user: r.user_id, p_notification: r.notification_id });
+      if (!error && data === true) out.failed++;
+      else out.skipped++;
+    }
+  } catch (e) {
+    console.error("[bandit_failure] sweep failed:", (e as Error)?.message ?? e);
+  }
+  return out;
+}
