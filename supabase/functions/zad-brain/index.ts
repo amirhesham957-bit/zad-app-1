@@ -126,6 +126,7 @@ import { INITIATIVE_RULE, childToneBlock, conversationProfile, dropServiceCloser
 import { type DialectCode, dialectPromptBlock, dialectReminder } from "../_shared/dialect.ts";
 import { memoryPhraseStore, proactiveTitle } from "./proactiveTemplates.ts";
 import { banditEnabled, chooseTone, supabaseBanditStore } from "./banditWiring.ts";
+import { rewardEligible, type ShownChoice, unambiguousMember } from "./banditReward.ts";
 import { customerCard, IDENTITY_MEMORY_SCOPES, identityOverwrites, sanitizeProfilePatch } from "../_shared/customerProfile.ts";
 import { rateConfidence } from "../_shared/consumptionRate.ts";
 import { type LevelReading, pantryForecast } from "../_shared/or/pantryForecast.ts";
@@ -3150,7 +3151,13 @@ function getAssistantName(_snap: any): { nameAr: string; nameEn: string } {
 /** البرومبت المختصر لـ Groq بنفس لهجة البرومبت الكامل (groqPrompt.ts، الفجوة ١٣). */
 const proactivePhrases = memoryPhraseStore();
 /** عنوان مبادرة زاد بلهجة العميل؛ أي فشل في قراية اللهجة = القالب الأساسي. */
-async function proactiveTitleFor(sb: any, userId: string, kind: string | null | undefined): Promise<string> {
+async function proactiveTitleFor(
+  sb: any,
+  userId: string,
+  kind: string | null | undefined,
+  /** م٨.٢: لو القالب المعروض اتختار من الـbandit لفرد معروف، بيتحط هنا عشان المنادي يسجله مع الإشعار (مكافأة الفتح). */
+  shown?: { choice?: ShownChoice },
+): Promise<string> {
   let dialect: DialectCode = "EG";
   try {
     const [{ data: u }, { data: p }] = await Promise.all([
@@ -3161,13 +3168,19 @@ async function proactiveTitleFor(sb: any, userId: string, kind: string | null | 
   } catch { /* القالب الأساسي */ }
   // م٨.٢: نبرة bandit للفرد (صاحب الحساب)، خلف ZAD_BANDIT_TONE (مقفول افتراضياً). أي فشل = القالب الأساسي.
   const tone = banditEnabled((k) => Deno.env.get(k)) ? async (base: string): Promise<string | null> => {
-    const [{ data: me }, { data: fm }] = await Promise.all([
-      sb.from("zad_household_members").select("id,birth_year").eq("user_id", userId).eq("kind", "self").is("archived_at", null).maybeSingle(),
+    const [{ data: mems }, { data: fm }] = await Promise.all([
+      sb.from("zad_household_members").select("id,kind,birth_year,archived_at").eq("user_id", userId).is("archived_at", null),
       sb.from("family_members").select("role").eq("user_id", userId).eq("role", "child").limit(1),
     ]);
+    const me = ((mems ?? []) as Array<{ id: string; kind: string; birth_year: number | null; archived_at: string | null }>).find((m) => m.kind === "self");
     if (!me?.id) return null;
     const age = typeof me.birth_year === "number" ? new Date().getUTCFullYear() - me.birth_year : null;
     const pick = await chooseTone(supabaseBanditStore(sb), userId, { memberId: me.id, age, isChild: (fm ?? []).length > 0 }, kind, base, Math.random);
+    // مكافأة الفتح: بس لو الفرد معروف بوضوح (حساب فيه أكتر من فرد = الرسالة للحساب = مفيش نسب) ومؤهل.
+    const k = (kind ?? "").trim();
+    if (pick && shown && unambiguousMember((mems ?? []) as any) && rewardEligible(k, me, (fm ?? []).length > 0)) {
+      shown.choice = { memberId: me.id, kind: k, arm: pick.armId };
+    }
     return pick?.title ?? null;
   } : undefined;
   return await proactiveTitle(proactivePhrases, kind, dialect, undefined, tone);

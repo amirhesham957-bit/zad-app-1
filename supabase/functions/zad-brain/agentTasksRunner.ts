@@ -22,6 +22,8 @@ import { soulBlock } from "./soul.ts";
 import { pushToDevice, pushToTelegram } from "./push.ts";
 import { UNCOUNTED_MOMENTS } from "./voiceMoments.ts";
 import { runWeatherDrift, weatherAlertsEnabled } from "./weatherDrift.ts";
+import { noteShown, type ShownChoice, settleOpenedNotifications } from "./banditReward.ts";
+import { banditEnabled } from "./banditWiring.ts";
 import { recentOutbound } from "../_shared/outbound.ts";
 import { proactiveTurn, recordConversation } from "../_shared/conversationLog.ts";
 
@@ -32,7 +34,7 @@ export type AgentTaskDeps = {
   buildChatSystemPrompt: (snap: any) => string;
   groqSystemFor: (snap: any) => string;
   runTool: (sb: SupabaseClient, userId: string, name: string, input: any, snap: any, ctx: RunContext, scope: AuditScope) => Promise<string>;
-  proactiveTitleFor: (sb: any, userId: string, kind: string | null | undefined) => Promise<string>;
+  proactiveTitleFor: (sb: any, userId: string, kind: string | null | undefined, shown?: { choice?: ShownChoice }) => Promise<string>;
   accountTimeZone: (sb: SupabaseClient, userId: string) => Promise<string>;
 };
 
@@ -40,6 +42,8 @@ export async function processDueAgentTasks(sb: SupabaseClient, deps: AgentTaskDe
   const { buildSnapshot, buildChatSystemPrompt, groqSystemFor, runTool, proactiveTitleFor, accountTimeZone, modelRoutine: MODEL_ROUTINE, maxAgentTurns: MAX_AGENT_TURNS } = deps;
   // تنبيه الجو الاستباقي: خلف ZAD_WEATHER_ALERTS (مقفول = ولا قراية ولا شبكة). بيسجل لحظات بس، ومابيرميش.
   if (weatherAlertsEnabled()) await runWeatherDrift(sb, { accountTimeZone });
+  // م٨.٢: مكافأة الـbandit للإشعارات اللي اتفتحت (ZAD_BANDIT_TONE مقفول = صفر). مابيرميش.
+  await settleOpenedNotifications(sb, banditEnabled((k) => Deno.env.get(k)));
   const { data: due } = await sb.from("agent_tasks")
     .select("id,user_id,task_description,goal_id,recurrence,scheduled_for,kind,created_at,held_count")
     .eq("status", "pending")
@@ -326,17 +330,27 @@ export async function processDueAgentTasks(sb: SupabaseClient, deps: AgentTaskDe
       // العنوان بيفرّق بين طلب العميل (reminder) ومبادرة زاد — كان «مهمة كنت طلبتها» للكل.
       const baseNotice = agentTaskNotice(task.kind);
       // م٤.٤: عنوان المبادرة بلهجة العميل (قالب اللهجة أو صياغتها المخزنة، وإلا الأساس). طلب العميل مالوش لهجة.
+      const shown: { choice?: ShownChoice } = {};
       const notice = baseNotice.proactive
-        ? { ...baseNotice, title: await proactiveTitleFor(sb, task.user_id, task.kind) }
+        ? { ...baseNotice, title: await proactiveTitleFor(sb, task.user_id, task.kind, shown) }
         : baseNotice;
       // المحادثة الواحدة: المبادرة بعلامتها (زاد عارف إنه هو اللي بدأ)، وطلب العميل كرد عادي.
       await recordConversation(sb, task.user_id, [{
         role: "assistant",
         text: notice.proactive ? proactiveTurn(notice.title, finalText) : `${notice.title}\n${finalText}`,
       }]);
-      await sb.from("app_notifications").insert({
-        user_id: task.user_id, title: notice.title, message: finalText,
-      });
+      if (shown.choice) {
+        // م٨.٢: القالب اللي اتعرض لازم نعرف الإشعار بتاعه (مكافأة الفتح). ده مابيحصل غير والفلاج مفتوح.
+        const ins = await sb.from("app_notifications").insert({
+          user_id: task.user_id, title: notice.title, message: finalText,
+        }).select("id").single();
+        const nid = (ins as any)?.data?.id;
+        if (typeof nid === "string") await noteShown(sb, task.user_id, nid, shown.choice);
+      } else {
+        await sb.from("app_notifications").insert({
+          user_id: task.user_id, title: notice.title, message: finalText,
+        });
+      }
       // FCM — الإشعار يوصل الجهاز فوراً حتى والتطبيق مقفول (fire-and-forget). تجربة الأسبوعين (٥.٤) بتروح
       // data-only بزرارينها، عشان التطبيق هو اللي يعرضها؛ لو مابقتش مستنية رد بتروح عادي.
       const trial = HABIT_TRIAL_KINDS.has(task.kind ?? "") ? await habitTrialForTask(sb, task.user_id, task.id) : null;

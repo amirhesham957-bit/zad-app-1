@@ -884,3 +884,10 @@ Added `zad_flutter/lib/features/notification_reads` (repository interface + Supa
 - **اتعمل برضه:** نداء Open-Meteo خفيف مستقل (`hourly=temperature_2m,precipitation_probability&forecast_hours=4`) بنفس `weatherSource` والمهلة؛ مش بنغيّر `forecastUrl` لأن ده كان هيغيّر طلب وكاش الجميع حتى والفلاج مقفول. حد أقصى ٢٥ عميل في اللفة، وميمو ٣٠ دقيقة للمكان جوه الـisolate.
 - **موجود قبل كده:** لحظة `rain_soon` (٥٠٪، ٤ ساعات، مرة في اليوم، كرون SQL `zad_enqueue_rain_soon`) لسه شغالة زي ما هي، والمسارين مش بيتنسّقوا مع بعض (ممكن عميل ياخد الاتنين في اليوم لو المطر عدّى الحدين).
 - **فاضل / فخ:** العتبات وسقف العملاء محتاجين قياس على الإنتاج قبل فتح الفلاج؛ اللحظة بتتحسب وقت الفحص ولو المعالج اتأخر ممكن تتبعت بعد الساعات الـ٣.
+
+## ٢٠٢٦-١١-٢٧: م٨.٢/م٨.٥ تغذية مكافأة الـbandit (`feat/m8-bandit-reward`)
+
+- **الإشارات اللي لقيناها:** `app_notifications.is_read` بس (الواجهة بتحدّثها بلمسة الإشعار أو «قراية الكل» عبر `notifications_remote.dart`). مفيش فتح/رد لتليجرام أو FCM، و`zad_voice_moments` بتسجل `status/delivery` من غير رد.
+- **اتعمل:** `zad_bandit_shown` (RLS، revoke، service_role select بس) + `zad_bandit_note_shown` + `zad_bandit_settle_read` (ميجريشن `20261127110000`، أسطر LIST في `edge-functions.yml`، تست `bandit_reward_test.sql`). `proactiveTitleFor` بيطلّع القالب المختار، والمُرسِل بيسجله مع id الإشعار، وأول `processDueAgentTasks` بيدّي +١ نجاح لو الإشعار اتقرا. كله خلف `ZAD_BANDIT_TONE`، ومع `APPROVED_VARIANTS` الفاضية مفيش حاجة بتتسجل.
+- **اتقاس:** سلسلة SQL على postgres:17 (كل شيء طلع `all checks passed`)، وmutation: من غير الميجريشن التست بيقع، ومع شرط `is_read` مكسور بيقع. `deno check` EXIT 0، و`deno test -A zad-brain/ _shared/ _schema/` ٢٤٠٧ نجح ٠ فشل.
+- **فاضل / فخاخ:** مفيش إشارة فشل (قرار المالك: متجاهَل = مفيش تحديث) فالـposterior مكافآت بس وبيتحيّز للقالب الأكتر عرضاً. «قراية الكل» بتتحسب فتح. حساب فيه أكتر من فرد مابيتسجلش. العمر المجهول (من غير `birth_year`) بيتعامل كبالغ زي مسار الاختيار. السجلات المفتوحة أقدم من ٧ أيام مابتتحسبش.
