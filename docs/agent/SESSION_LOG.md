@@ -856,3 +856,4 @@ Added `zad_flutter/lib/features/notification_reads` (repository interface + Supa
 ## ٢٠٢٦-١١-٢٧ — م٧.٨ توصيل الهدف بـagent_goals (مقفول)
 - **اتعمل:** `zad-brain/memberGoalWiring.ts` + تست (٣): `weeklyProgress` من `zad_events` (`payload.row_id`/`amount`)، و`memberGoalView` فوق `goalStatus`/`adjustStalledGoal`. في اللقطة `life_goals[].weekly` و`proposal` خلف `ZAD_MEMBER_GOALS` (مقفول افتراضياً). مفيش كتابة ولا ميجريشن؛ التعديل اقتراح والتنفيذ بعد الموافقة عبر `set_life_goal` -> `goal.set`.
 - **فاضل:** أهداف العدّ، واجهة الموافقة، أمثلة البنت والأخ، فتح الفلاج بعد قياس. م٧.٨ مفتوح.
+- **فخ (م٧.٨):** `zad_events` (ميجريشن `20261121160000`) كان ناقص من `_schema/schema.json`، فعقد السكيما وقف الـCI أول ما الكود قرا منه. اتضاف (٢٧/١١).

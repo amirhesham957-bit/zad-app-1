@@ -1509,6 +1509,18 @@
     "status",
     "user_id"
   ],
+  "zad_events": [
+    "client_event_id",
+    "confidence",
+    "id",
+    "kind",
+    "member_id",
+    "occurred_at",
+    "payload",
+    "recorded_at",
+    "source",
+    "user_id"
+  ],
   "zad_appointments": [
     "created_at",
     "expected_cost",
