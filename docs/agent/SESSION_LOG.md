@@ -1057,3 +1057,12 @@ Added `zad_flutter/lib/features/notification_reads` (repository interface + Supa
 - **اتقاس:** `settings_buttons_test.sql` (سطر جديد في LIST بسلسلة كاملة، أخرها مراية `20261128260000`) على postgres:16 محلي EXIT=0، وبيفشل من غير الميجريشن («confirmed and anchored»). تست Flutter `test/shared/settings_door_test.dart` (الـremote الحقيقي فوق HTTP مسجّل، مفيش كتابة جدول).
 - **فخ:** الباب بيحدّث الصف بس ومابيعملوش: صف `zad_users` ناقص = `user_not_found` رفض دايم في الـOutbox بدل ما الـupsert كان بيعمله. وuuid الحدث بيتولّد جديد لكل محاولة (القيم مطلقة فالتكرار آمن؛ `balance_anchored_at` بس بيتحرك لوقت إعادة المحاولة).
 - **فاضل في P1.6b:** بيت، مواعيد وأماكن، عيلة، تليجرام وإشعارات.
+
+
+## P1.6b مجموعة المواعيد (٢٠٢٦-١١-٢٨)
+
+- **اتعمل:** `SupabaseAppointmentsRemote` (`features/appointments/data/appointments_repository.dart`) بقى بيكتب من `zad_commit_my_intent`: الإضافة `appointment.added` بـ`item_id` = id الصف من الـOutbox، الحالة `appointment.updated` بـpatch للحالة بس، والمسح `appointment.deleted` (`item_not_found` = اتمسح قبل كده، نجاح). القراية والقراية-بعد-الكتابة لسه select.
+- **ميجريشن `20261129040000`:** `zad_intent_appointment` بنسخة `20261122090000` + `item_id` اختياري في الإضافة (تكرار بمفتاح تاني بيرجّع الصف من غير كتابة؛ id بتاع حد تاني أو مش UUID = `item_not_found`)، والغلاف `zad_commit_my_intent` بنسخة `20261129020000` + أنواع المواعيد التلاتة.
+- **اتقاس:** `appointments_buttons_test.sql` (سطر جديد في LIST بسلسلة كاملة) على postgres:16 محلي EXIT=0، وبيفشل من غير الميجريشن («add ok»). `test/shared/appointments_door_test.dart` + مواعيد + architecture أخضر، `flutter analyze` نضيف.
+- **اللي فضل مباشر:** `my_places_screen.dart` (إضافة وإلغاء تذكير مكان على `zad_place_reminders`، ومسح زيارة من `zad_place_visits`): مفيش مجال «place» ورا الباب، وإنشاءه خارج شريحة الزراير. التذكير من الشات/البوت بيكتب نفس الجدول مباشرة كمان.
+- **فخ:** الغلاف بيتنسخ من آخر ميجريشن بيعرّفه، ومجموعات P1.6b بتتعدل بالتوازي: قبل الدمج راجع إن النسخة فيها أنواع كل المجموعات.

@@ -18,12 +18,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
+import 'package:zad/core/data/commit_my_intent.dart';
+import 'package:zad/core/data/edge_client.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/data/sync/outbox.dart';
 import 'package:zad/core/data/sync/outbox_entry.dart';
+import 'package:zad/core/data/sync/sync_failure.dart';
 import 'package:zad/features/appointments/domain/appointments.dart';
 
-/// Reads and writes `zad_appointments`. RLS is the owner's rows only.
+/// Reads `zad_appointments` and writes it through the one door (P1.6b). RLS is
+/// the owner's rows only.
 abstract interface class AppointmentsRemote {
   /// The account's rows from [since] on, cancelled ones left out.
   Future<List<Map<String, dynamic>>> fetchFrom({
@@ -70,37 +74,78 @@ class SupabaseAppointmentsRemote implements AppointmentsRemote {
     return rows.cast<Map<String, dynamic>>();
   }
 
+  /// What `appointment.added` reads from a row; `id` travels as `item_id`.
+  static const List<String> _addKeys = <String>[
+    'title',
+    'kind',
+    'starts_at',
+    'place_label',
+    'remind_minutes_before',
+    'recurrence',
+    'source',
+    'for_person',
+  ];
+
   @override
   Future<Map<String, dynamic>?> insertReturning(
     Map<String, dynamic> row,
   ) async {
-    // A replay after a lost answer finds the row there and leaves it alone.
-    await _client
-        .from(_table)
-        .upsert(row, onConflict: 'id', ignoreDuplicates: true);
-    return await _client
-        .from(_table)
-        .select()
-        .eq('id', row['id'] as String)
-        .maybeSingle();
+    final id = row['id'] as String;
+    // A replay after a lost answer finds the row there and leaves it alone:
+    // the door answers a known `item_id` without writing a second row.
+    await commitMyIntent(
+      _client,
+      kind: 'appointment.added',
+      clientEventId: 'appointment:$id',
+      payload: <String, dynamic>{
+        'item_id': id,
+        for (final key in _addKeys)
+          if (row[key] != null) key: row[key],
+      },
+    );
+    return await _client.from(_table).select().eq('id', id).maybeSingle();
   }
 
   @override
   Future<Map<String, dynamic>?> setStatusReturning(
     String id,
     String status,
-  ) async => await _client
-      .from(_table)
-      .update(<String, dynamic>{
-        'status': status,
-        'updated_at': DateTime.now().toUtc().toIso8601String(),
-      })
-      .eq('id', id)
-      .select()
-      .maybeSingle();
+  ) async {
+    try {
+      await commitMyIntent(
+        _client,
+        kind: 'appointment.updated',
+        // An absolute write, so a fresh id per attempt is safe: the same
+        // status twice leaves the same row (and a status after the cron moved
+        // the time never sends the time).
+        clientEventId: 'appointment_status:$id:${newTraceId()}',
+        payload: <String, dynamic>{
+          'item_id': id,
+          'patch': <String, dynamic>{'status': status},
+        },
+      );
+    } on ServerRefusal catch (e) {
+      // Deleted meanwhile (by the brain, or another phone): nothing to change.
+      if (e.reason == 'item_not_found') return null;
+      rethrow;
+    }
+    return await _client.from(_table).select().eq('id', id).maybeSingle();
+  }
 
   @override
-  Future<void> remove(String id) => _client.from(_table).delete().eq('id', id);
+  Future<void> remove(String id) async {
+    try {
+      await commitMyIntent(
+        _client,
+        kind: 'appointment.deleted',
+        clientEventId: 'appointment_delete:$id',
+        payload: <String, dynamic>{'item_id': id},
+      );
+    } on ServerRefusal catch (e) {
+      // Already gone: the delete has nothing left to do.
+      if (e.reason != 'item_not_found') rethrow;
+    }
+  }
 
   @override
   Future<bool> exists(String id) async =>
