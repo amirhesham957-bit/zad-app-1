@@ -166,6 +166,10 @@ class MainActivity : FlutterActivity() {
                             Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName")),
                         ),
                     )
+                    // The phone's maker, lower case: Dart decides whether an
+                    // autostart page exists for it (rescue card, P1.8).
+                    "manufacturer" -> result.success(Build.MANUFACTURER.lowercase(Locale.US))
+                    "openAutostart" -> result.success(openAutostart())
                     else -> result.notImplemented()
                 }
             }
@@ -201,6 +205,38 @@ class MainActivity : FlutterActivity() {
         super.onNewIntent(intent)
         readShare(intent)
         readLink(intent)
+    }
+
+    /**
+     * The maker's own «autostart» page (Xiaomi, Oppo/Realme, Vivo, Huawei/Honor),
+     * by known component; any other maker, or a ROM that moved it, lands on
+     * the app's details page. True when some page opened.
+     */
+    private fun openAutostart(): Boolean {
+        fun component(pkg: String, cls: String) =
+            Intent().setClassName(pkg, cls).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        val maker = Build.MANUFACTURER.lowercase(Locale.US)
+        val own: List<Intent> = when {
+            maker.contains("xiaomi") || maker.contains("redmi") || maker.contains("poco") -> listOf(
+                component("com.miui.securitycenter", "com.miui.permcenter.autostart.AutoStartManagementActivity"),
+            )
+            maker.contains("oppo") || maker.contains("realme") || maker.contains("oneplus") -> listOf(
+                component("com.coloros.safecenter", "com.coloros.safecenter.permission.startup.StartupAppListActivity"),
+                component("com.coloros.safecenter", "com.coloros.safecenter.startupapp.StartupAppListActivity"),
+                component("com.oppo.safe", "com.oppo.safe.permission.startup.StartupAppListActivity"),
+            )
+            maker.contains("vivo") || maker.contains("iqoo") -> listOf(
+                component("com.vivo.permissionmanager", "com.vivo.permissionmanager.activity.BgStartUpManagerActivity"),
+                component("com.iqoo.secure", "com.iqoo.secure.ui.phoneoptimize.AddWhiteListActivity"),
+            )
+            maker.contains("huawei") || maker.contains("honor") -> listOf(
+                component("com.huawei.systemmanager", "com.huawei.systemmanager.startupmgr.ui.StartupNormalAppListActivity"),
+                component("com.huawei.systemmanager", "com.huawei.systemmanager.optimize.process.ProtectActivity"),
+            )
+            else -> emptyList()
+        }
+        val details = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName"))
+        return openFirst(*own.toTypedArray(), details)
     }
 
     /** Starts the first of [intents] some activity takes; false when none does. */

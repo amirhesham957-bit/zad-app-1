@@ -959,3 +959,10 @@ Added `zad_flutter/lib/features/notification_reads` (repository interface + Supa
 - **فخ:** `zad_users` فيها أرقام ميزانية وصف الطفل بتاعه مقروء له؛ RLS مابتفصلش أعمدة. محتاج شريحة تفصل الميزانية عن البروفايل. والصفوف القديمة في الأدوية اتعلّمت private مرة واحدة (قرار تنفيذ، مكتوب في الخطة).
 - **فخ أداة:** التست لازم يفصل نداء الدالة عن قراية الصف في استعلامين (نفس الـstatement مابيشوفش الإدراج).
 - **تكملة نفس اليوم:** `memberMorningDigest.ts` (مصفوفة ثم ميزانية انتباه لكل فرد، حتى الحرج مايكسرش الخصوصية) و`isMatrixLeak/findMatrixLeaks` في `crossMemberLeak.ts`، مع تستات. `deno check` EXIT=0، و`deno test -A zad-brain/ _shared/ _schema/` EXIT=0 (٢٤٩١ نجحوا). P2.5 `[x]`، وP2.5b (فصل أعمدة `zad_users`) صف جديد. P2.8 فضلت `[~]`: الموجز مش متوصّل بكرون ومفيش e2e.
+
+## ٢٠٢٦-١١-٢٨ — P1.8 كارت الإنقاذ
+
+- **اتعمل:** `RescueCard` أول الرئيسية (`features/home/presentation/rescue_card.dart`، منطق `domain/rescue.dart`): بيظهر لما قراءة البنك وقفت (`showBankBanner`: stalled أو اتشالت بعد ما اشتغلت) أو الموقع اتشال لحساب بيستعمله؛ مخفي لو سليم أو الميزة عمرها ما اتفعّلت. أزرار: وصول الإشعارات، قيود البطارية (`zad/battery` `openSettings`)، التشغيل التلقائي (قناة `zad/battery` `manufacturer`/`openAutostart`، intents معروفة لشاومي/أوبو/فيفو/هواوي مع رجوع لتفاصيل التطبيق). `EssentialPermission.locationAlways` لحساب بيستعمل تنبيهات الشارع/مناطق الأولاد.
+- **السيرفر:** مفيش نبض جديد. النبض موجود: `bank.off`/`bank.stalled` في `zad_product_events` (لما التطبيق يتفتح، كل ١٢ ساعة) ⇐ تريجر `zad_bank_off_tells` ⇐ مهمة `listener_gap_alert` (واحدة في اليوم) ⇐ `pushToDevice`. اللي اتضاف: `agentTaskPushData` بيبعت `route: bank_fix` مع الإشعار ده، والتطبيق بيفتح الرئيسية (`AlertDestination.rescue`، نفس مسار `_openPush` وgetInitialMessage).
+- **قرارات:** زرار البطارية بيفتح قايمة التحسين مش `ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` (اتشال لشروط بلاي، 20-22/11). نص «واقفة» في `supportDesk.ts` بقى ١٢ ساعة بدل يومين.
+- **فجوة معروفة:** النبض بيطلع لما التطبيق يتفتح بس، فعميل ما فتحش زاد بعد ما الخدمة وقفت مش هيتبعتله إشعار السيرفر. الإغلاق ده محتاج إشارة من الخلفية (مفتاح الإرسال `last_used_at`، شريحة تانية). مفيش إشارة سيرفر لفقد الموقع.

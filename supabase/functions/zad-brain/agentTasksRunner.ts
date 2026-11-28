@@ -8,7 +8,7 @@ import { CHAT_TOOLS } from "./chatTools.ts";
 import { CONFIRM_REQUIRED_TOOLS, freshContext, type RunContext } from "./validators.ts";
 import { callModel, type Turn } from "./callModel.ts";
 import {
-  agentTaskNotice, attentionDecisions, capPostponeUntil, dailyCapDecision, type HoldCode, outlivesShelf,
+  agentTaskNotice, agentTaskPushData, attentionDecisions, capPostponeUntil, dailyCapDecision, type HoldCode, outlivesShelf,
   pacingDecision, pacingPriority, PACING_DUPLICATE_HOURS, postponeForQuietHours, postponeForSuppression,
   quietWindowOf, responsiveHourDecision,
 } from "./shared.ts";
@@ -360,7 +360,7 @@ export async function processDueAgentTasks(sb: SupabaseClient, deps: AgentTaskDe
       // «اتعلمت إن» في الملخص الأسبوعي (٥.٢) بنفس الطريقة: data-only بزرارين «صح / مش صح».
       const answerPush = trial ? habitTrialPush(trial, finalText) : learning ? houseLearningPush(learning, finalText) : null;
       if (answerPush) await pushToDevice(sb, task.user_id, notice.title, answerPush.body, answerPush.data, true);
-      else await pushToDevice(sb, task.user_id, notice.title, finalText.slice(0, 180));
+      else await pushToDevice(sb, task.user_id, notice.title, finalText.slice(0, 180), agentTaskPushData(task.kind));
       // المبادرات بتروح تليجرام كمان: من غيرها كانت بتقف في قايمة جوه التطبيق (FCM صفر
       // توكن). الطلبات مابتروحش — العميل غالبًا طلبها من نفس القناة اللي هيشوف ردها فيها.
       if (notice.proactive) {

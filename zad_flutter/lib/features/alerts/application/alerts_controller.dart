@@ -223,7 +223,7 @@ class AlertsController extends Notifier<AlertsView> {
         ref.read(shellNavigationProvider.notifier).open(ShellTab.proposals);
       case AlertDestination.pharmacy:
         ref.read(shellNavigationProvider.notifier).open(ShellTab.household);
-      case AlertDestination.home:
+      case AlertDestination.home || AlertDestination.rescue:
         ref.read(shellNavigationProvider.notifier).open(ShellTab.home);
       case AlertDestination.family:
         ref.read(shellNavigationProvider.notifier).open(ShellTab.family);
