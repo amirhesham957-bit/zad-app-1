@@ -14,13 +14,17 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:zad/core/data/commit_my_intent.dart';
+import 'package:zad/core/data/edge_client.dart';
 import 'package:zad/core/data/providers.dart';
 
 /// The bot's real username (`getMe`, 2026-07-31). `ZadSmartBot` is only its
 /// display name — searching Telegram for it finds nothing.
 const String kTelegramBotUsername = 'ZadhApp_bot';
 
-/// Reads and writes `telegram_bindings`.
+/// Reads and writes `telegram_bindings`. Unlinking goes through the one door
+/// (`settings.telegram_unlinked`); the code insert stays a direct write: the
+/// code is the only proof of identity and must not reach the events ledger.
 class TelegramLinkRemote {
   /// Creates the remote.
   const new(this._client);
@@ -78,7 +82,12 @@ class TelegramLinkRemote {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) return;
     try {
-      await _client.from('telegram_bindings').delete().eq('user_id', userId);
+      await commitMyIntent(
+        _client,
+        kind: 'settings.telegram_unlinked',
+        clientEventId: 'telegram_unlink:${newTraceId()}',
+        payload: const <String, dynamic>{},
+      );
     } on Object catch (e) {
       debugPrint('unlinkTelegram() FAILED: $e');
     }

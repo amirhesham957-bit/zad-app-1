@@ -1057,3 +1057,11 @@ Added `zad_flutter/lib/features/notification_reads` (repository interface + Supa
 - **اتقاس:** `settings_buttons_test.sql` (سطر جديد في LIST بسلسلة كاملة، أخرها مراية `20261128260000`) على postgres:16 محلي EXIT=0، وبيفشل من غير الميجريشن («confirmed and anchored»). تست Flutter `test/shared/settings_door_test.dart` (الـremote الحقيقي فوق HTTP مسجّل، مفيش كتابة جدول).
 - **فخ:** الباب بيحدّث الصف بس ومابيعملوش: صف `zad_users` ناقص = `user_not_found` رفض دايم في الـOutbox بدل ما الـupsert كان بيعمله. وuuid الحدث بيتولّد جديد لكل محاولة (القيم مطلقة فالتكرار آمن؛ `balance_anchored_at` بس بيتحرك لوقت إعادة المحاولة).
 - **فاضل في P1.6b:** بيت، مواعيد وأماكن، عيلة، تليجرام وإشعارات.
+
+## P1.6b مجموعة تيليجرام وإشعارات (٢٠٢٦-١١-٢٩)
+
+- **اتعمل:** `setSwitch` في `notification_reads_repository.dart` بقى `settings.notification_switch_set`، و`unlink` في `telegram_link.dart` بقى `settings.telegram_unlinked` (من `zad_commit_my_intent`). ميجريشن `20261129060000`: `zad_intent_settings` بنسخة `20261129020000` + النوعين، والغلاف بنفس القايمة + النوعين. من غير تعديل `zad_commit_intent` (مجال settings موجود).
+- **فضل مباشر:** `generateBindingCode` (insert في `telegram_bindings`): الكود هو إثبات الهوية الوحيد وماينفعش يتكتب في `zad_events`؛ السياسة بتحصره على صف من غير chat_id. التست بيتأكد إن الدفتر مافيهوش كود ولا chat_id.
+- **سلوك:** المفتاح بيتكتب online فقط (زي الأول، مفيش Outbox). الإطفاء بيمسح `enabled_at`.
+- **اتقاس:** `telegram_notifications_test.sql` بسلسلة settings_buttons كاملة على postgres:17 EXIT=0، وبيفشل من غير الميجريشن. `flutter analyze` EXIT=0 وتست فلاتر ٢١ نجحوا.
+
