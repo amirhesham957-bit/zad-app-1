@@ -805,6 +805,11 @@
     "found_at",
     "expires_at"
   ],
+  "zad_device_key_rate": [
+    "calls",
+    "hour_start",
+    "key_hash"
+  ],
   "zad_device_send_keys": [
     "key_hash",
     "user_id",
