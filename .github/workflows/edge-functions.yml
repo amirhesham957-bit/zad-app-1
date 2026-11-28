@@ -350,7 +350,8 @@ jobs:
       - name: Start Postgres (the script talks to the container named zadpg)
         run: |
           docker run -d --name zadpg -e POSTGRES_PASSWORD=pg -e POSTGRES_HOST_AUTH_METHOD=trust postgres:17-alpine
-          for _ in $(seq 30); do docker exec zadpg pg_isready -U postgres && break; sleep 1; done
+          # -h 127.0.0.1: the image first runs a socket-only init server that passes a plain pg_isready, then restarts; only the final server listens on TCP (button-e2e flake, 2026-11-28)
+          for _ in $(seq 30); do docker exec zadpg pg_isready -h 127.0.0.1 -U postgres && break; sleep 1; done
       - name: Button sandwich e2e
         run: |
           set -o pipefail
