@@ -46,9 +46,13 @@ select pg_temp.check((select guardian_member_id from public.zad_household_member
 
 -- ── RLS: غير الصاحب مايعدّلش ──
 select pg_temp.who(:b);
-update public.zad_household_members set country = 'SA' where id = :mkid;
+with u as (update public.zad_household_members set country = 'SA' where id = :mkid returning 1)
+select pg_temp.check((select count(*) from u) = 0, 'non-owner update affects 0 rows');
+with u as (update public.zad_household_members set guardian_member_id = :mb where id = :mkid returning 1)
+select pg_temp.check((select count(*) from u) = 0, 'non-owner guardian_member_id update on a foreign row affects 0 rows');
 select pg_temp.who(:a);
 select pg_temp.check((select country from public.zad_household_members where id = :mkid) = 'EG', 'non-owner update changed nothing');
+select pg_temp.check((select guardian_member_id from public.zad_household_members where id = :mkid) = :ma, 'non-owner guardian update changed nothing');
 select pg_temp.who(:b);
 select pg_temp.check(pg_temp.fails($q$update public.zad_household_members set guardian_member_id = '00000000-0000-0000-0000-00000000aa01' where id = '00000000-0000-0000-0000-00000000bb01'$q$), 'guardian from another household is refused (fk)');
 
