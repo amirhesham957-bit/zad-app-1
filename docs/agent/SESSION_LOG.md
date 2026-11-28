@@ -951,6 +951,15 @@ Added `zad_flutter/lib/features/notification_reads` (repository interface + Supa
 - **P1.4 خريطة:** مفيش مولّد ولا `*.g.dart`؛ ٥٢ `fromJson` يدوي؛ `schema.json` يدوي؛ مفيش CI لفحص الاختلاف. P1.4 بناء من الصفر.
 - **فخ:** worktrees الوكلاء ملت القرص (٣٠GB/٣٢GB) والـworktree الجديد وقع بـ"unable to write file". اتمسحت ٢٦ worktree نضيفة.
 
+## ٢٠٢٦-١١-٢٨ — P2.5 مصفوفة الرؤية + جزء P2.8 (فرع `feat/p2-5-p2-8-visibility`)
+
+- **اتعمل:** `20261128190000_visibility_matrix.sql`: قاصر أعمى عن الميزانية والصيدلية بـRLS restrictive، ودوال العرض بتخبّيهم (`zad_view_money` ترفض)، `is_private` على الأدوية من الباب، وصيدلية مفتوحة للبالغين، وولي الأمر يشوف مهام وأهداف القاصر، و`zad_view_family_home`. `_shared/or/visibilityMatrix.ts` نسخة TS نقية. `schema.json` فيه `is_private`. سطر جديد في LIST بتاع `edge-functions.yml`.
+- **اتقاس:** تست `visibility_matrix_test.sql` على Postgres 17 محلي (docker): EXIT=0 وبيطبع `all checks passed`؛ بدون المايجريشن بيقع (EXIT=1). الباك-فيل اتجرّب مرتين (التاني مابيرجّعش اللي اتفتح). `deno check` EXIT=0، و`deno test -A zad-brain/ _shared/ _schema/` EXIT=0 (٢٤٨١ نجحوا).
+- **ماتشغّلش:** CI الحقيقي، وباقي سلاسل SQL الأخرى بعد الميجريشن (مش في سلاسلها)، وe2e.
+- **فخ:** `zad_users` فيها أرقام ميزانية وصف الطفل بتاعه مقروء له؛ RLS مابتفصلش أعمدة. محتاج شريحة تفصل الميزانية عن البروفايل. والصفوف القديمة في الأدوية اتعلّمت private مرة واحدة (قرار تنفيذ، مكتوب في الخطة).
+- **فخ أداة:** التست لازم يفصل نداء الدالة عن قراية الصف في استعلامين (نفس الـstatement مابيشوفش الإدراج).
+- **تكملة نفس اليوم:** `memberMorningDigest.ts` (مصفوفة ثم ميزانية انتباه لكل فرد، حتى الحرج مايكسرش الخصوصية) و`isMatrixLeak/findMatrixLeaks` في `crossMemberLeak.ts`، مع تستات. `deno check` EXIT=0، و`deno test -A zad-brain/ _shared/ _schema/` EXIT=0 (٢٤٩١ نجحوا). P2.5 `[x]`، وP2.5b (فصل أعمدة `zad_users`) صف جديد. P2.8 فضلت `[~]`: الموجز مش متوصّل بكرون ومفيش e2e.
+
 ## ٢٠٢٦-١١-٢٨ — P1.8 كارت الإنقاذ
 
 - **اتعمل:** `RescueCard` أول الرئيسية (`features/home/presentation/rescue_card.dart`، منطق `domain/rescue.dart`): بيظهر لما قراءة البنك وقفت (`showBankBanner`: stalled أو اتشالت بعد ما اشتغلت) أو الموقع اتشال لحساب بيستعمله؛ مخفي لو سليم أو الميزة عمرها ما اتفعّلت. أزرار: وصول الإشعارات، قيود البطارية (`zad/battery` `openSettings`)، التشغيل التلقائي (قناة `zad/battery` `manufacturer`/`openAutostart`، intents معروفة لشاومي/أوبو/فيفو/هواوي مع رجوع لتفاصيل التطبيق). `EssentialPermission.locationAlways` لحساب بيستعمل تنبيهات الشارع/مناطق الأولاد.
