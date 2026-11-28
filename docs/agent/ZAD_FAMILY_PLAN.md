@@ -130,7 +130,7 @@ related:
 | P1.4 | `[x]` | توليد موديلات Dart من السكيما ودوال العرض + فحص اختلاف في الـCI (المولّد يقرا أسماء `available_actions` المعتمدة ويرفض أي اسم مؤقت وقت الكومبايل) | سكريبت + workflow | الـCI يوقع لو عمود اتغير |
 | P1.3b | `[x]` | ربط الأدوية والجرعات الفايتة في `zad_view_family` للولي (`zad_pharmacy_items.family_member_id` بيشاور على `family_members` مش `zad_household_members`) | مايجريشن + تست SQL | الولي يشوف أدوية الأم/الطفل وجرعة فايتة، وغيره لا |
 | P1.1b | `[x]` | تكملة P1.1: الصوت والتخطيط والاستريم على نفس البوابة `gate.ts` | `zad-brain/gate.ts`، `index.ts` | نفس تستات P1.1 + الاستريم |
-| P1.5 | `[ ]` | ٤ تبويبات (الرئيسية، فلوسي، بيتي، عيلتي) + زرار المساعد. الجداول المدفونة كروت في الشات | `app/shell/zad_bottom_nav_bar.dart` | `flutter analyze` + `flutter test` |
+| P1.5 | `[x]` | ٤ تبويبات (الرئيسية، فلوسي، بيتي، عيلتي) + زرار المساعد. الجداول المدفونة كروت في الشات | `app/shell/zad_bottom_nav_bar.dart` | `flutter analyze` + `flutter test` |
 | P1.6 | `[ ]` | اختبار ساندوتش لكل زرار ظاهر: زرار ← `zad_events` ← البوت ← الإشعار | مبني على `supabase/sql/e2e/run_commit_intent_e2e.sh` | `e2e: all checks passed` |
 | P1.7 | `[x]` | Sentry + `trace_id` من الزرار للـedge function لـ`zad_events` | Flutter + `_shared` | عطل تجريبي يتتبع لمصدره |
 
