@@ -807,6 +807,22 @@
     "found_at",
     "expires_at"
   ],
+  "zad_round_trace": [
+    "created_at",
+    "duration_ms",
+    "engine",
+    "error",
+    "id",
+    "outcome",
+    "started_at",
+    "trace_id"
+  ],
+  "zad_engine_breaker": [
+    "consecutive_failures",
+    "engine",
+    "opened_at",
+    "updated_at"
+  ],
   "zad_device_key_rate": [
     "calls",
     "hour_start",

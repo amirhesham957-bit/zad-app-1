@@ -328,6 +328,7 @@ jobs:
           supabase/sql/tests/events_ledger_scaffold.sql supabase/migrations/20261121160000_events_ledger.sql supabase/migrations/20261128120000_household_traits.sql supabase/sql/tests/household_traits_test.sql
           supabase/sql/tests/events_ledger_scaffold.sql supabase/migrations/20261121160000_events_ledger.sql supabase/migrations/20261128120000_household_traits.sql supabase/migrations/20261128130000_member_facts.sql supabase/sql/tests/member_facts_test.sql
           supabase/sql/tests/events_ledger_scaffold.sql supabase/migrations/20261121160000_events_ledger.sql supabase/migrations/20261128120000_household_traits.sql supabase/migrations/20261128130000_member_facts.sql supabase/migrations/20261128150000_events_trace_id.sql supabase/sql/tests/events_trace_id_test.sql
+          supabase/sql/tests/scratch_scaffold.sql supabase/migrations/20261128200000_round_trace_engine_breaker.sql supabase/sql/tests/round_trace_breaker_test.sql
           LIST
 
   # P1.6a: ساندوتش الزرار (button_manifest.json): الباب ⇐ zad_events ⇐ البوت على Postgres + PostgREST حقيقيين (نفس السكريبت المحلي).

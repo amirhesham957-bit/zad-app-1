@@ -25,6 +25,7 @@
 // ------------------------------------------------------------
 import { evalKeyOrder, internalKeyOrder, keyOrder, type Lane, paidReservedCount, reservedCount } from "./keyLanes.ts";
 import { DeadKeys, RATE_LIMIT_DEFAULT_MS } from "../_shared/deadKeys.ts";
+import { recordRound, routesAfterBreaker } from "./engineBreaker.ts";
 import { freeGeminiKeys, geminiKeys, groqKeys, paidGeminiKeys } from "../_shared/keyPool.ts";
 export type ToolCall = { id: string; name: string; input: any; thoughtSignature?: string };
 
@@ -324,7 +325,12 @@ export async function callModel(opts: {
   let paidRefused = false;
   if (freeBusy) trail.push("free lane over its daily budget");
   else if (candidates.length === 0) trail.push("every gemini model cooling down");
-  for (const model of candidates) {
+  // P3.4: قاطع الدايرة المشترك (Postgres): موديل فاتح بيتخطى، ولو كله فاتح أو القاطع نفسه وقع بنكمّل زي ما كنا.
+  const breaker = await routesAfterBreaker(
+    candidates.map((m) => ({ provider: "gemini" as const, model: m, viaGateway: false })),
+  );
+  for (const k of breaker.skipped) trail.push(`${k}: breaker open`);
+  for (const model of breaker.routes.map((r) => r.model)) {
     const left = deadline - Date.now();
     // الميزانية خلصت وفيه جروك يلحق ⇒ ماتبدأش موديل جيميناي تاني.
     if (left < MIN_GEMINI_ATTEMPT_MS && GROQ_KEY_POOL.length > 0) {
@@ -332,9 +338,11 @@ export async function callModel(opts: {
       break;
     }
     const timeoutMs = Math.max(MIN_GEMINI_ATTEMPT_MS, Math.min(GEMINI_CALL_TIMEOUT_MS, left));
+    const t0 = Date.now();
     try {
       const reply = await withRetry(() => sendGemini({ ...opts, model, timeoutMs }));
       modelCooldownUntil.delete(model);
+      recordRound({ engine: `gemini:${model}`, ok: true, startedAtMs: t0 });
       return { ...reply, model };
     } catch (e) {
       // المدفوع اتلغى أو اتقفل (400/401/403): مع الاحتياطي المجاني، اللفة ماتقعش — السلسلة تكمّل على المجاني.
@@ -345,6 +353,7 @@ export async function callModel(opts: {
       }
       if (e instanceof ConfigError) throw e;
       if (!(e instanceof ProviderUnavailableError)) throw e;
+      recordRound({ engine: `gemini:${model}`, ok: false, startedAtMs: t0, error: e.short });
       if (modelCooldownMs > 0) modelCooldownUntil.set(model, Date.now() + modelCooldownMs);
       trail.push(`${model}: ${e.short}`);
       console.warn(`[zad-brain] model ${model} unavailable (${e.short}); falling over`);
@@ -366,9 +375,11 @@ export async function callModel(opts: {
         break;
       }
       const timeoutMs = Math.max(MIN_GEMINI_ATTEMPT_MS, Math.min(GEMINI_CALL_TIMEOUT_MS, left));
+      const t0 = Date.now();
       try {
         const reply = await inLane("internal", () => withRetry(() => sendGemini({ ...opts, model, timeoutMs })));
         freeCooldownUntil.delete(model);
+        recordRound({ engine: `gemini-free:${model}`, ok: true, startedAtMs: t0 });
         console.warn(`[zad-brain] paid key unavailable; ${model} answered on a free key`);
         return { ...reply, model };
       } catch (e) {
@@ -378,6 +389,7 @@ export async function callModel(opts: {
           continue;
         }
         if (!(e instanceof ProviderUnavailableError)) throw e;
+        recordRound({ engine: `gemini-free:${model}`, ok: false, startedAtMs: t0, error: e.short });
         if (modelCooldownMs > 0) freeCooldownUntil.set(model, Date.now() + modelCooldownMs);
         trail.push(`free ${model}: ${e.short}`);
       }
@@ -387,9 +399,13 @@ export async function callModel(opts: {
   if (GROQ_KEY_POOL.length > 0) {
     const groqModel = opts.groqModel ?? GROQ_MODEL;
     console.warn(`[zad-brain] whole Gemini chain unavailable [${trail.join(" | ")}]; falling back to Groq ${groqModel}`);
+    const t0 = Date.now();
     try {
-      return { ...(await withRetry(() => sendGroq({ ...opts, model: groqModel }))), model: groqModel };
+      const reply = await withRetry(() => sendGroq({ ...opts, model: groqModel }));
+      recordRound({ engine: `groq:${groqModel}`, ok: true, startedAtMs: t0 });
+      return { ...reply, model: groqModel };
     } catch (e) {
+      recordRound({ engine: `groq:${groqModel}`, ok: false, startedAtMs: t0, error: e instanceof Error ? e.message.slice(0, 100) : String(e) });
       throw new RetryableError(
         `every gemini model unavailable [${trail.join(" | ")}] and groq failed too: ${e instanceof Error ? e.message : String(e)}`,
       );
