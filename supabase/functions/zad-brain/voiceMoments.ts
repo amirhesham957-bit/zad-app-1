@@ -59,9 +59,9 @@ export interface ComposedMoment {
 }
 
 /** لحظات بتتقال مكتوبة بس — "والباقي كتابي عادي". كل اللي مش هنا بيتقال بصوتها. */
-export const TEXT_ONLY_MOMENTS: ReadonlySet<string> = new Set(["dose_nudge", "close_day", "salary_cycle", "rain_soon", "weather_alert"]);
+export const TEXT_ONLY_MOMENTS: ReadonlySet<string> = new Set(["dose_nudge", "close_day", "salary_cycle", "rain_soon", "weather_alert", "fact_checkin"]);
 /** بتتقال بالقالب بس، من غير صياغة موديل. */
-export const TEMPLATE_MOMENTS: ReadonlySet<string> = new Set(["newcomer_question", "close_day", "salary_cycle", "rain_soon", "weather_alert"]);
+export const TEMPLATE_MOMENTS: ReadonlySet<string> = new Set(["newcomer_question", "close_day", "salary_cycle", "rain_soon", "weather_alert", "fact_checkin"]);
 
 /** «احتمال مطر في الساعات الجاية» (20261115010000، المالك ١٥/١١): مرة في اليوم بالكتير، مكتوبة، من غير موديل. */
 export const RAIN_SOON_MOMENT = "rain_soon";
@@ -829,6 +829,10 @@ export function momentFallback(moment: string, facts: Record<string, unknown>): 
           (ask ? ` وسؤال صغير: ${ask}` : ""),
         speech: `${occasion.line ? `${occasion.line} ` : "صباح الفل عليك! طمّني نمت كويس؟ "}${alert ? `${alert} ` : ""}${meds.length ? `وماتنساش ${meds[0]}. ` : ""}${appts.length ? `وفاكر إن عندك ${appts[0]} النهارده؟ ` : ""}${clothes ? `${clothes} ` : ""}${ask ? `وعايزة أسألك: ${ask} ` : ""}يلا يوم حلو إن شاء الله.`,
       };
+    }
+    case "fact_checkin": {
+      // P3.1 (ZAD_FACT_INFERENCE): سؤال تأكيد حقيقة مستنتجة، النص جاهز من factQuestionText (القيمة من حقيقة مسجلة).
+      return { title: "💬 سؤال صغير", text: str(facts.question, 300), speech: "" };
     }
     case "newcomer_question": {
       const ask = str(facts.daily_question, 120);
@@ -2102,7 +2106,7 @@ export type MomentHold = "quiet_hours" | "daily_cap" | "busy_day" | "circumstanc
  * صباح الخير) زي ما هو.
  */
 export const BUSY_DAY_OPTIONAL_MOMENTS: ReadonlySet<string> = new Set([
-  "tasbiha_reminder", "ignored_days", "back_home_spent", "challenge_streak_broken", NEWCOMER_MOMENT,
+  "tasbiha_reminder", "ignored_days", "back_home_spent", "challenge_streak_broken", NEWCOMER_MOMENT, "fact_checkin",
   WEEKLY_MONEY_MOMENT, "weekly_money_proud", "weekly_money_reproach", MONTHLY_STORY_MOMENT,
 ]);
 export const BUSY_DAY_APPOINTMENTS = 3;

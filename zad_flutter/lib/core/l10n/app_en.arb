@@ -3024,5 +3024,6 @@
   "notifReadsLoadFailed": "Could not load, tap to try again",
   "notifReadsDate": "Date",
   "notifReadsTime": "Time",
-  "notifReadsPlace": "Place"
+  "notifReadsPlace": "Place",
+  "stuckNotificationRecord": "Record it"
 }

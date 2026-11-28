@@ -19,3 +19,15 @@ Deno.test("every reason the profile door SQL can return has an Arabic REASONS en
     assertStringIncludes(text, r);
   }
 });
+
+Deno.test("P3.1: the fact check-in migration reasons all have Arabic REASONS entries", async () => {
+  const all = await Deno.readTextFile(new URL("../../migrations/20261128230000_fact_checkin.sql", import.meta.url));
+  const sql = all.slice(all.indexOf("function public.zad_intent_profile"));
+  const reasons = new Set([...sql.matchAll(/'reason',\s*'([a-z_]+)'/g)].map((m) => m[1]));
+  assert(reasons.has("fact_denied_recently"), "migration should return fact_denied_recently");
+  for (const r of reasons) {
+    const text = refusalText(r);
+    assert(!text.includes(FALLBACK), `no Arabic REASONS entry for ${r}`);
+    assertStringIncludes(text, r);
+  }
+});
