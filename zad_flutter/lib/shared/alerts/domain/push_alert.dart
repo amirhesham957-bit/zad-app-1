@@ -20,6 +20,10 @@ enum AlertDestination {
 
   /// The family chat — a message or an SOS from someone in the family.
   family,
+
+  /// The home, where the rescue card is (the server's «bank reading
+  /// stopped» push, P1.8).
+  rescue,
 }
 
 /// An alert.
@@ -175,6 +179,7 @@ AlertDestination? destinationFor(String? route) => switch (route) {
   'pharmacy' => AlertDestination.pharmacy,
   'home' => AlertDestination.home,
   'family' => AlertDestination.family,
+  'bank_fix' => AlertDestination.rescue,
   _ => null,
 };
 
@@ -355,6 +360,7 @@ String? payloadFor(AlertDestination? d) => switch (d) {
   AlertDestination.pharmacy => 'pharmacy',
   AlertDestination.home => 'home',
   AlertDestination.family => 'family',
+  AlertDestination.rescue => 'bank_fix',
   null => null,
 };
 

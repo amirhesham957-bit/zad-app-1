@@ -950,3 +950,10 @@ Added `zad_flutter/lib/features/notification_reads` (repository interface + Supa
 - **P1.3:** `zad_view_home/money/house/family` في `20261127140000_view_rpcs.sql`. فجوة: عرض الولي مافيهوش أدوية (P1.3b).
 - **P1.4 خريطة:** مفيش مولّد ولا `*.g.dart`؛ ٥٢ `fromJson` يدوي؛ `schema.json` يدوي؛ مفيش CI لفحص الاختلاف. P1.4 بناء من الصفر.
 - **فخ:** worktrees الوكلاء ملت القرص (٣٠GB/٣٢GB) والـworktree الجديد وقع بـ"unable to write file". اتمسحت ٢٦ worktree نضيفة.
+
+## ٢٠٢٦-١١-٢٨ — P1.8 كارت الإنقاذ
+
+- **اتعمل:** `RescueCard` أول الرئيسية (`features/home/presentation/rescue_card.dart`، منطق `domain/rescue.dart`): بيظهر لما قراءة البنك وقفت (`showBankBanner`: stalled أو اتشالت بعد ما اشتغلت) أو الموقع اتشال لحساب بيستعمله؛ مخفي لو سليم أو الميزة عمرها ما اتفعّلت. أزرار: وصول الإشعارات، قيود البطارية (`zad/battery` `openSettings`)، التشغيل التلقائي (قناة `zad/battery` `manufacturer`/`openAutostart`، intents معروفة لشاومي/أوبو/فيفو/هواوي مع رجوع لتفاصيل التطبيق). `EssentialPermission.locationAlways` لحساب بيستعمل تنبيهات الشارع/مناطق الأولاد.
+- **السيرفر:** مفيش نبض جديد. النبض موجود: `bank.off`/`bank.stalled` في `zad_product_events` (لما التطبيق يتفتح، كل ١٢ ساعة) ⇐ تريجر `zad_bank_off_tells` ⇐ مهمة `listener_gap_alert` (واحدة في اليوم) ⇐ `pushToDevice`. اللي اتضاف: `agentTaskPushData` بيبعت `route: bank_fix` مع الإشعار ده، والتطبيق بيفتح الرئيسية (`AlertDestination.rescue`، نفس مسار `_openPush` وgetInitialMessage).
+- **قرارات:** زرار البطارية بيفتح قايمة التحسين مش `ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` (اتشال لشروط بلاي، 20-22/11). نص «واقفة» في `supportDesk.ts` بقى ١٢ ساعة بدل يومين.
+- **فجوة معروفة:** النبض بيطلع لما التطبيق يتفتح بس، فعميل ما فتحش زاد بعد ما الخدمة وقفت مش هيتبعتله إشعار السيرفر. الإغلاق ده محتاج إشارة من الخلفية (مفتاح الإرسال `last_used_at`، شريحة تانية). مفيش إشارة سيرفر لفقد الموقع.

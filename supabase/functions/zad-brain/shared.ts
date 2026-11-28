@@ -67,6 +67,15 @@ export function agentTaskNotice(kind: string | null | undefined): { title: strin
  * خطر مالي بيحتاج تصرّف دلوقتي بس: إشعارات البنك وقفت (يعني صرف مش متسجّل) والصرف أسرع من
  * السقف. الملخصات والتذكيرات لأ — فويس على كل رسالة بيبقى ضوضاء والعميل بيكتمه.
  */
+/**
+ * بيانات إشعار الجهاز لمهمة من النوع ده: `route` بيفتح الشاشة اللي تصلّح المشكلة.
+ * «قراءة البنك وقفت» (listener_gap_alert) ⇐ `bank_fix` ⇐ الرئيسية وكارت الإنقاذ (P1.8)؛
+ * باقي الأنواع من غير route زي ما كانت.
+ */
+export function agentTaskPushData(kind: string | null | undefined): Record<string, string> | undefined {
+  return (kind ?? "").trim() === "listener_gap_alert" ? { route: "bank_fix" } : undefined;
+}
+
 export const VOICE_ALERT_KINDS: ReadonlySet<string> = new Set(["listener_gap_alert", "spending_ahead"]);
 
 /**

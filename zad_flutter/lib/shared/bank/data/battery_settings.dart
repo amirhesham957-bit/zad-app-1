@@ -38,3 +38,26 @@ Future<bool> openBatterySettings() async {
     return false;
   }
 }
+
+/// The phone maker, lower case ("xiaomi"), or null when it cannot be told.
+Future<String?> phoneMaker() async {
+  if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return null;
+  try {
+    return await _channel.invokeMethod<String>('manufacturer');
+  } on Object {
+    return null;
+  }
+}
+
+/// Opens the maker's «autostart» page (Xiaomi, Oppo, Vivo, Huawei and their
+/// sub-brands), or the app's own settings page when the phone has none. True
+/// when a page opened.
+Future<bool> openAutostartSettings() async {
+  if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return false;
+  try {
+    return await _channel.invokeMethod<bool>('openAutostart') ?? false;
+  } on Object catch (e) {
+    debugPrint('autostart settings not opened: $e');
+    return false;
+  }
+}
