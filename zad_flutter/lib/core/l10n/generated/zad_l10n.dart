@@ -8516,6 +8516,48 @@ abstract class ZadL10n {
   /// **'فكّ القيود'**
   String get zadStatusFixBattery;
 
+  /// No description provided for @rescueBankTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'قراءة رسائل البنك وقفت'**
+  String get rescueBankTitle;
+
+  /// No description provided for @rescueBankBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'الموبايل قفل زاد في الخلفية، فالدفعات الجديدة مابتتسجلش. فعّل الوصول للإشعارات وفكّ قيود البطارية.'**
+  String get rescueBankBody;
+
+  /// No description provided for @rescueLocationTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الموقع اتقفل عن زاد'**
+  String get rescueLocationTitle;
+
+  /// No description provided for @rescueLocationBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'من غير الموقع تنبيهات المحلات والمناطق مابتشتغلش. اسمح بيه تاني.'**
+  String get rescueLocationBody;
+
+  /// No description provided for @rescueOpenListener.
+  ///
+  /// In ar, this message translates to:
+  /// **'الوصول للإشعارات'**
+  String get rescueOpenListener;
+
+  /// No description provided for @rescueBattery.
+  ///
+  /// In ar, this message translates to:
+  /// **'قيود البطارية'**
+  String get rescueBattery;
+
+  /// No description provided for @rescueAutostart.
+  ///
+  /// In ar, this message translates to:
+  /// **'التشغيل التلقائي'**
+  String get rescueAutostart;
+
   /// Care sheet: opens the games hub.
   ///
   /// In ar, this message translates to:
@@ -12673,6 +12715,18 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'عشان قراءة الإشعارات والتذكيرات ماتتقفلش لما الموبايل يوفّر البطارية.'**
   String get permBatteryWhy;
+
+  /// No description provided for @permLocationAlwaysTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'الموقع طول الوقت'**
+  String get permLocationAlwaysTitle;
+
+  /// No description provided for @permLocationAlwaysWhy.
+  ///
+  /// In ar, this message translates to:
+  /// **'عشان تنبيهات الشارع ومناطق الأولاد تشتغل والتطبيق مقفول.'**
+  String get permLocationAlwaysWhy;
 
   /// No description provided for @permEnable.
   ///

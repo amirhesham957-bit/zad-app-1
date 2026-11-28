@@ -4860,6 +4860,29 @@ class ZadL10nAr extends ZadL10n {
   String get zadStatusFixBattery => 'فكّ القيود';
 
   @override
+  String get rescueBankTitle => 'قراءة رسائل البنك وقفت';
+
+  @override
+  String get rescueBankBody =>
+      'الموبايل قفل زاد في الخلفية، فالدفعات الجديدة مابتتسجلش. فعّل الوصول للإشعارات وفكّ قيود البطارية.';
+
+  @override
+  String get rescueLocationTitle => 'الموقع اتقفل عن زاد';
+
+  @override
+  String get rescueLocationBody =>
+      'من غير الموقع تنبيهات المحلات والمناطق مابتشتغلش. اسمح بيه تاني.';
+
+  @override
+  String get rescueOpenListener => 'الوصول للإشعارات';
+
+  @override
+  String get rescueBattery => 'قيود البطارية';
+
+  @override
+  String get rescueAutostart => 'التشغيل التلقائي';
+
+  @override
   String get gamesHubButton => 'ألعاب زادو';
 
   @override
@@ -7536,6 +7559,13 @@ class ZadL10nAr extends ZadL10n {
       'عشان قراءة الإشعارات والتذكيرات ماتتقفلش لما الموبايل يوفّر البطارية.';
 
   @override
+  String get permLocationAlwaysTitle => 'الموقع طول الوقت';
+
+  @override
+  String get permLocationAlwaysWhy =>
+      'عشان تنبيهات الشارع ومناطق الأولاد تشتغل والتطبيق مقفول.';
+
+  @override
   String get permEnable => 'فعّل';
 
   @override
@@ -9100,6 +9130,17 @@ class ZadL10nArSa extends ZadL10nAr {
 
   @override
   String get zadStatusFixBattery => 'فكّ القيود';
+
+  @override
+  String get rescueBankBody =>
+      'الجوال قفل زاد في الخلفية، فالدفعات الجديدة ما تتسجل. فعّل الوصول للإشعارات وفكّ قيود البطارية.';
+
+  @override
+  String get rescueLocationTitle => 'الموقع انقفل عن زاد';
+
+  @override
+  String get rescueLocationBody =>
+      'بدون الموقع تنبيهات المحلات والمناطق ما تشتغل. اسمح فيه مرة ثانية.';
 
   @override
   String get gamesHubIntro => 'العب، كمّل السلسلة، واكسب بذور';
