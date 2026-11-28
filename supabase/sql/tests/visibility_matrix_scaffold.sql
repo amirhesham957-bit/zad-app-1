@@ -1,4 +1,4 @@
--- On top of scratch_scaffold.sql + view_rpcs_scaffold.sql: what the visibility matrix (20261128180000) reads that those two lack.
+-- On top of scratch_scaffold.sql + view_rpcs_scaffold.sql: what the visibility matrix (20261128190000) reads that those two lack.
 -- zad_inventory.family_id with the live family-scoped policy, agent_tasks (live shape, owner read), RLS on agent_goals and the
 -- doses table, and zad_obligations (a second budget table, so the minor policy is checked on more than one).
 -- Scratch only.

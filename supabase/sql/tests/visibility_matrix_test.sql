@@ -1,4 +1,4 @@
--- مصفوفة الرؤية (P2.5/P2.8، migration 20261128180000), on a scratch database:
+-- مصفوفة الرؤية (P2.5/P2.8، migration 20261128190000), on a scratch database:
 --
 --   psql < supabase/sql/tests/scratch_scaffold.sql
 --   psql < supabase/sql/tests/view_rpcs_scaffold.sql
