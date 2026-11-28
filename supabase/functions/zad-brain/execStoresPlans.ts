@@ -1,4 +1,5 @@
 // m4.5 pass 3: executeTool case bodies moved verbatim out of index.ts (no behavior change).
+import { ownPriceAnswer } from "./ownPurchasePrice.ts";
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import type { AuditScope } from "./audit.ts";
 import type { RunContext } from "./validators.ts";
@@ -67,6 +68,9 @@ export async function execStoresPlans(name: string, sb: SupabaseClient, userId: 
       // ببلد العميل وعملته (pricePayload) — من غيرهم الأسعار بعملة تانية ماكانتش بتتشال.
       const { data: u } = await sb.from("zad_users").select("country,currency").eq("id", userId).maybeSingle();
       const me = u as { country?: string | null; currency?: string | null } | null;
+      // الأول: سعر الصنف المسجّل في فواتير العميل نفسه؛ فاضي (إشعار بنك إجمالي بس) = يكمّل بحث النت تحت.
+      const own = await ownPriceAnswer(sb, userId, String(input.item_name ?? ""), me?.currency ?? null);
+      if (own) return own;
       // بحث موجّه بمصدره، محفوظ ٧ أيام بالبلد والصنف (webPrice.ts، zad_web_prices) — بداية الأسعار قبل الجمهور.
       const found = await webPrice(sb, {
         item: String(input.item_name ?? ""), store: input.store ? String(input.store) : null,

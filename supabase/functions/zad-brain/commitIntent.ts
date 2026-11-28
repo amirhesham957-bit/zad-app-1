@@ -118,6 +118,8 @@ const REASONS: Record<string, string> = {
   txn_kind_unknown: "النوع يا expense يا income",
   wallet_unknown: "المحفظة يا cash يا card يا bank",
   transfer_to_missing: "التحويل لازم يقول رايح فين",
+  cash_withdrawal_duplicate_suspected: "فيه سحب كاش بنفس المبلغ مسجّل من ساعات (غالباً نفس السحب من إشعار البنك) — اسأل العميل: ده سحب تاني فعلاً؟ لو أيوه ابعته تاني بـallow_duplicate",
+  cash_spend_matches_bank_notice: "فيه إشعار بنك بنفس المبلغ لسه مش مفسَّر (غالباً نفس الدفعة بالكارت) — اسأل العميل: دفعتها كاش ولا بالكارت؟ لو كاش ابعتها تاني بـconfirm_cash",
   transfer_change_unsupported: "التحويل مايتعملش بالتعديل — سجّله معاملة جديدة",
   text_too_long: "الفئة أو اسم المحل طويل أوي",
   for_person_invalid: "«لمين» لازم يكون من ١ لـ٤٠ حرف",
