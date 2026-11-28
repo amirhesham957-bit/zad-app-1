@@ -46,12 +46,17 @@ class _List extends QuietShopping {
 ShoppingItem _s(String id, String name, {bool bought = false}) =>
     ShoppingItem(id: id, userId: 'u', itemName: name, isPurchased: bought);
 
-InventoryItem _i(String id, String name, double qty) => InventoryItem(
+InventoryItem _i(
+  String id,
+  String name,
+  double qty, {
+  String category = 'الألبان',
+}) => InventoryItem(
   id: id,
   userId: 'u',
   itemName: name,
   quantity: qty,
-  category: 'الألبان',
+  category: category,
 );
 
 void main() {
@@ -139,6 +144,17 @@ void main() {
       expect(find.text('روابط أمازون · زاد ممكن ياخد عمولة'), findsOneWidget);
     });
 
+    testWidgets('P3.14: no chip for a fresh line, chip for a pantry line', (
+      tester,
+    ) async {
+      await pump(
+        tester,
+        const ShoppingListView(),
+        shopping: <ShoppingItem>[_s('1', 'طماطم'), _s('2', 'مناديل')],
+      );
+      expect(find.text('من أمازون'), findsOneWidget);
+    });
+
     testWidgets('a tap searches the item in amazon.eg with the Egypt tag and '
         'records shopping_row', (tester) async {
       await pump(
@@ -199,6 +215,25 @@ void main() {
       await tester.pump();
       expect(opened.single.queryParameters['k'], 'لبن');
       expect(logged, <String>['pantry_low']);
+    });
+
+    testWidgets('P3.14: a low vegetable has no chip', (tester) async {
+      await pump(
+        tester,
+        const ui.PantryView(),
+        pantry: <InventoryItem>[_i('1', 'طماطم', 0, category: 'الخضار')],
+      );
+      expect(find.byType(AmazonBuyChip), findsOneWidget);
+      expect(find.text('من أمازون'), findsNothing);
+    });
+
+    testWidgets('P3.14: a low pantry item still has the chip', (tester) async {
+      await pump(
+        tester,
+        const ui.PantryView(),
+        pantry: <InventoryItem>[_i('2', 'أرز', 0, category: 'البقالة')],
+      );
+      expect(find.text('من أمازون'), findsOneWidget);
     });
 
     testWidgets('a pantry with nothing low has no chip and no disclosure', (

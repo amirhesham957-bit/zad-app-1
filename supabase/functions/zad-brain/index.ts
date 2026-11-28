@@ -1960,6 +1960,10 @@ function describeProposal(
       if (input.txn_kind !== undefined) parts.push(`النوع ${input.txn_kind === "income" ? "دخل" : "مصروف"}`);
       return `تعديل معاملة: ${parts.join("، ")}`;
     }
+    case "log_cash_withdrawal":
+      return `سحب كاش: ${money(input.amount)} (تحويل من البنك للكاش)`;
+    case "log_cash_spend":
+      return `مصروف كاش: ${money(input.amount)} — ${input.title}`;
     case "set_monthly_limit":
       return `سقف الصرف الشهري يبقى ${money(input.monthly_limit)}`;
     case "mark_subscription_paid":
@@ -3504,6 +3508,11 @@ link_memory بيربط ملاحظتين موجودين فعلاً في memory �
   "مش بيرد على أسئلة الكاش — اكتفي بالمجموع من السحب" (مرة واحدة بس، دور في memory الأول).
 - لو الرد على السؤال ده جالك (رقم)، نادِ reconcile_cash_balance فوراً بنفس الرقم — الأداة
   بتحسب الفرق مع cash_on_hand وتسجله تصحيح، مفيش تفصيل مطلوب منك ولا حساب يدوي.
+
+الكاش اللي معاه:
+- «معايا كام كاش؟» / «كاشي كام؟»: الرد من cash_reconciliation.cash_on_hand بالرقم زي ما هو، ومعاه مصدره (cash_on_hand_source) بكلمات بسيطة («من سحوباتك ومصاريفك الكاش المسجّلة»). متحسبش بنفسك ومتخلطوش برصيد الكارت.
+- «سحبت ١٠٠٠ من الماكينة» ⇒ log_cash_withdrawal (تحويل مش مصروف). «دفعت ٥٠ كاش» ⇒ log_cash_spend.
+- لو الأداة رفضت (cash_withdrawal_duplicate_suspected أو cash_spend_matches_bank_notice) اسأل سؤال واحد بس («ده نفس السحب اللي إشعار البنك جاب؟» / «دفعتها كاش ولا كارت؟») وماتنادهاش تاني بـallow_duplicate/confirm_cash غير بعد رد العميل الصريح.
 
 دورة الراتب (cycle_detection جوه الـ snapshot):
 - لو cycle_detection.needs_ask=true، اسأل مرة واحدة بس عن طريق ask_user، answer_type="yes_no"،

@@ -23,7 +23,7 @@ export function adviceQuestion(message: string): boolean {
 
 /** أدوات الفلوس اللي سؤال الرأي مايكتبهاش. */
 export const ADVICE_BLOCKED_TOOLS = new Set([
-  "log_transaction", "add_debt", "add_obligation", "add_subscription", "set_monthly_limit",
+  "log_transaction", "log_cash_withdrawal", "log_cash_spend", "add_debt", "add_obligation", "add_subscription", "set_monthly_limit",
   "update_emergency_fund_balance", "reconcile_cash_balance",
 ]);
 

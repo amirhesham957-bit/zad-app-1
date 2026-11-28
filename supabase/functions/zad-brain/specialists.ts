@@ -251,6 +251,9 @@ const EXPENSE_INTENT = new RegExp(
   `(صرفت|دفعت|سددت|خصمت|اتخصم)\\s.{0,30}[0-9٠-٩]|(اشتريت|جبت)\\s.{0,30}(ب\\s?[0-9٠-٩]+|[0-9٠-٩]+\\s*${MONEY_UNIT})|` +
     `(^|\\s)[0-9٠-٩]+\\s*${MONEY_UNIT}\\s+(علي|على)\\s`,
 );
+// سحب كاش من الماكينة / مصروف كاش (P3.12): بيروحوا لأدوات الكاش مش log_transaction.
+const CASH_WITHDRAW_INTENT = /سحبت\s.{0,30}[0-9٠-٩]|[0-9٠-٩].{0,30}(من|ب)\s?(الماكينه|ماكينه|الاتم|atm|الصراف)/i;
+const CASH_SPEND_INTENT = /(دفعت|صرفت|سددت)\s.{0,30}[0-9٠-٩].{0,25}(كاش|نقد)|(دفعت|صرفت|سددت)\s.{0,15}(كاش|نقد).{0,25}[0-9٠-٩]/;
 // «خلي ميزانية الشهر 9000» و«غير ميزانيتي ل 12 ألف»: الموديل رد «أبشر، عدّلت ميزانية الشهر وصارت 9000»
 // ومانداش set_monthly_limit (التقييم الليلي ٢٠٢٦-١٠-٢٦). لازم فعل + الميزانية/الكارت + رقم، فسؤال
 // «كم باقي من الميزانية؟» و«صرفت أكتر من الميزانية» مايعدّوش.
@@ -367,6 +370,8 @@ export function intentToolHints(message: string, priorReply = ""): string[] {
   if (WEATHER_INTENT.test(norm)) tools.push("weather_forecast");
   if (HELD_INTENT.test(norm)) tools.push("what_i_held_back");
   if (EXPENSE_INTENT.test(norm)) tools.push("log_transaction");
+  if (CASH_WITHDRAW_INTENT.test(norm)) tools.push("log_cash_withdrawal");
+  if (CASH_SPEND_INTENT.test(norm)) tools.push("log_cash_spend");
   if (LIMIT_INTENT.test(norm)) tools.push("set_monthly_limit");
   if (CATEGORY_CAP_INTENT.test(norm)) tools.push("set_category_budget");
   if (MEDICINE_ADD_INTENT.test(norm)) tools.push("add_pharmacy_item");

@@ -441,6 +441,20 @@ export const validateDeleteTransaction: Validator = (input, snap, ctx) => {
   return { ok: true };
 };
 
+/** سحب/صرف كاش: مبلغ موجب، والفلاج (allow_duplicate/confirm_cash) مايتبعتش في نفس اللفة اللي اترفضت فيها: لازم رد العميل. */
+export const validateCashTool = (tool: "log_cash_withdrawal" | "log_cash_spend", flag: string): Validator => (input, _snap, ctx) => {
+  if ((ctx.counts[tool] ?? 0) >= 2) return { ok: false, reason: "وصلت لحد أقصى عمليتين كاش في المرة" };
+  if (typeof input.amount !== "number" || !Number.isFinite(input.amount) || input.amount <= 0) {
+    return { ok: false, reason: "المبلغ لازم يكون رقم موجب" };
+  }
+  if (input.amount > 100_000_000) return { ok: false, reason: "المبلغ ده غير منطقي" };
+  if (tool === "log_cash_spend" && !String(input.title ?? "").trim()) return { ok: false, reason: "محتاج وصف للمصروف" };
+  if (input[flag] === true && (ctx.counts[`cash_asked:${tool}`] ?? 0) >= 1) {
+    return { ok: false, reason: `اتسأل العميل في اللفة دي — استنى رده قبل ${flag}=true` };
+  }
+  return { ok: true };
+};
+
 export const validateSetMonthlyLimit: Validator = (input, _snap, ctx) => {
   if ((ctx.counts["set_monthly_limit"] ?? 0) >= 1) return { ok: false, reason: "تعديل سقف واحد بس في المرة" };
   if (typeof input.monthly_limit !== "number" || !Number.isFinite(input.monthly_limit) || input.monthly_limit <= 0) {
@@ -1270,6 +1284,8 @@ export const VALIDATORS: Record<string, Validator> = {
   log_transaction: validateLogTransaction,
   update_transaction: validateUpdateTransaction,
   delete_transaction: validateDeleteTransaction,
+  log_cash_withdrawal: validateCashTool("log_cash_withdrawal", "allow_duplicate"),
+  log_cash_spend: validateCashTool("log_cash_spend", "confirm_cash"),
   set_monthly_limit: validateSetMonthlyLimit,
   set_category_budget: validateSetCategoryBudget,
   add_inventory_item: validateAddInventoryItem,
@@ -1396,6 +1412,7 @@ export const MUTATING_TOOLS = [
   "reconcile_cash_balance", "confirm_cycle_start", "confirm_obligation",
   // المرحلة ٢-ب
   "log_transaction", "update_transaction", "delete_transaction", "set_monthly_limit", "set_category_budget",
+  "log_cash_withdrawal", "log_cash_spend",
   "add_inventory_item", "delete_inventory_item", "add_pharmacy_item", "update_pharmacy_item", "set_market", "log_pharmacy_dose", "delete_pharmacy_item",
   "add_shopping_item", "complete_shopping_item", "delete_shopping_item",
   "schedule_task",
@@ -1442,6 +1459,7 @@ export const MUTATING_TOOLS = [
  */
 export const CONFIRM_REQUIRED_TOOLS = [
   "log_transaction", "update_transaction", "delete_transaction", "set_monthly_limit",
+  // log_cash_withdrawal و log_cash_spend مش هنا (قرار المالك ٢٠٢٦-١١-٢٨): كارت تأكيد قبل سؤال «دفعتها كاش ولا كارت؟» تقيل، والباب نفسه بيرفض المشكوك فيه ويسأل مرة واحدة.
   // «دفعت النت» = مصروف بيتسجل (ZAD_PLAN ١٠.٢أ) — نفس حارس الفلوس.
   "mark_subscription_paid",
 ];

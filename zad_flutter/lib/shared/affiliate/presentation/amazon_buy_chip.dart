@@ -31,10 +31,29 @@ final amazonChipsAllowedProvider = Provider<bool>((ref) {
   }
 });
 
+/// Inventory categories (the keys `zad_inventory.category` stores, data, not
+/// translated) whose items are bought fresh: no Amazon button for them (P3.14).
+// l10n: data-begin
+const Set<String> kAmazonFreshCategories = <String>{
+  'الخضار',
+  'الفواكه',
+  'اللحوم',
+};
+// l10n: data-end
+
 /// The pill for [itemName]; [sourceScreen] is recorded with the click.
 class AmazonBuyChip extends ConsumerWidget {
   /// Creates the chip.
-  const new({required this.itemName, required this.sourceScreen, super.key});
+  const new({
+    required this.itemName,
+    required this.sourceScreen,
+    this.category,
+    super.key,
+  });
+
+  /// The item's inventory category key; a fresh one (vegetables, fruit, meat)
+  /// shows no chip.
+  final String? category;
 
   /// What to search for.
   final String itemName;
@@ -44,7 +63,9 @@ class AmazonBuyChip extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    if (!ref.watch(amazonChipsAllowedProvider) || itemName.trim().isEmpty) {
+    if (!ref.watch(amazonChipsAllowedProvider) ||
+        itemName.trim().isEmpty ||
+        kAmazonFreshCategories.contains(category)) {
       return const SizedBox.shrink();
     }
     final label = context.l10n.amazonBuyChipLabel(itemName.trim());

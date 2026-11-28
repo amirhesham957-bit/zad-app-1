@@ -196,6 +196,40 @@ export async function execTransactions(name: string, sb: SupabaseClient, userId:
       });
       return "اتعدلت المعاملة";
     }
+    case "log_cash_withdrawal":
+    case "log_cash_spend": {
+      const withdraw = name === "log_cash_withdrawal";
+      const amount = Math.round(input.amount * 100) / 100;
+      const title = String(input.title ?? (withdraw ? "سحب كاش" : "")).trim().slice(0, 80);
+      const payload: Record<string, unknown> = withdraw
+        ? { amount, title, ...(input.allow_duplicate === true ? { allow_duplicate: true } : {}) }
+        : {
+          amount, title,
+          ...(input.category ? { category: String(input.category).trim().slice(0, 40) } : {}),
+          ...(input.merchant_name ? { merchant_name: String(input.merchant_name).trim().slice(0, 80) } : {}),
+          ...(normalizeForPerson(input.for_person) ? { for_person: normalizeForPerson(input.for_person) } : {}),
+          ...(input.confirm_cash === true ? { confirm_cash: true } : {}),
+        };
+      const w = await commitIntent(sb, userId, scope, name, input, withdraw ? "money.cash_withdrawn" : "money.cash_spent", payload);
+      if (!w.ok) {
+        if (w.reason === "cash_withdrawal_duplicate_suspected" || w.reason === "cash_spend_matches_bank_notice") {
+          // سؤال واحد للعميل، ومفيش نداء تاني قبل رده (validateCashTool بيرفض الفلاج في نفس اللفة).
+          ctx.counts[`cash_asked:${name}`] = 1;
+          return withdraw
+            ? "مرفوض: فيه سحب بنفس المبلغ مسجّل من ساعات — ولا حاجة اتكتبت. اسأل العميل سؤال واحد بس: «ده نفس السحب اللي إشعار البنك جاب؟». لو قال سحبتين فعلاً نادِ الأداة تاني بـ allow_duplicate=true بعد رده."
+            : "مرفوض: فيه إشعار بنك بنفس المبلغ لسه مش مفسَّر — ولا حاجة اتكتبت. اسأل العميل سؤال واحد بس: «دفعتها كاش ولا كارت؟». لو قال كاش نادِ الأداة تاني بـ confirm_cash=true بعد رده، ولو قال كارت متسجلهاش.";
+        }
+        return refusalText(w.reason);
+      }
+      if (w.duplicate) return DUPLICATE_REPLY;
+      ctx.mutationCount++;
+      ctx.mutations.push({ tool: name, old: null, new: { amount, title } });
+      await recordAction(sb, userId, scope, {
+        tool: name, input, table: "zad_transactions", targetId: w.rowId,
+        previous: null, next: { id: w.rowId, amount, title },
+      });
+      return withdraw ? `اتسجّل سحب كاش ${amount} (تحويل من البنك للكاش)` : `اتسجّل مصروف كاش ${amount}: ${title}`;
+    }
     case "delete_transaction": {
       // الصف كامل: التراجع (zad_agent_undo) بيرجّعه بـjsonb_populate_record، ومن غير user_id كان بيرد
       // ownership_mismatch، فالمعاملة المحذوفة ماكانتش بترجع (ZAD_OR_PLAN م١، ٢٠/١١).
