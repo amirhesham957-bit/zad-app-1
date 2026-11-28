@@ -188,7 +188,7 @@ export const DOSE_MOMENTS: ReadonlySet<string> = new Set([
  * DOSE_MOMENTS: تنبيه ولي الأمر (family_dose_missed، 20261001140000) بيسمّي دوا الفرد، بس
  * مالوش زرار «خدتها» — الجرعة مش بتاعته.
  */
-export const MEDICINE_NAMED_MOMENTS: ReadonlySet<string> = new Set([...DOSE_MOMENTS, "family_dose_missed"]);
+export const MEDICINE_NAMED_MOMENTS: ReadonlySet<string> = new Set([...DOSE_MOMENTS, "family_dose_missed", "guardian_dose_missed"]);
 
 /** نطاقات الأولاد (20261003110000): خرج من نطاق جوه مواعيده، ورجع بعدها. */
 export const FAMILY_ZONE_MOMENTS: ReadonlySet<string> = new Set(["family_zone_exit", "family_zone_back"]);
@@ -292,6 +292,10 @@ const MOMENT_GUIDANCE: Record<string, string> = {
     "تنبيه لولي أمر: فرد من عيلته (member_alias) وافق إنه يتابع أدويته، وفاتته جرعة (item_name) ميعادها scheduled_at. " +
     "text: سطر واحد هادي فيه مين، واسم الدوا زي ما هو، والميعاد — واقتراح يكلّمه أو يطمّن عليه. " +
     "speech: جملتين بلهجته، من غير تخويف ولا لوم للفرد. لو again = true قولي إنها تاني جرعة تفوته النهارده.",
+  guardian_dose_missed:
+    "تنبيه لمسؤول عن فرد (patient_name): الفرد فاتته جرعة (medicine_name) ميعادها scheduled_at. " +
+    "text: سطر واحد هادي فيه اسم الفرد واسم الدوا زي ما هو — واقتراح يطمّن عليه. " +
+    "speech: جملتين بلهجته، من غير تخويف ولا لوم للفرد، ومن غير أي معلومة تانية.",
   travel_arrived:
     "العميل لسه واصل بلد تانية (country = كود البلد، وبلده home_country) — قولي اسم البلد بالعربي. text: سطر ترحيب قصير بالبلد واسمها، وعرض واحد: " +
     "يرشحله سوبرماركت أو أماكن قريبة فيها اللي بيحبه لو عايز. speech: جملتين مبسوطين بلهجته. " +
@@ -564,6 +568,15 @@ export function momentFallback(moment: string, facts: Record<string, unknown>): 
         title: `💊 ${who} فاتته جرعة ${item}`,
         text: `${again ? "تاني جرعة تفوت النهارده: " : ""}${who} ماسجلش إنه خد ${item}${at ? ` بتاعة ${at}` : ""}. اطمن عليه.`,
         speech: `${who} لسه ماخدش ${item}${at ? ` بتاعة ${at}` : ""}. ممكن تكلمه تطمن عليه؟`,
+      };
+    }
+    case "guardian_dose_missed": {
+      const who = str(facts.patient_name, 40) || "فرد من العيلة";
+      const med = str(facts.medicine_name, 60) || "الدوا";
+      return {
+        title: `💊 ${who} فوّت جرعة ${med}`,
+        text: `${who} فوّت جرعة ${med}. اطمن عليه.`,
+        speech: `${who} فوّت جرعة ${med}. ممكن تكلمه تطمن عليه؟`,
       };
     }
     case "travel_arrived": {
@@ -1093,6 +1106,17 @@ export async function isStillRelevant(sb: SupabaseClient, row: VoiceMomentRow): 
     // م٧.٩: تنبيه لولي الأمر بيحمل محتوى الفرد، فيعدّي بس لو الفرد وافق (crossMemberLeak، fail closed).
     if (memberLeaks(row.user_id, memberId, !!share && (share as unknown[]).length > 0)) return false;
     return await isStillRelevant(sb, { ...row, user_id: memberId, moment: "dose_missed" });
+  }
+  // مسؤول عن فرد (P2.6): الموافقة لازم تفضل موجودة وقت الإرسال، والجرعة لسه 'missed' (مش اتاخدت بعدها).
+  if (row.moment === "guardian_dose_missed") {
+    const patient = str(row.facts?.patient_user_id, 60);
+    const doseId = str(row.facts?.dose_id, 60);
+    if (!patient || !doseId) return false;
+    const { data: share } = await sb.from("zad_family_shares").select("id")
+      .eq("owner_id", patient).eq("viewer_id", row.user_id).eq("scope", "medicines").eq("status", "granted").limit(1);
+    if (memberLeaks(row.user_id, patient, !!share && (share as unknown[]).length > 0)) return false;
+    const { data: dose } = await sb.from("zad_pharmacy_doses").select("status").eq("id", doseId).maybeSingle();
+    return (dose as { status?: string } | null)?.status === "missed";
   }
   // رجع بلده (أو راح بلد تالتة) قبل ما الترحيب يتبعت = مفيش ترحيب.
   if (row.moment === "travel_arrived") {

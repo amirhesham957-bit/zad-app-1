@@ -199,6 +199,7 @@ jobs:
           supabase/sql/tests/scratch_scaffold.sql supabase/migrations/20261127100000_bandit_state.sql supabase/sql/tests/bandit_state_test.sql
           supabase/sql/tests/scratch_scaffold.sql supabase/migrations/20261127121500_energy_settlement.sql supabase/migrations/20261127121500_energy_settlement.sql supabase/sql/tests/energy_settlement_test.sql
           supabase/sql/tests/scratch_scaffold.sql supabase/migrations/20261024213500_night_one_message.sql supabase/sql/tests/night_one_message_test.sql
+          supabase/sql/tests/guardian_missed_dose_scaffold.sql supabase/migrations/20261128140000_missed_dose_to_guardian.sql supabase/sql/tests/guardian_missed_dose_test.sql
           supabase/sql/tests/undo_every_table_scaffold.sql supabase/migrations/20261121140000_undo_knows_every_trash_table.sql supabase/sql/tests/undo_every_table_test.sql
           supabase/sql/tests/events_ledger_scaffold.sql supabase/migrations/20261121160000_events_ledger.sql supabase/sql/tests/events_ledger_test.sql
           supabase/sql/tests/events_ledger_scaffold.sql supabase/migrations/20261121160000_events_ledger.sql supabase/sql/tests/commit_intent_scaffold.sql supabase/migrations/20261121180000_commit_intent.sql supabase/sql/tests/commit_intent_test.sql

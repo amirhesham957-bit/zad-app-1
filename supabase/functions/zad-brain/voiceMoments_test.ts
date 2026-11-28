@@ -360,6 +360,27 @@ Deno.test("the guardian's alert names the member and the real medicine, and is c
   assertEquals(MEDICINE_NAMED_MOMENTS.has("family_dose_missed"), true);
 });
 
+Deno.test("guardian_dose_missed (P2.6): Arabic text names patient and medicine; sent only with consent and while still missed", async () => {
+  const f = momentFallback("guardian_dose_missed", { patient_name: "ماما", medicine_name: "كونكور" });
+  assertStringIncludes(f.title, "ماما");
+  assertStringIncludes(f.text, "فوّت جرعة كونكور");
+  assertEquals(MEDICINE_NAMED_MOMENTS.has("guardian_dose_missed"), true);
+  const row = {
+    id: "g2", user_id: "son", moment: "guardian_dose_missed", status: "pending", attempts: 0,
+    created_at: new Date().toISOString(),
+    facts: { patient_user_id: "mom", patient_name: "ماما", medicine_name: "كونكور", dose_id: "d1" },
+  };
+  const tables = (shared: boolean, status: string) => ({
+    zad_family_shares: shared ? [{ id: "s1", owner_id: "mom", viewer_id: "son", scope: "medicines", status: "granted" }] : [],
+    zad_pharmacy_doses: [{ id: "d1", status }],
+  });
+  // deno-lint-ignore no-explicit-any
+  const relevant = (shared: boolean, status: string) => isStillRelevant(fakeSb(tables(shared, status)).sb, row as any);
+  assertEquals(await relevant(true, "missed"), true);
+  assertEquals(await relevant(false, "missed"), false, "consent revoked: no alert");
+  assertEquals(await relevant(true, "taken"), false, "dose was logged after all");
+});
+
 Deno.test("a moment is written by the same Zad as the chat (one identity)", () => {
   const { system } = buildMomentPrompt({ moment: "morning_greeting", facts: {} }, "EG", null, {});
   assert(system.includes("=== SOUL — هويتك ==="));
