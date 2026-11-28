@@ -1,6 +1,6 @@
 import { assertEquals } from "jsr:@std/assert@1";
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
-import { dealPutPayload, findCustomerCities, flyerEntries, nextFlyer, searchedDeals } from "./storeDeals.ts";
+import { dealPutPayload, flyerReadOutcome, findCustomerCities, flyerEntries, nextFlyer, searchedDeals } from "./storeDeals.ts";
 
 const target = { country: "SA", store: "كيو", currency: "SAR" };
 
@@ -175,4 +175,23 @@ Deno.test("instagram: the store's own account every day, the hashtag on Monday a
     accountDayTargets(targets, [{ country: "SA", store: " لولو " }]).map((t) => `${t.country} ${t.store}`),
     ["SA كيتا", "AE لولو", "SA نينجا"].slice(0, INSTAGRAM_STORES_PER_RUN),
   );
+});
+
+Deno.test("nextFlyer: a not_a_flyer read is final, never retried", () => {
+  const banner = flyer(7, "", "");
+  const now = new Date("2026-11-30T12:00:00Z");
+  const read = { pdf_url: banner.pdf_url, ok: true, deals: 0, reason: "not_a_flyer", read_at: "2026-11-01T00:00:00Z" };
+  assertEquals(nextFlyer([banner], [read], now), null);
+  // the same row without the reason is the old empty read: read again.
+  assertEquals(nextFlyer([banner], [{ ...read, reason: null }], now)?.pdf_url, banner.pdf_url);
+});
+
+Deno.test("flyerReadOutcome: image with zero offers is not_a_flyer; PDF zero or a failed read stays a failure", () => {
+  assertEquals(flyerReadOutcome({ ok: true, kind: "image", raw: 0, deals: [] }), { ok: true, reason: "not_a_flyer" });
+  assertEquals(flyerReadOutcome({ ok: true, kind: "pdf", raw: 0, deals: [] }), { ok: false, reason: "empty_raw_0" });
+  assertEquals(flyerReadOutcome({ ok: true, raw: 0, deals: [] }), { ok: false, reason: "empty_raw_0" });
+  assertEquals(flyerReadOutcome({ ok: false, kind: "image", reason: "no_model" }), { ok: false, reason: "no_model" });
+  assertEquals(flyerReadOutcome(null), { ok: false, reason: "no_reply" });
+  assertEquals(flyerReadOutcome({ ok: true, kind: "image", raw: 3, deals: [] }), { ok: false, reason: "empty_raw_3" });
+  assertEquals(flyerReadOutcome({ ok: true, kind: "image", raw: 2, deals: [{}, {}] }), { ok: true, reason: null });
 });

@@ -46,6 +46,8 @@ export interface VoiceMomentRow {
   facts: Record<string, unknown>;
   attempts: number;
   created_at: string;
+  /** مفتاح منع التكرار للحظة (zad_voice_moments.dedupe_key)؛ بيتبعت لإشعار التطبيق البديل. */
+  dedupe_key?: string | null;
 }
 
 export interface ComposedMoment {
@@ -1191,6 +1193,31 @@ export interface VoiceMomentDeps {
    * موبايل ولا تليجرام. لو رجعت false الصياغة مابتحصلش خالص. من غيرها (الاختبارات) السلوك زي ما هو.
    */
   hasChannel?: (userId: string, opts: { device: boolean; telegram: boolean }) => Promise<boolean>;
+  /**
+   * إشعار داخل التطبيق (app_notifications) للي اللحظة ماوصلتلوش بأي قناة: صف واحد للحظة (user_id + dedupe_key،
+   * on conflict do nothing). من غيرها (الاختبارات) مفيش كتابة. فشلها مابيوقفش اللحظة.
+   */
+  notifyInApp?: (userId: string, title: string, text: string, dedupeKey: string) => Promise<void>;
+}
+
+/**
+ * نص إشعار التطبيق للحظة دوا: ثابت وعام، من غير اسم دوا ولا اسم شخص ولا تفاصيل صحية (صف جدول عادي).
+ * لحظات ولي الأمر/العيلة ليها صيغة تانية.
+ */
+export function genericDoseInApp(moment: string): { title: string; text: string } {
+  return moment === "family_dose_missed" || moment === "guardian_dose_missed"
+    ? { title: "💊 جرعة فائتة", text: "فيه جرعة فائتة عند فرد من العيلة — راجع التفاصيل" }
+    : { title: "💊 موعد جرعة", text: "حان موعد جرعة الدواء — راجع الصيدلية للتفاصيل" };
+}
+
+/** صف واحد في التطبيق للحظة (الصف بيتحدد بـdedupe_key، فتكرار المحاولة مابيكرّرش). الفشل هنا مابيكسرش اللحظة. */
+async function inAppFallback(deps: VoiceMomentDeps, row: VoiceMomentRow, title: string, text: string): Promise<void> {
+  if (!deps.notifyInApp || !text.trim()) return;
+  try {
+    await deps.notifyInApp(row.user_id, title, text, row.dedupe_key || `voice_moment:${row.id}`);
+  } catch (e) {
+    console.warn(`[voice_moments] in-app fallback failed for ${row.moment} ${row.id}:`, (e as Error)?.message);
+  }
 }
 
 export async function processVoiceMoments(
@@ -1205,7 +1232,7 @@ export async function processVoiceMoments(
   // pending، أو محجوز من معالج مات قبل ما يخلّص. الحجز الذرّي تحت هو اللي بيمنع التكرار.
   const claimable = () => `status.eq.pending,and(status.eq.sending,claimed_at.lt.${new Date(now() - CLAIM_STALE_MS).toISOString()})`;
   let query = sb.from("zad_voice_moments")
-    .select("id,user_id,moment,facts,attempts,created_at")
+    .select("id,user_id,moment,facts,attempts,created_at,dedupe_key")
     .or(claimable()).gte("created_at", since);
   if (onlyUserId) query = query.eq("user_id", onlyUserId);
   const { data, error } = await query.order("created_at", { ascending: true }).limit(limit);
@@ -1320,9 +1347,19 @@ export async function processVoiceMoments(
       if (deps.hasChannel) {
         const reachable = await deps.hasChannel(row.user_id, {
           device: !TELEGRAM_ONLY_MOMENTS.has(deliveryMoment),
-          telegram: (voice || TELEGRAM_TEXT_MOMENTS.has(deliveryMoment)) && !DEVICE_ONLY_MOMENTS.has(deliveryMoment),
+          // تليجرام بيتجرّب كمان لو الموبايل فشل (تحت)، فمعاه كل لحظة مش «موبايل بس» قناة.
+          telegram: !DEVICE_ONLY_MOMENTS.has(deliveryMoment),
         }).catch(() => true);
         if (!reachable) {
+          // لحظة نصها قالب (من غير موديل) نقدر نكتبها في التطبيق من غير صياغة. الباقي مالوش نص من غير نداء موديل، فمابيتكتبش.
+          if (deps.notifyInApp && TEMPLATE_MOMENTS.has(deliveryMoment)) {
+            const tpl = momentFallback(deliveryMoment, row.facts ?? {});
+            await inAppFallback(deps, row, tpl.title, tpl.text);
+          } else if (deps.notifyInApp && MEDICINE_NAMED_MOMENTS.has(deliveryMoment)) {
+            // تنبيه دوا مايضيعش: نص ثابت عام من غير موديل ولا اسم دوا.
+            const g = genericDoseInApp(deliveryMoment);
+            await inAppFallback(deps, row, g.title, g.text);
+          }
           await sb.from("zad_voice_moments").update({
             status: "failed", attempts: row.attempts + 1, error: "no channel (not composed)",
           }).eq("id", row.id);
@@ -1383,7 +1420,8 @@ export async function processVoiceMoments(
       const device = TELEGRAM_ONLY_MOMENTS.has(deliveryMoment)
         ? "telegram_only"
         : await deps.pushDevice(row.user_id, composed.title, composed.text, data, voice);
-      const telegram = !voice && !TELEGRAM_TEXT_MOMENTS.has(deliveryMoment)
+      // لحظة نصية بتروح الموبايل بس عادةً، لكن لو الموبايل ما وصلش تتجرّب على تليجرام بدل ما تضيع.
+      const telegram = !voice && !TELEGRAM_TEXT_MOMENTS.has(deliveryMoment) && device === "sent"
         ? "not_for_text_moments"
         : DEVICE_ONLY_MOMENTS.has(deliveryMoment)
           ? "device_only"
@@ -1405,6 +1443,11 @@ export async function processVoiceMoments(
         delivery: { device, telegram, composed_by: composedBy, title: composed.title, text: composed.text.slice(0, 300), ...(voice ? { emotion } : {}) },
         error: delivered ? null : "no channel delivered",
       }).eq("id", row.id);
+      if (!delivered && deps.notifyInApp) {
+        // لحظة دوا: النص العام الثابت، مش المصاغ (اسم الدوا مايتكتبش في صف الجدول).
+        const inApp = MEDICINE_NAMED_MOMENTS.has(deliveryMoment) ? genericDoseInApp(deliveryMoment) : composed;
+        await inAppFallback(deps, row, inApp.title, inApp.text);
+      }
       if (delivered) {
         result.sent++;
         // المحادثة الواحدة (_shared/conversationLog.ts): اللي زاد قاله من نفسه بيدخل المحادثة، فلو
