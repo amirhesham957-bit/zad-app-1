@@ -1870,6 +1870,21 @@
     "kind",
     "user_id"
   ],
+  "zad_member_facts": [
+    "asked_at",
+    "confidence",
+    "created_at",
+    "denied_at",
+    "evidence",
+    "expires_at",
+    "id",
+    "key",
+    "member_id",
+    "source",
+    "updated_at",
+    "user_id",
+    "value"
+  ],
   "zad_household_members": [
     "archived_at",
     "birth_year",
