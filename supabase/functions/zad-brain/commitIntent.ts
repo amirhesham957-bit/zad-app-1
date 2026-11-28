@@ -22,7 +22,8 @@ export type IntentKind =
   | "appointment.added" | "appointment.updated" | "appointment.deleted"
   | "settings.cycle_start_set" | "settings.market_set" | "settings.emergency_fund_set" | "settings.sleep_set"
   | "settings.sleep_cleared" | "settings.app_flag_set"
-  | "goal.set" | "goal.cancelled" | "goal.progress" | "goal.challenge_started" | "goal.challenge_stopped";
+  | "goal.set" | "goal.cancelled" | "goal.progress" | "goal.challenge_started" | "goal.challenge_stopped"
+  | "trait.set" | "trait.end";
 export type IntentSource = "manual" | "receipt" | "bank" | "model" | "cron";
 
 export type CommitResult =
@@ -164,6 +165,12 @@ const REASONS: Record<string, string> = {
   target_invalid: "المبلغ المستهدف لازم رقم موجب منطقي",
   deadline_invalid: "تاريخ الهدف مش مفهوم",
   unit_invalid: "unit يا money يا count",
+  invalid_trait: "السمة لازم تكون breadwinner أو elder أو alone أو has_minor أو travelling",
+  trait_already_open: "السمة دي مفتوحة بالفعل للفرد ده — اقفلها الأول (trait.end) لو عايز تبدأها من جديد",
+  trait_not_open: "مفيش سمة مفتوحة بالاسم ده للفرد ده عشان تتقفل",
+  trait_date_invalid: "تاريخ السمة مش مفهوم أو نهايتها قبل بدايتها",
+  member_not_in_household: "الفرد ده مش في البيت",
+  bad_source: "مصدر السمة يا said يا observed يا inferred",
   goal_not_found: "مفيش هدف بالاسم ده عند العميل",
   goal_amount_invalid: "المبلغ لازم رقم مش صفر وبحدود المنطق",
   goal_not_amount: "الهدف ده بيتعد بالمهام مش بالفلوس — تقدمه بيتحسب لوحده.",
