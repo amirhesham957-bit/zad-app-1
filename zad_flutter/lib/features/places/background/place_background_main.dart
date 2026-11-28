@@ -32,8 +32,8 @@ import 'package:zad_geofence/zad_geofence.dart';
 /// sent with the device key when one is held ([DeviceKeyPlaceServer], the
 /// three place actions only), else refused by [UnauthorizedPlaceServer],
 /// which leaves its event in the plugin's inbox and `leftAt` in the state
-/// blob for the app's next [PlaceEngine.handlePending] to send exactly once. The session is never refreshed
-/// here.
+/// blob for the app's next [PlaceEngine.handlePending] to send exactly
+/// once. The session is never refreshed here.
 @visibleForTesting
 PlaceEngine backgroundPlaceEngine({
   required PlaceHost host,
