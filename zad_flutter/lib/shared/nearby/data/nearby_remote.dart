@@ -13,6 +13,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:zad/core/data/edge_client.dart';
 import 'package:zad/shared/nearby/domain/nearby.dart';
 
 /// Finds shops around a point.
@@ -31,10 +32,8 @@ typedef ServerCall = Future<Object?> Function(Map<String, dynamic> body);
 
 /// [ServerCall] over a Supabase client.
 ServerCall supabaseServerCall(SupabaseClient client) =>
-    (body) async => (await client.functions.invoke(
-      'zad-core-intelligence',
-      body: body,
-    )).data;
+    (body) async =>
+        (await invokeEdge(client, 'zad-core-intelligence', body: body)).data;
 
 /// The real one.
 class ServerThenOverpassRemote implements NearbyRemote {

@@ -8,6 +8,7 @@
 library;
 
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:zad/core/data/edge_client.dart';
 
 /// Reads and writes a family's shared tables.
 class FamilyLifeRemote {
@@ -163,7 +164,8 @@ class FamilyLifeRemote {
   /// The server's proposed distribution of the open chores (`chore_plan` on
   /// zad-core-intelligence). Nothing is written.
   Future<Map<String, dynamic>> chorePlan(String familyId) async {
-    final response = await _client.functions.invoke(
+    final response = await invokeEdge(
+      _client,
       'zad-core-intelligence',
       body: <String, dynamic>{
         'action': 'chore_plan',
@@ -274,7 +276,8 @@ class FamilyLifeRemote {
     String userId,
     Map<String, dynamic> payload,
   ) async {
-    final response = await _client.functions.invoke(
+    final response = await invokeEdge(
+      _client,
       'zad-core-intelligence',
       body: <String, dynamic>{
         'action': action,

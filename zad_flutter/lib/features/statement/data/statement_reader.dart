@@ -8,6 +8,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:zad/core/data/edge_client.dart';
 import 'package:zad/core/data/providers.dart';
 
 /// Reads statements off files.
@@ -34,7 +35,8 @@ class SupabaseStatementReader implements StatementReader {
     required Uint8List bytes,
     required String mimeType,
   }) async {
-    final response = await _client.functions.invoke(
+    final response = await invokeEdge(
+      _client,
       'zad-core-intelligence',
       body: <String, dynamic>{
         'action': 'analyze_statement',

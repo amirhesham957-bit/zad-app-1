@@ -7,6 +7,7 @@ library;
 
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:zad/core/data/edge_client.dart';
 import 'package:zad/shared/alerts/domain/push_alert.dart';
 import 'package:zad/shared/nearby/domain/nearby.dart';
 import 'package:zad/shared/places/application/place_engine.dart';
@@ -26,7 +27,8 @@ class SupabasePlaceServer implements PlaceServer {
     required StoreKind kind,
     GeoPoint? at,
   }) async {
-    final data = (await _client.functions.invoke(
+    final data = (await invokeEdge(
+      _client,
       'zad-brain',
       body: <String, dynamic>{
         'action': 'store_arrival',
@@ -41,7 +43,8 @@ class SupabasePlaceServer implements PlaceServer {
   }
 
   @override
-  Future<void> backHome(DateTime leftAt) => _client.functions.invoke(
+  Future<void> backHome(DateTime leftAt) => invokeEdge(
+    _client,
     'zad-brain',
     body: <String, dynamic>{
       'action': 'place_event',
@@ -51,21 +54,21 @@ class SupabasePlaceServer implements PlaceServer {
   );
 
   @override
-  Future<void> commuteSummary(CommutePattern? pattern) =>
-      _client.functions.invoke(
-        'zad-brain',
-        body: <String, dynamic>{
-          'action': 'commute_summary',
-          if (pattern == null)
-            'clear': true
-          else ...<String, dynamic>{
-            'leave': pattern.leave,
-            'back': pattern.back,
-            'days': pattern.days,
-            'samples': pattern.samples,
-          },
-        },
-      );
+  Future<void> commuteSummary(CommutePattern? pattern) => invokeEdge(
+    _client,
+    'zad-brain',
+    body: <String, dynamic>{
+      'action': 'commute_summary',
+      if (pattern == null)
+        'clear': true
+      else ...<String, dynamic>{
+        'leave': pattern.leave,
+        'back': pattern.back,
+        'days': pattern.days,
+        'samples': pattern.samples,
+      },
+    },
+  );
 
   @override
   Future<void> zoneEvent({

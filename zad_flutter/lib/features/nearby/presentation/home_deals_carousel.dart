@@ -25,6 +25,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:zad/core/data/edge_client.dart';
 import 'package:zad/core/data/local/screen_cache.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/components/zad_network_image.dart';
@@ -135,7 +136,8 @@ class _HomeDealsCarouselState extends ConsumerState<HomeDealsCarousel> {
       return;
     }
     try {
-      final raw = (await client.functions.invoke(
+      final raw = (await invokeEdge(
+        client,
         'zad-brain',
         body: const <String, dynamic>{'action': 'home_deals'},
       )).data;

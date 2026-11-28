@@ -9,6 +9,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:zad/core/data/edge_client.dart';
 import 'package:zad/core/data/providers.dart';
 
 /// One item read off a pantry photo.
@@ -59,7 +60,8 @@ class SupabaseVisionScanner implements VisionScanner {
     String userId,
     Uint8List image,
   ) async {
-    final response = await _client.functions.invoke(
+    final response = await invokeEdge(
+      _client,
       'zad-core-intelligence',
       body: <String, dynamic>{
         'action': action,

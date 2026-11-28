@@ -255,6 +255,7 @@ export type { ObligationRow };
 import { BNPL_PROVIDERS, detectBnplObligationCandidate } from "./bnplObligation.ts";
 export { BNPL_PROVIDERS, detectBnplObligationCandidate };
 import { CORS_HEADERS } from "./corsHeaders.ts";
+import { traceIdOf, withTrace } from "../_shared/trace.ts";
 export { CORS_HEADERS };
 import { DIRECT_INGRESS_TOOLS, NO_SNAPSHOT_INGRESS_TOOLS } from "./ingressTools.ts";
 import type { ToolDeps } from "./execDeps.ts";
@@ -3512,7 +3513,9 @@ Deno.serve(async (req: Request) => {
   } catch {
     // Not JSON: handleRequest answers that as it always has.
   }
-  return await inLane(laneFor(action), () => handleRequest(req));
+  const traceId = traceIdOf(req);
+  console.log(`[zad-brain] trace=${traceId} action=${typeof action === "string" ? action : "chat"}`);
+  return await withTrace(traceId, () => inLane(laneFor(action), () => handleRequest(req)));
 });
 
 async function handleRequest(req: Request): Promise<Response> {

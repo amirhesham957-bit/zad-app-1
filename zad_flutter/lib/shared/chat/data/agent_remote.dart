@@ -24,6 +24,7 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:zad/core/data/edge_client.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/env/zad_env.dart';
 import 'package:zad/shared/chat/domain/agent_turn.dart';
@@ -206,7 +207,8 @@ class SupabaseAgentRemote implements AgentRemote {
     required String tool,
     required Map<String, dynamic> input,
   }) async {
-    final response = await _client.functions.invoke(
+    final response = await invokeEdge(
+      _client,
       function,
       body: <String, dynamic>{
         'action': 'agent_confirm',
