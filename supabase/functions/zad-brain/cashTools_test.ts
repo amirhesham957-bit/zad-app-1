@@ -34,10 +34,10 @@ function fakeDb(door: (intent: Row) => Row) {
 const okDoor = (i: Row): Row => ({ ok: true, duplicate: false, row_id: "t1", payload: { ...(i.payload as Row), after: { id: "t1" } } });
 const refuse = (reason: string) => (_i: Row): Row => ({ ok: false, reason });
 
-Deno.test("cash tools are registered, confirm-required and reachable by intent", () => {
+Deno.test("cash tools are registered, not confirm-required and reachable by intent", () => {
   const names = CHAT_TOOLS.map((t) => t.name);
   assert(names.includes("log_cash_withdrawal") && names.includes("log_cash_spend"));
-  assert(CONFIRM_REQUIRED_TOOLS.includes("log_cash_withdrawal") && CONFIRM_REQUIRED_TOOLS.includes("log_cash_spend"));
+  assert(!CONFIRM_REQUIRED_TOOLS.includes("log_cash_withdrawal") && !CONFIRM_REQUIRED_TOOLS.includes("log_cash_spend"), "no confirm card: the door asks the one question (owner 2026-11-28)");
   assert(intentToolHints("سحبت ١٠٠٠ من الماكينة").includes("log_cash_withdrawal"));
   assert(intentToolHints("دفعت ٥٠ كاش").includes("log_cash_spend"));
   // بره نطاق الفلوس الافتراضي (سقف ٤٠ أداة)، وبتيجي بالنية بس.
