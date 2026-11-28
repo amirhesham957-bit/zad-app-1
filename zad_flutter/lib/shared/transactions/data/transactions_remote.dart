@@ -6,9 +6,12 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:zad/core/data/commit_my_intent.dart';
+import 'package:zad/core/data/edge_client.dart';
 import 'package:zad/core/data/providers.dart';
+import 'package:zad/core/data/sync/sync_failure.dart';
 
-/// Reads and writes `zad_transactions`.
+/// Reads `zad_transactions` and writes it through the one door (P1.6b).
 abstract interface class TransactionsRemote {
   /// Rows in `[startsAt, endsAt)`, newest first.
   Future<List<Map<String, dynamic>>> fetchPeriod({
@@ -41,6 +44,31 @@ class SupabaseTransactionsRemote implements TransactionsRemote {
 
   static const String _table = 'zad_transactions';
 
+  /// What `money.logged` reads from a row; `id` travels as `item_id`.
+  static const List<String> _insertKeys = <String>[
+    'amount',
+    'title',
+    'category',
+    'txn_kind',
+    'wallet',
+    'transfer_to',
+    'source_type',
+    'merchant_name',
+    'for_person',
+    'counts_toward_budget',
+    'currency',
+    'created_at',
+  ];
+
+  /// What `money.updated` accepts in a patch.
+  static const List<String> _patchKeys = <String>[
+    'title',
+    'amount',
+    'category',
+    'txn_kind',
+    'for_person',
+  ];
+
   @override
   Future<List<Map<String, dynamic>>> fetchPeriod({
     required String userId,
@@ -65,23 +93,26 @@ class SupabaseTransactionsRemote implements TransactionsRemote {
   Future<Map<String, dynamic>?> upsertReturning(
     Map<String, dynamic> row,
   ) async {
-    // ignoreDuplicates makes the replay of an already-applied write a no-op
-    // instead of a second row. That is what keeps a retry from firing the
-    // AFTER INSERT triggers — the Telegram message and the parent alert —
-    // twice.
-    await _client
-        .from(_table)
-        .upsert(row, onConflict: 'id', ignoreDuplicates: true);
+    final id = row['id'] as String;
+    // The door answers a replay (same event id, or the same row id under a new
+    // one) without writing, which is what keeps a retry from firing the AFTER
+    // INSERT triggers (the Telegram message and the parent alert) twice.
+    await commitMyIntent(
+      _client,
+      kind: 'money.logged',
+      clientEventId: 'txn:$id',
+      payload: <String, dynamic>{
+        'item_id': id,
+        for (final key in _insertKeys)
+          if (row[key] != null) key: row[key],
+      },
+    );
 
     // Read back rather than trusting what was sent: two BEFORE INSERT triggers
     // may have rewritten it. zad_enforce_txn_kind reconciles txn_kind against
     // is_expense, and zad_normalize_transaction_currency converts the amount
     // into the account's currency using rates this client does not have.
-    return await _client
-        .from(_table)
-        .select()
-        .eq('id', row['id'] as String)
-        .maybeSingle();
+    return await _client.from(_table).select().eq('id', id).maybeSingle();
   }
 
   @override
@@ -89,15 +120,48 @@ class SupabaseTransactionsRemote implements TransactionsRemote {
     Map<String, dynamic> patch,
   ) async {
     final id = patch['id'] as String;
-    await _client
-        .from(_table)
-        .update(<String, dynamic>{...patch}..remove('id'))
-        .eq('id', id);
+    try {
+      await commitMyIntent(
+        _client,
+        kind: 'money.updated',
+        // An edit is an absolute write, so a fresh id per attempt is safe: the
+        // same edit twice leaves the same row. A derived id would instead make
+        // the third of A, B, A, B look like a replay of the first.
+        clientEventId: 'txn_edit:$id:${newTraceId()}',
+        payload: <String, dynamic>{
+          'item_id': id,
+          'patch': <String, dynamic>{
+            for (final key in _patchKeys)
+              if (patch.containsKey(key) &&
+                  // The door cannot change a row into or out of a transfer, so
+                  // a transfer's kind is not part of its edit.
+                  !(key == 'txn_kind' && patch[key] == 'transfer'))
+                key: patch[key],
+          },
+        },
+      );
+    } on ServerRefusal catch (e) {
+      // Deleted elsewhere since: nothing left to edit.
+      if (e.reason == 'item_not_found') return null;
+      rethrow;
+    }
     return await _client.from(_table).select().eq('id', id).maybeSingle();
   }
 
   @override
-  Future<void> delete(String id) => _client.from(_table).delete().eq('id', id);
+  Future<void> delete(String id) async {
+    try {
+      await commitMyIntent(
+        _client,
+        kind: 'money.deleted',
+        clientEventId: 'txn_delete:$id',
+        payload: <String, dynamic>{'item_id': id},
+      );
+    } on ServerRefusal catch (e) {
+      // Already gone: the delete has nothing left to do.
+      if (e.reason != 'item_not_found') rethrow;
+    }
+  }
 
   @override
   Future<bool> exists(String id) async =>

@@ -30,6 +30,7 @@ import 'package:zad/core/design/tokens/zad_motion.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/l10n/l10n.dart';
+import 'package:zad/features/intelligence/data/emergency_fund_remote.dart';
 import 'package:zad/features/intelligence/data/monthly_report_pdf.dart';
 import 'package:zad/features/intelligence/domain/monthly_analysis.dart';
 import 'package:zad/features/intelligence/domain/monthly_report.dart';
@@ -1015,10 +1016,7 @@ class _StressState extends ConsumerState<_StressTestCard> {
     setState(() => _fund = value);
     final client = ref.read(supabaseClientProvider);
     try {
-      await client
-          .from('zad_users')
-          .update(<String, dynamic>{'emergency_fund_balance': value})
-          .eq('id', client.auth.currentUser?.id ?? '');
+      await writeEmergencyFund(client, value);
     } on Object catch (e) {
       debugPrint('emergency fund write failed: $e');
     }
