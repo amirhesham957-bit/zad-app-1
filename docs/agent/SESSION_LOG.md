@@ -951,6 +951,13 @@ Added `zad_flutter/lib/features/notification_reads` (repository interface + Supa
 - **P1.4 خريطة:** مفيش مولّد ولا `*.g.dart`؛ ٥٢ `fromJson` يدوي؛ `schema.json` يدوي؛ مفيش CI لفحص الاختلاف. P1.4 بناء من الصفر.
 - **فخ:** worktrees الوكلاء ملت القرص (٣٠GB/٣٢GB) والـworktree الجديد وقع بـ"unable to write file". اتمسحت ٢٦ worktree نضيفة.
 
+## ٢٠٢٦-١١-٢٨ — P1.6a ساندوتش الزرار (فرع `feat/p1-6a-button-e2e`)
+
+- **اكتشاف:** أزرار فلاتر مابتعديش على الباب (~١٣٧ كتابة مباشرة، 2 `.rpc` بس)، ومفيش شاشة بتستعمل `available_actions`. فـP1.6 اتقسم: P1.6a (معرّفات `allowed_actions.json`) وP1.6b (نقل الأزرار للباب، قرار مالك).
+- **اتعمل:** `button_manifest.json` (١٥ معرّف: ١٣ covered، `review_budget` read_only، `add_task`/`complete_task` no_door)، `button_e2e.ts` (نية manual + trace_id ← `zad_events` ← ضغطة تانية مابتكتبش ← أداة بوت حقيقية)، حارس `_schema/button_manifest_test.ts` (٦ تستات، اتجرّب بالكسر)، وjob `button-e2e` (مش في needs بتاع deploy).
+- **لسه:** الإشعار مش مختبر؛ المهام من غير نية؛ P1.6b؛ بوابة ١ مفتوحة. **فخ:** السكريبت بيفترض حاوية `zadpg`، وبيطبع `e2e: all checks passed` مرتين (الأول من e2e القديم)، والمهم آخر سطر.
+
+
 ## ٢٠٢٦-١١-٢٨ — P2.5 مصفوفة الرؤية + جزء P2.8 (فرع `feat/p2-5-p2-8-visibility`)
 
 - **اتعمل:** `20261128190000_visibility_matrix.sql`: قاصر أعمى عن الميزانية والصيدلية بـRLS restrictive، ودوال العرض بتخبّيهم (`zad_view_money` ترفض)، `is_private` على الأدوية من الباب، وصيدلية مفتوحة للبالغين، وولي الأمر يشوف مهام وأهداف القاصر، و`zad_view_family_home`. `_shared/or/visibilityMatrix.ts` نسخة TS نقية. `schema.json` فيه `is_private`. سطر جديد في LIST بتاع `edge-functions.yml`.

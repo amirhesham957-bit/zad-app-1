@@ -17,6 +17,8 @@ for f in supabase/sql/tests/events_ledger_scaffold.sql supabase/migrations/20261
          supabase/migrations/20261122080000_commit_intent_document.sql supabase/migrations/20261122090000_commit_intent_appointment.sql \
          supabase/sql/tests/commit_intent_self_scaffold.sql supabase/migrations/20261122100000_commit_intent_settings.sql \
          supabase/migrations/20261122110000_commit_intent_goal.sql supabase/migrations/20261122120000_commit_intent_pharmacy_snooze.sql \
+         supabase/migrations/20261128120000_household_traits.sql supabase/migrations/20261128130000_member_facts.sql \
+         supabase/migrations/20261128150000_events_trace_id.sql \
          supabase/sql/e2e/commit_intent_e2e_scaffold.sql supabase/sql/e2e/commit_intent_e2e_self_scaffold.sql; do
   docker exec -i "$PG" psql -U postgres -d "$DB" -v ON_ERROR_STOP=1 -q < "$f" > /dev/null
 done
@@ -34,3 +36,5 @@ KEY=$(deno eval --quiet "
   const sig = new Uint8Array(await crypto.subtle.sign('HMAC', k, new TextEncoder().encode(body)));
   console.log(body + '.' + btoa(String.fromCharCode(...sig)).replace(/=+\$/,'').replace(/\+/g,'-').replace(/\//g,'_'));")
 E2E_URL=http://localhost:$PORT E2E_KEY=$KEY deno run --allow-all --no-check supabase/sql/e2e/commit_intent_e2e.ts
+# P1.6a: ساندوتش كل زرار في button_manifest.json (زرار ⇐ الباب ⇐ zad_events ⇐ البوت). آخر سطر لازم يبقى e2e: all checks passed.
+E2E_URL=http://localhost:$PORT E2E_KEY=$KEY deno run --allow-all --no-check supabase/sql/e2e/button_e2e.ts

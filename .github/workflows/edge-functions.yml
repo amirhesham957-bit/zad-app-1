@@ -330,6 +330,28 @@ jobs:
           supabase/sql/tests/events_ledger_scaffold.sql supabase/migrations/20261121160000_events_ledger.sql supabase/migrations/20261128120000_household_traits.sql supabase/migrations/20261128130000_member_facts.sql supabase/migrations/20261128150000_events_trace_id.sql supabase/sql/tests/events_trace_id_test.sql
           LIST
 
+  # P1.6a: ساندوتش الزرار (button_manifest.json): الباب ⇐ zad_events ⇐ البوت على Postgres + PostgREST حقيقيين (نفس السكريبت المحلي).
+  # مش شرط للنشر (مش في needs بتاع deploy) لحد ما يثبت إنه مستقر على الـCI؛ بيظهر أحمر على الـPR لو الباب اتكسر.
+  button-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Start Postgres (the script talks to the container named zadpg)
+        run: |
+          docker run -d --name zadpg -e POSTGRES_PASSWORD=pg -e POSTGRES_HOST_AUTH_METHOD=trust postgres:17-alpine
+          for _ in $(seq 30); do docker exec zadpg pg_isready -U postgres && break; sleep 1; done
+      - name: Button sandwich e2e
+        run: |
+          set -o pipefail
+          bash supabase/sql/e2e/run_commit_intent_e2e.sh | tee /tmp/e2e.log
+          tail -n 1 /tmp/e2e.log | grep -qx 'e2e: all checks passed'
+
   # النشر من الريبو، بعد ما الفحص يعدي — مش من على جهاز حد.
   #
   # الانحراف بين الريبو والمنشور مش احتمال نظري هنا، هو حصل فعلاً: في 2026-08-01 النسخة
