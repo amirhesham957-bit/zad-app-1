@@ -1057,3 +1057,10 @@ Added `zad_flutter/lib/features/notification_reads` (repository interface + Supa
 - **اتقاس:** `settings_buttons_test.sql` (سطر جديد في LIST بسلسلة كاملة، أخرها مراية `20261128260000`) على postgres:16 محلي EXIT=0، وبيفشل من غير الميجريشن («confirmed and anchored»). تست Flutter `test/shared/settings_door_test.dart` (الـremote الحقيقي فوق HTTP مسجّل، مفيش كتابة جدول).
 - **فخ:** الباب بيحدّث الصف بس ومابيعملوش: صف `zad_users` ناقص = `user_not_found` رفض دايم في الـOutbox بدل ما الـupsert كان بيعمله. وuuid الحدث بيتولّد جديد لكل محاولة (القيم مطلقة فالتكرار آمن؛ `balance_anchored_at` بس بيتحرك لوقت إعادة المحاولة).
 - **فاضل في P1.6b:** بيت، مواعيد وأماكن، عيلة، تليجرام وإشعارات.
+
+## ٢٠٢٦-١١-٢٩ — P1.6b مجموعة البيت (فرع `feat/p1-6b-home`)
+- **اتنقل:** `maintenance_screen.dart` (إضافة/تم الصيانة/حذف ← `maintenance.added/updated/deleted`) و`documents_screen.dart` (حفظ/تجديد/حذف ← `document.saved/deleted`) لـ`commitMyIntent`. تعديل مستند غيّر النوع أو الصاحب أو الاسم = `document.saved` بالمفتاح الجديد ثم `document.deleted` للصف القديم.
+- **ميجريشن `20261129030000`:** `zad_intent_maintenance` بنسخة `20261122070000` + `purchase_date` اختياري (الزرار كان بيبعته)، وغلاف `zad_commit_my_intent` بنسخة `20261129020000` + ٥ أنواع. مجال المستندات زي ما هو.
+- **فضل مباشر:** `trusted_technicians_sheet.dart` (insert/delete على `zad_trusted_technicians`): مفيش مجال في الباب للفنيين، وإضافته محتاجة توزيع جديد في `zad_commit_intent`.
+- **اتقاس:** `home_buttons_test.sql` (سطر جديد في LIST) EXIT=0 وبيفشل من غير الميجريشن. `flutter analyze` EXIT=0، وتستات `home_door_test.dart` وmaintenance وdocuments وarchitecture EXIT=0.
+- **فخ:** مفيش تست ويدجت للشاشتين (محتاجة جلسة وكاش)، فتست Flutter حارس مصدر + سلك الدالة بس.

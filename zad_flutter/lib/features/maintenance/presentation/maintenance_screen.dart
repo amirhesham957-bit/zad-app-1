@@ -11,6 +11,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timezone/timezone.dart' as tz;
+import 'package:uuid/uuid.dart';
+import 'package:zad/core/data/commit_my_intent.dart';
 import 'package:zad/core/data/local/screen_cache.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/components/zad_empty_state.dart';
@@ -162,11 +164,15 @@ class _MaintenanceState extends ConsumerState<MaintenanceScreen> {
     });
     unawaited(HapticFeedback.lightImpact());
     try {
-      await ref
-          .read(supabaseClientProvider)
-          .from('zad_maintenance_items')
-          .update(<String, dynamic>{'last_service_date': today})
-          .eq('id', id);
+      await commitMyIntent(
+        ref.read(supabaseClientProvider),
+        kind: 'maintenance.updated',
+        clientEventId: const Uuid().v4(),
+        payload: <String, dynamic>{
+          'item_id': id,
+          'patch': <String, dynamic>{'last_service_date': today},
+        },
+      );
     } on Object catch (e) {
       debugPrint('maintenance serviced failed: $e');
     }
@@ -180,11 +186,12 @@ class _MaintenanceState extends ConsumerState<MaintenanceScreen> {
       ];
     });
     try {
-      await ref
-          .read(supabaseClientProvider)
-          .from('zad_maintenance_items')
-          .delete()
-          .eq('id', id);
+      await commitMyIntent(
+        ref.read(supabaseClientProvider),
+        kind: 'maintenance.deleted',
+        clientEventId: const Uuid().v4(),
+        payload: <String, dynamic>{'item_id': id},
+      );
     } on Object catch (e) {
       debugPrint('maintenance delete failed: $e');
       await _load();
@@ -198,12 +205,13 @@ class _MaintenanceState extends ConsumerState<MaintenanceScreen> {
       builder: (_) => const _AddDialog(),
     );
     if (row == null) return;
-    final client = ref.read(supabaseClientProvider);
     try {
-      await client.from('zad_maintenance_items').insert(<String, dynamic>{
-        ...row,
-        'user_id': client.auth.currentUser?.id,
-      });
+      await commitMyIntent(
+        ref.read(supabaseClientProvider),
+        kind: 'maintenance.added',
+        clientEventId: const Uuid().v4(),
+        payload: <String, dynamic>{...row},
+      );
     } on Object catch (e) {
       debugPrint('maintenance insert failed: $e');
       if (mounted) {

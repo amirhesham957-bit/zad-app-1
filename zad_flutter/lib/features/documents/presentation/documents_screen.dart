@@ -11,6 +11,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timezone/timezone.dart' as tz;
+import 'package:uuid/uuid.dart';
+import 'package:zad/core/data/commit_my_intent.dart';
 import 'package:zad/core/data/local/screen_cache.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/components/zad_empty_state.dart';
@@ -131,14 +133,26 @@ class _DocumentsState extends ConsumerState<DocumentsScreen> {
       'expires_on': draft.expiresOnIso,
     };
     try {
-      if (doc == null) {
-        // Same (kind, holder, name) again is a renewal, not a second one.
-        await client.from('zad_documents').upsert(<String, dynamic>{
-          ...values,
-          'user_id': client.auth.currentUser?.id,
-        }, onConflict: 'user_id,kind,holder,label');
-      } else {
-        await client.from('zad_documents').update(values).eq('id', doc.id);
+      // Same (kind, holder, name) again is a renewal, not a second one: the
+      // door's `document.saved` upserts on that key.
+      await commitMyIntent(
+        client,
+        kind: 'document.saved',
+        clientEventId: const Uuid().v4(),
+        payload: values,
+      );
+      // An edit that changed what the document is (kind, holder or name) is a
+      // new key for the door, so the old row goes once the new one is saved.
+      if (doc != null &&
+          (doc.kind != draft.kind ||
+              doc.holder != values['holder'] ||
+              doc.label != values['label'])) {
+        await commitMyIntent(
+          client,
+          kind: 'document.deleted',
+          clientEventId: const Uuid().v4(),
+          payload: <String, dynamic>{'item_id': doc.id},
+        );
       }
       unawaited(HapticFeedback.lightImpact());
     } on Object catch (e) {
@@ -157,11 +171,12 @@ class _DocumentsState extends ConsumerState<DocumentsScreen> {
       ];
     });
     try {
-      await ref
-          .read(supabaseClientProvider)
-          .from('zad_documents')
-          .delete()
-          .eq('id', doc.id);
+      await commitMyIntent(
+        ref.read(supabaseClientProvider),
+        kind: 'document.deleted',
+        clientEventId: const Uuid().v4(),
+        payload: <String, dynamic>{'item_id': doc.id},
+      );
     } on Object catch (e) {
       debugPrint('document delete failed: $e');
       _say(l.docsDeleteFailed);
