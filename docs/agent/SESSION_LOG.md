@@ -982,6 +982,11 @@ Added `zad_flutter/lib/features/notification_reads` (repository interface + Supa
 - **فخ:** أي جدول جديد لازم يتضاف في `_schema/schema.json` بإيدك وإلا عقد الـschema يقع.
 
 
+## ٢٠٢٦-١١-٢٨ — P3.14 زر «من أمازون» مش على الطازج (فرع `feat/p3-14-amazon-button`)
+
+- **اتعمل:** `AmazonBuyChip` بقى ياخد `category` ويرجّع فاضي لو (الخضار|الفواكه|اللحوم). `pantry_view` وقايمة الشراء (سطر ومجموعة) بيمرّروا `pantryCategoryOf(category, name)` (القايمة من الاسم بس لأن `ShoppingItem` مالوش تصنيف). تستات widget في `amazon_chips_test.dart`: خضار مخفي، بقالة ظاهر (مخزن وقايمة).
+- **فاضل:** مكونات الشيف الناقصة (`recipes/`) لسه بتعرض الزرار لأي اسم لأنها مابتمرّرش تصنيف.
+- **فخ:** `dart format lib test` من غير مسار بيعدّل ملفات مالهاش علاقة (`zad_tour.dart`، `zad_views.g.dart`)؛ استعمل مسارات الملفات اللي لمستها بس.
 ## P3.1 فلتر الهزار + حقائق الفرد، P3.5 نطاق التوقعات (٢٠٢٦-١١-٢٨)
 
 - **اتعمل:** `_shared/or/jokeFilter.ts` (تصريح بالهزار، مبالغة صريحة، ضحكة + رقم خيالي؛ ضحكة جنب طلب عادي مش هزار) ⇒ قاعدة 4ب في البرومبت، رفض أدوات الكتابة (`JOKE_BLOCKED_TOOLS`) في لفة الهزار، والمسار السريع بيتخطى. `_shared/or/factInference.ts` + `checkInQuestion.ts` (سؤال اليوم، `parseFactAnswer`) + `zad-brain/factCheckIn.ts` (ليلي ساعة ١ UTC من `processDueAgentTasks`، لحظة `fact_checkin` نص بس، رد «آه»/«لأ» قبل المسار السريع، حقائق من الشات بعد فلتر الهزار). ميجريشن `20261128210000` (`profile.fact_asked`، `profile.fact_deny`، `fact_denied_recently` ١٨٠ يوم)، وميجريشن `20261128220000` (نطاق التوقعات وتغطيته). القاصر برا.
