@@ -92,8 +92,8 @@ export function purchaseFromPending(row: PendingPurchase, mode: PurchaseMode): R
 /** الأزرار: «سجّل الكل» بس لو فيه مبلغ اتقرا، و«المخزن بس» بس لو فيه أصناف. */
 export function purchaseKeyboard(pendingId: string, opts: { hasAmount: boolean; hasLines: boolean }): InlineKeyboardButton[][] {
   const row: InlineKeyboardButton[] = [];
-  if (opts.hasAmount) row.push({ text: opts.hasLines ? "✅ سجّل الكل" : "✅ أكد التسجيل", callback_data: `pa:${pendingId}` });
-  if (opts.hasLines) row.push({ text: opts.hasAmount ? "📦 المخزن بس" : "📦 ضيفهم للمخزن", callback_data: `pl:${pendingId}` });
+  if (opts.hasAmount) row.push({ text: opts.hasLines ? "✅ اخصم وسجّل" : "✅ أكد التسجيل", callback_data: `pa:${pendingId}` });
+  if (opts.hasLines) row.push({ text: opts.hasAmount ? "📦 سجّل البنود بس" : "📦 ضيفهم للمخزن", callback_data: `pl:${pendingId}` });
   row.push({ text: "✖️ لأ", callback_data: `c:${pendingId}` });
   return [row];
 }

@@ -28,6 +28,10 @@ import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { mediaGate } from "./entitlement.ts";
 import { decideNotificationPush, notificationText, validNotificationId } from "./notificationPush.ts";
 import { routePhoto } from "./photoRoute.ts";
+import {
+  BANK_SOURCE_TYPE, type BankMatch, type BankProposal, type BankRow, bankMatchOf, BANK_TWIN_WINDOW_MS, linkKeyboard,
+  linkQuestion, parseLinkCallback, parseSeparateCallback,
+} from "./receiptBankMatch.ts";
 import { alertEmotion, alertSpeechText, geminiKeysFromEnv, pcmToMp3, synthesizeAlertPcm, wantsVoice, speechLimitForMoment } from "./voiceAlert.ts";
 import { detectDialectFromText, voiceCountry } from "../_shared/dialect.ts";
 import { type BotDialect, chatBotDialect, localizeBotText } from "./botDialect.ts";
@@ -2154,12 +2158,24 @@ bot.on("message:photo", async (ctx) => {
       return false;
     }
     const preview = purchasePreview(input.lines);
+    const pendingId = (pending as { id: string }).id;
+    // فاتورة كارت ليها إشعار بنك (متسجل أو لسه مستني) = نفس الدفعة: نسأل نربطها بدل ما تتخصم مرتين (P2.10b).
+    const match = total ? await findBankMatch(sb, userId as string, total, wallet) : null;
+    if (total && match) {
+      await ctx.reply(
+        [input.before, preview, linkQuestion(match, money(match.amount, await currencyOf()))].filter((s) => s).join("\n\n"),
+        { reply_markup: toGrammyKeyboard(linkKeyboard(pendingId, match)) },
+      );
+      return true;
+    }
+    const hasLines = input.lines.length > 0;
     const body = total
-      ? confirmSpendMessage({ is_spend: true, kind: "expense", amount: total, title: input.title, category: input.category, confidence: 0.75 }, await currencyOf(), wallet)
+      ? confirmSpendMessage({ is_spend: true, kind: "expense", amount: total, title: input.title, category: input.category, confidence: 0.75 }, await currencyOf(), wallet) +
+        (hasLines ? `\n\nاخصم ${money(total, await currencyOf())} من الرصيد وسجّل الفاتورة، ولا أسجّل البنود في المخزن/السجل بس من غير خصم؟` : "")
       : "مقريتش مبلغ واضح في الفاتورة — أضيف الأصناف من غير مصروف؟";
     await ctx.reply(
       [input.before, preview, body].filter((s) => s).join("\n\n"),
-      { reply_markup: toGrammyKeyboard(purchaseKeyboard((pending as { id: string }).id, { hasAmount: total !== null, hasLines: input.lines.length > 0 })) },
+      { reply_markup: toGrammyKeyboard(purchaseKeyboard(pendingId, { hasAmount: total !== null, hasLines })) },
     );
     return true;
   }
@@ -2220,6 +2236,42 @@ bot.on("message:photo", async (ctx) => {
 });
 
 /**
+ * إشعار البنك بتاع فاتورة كارت (P2.10b): اقتراحات مفتوحة + مصاريف البنك المتسجلة في نافذة ±٢٤ ساعة
+ * من دلوقتي (البوت ماعندوش تاريخ مطبوع)، والقاعدة في receiptBankMatch.ts زي شيت التطبيق. أي فشل = مفيش مقابل.
+ */
+async function findBankMatch(sb: SupabaseClient, userId: string, total: number, wallet: string | null): Promise<BankMatch | null> {
+  if (wallet === "cash") return null;
+  try {
+    const now = Date.now();
+    const from = new Date(now - BANK_TWIN_WINDOW_MS).toISOString();
+    const to = new Date(now + BANK_TWIN_WINDOW_MS).toISOString();
+    const [props, txns] = await Promise.all([
+      sb.from("zad_transaction_proposals")
+        .select("id,amount,title,merchant_name,status,txn_kind,created_at")
+        .eq("user_id", userId).in("status", ["awaiting_confirmation", "needs_classification"])
+        .gte("created_at", from).lte("created_at", to).limit(50),
+      sb.from("zad_transactions")
+        .select("id,amount,title,merchant_name,source_type,is_expense,txn_kind,created_at")
+        .eq("user_id", userId).eq("source_type", BANK_SOURCE_TYPE).eq("is_expense", true)
+        .gte("created_at", from).lte("created_at", to).limit(50),
+    ]);
+    const proposals: BankProposal[] = ((props.data ?? []) as Array<Record<string, unknown>>).map((p) => ({
+      id: String(p.id), amount: Number(p.amount), createdAt: new Date(String(p.created_at)), title: String(p.title ?? ""),
+      merchantName: (p.merchant_name as string | null) ?? null, status: String(p.status), txnKind: (p.txn_kind as string | null) ?? null,
+    }));
+    const rows: BankRow[] = ((txns.data ?? []) as Array<Record<string, unknown>>).map((t) => ({
+      id: String(t.id), amount: Number(t.amount), createdAt: new Date(String(t.created_at)), title: String(t.title ?? ""),
+      merchantName: (t.merchant_name as string | null) ?? null, sourceType: (t.source_type as string | null) ?? null,
+      isExpense: t.is_expense === true, txnKind: (t.txn_kind as string | null) ?? null,
+    }));
+    return bankMatchOf({ total, spentAt: new Date(now), rows, proposals, paidWith: wallet });
+  } catch (e) {
+    console.error("bank match lookup failed:", e instanceof Error ? e.message : String(e));
+    return null;
+  }
+}
+
+/**
  * «سجّل الكل» / «المخزن بس» على صف محجوز: نفس بروتوكول تأكيد المصروف (claim بـstatus، ولو فشل
  * يرجع pending)، والكتابة كلها في zad_record_purchase_service. مفتاح الشرا = id الصف، فداسة مرتين
  * أو إعادة بعد فشل ملتبس بترجع نفس الرد. مصروف بنفس المبلغ من دقايق (غالباً صف البنك لنفس الدفعة)
@@ -2231,6 +2283,7 @@ async function recordPendingPurchase(
   userId: string,
   row: PendingPurchase & { status: string; expires_at: string },
   mode: PurchaseMode,
+  link?: { mergeWith?: string; separate?: boolean },
 ): Promise<void> {
   if (row.status !== "pending") {
     await ctx.reply("الطلب ده اتعامل معاه قبل كده.");
@@ -2241,7 +2294,9 @@ async function recordPendingPurchase(
     await ctx.reply("الطلب ده انتهت صلاحيته — ابعت الفاتورة تاني.");
     return;
   }
-  const purchase = purchaseFromPending(row, mode);
+  const base = purchaseFromPending(row, mode);
+  const purchase = base && link?.mergeWith ? { ...base, merge_with: link.mergeWith }
+    : base && link?.separate ? { ...base, allow_duplicate: true } : base;
   if (!purchase) {
     await ctx.reply(mode === "all" ? "مفيش مبلغ في الفاتورة دي أسجله." : "مفيش أصناف في الفاتورة دي أضيفها.");
     return;
@@ -2746,6 +2801,60 @@ bot.on("callback_query:data", async (ctx) => {
         await ctx.reply(formatInsightTitle(insight), { reply_markup: toGrammyKeyboard(dismissKeyboard(insight.id)) });
       }
     }
+    return;
+  }
+
+  // «اربطها» / «سجّلها لوحدها» على فاتورة ليها إشعار بنك (P2.10b). الحالة في telegram_pending_writes،
+  // والهدف (إشعار أو عملية) في الـcallback نفسه، وبنتأكد إنه بتاع العميل قبل أي كتابة.
+  const linkPick = parseLinkCallback(data);
+  const separatePick = linkPick ? null : parseSeparateCallback(data);
+  if (linkPick || separatePick) {
+    const { data: pendingRow } = await sb.from("telegram_pending_writes")
+      .select("id,amount,title,category,status,expires_at,wallet,merchant_name,source_type,purchase_lines")
+      .eq("id", linkPick?.pendingId ?? separatePick!)
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (!pendingRow) {
+      await ctx.reply("الطلب ده مش موجود أو مش بتاعك.");
+      return;
+    }
+    const row = pendingRow as PendingPurchase & { status: string; expires_at: string };
+    await ctx.editMessageReplyMarkup({ reply_markup: { inline_keyboard: [] } }).catch(() => {});
+    if (!linkPick) {
+      await recordPendingPurchase(ctx, sb, userId, row, "all", { separate: true });
+      return;
+    }
+    if (row.status !== "pending" || new Date(row.expires_at) < new Date()) {
+      await recordPendingPurchase(ctx, sb, userId, row, "all");
+      return;
+    }
+    let mergeWith: string | null = null;
+    if (linkPick.targetKind === "transaction") {
+      const { data: t } = await sb.from("zad_transactions").select("id")
+        .eq("id", linkPick.targetId).eq("user_id", userId).eq("source_type", BANK_SOURCE_TYPE).maybeSingle();
+      mergeWith = (t as { id?: string } | null)?.id ?? null;
+    } else {
+      const { data: p } = await sb.from("zad_transaction_proposals").select("status")
+        .eq("id", linkPick.targetId).eq("user_id", userId).maybeSingle();
+      const status = (p as { status?: string } | null)?.status;
+      if (status === "awaiting_confirmation" || status === "needs_classification") {
+        const { data: res, error } = await sb.rpc("zad_resolve_transaction_proposal_service", {
+          p_user: userId, p_proposal: linkPick.targetId,
+          p_decision: status === "needs_classification" ? "expense" : "confirm", p_channel: "telegram",
+        });
+        if (error) console.error("receipt link: proposal confirm failed:", error.message);
+        mergeWith = (res as { transaction_id?: string | null } | null)?.transaction_id ?? null;
+      } else if (status === "posted") {
+        const { data: done } = await sb.from("zad_transaction_proposals").select("transaction_id")
+          .eq("id", linkPick.targetId).eq("user_id", userId).maybeSingle();
+        mergeWith = (done as { transaction_id?: string | null } | null)?.transaction_id ?? null;
+      }
+    }
+    if (!mergeWith) {
+      await ctx.reply("مقدرتش أربط الفاتورة بإشعار البنك دلوقتي — رد على إشعار البنك الأول، أو ابعت الفاتورة تاني.");
+      return;
+    }
+    await recordPendingPurchase(ctx, sb, userId, row, "all", { mergeWith });
     return;
   }
 
