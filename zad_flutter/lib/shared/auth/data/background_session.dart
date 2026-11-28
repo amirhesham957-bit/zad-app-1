@@ -15,9 +15,11 @@
 ///
 /// So a headless engine reads the session the app saved and nothing more:
 /// no auto-refresh, no explicit refresh, and a storage that ignores writes
-/// and removals. A token still valid is used; an expired one means the event
-/// waits where it is (the native inbox, the geofence blob) for the app, which
-/// owns the session, to run it on its next open.
+/// and removals. A token still valid is used; an expired one means whatever
+/// needs the server waits where it is (the native inbox, the geofence blob)
+/// for the app, which owns the session, to send on its next open. The street
+/// alerts engine still does its local work meanwhile
+/// (`backgroundPlaceEngine`).
 library;
 
 import 'package:supabase_flutter/supabase_flutter.dart';
