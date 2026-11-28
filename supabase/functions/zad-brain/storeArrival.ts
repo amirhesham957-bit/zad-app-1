@@ -2,7 +2,7 @@
 import { isBrokeModeActive } from "../_shared/brokeMode.ts";
 import { householdFamilyId, householdFilter } from "../_shared/household.ts";
 import { type SavingsAgreement, savingsAgreementFrom } from "../_shared/savingsAgreement.ts";
-import { MODEL_ROUTINE, momentChannels } from "./brainConsts.ts";
+import { MODEL_ROUTINE, momentChannels, momentInApp } from "./brainConsts.ts";
 import { callModel } from "./callModel.ts";
 import { CORS_HEADERS } from "./corsHeaders.ts";
 import { homeMap } from "./crowdFloor.ts";
@@ -321,6 +321,7 @@ async function firePlaceReminders(
 function runVoiceMomentsInBackground(sb: SupabaseClient, userId: string, label: string): void {
   const work = processVoiceMoments(sb, {
     hasChannel: (uid, o) => momentChannels(sb, uid, o),
+    notifyInApp: (uid, title, text, key) => momentInApp(sb, uid, title, text, key),
     compose: async (system, user) =>
       (await callModel({ model: MODEL_ROUTINE, system, tools: [], history: [{ role: "user", text: user }], maxTokens: 500 })).text,
     pushDevice: (uid, title, text, data, dataOnly) => pushToDevice(sb, uid, title, text, data, dataOnly),

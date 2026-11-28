@@ -56,7 +56,21 @@ export const FLYER_CONFIDENCE = 0.7;
 export const FLYER_RETRY_HOURS = 20;
 
 export interface FlyerEntryRow { store: string; country: string; currency: string; label: string; pdf_url: string; city: string }
-export interface FlyerReadRow { pdf_url: string; ok: boolean; read_at: string; deals?: number | null }
+export interface FlyerReadRow { pdf_url: string; ok: boolean; read_at: string; deals?: number | null; reason?: string | null }
+
+/** A banner image the model read fine (reply.ok) but that holds no offers: a final state, never read again or alerted on. */
+export const NOT_A_FLYER = "not_a_flyer";
+
+/**
+ * What to record for one flyer read. ok = it produced offers. An image read that succeeded with zero offers is
+ * [NOT_A_FLYER] (ok true, deals 0): a marketing banner, not an outage. A PDF with zero offers, or a failed read, stays a failure.
+ */
+export function flyerReadOutcome(reply: { ok?: unknown; deals?: unknown; kind?: unknown; reason?: unknown; raw?: unknown } | null | undefined): { ok: boolean; reason: string | null } {
+  const dealCount = Array.isArray(reply?.deals) ? reply.deals.length : 0;
+  if (reply?.ok === true && dealCount > 0) return { ok: true, reason: null };
+  if (reply?.ok === true && reply.kind === "image" && Number(reply.raw ?? 0) === 0) return { ok: true, reason: NOT_A_FLYER };
+  return { ok: false, reason: String(reply?.reason ?? (reply?.ok ? `empty_raw_${Number(reply?.raw) || 0}` : "no_reply")).slice(0, 60) };
+}
 
 /**
  * Official flyers (zad-core-intelligence/officialFlyers.ts): the sites' answer to «list» flattened, and the first flyer
@@ -91,6 +105,7 @@ export function nextFlyer(entries: FlyerEntryRow[], reads: FlyerReadRow[], now: 
     const r = last.get(e.pdf_url);
     if (!r) return true;
     // «ok» بصفر عروض = قراية فاضية اتسجلت كنجاح (أول رن حي ٧/١١، قبل ما «ok» يبقى معناه إن فيه عروض): تتقري تاني.
+    if (r.ok && r.reason === NOT_A_FLYER) return false;
     if (r.ok) return (r.deals ?? 1) === 0;
     return now.getTime() - new Date(r.read_at).getTime() >= FLYER_RETRY_HOURS * 3_600_000;
   });

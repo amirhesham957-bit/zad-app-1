@@ -57,6 +57,17 @@ export async function momentChannels(sb: SupabaseClient, userId: string, o: { de
   return (t.count ?? 0) > 0 || (b.count ?? 0) > 0;
 }
 
+/**
+ * إشعار داخل التطبيق للحظة ماوصلتش بأي قناة: صف واحد لكل لحظة (unique user_id + dedupe_key، 20261128170000)، وتكرار
+ * المحاولة بيتجاهل. bot_push بيفضل false فالتريجر مابيبعتش تليجرام تاني.
+ */
+export async function momentInApp(sb: SupabaseClient, userId: string, title: string, text: string, dedupeKey: string): Promise<void> {
+  const { error } = await sb.from("app_notifications")
+    .upsert({ user_id: userId, title: title.slice(0, 200), message: text.slice(0, 1000), dedupe_key: dedupeKey.slice(0, 200) },
+      { onConflict: "user_id,dedupe_key", ignoreDuplicates: true });
+  if (error) throw new Error(error.message);
+}
+
 /** توقيت سوق العميل (zad_market_timezone على بلده). فشل = UTC، زي باقي الفانكشن. */
 export async function accountTimeZone(sb: SupabaseClient, userId: string): Promise<string> {
   const { data: u } = await sb.from("zad_users").select("country").eq("id", userId).maybeSingle();

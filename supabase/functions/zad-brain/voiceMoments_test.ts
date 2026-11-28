@@ -5,6 +5,7 @@ import {
   MOMENT_SPACING_MS,
   tooSoonAfterLast,
   momentFallback,
+  genericDoseInApp,
   parseComposedMoment,
   processVoiceMoments,
   TEXT_ONLY_MOMENTS,
@@ -541,4 +542,136 @@ Deno.test("member privacy (م٧.٩): a guardian's alert about a member leaks unl
   assertEquals(memberLeaks("son", "son", false), false, "own content is never a leak");
   const src = Deno.readTextFileSync(new URL("./voiceMoments.ts", import.meta.url));
   assertEquals(src.split("memberLeaks(row.user_id, memberId,").length - 1, 2, "both family-alert branches are guarded");
+});
+
+// ── إشعار التطبيق البديل لما اللحظة ماوصلتش (notifyInApp) ───────────────────
+const composedDose = '{"title":"💊 كونكور","text":"خده دلوقتي","speech":"خد الكونكور"}';
+function inAppDeps(over: Partial<Parameters<typeof processVoiceMoments>[1]>) {
+  const rows = new Map<string, { title: string; text: string }>();
+  const deps = {
+    compose: () => Promise.resolve(composedDose),
+    pushDevice: () => Promise.resolve("sent"),
+    pushTelegram: () => Promise.resolve("delivered"),
+    // the real table: unique (user_id, dedupe_key), on conflict do nothing.
+    notifyInApp: (u: string, title: string, text: string, key: string) => {
+      if (!rows.has(`${u}|${key}`)) rows.set(`${u}|${key}`, { title, text });
+      return Promise.resolve();
+    },
+    ...over,
+  };
+  return { deps, rows };
+}
+
+Deno.test("in-app fallback: a delivered moment writes no row", async () => {
+  const { sb } = fakeSb(pendingDose("dose_missed").tables);
+  const { deps, rows } = inAppDeps({});
+  assertEquals((await processVoiceMoments(sb, deps)).sent, 1);
+  assertEquals(rows.size, 0);
+});
+
+Deno.test("in-app fallback: device sent and telegram never needed, still no row", async () => {
+  const { sb } = fakeSb(pendingDose("dose_missed").tables);
+  const { deps, rows } = inAppDeps({ pushTelegram: () => Promise.resolve("failed") });
+  assertEquals((await processVoiceMoments(sb, deps)).sent, 1);
+  assertEquals(rows.size, 0);
+});
+
+Deno.test("in-app fallback: device and telegram both fail writes one row with the generic dose text", async () => {
+  const { sb, updates } = fakeSb(pendingDose("dose_missed").tables);
+  const { deps, rows } = inAppDeps({ pushDevice: () => Promise.resolve("no_token"), pushTelegram: () => Promise.resolve("failed") });
+  assertEquals(await processVoiceMoments(sb, deps), { sent: 0, skipped: 0, failed: 1 });
+  assertEquals(updates.at(-1)?.values.error, "no channel delivered");
+  // a medicine moment gets the fixed generic text, never the composed one with the medicine's name.
+  assertEquals([...rows.values()], [genericDoseInApp("dose_missed")]);
+  assertEquals([...rows.keys()], ["u1|voice_moment:m1"]);
+});
+
+Deno.test("in-app fallback: the moment's own dedupe_key is the row key, and a second failed run adds nothing", async () => {
+  const t = pendingDose("dose_missed").tables;
+  (t.zad_voice_moments[0] as Row).dedupe_key = "dose_missed:d1";
+  const { sb } = fakeSb(t);
+  const { deps, rows } = inAppDeps({ pushDevice: () => Promise.resolve("no_token"), pushTelegram: () => Promise.resolve("failed") });
+  await processVoiceMoments(sb, deps);
+  await processVoiceMoments(sb, deps);
+  assertEquals([...rows.keys()], ["u1|dose_missed:d1"]);
+});
+
+Deno.test("in-app fallback: telegram is tried when the device push failed (text moment), and a delivery there writes no row", async () => {
+  const { sb } = fakeSb(closeDayRow());
+  let telegramCalls = 0;
+  const { deps, rows } = inAppDeps({
+    ...atNight,
+    pushDevice: () => Promise.resolve("no_token"),
+    pushTelegram: () => { telegramCalls++; return Promise.resolve("delivered"); },
+  });
+  assertEquals((await processVoiceMoments(sb, deps)).sent, 1);
+  assertEquals(telegramCalls >= 1, true);
+  assertEquals(rows.size, 0);
+});
+
+Deno.test("in-app fallback: a plain text moment (rain_soon) whose device push failed still tries telegram", async () => {
+  const t = pendingDose("rain_soon").tables;
+  (t.zad_voice_moments[0] as Row).facts = { rain: { line: "احتمال مطر" }, time_zone: "UTC" };
+  const { sb } = fakeSb(t);
+  let telegramCalls = 0;
+  const { deps } = inAppDeps({
+    pushDevice: () => Promise.resolve("no_token"),
+    pushTelegram: () => { telegramCalls++; return Promise.resolve("delivered"); },
+  });
+  await processVoiceMoments(sb, deps);
+  assertEquals(telegramCalls, 1);
+});
+
+Deno.test("in-app fallback: no channel + non-dose model moment = not composed and no row", async () => {
+  const { sb } = fakeSb(pendingDose("morning_greeting").tables);
+  let composed = 0;
+  const { deps, rows } = inAppDeps({ compose: () => { composed++; return Promise.resolve("{}"); }, hasChannel: () => Promise.resolve(false) });
+  assertEquals((await processVoiceMoments(sb, deps)).failed, 1);
+  assertEquals([composed, rows.size], [0, 0]);
+});
+
+Deno.test("in-app fallback: no channel + template moment (close_day) writes its template text once, without a model call", async () => {
+  const { sb, updates } = fakeSb(closeDayRow());
+  let composed = 0;
+  const { deps, rows } = inAppDeps({ ...atNight, compose: () => { composed++; return Promise.resolve("{}"); }, hasChannel: () => Promise.resolve(false) });
+  await processVoiceMoments(sb, deps);
+  await processVoiceMoments(sb, deps);
+  assertEquals(composed, 0);
+  assertEquals(updates.at(-1)?.values.error, "no channel (not composed)");
+  assertEquals(rows.size, 1);
+  assertEquals([...rows.values()][0].text.length > 0, true);
+});
+
+Deno.test("in-app fallback: a failing notifyInApp never breaks the moment", async () => {
+  const { sb, updates } = fakeSb(pendingDose("dose_missed").tables);
+  const { deps } = inAppDeps({
+    pushDevice: () => Promise.resolve("no_token"), pushTelegram: () => Promise.resolve("failed"),
+    notifyInApp: () => Promise.reject(new Error("db down")),
+  });
+  assertEquals((await processVoiceMoments(sb, deps)).failed, 1);
+  assertEquals(updates.at(-1)?.values.status, "failed");
+});
+
+Deno.test("in-app fallback: dose moment with no channel writes one generic row, no compose, no medicine name; twice still one", async () => {
+  for (const moment of ["dose_missed", "dose_missed_again"]) {
+    const { sb, updates } = fakeSb(pendingDose(moment).tables);
+    let composed = 0;
+    const { deps, rows } = inAppDeps({ compose: () => { composed++; return Promise.resolve("{}"); }, hasChannel: () => Promise.resolve(false) });
+    await processVoiceMoments(sb, deps);
+    await processVoiceMoments(sb, deps);
+    assertEquals(composed, 0, moment);
+    assertEquals(updates.at(-1)?.values.error, "no channel (not composed)");
+    assertEquals(rows.size, 1, moment);
+    const r = [...rows.values()][0];
+    assertEquals(r, genericDoseInApp(moment));
+    assertEquals((r.title + r.text).includes("كونكور"), false);
+  }
+  assertEquals(genericDoseInApp("guardian_dose_missed").text, "فيه جرعة فائتة عند فرد من العيلة — راجع التفاصيل");
+});
+
+Deno.test("in-app fallback: a failing insert on a dose moment with no channel still marks it failed", async () => {
+  const { sb, updates } = fakeSb(pendingDose("dose_missed").tables);
+  const { deps } = inAppDeps({ hasChannel: () => Promise.resolve(false), notifyInApp: () => Promise.reject(new Error("db down")) });
+  assertEquals((await processVoiceMoments(sb, deps)).failed, 1);
+  assertEquals(updates.at(-1)?.values.error, "no channel (not composed)");
 });

@@ -141,6 +141,7 @@
   "app_notifications": [
     "bot_push",
     "created_at",
+    "dedupe_key",
     "id",
     "is_read",
     "message",
@@ -478,7 +479,8 @@
   ],
   "zad_admin_alert_log": [
     "kind",
-    "last_sent"
+    "last_sent",
+    "state"
   ],
   "zad_affiliate_offers": [
     "affiliate_url",
