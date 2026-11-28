@@ -118,7 +118,7 @@ import { type LearnedFormat, learnedCases, learnedSenders, senderKnown } from ".
 import { classifyMessage, lockedReply, quotaExempt } from "./entitlement.ts";
 import { type ChatCharge, openChatCharge, withChargeSettlement } from "./gate.ts";
 import { hasServiceRoleAuthorization, resolveAuthedUserId } from "./auth.ts";
-import { resolveDeviceKeyUser } from "./deviceKey.ts";
+import { DEVICE_KEY_PLACE_HOURLY_LIMIT, type DeviceKeyCall, resolveDeviceKeyCall } from "./deviceKey.ts";
 import { secretMatches } from "../_shared/cronSecret.ts";
 import { HABIT_TRIAL_KINDS, habitTrialForTask, habitTrialPush } from "./habitTrialPush.ts";
 import { HOUSE_LEARNING_KIND, houseLearningForTask, houseLearningPush } from "./houseLearningPush.ts";
@@ -1885,6 +1885,36 @@ async function resolveRequestUserId(req: Request, body: unknown): Promise<string
     const { data, error } = await sb.auth.getUser(token);
     return error || !data?.user?.id ? null : data.user.id;
   });
+}
+
+const LIMITED_RESPONSE = () =>
+  new Response(JSON.stringify({ ok: false, error: "rate_limited", message: "device key place calls: 60 per hour" }), {
+    status: 429, headers: { ...CORS_HEADERS, "Retry-After": "3600" },
+  });
+
+/** JWT الأول، وإلا مفتاح الجهاز (للأكشنز اللي deviceKeyAllows بيسمح بيها). الحساب من صف المفتاح بس. */
+async function resolveUserOrDeviceKey(req: Request, body: any): Promise<DeviceKeyCall> {
+  const jwt = await resolveRequestUserId(req, body);
+  if (jwt) return { kind: "ok", userId: jwt };
+  const sb = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+  const call = await resolveDeviceKeyCall(req, body?.action, async (keyHash) => {
+    const { data } = await sb.from("zad_device_send_keys")
+      .update({ last_used_at: new Date().toISOString() })
+      .eq("key_hash", keyHash)
+      .select("user_id")
+      .maybeSingle();
+    return typeof data?.user_id === "string" ? data.user_id : null;
+  }, async (keyHash) => {
+    const { data, error } = await sb.rpc("zad_device_key_hit", {
+      p_key_hash: keyHash, p_limit: DEVICE_KEY_PLACE_HOURLY_LIMIT,
+    });
+    if (error) throw new Error(error.message);
+    return data === true;
+  });
+  if (call.kind === "ok" && body?.action === "notification_ingest") {
+    afterResponse("device key breadcrumb", recordDeviceKeyUse(sb, call.userId));
+  }
+  return call;
 }
 
 /** اقتراح كتابة مالية مستني تأكيد العميل — مش متخزّن في أي جدول، بيرجع للكلاينت
@@ -4827,7 +4857,9 @@ async function handleRequest(req: Request): Promise<Response> {
 
     // مواعيد يوم العميل من موبايله (commute.ts). الهوية من JWT بس.
     if (body.action === "commute_summary") {
-      const commuteUser = await resolveRequestUserId(req, body);
+      const commuteCall = await resolveUserOrDeviceKey(req, body);
+      if (commuteCall.kind === "limited") return LIMITED_RESPONSE();
+      const commuteUser = commuteCall.kind === "ok" ? commuteCall.userId : null;
       if (!commuteUser) {
         return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: CORS_HEADERS });
       }
@@ -4869,7 +4901,9 @@ async function handleRequest(req: Request): Promise<Response> {
 
     // gate: service (webhook/DB trigger)، من غير خصم من العميل.
     if (body.action === "place_event") {
-      const placeUserId = await resolveRequestUserId(req, body);
+      const placeCall = await resolveUserOrDeviceKey(req, body);
+      if (placeCall.kind === "limited") return LIMITED_RESPONSE();
+      const placeUserId = placeCall.kind === "ok" ? placeCall.userId : null;
       if (!placeUserId) {
         return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401, headers: CORS_HEADERS });
       }
@@ -5041,22 +5075,10 @@ async function handleRequest(req: Request): Promise<Response> {
     // agent_confirm وagent_execute مابيكلموش موديل (runTool بس) فمفيش خصم. notification_ingest وstore_arrival مجانيين (موديل routine من غير خصم) = قرار منتج.
     if (body.action === "agent_turn" || body.action === "agent_turn_stream" || body.action === "agent_confirm" || body.action === "agent_execute" || body.action === "notification_ingest" || body.action === "store_arrival") {
       // ٢.٧(ب): محرك الخلفية جلسته منتهية عن قصد (١.٣) — مفتاح الجهاز بيفتح
-      // notification_ingest بس، والحساب من صف المفتاح مش من الـbody.
-      const jwtUserId = await resolveRequestUserId(req, body);
-      const deviceUserId = jwtUserId ? null : await resolveDeviceKeyUser(req, body.action, async (keyHash) => {
-        const sbKey = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
-        const { data } = await sbKey.from("zad_device_send_keys")
-          .update({ last_used_at: new Date().toISOString() })
-          .eq("key_hash", keyHash)
-          .select("user_id")
-          .maybeSingle();
-        return typeof data?.user_id === "string" ? data.user_id : null;
-      });
-      const authedUserId = jwtUserId ?? deviceUserId;
-      if (deviceUserId) {
-        // أثر من السيرفر إن الخلفية وصّلت (مرة كل ٦ ساعات بالكتير لكل حساب).
-        afterResponse("device key breadcrumb", recordDeviceKeyUse(createClient(SUPABASE_URL, SERVICE_ROLE_KEY), deviceUserId));
-      }
+      // الأكشنز في DEVICE_KEY_ACTIONS بس، والحساب من صف المفتاح مش من الـbody.
+      const authCall = await resolveUserOrDeviceKey(req, body);
+      if (authCall.kind === "limited") return LIMITED_RESPONSE();
+      const authedUserId = authCall.kind === "ok" ? authCall.userId : null;
       if (!authedUserId) {
         return new Response(
           JSON.stringify({ error: "unauthorized: agent actions require a user JWT" }),

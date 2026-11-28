@@ -13,6 +13,7 @@ import 'package:zad/core/env/zad_env.dart';
 import 'package:zad/shared/alerts/data/push_platform.dart';
 import 'package:zad/shared/alerts/domain/push_alert.dart';
 import 'package:zad/shared/auth/data/background_session.dart';
+import 'package:zad/shared/bank/data/device_send_key.dart';
 import 'package:zad/shared/family/data/family_shares_remote.dart';
 import 'package:zad/shared/nearby/data/nearby_remote.dart';
 import 'package:zad/shared/places/application/child_zones.dart';
@@ -28,14 +29,17 @@ import 'package:zad_geofence/zad_geofence.dart';
 /// phone alone: shops come from Overpass with no server call, local work (the
 /// nightly home sample, fence refresh, the shop cooldown) runs, and anything
 /// that must reach the server (`back_home`, zone events, `store_arrival`) is
-/// refused by [UnauthorizedPlaceServer], which leaves its event in the plugin's
-/// inbox and `leftAt` in the state blob for the app's next [PlaceEngine
-/// .handlePending] to send exactly once. The session is never refreshed here.
+/// sent with the device key when one is held ([DeviceKeyPlaceServer], the
+/// three place actions only), else refused by [UnauthorizedPlaceServer],
+/// which leaves its event in the plugin's inbox and `leftAt` in the state
+/// blob for the app's next [PlaceEngine.handlePending] to send exactly
+/// once. The session is never refreshed here.
 @visibleForTesting
 PlaceEngine backgroundPlaceEngine({
   required PlaceHost host,
   required SupabaseClient? client,
   required http.Client httpClient,
+  String? deviceKey,
   Future<void> Function(PushAlert alert) notify = showAlertInBackground,
   DateTime Function() now = DateTime.now,
 }) {
@@ -44,9 +48,16 @@ PlaceEngine backgroundPlaceEngine({
       : ServerThenOverpassRemote(supabaseServerCall(client), httpClient);
   return PlaceEngine(
     host: host,
-    server: client == null
-        ? const UnauthorizedPlaceServer()
-        : SupabasePlaceServer(client),
+    server: client != null
+        ? SupabasePlaceServer(client)
+        : deviceKey != null
+        ? DeviceKeyPlaceServer(
+            client: httpClient,
+            supabaseUrl: ZadEnv.supabaseUrl,
+            anonKey: ZadEnv.supabaseAnonKey,
+            deviceKey: deviceKey,
+          )
+        : const UnauthorizedPlaceServer(),
     findShops: (at, kind) =>
         remote.stores(at: at, kind: kind, radius: kSearchRadius),
     notify: notify,
@@ -77,6 +88,11 @@ Future<void> placeBackgroundMain() async {
       host: const PluginPlaceHost(),
       client: client,
       httpClient: httpClient,
+      // No session: the device's send key (ZAD_PLAN ٢.٧ب) carries the three
+      // place actions, still no refresh.
+      deviceKey: client == null
+          ? await DeviceSendKey.stored(const SecureDeviceKeyVault())
+          : null,
     );
     await engine.handlePending();
     if (client == null) return;
