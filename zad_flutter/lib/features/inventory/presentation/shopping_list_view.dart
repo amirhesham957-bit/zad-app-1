@@ -24,6 +24,7 @@ import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/core/money/money.dart';
 import 'package:zad/features/inventory/data/shopping_ai_remote.dart';
+import 'package:zad/features/inventory/domain/pantry_categories.dart';
 import 'package:zad/features/inventory/presentation/art_flight.dart';
 import 'package:zad/features/inventory/presentation/shopping_world_scene.dart';
 import 'package:zad/shared/ads/presentation/inline_ad.dart';
@@ -882,6 +883,7 @@ class _Line extends ConsumerWidget {
               alignment: AlignmentDirectional.centerStart,
               child: AmazonBuyChip(
                 itemName: item.itemName,
+                category: pantryCategoryOf(null, item.itemName),
                 sourceScreen: 'shopping_row',
               ),
             ),
@@ -1027,6 +1029,7 @@ class _FamilyLineState extends ConsumerState<_FamilyLine> {
             alignment: AlignmentDirectional.centerStart,
             child: AmazonBuyChip(
               itemName: group.name,
+              category: pantryCategoryOf(null, group.name),
               sourceScreen: 'shopping_row',
             ),
           ),

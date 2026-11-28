@@ -98,6 +98,41 @@ export const CHAT_TOOLS: ToolDef[] = [
     },
   },
   {
+    name: "log_cash_withdrawal",
+    description:
+      "العميل سحب كاش من ATM/الماكينة («سحبت ١٠٠٠ من الماكينة»): ده تحويل من البنك لرصيد الكاش، مش مصروف. " +
+      "لو رفض بـ cash_withdrawal_duplicate_suspected اسأل سؤال واحد بس: «ده نفس السحب اللي إشعار البنك جاب؟» " +
+      "ومتندهش تاني قبل ما العميل يرد؛ لو قال «لأ، سحبتين فعلاً» نادِها تاني بـ allow_duplicate=true.",
+    input_schema: {
+      type: "object",
+      properties: {
+        amount: { type: "number" },
+        title: { type: "string" },
+        allow_duplicate: { type: "boolean", description: "true بس بعد رد العميل إنه سحب تاني فعلاً" },
+      },
+      required: ["amount"],
+    },
+  },
+  {
+    name: "log_cash_spend",
+    description:
+      "العميل دفع كاش («دفعت ٥٠ كاش»): مصروف بيخصم من رصيد الكاش. لو رفض بـ cash_spend_matches_bank_notice " +
+      "اسأل سؤال واحد بس: «دفعتها كاش ولا كارت؟» ومتندهش تاني قبل ما العميل يرد؛ لو قال كاش نادِها تاني بـ confirm_cash=true، " +
+      "ولو قال كارت متسجلهاش (إشعار البنك هو المصروف).",
+    input_schema: {
+      type: "object",
+      properties: {
+        amount: { type: "number" },
+        title: { type: "string" },
+        category: { type: "string" },
+        merchant_name: { type: "string" },
+        for_person: { type: "string" },
+        confirm_cash: { type: "boolean", description: "true بس بعد رد العميل إنه دفع كاش فعلاً" },
+      },
+      required: ["amount", "title"],
+    },
+  },
+  {
     name: "set_monthly_limit",
     description:
       "اظبط **رصيد العميل** — الرقم اللي الكارت الأخضر بيعرضه. مفيش سقف ميزانية في زاد " +

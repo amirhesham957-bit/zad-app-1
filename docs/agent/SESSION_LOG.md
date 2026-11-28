@@ -989,6 +989,18 @@ Added `zad_flutter/lib/features/notification_reads` (repository interface + Supa
 - **ماتشغّلش:** `deno test` الكامل و`deno check` (مفيش كود TS اتغيّر غير schema.json)، وCI الحقيقي.
 - **فاضل:** المرحلة ٢ (نقل القراية والكتابة ثم revoke الأعمدة من `zad_users`) مكتوبة بالتفصيل في صف P2.5b. التسريب لسه مفتوح لحد (ج).
 - **فخ:** الجدول الجديد لازم في `schema.json` وإلا عقد الـschema يقع. وسكربت بالاسم نفسه في الـscratchpad ممكن يتكتب فوقه من جلسة تانية، وسكريبتات flutter بتتأثر لو حد مسح `/tmp/flutter_tools.*` (استعمل `TMPDIR` خاص).
+## P1.6b مجموعة الفلوس (٢٠٢٦-١١-٢٨)
+
+- **اتعمل:** أزرار الفلوس بتكتب من `zad_commit_my_intent` بدل الجدول: إضافة/تعديل/مسح معاملة (`money.logged/updated/deleted`، `transactions_remote.dart`)، سقف فئة وشيله (`money.category_budget_set`، `category_budgets_remote.dart`، صفر بيشيل)، حفظ صندوق الطوارئ (`settings.emergency_fund_set`، `emergency_fund_remote.dart`). مساعد واحد `core/data/commit_my_intent.dart` بيبعت `p_trace_id` (P1.7) والرفض بيرمي `ServerRefusal`. الـOutbox وأشكال الـpayload زي ما هي (مدخلات قديمة متعلّقة بتتصرّف عادي).
+- **ميجريشن `20261128250000`:** `zad_commit_my_intent` بقى بـ`p_trace_id` اختياري ويقبل أنواع الفلوس + `settings.emergency_fund_set` (النسخة ذات الـ٤ بارامترات اتشالت). `zad_intent_money` نسخة `20261122020000` + `item_id` اختياري في `money.logged` (id الصف من العميل؛ صف بتاعي موجود = رجّعه من غير كتابة، بتاع حد تاني أو مش UUID = `item_not_found`) + `counts_toward_budget` و`currency`.
+- **اتقاس:** تست SQL جديد (`money_buttons_test.sql`، سطر في LIST) على postgres:16 محلي، وبيفشل من غير الميجريشن؛ `flutter analyze` No issues found؛ `flutter test` EXIT=0؛ تست `test/shared/money_door_test.dart` (٨) بيثبت لكل زرار إن الخارج RPC الباب بـp_kind وtrace وفي النفس مفيش كتابة على جدول.
+- **فاضل في الفلوس:** `zad_users` (حد الدورة `monthly_limit` وإعدادات الحساب من `settings_repository.dart`) و`purchases` (`zad_record_purchase`) و`money.limit_set` مش متوصّل بزرار لسه؛ كتابات الفلوس اللي برا الـ٣ ملفات المذكورة (الاشتراكات، `family_life_remote`) في مجموعاتها. باقي المجموعات (ديون/التزامات، بيت، مواعيد، عيلة، تليجرام) ماتلمستش.
+- **فخ:** الباب بيرفض عناوين فيها «؟» أو «?» أو «مثلا/يمكن…» (`title_guessed`) وأي مبلغ > ١٬٠٠٠٬٠٠٠: الزرار اللي كان بيعدّيها قبل كده بقى بيتحوّل رفض دايم في الـOutbox (dead). ومعرّف الحدث للتعديل وسقف الفئة وصندوق الطوارئ عشوائي لكل محاولة (كتابة مطلقة)، مش مشتق، عشان A→B→A→B ماتتحسبش تكرار.
+## ٢٠٢٦-١١-٢٨ — P3.14 زر «من أمازون» مش على الطازج (فرع `feat/p3-14-amazon-button`)
+
+- **اتعمل:** `AmazonBuyChip` بقى ياخد `category` ويرجّع فاضي لو (الخضار|الفواكه|اللحوم). `pantry_view` وقايمة الشراء (سطر ومجموعة) بيمرّروا `pantryCategoryOf(category, name)` (القايمة من الاسم بس لأن `ShoppingItem` مالوش تصنيف). تستات widget في `amazon_chips_test.dart`: خضار مخفي، بقالة ظاهر (مخزن وقايمة).
+- **فاضل:** مكونات الشيف الناقصة (`recipes/`) لسه بتعرض الزرار لأي اسم لأنها مابتمرّرش تصنيف.
+- **فخ:** `dart format lib test` من غير مسار بيعدّل ملفات مالهاش علاقة (`zad_tour.dart`، `zad_views.g.dart`)؛ استعمل مسارات الملفات اللي لمستها بس.
 ## P3.1 فلتر الهزار + حقائق الفرد، P3.5 نطاق التوقعات (٢٠٢٦-١١-٢٨)
 
 - **اتعمل:** `_shared/or/jokeFilter.ts` (تصريح بالهزار، مبالغة صريحة، ضحكة + رقم خيالي؛ ضحكة جنب طلب عادي مش هزار) ⇒ قاعدة 4ب في البرومبت، رفض أدوات الكتابة (`JOKE_BLOCKED_TOOLS`) في لفة الهزار، والمسار السريع بيتخطى. `_shared/or/factInference.ts` + `checkInQuestion.ts` (سؤال اليوم، `parseFactAnswer`) + `zad-brain/factCheckIn.ts` (ليلي ساعة ١ UTC من `processDueAgentTasks`، لحظة `fact_checkin` نص بس، رد «آه»/«لأ» قبل المسار السريع، حقائق من الشات بعد فلتر الهزار). ميجريشن `20261128210000` (`profile.fact_asked`، `profile.fact_deny`، `fact_denied_recently` ١٨٠ يوم)، وميجريشن `20261128220000` (نطاق التوقعات وتغطيته). القاصر برا.
@@ -1005,6 +1017,12 @@ Added `zad_flutter/lib/features/notification_reads` (repository interface + Supa
 - **فخ:** السقالة بتنسخ `private.zad_bank_twin` حرفياً؛ لو P2.10 غيّرتها لازم تتحدّث.
 
 
+
+## P3.12b أدوات الكاش (٢٠٢٦-١١-٢٨، فرع `feat/p3-12b-cash-tools`)
+
+- **اتعمل:** `log_cash_withdrawal` (`money.cash_withdrawn`) و`log_cash_spend` (`money.cash_spent`) عبر `commitIntent` (المصدر من `intentSource`)، في `CHAT_TOOLS` وCONFIRM_REQUIRED وMUTATING وتخصص الفلوس ومجال finance وحارس سؤال الرأي، وتلميح نية («سحبت ١٠٠٠ من الماكينة»، «دفعت ٥٠ كاش»). الرفضين بيرجّعوا سؤال واحد («ده نفس السحب اللي إشعار البنك جاب؟» / «دفعتها كاش ولا كارت؟») وبيسجّلوا `cash_asked:<tool>` في اللفة؛ `validateCashTool` بيرفض `allow_duplicate`/`confirm_cash` في نفس اللفة، فالفلاج لازم يجي بعد رد العميل. الرفضين كانوا في `REASONS` من P3.12 (من غير تكرار). «معايا كام كاش»: قاعدة في البرومبت من `cash_on_hand` + `cash_on_hand_source` (مفيش أداة قراءة جديدة). تليجرام بيعدّي على zad-brain فبياخد نفس الأدوات.
+- **اتقاس:** `cashTools_test.ts` (٦ حالات: النوع والمصدر، السؤال، الفلاج مرفوض في نفس اللفة، مفيش كتابة مباشرة).
+- **فاضل:** تأكيد البزرار قبل الرفض يعني العميل بيشوف كارت ثم السؤال ثم كارت تاني؛ لو اتحس تقيل نشيلهم من CONFIRM_REQUIRED.
 
 ## P3.7 نفاد الدوا الحتمي (٢٠٢٦-١١-٢٨، فرع `feat/p3-7-p3-6`)
 
