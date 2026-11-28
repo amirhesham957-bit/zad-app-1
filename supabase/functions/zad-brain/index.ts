@@ -185,7 +185,8 @@ import { describeSafeSpend } from "./safeSpendTool.ts";
 import { describeConflicts, parseConflictInput } from "./constraintConflicts.ts";
 import { paydayOdds, paydayOddsRule, type SpendRow } from "./paydayOdds.ts";
 import { medicineDaysLeft, medicineLow } from "./medicineStock.ts";
-import { describeReorder, parseReorderInput } from "./pharmacyReorderTool.ts";
+import { runOutWhen } from "../_shared/or/medicineRunOut.ts";
+import { recurringObligationCandidate } from "./recurringBillWiring.ts";import { describeReorder, parseReorderInput } from "./pharmacyReorderTool.ts";
 import { budgetAtStart, circumstanceBudget, circumstanceBudgetLine, circumstanceBudgetRule, circumstanceCost } from "./circumstanceBudget.ts";
 import { homeEmergencyRule, technicianFollowUp, techniciansForSnapshot } from "./homeEmergency.ts";
 import { loadWhileAway, whileAwayBlock } from "./whileAway.ts";
@@ -1089,6 +1090,10 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
     obligationRows,
     subRes.data ?? [],
     now,
+  ) ?? recurringObligationCandidate( // P3.6: خلف ZAD_RECURRING_BILLS (مقفول)؛ نفس مسار السؤال والباب
+    transactions.filter((t) => t.txn_kind === "expense"),
+    [...obligationRows.map((o) => o.title), ...(subRes.data ?? []).map((s: { title: string }) => s.title)],
+    now,
   );
   if (candidate) {
     obligationDetection = {
@@ -1293,7 +1298,7 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
   }
   for (const p of pharmRes.data ?? []) {
     if (medicineLow(p)) { // م٣.٤: نقطة إعادة الطلب بالوحدات (medicineStock.ts)، مش «٣ جرعات × ٣»
-      upcoming.push({ type: "medication_low", name: p.for_person ? `${p.name} (لـ${p.for_person})` : p.name, when: "قريب" });
+      upcoming.push({ type: "medication_low", name: p.for_person ? `${p.name} (لـ${p.for_person})` : p.name, when: runOutWhen(p, localNowContext(budgetState.timezone ?? "UTC").date) }); // P3.7: تاريخ النفاد من الرصيد × الجرعات
     }
   }
 
