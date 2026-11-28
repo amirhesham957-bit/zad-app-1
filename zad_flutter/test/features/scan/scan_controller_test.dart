@@ -782,6 +782,26 @@ void main() {
       );
     });
 
+    test(
+      '«سجّل البنود بس» sends the lines with no amount and no expense',
+      () async {
+        final container = containerWith();
+        addTearDown(container.dispose);
+        final controller = container.read(scanControllerProvider.notifier);
+
+        await controller.scan(ReceiptImageSource.camera);
+        expect(container.read(scanControllerProvider).offersRecordOnly, isTrue);
+        controller.setDeductFromBalance(value: false);
+        await controller.saveAsTransaction();
+
+        final purchase = queuedPurchase(container);
+        expect(purchase.containsKey('amount'), isFalse);
+        expect(purchase.containsKey('merge_with'), isFalse);
+        expect(purchase['lines'], hasLength(1));
+        expect(recorded(container), isEmpty, reason: 'no expense is shown');
+      },
+    );
+
     test('a category outside the eleven is dropped, not written', () async {
       // The server clamps this, and got it wrong once anyway — a supermarket
       // receipt came back "مواليد" on 2026-08-15. Writing it would put the

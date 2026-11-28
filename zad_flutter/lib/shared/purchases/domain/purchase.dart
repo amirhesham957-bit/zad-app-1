@@ -86,10 +86,10 @@ class Purchase {
   /// Creates a purchase.
   const new({
     required this.id,
-    required this.amount,
     required this.title,
     required this.spentAt,
     required this.sourceType,
+    this.amount,
     this.category,
     this.wallet = Wallet.card,
     this.merchantName,
@@ -101,8 +101,9 @@ class Purchase {
   /// The purchase's id, and the expense's when a new one is written.
   final String id;
 
-  /// What was paid.
-  final double amount;
+  /// What was paid. Null records the lines only, with no expense and no
+  /// deduction (the server's `lines_only`: «سجّل البنود بس»).
+  final double? amount;
 
   /// The expense's title.
   final String title;
@@ -135,7 +136,7 @@ class Purchase {
   /// The function's shape.
   Map<String, dynamic> toJson() => <String, dynamic>{
     'id': id,
-    'amount': amount,
+    'amount': ?amount,
     'title': title,
     'category': ?category,
     'wallet': wallet.wireName,
@@ -166,14 +167,15 @@ class PurchaseOutcome {
   static PurchaseOutcome? fromJson(Map<String, dynamic> json) {
     if (json['ok'] != true) return null;
     final txn = json['transaction_id']?.toString();
-    if (txn == null || txn.isEmpty) return null;
+    final linesOnly = json['status'] == 'lines_only';
+    if (!linesOnly && (txn == null || txn.isEmpty)) return null;
     int count(Object? group, String key) => switch (group) {
       final Map<dynamic, dynamic> m => (m[key] as num?)?.toInt() ?? 0,
       _ => 0,
     };
     return PurchaseOutcome(
       merged: json['status'] == 'merged',
-      transactionId: txn,
+      transactionId: (txn == null || txn.isEmpty) ? null : txn,
       pantryAdded: count(json['pantry'], 'added'),
       pantryToppedUp: count(json['pantry'], 'topped_up'),
       pantryTicked: count(json['pantry'], 'ticked'),
@@ -190,8 +192,8 @@ class PurchaseOutcome {
   /// Whether an existing expense took the purchase rather than a new one.
   final bool merged;
 
-  /// The expense the purchase is.
-  final String transactionId;
+  /// The expense the purchase is; null when only the lines were recorded.
+  final String? transactionId;
 
   /// New pantry rows.
   final int pantryAdded;

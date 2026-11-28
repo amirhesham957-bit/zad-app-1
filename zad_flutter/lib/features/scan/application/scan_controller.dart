@@ -20,6 +20,9 @@ import 'package:zad/shared/market/application/account_time_zone.dart';
 import 'package:zad/shared/pharmacy/data/pharmacy_repository.dart';
 import 'package:zad/shared/pharmacy/domain/medicine.dart';
 import 'package:zad/shared/pharmacy/domain/pharmacy_intake.dart';
+import 'package:zad/shared/proposals/application/proposals_controller.dart';
+import 'package:zad/shared/proposals/data/proposals_repository.dart';
+import 'package:zad/shared/proposals/domain/transaction_proposal.dart';
 import 'package:zad/shared/purchases/data/purchases_repository.dart';
 import 'package:zad/shared/purchases/domain/purchase.dart';
 import 'package:zad/shared/scan/data/receipt_scanner.dart';
@@ -91,7 +94,9 @@ class ScanView {
     this.addToPharmacy = true,
     this.lastPharmacyIntake,
     this.bankTwin,
+    this.bankProposal,
     this.mergeWithBank = true,
+    this.deductFromBalance = true,
     this.savedQueued = false,
   });
 
@@ -135,6 +140,22 @@ class ScanView {
   /// ([bankTwinOf]) — saving would otherwise count it twice.
   final ZadTransaction? bankTwin;
 
+  /// The bank's notification for this receipt that the customer has not
+  /// answered yet (a proposal), when no recorded [bankTwin] fits better.
+  final TransactionProposal? bankProposal;
+
+  /// With no bank match: whether saving deducts the total from the balance.
+  /// False records the lines only (server `lines_only`).
+  final bool deductFromBalance;
+
+  /// Whether the bank has a record for this receipt, recorded or pending.
+  bool get hasBankMatch => bankTwin != null || bankProposal != null;
+
+  /// Whether the «اخصم ولا بنود بس» question applies: no bank match, and
+  /// there are lines to record without a deduction.
+  bool get offersRecordOnly =>
+      !hasBankMatch && (offersPantry || offersPharmacy);
+
   /// Whether saving completes [bankTwin] with the receipt instead of adding a
   /// second expense. Yes unless the customer says it is another payment.
   final bool mergeWithBank;
@@ -177,7 +198,10 @@ class ScanView {
     bool? addToPharmacy,
     ZadTransaction? bankTwin,
     bool clearBankTwin = false,
+    TransactionProposal? bankProposal,
+    bool clearBankProposal = false,
     bool? mergeWithBank,
+    bool? deductFromBalance,
   }) => ScanView(
     stage: stage ?? this.stage,
     receipt: clearReceipt ? null : (receipt ?? this.receipt),
@@ -189,7 +213,11 @@ class ScanView {
     pharmacyCounts: pharmacyCounts ?? this.pharmacyCounts,
     addToPharmacy: addToPharmacy ?? this.addToPharmacy,
     bankTwin: clearBankTwin ? null : (bankTwin ?? this.bankTwin),
+    bankProposal: clearBankProposal
+        ? null
+        : (bankProposal ?? this.bankProposal),
     mergeWithBank: mergeWithBank ?? this.mergeWithBank,
+    deductFromBalance: deductFromBalance ?? this.deductFromBalance,
   );
 }
 
@@ -239,11 +267,13 @@ class ScanController extends Notifier<ScanView> {
           .scan(userId: userId, image: image, mimeType: mimeType);
       if (!ref.mounted) return;
 
+      final match = receipt.isUsable ? _bankMatchFor(receipt) : null;
       state = ScanView(
         stage: receipt.isUsable ? ScanStage.ready : ScanStage.unreadable,
         receipt: receipt.isUsable ? receipt : null,
         pharmacy: receipt.isUsable ? _proposalsFor(receipt) : const [],
-        bankTwin: receipt.isUsable ? _bankTwinFor(receipt) : null,
+        bankTwin: match?.transaction,
+        bankProposal: match?.proposal,
       );
     } on Object catch (error) {
       if (!ref.mounted) return;
@@ -266,12 +296,16 @@ class ScanController extends Notifier<ScanView> {
       type: type,
       paidWith: paidWith,
     );
-    final twin = _bankTwinFor(next);
+    final match = _bankMatchFor(next);
+    final twin = match?.transaction;
+    final proposal = match?.proposal;
     state = type == null || type == current.type
         ? state.copyWith(
             receipt: next,
             bankTwin: twin,
             clearBankTwin: twin == null,
+            bankProposal: proposal,
+            clearBankProposal: proposal == null,
           )
         : state.copyWith(
             receipt: next,
@@ -279,6 +313,8 @@ class ScanController extends Notifier<ScanView> {
             pharmacyCounts: const <int, int>{},
             bankTwin: twin,
             clearBankTwin: twin == null,
+            bankProposal: proposal,
+            clearBankProposal: proposal == null,
           );
   }
 
@@ -288,13 +324,26 @@ class ScanController extends Notifier<ScanView> {
     state = state.copyWith(mergeWithBank: value);
   }
 
-  ZadTransaction? _bankTwinFor(ScannedReceipt receipt) {
+  /// «اخصم وسجّل ولا سجّل البنود بس» — with no bank match.
+  void setDeductFromBalance({required bool value}) {
+    if (!ref.mounted) return;
+    state = state.copyWith(deductFromBalance: value);
+  }
+
+  BankMatch? _bankMatchFor(ScannedReceipt receipt) {
     if (!receipt.type.isPurchase) return null;
     try {
-      return bankTwinOf(
+      List<TransactionProposal> proposals;
+      try {
+        proposals = ref.read(proposalsRepositoryProvider).cached();
+      } on Object {
+        proposals = const <TransactionProposal>[];
+      }
+      return bankMatchOf(
         total: receipt.total,
         spentAt: _spentAt(receipt),
         rows: ref.read(transactionsRepositoryProvider).allCached(),
+        proposals: proposals,
         paidWith: receipt.paidWith,
       );
     } on Object {
@@ -370,7 +419,11 @@ class ScanController extends Notifier<ScanView> {
       final purchases = ref.read(purchasesRepositoryProvider);
       final id = purchases.newId();
       final twin = state.bankTwin;
+      final proposal = state.bankProposal;
       final merge = twin != null && state.mergeWithBank;
+      final mergeProposal = proposal != null && state.mergeWithBank;
+      // No bank record and the customer chose «سجّل البنود بس».
+      final linesOnly = !state.hasBankMatch && !state.deductFromBalance;
       final category = receipt.hasKnownCategory ? receipt.category : null;
       final store = receipt.storeName.isEmpty ? null : receipt.storeName;
 
@@ -393,16 +446,48 @@ class ScanController extends Notifier<ScanView> {
           ? pharmacyLinesOf(ref, shopMedicines)
           : null;
       final lines = <PurchaseLine>[...pantry, ...?pharmacy?.lines];
+      if (linesOnly && lines.isEmpty) {
+        throw StateError('no lines to record without a deduction');
+      }
+
+      // A pending bank notification is completed, not duplicated: it is
+      // confirmed (the server posts the expense), then the receipt's lines
+      // go onto that expense through `merge_with`.
+      String? proposalTxnId;
+      if (mergeProposal) {
+        final outcome = await ref
+            .read(proposalsControllerProvider.notifier)
+            .decide(
+              proposal.id,
+              proposal.status == ProposalStatus.needsClassification
+                  ? ProposalDecision.expense
+                  : ProposalDecision.confirm,
+            );
+        proposalTxnId = outcome?.transactionId;
+        if (proposalTxnId == null) {
+          throw StateError('bank notification was not confirmed');
+        }
+      }
 
       final outcome = await purchases.record(
         Purchase(
           id: id,
           // On a merge the bank's row keeps its own amount and time; these
           // only have to be valid.
-          amount: merge ? twin.amount : receipt.total,
+          amount: linesOnly
+              ? null
+              : merge
+              ? twin.amount
+              : mergeProposal
+              ? proposal.amount
+              : receipt.total,
           title: receipt.title,
           // The printed date's month, not the scan's.
-          spentAt: merge ? twin.createdAt : _spentAt(receipt),
+          spentAt: merge
+              ? twin.createdAt
+              : mergeProposal
+              ? proposal.createdAt
+              : _spentAt(receipt),
           // So the brain can tell a photographed receipt from a typed
           // figure (provenance, 2026-10-11).
           sourceType: 'receipt',
@@ -411,19 +496,34 @@ class ScanController extends Notifier<ScanView> {
           // picked); card, the commoner, when it says nothing.
           wallet: receipt.paidWith ?? Wallet.card,
           merchantName: store,
-          mergeWith: merge ? twin.id : null,
+          mergeWith: merge ? twin.id : proposalTxnId,
           // «عملية تانية»: the customer already answered the question the
           // server would ask.
-          allowDuplicate: twin != null && !merge,
+          allowDuplicate:
+              (twin != null || proposal != null) && !state.mergeWithBank,
           lines: lines,
         ),
         // One payment, one expense: the bank's row takes the shop and the
         // category, and keeps its amount and time (they are the bank's).
-        shownAs: merge
+        shownAs: linesOnly
+            ? null
+            : merge
             ? twin.edited(
                 title: receipt.title,
                 amount: twin.amount,
                 category: category ?? twin.category,
+              )
+            : mergeProposal
+            ? ZadTransaction.expense(
+                id: proposalTxnId!,
+                userId: userId,
+                amount: proposal.amount,
+                title: receipt.title,
+                createdAt: proposal.createdAt,
+                wallet: receipt.paidWith ?? Wallet.card,
+                category: category,
+                merchantName: store,
+                sourceType: kBankSourceType,
               )
             : ZadTransaction.expense(
                 id: id,

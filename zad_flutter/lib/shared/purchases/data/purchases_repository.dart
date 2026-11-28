@@ -70,16 +70,16 @@ class PurchasesRepository {
 
   /// Queues [purchase] and tries to send it now.
   ///
-  /// [shownAs] is the expense as the phone should show it until the server
-  /// answers: the new row, or the bank's row with the shop on it. Returns
-  /// what the server did, or null when it has not answered yet — no network,
-  /// or older writes still ahead of it in the queue — and the purchase goes
-  /// when they do.
+  /// [shownAs] (omitted when only the lines are recorded) is the expense as
+  /// the phone should show it until the server answers: the new row, or the
+  /// bank's row with the shop on it. Returns what the server did, or null
+  /// when it has not answered yet — no network, or older writes still ahead
+  /// of it in the queue — and the purchase goes when they do.
   Future<PurchaseOutcome?> record(
     Purchase purchase, {
-    required ZadTransaction shownAs,
+    ZadTransaction? shownAs,
   }) async {
-    await _transactions.holdUnsent(shownAs);
+    if (shownAs != null) await _transactions.holdUnsent(shownAs);
     await _outbox().enqueue(
       id: outboxIdFor(purchase.id),
       kind: OutboxKind.recordPurchase,
@@ -134,9 +134,12 @@ class PurchasesRepository {
         ));
 
     final id = payload['id'] as String;
-    if (outcome.transactionId != id) await _transactions.forget(id);
-    final row = await _remote.fetchTransaction(outcome.transactionId);
-    if (row != null) await _transactions.confirm(row);
+    final txnId = outcome.transactionId;
+    if (txnId != null) {
+      if (txnId != id) await _transactions.forget(id);
+      final row = await _remote.fetchTransaction(txnId);
+      if (row != null) await _transactions.confirm(row);
+    }
 
     try {
       await _afterRecorded(outcome);
