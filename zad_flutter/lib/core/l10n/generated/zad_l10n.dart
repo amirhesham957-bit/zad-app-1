@@ -4754,6 +4754,42 @@ abstract class ZadL10n {
   /// **'اللي موجود هتزيد كميته، واللي في قايمة المشتريات هيتشال منها، والأدوية هتروح الصيدلية.'**
   String get scanPantryWithMedicines;
 
+  /// No description provided for @scanBankMatchQuestion.
+  ///
+  /// In ar, this message translates to:
+  /// **'لقيت إشعار فيزا بـ {amount} من {merchant}. أربط الفاتورة بيه من غير خصم تاني؟'**
+  String scanBankMatchQuestion(String amount, String merchant);
+
+  /// No description provided for @scanBankMatchLink.
+  ///
+  /// In ar, this message translates to:
+  /// **'اربطها (من غير خصم تاني)'**
+  String get scanBankMatchLink;
+
+  /// No description provided for @scanBankMatchSeparate.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجّلها لوحدها'**
+  String get scanBankMatchSeparate;
+
+  /// No description provided for @scanDeductQuestion.
+  ///
+  /// In ar, this message translates to:
+  /// **'اخصم {amount} من الرصيد وسجّل الفاتورة، ولا أسجّل البنود في المخزن/السجل بس من غير خصم؟'**
+  String scanDeductQuestion(String amount);
+
+  /// No description provided for @scanDeductYes.
+  ///
+  /// In ar, this message translates to:
+  /// **'اخصم وسجّل'**
+  String get scanDeductYes;
+
+  /// No description provided for @scanDeductLinesOnly.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجّل البنود بس'**
+  String get scanDeductLinesOnly;
+
   /// No description provided for @dealsTitle.
   ///
   /// In ar, this message translates to:

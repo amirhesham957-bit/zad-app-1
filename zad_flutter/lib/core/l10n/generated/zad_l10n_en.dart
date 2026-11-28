@@ -2726,6 +2726,28 @@ class ZadL10nEn extends ZadL10n {
       'What you have goes up, what\'s on the shopping list comes off it, and medicines go to the pharmacy.';
 
   @override
+  String scanBankMatchQuestion(String amount, String merchant) {
+    return 'Found a Visa notification for $amount from $merchant. Link the receipt to it without deducting again?';
+  }
+
+  @override
+  String get scanBankMatchLink => 'Link it (no second deduction)';
+
+  @override
+  String get scanBankMatchSeparate => 'Record it on its own';
+
+  @override
+  String scanDeductQuestion(String amount) {
+    return 'Deduct $amount from the balance and record the receipt, or record the items in the pantry/log only, with no deduction?';
+  }
+
+  @override
+  String get scanDeductYes => 'Deduct and record';
+
+  @override
+  String get scanDeductLinesOnly => 'Record items only';
+
+  @override
   String get dealsTitle => 'Deals and shops nearby';
 
   @override

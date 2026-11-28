@@ -37,6 +37,7 @@ import 'package:zad/shared/market/domain/market_examples.dart';
 import 'package:zad/shared/pharmacy/domain/pharmacy_intake.dart';
 import 'package:zad/shared/quota/domain/server_refusal.dart';
 import 'package:zad/shared/scan/data/receipt_scanner.dart';
+import 'package:zad/shared/scan/domain/bank_twin.dart';
 import 'package:zad/shared/scan/domain/scanned_receipt.dart';
 import 'package:zad/shared/sound/ui_sounds.dart';
 import 'package:zad/shared/transactions/domain/transaction.dart';
@@ -355,50 +356,52 @@ class _ReadingState extends ConsumerState<_Reading> {
             ],
           ),
 
-          if (view.bankTwin case final twin?) ...<Widget>[
+          if (view.hasBankMatch) ...<Widget>[
             const SizedBox(height: ZadSpacing.lg),
             // One card payment, two messages: the bank's and this paper.
             // Saved twice, it would be counted twice.
-            DecoratedBox(
-              decoration: BoxDecoration(
-                color: ZadColors.mustardOchre.withValues(alpha: 0.10),
-                borderRadius: BorderRadius.circular(ZadRadii.card),
+            _questionBox(
+              text: context.l10n.scanBankMatchQuestion(
+                _plain(_bankMatch(view).amount),
+                _bankMatch(view).merchant,
               ),
-              child: Padding(
-                padding: const EdgeInsets.all(ZadSpacing.md),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      'المبلغ ده اتسجل من البنك'
-                      '${twin.bankName == null ? '' : ' (${twin.bankName})'}: '
-                      '${_plain(twin.amount)} — «${twin.title}»',
-                      style: ZadType.bodyMedium,
-                    ),
-                    const SizedBox(height: ZadSpacing.sm),
-                    Wrap(
-                      spacing: ZadSpacing.sm,
-                      children: <Widget>[
-                        ChoiceChip(
-                          label: const Text('نفس العملية'),
-                          selected: view.mergeWithBank,
-                          onSelected: busy
-                              ? null
-                              : (_) => controller.setMergeWithBank(value: true),
-                        ),
-                        ChoiceChip(
-                          label: const Text('عملية تانية'),
-                          selected: !view.mergeWithBank,
-                          onSelected: busy
-                              ? null
-                              : (_) =>
-                                    controller.setMergeWithBank(value: false),
-                        ),
-                      ],
-                    ),
-                  ],
+              choices: <Widget>[
+                ChoiceChip(
+                  label: Text(context.l10n.scanBankMatchLink),
+                  selected: view.mergeWithBank,
+                  onSelected: busy
+                      ? null
+                      : (_) => controller.setMergeWithBank(value: true),
                 ),
-              ),
+                ChoiceChip(
+                  label: Text(context.l10n.scanBankMatchSeparate),
+                  selected: !view.mergeWithBank,
+                  onSelected: busy
+                      ? null
+                      : (_) => controller.setMergeWithBank(value: false),
+                ),
+              ],
+            ),
+          ] else if (view.offersRecordOnly) ...<Widget>[
+            const SizedBox(height: ZadSpacing.lg),
+            _questionBox(
+              text: context.l10n.scanDeductQuestion(_plain(receipt.total)),
+              choices: <Widget>[
+                ChoiceChip(
+                  label: Text(context.l10n.scanDeductYes),
+                  selected: view.deductFromBalance,
+                  onSelected: busy
+                      ? null
+                      : (_) => controller.setDeductFromBalance(value: true),
+                ),
+                ChoiceChip(
+                  label: Text(context.l10n.scanDeductLinesOnly),
+                  selected: !view.deductFromBalance,
+                  onSelected: busy
+                      ? null
+                      : (_) => controller.setDeductFromBalance(value: false),
+                ),
+              ],
             ),
           ],
 
@@ -804,6 +807,30 @@ class _ButtonSpinner extends StatelessWidget {
     child: CircularProgressIndicator(strokeWidth: 2),
   );
 }
+
+/// The bank's record the receipt matched, recorded or pending.
+BankMatch _bankMatch(ScanView view) =>
+    BankMatch(transaction: view.bankTwin, proposal: view.bankProposal);
+
+/// A tinted question with its choices.
+Widget _questionBox({required String text, required List<Widget> choices}) =>
+    DecoratedBox(
+      decoration: BoxDecoration(
+        color: ZadColors.mustardOchre.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(ZadRadii.card),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(ZadSpacing.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text(text, style: ZadType.bodyMedium),
+            const SizedBox(height: ZadSpacing.sm),
+            Wrap(spacing: ZadSpacing.sm, children: choices),
+          ],
+        ),
+      ),
+    );
 
 /// A figure with no grouping separators, for an editable field.
 String _plain(double value) {
