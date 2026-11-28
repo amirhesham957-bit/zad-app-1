@@ -5,6 +5,8 @@ library;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:zad/core/data/commit_my_intent.dart';
+import 'package:zad/core/data/edge_client.dart';
 import 'package:zad/core/data/providers.dart';
 
 /// What kind of notification is read.
@@ -124,14 +126,14 @@ class SupabaseNotificationReadsRepository
 
   @override
   Future<void> setSwitch(ReadKind kind, {required bool enabled}) async {
-    final uid = _userId();
-    if (uid == null) throw StateError('not signed in');
-    await _client.from('zad_notification_switches').upsert(<String, dynamic>{
-      'user_id': uid,
-      'kind': kind.wire,
-      'enabled': enabled,
-      'enabled_at': enabled ? DateTime.now().toUtc().toIso8601String() : null,
-    }, onConflict: 'user_id,kind');
+    if (_userId() == null) throw StateError('not signed in');
+    // The door takes the user from the JWT and stamps `enabled_at` itself.
+    await commitMyIntent(
+      _client,
+      kind: 'settings.notification_switch_set',
+      clientEventId: 'notif_switch:${kind.wire}:${newTraceId()}',
+      payload: <String, dynamic>{'kind': kind.wire, 'enabled': enabled},
+    );
   }
 
   @override
