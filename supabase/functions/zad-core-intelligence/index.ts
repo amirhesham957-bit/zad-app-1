@@ -3690,7 +3690,7 @@ async function handle(req: Request): Promise<Response> {
         const raw = officialFlyerDeals(parsed).map((d) => ({ ...d, currency: site.currency }));
         const deals = readStoreDeals({ deals: raw }, [{ title: `نشرة ${site.store}: ${label}`, url: pdfUrl, snippet: "" }], site.currency, now);
         if (raw.length > 0 && deals.length === 0) console.warn("[official_flyers] every deal dropped:", JSON.stringify(raw.slice(0, 3)));
-        return jsonResponse({ ok: true, store: site.store, country: site.country, currency: site.currency, raw: raw.length, deals, source: "flyer" });
+        return jsonResponse({ ok: true, store: site.store, country: site.country, currency: site.currency, raw: raw.length, deals, source: "flyer", kind: isImage ? "image" : "pdf" });
       }
 
       // ──────────────────────────────────────────────

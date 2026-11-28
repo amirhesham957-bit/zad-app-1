@@ -197,7 +197,7 @@ import { knownLinkCheck } from "./knownLinks.ts";
 import { socialPickRows, weekTrendRows } from "./socialPicksStore.ts";
 import { videoAlive } from "./videoLinks.ts";
 import { dealCountry, dealsAtPlace, dealsHere, dealSource, linkCheck, nearbySource, type StoredDealRow } from "./tasteDeals.ts";
-import { dealPutPayload, findCustomerCities, type FlyerReadRow, flyerEntries, INSTAGRAM_STORES_PER_RUN, accountDayTargets, isInstagramHashtagDay, nextFlyer, searchedDeals, STORES_PER_RUN, TIKTOK_STORES_PER_RUN, YOUTUBE_STORES_PER_RUN } from "./storeDeals.ts";
+import { dealPutPayload, findCustomerCities, type FlyerReadRow, flyerEntries, flyerReadOutcome, INSTAGRAM_STORES_PER_RUN, accountDayTargets, isInstagramHashtagDay, nextFlyer, searchedDeals, STORES_PER_RUN, TIKTOK_STORES_PER_RUN, YOUTUBE_STORES_PER_RUN } from "./storeDeals.ts";
 import { replyCadence, replyCadenceRule } from "./replyCadence.ts";
 import { ENGAGEMENT_WINDOW_DAYS, engagementFrom, type InsightRow } from "./engagement.ts";
 import { monthlyAverages, monthRunway, projectDecision } from "./decisionImpact.ts";
@@ -3853,7 +3853,7 @@ async function handleRequest(req: Request): Promise<Response> {
         return new Response(JSON.stringify({ ok: true, sites, read: null }), { headers: CORS_HEADERS });
       }
       const { data: reads, error: readsErr } = await sbDeals.from("zad_flyer_reads")
-        .select("pdf_url, ok, read_at, deals").in("pdf_url", entries.map((e) => e.pdf_url));
+        .select("pdf_url, ok, read_at, deals, reason").in("pdf_url", entries.map((e) => e.pdf_url));
       if (readsErr) {
         console.error("[deals_flyers_run] reads failed:", readsErr.message);
         return new Response(JSON.stringify({ error: "reads_failed" }), { status: 500, headers: CORS_HEADERS });
@@ -3870,11 +3870,12 @@ async function handleRequest(req: Request): Promise<Response> {
         if (!error && (data as { ok?: boolean } | null)?.ok) put++;
         else refused++;
       }
-      // «ok» بس لو النشرة طلّعت عروض فعلاً: صفر = اتسجّل فشل ويتجرب تاني بعد ٢٠ ساعة، مش «اتقرت» للأبد (أول رن حي ٧/١١).
-      const ok = reply?.ok === true && Array.isArray(reply?.deals) && reply.deals.length > 0;
+      // «ok» بس لو النشرة طلّعت عروض فعلاً: صفر = اتسجّل فشل ويتجرب تاني بعد ٢٠ ساعة (أول رن حي ٧/١١)، إلا صورة اتقرت
+      // بنجاح وفيها صفر عروض = بانر مش نشرة (not_a_flyer): حالة نهائية مابتتقراش تاني ومابتعدّش فشل.
+      const { ok, reason: readReason } = flyerReadOutcome(reply);
       const { error: logErr } = await sbDeals.from("zad_flyer_reads").upsert({
         pdf_url: next.pdf_url, store: next.store, country: next.country, city: next.city, label: next.label,
-        ok, deals: put, reason: ok ? null : String(reply?.reason ?? (reply?.ok ? `empty_raw_${Number(reply?.raw) || 0}` : "no_reply")).slice(0, 60), read_at: new Date().toISOString(),
+        ok, deals: put, reason: readReason, read_at: new Date().toISOString(),
       }, { onConflict: "pdf_url" });
       if (logErr) console.error("[deals_flyers_run] log failed:", logErr.message);
       const result = { store: next.store, label: next.label, city: next.city, ok, raw: Number(reply?.raw) || 0, read: Array.isArray(reply?.deals) ? reply.deals.length : 0, put, refused, reason: reply?.reason ?? null };
