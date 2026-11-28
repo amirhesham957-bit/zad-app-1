@@ -10,9 +10,20 @@
 /** الهيدر اللي محرك الخلفية بيبعت فيه المفتاح. */
 export const DEVICE_KEY_HEADER = "x-zad-device-key";
 
-/** الأكشنز اللي المفتاح يفتحها. واحد بس، عن قصد. */
+/**
+ * أكشنز المكان اللي محرك الخلفية بيبعتها من غير جلسة (الجيوفنس: وصول محل، رجوع
+ * البيت، ملخص المشوار). عليها حد معدّل لكل مفتاح.
+ */
+export const DEVICE_KEY_PLACE_ACTIONS: readonly string[] = ["store_arrival", "place_event", "commute_summary"];
+
+/** الأكشنز اللي المفتاح يفتحها، وبس. أي أكشن تاني بيفضل ٤٠١. */
+export const DEVICE_KEY_ACTIONS: readonly string[] = ["notification_ingest", ...DEVICE_KEY_PLACE_ACTIONS];
+
+/** حد المكالمات لكل مفتاح في الساعة لأكشنز المكان. */
+export const DEVICE_KEY_PLACE_HOURLY_LIMIT = 60;
+
 export function deviceKeyAllows(action: unknown): boolean {
-  return action === "notification_ingest";
+  return typeof action === "string" && DEVICE_KEY_ACTIONS.includes(action);
 }
 
 /** المفتاح من الهيدر، أو null لو مش موجود أو شكله غلط (٣٢ بايت base64url = ٤٣ حرف). */
@@ -45,5 +56,34 @@ export async function resolveDeviceKeyUser(
     return await lookup(await hashDeviceKey(key));
   } catch {
     return null;
+  }
+}
+
+export type DeviceKeyCall =
+  | { kind: "ok"; userId: string }
+  | { kind: "none" }
+  | { kind: "limited" };
+
+/**
+ * مكالمة بمفتاح جهاز: الحساب من صف المفتاح بس. أكشنز المكان بتعدّي على [hit]
+ * (يرجّع false لو المفتاح عدّى الحد) — لو فشل العدّاد نرفض، مانفتحش من غير حد.
+ */
+export async function resolveDeviceKeyCall(
+  req: Request,
+  action: unknown,
+  lookup: DeviceKeyLookup,
+  hit: (keyHash: string) => Promise<boolean>,
+): Promise<DeviceKeyCall> {
+  if (!deviceKeyAllows(action)) return { kind: "none" };
+  const key = presentedDeviceKey(req);
+  if (!key) return { kind: "none" };
+  try {
+    const keyHash = await hashDeviceKey(key);
+    const userId = await lookup(keyHash);
+    if (!userId) return { kind: "none" };
+    if (DEVICE_KEY_PLACE_ACTIONS.includes(String(action)) && !(await hit(keyHash))) return { kind: "limited" };
+    return { kind: "ok", userId };
+  } catch {
+    return { kind: "none" };
   }
 }

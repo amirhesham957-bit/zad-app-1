@@ -5,10 +5,14 @@
 /// refreshed.
 library;
 
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:zad/core/data/edge_client.dart';
 import 'package:zad/shared/alerts/domain/push_alert.dart';
+import 'package:zad/shared/bank/data/device_send_key.dart';
 import 'package:zad/shared/nearby/domain/nearby.dart';
 import 'package:zad/shared/places/application/place_engine.dart';
 import 'package:zad/shared/places/domain/commute.dart';
@@ -30,45 +34,18 @@ class SupabasePlaceServer implements PlaceServer {
     final data = (await invokeEdge(
       _client,
       'zad-brain',
-      body: <String, dynamic>{
-        'action': 'store_arrival',
-        'store_name': name,
-        'category': kind.tag,
-        // The shop's point, for the map button under the alert.
-        'store_lat': ?at?.lat,
-        'store_lon': ?at?.lon,
-      },
+      body: storeArrivalBody(name: name, kind: kind, at: at),
     )).data;
     return storeArrivalAlert(data, kind);
   }
 
   @override
-  Future<void> backHome(DateTime leftAt) => invokeEdge(
-    _client,
-    'zad-brain',
-    body: <String, dynamic>{
-      'action': 'place_event',
-      'event': 'back_home',
-      'left_at': leftAt.toUtc().toIso8601String(),
-    },
-  );
+  Future<void> backHome(DateTime leftAt) =>
+      invokeEdge(_client, 'zad-brain', body: backHomeBody(leftAt));
 
   @override
-  Future<void> commuteSummary(CommutePattern? pattern) => invokeEdge(
-    _client,
-    'zad-brain',
-    body: <String, dynamic>{
-      'action': 'commute_summary',
-      if (pattern == null)
-        'clear': true
-      else ...<String, dynamic>{
-        'leave': pattern.leave,
-        'back': pattern.back,
-        'days': pattern.days,
-        'samples': pattern.samples,
-      },
-    },
-  );
+  Future<void> commuteSummary(CommutePattern? pattern) =>
+      invokeEdge(_client, 'zad-brain', body: commuteSummaryBody(pattern));
 
   @override
   Future<void> zoneEvent({
@@ -149,6 +126,112 @@ class UnauthorizedPlaceServer implements PlaceServer {
   Future<void> commuteSummary(CommutePattern? pattern) =>
       Future<void>.error(const PlaceServerUnauthorized());
 }
+
+/// The headless engine's server when the saved access token has expired but
+/// this device holds a registered send key (ZAD_PLAN ٢.٧ب). The three place
+/// actions zad-brain opens to the key — `store_arrival`, `place_event`,
+/// `commute_summary` — go out with `x-zad-device-key`, no JWT, no refresh.
+/// Zone events and the last-location write need the session itself, so they
+/// throw [PlaceServerUnauthorized] and wait for the app, like
+/// [UnauthorizedPlaceServer].
+class DeviceKeyPlaceServer implements PlaceServer {
+  /// Creates it.
+  const new({
+    required http.Client client,
+    required String supabaseUrl,
+    required String anonKey,
+    required String deviceKey,
+  }) : _client = client,
+       _url = supabaseUrl,
+       _anon = anonKey,
+       _key = deviceKey;
+
+  final http.Client _client;
+  final String _url;
+  final String _anon;
+  final String _key;
+
+  Future<Object?> _send(Map<String, dynamic> body) => sendIngestWithDeviceKey(
+    client: _client,
+    supabaseUrl: _url,
+    anonKey: _anon,
+    deviceKey: _key,
+    payload: body,
+  );
+
+  @override
+  Future<PushAlert?> storeArrival({
+    required String name,
+    required StoreKind kind,
+    GeoPoint? at,
+  }) async => storeArrivalAlert(
+    placeBody(await _send(storeArrivalBody(name: name, kind: kind, at: at))),
+    kind,
+  );
+
+  @override
+  Future<void> backHome(DateTime leftAt) => _send(backHomeBody(leftAt));
+
+  @override
+  Future<void> commuteSummary(CommutePattern? pattern) =>
+      _send(commuteSummaryBody(pattern));
+
+  @override
+  Future<void> saveLastLocation(GeoPoint coarse) =>
+      Future<void>.error(const PlaceServerUnauthorized());
+
+  @override
+  Future<void> zoneEvent({
+    required String zoneId,
+    required PlaceTransition transition,
+    required DateTime at,
+  }) => Future<void>.error(const PlaceServerUnauthorized());
+}
+
+/// A device-key answer is the raw response body, decoded like `invokeEdge`'s.
+Object? placeBody(Object? raw) {
+  if (raw is! String || raw.isEmpty) return null;
+  try {
+    final json = jsonDecode(raw);
+    return json;
+  } on FormatException {
+    return null;
+  }
+}
+
+/// The `store_arrival` request body, shared by both servers.
+Map<String, dynamic> storeArrivalBody({
+  required String name,
+  required StoreKind kind,
+  GeoPoint? at,
+}) => <String, dynamic>{
+  'action': 'store_arrival',
+  'store_name': name,
+  'category': kind.tag,
+  'store_lat': ?at?.lat,
+  'store_lon': ?at?.lon,
+};
+
+/// The `place_event` back-home body.
+Map<String, dynamic> backHomeBody(DateTime leftAt) => <String, dynamic>{
+  'action': 'place_event',
+  'event': 'back_home',
+  'left_at': leftAt.toUtc().toIso8601String(),
+};
+
+/// The `commute_summary` body; null clears it.
+Map<String, dynamic> commuteSummaryBody(CommutePattern? pattern) =>
+    <String, dynamic>{
+      'action': 'commute_summary',
+      if (pattern == null)
+        'clear': true
+      else ...<String, dynamic>{
+        'leave': pattern.leave,
+        'back': pattern.back,
+        'days': pattern.days,
+        'samples': pattern.samples,
+      },
+    };
 
 /// The alert in a `store_arrival` answer: its `title` and `body`, which the
 /// server sends only when there is something missing and it is not muted or
