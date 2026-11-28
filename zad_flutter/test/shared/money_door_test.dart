@@ -151,6 +151,29 @@ void main() {
       expect(wire.tableWrites, isEmpty);
     });
 
+    test('the stuck-notification card entry goes through the door', () async {
+      // stuck_notifications.dart records an expense on the card wallet through
+      // transactionsRepository.record, with no category.
+      await repo.record(
+        (id) => ZadTransaction.expense(
+          id: id,
+          userId: 'user-1',
+          amount: 120,
+          title: 'مصروف',
+          createdAt: DateTime.utc(2026, 9, 19, 12),
+          wallet: Wallet.card,
+        ),
+      );
+      await repo.sendQueued(only(OutboxKind.insertTransaction));
+
+      final call = wire.doorCalls.single;
+      expect(call['p_kind'], 'money.logged');
+      expect((call['p_payload'] as Map)['wallet'], 'card');
+      expect((call['p_payload'] as Map)['amount'], 120);
+      expectTraced(call);
+      expect(wire.tableWrites, isEmpty);
+    });
+
     test('the edit button sends money.updated, never a table update', () async {
       final txn = (await repo.record(coffee)).markPending(pending: false);
       await outbox.discard(txn.id);
