@@ -21,10 +21,8 @@ Deno.test("Turkey is transcribed as Turkish, not forced into Arabic", () => {
   assertEquals(whisperOptions("TR"), { language: "tr" });
 });
 
-Deno.test("an unknown country leaves the language to Whisper", () => {
-  assertEquals(whisperOptions(null), {});
-  assertEquals(whisperOptions("US"), {});
-  assertEquals(whisperOptions(""), {});
+Deno.test("a country outside the Arab list still gets Arabic (Zad is Arabic-first)", () => {
+  assertEquals(whisperOptions("US").language, "ar");
 });
 
 import { spokenText } from "./whisper.ts";
@@ -98,4 +96,13 @@ Deno.test("whisperWithFallback: a refused model falls back on the same key; a re
     return { ok: false, status: 500, data: {} };
   });
   assertEquals([down.ok, down.status, n], [false, 500, 1]);
+});
+
+Deno.test("unknown country never auto-detects: Arabic is locked with the Egyptian hint (2026-11-28)", () => {
+  for (const c of [null, undefined, ""]) {
+    const o = whisperOptions(c);
+    assertEquals(o.language, "ar");
+    assertEquals(o.prompt?.includes("ملوخية"), true);
+    assertEquals(o.model, "whisper-large-v3");
+  }
 });
