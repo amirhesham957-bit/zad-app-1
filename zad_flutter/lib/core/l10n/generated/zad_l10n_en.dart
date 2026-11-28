@@ -4973,6 +4973,29 @@ class ZadL10nEn extends ZadL10n {
   String get zadStatusFixBattery => 'Remove limits';
 
   @override
+  String get rescueBankTitle => 'Bank message reading stopped';
+
+  @override
+  String get rescueBankBody =>
+      'The phone shut Zad down in the background, so new payments are not being recorded. Turn notification access back on and remove the battery limits.';
+
+  @override
+  String get rescueLocationTitle => 'Location was switched off for Zad';
+
+  @override
+  String get rescueLocationBody =>
+      'Without location, store and area alerts do not work. Allow it again.';
+
+  @override
+  String get rescueOpenListener => 'Notification access';
+
+  @override
+  String get rescueBattery => 'Battery limits';
+
+  @override
+  String get rescueAutostart => 'Autostart';
+
+  @override
   String get gamesHubButton => 'Zado\'s games';
 
   @override
@@ -7658,6 +7681,13 @@ class ZadL10nEn extends ZadL10n {
   @override
   String get permBatteryWhy =>
       'So notification reading and reminders are not stopped when the phone saves battery.';
+
+  @override
+  String get permLocationAlwaysTitle => 'Location all the time';
+
+  @override
+  String get permLocationAlwaysWhy =>
+      'So street alerts and the kids\' zones work while the app is closed.';
 
   @override
   String get permEnable => 'Enable';

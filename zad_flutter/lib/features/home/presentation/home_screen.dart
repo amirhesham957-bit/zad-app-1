@@ -46,6 +46,7 @@ import 'package:zad/features/home/presentation/inventory_check_in_card.dart';
 import 'package:zad/features/home/presentation/metrics_duo.dart';
 import 'package:zad/features/home/presentation/occasion_card.dart';
 import 'package:zad/features/home/presentation/quiet_banner.dart';
+import 'package:zad/features/home/presentation/rescue_card.dart';
 import 'package:zad/features/home/presentation/sections_grid.dart';
 import 'package:zad/features/home/presentation/subscribe_pulse_card.dart';
 import 'package:zad/features/home/presentation/tasbiha_home_widget.dart';
@@ -151,6 +152,8 @@ class HomeScreen extends ConsumerWidget {
           ),
           sliver: SliverList(
             delegate: SliverChildListDelegate(<Widget>[
+              // Rescue (P1.8): bank reading or location was taken away.
+              const RescueCard(),
               // A quiet period the customer asked for, with the way out of it.
               const QuietModeBanner(),
               // The day's occasion first: it is there one day a year.

@@ -64,7 +64,7 @@ const day = (iso: unknown) => typeof iso === "string" && iso ? iso.slice(0, 10) 
 const BANK: Record<string, string> = {
   "bank.flowing": "شغالة",
   "bank.off": "اتقفلت (الصلاحية اتشالت)",
-  "bank.stalled": "واقفة (مفيش إشعارات من يومين)",
+  "bank.stalled": "واقفة (مفيش إشعارات من ١٢ ساعة)",
 };
 
 /** رد /support. [r] = zad_support_lookup. */

@@ -16,8 +16,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/l10n/l10n.dart';
+import 'package:zad/features/home/presentation/rescue_card.dart';
 import 'package:zad/shared/alerts/application/notification_access.dart';
 import 'package:zad/shared/bank/application/bank_access_controller.dart';
+import 'package:zad/shared/places/data/background_location.dart';
 
 /// The permissions the proactive brain needs from day one.
 enum EssentialPermission {
@@ -29,6 +31,10 @@ enum EssentialPermission {
 
   /// Not optimised in the background, so the listener is not killed.
   battery,
+
+  /// Location «طول الوقت», for street alerts and a child's zones; asked only
+  /// of an account that uses them.
+  locationAlways,
 }
 
 /// The device flag: the first-run sheet was shown (once, never nagged).
@@ -43,14 +49,30 @@ final FutureProvider<List<EssentialPermission>> missingPermissionsProvider =
         bankAccessControllerProvider.select((v) => v.granted),
       );
       final battery = await ref.read(batteryUnrestrictedProvider)();
+      final needsAlways = await _try(
+        () => ref.read(rescueLocationNeededProvider)(),
+      );
+      final always = needsAlways == true
+          ? await _try(() => ref.read(backgroundLocationProvider).granted())
+          : null;
       return <EssentialPermission>[
         if (alerts == NotificationStand.denied ||
             alerts == NotificationStand.blocked)
           EssentialPermission.notifications,
         if (!bank) EssentialPermission.bankReading,
         if (battery == false) EssentialPermission.battery,
+        if (always == false) EssentialPermission.locationAlways,
       ];
     });
+
+Future<T?> _try<T>(Future<T> Function() read) async {
+  try {
+    return await read();
+  } on Object {
+    // No plugin or wiring (a test host): counts as nothing missing.
+    return null;
+  }
+}
 
 /// Asks for one permission; the system dialog (or settings page) only opens
 /// from here, after the explanation the customer just read.
@@ -62,6 +84,9 @@ Future<void> requestEssential(WidgetRef ref, EssentialPermission p) async {
       await ref.read(bankAccessControllerProvider.notifier).openSettings();
     case EssentialPermission.battery:
       await ref.read(batteryExemptionRequestProvider)();
+    case EssentialPermission.locationAlways:
+      final always = ref.read(backgroundLocationProvider);
+      if (!await always.request()) await always.openSettings();
   }
 }
 
@@ -69,18 +94,21 @@ String _title(ZadL10n l, EssentialPermission p) => switch (p) {
   EssentialPermission.notifications => l.permNotificationsTitle,
   EssentialPermission.bankReading => l.permBankTitle,
   EssentialPermission.battery => l.permBatteryTitle,
+  EssentialPermission.locationAlways => l.permLocationAlwaysTitle,
 };
 
 String _why(ZadL10n l, EssentialPermission p) => switch (p) {
   EssentialPermission.notifications => l.permNotificationsWhy,
   EssentialPermission.bankReading => l.permBankWhy,
   EssentialPermission.battery => l.permBatteryWhy,
+  EssentialPermission.locationAlways => l.permLocationAlwaysWhy,
 };
 
 IconData _icon(EssentialPermission p) => switch (p) {
   EssentialPermission.notifications => Icons.notifications_active_outlined,
   EssentialPermission.bankReading => Icons.account_balance_outlined,
   EssentialPermission.battery => Icons.battery_charging_full_outlined,
+  EssentialPermission.locationAlways => Icons.near_me_outlined,
 };
 
 /// Shows the first-run sheet once per device, when something is missing.

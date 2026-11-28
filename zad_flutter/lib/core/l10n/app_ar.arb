@@ -4100,6 +4100,13 @@
   "zadStatusFixAllow": "اسمح",
   "zadStatusFixLocationOn": "شغّل الموقع",
   "zadStatusFixBattery": "فكّ القيود",
+  "rescueBankTitle": "قراءة رسائل البنك وقفت",
+  "rescueBankBody": "الموبايل قفل زاد في الخلفية، فالدفعات الجديدة مابتتسجلش. فعّل الوصول للإشعارات وفكّ قيود البطارية.",
+  "rescueLocationTitle": "الموقع اتقفل عن زاد",
+  "rescueLocationBody": "من غير الموقع تنبيهات المحلات والمناطق مابتشتغلش. اسمح بيه تاني.",
+  "rescueOpenListener": "الوصول للإشعارات",
+  "rescueBattery": "قيود البطارية",
+  "rescueAutostart": "التشغيل التلقائي",
   "gamesHubButton": "ألعاب زادو",
   "@gamesHubButton": {
     "description": "Care sheet: opens the games hub."
@@ -6910,6 +6917,8 @@
   "permBankWhy": "زاد بيقرا الإشعارات اللي بتوصلك من البنك ورسايل الدفع عشان يسجّل المشتريات عنك، وبيحتفظ بس بالإشعارات اللي شكلها معاملة.",
   "permBatteryTitle": "الشغل في الخلفية",
   "permBatteryWhy": "عشان قراءة الإشعارات والتذكيرات ماتتقفلش لما الموبايل يوفّر البطارية.",
+  "permLocationAlwaysTitle": "الموقع طول الوقت",
+  "permLocationAlwaysWhy": "عشان تنبيهات الشارع ومناطق الأولاد تشتغل والتطبيق مقفول.",
   "permEnable": "فعّل",
   "permLater": "مش دلوقتي",
   "permDone": "تمام",

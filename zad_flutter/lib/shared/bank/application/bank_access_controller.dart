@@ -39,7 +39,7 @@ enum BankAccessHealth {
   /// Granted, worked, and has seen nothing at all for [kListenerStallAfter].
   ///
   /// The listener sees every notification on the phone (WhatsApp included),
-  /// not only bank ones, so two days of nothing is a dead service, not a
+  /// not only bank ones, so twelve hours of nothing is a dead service, not a
   /// quiet phone. The owner's phone stopped sending on 2026-10-05 and nothing
   /// said so: this state used to read as [flowing] once anything had ever
   /// been captured.
@@ -146,7 +146,7 @@ class BankAccessState {
   final DateTime? checkedAt;
 
   /// Whether home's pill reads green: granted, bound at least once, and not
-  /// [BankAccessHealth.stalled] — the same two days the bank screen uses.
+  /// [BankAccessHealth.stalled] — the same twelve hours the bank screen uses.
   ///
   /// Kotlin's `isListenerAlive` also wanted a notification in the last ten
   /// minutes. That read every quiet phone, and every phone that had just
