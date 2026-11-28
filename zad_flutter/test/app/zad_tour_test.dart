@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zad/app/shell/zad_tour.dart';
 import 'package:zad/core/l10n/generated/zad_l10n.dart';
+import 'package:zad/core/l10n/generated/zad_l10n_ar.dart';
 
 void main() {
   final target = GlobalKey();
@@ -66,5 +67,13 @@ void main() {
     await tester.tap(find.text('تخطي'));
     await tester.pumpAndSettle();
     expect(find.byType(ZadTourOverlay), findsNothing);
+  });
+
+  test('the family tab has a stop, before «المزيد»', () {
+    final steps = zadTourSteps(ZadL10nAr());
+    final i = steps.indexWhere((s) => s.target == ZadTourKeys.family);
+    expect(i, isNonNegative);
+    expect(steps[i].title, 'عيلتي');
+    expect(steps[i + 1].target, ZadTourKeys.more);
   });
 }

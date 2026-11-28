@@ -6290,6 +6290,30 @@ abstract class ZadL10n {
   /// **'عقل زاد وحسابك وكل المزايا.'**
   String get tourMoreBody;
 
+  /// No description provided for @tourFamilyTitle.
+  ///
+  /// In ar, this message translates to:
+  /// **'عيلتي'**
+  String get tourFamilyTitle;
+
+  /// No description provided for @tourFamilyBody.
+  ///
+  /// In ar, this message translates to:
+  /// **'أفراد العيلة والمصروف المشترك والمهام في مكان واحد.'**
+  String get tourFamilyBody;
+
+  /// No description provided for @homeQuickRecipes.
+  ///
+  /// In ar, this message translates to:
+  /// **'نطبخ إيه؟'**
+  String get homeQuickRecipes;
+
+  /// No description provided for @homeQuickOffers.
+  ///
+  /// In ar, this message translates to:
+  /// **'عروض اليوم'**
+  String get homeQuickOffers;
+
   /// No description provided for @tourBellTitle.
   ///
   /// In ar, this message translates to:
