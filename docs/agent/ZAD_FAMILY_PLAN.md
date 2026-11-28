@@ -138,7 +138,7 @@ related:
 | P2.1 | `[ ]` | فرد واحد: `zad_household_members` هو الشخص، و`family_members` ربط حساب. يتضاف للفرد بلد وعملة ولهجة ومين وليّه | مايجريشن | تست SQL + RLS |
 | P2.2 | `[ ]` | `zad_household_traits`: سمة بتاريخ بداية ونهاية ومصدر (معيل، كبيرة، لوحده، فيها قاصر، مسافرة) | مايجريشن + مجال في الباب | تست SQL + `oneDoor_test` |
 | P2.3 | `[ ]` | `zad_member_facts` + مجال `profile` في `zad_commit_intent` (مصدر: قالها/اتلاحظت/اتستنتجت، ثقة، دليل، انتهاء) | مايجريشن + `commitIntent.ts` | تست SQL + رفض عربي في `REASONS` |
-| P2.4 | `[ ]` | توسيع `zad_locale_config` لحزمة البلد: متاجر، مواسم، يوم القبض، أكلات | مايجريشن (بيانات) | تست SQL |
+| P2.4 | `[x]` | توسيع `zad_locale_config` لحزمة البلد: متاجر، مواسم، يوم القبض، أكلات | مايجريشن (بيانات) | تست SQL |
 | P2.5 | `[ ]` | مصفوفة الرؤية (مين يشوف إيه عن مين) بقرار المالك، و`crossMemberLeak.ts` بيقراها | مايجريشن + `_shared/or/crossMemberLeak.ts` | `deno test` على الحالات الخمسة |
 | P2.6 | `[ ]` | الجرعة الفائتة توصل للمسؤول بعد مهلة. اقرا `parent-digest` و`zad_guardian_*` كاملين الأول | `zad_enqueue_missed_doses`، `parent-digest/` | تست SQL: أم بحساب مربوط فوّتت = لحظة للابن |
 | P2.7 | `[ ]` | المطر قبلها بـ٣٠ دقيقة: `minutely_15` من Open-Meteo (يتأكد من التوثيق والتغطية) + سياق المواعيد والمدرسة | `zad-brain/weatherDrift.ts` | `deno test` يوقع لو رجع للساعة |
