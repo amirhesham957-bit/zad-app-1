@@ -1107,16 +1107,22 @@ export async function isStillRelevant(sb: SupabaseClient, row: VoiceMomentRow): 
     if (memberLeaks(row.user_id, memberId, !!share && (share as unknown[]).length > 0)) return false;
     return await isStillRelevant(sb, { ...row, user_id: memberId, moment: "dose_missed" });
   }
-  // مسؤول عن فرد (P2.6): الموافقة لازم تفضل موجودة وقت الإرسال، والجرعة لسه 'missed' (مش اتاخدت بعدها).
+  // مسؤول عن فرد (P2.6): الموافقة لازم تفضل موجودة وقت الإرسال، والخانة لسه من غير إجابة (taken/skipped/dose_log)
+  // بنفس قاعدة zad_enqueue_missed_doses: أي إجابة من ٣ ساعات قبل الخانة.
   if (row.moment === "guardian_dose_missed") {
     const patient = str(row.facts?.patient_user_id, 60);
-    const doseId = str(row.facts?.dose_id, 60);
-    if (!patient || !doseId) return false;
+    const itemId = str(row.facts?.item_id, 60);
+    const slot = str(row.facts?.scheduled_at, 40);
+    if (!patient || !itemId || !slot) return false;
     const { data: share } = await sb.from("zad_family_shares").select("id")
       .eq("owner_id", patient).eq("viewer_id", row.user_id).eq("scope", "medicines").eq("status", "granted").limit(1);
     if (memberLeaks(row.user_id, patient, !!share && (share as unknown[]).length > 0)) return false;
-    const { data: dose } = await sb.from("zad_pharmacy_doses").select("status").eq("id", doseId).maybeSingle();
-    return (dose as { status?: string } | null)?.status === "missed";
+    const since = new Date(new Date(slot).getTime() - 3 * 3600_000).toISOString();
+    const [{ data: pd }, { data: dl }] = await Promise.all([
+      sb.from("zad_pharmacy_doses").select("id").eq("user_id", patient).eq("item_id", itemId).in("status", ["taken", "skipped"]).gte("scheduled_at", since).limit(1),
+      sb.from("zad_dose_log").select("id").eq("user_id", patient).eq("pharmacy_item_id", itemId).gte("taken_at", since).limit(1),
+    ]);
+    return !((pd ?? []).length > 0 || (dl ?? []).length > 0);
   }
   // رجع بلده (أو راح بلد تالتة) قبل ما الترحيب يتبعت = مفيش ترحيب.
   if (row.moment === "travel_arrived") {
