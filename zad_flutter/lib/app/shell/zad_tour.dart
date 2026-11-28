@@ -52,47 +52,47 @@ class ZadTourStep {
 
 /// Every stop, in order, before the ones not on screen are dropped.
 List<ZadTourStep> zadTourSteps(ZadL10n l) => <ZadTourStep>[
-  ZadTourStep(title: l.tourWelcomeTitle, body: l.tourWelcomeBody),
-  ZadTourStep(
-    title: l.tourHomeTitle,
-    body: l.tourHomeBody,
-    target: ZadTourKeys.home,
-  ),
-  ZadTourStep(
-    title: l.tourMoneyTitle,
-    body: l.tourMoneyBody,
-    target: ZadTourKeys.money,
-  ),
-  ZadTourStep(
-    title: l.tourMicTitle,
-    body: l.tourMicBody,
-    target: ZadTourKeys.mic,
-  ),
-  ZadTourStep(
-    title: l.tourCameraTitle,
-    body: l.tourCameraBody,
-    target: ZadTourKeys.camera,
-  ),
-  ZadTourStep(
-    title: l.tourHouseTitle,
-    body: l.tourHouseBody,
-    target: ZadTourKeys.house,
-  ),
-  ZadTourStep(
-    title: l.tourFamilyTitle,
-    body: l.tourFamilyBody,
-    target: ZadTourKeys.family,
-  ),
-  ZadTourStep(
-    title: l.tourMoreTitle,
-    body: l.tourMoreBody,
-    target: ZadTourKeys.more,
-  ),
-  ZadTourStep(
-    title: l.tourBellTitle,
-    body: l.tourBellBody,
-    target: ZadTourKeys.bell,
-  ),
+    ZadTourStep(title: l.tourWelcomeTitle, body: l.tourWelcomeBody),
+    ZadTourStep(
+      title: l.tourHomeTitle,
+      body: l.tourHomeBody,
+      target: ZadTourKeys.home,
+    ),
+    ZadTourStep(
+      title: l.tourMoneyTitle,
+      body: l.tourMoneyBody,
+      target: ZadTourKeys.money,
+    ),
+    ZadTourStep(
+      title: l.tourMicTitle,
+      body: l.tourMicBody,
+      target: ZadTourKeys.mic,
+    ),
+    ZadTourStep(
+      title: l.tourCameraTitle,
+      body: l.tourCameraBody,
+      target: ZadTourKeys.camera,
+    ),
+    ZadTourStep(
+      title: l.tourHouseTitle,
+      body: l.tourHouseBody,
+      target: ZadTourKeys.house,
+    ),
+    ZadTourStep(
+      title: l.tourFamilyTitle,
+      body: l.tourFamilyBody,
+      target: ZadTourKeys.family,
+    ),
+    ZadTourStep(
+      title: l.tourMoreTitle,
+      body: l.tourMoreBody,
+      target: ZadTourKeys.more,
+    ),
+    ZadTourStep(
+      title: l.tourBellTitle,
+      body: l.tourBellBody,
+      target: ZadTourKeys.bell,
+    ),
 ];
 
 /// Opens the tour over the shell, skipping anything not on screen.
