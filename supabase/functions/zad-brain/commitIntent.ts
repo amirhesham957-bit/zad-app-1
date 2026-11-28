@@ -23,7 +23,8 @@ export type IntentKind =
   | "settings.cycle_start_set" | "settings.market_set" | "settings.emergency_fund_set" | "settings.sleep_set"
   | "settings.sleep_cleared" | "settings.app_flag_set"
   | "goal.set" | "goal.cancelled" | "goal.progress" | "goal.challenge_started" | "goal.challenge_stopped"
-  | "trait.set" | "trait.end";
+  | "trait.set" | "trait.end"
+  | "profile.fact_set" | "profile.fact_forget";
 export type IntentSource = "manual" | "receipt" | "bank" | "model" | "cron";
 
 export type CommitResult =
@@ -171,6 +172,10 @@ const REASONS: Record<string, string> = {
   trait_date_invalid: "تاريخ السمة مش مفهوم أو نهايتها قبل بدايتها",
   member_not_in_household: "الفرد ده مش في البيت",
   bad_source: "مصدر السمة يا said يا observed يا inferred",
+  unknown_kind: "نوع النية مش معروف — استعمل نوع من الأنواع المسجّلة",
+  fact_invalid: "الحقيقة لازم لها مفتاح (لحد ٦٠ حرف) وقيمة (لحد ٥٠٠ حرف) وثقة من ٠ لـ١ وتاريخ انتهاء مفهوم في المستقبل",
+  fact_not_found: "مفيش حقيقة حالية بالمفتاح ده للفرد ده عشان تتنسى",
+  inferred_needs_evidence: "الحقيقة المستنتجة لازم ثقتها ٠٫٨ أو أقل ومعاها دليل مكتوب — لو مش متأكد اسأله بدل ما تستنتج",
   goal_not_found: "مفيش هدف بالاسم ده عند العميل",
   goal_amount_invalid: "المبلغ لازم رقم مش صفر وبحدود المنطق",
   goal_not_amount: "الهدف ده بيتعد بالمهام مش بالفلوس — تقدمه بيتحسب لوحده.",

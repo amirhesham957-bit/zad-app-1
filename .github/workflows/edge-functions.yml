@@ -322,6 +322,7 @@ jobs:
           supabase/sql/tests/scratch_scaffold.sql supabase/sql/tests/view_rpcs_scaffold.sql supabase/migrations/20261001130000_family_shares_by_consent.sql supabase/migrations/20261127140000_view_rpcs.sql supabase/migrations/20261127150000_view_family_meds.sql supabase/sql/tests/view_rpcs_test.sql
           supabase/sql/tests/events_ledger_scaffold.sql supabase/migrations/20261121160000_events_ledger.sql supabase/migrations/20261128100000_one_person_member.sql supabase/sql/tests/one_person_member_test.sql
           supabase/sql/tests/events_ledger_scaffold.sql supabase/migrations/20261121160000_events_ledger.sql supabase/migrations/20261128120000_household_traits.sql supabase/sql/tests/household_traits_test.sql
+          supabase/sql/tests/events_ledger_scaffold.sql supabase/migrations/20261121160000_events_ledger.sql supabase/migrations/20261128120000_household_traits.sql supabase/migrations/20261128130000_member_facts.sql supabase/sql/tests/member_facts_test.sql
           LIST
 
   # النشر من الريبو، بعد ما الفحص يعدي — مش من على جهاز حد.
