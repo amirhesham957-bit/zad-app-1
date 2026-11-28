@@ -1,5 +1,5 @@
 // m4.5 pass 3: executeTool case bodies moved verbatim out of index.ts (no behavior change).
-import { ownPriceReply, ownPricesFor } from "./ownPurchasePrice.ts";
+import { ownPriceAnswer } from "./ownPurchasePrice.ts";
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import type { AuditScope } from "./audit.ts";
 import type { RunContext } from "./validators.ts";
@@ -68,23 +68,9 @@ export async function execStoresPlans(name: string, sb: SupabaseClient, userId: 
       // ببلد العميل وعملته (pricePayload) — من غيرهم الأسعار بعملة تانية ماكانتش بتتشال.
       const { data: u } = await sb.from("zad_users").select("country,currency").eq("id", userId).maybeSingle();
       const me = u as { country?: string | null; currency?: string | null } | null;
-      // الأول: سعر الصنف المسجّل في فواتير العميل نفسه (بنود zad_purchases) — مش بحث نت ولا «التفاصيل مش ظاهرة».
-      const wanted = String(input.item_name ?? "").trim();
-      if (wanted.length >= 2) {
-        const since = new Date(Date.now() - 180 * 86_400_000).toISOString();
-        const { data: purchases } = await sb.from("zad_purchases").select("id,lines,created_at,transaction_id")
-          .eq("user_id", userId).gte("created_at", since).order("created_at", { ascending: false }).limit(300);
-        const rows = (purchases ?? []) as Array<{ lines: unknown; created_at: string; transaction_id: string }>;
-        const hit = ownPricesFor(rows, wanted);
-        if (hit.length > 0) {
-          const ids = rows.filter((r) => ownPricesFor([r], wanted).length > 0).map((r) => r.transaction_id).slice(0, 20);
-          const { data: tx } = await sb.from("zad_transactions").select("id,title").in("id", ids);
-          const shopById = new Map(((tx ?? []) as Array<{ id: string; title: string | null }>).map((x) => [x.id, x.title]));
-          const withShop = rows.map((r) => ({ ...r, shop: shopById.get(r.transaction_id) ?? null }));
-          const reply = ownPriceReply(ownPricesFor(withShop, wanted), wanted, me?.currency ?? null);
-          if (reply) return reply;
-        }
-      }
+      // الأول: سعر الصنف المسجّل في فواتير العميل نفسه؛ فاضي (إشعار بنك إجمالي بس) = يكمّل بحث النت تحت.
+      const own = await ownPriceAnswer(sb, userId, String(input.item_name ?? ""), me?.currency ?? null);
+      if (own) return own;
       // بحث موجّه بمصدره، محفوظ ٧ أيام بالبلد والصنف (webPrice.ts، zad_web_prices) — بداية الأسعار قبل الجمهور.
       const found = await webPrice(sb, {
         item: String(input.item_name ?? ""), store: input.store ? String(input.store) : null,

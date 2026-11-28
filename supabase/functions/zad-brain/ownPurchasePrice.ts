@@ -3,6 +3,7 @@
 // بلاغ المالك ٢٠٢٦-١١-٢٨: سجّل فاتورة «بشاير للخضراوات» بأصنافها وأسعارها (منها الملوخية)، وسأل البوت
 // «سعر الملوخية كام» فرد «تفاصيل الأصناف مش ظاهرة». السبب: ماكانش فيه أداة بتقرا بنود الفواتير؛ كلها كانت
 // بتقرا بحث النت أو لقطة الإجمالي. بند الفاتورة `price` = إجمالي البند، فسعر الوحدة = price ÷ quantity.
+import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { normalizeItemName, samePantryItem } from "./pantryMatch.ts";
 
 export interface PurchaseRow {
@@ -55,4 +56,22 @@ export function ownPriceReply(prices: OwnPrice[], item: string, currency: string
     return `- ${p.name}: ${p.unitPrice}${cur}${per} (البند ${p.total}${cur} × ${p.quantity})${p.shop ? ` من ${p.shop}` : ""} — ${day}`;
   });
   return `سعر "${item}" من فواتير العميل نفسه (مسجّل، مش تقدير):\n${lines.join("\n")}`;
+}
+
+/** سعر الصنف من فواتير العميل (آخر ١٨٠ يوم) أو null = مفيش بنود بالصنف، والمنادي يكمّل بحث النت. */
+export async function ownPriceAnswer(
+  sb: SupabaseClient, userId: string, item: string, currency: string | null,
+): Promise<string | null> {
+  const wanted = item.trim();
+  if (wanted.length < 2) return null;
+  const since = new Date(Date.now() - 180 * 86_400_000).toISOString();
+  const { data: purchases } = await sb.from("zad_purchases").select("id,lines,created_at,transaction_id")
+    .eq("user_id", userId).gte("created_at", since).order("created_at", { ascending: false }).limit(300);
+  const rows = (purchases ?? []) as Array<{ lines: unknown; created_at: string; transaction_id: string }>;
+  const matching = rows.filter((r) => ownPricesFor([r], wanted).length > 0);
+  if (matching.length === 0) return null;
+  const { data: tx } = await sb.from("zad_transactions").select("id,title")
+    .in("id", matching.map((r) => r.transaction_id).slice(0, 20));
+  const shopById = new Map(((tx ?? []) as Array<{ id: string; title: string | null }>).map((x) => [x.id, x.title]));
+  return ownPriceReply(ownPricesFor(rows.map((r) => ({ ...r, shop: shopById.get(r.transaction_id) ?? null })), wanted), wanted, currency);
 }

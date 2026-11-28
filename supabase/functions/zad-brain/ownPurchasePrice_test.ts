@@ -1,5 +1,6 @@
 import { assertEquals } from "jsr:@std/assert@1";
-import { ownPriceReply, ownPricesFor } from "./ownPurchasePrice.ts";
+import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
+import { ownPriceAnswer, ownPriceReply, ownPricesFor } from "./ownPurchasePrice.ts";
 
 const rows = [
   { created_at: "2026-11-20T10:00:00Z", shop: "بشاير للخضراوات والفاكهة", lines: [
@@ -25,4 +26,28 @@ Deno.test("a line with no price, another item, or a bank-total row yields nothin
   assertEquals(ownPricesFor(rows, "لبن"), []);
   assertEquals(ownPricesFor([{ created_at: "2026-11-01", lines: [] }], "ملوخية"), []);
   assertEquals(ownPriceReply([], "ملوخية", "EGP"), null);
+});
+
+function sbWith(purchases: unknown[], tx: unknown[] = []) {
+  return {
+    from: (table: string) => {
+      const data = table === "zad_purchases" ? purchases : tx;
+      const q: Record<string, unknown> = {};
+      for (const m of ["select", "eq", "gte", "order", "limit", "in"]) q[m] = () => q;
+      q.then = (res: (v: unknown) => unknown) => Promise.resolve({ data, error: null }).then(res);
+      return q;
+    },
+  } as unknown as SupabaseClient;
+}
+
+Deno.test("no receipt lines for the item (bank-total-only) => null, so check_price_online falls through to the web search", async () => {
+  assertEquals(await ownPriceAnswer(sbWith([]), "u", "ملوخية", "EGP"), null);
+  assertEquals(await ownPriceAnswer(sbWith([{ lines: [], created_at: "2026-11-20", transaction_id: "t" }]), "u", "ملوخية", "EGP"), null);
+});
+
+Deno.test("receipt lines present => the recorded price with the shop from the transaction", async () => {
+  const r = await ownPriceAnswer(
+    sbWith(rows.map((x, i) => ({ ...x, transaction_id: `t${i}` })), [{ id: "t0", title: "بشاير" }]), "u", "ملوخية", "EGP");
+  assertEquals(r?.includes("25 EGP لكل كجم"), true);
+  assertEquals(r?.includes("بشاير"), true);
 });
