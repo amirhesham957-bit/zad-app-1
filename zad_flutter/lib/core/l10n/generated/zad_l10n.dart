@@ -12889,6 +12889,12 @@ abstract class ZadL10n {
   /// In ar, this message translates to:
   /// **'المكان'**
   String get notifReadsPlace;
+
+  /// No description provided for @stuckNotificationRecord.
+  ///
+  /// In ar, this message translates to:
+  /// **'سجّله'**
+  String get stuckNotificationRecord;
 }
 
 class _ZadL10nDelegate extends LocalizationsDelegate<ZadL10n> {

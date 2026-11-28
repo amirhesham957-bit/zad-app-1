@@ -6951,5 +6951,6 @@
   "notifReadsLoadFailed": "ماقدرناش نحمّل، اضغط للمحاولة تاني",
   "notifReadsDate": "التاريخ",
   "notifReadsTime": "الوقت",
-  "notifReadsPlace": "المكان"
+  "notifReadsPlace": "المكان",
+  "stuckNotificationRecord": "سجّله"
 }

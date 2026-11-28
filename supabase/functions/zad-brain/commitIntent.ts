@@ -25,7 +25,7 @@ export type IntentKind =
   | "settings.sleep_cleared" | "settings.app_flag_set"
   | "goal.set" | "goal.cancelled" | "goal.progress" | "goal.challenge_started" | "goal.challenge_stopped"
   | "trait.set" | "trait.end"
-  | "profile.fact_set" | "profile.fact_forget";
+  | "profile.fact_set" | "profile.fact_forget" | "profile.fact_asked" | "profile.fact_deny";
 export type IntentSource = "manual" | "receipt" | "bank" | "model" | "cron";
 
 export type CommitResult =
@@ -180,6 +180,7 @@ const REASONS: Record<string, string> = {
   unknown_kind: "نوع النية مش معروف — استعمل نوع من الأنواع المسجّلة",
   fact_invalid: "الحقيقة لازم لها مفتاح (لحد ٦٠ حرف) وقيمة (لحد ٥٠٠ حرف) وثقة من ٠ لـ١ وتاريخ انتهاء مفهوم في المستقبل",
   fact_not_found: "مفيش حقيقة حالية بالمفتاح ده للفرد ده عشان تتنسى",
+  fact_denied_recently: "العميل قال «لأ» على الحقيقة دي من أقل من ١٨٠ يوم — ماتستنتجهاش ولا تسأله عليها تاني",
   inferred_needs_evidence: "الحقيقة المستنتجة لازم ثقتها ٠٫٨ أو أقل ومعاها دليل مكتوب — لو مش متأكد اسأله بدل ما تستنتج",
   goal_not_found: "مفيش هدف بالاسم ده عند العميل",
   goal_amount_invalid: "المبلغ لازم رقم مش صفر وبحدود المنطق",

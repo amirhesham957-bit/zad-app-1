@@ -16,8 +16,12 @@ class ZadQuestionCard extends StatefulWidget {
     required this.onAnswer,
     required this.onDismiss,
     this.onOpenCamera,
+    this.yesLabel = 'أيوة',
     super.key,
   });
+
+  /// The label of the confirming button of a yes/no question.
+  final String yesLabel;
 
   /// The question.
   final ZadInsight insight;
@@ -109,16 +113,22 @@ class _ZadQuestionCardState extends State<ZadQuestionCard> {
           Row(
             children: <Widget>[
               SizedBox(
-                height: 32,
+                height: 44,
                 child: FilledButton(
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size(64, 44),
+                  ),
                   onPressed: () => widget.onAnswer(kYesAnswer),
-                  child: const Text('أيوة', style: ZadType.labelSmall),
+                  child: Text(widget.yesLabel, style: ZadType.labelSmall),
                 ),
               ),
               const SizedBox(width: 8),
               SizedBox(
-                height: 32,
+                height: 44,
                 child: OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(64, 44),
+                  ),
                   onPressed: () => widget.onAnswer('لأ'),
                   child: const Text('لأ', style: ZadType.labelSmall),
                 ),
