@@ -4,6 +4,7 @@
 --   psql < supabase/sql/tests/view_rpcs_scaffold.sql
 --   psql < supabase/migrations/20261001130000_family_shares_by_consent.sql
 --   psql < supabase/migrations/20261127140000_view_rpcs.sql
+--   psql < supabase/migrations/20261127150000_view_family_meds.sql
 --   psql < supabase/sql/tests/view_rpcs_test.sql
 --
 -- Raises on the first failed check; each passing one prints "ok:".
@@ -121,6 +122,37 @@ select pg_temp.who(:a);
 select pg_temp.check(public.zad_view_family(:mb) -> 'sections' = '["medicines"]'::jsonb, 'a different single scope: only it is in sections');
 select pg_temp.check(not (public.zad_view_family(:mb) -> 'numbers' ? 'spent_30d') and (public.zad_view_family(:mb) -> 'numbers' -> 'medicines_active' ->> 'value')::int = 2,
   'spending stays out when only medicines is granted; medicines = the table for b');
+
+-- ── P1.3b: الولي يشوف أدوية الفرد وجرعاته الفايتة (الربط بـfor_person، مش family_member_id) ──
+reset role;
+insert into public.zad_pharmacy_items (id, user_id, name, remaining_quantity, for_person) values
+  ('00000000-0000-0000-0000-0000000d0001', :a, 'فيتامين', 5, 'سلمى'), ('00000000-0000-0000-0000-0000000d0002', :a, 'مضاد', 0, 'سلمى'),
+  ('00000000-0000-0000-0000-0000000d0003', :a, 'ضغط جدو', 7, ' جدو '), ('00000000-0000-0000-0000-0000000d0004', :a, 'غريب', 4, 'حد تاني');
+insert into public.zad_pharmacy_doses (user_id, item_id, status, scheduled_at) values
+  (:a, '00000000-0000-0000-0000-0000000d0001', 'missed', now() - interval '1 day'),
+  (:a, '00000000-0000-0000-0000-0000000d0001', 'missed', now() - interval '30 days'),
+  (:a, '00000000-0000-0000-0000-0000000d0001', 'skipped', now() - interval '1 day'),
+  (:a, '00000000-0000-0000-0000-0000000d0001', 'taken', now() - interval '2 days'),
+  (:a, '00000000-0000-0000-0000-0000000d0003', 'missed', now() - interval '2 days'),
+  (:a, (select id from public.zad_pharmacy_items where user_id = :a and name = 'بنادول'), 'missed', now() - interval '3 days');
+select pg_temp.who(:a);
+select pg_temp.check((public.zad_view_family(:mkid) -> 'numbers' -> 'medicines_active' ->> 'value')::int = 1, 'guardian: the child''s active medicines (finished one and other people''s excluded)');
+select pg_temp.check(public.zad_view_family(:mkid) -> 'numbers' -> 'medicines_active' ->> 'source' = 'zad_pharmacy_items.for_person', 'child medicines number names its source');
+select pg_temp.check((public.zad_view_family(:mkid) -> 'numbers' -> 'missed_doses_7d' ->> 'value')::int = 1, 'guardian: the child''s missed dose (only status missed, last 7 days, only her items)');
+select pg_temp.check(public.zad_view_family(:mkid) -> 'sections' @> '["medicines"]'::jsonb, 'medicines is in the guardian''s sections');
+select pg_temp.check((public.zad_view_family(:mnolink) -> 'numbers' -> 'medicines_active' ->> 'value')::int = 1
+  and (public.zad_view_family(:mnolink) -> 'numbers' -> 'missed_doses_7d' ->> 'value')::int = 1, 'the elder without an account: name match ignores spaces');
+select pg_temp.check((public.zad_view_family(:ma) -> 'numbers' -> 'medicines_active' ->> 'value')::int = 1
+  and (public.zad_view_family(:ma) -> 'numbers' -> 'missed_doses_7d' ->> 'value')::int = 1, 'self member = items with no for_person');
+select pg_temp.check((select bool_and(v ? 'source' and v ? 'value') from jsonb_each(public.zad_view_family(:mkid) -> 'numbers') e(k, v)), 'all family numbers are {value, source}');
+-- Not the guardian: no child medicines; a consented adult still sees only the consented scope.
+select pg_temp.who(:b);
+select pg_temp.check(not (public.zad_view_family(:mkid) ? 'numbers'), 'non-guardian gets no numbers for the child');
+select pg_temp.check(not (public.zad_view_family(:mnolink) ? 'numbers'), 'non-guardian gets no numbers for an account-less member');
+select pg_temp.who(:c);
+select pg_temp.check(not (public.zad_view_family(:mkid) ? 'numbers'), 'outsider gets no medicines of the child');
+select pg_temp.who(:a);
+select pg_temp.check(not (public.zad_view_family(:mb) -> 'numbers' ? 'missed_doses_7d'), 'consented view of b never shows missed_doses_7d (guardian-only)');
 
 -- ── مفيش كتابة، ومفيش وصول لـanon ──
 select pg_temp.check(not has_function_privilege('anon', 'public.zad_view_family(uuid)', 'execute'), 'anon cannot execute zad_view_family');
