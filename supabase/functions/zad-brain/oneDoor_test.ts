@@ -10,7 +10,7 @@ const THROUGH_THE_DOOR = [
   "zad_inventory", "zad_shopping_list", "zad_pharmacy_items", "zad_transactions", "zad_category_budgets",
   "zad_subscriptions", "zad_debts", "zad_obligations", "zad_maintenance_items", "zad_documents", "zad_appointments",
   "zad_users", "agent_goals", "zad_savings_challenges", "zad_dose_snoozes", "zad_pharmacy_doses",
-  "zad_household_traits",
+  "zad_household_traits", "zad_member_facts",
 ];
 // الاستثناء الوحيد: فحص القبول الحي (acceptance_probe) بيمسح مواعيد حساب الاختبار قبل وبعد اللفات — مش أداة موديل
 // ولا حساب عميل. «الحلم» بالليل بقى بيضيف للقايمة من الباب (مصدره cron).
