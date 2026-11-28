@@ -185,7 +185,8 @@ import { describeSafeSpend } from "./safeSpendTool.ts";
 import { describeConflicts, parseConflictInput } from "./constraintConflicts.ts";
 import { paydayOdds, paydayOddsRule, type SpendRow } from "./paydayOdds.ts";
 import { medicineDaysLeft, medicineLow } from "./medicineStock.ts";
-import { runOutWhen } from "../_shared/or/medicineRunOut.ts";import { describeReorder, parseReorderInput } from "./pharmacyReorderTool.ts";
+import { runOutWhen } from "../_shared/or/medicineRunOut.ts";
+import { recurringObligationCandidate } from "./recurringBillWiring.ts";import { describeReorder, parseReorderInput } from "./pharmacyReorderTool.ts";
 import { budgetAtStart, circumstanceBudget, circumstanceBudgetLine, circumstanceBudgetRule, circumstanceCost } from "./circumstanceBudget.ts";
 import { homeEmergencyRule, technicianFollowUp, techniciansForSnapshot } from "./homeEmergency.ts";
 import { loadWhileAway, whileAwayBlock } from "./whileAway.ts";
@@ -1088,6 +1089,10 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
     transactions.filter((t) => t.txn_kind === "expense"),
     obligationRows,
     subRes.data ?? [],
+    now,
+  ) ?? recurringObligationCandidate( // P3.6: خلف ZAD_RECURRING_BILLS (مقفول)؛ نفس مسار السؤال والباب
+    transactions.filter((t) => t.txn_kind === "expense"),
+    [...obligationRows.map((o) => o.title), ...(subRes.data ?? []).map((s: { title: string }) => s.title)],
     now,
   );
   if (candidate) {
