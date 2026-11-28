@@ -12,6 +12,7 @@ import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:zad/core/data/edge_client.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/shared/scan/domain/scanned_receipt.dart';
 
@@ -102,7 +103,8 @@ class SupabaseReceiptScanner implements ReceiptScanner {
     required Uint8List image,
     String mimeType = 'image/jpeg',
   }) async {
-    final response = await _client.functions.invoke(
+    final response = await invokeEdge(
+      _client,
       function,
       body: <String, dynamic>{
         'action': 'analyze_receipt',

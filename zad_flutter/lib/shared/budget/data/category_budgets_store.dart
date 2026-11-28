@@ -12,6 +12,7 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:zad/core/data/edge_client.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/data/sync/outbox.dart';
 import 'package:zad/core/data/sync/outbox_entry.dart';
@@ -188,7 +189,8 @@ class SupabaseBehaviorAnalysisRemote implements BehaviorAnalysisRemote {
     required String category,
     required String transactions,
   }) async {
-    final response = await _client.functions.invoke(
+    final response = await invokeEdge(
+      _client,
       'zad-core-intelligence',
       body: <String, dynamic>{
         'action': 'behavior_analysis',

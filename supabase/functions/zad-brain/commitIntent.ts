@@ -8,6 +8,7 @@
 
 import { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import type { AuditScope } from "./audit.ts";
+import { currentTraceId } from "../_shared/trace.ts";
 
 export type IntentKind =
   | "inventory.added" | "inventory.consumed" | "inventory.quantity_set" | "inventory.deleted" | "inventory.restock_mode_set"
@@ -70,6 +71,8 @@ export async function commitIntent(
   const intent = {
     user_id: userId, kind, client_event_id: await intentKey(scope, tool, input),
     source: intentSource(scope), payload,
+    // trace_id الطلب (P1.7): بيوصل لـzad_events.trace_id. اختياري، والباب بيتجاهله لو شكله غلط.
+    ...(currentTraceId() ? { trace_id: currentTraceId() } : {}),
   };
   const { data, error } = await sb.rpc("zad_commit_intent", { p_intent: intent });
   if (error) return { ok: false, reason: `rpc: ${error.message}` };

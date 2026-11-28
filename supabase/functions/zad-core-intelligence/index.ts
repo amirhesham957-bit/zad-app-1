@@ -438,7 +438,7 @@ function corsHeaders() {
   return {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Access-Control-Allow-Headers": "apikey, x-client-info, Content-Type, Authorization",
+    "Access-Control-Allow-Headers": "apikey, x-client-info, Content-Type, Authorization, x-zad-trace-id",
     "Content-Type": "application/json",
   };
 }

@@ -21,6 +21,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' show DateFormat, NumberFormat;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:zad/core/data/edge_client.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/design/components/zad_field_dialog.dart';
 import 'package:zad/core/design/tokens/zad_colors.dart';
@@ -667,7 +668,8 @@ class _ReportState extends ConsumerState<_ReportCard> {
         : DateFormat('MMMM yyyy', 'ar').format(widget.cycleStart!);
     try {
       final client = ref.read(supabaseClientProvider);
-      final response = await client.functions.invoke(
+      final response = await invokeEdge(
+        client,
         'zad-core-intelligence',
         body: <String, dynamic>{
           'action': 'monthly_expense_report',

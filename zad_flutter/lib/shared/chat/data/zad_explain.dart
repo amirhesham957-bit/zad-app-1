@@ -7,6 +7,7 @@
 library;
 
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:zad/core/data/edge_client.dart';
 
 /// What a screen can ask to be explained; the server holds the instructions.
 enum ZadExplainTopic {
@@ -33,7 +34,8 @@ Future<String?> explainWithZad(
   String data,
 ) async {
   try {
-    final response = await client.functions.invoke(
+    final response = await invokeEdge(
+      client,
       'zad-brain',
       body: <String, dynamic>{
         'action': 'explain',

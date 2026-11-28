@@ -6,7 +6,7 @@ const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "apikey, x-client-info, Content-Type, Authorization",
+  "Access-Control-Allow-Headers": "apikey, x-client-info, Content-Type, Authorization, x-zad-trace-id",
 };
 
 Deno.serve(async (req: Request) => {

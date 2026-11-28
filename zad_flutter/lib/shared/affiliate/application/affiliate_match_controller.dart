@@ -7,6 +7,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:zad/core/data/edge_client.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/shared/affiliate/data/affiliate_repository.dart';
 
@@ -88,7 +89,8 @@ class AffiliateMatchController extends Notifier<AffiliateMatchView> {
           },
       ];
       final client = ref.read(supabaseClientProvider);
-      final response = await client.functions.invoke(
+      final response = await invokeEdge(
+        client,
         'amazon-creators-search',
         body: <String, dynamic>{
           'action': 'match_product',

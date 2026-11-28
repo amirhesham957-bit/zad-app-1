@@ -8,6 +8,7 @@ library;
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:zad/core/data/edge_client.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/shared/insights/data/insights_repository.dart';
 import 'package:zad/shared/insights/domain/insight.dart';
@@ -94,7 +95,8 @@ class InsightsController extends Notifier<InsightsView> {
     if (question.aboutItem case final item?) message.write(' (بخصوص: $item)');
     message.write('. الإجابة: $text');
     try {
-      await client.functions.invoke(
+      await invokeEdge(
+        client,
         'zad-brain',
         body: <String, dynamic>{
           'user_id': userId,

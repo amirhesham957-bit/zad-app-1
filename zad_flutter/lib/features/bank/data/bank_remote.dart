@@ -5,6 +5,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:zad/core/data/edge_client.dart';
 import 'package:zad/core/data/providers.dart';
 
 /// Hands a notification to `zad-brain`.
@@ -28,7 +29,7 @@ class SupabaseBankRemote implements BankRemote {
   Future<String?> ingestNotification(Map<String, dynamic> payload) async {
     // 20s, matching the Kotlin listener: the server may be waking a cold
     // function and running a model over the message.
-    final response = await _client.functions.invoke('zad-brain', body: payload);
+    final response = await invokeEdge(_client, 'zad-brain', body: payload);
 
     final data = response.data;
     if (data is Map && data['status'] != null) return '${data['status']}';

@@ -2,6 +2,7 @@
 library;
 
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:zad/core/data/edge_client.dart';
 
 /// Asks for recipes and records opinions on them.
 abstract interface class RecipesRemote {
@@ -44,7 +45,8 @@ class SupabaseRecipesRemote implements RecipesRemote {
     bool week = false,
     List<String> avoid = const <String>[],
   }) async {
-    final response = await _client.functions.invoke(
+    final response = await invokeEdge(
+      _client,
       function,
       body: <String, dynamic>{
         'action': 'meal_suggestions',
@@ -72,7 +74,8 @@ class SupabaseRecipesRemote implements RecipesRemote {
   }) async {
     // The action checks the bearer token against user_id itself; the
     // client's session token rides along with invoke.
-    final response = await _client.functions.invoke(
+    final response = await invokeEdge(
+      _client,
       function,
       body: <String, dynamic>{
         'action': 'rate_recipe',

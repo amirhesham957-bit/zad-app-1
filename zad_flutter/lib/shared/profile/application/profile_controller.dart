@@ -13,6 +13,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:zad/core/data/edge_client.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/shared/auth/application/session_controller.dart';
 
@@ -227,7 +228,7 @@ class ProfileController extends Notifier<ProfileView> {
   /// days out, then this device signs out. True when the server took it.
   Future<bool> deleteAccount() async {
     try {
-      await _client.functions.invoke('delete-account');
+      await invokeEdge(_client, 'delete-account');
     } on Object {
       return false;
     }
