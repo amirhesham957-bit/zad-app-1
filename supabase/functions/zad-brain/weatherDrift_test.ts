@@ -195,3 +195,75 @@ Deno.test("drift: processDueAgentTasks makes zero network calls with the flag cl
     resetDriftMemo();
   }
 });
+
+// ── P2.7: مطر قبل الموعد/المدرسة بـ٣٠ دقيقة من minutely_15 ──────────────────────────────────────
+const SLOT_TIMES = ["T11:00", "T11:15", "T11:30", "T11:45", "T12:00", "T12:15", "T12:30", "T12:45"].map((t) => `2026-11-27${t}`);
+function withMinutely(mm: number[] | null, pcts = [0, 0, 0, 0], calls: string[] = []) {
+  return (url: string) => {
+    calls.push(url);
+    const body: Record<string, unknown> = {
+      hourly: { time: ["T11", "T12", "T13", "T14"].map((h) => `2026-11-27${h}:00`), temperature_2m: [20, 20, 20, 20], precipitation_probability: pcts },
+    };
+    if (mm) body.minutely_15 = { time: SLOT_TIMES, precipitation: mm };
+    return Promise.resolve(new Response(JSON.stringify(body), { status: 200 }));
+  };
+}
+const inMin = (m: number) => new Date(NOW + m * 60_000).toISOString();
+const apptTables = (startsAt: string): Record<string, Row[]> =>
+  ({ ...baseTables(), zad_appointments: [{ user_id: "u1", title: "الدكتور", starts_at: startsAt, status: "upcoming" }] });
+const alertOf = (row: Row) => (row.facts as { alert: { kind: string; source?: string; line: string } }).alert;
+
+Deno.test("drift P2.7: rain in minutely_15 around an appointment 25 min away queues rain_event from minutely_15 (not hourly)", async () => {
+  resetDriftMemo();
+  const sb = fakeDb(apptTables(inMin(25)));
+  const calls: string[] = [];
+  const r = await runWeatherDrift(sb, deps(withMinutely([0, 0, 0.4, 0.6, 0, 0, 0, 0], [0, 0, 0, 0], calls)));
+  assertEquals(r.queued, 1);
+  assertStringIncludes(calls[0], "minutely_15=precipitation");
+  assertStringIncludes(calls[0], "forecast_minutely_15=");
+  const a = alertOf(queued(sb)[0]);
+  assertEquals([a.kind, a.source], ["rain_event", "minutely_15"]); // لو رجع للساعة source = "hourly" والتست يقع.
+  assertStringIncludes(a.line, "الدكتور");
+  assertStringIncludes(a.line, "1 مم");
+});
+
+Deno.test("drift P2.7: dry minutely_15, or an event outside the 30-minute lead, queues nothing", async () => {
+  resetDriftMemo();
+  assertEquals((await runWeatherDrift(fakeDb(apptTables(inMin(25))), deps(withMinutely([0, 0, 0, 0, 0, 0, 0, 0])))).queued, 0);
+  resetDriftMemo();
+  assertEquals((await runWeatherDrift(fakeDb(apptTables(inMin(10))), deps(withMinutely([0, 0, 0.5, 0.5, 0.5, 0, 0, 0])))).queued, 0);
+  resetDriftMemo();
+  const far = Date.parse("2026-11-27T10:00:00Z"); // موعد بعد ساعة: خارج الشباك (والـDB مابترجعوش أصلاً).
+  assertEquals((await runWeatherDrift(fakeDb(apptTables(new Date(far + 3_600_000).toISOString())), deps(withMinutely([0, 0, 1, 1, 1, 1, 0, 0])))).queued, 0);
+});
+
+Deno.test("drift P2.7: empty minutely_15 falls back to the hourly probability, labelled source=hourly", async () => {
+  resetDriftMemo();
+  const sb = fakeDb(apptTables(inMin(25)));
+  // احتمال الساعة ٤٠٪ بالظبط ⇒ مفيش تنبيه ساعة عام، لكن الحدث نفسه ساعته ٤١٪ ⇒ نرجع للساعة (> ٤٠٪ هي الحد الفعلي، فنخلّيها ٤١).
+  const r = await runWeatherDrift(sb, deps(withMinutely(null, [41, 0, 0, 0])));
+  assertEquals(r.queued, 1);
+  const rows = queued(sb);
+  const ev = rows.map(alertOf).find((a) => a.kind === "rain_event")!;
+  assertEquals(ev.source, "hourly");
+  assertStringIncludes(ev.line, "41٪");
+});
+
+Deno.test("drift P2.7: school start of a child's timetable (today's first period) triggers rain_event", async () => {
+  resetDriftMemo();
+  // الجمعة ٢٧/١١/٢٠٢٦ ⇒ weekday = 5. بداية الحصة ١١:٢٥ بتوقيت القاهرة (= +٢٥ دقيقة).
+  const sb = fakeDb({
+    ...baseTables(),
+    zad_school_timetable: [
+      { user_id: "u1", person: "سلمى", weekday: 5, period: 1, starts: "11:25:00" },
+      { user_id: "u1", person: "سلمى", weekday: 5, period: 2, starts: "12:10:00" },
+      { user_id: "u1", person: "عمر", weekday: 4, period: 1, starts: "11:25:00" }, // يوم تاني: مايتحسبش
+    ],
+  });
+  const r = await runWeatherDrift(sb, deps(withMinutely([0, 0, 0.3, 0.3, 0, 0, 0, 0])));
+  assertEquals(r.queued, 1);
+  const a = alertOf(queued(sb)[0]);
+  assertEquals(a.kind, "rain_event");
+  assertStringIncludes(a.line, "مدرسة سلمى");
+  assert(!a.line.includes("عمر"));
+});
