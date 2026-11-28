@@ -124,7 +124,7 @@ class ZadBottomNavBar extends StatelessWidget {
           ZadNavDestination.home => ZadTourKeys.home,
           ZadNavDestination.money => ZadTourKeys.money,
           ZadNavDestination.inventory => ZadTourKeys.house,
-          ZadNavDestination.family => null,
+          ZadNavDestination.family => ZadTourKeys.family,
         },
         child: _ZadNavTab(
           icon: item.icon,

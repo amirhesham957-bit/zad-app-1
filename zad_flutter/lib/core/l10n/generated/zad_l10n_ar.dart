@@ -3588,6 +3588,19 @@ class ZadL10nAr extends ZadL10n {
   String get tourMoreBody => 'عقل زاد وحسابك وكل المزايا.';
 
   @override
+  String get tourFamilyTitle => 'عيلتي';
+
+  @override
+  String get tourFamilyBody =>
+      'أفراد العيلة والمصروف المشترك والمهام في مكان واحد.';
+
+  @override
+  String get homeQuickRecipes => 'نطبخ إيه؟';
+
+  @override
+  String get homeQuickOffers => 'عروض اليوم';
+
+  @override
   String get tourBellTitle => 'الإشعارات';
 
   @override
