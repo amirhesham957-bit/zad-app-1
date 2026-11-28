@@ -1459,7 +1459,7 @@ export const MUTATING_TOOLS = [
  */
 export const CONFIRM_REQUIRED_TOOLS = [
   "log_transaction", "update_transaction", "delete_transaction", "set_monthly_limit",
-  "log_cash_withdrawal", "log_cash_spend",
+  // log_cash_withdrawal و log_cash_spend مش هنا (قرار المالك ٢٠٢٦-١١-٢٨): كارت تأكيد قبل سؤال «دفعتها كاش ولا كارت؟» تقيل، والباب نفسه بيرفض المشكوك فيه ويسأل مرة واحدة.
   // «دفعت النت» = مصروف بيتسجل (ZAD_PLAN ١٠.٢أ) — نفس حارس الفلوس.
   "mark_subscription_paid",
 ];
