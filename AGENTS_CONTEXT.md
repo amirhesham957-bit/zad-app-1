@@ -48,7 +48,7 @@ cd supabase/functions && ~/.deno/bin/deno check zad-brain/index.ts zad-telegram-
 # SQL: حاوية Postgres اسمها zadpg. كل سطر في LIST بتاع edge-functions.yml = داتابيز جديدة والملفات بالترتيب، والأخير هو التست
 db=t_x_$RANDOM; docker exec zadpg createdb -U postgres $db; for f in <chain>; do docker exec -i zadpg psql -U postgres -d $db -v ON_ERROR_STOP=1 -q < "$f"; done
 # e2e (Postgres + PostgREST + كود العقل الحقيقي، مش الحي أبداً):
-E2E_DB=t_e2e_x E2E_PORT=39xx E2E_REST=zad-e2e-rest-x bash supabase/sql/e2e/run_commit_intent_e2e.sh   # آخر سطر: e2e: all checks passed
+E2E_DB=t_e2e_x E2E_PORT=39xx E2E_REST=zad-e2e-rest-x bash supabase/sql/e2e/run_commit_intent_e2e.sh   # آخر سطر: e2e: all checks passed (بيشغّل كمان ساندوتش الزرار P1.6a: button_manifest.json + button_e2e.ts؛ حارسه في _schema/button_manifest_test.ts؛ job button-e2e في الـCI)
 ```
 - السقالة (`supabase/sql/tests/*_scaffold.sql`) بتعيد شكل الجداول **زي الحي**: اقرا `information_schema` و`pg_constraint` بـSELECT بس.
 - Mutation check: التست الجديد لازم يوقع لو الميجريشن بتاعته اتشالت.

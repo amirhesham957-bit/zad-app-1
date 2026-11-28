@@ -47,7 +47,7 @@ related:
 
 ## دلوقتي
 
-- **الشريحة الجاية (بالترتيب):** (١) دمج #804 (سبينيس not_a_flyer + fallback app_notifications + قالب الجرعة العام) أول ما `check` و`verify` يخضروا. (٢) P1.8 كارت الإنقاذ (جلسة تانية، فرع `feat/p1-8-rescue-card`). (٣) مفتاح الجهاز لأحداث الأماكن (فرع `feat/places-device-key`، بنّا شغال). (٤) P2.5 ثم P2.8 بقرارات المالك تحت. (٥) P1.6 ثم P3.4.
+- **الشريحة الجاية (بالترتيب):** (١) دمج #804 (سبينيس not_a_flyer + fallback app_notifications + قالب الجرعة العام) أول ما `check` و`verify` يخضروا. (٢) P1.8 كارت الإنقاذ (جلسة تانية، فرع `feat/p1-8-rescue-card`). (٣) مفتاح الجهاز لأحداث الأماكن (فرع `feat/places-device-key`، بنّا شغال). (٤) P2.5 ثم P2.8 بقرارات المالك تحت. (٥) P1.6a اتعمل (PR مفتوح)، وP1.6b قرار مالك، ثم P3.4.
 - **شغال/مفتوح:** PR #804. فرع `feat/places-device-key` (مرفوع بعد كل جزء، مفيش PR). فرع `feat/p1-8-rescue-card` (جلسة تانية).
 - **اتدمج ٢٠٢٦-١١-٢٨ بإذن المالك:** P1.3b وP1.4 وP1.5 وP1.5b وP1.7 وP2.1 وP2.2 وP2.3 وP2.4 وP2.6 وP2.7 وP2.10a وP2.10b، وإصلاح «أماكني» الجزئي (#800: المحرك المخفي مابيخرجش لما التوكن ينتهي؛ تنبيه النواقص لسه محتاج مفتاح الجهاز). القرارات: أيام القبض EG=1/SA=27/TR=15، المطر في مصر بدقة الساعة، `allowed_actions.json` ١٥ فعل، حد التريجر المجاني ٢/يوم وأي زيادة بإعلان Rewarded.
 - **قرارات المالك لـP2.5/P2.8 (٢٠٢٦-١١-٢٨، لسه ماتنفّذتش):** كل فرد يشوف تفاصيل مصروفاته وأهدافه ومهامه بس؛ باقي العيلة تشوف إجمالي الميزانية + المخزن + الصيدلية + المهام المشتركة إلا لو شارك العنصر صراحةً. **الطفل** يشوف مهامه وأهدافه بس من غير أرقام ميزانية، **مطبّقة في SQL/RLS ودوال العرض قبل الواجهة**. **الصيدلية المنزلية** مفتوحة افتراضياً للبالغين مع `is_private=true` لأي دوا خاص؛ الأطفال لا يشوفوها ولا يعدّلوها (RLS). أدوية فرد بالغ بتفضل بموافقته (P2.6 بيستخدم `zad_family_share_granted(...,'medicines')`، راجعه مع P2.5). **ربط الأدوية:** `member_id` صريح في الداتابيز، والـAI يحوّل الاسم لـ`member_id` قبل التنفيذ. **بيت العيلة (P2.8):** المساحة المشتركة بـ`family_id` واحد (المخزن والصيدلية وإجمالي الميزانية) بقواعد P2.5. تنبيه: موديلين للعيلة (`family_members` و`zad_household_members`)، P2.5 لازم يربط بينهم؛ مفيش جدول `zad_tasks` (أقرب حاجة `family_chores`).
@@ -131,10 +131,11 @@ related:
 | P1.3b | `[x]` | ربط الأدوية والجرعات الفايتة في `zad_view_family` للولي (`zad_pharmacy_items.family_member_id` بيشاور على `family_members` مش `zad_household_members`) | مايجريشن + تست SQL | الولي يشوف أدوية الأم/الطفل وجرعة فايتة، وغيره لا |
 | P1.1b | `[x]` | تكملة P1.1: الصوت والتخطيط والاستريم على نفس البوابة `gate.ts` | `zad-brain/gate.ts`، `index.ts` | نفس تستات P1.1 + الاستريم |
 | P1.5 | `[x]` | ٤ تبويبات (الرئيسية، فلوسي، بيتي، عيلتي) + زرار المساعد. الجداول المدفونة كروت في الشات | `app/shell/zad_bottom_nav_bar.dart` | `flutter analyze` + `flutter test` |
-| P1.6 | `[ ]` | اختبار ساندوتش لكل زرار ظاهر: زرار ← `zad_events` ← البوت ← الإشعار | مبني على `supabase/sql/e2e/run_commit_intent_e2e.sh` | `e2e: all checks passed` |
+| P1.6a | `[x]` | ساندوتش الزرار لمعرّفات `allowed_actions.json` الـ١٥: زرار (نية manual + trace_id) ← الباب ← `zad_events` ← أداة البوت. ١٣ مغطّاة، `review_budget` قراية بس، و`add_task`/`complete_task` من غير نية للباب (`no_door`). الإشعار لسه مش مختبر (`notification_tested:false`) | `supabase/sql/e2e/button_manifest.json`، `button_e2e.ts`، `run_commit_intent_e2e.sh`، حارس `_schema/button_manifest_test.ts` (CI)، job `button-e2e` في `edge-functions.yml` | `e2e: all checks passed` + الحارس يوقع لو معرّف في الكود مش في الـmanifest |
+| P1.6b | `[ ]` | **قرار المالك قبل البدء:** نقل الأزرار اللي بتكتب مباشرة في الجداول (~١٣٧ `.insert/.upsert/.update/.delete` في `zad_flutter/lib`، مش من الباب) لـ`zad_commit_intent`، وإضافة نية للمهام، وإشعار كل زرار. المجموعات: فلوس (`shared/transactions/data/transactions_remote.dart`، `shared/budget/data/category_budgets_*`، `features/intelligence/presentation/intelligence_screen.dart` صندوق الطوارئ)، ديون/التزامات/اشتراكات (`features/debts/presentation/debts_tab.dart`، `features/obligations/data/obligations_repository.dart`)، بيت (`features/maintenance/presentation/maintenance_screen.dart`، `trusted_technicians_sheet.dart`، `features/documents/presentation/documents_screen.dart`)، مواعيد وأماكن (`features/appointments/data/appointments_repository.dart`، `features/places/presentation/my_places_screen.dart`)، عيلة (`shared/family/data/family_life_remote.dart`، `features/savings/presentation/family_savings_screen.dart`)، تليجرام وإشعارات (`features/telegram/data/telegram_link.dart`، `features/notification_reads/data/notification_reads_repository.dart`) | ماتبدأش | كل زرار ظاهر ليه مدخل في الـmanifest ومسار مختبر |
 | P1.7 | `[x]` | Sentry + `trace_id` من الزرار للـedge function لـ`zad_events` | Flutter + `_shared` | عطل تجريبي يتتبع لمصدره |
 
-**بوابة ١:** مفيش زرار ظاهر من غير مسار مختبر.
+**بوابة ١:** مفيش زرار ظاهر من غير مسار مختبر. **لسه مفتوحة لحد P1.6b:** P1.6a بيغطي معرّفات `available_actions` بس، وأزرار الواجهة الفعلية بتكتب مباشرة (مفيش شاشة بتستعمل `ZadViewAction` لسه).
 
 ### المرحلة ٢: العقل العائلي
 
@@ -199,3 +200,4 @@ related:
 ## السجل
 
 - ٢٠٢٦-١١-٢٧: الخطة اتعملت من جلسة تخطيط مع المالك (جرد بالـgrep + بحث مكتبات + مبادئ OpenJarvis). الدوك المرئي اتعمل. مفيش كود اتغير.
+- ٢٠٢٦-١١-٢٨: P1.6 اتقسم. P1.6a (manifest + حارس CI + e2e الزرار ← الباب ← `zad_events` ← البوت للـ١٥ معرّف + job `button-e2e`)؛ P1.6b (نقل ~١٣٧ كتابة مباشرة للباب) قرار مالك. بوابة ١ لسه مفتوحة.
