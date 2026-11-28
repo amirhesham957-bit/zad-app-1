@@ -1037,3 +1037,13 @@ Added `zad_flutter/lib/features/notification_reads` (repository interface + Supa
 - **قرار:** المرشح الشهري بس بيعدّي للالتزام، لأن `confirm_obligation` بيكتب `recurrence=monthly` دايماً؛ الأسبوعي بيتكشف في الدالة بس. خلف `ZAD_RECURRING_BILLS` مقفول لأنه بيزوّد أسئلة للعميل.
 - **اتقاس:** تست `recurringBills_test.ts` (٧ حالات منها مجموعة اصطناعية معلّمة: precision=recall=1). الأرقام دي على بيانات اصطناعية وأنا اللي كتبتها، فمش قياس حقيقي. Precision/Recall على معاملات حقيقية لسه، والفلاج يفضل مقفول لحد ما يتقاس.
 - **فخ:** الكاشف القديم `detectObligationCandidate` بيشترط نفس المبلغ بالظبط وشهور مختلفة؛ الجديد بيمسك المبلغ المتغيّر شوية، فممكن يتداخلوا على نفس التاجر (الأول بيكسب).
+
+
+## P1.6b مجموعة الديون والالتزامات والاشتراكات (٢٠٢٦-١١-٢٨)
+
+- **اتعمل:** أزرار الديون (`debts_tab.dart` عن طريق `features/debts/data/debts_door.dart`: إضافة/دفع/مسح) وremote الالتزامات (`obligations_repository.dart`) وremote الاشتراكات (`subscriptions_remote.dart`) بتكتب من `zad_commit_my_intent` بدل الجدول. الـremote بيشوف الصف موجود ولا لأ: مش موجود = `*.added` بـ`item_id`، موجود = `*.updated` بـpatch كامل، والمسح = `*.deleted`.
+- **ميجريشن `20261129010000`:** `zad_intent_obligation` (+`item_id`/`due_date`، patch واسع، نوع `obligation.deleted`) و`zad_intent_subscription` (+`item_id`/`due_day`/`type`/`provider`/`auto_deduct`، دورة WEEKLY، patch واسع) و`zad_commit_my_intent` بنسخة `20261128250000` + الأنواع الجديدة. `zad_intent_debt` ماتغيرش.
+- **اتقاس:** تست `debts_buttons_test.sql` (سطر في LIST بسلسلة كاملة) على postgres:16 محلي EXIT=0 وبيفشل من غير الميجريشن؛ `flutter analyze` No issues found؛ تست `test/shared/debts_door_test.dart` (الـremotes الحقيقية فوق HTTP مسجّل، مفيش كتابة جدول).
+- **فخ:** الباب بيرفض اللي الجدول كان بيقبله: اشتراك/التزام بمبلغ ٠ أو عنوان أقصر من ٢ حرف، ودين فايدته > ١٠٠٠. الزرار ده بقى رفض دايم في الـOutbox.
+- **فاضل في P1.6b:** بيت، مواعيد وأماكن، عيلة، تليجرام وإشعارات.
+
