@@ -5,6 +5,7 @@ import {
   MOMENT_SPACING_MS,
   tooSoonAfterLast,
   momentFallback,
+  genericDoseInApp,
   parseComposedMoment,
   processVoiceMoments,
   TEXT_ONLY_MOMENTS,
@@ -575,12 +576,13 @@ Deno.test("in-app fallback: device sent and telegram never needed, still no row"
   assertEquals(rows.size, 0);
 });
 
-Deno.test("in-app fallback: device and telegram both fail writes one row with the composed text", async () => {
+Deno.test("in-app fallback: device and telegram both fail writes one row with the generic dose text", async () => {
   const { sb, updates } = fakeSb(pendingDose("dose_missed").tables);
   const { deps, rows } = inAppDeps({ pushDevice: () => Promise.resolve("no_token"), pushTelegram: () => Promise.resolve("failed") });
   assertEquals(await processVoiceMoments(sb, deps), { sent: 0, skipped: 0, failed: 1 });
   assertEquals(updates.at(-1)?.values.error, "no channel delivered");
-  assertEquals([...rows.values()], [{ title: "💊 كونكور", text: "خده دلوقتي" }]);
+  // a medicine moment gets the fixed generic text, never the composed one with the medicine's name.
+  assertEquals([...rows.values()], [genericDoseInApp("dose_missed")]);
   assertEquals([...rows.keys()], ["u1|voice_moment:m1"]);
 });
 
@@ -620,8 +622,8 @@ Deno.test("in-app fallback: a plain text moment (rain_soon) whose device push fa
   assertEquals(telegramCalls, 1);
 });
 
-Deno.test("in-app fallback: no channel + model moment = not composed and no row (no text without a model call)", async () => {
-  const { sb } = fakeSb(pendingDose("dose_missed").tables);
+Deno.test("in-app fallback: no channel + non-dose model moment = not composed and no row", async () => {
+  const { sb } = fakeSb(pendingDose("morning_greeting").tables);
   let composed = 0;
   const { deps, rows } = inAppDeps({ compose: () => { composed++; return Promise.resolve("{}"); }, hasChannel: () => Promise.resolve(false) });
   assertEquals((await processVoiceMoments(sb, deps)).failed, 1);
@@ -648,4 +650,28 @@ Deno.test("in-app fallback: a failing notifyInApp never breaks the moment", asyn
   });
   assertEquals((await processVoiceMoments(sb, deps)).failed, 1);
   assertEquals(updates.at(-1)?.values.status, "failed");
+});
+
+Deno.test("in-app fallback: dose moment with no channel writes one generic row, no compose, no medicine name; twice still one", async () => {
+  for (const moment of ["dose_missed", "dose_missed_again"]) {
+    const { sb, updates } = fakeSb(pendingDose(moment).tables);
+    let composed = 0;
+    const { deps, rows } = inAppDeps({ compose: () => { composed++; return Promise.resolve("{}"); }, hasChannel: () => Promise.resolve(false) });
+    await processVoiceMoments(sb, deps);
+    await processVoiceMoments(sb, deps);
+    assertEquals(composed, 0, moment);
+    assertEquals(updates.at(-1)?.values.error, "no channel (not composed)");
+    assertEquals(rows.size, 1, moment);
+    const r = [...rows.values()][0];
+    assertEquals(r, genericDoseInApp(moment));
+    assertEquals((r.title + r.text).includes("كونكور"), false);
+  }
+  assertEquals(genericDoseInApp("guardian_dose_missed").text, "فيه جرعة فائتة عند فرد من العيلة — راجع التفاصيل");
+});
+
+Deno.test("in-app fallback: a failing insert on a dose moment with no channel still marks it failed", async () => {
+  const { sb, updates } = fakeSb(pendingDose("dose_missed").tables);
+  const { deps } = inAppDeps({ hasChannel: () => Promise.resolve(false), notifyInApp: () => Promise.reject(new Error("db down")) });
+  assertEquals((await processVoiceMoments(sb, deps)).failed, 1);
+  assertEquals(updates.at(-1)?.values.error, "no channel (not composed)");
 });

@@ -1200,6 +1200,16 @@ export interface VoiceMomentDeps {
   notifyInApp?: (userId: string, title: string, text: string, dedupeKey: string) => Promise<void>;
 }
 
+/**
+ * نص إشعار التطبيق للحظة دوا: ثابت وعام، من غير اسم دوا ولا اسم شخص ولا تفاصيل صحية (صف جدول عادي).
+ * لحظات ولي الأمر/العيلة ليها صيغة تانية.
+ */
+export function genericDoseInApp(moment: string): { title: string; text: string } {
+  return moment === "family_dose_missed" || moment === "guardian_dose_missed"
+    ? { title: "💊 جرعة فائتة", text: "فيه جرعة فائتة عند فرد من العيلة — راجع التفاصيل" }
+    : { title: "💊 موعد جرعة", text: "حان موعد جرعة الدواء — راجع الصيدلية للتفاصيل" };
+}
+
 /** صف واحد في التطبيق للحظة (الصف بيتحدد بـdedupe_key، فتكرار المحاولة مابيكرّرش). الفشل هنا مابيكسرش اللحظة. */
 async function inAppFallback(deps: VoiceMomentDeps, row: VoiceMomentRow, title: string, text: string): Promise<void> {
   if (!deps.notifyInApp || !text.trim()) return;
@@ -1345,6 +1355,10 @@ export async function processVoiceMoments(
           if (deps.notifyInApp && TEMPLATE_MOMENTS.has(deliveryMoment)) {
             const tpl = momentFallback(deliveryMoment, row.facts ?? {});
             await inAppFallback(deps, row, tpl.title, tpl.text);
+          } else if (deps.notifyInApp && MEDICINE_NAMED_MOMENTS.has(deliveryMoment)) {
+            // تنبيه دوا مايضيعش: نص ثابت عام من غير موديل ولا اسم دوا.
+            const g = genericDoseInApp(deliveryMoment);
+            await inAppFallback(deps, row, g.title, g.text);
           }
           await sb.from("zad_voice_moments").update({
             status: "failed", attempts: row.attempts + 1, error: "no channel (not composed)",
@@ -1429,7 +1443,11 @@ export async function processVoiceMoments(
         delivery: { device, telegram, composed_by: composedBy, title: composed.title, text: composed.text.slice(0, 300), ...(voice ? { emotion } : {}) },
         error: delivered ? null : "no channel delivered",
       }).eq("id", row.id);
-      if (!delivered && deps.notifyInApp) await inAppFallback(deps, row, composed.title, composed.text);
+      if (!delivered && deps.notifyInApp) {
+        // لحظة دوا: النص العام الثابت، مش المصاغ (اسم الدوا مايتكتبش في صف الجدول).
+        const inApp = MEDICINE_NAMED_MOMENTS.has(deliveryMoment) ? genericDoseInApp(deliveryMoment) : composed;
+        await inAppFallback(deps, row, inApp.title, inApp.text);
+      }
       if (delivered) {
         result.sent++;
         // المحادثة الواحدة (_shared/conversationLog.ts): اللي زاد قاله من نفسه بيدخل المحادثة، فلو
