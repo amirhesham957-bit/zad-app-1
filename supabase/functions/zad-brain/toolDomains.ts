@@ -7,7 +7,7 @@ import { memberGoalsOn } from "./memberGoalApply.ts";
 
 export const TOOL_DOMAIN: Record<string, ToolDomain> = {
   // الفلوس
-  log_transaction: "finance", allocate_income: "finance", update_transaction: "finance", delete_transaction: "finance",
+  log_transaction: "finance", log_cash_withdrawal: "finance", log_cash_spend: "finance", allocate_income: "finance", update_transaction: "finance", delete_transaction: "finance",
   set_monthly_limit: "finance", set_category_budget: "finance", add_debt: "finance", update_debt: "finance", delete_debt: "finance",
   add_obligation: "finance", update_obligation: "finance", delete_obligation: "finance",
   add_subscription: "finance", update_subscription: "finance", delete_subscription: "finance", mark_subscription_paid: "finance",

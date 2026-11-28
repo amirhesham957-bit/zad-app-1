@@ -991,6 +991,12 @@ Added `zad_flutter/lib/features/notification_reads` (repository interface + Supa
 
 
 
+## P3.12b أدوات الكاش (٢٠٢٦-١١-٢٨، فرع `feat/p3-12b-cash-tools`)
+
+- **اتعمل:** `log_cash_withdrawal` (`money.cash_withdrawn`) و`log_cash_spend` (`money.cash_spent`) عبر `commitIntent` (المصدر من `intentSource`)، في `CHAT_TOOLS` وCONFIRM_REQUIRED وMUTATING وتخصص الفلوس ومجال finance وحارس سؤال الرأي، وتلميح نية («سحبت ١٠٠٠ من الماكينة»، «دفعت ٥٠ كاش»). الرفضين بيرجّعوا سؤال واحد («ده نفس السحب اللي إشعار البنك جاب؟» / «دفعتها كاش ولا كارت؟») وبيسجّلوا `cash_asked:<tool>` في اللفة؛ `validateCashTool` بيرفض `allow_duplicate`/`confirm_cash` في نفس اللفة، فالفلاج لازم يجي بعد رد العميل. الرفضين كانوا في `REASONS` من P3.12 (من غير تكرار). «معايا كام كاش»: قاعدة في البرومبت من `cash_on_hand` + `cash_on_hand_source` (مفيش أداة قراءة جديدة). تليجرام بيعدّي على zad-brain فبياخد نفس الأدوات.
+- **اتقاس:** `cashTools_test.ts` (٦ حالات: النوع والمصدر، السؤال، الفلاج مرفوض في نفس اللفة، مفيش كتابة مباشرة).
+- **فاضل:** تأكيد البزرار قبل الرفض يعني العميل بيشوف كارت ثم السؤال ثم كارت تاني؛ لو اتحس تقيل نشيلهم من CONFIRM_REQUIRED.
+
 ## P3.7 نفاد الدوا الحتمي (٢٠٢٦-١١-٢٨، فرع `feat/p3-7-p3-6`)
 
 - **اتعمل:** `_shared/or/medicineRunOut.ts` (رصيد ÷ (جرعات × وحدات)، تاريخ النفاد، null من غير جدول جرعات). كان الحساب متكرر محلياً في `constraintConflicts` فاتشال واتوصّل بالدالة، وتنبيه `medication_low` في اللقطة بقى بتاريخ النفاد والرصيد بدل «قريب». من غير فلاج: صفر شبكة وصفر كتابة، وكل رقم من صف الدوا.
