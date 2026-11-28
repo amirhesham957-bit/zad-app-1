@@ -6,7 +6,7 @@
 --   psql < supabase/migrations/20261001130000_family_shares_by_consent.sql
 --   psql < supabase/migrations/20261127140000_view_rpcs.sql
 --   psql < supabase/migrations/20261127150000_view_family_meds.sql
---   psql < supabase/migrations/20261128180000_visibility_matrix.sql
+--   psql < supabase/migrations/20261128190000_visibility_matrix.sql
 --   psql < supabase/sql/tests/visibility_matrix_test.sql
 --
 -- Raises on the first failed check; each passing one prints "ok:".
