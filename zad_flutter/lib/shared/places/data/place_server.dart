@@ -105,6 +105,51 @@ class SupabasePlaceServer implements PlaceServer {
   }
 }
 
+/// Thrown by [UnauthorizedPlaceServer]: there is no usable session.
+class PlaceServerUnauthorized implements Exception {
+  /// Creates it.
+  const new();
+
+  @override
+  String toString() => 'PlaceServerUnauthorized: no usable session';
+}
+
+/// The headless engine's server when the saved access token has expired. It
+/// reaches nothing and refreshes nothing (background_session.dart says why);
+/// every call throws, which [PlaceEngine] already treats as "keep the event
+/// and its state for the next run" — the app's engine, which owns the session,
+/// sends them then.
+class UnauthorizedPlaceServer implements PlaceServer {
+  /// Creates it.
+  const new();
+
+  @override
+  Future<PushAlert?> storeArrival({
+    required String name,
+    required StoreKind kind,
+    GeoPoint? at,
+  }) => Future<PushAlert?>.error(const PlaceServerUnauthorized());
+
+  @override
+  Future<void> backHome(DateTime leftAt) =>
+      Future<void>.error(const PlaceServerUnauthorized());
+
+  @override
+  Future<void> saveLastLocation(GeoPoint coarse) =>
+      Future<void>.error(const PlaceServerUnauthorized());
+
+  @override
+  Future<void> zoneEvent({
+    required String zoneId,
+    required PlaceTransition transition,
+    required DateTime at,
+  }) => Future<void>.error(const PlaceServerUnauthorized());
+
+  @override
+  Future<void> commuteSummary(CommutePattern? pattern) =>
+      Future<void>.error(const PlaceServerUnauthorized());
+}
+
 /// The alert in a `store_arrival` answer: its `title` and `body`, which the
 /// server sends only when there is something missing and it is not muted or
 /// already said today.

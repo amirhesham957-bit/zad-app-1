@@ -35,6 +35,11 @@ ServerCall supabaseServerCall(SupabaseClient client) =>
     (body) async =>
         (await invokeEdge(client, 'zad-core-intelligence', body: body)).data;
 
+/// Shops from Overpass alone: no server call is attempted, so it works with
+/// no session (the headless engine after the saved token expired).
+NearbyRemote anonymousNearbyRemote(http.Client client) =>
+    ServerThenOverpassRemote((_) async => null, client);
+
 /// The real one.
 class ServerThenOverpassRemote implements NearbyRemote {
   /// Creates the remote.
