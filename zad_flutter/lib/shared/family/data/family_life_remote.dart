@@ -5,10 +5,19 @@
 /// later would reach the family after the moment it was meant for. Money only
 /// moves through the four server functions; nothing here writes a balance, a
 /// completion or a request's status.
+///
+/// The chat (a message, a pin, a reaction) and the last-seen stamp stay direct
+/// table writes: they are talk and a heartbeat, not data intents. Everything
+/// else that writes (chores, their preferences, goals, spending limits, savings
+/// funds, challenges) goes through the one door, `zad_commit_my_intent`, as
+/// `family.*` kinds (P1.6b), which keeps the admin-only rules and the minor's
+/// blindness to the family goals.
 library;
 
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:zad/core/data/commit_my_intent.dart';
 import 'package:zad/core/data/edge_client.dart';
+import 'package:zad/core/data/sync/sync_failure.dart';
 
 /// Reads and writes a family's shared tables.
 class FamilyLifeRemote {
@@ -126,12 +135,12 @@ class FamilyLifeRemote {
     String? dueDate,
     double reward = 0,
     int? minutes,
-  }) => _client.from('family_chores').insert(<String, dynamic>{
+  }) => _door('family.chore_added', 'family_chore', <String, dynamic>{
     'family_id': familyId,
     'assigned_to': assignedTo,
     'title': title,
     'due_date': ?dueDate,
-    'reward_amount': reward,
+    'reward': reward,
     'minutes': ?minutes,
   });
 
@@ -152,13 +161,12 @@ class FamilyLifeRemote {
     required int minutesPerWeek,
     required List<String> dislikes,
     required List<String> likes,
-  }) => _client.from('family_chore_preferences').upsert(<String, dynamic>{
+  }) => _door('family.chore_pref_set', 'family_chore_pref', <String, dynamic>{
     'member_id': memberId,
     'family_id': familyId,
     'minutes_per_week': minutesPerWeek,
     'dislikes': dislikes,
     'likes': likes,
-    'updated_at': DateTime.now().toUtc().toIso8601String(),
   });
 
   /// The server's proposed distribution of the open chores (`chore_plan` on
@@ -204,26 +212,37 @@ class FamilyLifeRemote {
     required double target,
     required String monthYear,
     String? reward,
-  }) => _client.from('family_goals').insert(<String, dynamic>{
+  }) => _door('family.goal_added', 'family_goal', <String, dynamic>{
     'family_id': familyId,
     'target_amount': target,
-    'current_amount': 0,
     'month_year': monthYear,
     'reward_suggestion': ?reward,
   });
 
   /// Sets a member's spending caps, and returns the row as stored — null
-  /// when the update matched nothing (not an admin).
+  /// when the door refused because the caller is not an admin.
   Future<Map<String, dynamic>?> setSpendLimits(
     String memberId, {
     double? daily,
     double? weekly,
-  }) => _client
-      .from('family_members')
-      .update(<String, dynamic>{'daily_limit': daily, 'weekly_limit': weekly})
-      .eq('id', memberId)
-      .select('id, daily_limit, weekly_limit')
-      .maybeSingle();
+  }) async {
+    try {
+      final answer = await commitMyIntent(
+        _client,
+        kind: 'family.spend_limits_set',
+        clientEventId: 'family_limits:${newTraceId()}',
+        payload: <String, dynamic>{
+          'member_id': memberId,
+          'daily': daily,
+          'weekly': weekly,
+        },
+      );
+      return Map<String, dynamic>.from(answer['after'] as Map);
+    } on ServerRefusal catch (e) {
+      if (e.reason == 'admins_only') return null;
+      rethrow;
+    }
+  }
 
   /// Says the app is open, for the chat's "online" strip.
   Future<void> touchLastSeen(String memberId) => _client
@@ -293,6 +312,19 @@ class FamilyLifeRemote {
   Future<List<Map<String, dynamic>>> _rows(
     Future<List<Map<String, dynamic>>> query,
   ) async => (await query).cast<Map<String, dynamic>>();
+
+  /// One press, one intent: a fresh id per call, so a double tap is two
+  /// intents and a replay of one is the door's duplicate.
+  Future<void> _door(
+    String kind,
+    String prefix,
+    Map<String, dynamic> payload,
+  ) => commitMyIntent(
+    _client,
+    kind: kind,
+    clientEventId: '$prefix:${newTraceId()}',
+    payload: payload,
+  );
 
   Future<Map<String, dynamic>> _rpc(
     String name,

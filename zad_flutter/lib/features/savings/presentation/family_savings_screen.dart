@@ -19,6 +19,7 @@ import 'package:zad/core/design/tokens/zad_colors.dart';
 import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
+import 'package:zad/features/savings/data/family_savings_door.dart';
 import 'package:zad/shared/campaigns/application/market_season.dart';
 import 'package:zad/shared/campaigns/domain/campaign.dart';
 import 'package:zad/shared/family/application/family_controller.dart';
@@ -261,14 +262,14 @@ class _FundsState extends ConsumerState<SinkingFundsCard> {
     if (result == null) return;
     final client = ref.read(supabaseClientProvider);
     try {
-      await client.from('sinking_funds').insert(<String, dynamic>{
-        'family_id': familyId,
-        'name': result.$1,
-        'target_amount': result.$2,
-        'event_id': result.$3?.id,
-        'target_date': result.$3?.start.toIso8601String(),
-        'created_by': client.auth.currentUser?.id,
-      });
+      await addFund(
+        client,
+        familyId: familyId,
+        name: result.$1,
+        target: result.$2,
+        eventId: result.$3?.id,
+        targetDate: result.$3?.start,
+      );
     } on Object catch (e) {
       debugPrint('sinking fund insert failed: $e');
     }
@@ -279,13 +280,11 @@ class _FundsState extends ConsumerState<SinkingFundsCard> {
     final amount = await _askAmount(context, 'إضافة مبلغ', 'المبلغ');
     if (amount == null) return;
     try {
-      await ref
-          .read(supabaseClientProvider)
-          .from('sinking_funds')
-          .update(<String, dynamic>{
-            'current_amount': _num(fund['current_amount']) + amount,
-          })
-          .eq('id', '${fund['id']}');
+      await contributeToFund(
+        ref.read(supabaseClientProvider),
+        '${fund['id']}',
+        amount,
+      );
     } on Object catch (e) {
       debugPrint('sinking fund contribute failed: $e');
     }
@@ -582,21 +581,18 @@ class _ChallengesState extends ConsumerState<FinancialChallengesCard> {
     );
     if (result == null) return;
     try {
-      await ref
-          .read(supabaseClientProvider)
-          .from('family_financial_challenges')
-          .insert(<String, dynamic>{
-            'family_id': familyId,
-            'challenge_type': result.$4 <= 7 ? 'weekly' : 'monthly',
-            'title': result.$1,
-            'target_amount': result.$2,
-            'reward_amount': result.$3,
-            'start_date': now.toIso8601String(),
-            'end_date': now.add(Duration(days: result.$4)).toIso8601String(),
-            'is_active': true,
-            if (c != null) 'season_key': c.eventKey,
-            if (c != null && c.badge.isNotEmpty) 'badge': c.badge,
-          });
+      await addChallenge(
+        ref.read(supabaseClientProvider),
+        familyId: familyId,
+        type: result.$4 <= 7 ? 'weekly' : 'monthly',
+        title: result.$1,
+        target: result.$2,
+        reward: result.$3,
+        start: now,
+        end: now.add(Duration(days: result.$4)),
+        seasonKey: c?.eventKey,
+        badge: c != null && c.badge.isNotEmpty ? c.badge : null,
+      );
     } on Object catch (e) {
       debugPrint('financial challenge insert failed: $e');
       // The server's guard: only an admin sets a reward.

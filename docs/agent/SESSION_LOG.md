@@ -1057,3 +1057,13 @@ Added `zad_flutter/lib/features/notification_reads` (repository interface + Supa
 - **اتقاس:** `settings_buttons_test.sql` (سطر جديد في LIST بسلسلة كاملة، أخرها مراية `20261128260000`) على postgres:16 محلي EXIT=0، وبيفشل من غير الميجريشن («confirmed and anchored»). تست Flutter `test/shared/settings_door_test.dart` (الـremote الحقيقي فوق HTTP مسجّل، مفيش كتابة جدول).
 - **فخ:** الباب بيحدّث الصف بس ومابيعملوش: صف `zad_users` ناقص = `user_not_found` رفض دايم في الـOutbox بدل ما الـupsert كان بيعمله. وuuid الحدث بيتولّد جديد لكل محاولة (القيم مطلقة فالتكرار آمن؛ `balance_anchored_at` بس بيتحرك لوقت إعادة المحاولة).
 - **فاضل في P1.6b:** بيت، مواعيد وأماكن، عيلة، تليجرام وإشعارات.
+
+## P1.6b مجموعة العيلة (٢٠٢٦-١١-٢٩)
+
+- **اتعمل:** كتابات العيلة بقت من `zad_commit_my_intent` بدل insert/upsert/update مباشر: `family.chore_added` و`family.chore_pref_set` و`family.goal_added` و`family.spend_limits_set` (`shared/family/data/family_life_remote.dart`)، و`family.fund_added` و`family.fund_contributed` و`family.challenge_added` (`features/savings/data/family_savings_door.dart` من `family_savings_screen.dart`). مجال جديد `family` في `zad_commit_intent` (بادئة + توزيع) ودالة `zad_intent_family`، ميجريشن `20261129050000`.
+- **الباب بدون RLS:** الباب security definer فالدالة بتكرّر قواعد RLS والتريجرات بـ`p_uid`: عضو في العيلة (`family_id` من العميل بيتتحقق منه، عيلة غيري = `not_in_family`/`fund_not_found`/`member_not_found`)، المكافأة والسقوف والتحدي بمكافأة = أدمن بس، تفضيل المهام للفرد لنفسه أو للأدمن. **القاصر:** `family.goal_added` = `minor_no_budget` (family_goals مقفولة عليه بـ`minor_blind_budget`)؛ باقي الأنواع بصلاحيات RLS القديمة للطفل (مهامه وتفضيله، ومايرفعش سقفه ولا مكافأة).
+- **اللي فضل مباشر:** رسايل الشات (إرسال/تثبيت/ردود فعل/metadata) وختم `last_seen_at`: تواصل ونبض مش نية بيانات.
+- **اتغيّر في السلوك:** مساهمة الصندوق بقت «زيادة» على رصيد السيرفر (كانت رصيد العميل + المبلغ، فمساهمتين مع بعض كانت بتضيّع واحدة). سقف الصرف عند غير الأدمن لسه `null` (الرسالة القديمة). المكافأة لغير الأدمن بقت `ServerRefusal('only_admins_set_rewards')` والنص نفسه في الرسالة. الأنواع بتتحقق من نطاقات (عنوان ≤٢٠٠، دقايق ١..٦٠٠، مبالغ ≤١٠٠ مليون/مليار، شهر الهدف `YYYY-MM`) والجدول كان بيقبل أي حاجة.
+- **اتقاس:** `family_buttons_test.sql` (سطر جديد في LIST، سلسلة events_ledger + household_traits + member_facts + events_trace_id + السقالة + الميجريشن) EXIT=0 على postgres:17 محلي وبيفشل من غير الميجريشن؛ `test/shared/family_door_test.dart`.
+- **فخ:** `zad_commit_my_intent` و`zad_commit_intent` بيتنسخوا من **آخر** تعريف لكل ميجريشن بيعيد تعريفهم (المجموعات بتشتغل مع بعض): ماتنسخش نسخة قديمة.
+- **فاضل في P1.6b:** بيت، مواعيد وأماكن، تليجرام وإشعارات.
