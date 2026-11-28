@@ -1,4 +1,4 @@
--- P1.6b (فلوس). بعد سلسلة الباب (money + trace) و20261128210000_money_buttons_door.sql.
+-- P1.6b (فلوس). بعد سلسلة الباب (money + trace) و20261128250000_money_buttons_door.sql.
 -- بيثبت إن أزرار الفلوس بتعدي من zad_commit_my_intent بصفة auth.uid() بس، بمصدر manual وtrace_id.
 \set ON_ERROR_STOP on
 

@@ -75,3 +75,14 @@ export function pickPantryMatch<T extends PantryRow>(rows: T[], name: string, un
   const exact = fits.filter((r) => normalizeItemName(r.item_name) === key).sort(newest);
   return exact[0] ?? fits.sort(newest)[0];
 }
+
+/**
+ * صفوف فاضية (كمية ≤ ٠) لنفس الصنف بوحدة تانية: «باذنجان ٠ قطعة» جنب «باذنجان ٢ كجم».
+ * مالهاش لازمة، فالأداة بتمسحها (من الباب) قبل ما تفتح الصف الجديد بدل ما تفضل مكررة.
+ */
+export function staleEmptyOtherUnitRows<T extends PantryRow>(rows: T[], name: string, unit?: string | null): T[] {
+  if (!(unit ?? "").trim()) return [];
+  return rows.filter((r) =>
+    samePantryItem(r.item_name, name) && !sameUnit(r.unit, unit) && Number(r.quantity ?? 0) <= 0
+  );
+}

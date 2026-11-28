@@ -1,5 +1,5 @@
 import { assertEquals } from "jsr:@std/assert@1";
-import { normalizeItemName, pickPantryMatch, samePantryItem, sameUnit, unitKey } from "./pantryMatch.ts";
+import { normalizeItemName, pickPantryMatch, samePantryItem, sameUnit, staleEmptyOtherUnitRows, unitKey } from "./pantryMatch.ts";
 
 Deno.test("names normalise the way the app's normalizeItemName does", () => {
   assertEquals(normalizeItemName("  الجبنة   الرومي "), "جبنه رومي");
@@ -53,4 +53,14 @@ Deno.test("one unit under its spellings, and a number stuck to a word, are one r
   assertEquals(unitKey(null), "piece");
   assertEquals(sameUnit("كيلو", "علبة"), false);
   assertEquals(normalizeItemName("زيت 1.5لتر"), "زيت 1.5 لتر");
+});
+
+Deno.test("an empty row of the same item in another unit is stale (باذنجان ٠ قطعة vs ٢ كجم)", () => {
+  const eg = [
+    { id: "p", item_name: "باذنجان", quantity: 0, unit: "قطعة", created_at: "2026-11-01T00:00:00Z" },
+    { id: "k", item_name: "باذنجان", quantity: 2, unit: "كجم", created_at: "2026-11-02T00:00:00Z" },
+  ];
+  assertEquals(staleEmptyOtherUnitRows(eg, "باذنجان", "كجم").map((r) => r.id), ["p"]);
+  assertEquals(staleEmptyOtherUnitRows(eg, "باذنجان", "قطعة").map((r) => r.id), [], "the full kg row stays");
+  assertEquals(staleEmptyOtherUnitRows(eg, "باذنجان"), [], "no unit given: nothing is touched");
 });

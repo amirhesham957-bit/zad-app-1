@@ -5,7 +5,7 @@
 --     category_budget_set وsettings.emergency_fund_set. المصدر manual دايماً والمستخدم auth.uid() بس.
 -- النسخة القديمة (٤ بارامترات) بتتشال: وجودها جنب الجديدة بيخلي النداء بالأسماء ملخبط.
 
-create or replace function public.zad_intent_money(p_uid uuid, p_kind text, p_payload jsonb, p_occurred timestamptz)
+create or replace function public.zad_intent_money_core(p_uid uuid, p_kind text, p_payload jsonb, p_occurred timestamptz)
 returns jsonb
 language plpgsql
 set search_path = public
@@ -194,7 +194,7 @@ begin
 end;
 $fn$;
 
-revoke all on function public.zad_intent_money(uuid, text, jsonb, timestamptz) from public, anon, authenticated, service_role;
+revoke all on function public.zad_intent_money_core(uuid, text, jsonb, timestamptz) from public, anon, authenticated, service_role;
 
 drop function if exists public.zad_commit_my_intent(text, text, jsonb, timestamptz);
 
