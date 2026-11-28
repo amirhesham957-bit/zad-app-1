@@ -3655,8 +3655,7 @@ class ZadL10nEn extends ZadL10n {
   String get tourMoreTitle => 'More';
 
   @override
-  String get tourMoreBody =>
-      'Family, Zad\'s brain, your account and every feature.';
+  String get tourMoreBody => 'Zad\'s brain, your account and every feature.';
 
   @override
   String get tourBellTitle => 'Notifications';

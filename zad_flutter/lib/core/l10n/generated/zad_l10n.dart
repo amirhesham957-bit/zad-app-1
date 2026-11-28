@@ -6287,7 +6287,7 @@ abstract class ZadL10n {
   /// No description provided for @tourMoreBody.
   ///
   /// In ar, this message translates to:
-  /// **'العيلة وعقل زاد وحسابك وكل المزايا.'**
+  /// **'عقل زاد وحسابك وكل المزايا.'**
   String get tourMoreBody;
 
   /// No description provided for @tourBellTitle.

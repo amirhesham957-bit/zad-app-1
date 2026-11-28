@@ -126,16 +126,19 @@ class ZadTopHeader extends StatelessWidget {
                 children: <Widget>[
                   Row(
                     children: <Widget>[
-                      _Square(
-                        size: 32,
-                        radius: 10,
-                        color: kShellPrimary.withValues(alpha: 0.08),
-                        onTap: onOpenDrawer,
-                        semantic: context.l10n.navMore,
-                        child: const Icon(
-                          Icons.menu,
-                          size: 18,
-                          color: kShellPrimary,
+                      KeyedSubtree(
+                        key: ZadTourKeys.more,
+                        child: _Square(
+                          size: 32,
+                          radius: 10,
+                          color: kShellPrimary.withValues(alpha: 0.08),
+                          onTap: onOpenDrawer,
+                          semantic: context.l10n.navMore,
+                          child: const Icon(
+                            Icons.menu,
+                            size: 18,
+                            color: kShellPrimary,
+                          ),
                         ),
                       ),
                       const SizedBox(width: 10),
