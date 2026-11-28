@@ -4,10 +4,10 @@ import type { EngineInterface, Register } from 'claude-code'
 import type { Phase, Plan } from '../types'
 
 const PANE = 'zad-or-plan'
-const TITLE = 'خطة زاد الحسابية'
-const REL = 'docs/agent/ZAD_OR_PLAN.md'
+const TITLE = 'خطة زاد العائلية'
+const REL = 'docs/agent/ZAD_FAMILY_PLAN.md'
 const FALLBACK_ROOT = '/workspaces/zad-app-1'
-const BRANCHES = ['docs/zad-or-plan', 'origin/docs/zad-or-plan', 'main', 'origin/main']
+const BRANCHES = ['main', 'origin/main']
 
 const EMPTY: Plan = { status: [], phases: [], read: false, mtimeMs: 0 }
 const plan = atom({ plugin: 'zad-or-plan', key: 'plan' } as const, EMPTY, {
@@ -33,8 +33,15 @@ export function parsePlan(text: string, mtimeMs: number): Plan {
       phases.push(phase)
       continue
     }
-    if (section.startsWith('الحالة دلوقتي') && line.startsWith('- ')) {
+    if ((section.startsWith('الحالة دلوقتي') || section === 'دلوقتي') && line.startsWith('- ')) {
       status.push(line.slice(2).replace(/\*\*/g, '').replace(/`/g, ''))
+      continue
+    }
+    const row = /^\|\s*(P\d+\.\d+\w*)\s*\|\s*`\[( |x|X|~)\]`\s*\|\s*([^|]*)/.exec(line)
+    if (row && phase) {
+      phase.total += 1
+      if (row[2] === 'x' || row[2] === 'X') phase.done += 1
+      else if (!phase.next) phase.next = `${row[1]} ${(row[3] ?? '').replace(/`/g, '')}`.slice(0, 140)
       continue
     }
     const box = /^\s*- \[( |x|X)\]\s+(.*)$/.exec(line)
@@ -95,7 +102,7 @@ export const register: Register = on => {
   on('session.start', async ($, e, next) => {
     await $.command.register({
       name: 'zad-plan',
-      description: 'افتح لوحة خطة زاد الحسابية (ZAD_OR_PLAN.md)',
+      description: 'افتح لوحة خطة زاد الحسابية (ZAD_FAMILY_PLAN.md)',
     })
     await refresh($)
     $.clock.every(3000, () => refresh($))
