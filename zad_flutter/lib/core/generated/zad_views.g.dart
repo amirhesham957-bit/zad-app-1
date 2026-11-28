@@ -37,7 +37,15 @@ enum ZadViewAction {
   restock('restock'),
   useExpiring('use_expiring'),
   addItem('add_item'),
-  addGoal('add_goal');
+  addGoal('add_goal'),
+  addIncome('add_income'),
+  addPantryItem('add_pantry_item'),
+  consumePantryItem('consume_pantry_item'),
+  addTask('add_task'),
+  completeTask('complete_task'),
+  addPharmacyItem('add_pharmacy_item'),
+  logDose('log_dose'),
+  setBudgetLimit('set_budget_limit');
   const ZadViewAction(this.id);
   final String id;
   static ZadViewAction? parse(String? id) {
