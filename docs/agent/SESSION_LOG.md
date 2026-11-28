@@ -981,3 +981,11 @@ Added `zad_flutter/lib/features/notification_reads` (repository interface + Supa
 - **فاضل:** ربط `zad_round_mark` باتعدّل/اترجّع (مفيش مسار بيناديها لسه). القاطع المحلي بتاع الـembed لسه في الذاكرة. ConfigError (400/401/403) مش بيعدّ فشل في القاطع.
 - **فخ:** أي جدول جديد لازم يتضاف في `_schema/schema.json` بإيدك وإلا عقد الـschema يقع.
 
+
+## ٢٠٢٦-١١-٢٨ — P2.5b فصل ميزانية `zad_users` (المرحلة ١، فرع `feat/p2-5b-budget-split`)
+
+- **اتعمل:** `20261128210000_user_budget_split.sql`: جدول `zad_user_budget` (budget، monthly_limit، emergency_fund_balance، cycle_anchor، cycle_start_day، limit_confirmed_at، balance_anchored_at، travel_budget) + RLS (صاحبه، وولي الأمر عبر `zad_i_guard`، وrestrictive `minor_blind_budget` تقفله على القاصر حتى لصفه) + باك-فيل + تريجر security definer بيعكس أي كتابة على الأعمدة دي في `zad_users`. مفيش caller اتغيّر. أضفنا الجدول لـ`_schema/schema.json` (عقد الـschema) وسطر في LIST بتاع `edge-functions.yml`.
+- **اتقاس:** السلسلة المحلية على postgres:17 (docker `zadpg`) EXIT=0 و٩ فحوصات `ok:` وآخر سطر `all checks passed`؛ من غير الميجريشن EXIT=3 (الجدول مش موجود)؛ ومع حذف policy القاصر فحص «القاصر مايقراش» بيقع. `deno test -A _schema/` EXIT=0 (١٩ نجحوا).
+- **ماتشغّلش:** `deno test` الكامل و`deno check` (مفيش كود TS اتغيّر غير schema.json)، وCI الحقيقي.
+- **فاضل:** المرحلة ٢ (نقل القراية والكتابة ثم revoke الأعمدة من `zad_users`) مكتوبة بالتفصيل في صف P2.5b. التسريب لسه مفتوح لحد (ج).
+- **فخ:** الجدول الجديد لازم في `schema.json` وإلا عقد الـschema يقع. وسكربت بالاسم نفسه في الـscratchpad ممكن يتكتب فوقه من جلسة تانية، وسكريبتات flutter بتتأثر لو حد مسح `/tmp/flutter_tools.*` (استعمل `TMPDIR` خاص).
