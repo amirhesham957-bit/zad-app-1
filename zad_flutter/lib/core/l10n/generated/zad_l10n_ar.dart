@@ -3585,7 +3585,7 @@ class ZadL10nAr extends ZadL10n {
   String get tourMoreTitle => 'المزيد';
 
   @override
-  String get tourMoreBody => 'العيلة وعقل زاد وحسابك وكل المزايا.';
+  String get tourMoreBody => 'عقل زاد وحسابك وكل المزايا.';
 
   @override
   String get tourBellTitle => 'الإشعارات';
@@ -8572,7 +8572,7 @@ class ZadL10nArSa extends ZadL10nAr {
       'صوّر الفاتورة، وزاد يسجلها في مصاريفك ويضيف الأغراض للمخزون.';
 
   @override
-  String get tourMoreBody => 'العائلة وعقل زاد وحسابك وكل المزايا.';
+  String get tourMoreBody => 'عقل زاد وحسابك وكل المزايا.';
 
   @override
   String get shoppingBasketEmpty => 'السلة فاضية — أضف اللي ناقصك';

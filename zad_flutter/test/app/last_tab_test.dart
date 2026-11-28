@@ -15,6 +15,17 @@ void main() {
     );
   });
 
+  test('عيلتي is a real tab now; a saved «more» (gone) opens home', () {
+    expect(
+      restoredTab('family', '2026-10-01T11:30:00Z', now),
+      ZadNavDestination.family,
+    );
+    expect(
+      restoredTab('more', '2026-10-01T11:30:00Z', now),
+      ZadNavDestination.home,
+    );
+  });
+
   test('later, nothing saved, a stranger value or a clock gone back: home', () {
     expect(
       restoredTab('inventory', '2026-10-01T10:30:00Z', now),

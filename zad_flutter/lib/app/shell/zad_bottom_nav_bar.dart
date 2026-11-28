@@ -1,8 +1,8 @@
 /// Kotlin's `ZadBottomNavBar` (`ui/components/ZadShell.kt`), measure for
 /// measure: a floating 64dp capsule 16dp in from the sides and 22dp above the
-/// system bar, four tabs — زاد · فلوسي · [mic + camera] · بيتي · عيلتي
-/// (the owner's layout, 2026-09-30: the brain in the middle and four places,
-/// not seventeen sections) — and the raised action cluster over the middle:
+/// system bar, four tabs — الرئيسية · فلوسي · [mic + camera] · بيتي · عيلتي
+/// (the owner's layout, 2026-09-30, and again in P1.5: four places and no
+/// «المزيد» tab) — and the raised action cluster over the middle:
 /// the pulsing emerald mic orb and the camera button beside it. Every other
 /// section is in the drawer behind the header's menu square.
 ///
@@ -46,12 +46,8 @@ enum ZadNavDestination {
   /// بيتي — the pantry, the shopping list and the pharmacy.
   inventory,
 
-  /// عيلتي — the family (and, in kids mode, a child's family screen). Not
-  /// in the adult bar: it opens from the drawer.
+  /// عيلتي — the family (and, in kids mode, a child's family screen).
   family,
-
-  /// المزيد — not a screen: it opens the drawer, where everything is.
-  more,
 }
 
 class _NavItem {
@@ -65,18 +61,18 @@ class _NavItem {
 String _navHome(ZadL10n l) => l.navHome;
 String _navMoney(ZadL10n l) => l.navMoney;
 String _navHomeStock(ZadL10n l) => l.navHomeStock;
-String _navMore(ZadL10n l) => l.navMore;
+String _navMyFamily(ZadL10n l) => l.navMyFamily;
 String _navFamily(ZadL10n l) => l.navFamily;
 
 // Kotlin draws these with Material's filled icons (`Icons.Default.*`), so
 // these are the same glyphs, not Lucide look-alikes.
-// The owner, 2026-10-01: الرئيسية first, and the drawer back in the bar —
-// hunting for the menu square at the top was worse. عيلتي moved into it.
+// P1.5 (owner): four places, عيلتي back in the bar and no «المزيد» tab — the
+// drawer stays behind the header's menu square, with everything in it.
 const List<_NavItem> _adultItems = <_NavItem>[
   _NavItem(ZadNavDestination.home, Icons.home, _navHome),
   _NavItem(ZadNavDestination.money, Icons.account_balance_wallet, _navMoney),
   _NavItem(ZadNavDestination.inventory, Icons.kitchen, _navHomeStock),
-  _NavItem(ZadNavDestination.more, Icons.menu, _navMore),
+  _NavItem(ZadNavDestination.family, Icons.family_restroom, _navMyFamily),
 ];
 
 const List<_NavItem> _kidsItems = <_NavItem>[
@@ -92,7 +88,6 @@ class ZadBottomNavBar extends StatelessWidget {
     required this.onNavigate,
     required this.onOpenCamera,
     required this.onOpenVoice,
-    this.onOpenMore,
     this.kidsMode = false,
     this.accent,
     super.key,
@@ -109,9 +104,6 @@ class ZadBottomNavBar extends StatelessWidget {
 
   /// The mic orb.
   final VoidCallback onOpenVoice;
-
-  /// المزيد: the drawer.
-  final VoidCallback? onOpenMore;
 
   /// Home and family only.
   final bool kidsMode;
@@ -132,17 +124,14 @@ class ZadBottomNavBar extends StatelessWidget {
           ZadNavDestination.home => ZadTourKeys.home,
           ZadNavDestination.money => ZadTourKeys.money,
           ZadNavDestination.inventory => ZadTourKeys.house,
-          ZadNavDestination.more => ZadTourKeys.more,
-          _ => null,
+          ZadNavDestination.family => null,
         },
         child: _ZadNavTab(
           icon: item.icon,
           label: item.label(context.l10n),
           selected: current == item.destination,
           accent: accent?.colors.first,
-          onTap: () => item.destination == ZadNavDestination.more
-              ? onOpenMore?.call()
-              : onNavigate(item.destination),
+          onTap: () => onNavigate(item.destination),
         ),
       ),
     ),

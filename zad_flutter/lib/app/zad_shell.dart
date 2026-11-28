@@ -2,8 +2,8 @@
 /// pill at the bottom, the drawer behind the menu square — drawn once here
 /// and never by a screen.
 ///
-/// The bar has four places — زاد, فلوسي, بيتي, عيلتي (the owner's layout,
-/// 2026-09-30, docs/agent/ZAD_BRAIN_PLAN.md) — with the mic orb and the
+/// The bar has four places — الرئيسية, فلوسي, بيتي, عيلتي (the owner's layout,
+/// 2026-09-30, docs/agent/ZAD_BRAIN_PLAN.md; P1.5 dropped the «المزيد» tab) — with the mic orb and the
 /// camera between them. عقل زاد and every other section open over the shell
 /// from زاد's brief or the drawer.
 library;
@@ -290,7 +290,7 @@ class _ZadShellState extends ConsumerState<ZadShell> {
     ZadNavDestination.money => context.l10n.navMoney,
     ZadNavDestination.inventory => context.l10n.navHomeStock,
     ZadNavDestination.family => context.l10n.navMyFamily,
-    ZadNavDestination.home || ZadNavDestination.more => context.l10n.navHome,
+    ZadNavDestination.home => context.l10n.navHome,
   };
 
   Future<void> _openBrain() => showBrainFamily(context);
@@ -506,7 +506,6 @@ class _ZadShellState extends ConsumerState<ZadShell> {
             onNavigate: _show,
             onOpenCamera: () => unawaited(_openCamera()),
             onOpenVoice: () => unawaited(_openVoice()),
-            onOpenMore: () => _scaffold.currentState?.openDrawer(),
             // The occasion's colours on the bar every screen shares.
             accent: campaignGradient(ref.watch(homeCampaignProvider)),
           ),

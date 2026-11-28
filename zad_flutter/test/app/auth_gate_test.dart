@@ -17,11 +17,13 @@ import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'package:zad/app/auth_gate.dart';
 import 'package:zad/app/shell/zad_bottom_nav_bar.dart';
+import 'package:zad/app/shell/zad_chrome.dart';
 import 'package:zad/app/zad_shell.dart';
 import 'package:zad/core/data/local/boxes.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/data/sync/outbox.dart';
 import 'package:zad/core/design/zad_theme.dart';
+import 'package:zad/core/l10n/l10n.dart';
 import 'package:zad/features/auth/presentation/login_screen.dart';
 import 'package:zad/features/chat/presentation/chat_screen.dart';
 import 'package:zad/features/family/presentation/family_screen.dart';
@@ -420,14 +422,14 @@ void main() {
       expect(container.read(shellNavigationProvider), isNull);
     });
 
-    testWidgets('the bar is الرئيسية · فلوسي · بيتي · المزيد, and each '
-        'can be asked for', (tester) async {
+    testWidgets('the bar is الرئيسية · فلوسي · بيتي · عيلتي (no المزيد), and '
+        'each can be asked for', (tester) async {
       final container = containerFor('user-1');
       addTearDown(container.dispose);
 
       await pumpGate(tester, container);
       await tester.pump(Duration.zero);
-      for (final label in <String>['الرئيسية', 'فلوسي', 'بيتي', 'المزيد']) {
+      for (final label in <String>['الرئيسية', 'فلوسي', 'بيتي', 'عيلتي']) {
         expect(
           find.descendant(
             of: find.byType(ZadBottomNavBar),
@@ -449,6 +451,48 @@ void main() {
         await tester.pump();
         expect(bar().current, shown, reason: '$asked');
       }
+
+      // Tapping each of the four tabs shows it, and there is no «المزيد» tab:
+      // the old menu is the drawer behind the header's square.
+      expect(
+        find.descendant(
+          of: find.byType(ZadBottomNavBar),
+          matching: find.text('المزيد'),
+        ),
+        findsNothing,
+      );
+      for (final (label, shown) in <(String, ZadNavDestination)>[
+        ('فلوسي', ZadNavDestination.money),
+        ('بيتي', ZadNavDestination.inventory),
+        ('عيلتي', ZadNavDestination.family),
+        ('الرئيسية', ZadNavDestination.home),
+      ]) {
+        await tester.tap(
+          find.descendant(
+            of: find.byType(ZadBottomNavBar),
+            matching: find.text(label),
+          ),
+        );
+        await tester.pump();
+        await tester.pump();
+        expect(bar().current, shown, reason: label);
+      }
+      // The assistant button stays in the centre.
+      expect(
+        find.descendant(
+          of: find.byType(ZadBottomNavBar),
+          matching: find.bySemanticsLabel(
+            tester.element(find.byType(ZadBottomNavBar)).l10n.navVoiceAssistant,
+          ),
+        ),
+        findsWidgets,
+      );
+      // And the drawer, where every former «المزيد» entry lives, opens from
+      // the header's menu square.
+      await tester.tap(find.bySemanticsLabel('المزيد').first);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(find.byType(ZadDrawer), findsOneWidget);
     });
 
     testWidgets('a screen the agent asks for opens with no chat on screen', (
