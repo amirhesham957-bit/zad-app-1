@@ -26,7 +26,7 @@ export const WHISPER_DEFAULT_MODEL = "whisper-large-v3-turbo";
  * كلمات زاد نفسها — نفس فكرة جملة اللهجة: Whisper بيقرا الـprompt كسياق سابق، فبيكتب اسم
  * الشاشة أو الأمر صح بدل أقرب كلمة شبهه. بيانات للموديل، مش نص واجهة.
  */
-const ZAD_WORDS = "زاد، سجّلي، الصيدلية، مواعيدي، فكّرني، صحّيني، المخزن، قايمة التسوق، الميزانية، الدوا، جرعة.";
+const ZAD_WORDS = "زاد، سجّلي، الصيدلية، مواعيدي، فكّرني، صحّيني، المخزن، قايمة التسوق، الميزانية، الدوا، جرعة، ملوخية، خضار، فاكهة، فاتورة، مصروف.";
 
 // ⚠️ بيانات لهجات للموديل، مش نصوص واجهة — ماتترجمهاش.
 const EGYPT = "عايز، دلوقتي، ازاي، فين، كام، جنيه، اشتريت، دفعت، صرفت.";
@@ -111,6 +111,9 @@ export function whisperOptions(country: unknown): WhisperOptions {
   if (code && DIALECT_HINT[code]) {
     return { language: "ar", prompt: `${DIALECT_HINT[code]} ${ZAD_WORDS}`, model: WHISPER_ARABIC_MODEL };
   }
+  // بلد مش معروف (حساب من غير country، أو بوت تليجرام): زاد عربي أولاً، فمانسيبش Whisper يكتشف
+  // اللغة: فويس مصري اتفرّغ بالإسباني («El molujero se arranque», ٢٠٢٦-١١-٢٨). تركيا فوق استثناء.
+  if (!code) return { language: "ar", prompt: `${EGYPT} ${ZAD_WORDS}`, model: WHISPER_ARABIC_MODEL };
   return {};
 }
 

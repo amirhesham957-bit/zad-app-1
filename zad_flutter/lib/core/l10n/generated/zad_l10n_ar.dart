@@ -7667,6 +7667,9 @@ class ZadL10nAr extends ZadL10n {
 
   @override
   String get notifReadsPlace => 'المكان';
+
+  @override
+  String get stuckNotificationRecord => 'سجّله';
 }
 
 /// The translations for Arabic, as used in Saudi Arabia (`ar_SA`).
@@ -10912,4 +10915,7 @@ class ZadL10nArSa extends ZadL10nAr {
 
   @override
   String get notifReadsPlace => 'المكان';
+
+  @override
+  String get stuckNotificationRecord => 'سجّله';
 }

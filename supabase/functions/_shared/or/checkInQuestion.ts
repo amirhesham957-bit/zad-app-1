@@ -63,3 +63,62 @@ export function pickWeeklyQuestion(
     values: results.map((r) => r.value),
   };
 }
+
+// ── سؤال الحقيقة اليومي (P3.1) ──────────────────────────────────────────────
+// حقيقة مستنتجة (zad_member_facts.source = inferred) بتتسأل مرة في اليوم بالكتير، والرد «آه»/«لأ» بيقفلها:
+// «آه» = قالها (profile.fact_set source said)، «لأ» = profile.fact_deny (مايتسألش ولا يتستنتج ١٨٠ يوم). الكتابة من الباب.
+
+export const FACT_QUESTION_MIN_HOURS = 20;
+export const FACT_DENY_QUIET_DAYS = 180;
+/** السؤال المفتوح بيتقبل رد «آه»/«لأ» لحد كام ساعة. */
+export const FACT_ANSWER_WINDOW_HOURS = 36;
+/** أقل ثقة تستاهل سؤال (تحتها إشارة ضعيفة). */
+export const FACT_MIN_QUESTION_CONFIDENCE = 0.4;
+
+export interface FactQuestionCandidate {
+  key: string;
+  value: string;
+  confidence: number;
+  askedAt: string | null;
+  deniedAt: string | null;
+}
+
+/**
+ * أحسن حقيقة تتسأل دلوقتي، أو null. الشروط: لسه ماتسألتش، ماتنفتش من أقل من ١٨٠ يوم، ثقتها كفاية،
+ * ومفيش سؤال اتبعت في آخر ٢٠ ساعة (سؤال واحد في اليوم). الأعلى ثقة الأول، وعند التساوي المفتاح أبجدياً.
+ */
+export function pickDailyFactQuestion(
+  cands: readonly FactQuestionCandidate[],
+  lastAskedHoursAgo: number | null,
+  nowMs: number,
+): FactQuestionCandidate | null {
+  if (lastAskedHoursAgo !== null && lastAskedHoursAgo < FACT_QUESTION_MIN_HOURS) return null;
+  const quietMs = FACT_DENY_QUIET_DAYS * 86_400_000;
+  const ok = cands.filter((c) => {
+    if (c.askedAt) return false;
+    if (c.confidence < FACT_MIN_QUESTION_CONFIDENCE) return false;
+    const d = c.deniedAt ? Date.parse(c.deniedAt) : NaN;
+    return !(Number.isFinite(d) && nowMs - d < quietMs);
+  });
+  ok.sort((a, b) => b.confidence - a.confidence || (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
+  return ok[0] ?? null;
+}
+
+/** نص السؤال. القيمة جاية من الحقيقة نفسها (مستنتجة من حدث أو من كلام العميل)، مش من تأليف. */
+export function factQuestionText(value: string): string {
+  return `سؤال صغير: أنا لاحظت إنه ${value}. صح كده؟ ردّ «آه» أو «لأ».`;
+}
+
+const YES = new Set(["اه", "ايوه", "ايوا", "ايوة", "اهه", "صح", "صحيح", "بالظبط", "تمام", "طبعا", "اكيد", "yes", "ايوه صح", "اه صح", "صح كده", "ايوه كده", "اه كده"]);
+const NO = new Set(["لا", "لاء", "لا لا", "لا خالص", "غلط", "مش كده", "مش صح", "لا مش كده", "لا مش صح", "no", "لا ابدا", "لا مش بالظبط"]);
+
+/** رد «آه»/«لأ» لوحده (حتى ٤ كلمات، ومعاه «يا زاد»). غير كده null، والرسالة تكمل مسارها العادي. */
+export function parseFactAnswer(message: string): "yes" | "no" | null {
+  let m = String(message ?? "").replace(/[ً-ٰٟـ]/g, "").replace(/[أإآ]/g, "ا").replace(/ى/g, "ي").replace(/ة/g, "ه")
+    .toLowerCase().replace(/[.!؟?،,؛:"'«»…\p{Extended_Pictographic}‍️]/gu, " ").replace(/\s+/g, " ").trim();
+  m = m.replace(/\s*يا زاد$/, "").trim();
+  if (!m || m.split(" ").length > 4) return null;
+  if (YES.has(m)) return "yes";
+  if (NO.has(m)) return "no";
+  return null;
+}

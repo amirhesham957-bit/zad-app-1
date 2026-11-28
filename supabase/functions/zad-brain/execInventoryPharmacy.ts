@@ -5,7 +5,7 @@ import type { RunContext } from "./validators.ts";
 import type { ToolDeps } from "./execDeps.ts";
 import { medicineHolder, memberNoticeNames, tellMemberMedicineAdded } from "./familyMedicine.ts";
 import { normalizeDoseTimes, matchMedicineByName, normalizeForPerson, pharmacyIsRecurring } from "./shared.ts";
-import { pickPantryMatch, type PantryRow } from "./pantryMatch.ts";
+import { pickPantryMatch, staleEmptyOtherUnitRows, type PantryRow } from "./pantryMatch.ts";
 import { consumeReply, matchConsumeRow, openedNote, openedOnlyReply, openOnly, quantityAfter, usedInRowUnits, type ConsumeRow } from "./consumeItem.ts";
 import { recordAction } from "./audit.ts";
 import { commitIntent, DUPLICATE_REPLY, refusalText } from "./commitIntent.ts";
@@ -122,6 +122,10 @@ export async function execInventoryPharmacy(name: string, sb: SupabaseClient, us
         const tickedMerge = await tickBoughtLine(sb, userId, houseFamily, existing.item_name, scope);
         return `"${existing.item_name}" كان موجود في المخزون — زوّدته ${input.quantity}، بقى ${total}${existing.unit ? ` ${existing.unit}` : ""}` +
           (tickedMerge ? ` — واتشطب "${tickedMerge}" من قايمة التسوق` : "");
+      }
+      // «باذنجان ٠ قطعة» جنب «باذنجان ٢ كجم»: الصف الفاضي بوحدة تانية بيتمسح من الباب قبل الجديد.
+      for (const stale of staleEmptyOtherUnitRows(houseRows.filter((r) => r.user_id === userId), itemName, unit)) {
+        await commitIntent(sb, userId, scope, `${name}:cleanup`, { item_id: stale.id }, "inventory.deleted", { item_id: stale.id });
       }
       // صف جديد من الباب (م٢.٥).
       const added = await commitIntent(sb, userId, scope, name, input, "inventory.added", {

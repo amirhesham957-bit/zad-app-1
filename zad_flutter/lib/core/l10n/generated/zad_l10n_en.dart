@@ -7792,4 +7792,7 @@ class ZadL10nEn extends ZadL10n {
 
   @override
   String get notifReadsPlace => 'Place';
+
+  @override
+  String get stuckNotificationRecord => 'Record it';
 }
