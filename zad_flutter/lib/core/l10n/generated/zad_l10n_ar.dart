@@ -2664,6 +2664,28 @@ class ZadL10nAr extends ZadL10n {
       'اللي موجود هتزيد كميته، واللي في قايمة المشتريات هيتشال منها، والأدوية هتروح الصيدلية.';
 
   @override
+  String scanBankMatchQuestion(String amount, String merchant) {
+    return 'لقيت إشعار فيزا بـ $amount من $merchant. أربط الفاتورة بيه من غير خصم تاني؟';
+  }
+
+  @override
+  String get scanBankMatchLink => 'اربطها (من غير خصم تاني)';
+
+  @override
+  String get scanBankMatchSeparate => 'سجّلها لوحدها';
+
+  @override
+  String scanDeductQuestion(String amount) {
+    return 'اخصم $amount من الرصيد وسجّل الفاتورة، ولا أسجّل البنود في المخزن/السجل بس من غير خصم؟';
+  }
+
+  @override
+  String get scanDeductYes => 'اخصم وسجّل';
+
+  @override
+  String get scanDeductLinesOnly => 'سجّل البنود بس';
+
+  @override
   String get dealsTitle => 'العروض والمحلات القريبة';
 
   @override

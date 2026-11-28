@@ -361,21 +361,20 @@ class _ReadingState extends ConsumerState<_Reading> {
             // One card payment, two messages: the bank's and this paper.
             // Saved twice, it would be counted twice.
             _questionBox(
-              text:
-                  'لقيت إشعار فيزا بـ '
-                  '${_plain(_bankMatch(view).amount)}'
-                  ' من ${_bankMatch(view).merchant}. '
-                  'أربط الفاتورة بيه من غير خصم تاني؟',
+              text: context.l10n.scanBankMatchQuestion(
+                _plain(_bankMatch(view).amount),
+                _bankMatch(view).merchant,
+              ),
               choices: <Widget>[
                 ChoiceChip(
-                  label: const Text('اربطها (من غير خصم تاني)'),
+                  label: Text(context.l10n.scanBankMatchLink),
                   selected: view.mergeWithBank,
                   onSelected: busy
                       ? null
                       : (_) => controller.setMergeWithBank(value: true),
                 ),
                 ChoiceChip(
-                  label: const Text('سجّلها لوحدها'),
+                  label: Text(context.l10n.scanBankMatchSeparate),
                   selected: !view.mergeWithBank,
                   onSelected: busy
                       ? null
@@ -386,19 +385,17 @@ class _ReadingState extends ConsumerState<_Reading> {
           ] else if (view.offersRecordOnly) ...<Widget>[
             const SizedBox(height: ZadSpacing.lg),
             _questionBox(
-              text:
-                  'اخصم ${_plain(receipt.total)} من الرصيد وسجّل الفاتورة، '
-                  'ولا أسجّل البنود في المخزن/السجل بس من غير خصم؟',
+              text: context.l10n.scanDeductQuestion(_plain(receipt.total)),
               choices: <Widget>[
                 ChoiceChip(
-                  label: const Text('اخصم وسجّل'),
+                  label: Text(context.l10n.scanDeductYes),
                   selected: view.deductFromBalance,
                   onSelected: busy
                       ? null
                       : (_) => controller.setDeductFromBalance(value: true),
                 ),
                 ChoiceChip(
-                  label: const Text('سجّل البنود بس'),
+                  label: Text(context.l10n.scanDeductLinesOnly),
                   selected: !view.deductFromBalance,
                   onSelected: busy
                       ? null
