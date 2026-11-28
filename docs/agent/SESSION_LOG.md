@@ -957,3 +957,11 @@ Added `zad_flutter/lib/features/notification_reads` (repository interface + Supa
 - **السيرفر:** مفيش نبض جديد. النبض موجود: `bank.off`/`bank.stalled` في `zad_product_events` (لما التطبيق يتفتح، كل ١٢ ساعة) ⇐ تريجر `zad_bank_off_tells` ⇐ مهمة `listener_gap_alert` (واحدة في اليوم) ⇐ `pushToDevice`. اللي اتضاف: `agentTaskPushData` بيبعت `route: bank_fix` مع الإشعار ده، والتطبيق بيفتح الرئيسية (`AlertDestination.rescue`، نفس مسار `_openPush` وgetInitialMessage).
 - **قرارات:** زرار البطارية بيفتح قايمة التحسين مش `ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` (اتشال لشروط بلاي، 20-22/11). نص «واقفة» في `supportDesk.ts` بقى ١٢ ساعة بدل يومين.
 - **فجوة معروفة:** النبض بيطلع لما التطبيق يتفتح بس، فعميل ما فتحش زاد بعد ما الخدمة وقفت مش هيتبعتله إشعار السيرفر. الإغلاق ده محتاج إشارة من الخلفية (مفتاح الإرسال `last_used_at`، شريحة تانية). مفيش إشارة سيرفر لفقد الموقع.
+
+## P3.4 تتبّع اللفات وقاطع المحركات (٢٠٢٦-١١-٢٨)
+
+- **اتعمل:** ميجريشن `20261128200000` (جدولان RLS مقفولين + ٣ دوال security definer لـservice_role)، `engineBreaker.ts` (store بـRPC، مهلة ٨٠٠ms للسؤال، fail-open)، `skipOpenRoutes`/`engineKey`/`stateOf` في `gatewayRouting.ts`، وتوصيل في `callModel` (جيميناي المدفوع بيتسأل عنه؛ المجاني وجروك بيتسجلوا بس). السقف ٣ فشل متتالي، راحة ٣٠٠ث، محاولة واحدة نص مفتوحة.
+- **اتقاس:** `deno check` EXIT=0، `deno test -A zad-brain/ _shared/ _schema/` ٢٤٩٢ عدّوا EXIT=0، تست SQL جديد على postgres:16 ومتكرر التطبيق، وبيفشل من غير الميجريشن.
+- **فاضل:** ربط `zad_round_mark` باتعدّل/اترجّع (مفيش مسار بيناديها لسه). القاطع المحلي بتاع الـembed لسه في الذاكرة. ConfigError (400/401/403) مش بيعدّ فشل في القاطع.
+- **فخ:** أي جدول جديد لازم يتضاف في `_schema/schema.json` بإيدك وإلا عقد الـschema يقع.
+

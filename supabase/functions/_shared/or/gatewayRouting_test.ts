@@ -1,5 +1,15 @@
 import { assertEquals, assertThrows } from "jsr:@std/assert@1";
-import { buildGatewayUrl, nextRoute, planRoutes, percentile, type Route, summarizeTrial } from "./gatewayRouting.ts";
+import {
+  buildGatewayUrl,
+  engineKey,
+  nextRoute,
+  percentile,
+  planRoutes,
+  type Route,
+  skipOpenRoutes,
+  stateOf,
+  summarizeTrial,
+} from "./gatewayRouting.ts";
 
 const G = (model: string, viaGateway = false): Route => ({ provider: "gemini", model, viaGateway });
 const Q = (model: string, viaGateway = false): Route => ({ provider: "groq", model, viaGateway });
@@ -120,4 +130,27 @@ Deno.test("summarizeTrial: delta null when one side is empty", () => {
   assertEquals(s.direct.p50, null);
   assertEquals(s.deltaP50Ms, null);
   assertEquals(s.gateway.cacheHitRate, 1);
+});
+
+Deno.test("breaker: closed and missing states keep the whole chain", () => {
+  const chain = [G("g-a"), G("g-b"), Q("q-1")];
+  assertEquals(skipOpenRoutes(chain, {}), chain);
+  assertEquals(skipOpenRoutes(chain, null), chain);
+  assertEquals(skipOpenRoutes(chain, { "gemini:g-a": "closed" }), chain);
+  assertEquals(stateOf({ x: "garbage" }, "x"), "closed");
+});
+
+Deno.test("breaker: an open engine is skipped, the next route stays", () => {
+  const chain = [G("g-a"), G("g-b"), Q("q-1")];
+  assertEquals(skipOpenRoutes(chain, { [engineKey(chain[0])]: "open" }), [G("g-b"), Q("q-1")]);
+});
+
+Deno.test("breaker: half_open is kept (it is the probe)", () => {
+  const chain = [G("g-a"), G("g-b")];
+  assertEquals(skipOpenRoutes(chain, { "gemini:g-a": "half_open" }), chain);
+});
+
+Deno.test("breaker: all open falls back to the full chain", () => {
+  const chain = [G("g-a"), Q("q-1")];
+  assertEquals(skipOpenRoutes(chain, { "gemini:g-a": "open", "groq:q-1": "open" }), chain);
 });

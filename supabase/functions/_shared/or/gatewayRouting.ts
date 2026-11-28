@@ -103,3 +103,28 @@ export function summarizeTrial(samples: Sample[]): {
     deltaP50Ms,
   };
 }
+
+// P3.4: قاطع الدايرة. الحالة نفسها في Postgres (zad_engine_is_open)؛ هنا القرار النقي بس.
+// closed = شغال. open = جوه فترة الراحة، يتخطى. half_open = الراحة خلصت، محاولة واحدة تجرّب.
+export type BreakerState = "closed" | "open" | "half_open";
+
+/** مفتاح المحرك في جدول القاطع: provider:model. */
+export function engineKey(route: Pick<Route, "provider" | "model">): string {
+  return `${route.provider}:${route.model}`;
+}
+
+/** حالة محرك من خريطة الحالات (الغايب أو أي قيمة مش معروفة = closed: القاطع مابيقفلش إلا بدليل). */
+export function stateOf(states: Record<string, string> | null | undefined, key: string): BreakerState {
+  const s = states?.[key];
+  return s === "open" || s === "half_open" ? s : "closed";
+}
+
+/**
+ * الـchain بعد شيل المحركات المفتوحة. half_open بيفضل (هو المحاولة). لو كله مفتوح بنرجّع الـchain زي ما هي:
+ * محاولة على محرك واقع أحسن من لفة من غير ولا محاولة.
+ */
+export function skipOpenRoutes(chain: Route[], states: Record<string, string> | null | undefined): Route[] {
+  const open = chain.filter((r) => stateOf(states, engineKey(r)) === "open");
+  if (open.length === 0 || open.length === chain.length) return chain;
+  return chain.filter((r) => !open.includes(r));
+}
