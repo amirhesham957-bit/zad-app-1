@@ -22,6 +22,7 @@ import { soulBlock } from "./soul.ts";
 import { pushToDevice, pushToTelegram } from "./push.ts";
 import { UNCOUNTED_MOMENTS } from "./voiceMoments.ts";
 import { runWeatherDrift, weatherAlertsEnabled } from "./weatherDrift.ts";
+import { factInferenceEnabled, runNightlyFactInference } from "./factCheckIn.ts";
 import { noteShown, type ShownChoice, settleIgnoredNotifications, settleOpenedNotifications } from "./banditReward.ts";
 import { banditEnabled } from "./banditWiring.ts";
 import { recentOutbound } from "../_shared/outbound.ts";
@@ -42,6 +43,8 @@ export async function processDueAgentTasks(sb: SupabaseClient, deps: AgentTaskDe
   const { buildSnapshot, buildChatSystemPrompt, groqSystemFor, runTool, proactiveTitleFor, accountTimeZone, modelRoutine: MODEL_ROUTINE, maxAgentTurns: MAX_AGENT_TURNS } = deps;
   // تنبيه الجو الاستباقي: خلف ZAD_WEATHER_ALERTS (مقفول = ولا قراية ولا شبكة). بيسجل لحظات بس، ومابيرميش.
   if (weatherAlertsEnabled()) await runWeatherDrift(sb, { accountTimeZone });
+  // P3.1: استنتاج الحقائق وسؤال اليوم خلف ZAD_FACT_INFERENCE (مقفول = صفر). مرة في الليلة (ساعة ١ UTC) مش كل لفة. مابيرميش.
+  if (factInferenceEnabled() && new Date().getUTCHours() === 1) await runNightlyFactInference(sb);
   // م٨.٢: مكافأة الـbandit للإشعارات اللي اتفتحت (ZAD_BANDIT_TONE مقفول = صفر). مابيرميش.
   await settleOpenedNotifications(sb, banditEnabled((k) => Deno.env.get(k)));
   // قاعدة الفشل: إشعار اتعرض من +٢٤ ساعة ولسه مااتقراش = فشل للقالب. بعد المكافأة عشان المقروء ياخد الأولوية. مابيرميش.

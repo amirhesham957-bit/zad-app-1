@@ -111,6 +111,8 @@ import { buildMenu, describeMenu, feedbackMap, parseMenuDishes } from "./menuToo
 import { appointmentsBusy, describeGatherings, findGatherings, mergeBusy, parseGatheringInput } from "./gatheringTool.ts";
 import { guardEngineReply, type EngineOutput } from "./engineGuard.ts";
 import { type FastIntent, formatBalanceReply, parseFastPath } from "./fastPath.ts";
+import { handleFactAnswer, learnFactsFromChat } from "./factCheckIn.ts";
+import { isJoke, JOKE_BLOCKED_TOOLS, JOKE_RULE, JOKE_TOOL_RESULT } from "../_shared/or/jokeFilter.ts";
 import { AgentSource, AuditScope, recordAction, writeRows } from "./audit.ts";
 import { commitIntent, DUPLICATE_REPLY, isDoorRefusal, logGuard, refusalText } from "./commitIntent.ts";
 import { redactNotificationText } from "./redact.ts";
@@ -2337,7 +2339,16 @@ async function handleAgentTurnInLane(
   //
   // parseFastPath under-matches by design — see fastPath.ts. Anything it returns null for
   // falls straight through to the model path below, unchanged.
-  const fast = parseFastPath(message);
+  // P3.1: رد «آه»/«لأ» على سؤال الحقيقة اليومي (ZAD_FACT_INFERENCE مقفول = null من غير قراية).
+  const factAnswer = await handleFactAnswer(sb, userId, message);
+  if (factAnswer) {
+    return new Response(JSON.stringify({
+      ok: true, reply: factAnswer, executed: [], proposals: [], tool_attempted: false, rejections: [], observations: [], fast_path: "fact_answer",
+    }), { headers: CORS_HEADERS });
+  }
+  // P3.1: هزار/مبالغة = مفيش مسار سريع يسجّل. الموديل يرد بمرح، وأدوات الكتابة بتترفض تحت.
+  const jokeTurn = isJoke(message);
+  const fast = jokeTurn ? null : parseFastPath(message);
   if (fast) {
     const fastReply = await answerFastPath(sb, userId, fast, declaredSource);
     if (fastReply) {
@@ -2769,6 +2780,11 @@ async function handleAgentTurnInLane(
         toolResults.push({ id: call.id, name: call.name, content: "تم. الأدوات المطلوبة معروضة دلوقتي، نادِها." });
         continue;
       }
+      // P3.1: الهزار مابيكتبش في المخزن ولا المصاريف ولا التنبؤ ولا الحقائق (jokeFilter.ts).
+      if (jokeTurn && JOKE_BLOCKED_TOOLS.has(call.name)) {
+        toolResults.push({ id: call.id, name: call.name, content: JOKE_TOOL_RESULT });
+        continue;
+      }
       // «اخد قرض 50 ألف عشان المصيف؟» نفّذت add_debt على جروك (التقييم الليلي ٢٧/١٠): سؤال رأي مش دين اتاخد.
       if (ADVICE_BLOCKED_TOOLS.has(call.name) && adviceQuestion(message)) {
         toolResults.push({ id: call.id, name: call.name, content: ADVICE_TOOL_RESULT });
@@ -3115,6 +3131,8 @@ async function handleAgentTurnInLane(
     })());
   }
 
+  // P3.1: حقائق من الكلام العادي بعد فلتر الهزار (ZAD_FACT_INFERENCE مقفول = صفر).
+  if (!jokeTurn) afterResponse("chat facts", learnFactsFromChat(sb, userId, message, scope));
   afterResponse("promise drift", recordPromiseDrift(sb, userId, runId, declaredSource, reply, executed.map((x) => x.tool)));
   await finishRun("success");
 
@@ -3371,7 +3389,7 @@ ${Array.isArray(snap?.stock) && (snap.stock as Array<{ forecast?: unknown }>).so
    - **اكتب زي ما بني آدم بيكتب في الشات** (المكالمة ليها قواعدها): ابدأ برد فعل على كلامه («يا خبر!») — سؤال معلومة أو سعر: الإجابة أول جملة؛ سطر لـ٣ من غير عناوين ولا نقط ولا Bold (القوايم لما يطلب تفاصيل أو أكتر من ٣ أرقام)؛ سؤال واحد بالكتير؛ متقفلش بـ«تحب أساعدك في حاجة تانية؟»؛ متعيدش كلامه؛ متبدأش ردين بنفس الكلمة؛ راجع بعد غياب ⇒ زي صاحب فاكره («بقالك يومين 😄»).
 ${ruleLines(householdLoadRule(snap), toneRule(snap), eventDayBudgetRule(snap), paydayOddsRule(snap), circumstanceBudgetRule(snap), homeEmergencyRule(snap))}${campaignAndTasteRules(snap)}${weatherRule(snap)}${ruleLines(replyCadenceRule(snap))}
 4. **التنفيذ الفوري**: طلب مهمة أو ميعاد أو مصروف أو دوا أو مخزون ⇒ **نفّذ الأمر فوراً** بالأداة، وأكّد باقتضاب بلهجته. ممنوع تقول "سجلت" أو "ضفت" أو "عدّلت" من غير ما تنادي الأداة في نفس الرد.
-5. **الحضور والهوية** (فوق SOUL): مفيش هزار لو بيكرر طلب.
+${JOKE_RULE}5. **الحضور والهوية** (فوق SOUL): مفيش هزار لو بيكرر طلب.
    - لو سأل العميل هل أنت إنسان، قل بوضوح وبخفة إنك مساعد ذكاء اصطناعي داخل زاد. لا خداع ولا غموض يصنع تعلق أو ضغط نفسي.
    - التوفير من غير إلحاح ولا تلاعب. السؤال العام: اربطه ببيته بس لو فيه رابط حقيقي. سؤال شخصي عنك («يومك كان عامل إيه؟»): دفا من غير «أنا نموذج لغوي» ومن غير ما تخترع حياة.
    - المبادرة مرة واحدة، ومتكررهاش لو ما ردّش. مش متأكد من رقم أو تاريخ ⇒ قول كده واسأل.
