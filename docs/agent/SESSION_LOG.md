@@ -981,6 +981,14 @@ Added `zad_flutter/lib/features/notification_reads` (repository interface + Supa
 - **فاضل:** ربط `zad_round_mark` باتعدّل/اترجّع (مفيش مسار بيناديها لسه). القاطع المحلي بتاع الـembed لسه في الذاكرة. ConfigError (400/401/403) مش بيعدّ فشل في القاطع.
 - **فخ:** أي جدول جديد لازم يتضاف في `_schema/schema.json` بإيدك وإلا عقد الـschema يقع.
 
+## ٢٠٢٦-١١-٢٨ — P3.12 محفظة الكاش (فرع `feat/p3-12-cash-wallet`)
+
+- **اكتشاف:** رصيد الكاش موجود من م١٩ (`zad_cash_balance`: تحويل لكاش +، مصروف بمحفظة cash -، والكارت مايلمسوش) ومتوصّل في `zad_budget_state.cash` ولقطة الشات (`cash_reconciliation.cash_on_hand`). فمفيش جدول جديد (رصيد تاني = مصدر حقيقة تاني). الناقص كان الباب: نفس السحب مرتين (إشعار + كلام) بيضاعف الكاش، ومصروف «كاش» لدفعة إشعارها وصل بيتخصم مرتين.
+- **اتعمل:** `20261128210000_cash_wallet_door.sql`: `zad_intent_money` اتسمّت `_core` وغلاف جديد بنوعين `money.cash_withdrawn` (تحويل لكاش، توأم نفس المبلغ ±٦ ساعات = رفض `cash_withdrawal_duplicate_suspected`، و`allow_duplicate`) و`money.cash_spent` (محفظة cash، توأم إشعار بنك عبر `private.zad_bank_twin` بتاع P2.10 = رفض `cash_spend_matches_bank_notice`، و`confirm_cash`)؛ نفس الحارس على `money.purchase` بمحفظة cash. `20261128210100_cash_wallet_view.sql`: `zad_view_money.numbers.cash_on_hand = {value, source: zad_cash_balance}` (القاصر بيتقفل قبله). TS: رفضين في `REASONS`، و`cash_on_hand_source` في اللقطة.
+- **اتقاس:** `cash_wallet_test.sql` و`cash_wallet_view_test.sql` على Postgres محلي (zadpg): EXIT=0؛ بدون المايجريشن بيقعوا، وبتعطيل حارس التكرار التست بيقع. السلسلتين مسجلتين في LIST بتاع `edge-functions.yml`.
+- **فاضل:** أدوات الشات/تليجرام/الزرار اللي بتبعت النوعين (`log_cash_withdrawal`/`log_cash_spend`) لسه ما اتكتبتش، فالنوعين مفتوحين للباب بس؛ سؤال «دفعتها كاش ولا كارت» محتاج صياغة في البوت. دمج فاتورة الكارت مع الإشعار (P2.10) اتختبر في `bank_twin_merge_test.sql` مش هنا (السقالة هنا فيها نسخة من `zad_bank_twin`). الدخل بمحفظة cash مش بيزود الكاش (الصيغة القديمة).
+- **فخ:** السقالة بتنسخ `private.zad_bank_twin` حرفياً؛ لو P2.10 غيّرتها لازم تتحدّث.
+
 
 
 ## P3.7 نفاد الدوا الحتمي (٢٠٢٦-١١-٢٨، فرع `feat/p3-7-p3-6`)

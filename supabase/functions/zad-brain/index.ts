@@ -1418,6 +1418,7 @@ async function buildSnapshot(sb: SupabaseClient, userId: string) {
     cash_reconciliation: {
       key: cashKey,
       cash_on_hand: Number(cashBalRes.data ?? 0),
+      cash_on_hand_source: "zad_cash_balance",
       needs_ask: (cashAskedRes.data ?? []).length === 0,
       dismissed_count: (dismissedRes.data ?? []).filter((d: any) => (d.dedupe_key ?? "").startsWith("cash_reconciliation_")).length,
     },
