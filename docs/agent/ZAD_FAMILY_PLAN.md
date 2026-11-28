@@ -123,7 +123,7 @@ related:
 | P1.2 | `[x]` | (موجود أصلاً: `InterstitialPacer.minGap` ٤ دقايق و٤ في الساعة، والأطفال بيمنعهم `adsAllowedProvider`، وتستاتهم في `interstitial_pacer_test.dart` و`ads_policy_test.dart`؛ مفيش تغيير كود) عدّاد Interstitial مركزي: ≤ ١ كل ٣ دقايق، نهاية مهمة، مش للأطفال | `shared/ads/application/interstitials.dart` | `flutter test` على العدّاد |
 | P1.3 | `[x]` | دوال عرض `zad_view_home/money/house/family(member_id)` بأرقام بمصدر و`available_actions` | مايجريشن + تست SQL | الرقم في الشاشة = رقم البوت لنفس العميل |
 | P1.4 | `[x]` | توليد موديلات Dart من السكيما ودوال العرض + فحص اختلاف في الـCI (المولّد يقرا أسماء `available_actions` المعتمدة ويرفض أي اسم مؤقت وقت الكومبايل) | سكريبت + workflow | الـCI يوقع لو عمود اتغير |
-| P1.3b | `[ ]` | ربط الأدوية والجرعات الفايتة في `zad_view_family` للولي (`zad_pharmacy_items.family_member_id` بيشاور على `family_members` مش `zad_household_members`) | مايجريشن + تست SQL | الولي يشوف أدوية الأم/الطفل وجرعة فايتة، وغيره لا |
+| P1.3b | `[x]` | ربط الأدوية والجرعات الفايتة في `zad_view_family` للولي (`zad_pharmacy_items.family_member_id` بيشاور على `family_members` مش `zad_household_members`) | مايجريشن + تست SQL | الولي يشوف أدوية الأم/الطفل وجرعة فايتة، وغيره لا |
 | P1.1b | `[x]` | تكملة P1.1: الصوت والتخطيط والاستريم على نفس البوابة `gate.ts` | `zad-brain/gate.ts`، `index.ts` | نفس تستات P1.1 + الاستريم |
 | P1.5 | `[ ]` | ٤ تبويبات (الرئيسية، فلوسي، بيتي، عيلتي) + زرار المساعد. الجداول المدفونة كروت في الشات | `app/shell/zad_bottom_nav_bar.dart` | `flutter analyze` + `flutter test` |
 | P1.6 | `[ ]` | اختبار ساندوتش لكل زرار ظاهر: زرار ← `zad_events` ← البوت ← الإشعار | مبني على `supabase/sql/e2e/run_commit_intent_e2e.sh` | `e2e: all checks passed` |
@@ -135,13 +135,13 @@ related:
 
 | ID | الحالة | الشريحة | الملفات | التحقق |
 |---|---|---|---|---|
-| P2.1 | `[ ]` | فرد واحد: `zad_household_members` هو الشخص، و`family_members` ربط حساب. يتضاف للفرد بلد وعملة ولهجة ومين وليّه | مايجريشن | تست SQL + RLS |
+| P2.1 | `[x]` | فرد واحد: `zad_household_members` هو الشخص، و`family_members` ربط حساب. يتضاف للفرد بلد وعملة ولهجة ومين وليّه | مايجريشن | تست SQL + RLS |
 | P2.2 | `[ ]` | `zad_household_traits`: سمة بتاريخ بداية ونهاية ومصدر (معيل، كبيرة، لوحده، فيها قاصر، مسافرة) | مايجريشن + مجال في الباب | تست SQL + `oneDoor_test` |
 | P2.3 | `[ ]` | `zad_member_facts` + مجال `profile` في `zad_commit_intent` (مصدر: قالها/اتلاحظت/اتستنتجت، ثقة، دليل، انتهاء) | مايجريشن + `commitIntent.ts` | تست SQL + رفض عربي في `REASONS` |
 | P2.4 | `[ ]` | توسيع `zad_locale_config` لحزمة البلد: متاجر، مواسم، يوم القبض، أكلات | مايجريشن (بيانات) | تست SQL |
 | P2.5 | `[ ]` | مصفوفة الرؤية (مين يشوف إيه عن مين) بقرار المالك، و`crossMemberLeak.ts` بيقراها | مايجريشن + `_shared/or/crossMemberLeak.ts` | `deno test` على الحالات الخمسة |
 | P2.6 | `[ ]` | الجرعة الفائتة توصل للمسؤول بعد مهلة. اقرا `parent-digest` و`zad_guardian_*` كاملين الأول | `zad_enqueue_missed_doses`، `parent-digest/` | تست SQL: أم بحساب مربوط فوّتت = لحظة للابن |
-| P2.7 | `[ ]` | المطر قبلها بـ٣٠ دقيقة: `minutely_15` من Open-Meteo (يتأكد من التوثيق والتغطية) + سياق المواعيد والمدرسة | `zad-brain/weatherDrift.ts` | `deno test` يوقع لو رجع للساعة |
+| P2.7 | `[x]` | المطر قبلها بـ٣٠ دقيقة: `minutely_15` من Open-Meteo (يتأكد من التوثيق والتغطية) + سياق المواعيد والمدرسة | `zad-brain/weatherDrift.ts` | `deno test` يوقع لو رجع للساعة |
 | P2.8 | `[ ]` | يوم كل فرد (موجز صبح بميزانية انتباه لكل فرد) + بيت العيلة لأي حد بينضم بـ`zad_join_family` | `attentionBudget.ts`، `zad-brain` | e2e |
 | P2.9 | `[ ]` | فتح `ZAD_FAMILY_PERSONA` بعد P2.2 وP2.3 (خطوة المالك) | secrets | — |
 

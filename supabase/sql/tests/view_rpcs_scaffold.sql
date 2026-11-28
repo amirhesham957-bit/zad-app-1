@@ -13,7 +13,7 @@ alter table public.zad_users add column if not exists country text;
 alter table public.zad_users add column if not exists monthly_limit numeric;
 alter table public.zad_pharmacy_items add column if not exists for_person text;
 create function public.zad_market_timezone(p text) returns text language sql immutable as $$ select 'UTC' $$;
-create table public.zad_pharmacy_doses (id uuid primary key default gen_random_uuid(), item_id uuid, status text, scheduled_at timestamptz);
+create table public.zad_pharmacy_doses (id uuid primary key default gen_random_uuid(), user_id uuid, item_id uuid, status text, scheduled_at timestamptz);
 create table public.zad_household_members (
   id uuid primary key default gen_random_uuid(), user_id uuid not null references auth.users(id) on delete cascade,
   display_name text not null, kind text not null check (kind in ('self', 'adult', 'child', 'elder')), birth_year int,
