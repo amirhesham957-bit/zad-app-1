@@ -1,4 +1,4 @@
 {
-  "_note": "Allowlist of available_actions ids. The generator fails on any id in zad_view_* that is not here. Adding an id needs review of this file.",
-  "actions": ["add_expense", "review_budget", "pay_debt", "restock", "use_expiring", "add_item", "add_goal"]
+  "_note": "Allowlist of available_actions ids. The generator fails on any id in zad_view_* that is not here. Adding an id needs review of this file. List approved by the owner 2026-11-28. Family-settings edits and permanent account deletion stay OUT.",
+  "actions": ["add_expense", "review_budget", "pay_debt", "restock", "use_expiring", "add_item", "add_goal", "add_income", "add_pantry_item", "consume_pantry_item", "add_task", "complete_task", "add_pharmacy_item", "log_dose", "set_budget_limit"]
 }
