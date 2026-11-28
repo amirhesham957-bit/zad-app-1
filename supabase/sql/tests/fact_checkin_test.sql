@@ -4,7 +4,7 @@
 --   psql < supabase/migrations/20261121160000_events_ledger.sql
 --   psql < supabase/migrations/20261128120000_household_traits.sql
 --   psql < supabase/migrations/20261128130000_member_facts.sql
---   psql < supabase/migrations/20261128210000_fact_checkin.sql
+--   psql < supabase/migrations/20261128230000_fact_checkin.sql
 --   psql < supabase/sql/tests/fact_checkin_test.sql
 
 \set ON_ERROR_STOP on

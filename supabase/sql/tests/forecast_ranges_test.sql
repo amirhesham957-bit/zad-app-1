@@ -5,7 +5,7 @@
 --   psql < supabase/sql/tests/forecast_runs_out_scaffold.sql
 --   psql < supabase/migrations/20261026214500_forecast_ledger.sql
 --   psql < supabase/migrations/20261026233000_forecast_runs_out.sql
---   psql < supabase/migrations/20261128220000_forecast_ranges.sql
+--   psql < supabase/migrations/20261128240000_forecast_ranges.sql
 --   psql < supabase/sql/tests/forecast_ranges_test.sql
 
 \set ON_ERROR_STOP on

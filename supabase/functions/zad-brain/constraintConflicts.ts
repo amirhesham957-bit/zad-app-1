@@ -4,6 +4,8 @@
 // (الجدول واسم الصف)، وكل رقم في النص إما من كلام العميل (المبلغ والتاريخ) أو من صف، أو فرق بسيط بين رقمين منهم.
 // المتاح (zad_budget_state.available) محسوب بعد الالتزامات، فمابنطرحش الالتزامات منه تاني: بنعرضها كتزامن بس.
 
+import { medicineRunOut } from "../_shared/or/medicineRunOut.ts";
+
 export interface ConflictInput { amount: number; date: string | null; label: string }
 
 export interface BudgetState { available?: number | null; days_left?: number | null; currency?: string | null }
@@ -124,16 +126,13 @@ export function findConflicts(input: ConflictInput, s: ConflictSources): Conflic
   addDue(s.subscriptions, "subscription_near", "zad_subscriptions", "اشتراك", (r) => r.amount);
 
   for (const m of s.pharmacy) {
-    const rem = m.remaining_quantity;
-    const per = Number(m.daily_dose_count ?? 0) * Number(m.units_per_dose ?? 1);
-    if (rem === null || !Number.isFinite(Number(rem)) || !(per > 0)) continue;
-    const days = Math.floor(Math.max(0, Number(rem)) / per);
-    const runOut = fromDay(todayN + days);
-    if (todayN + days > hi) continue;
+    const ro = medicineRunOut(m, s.today); // P3.7: نفس الحساب الصافي (_shared/or/medicineRunOut.ts)
+    if (!ro || todayN + ro.daysLeft > hi) continue;
+    const rem = ro.remaining, days = ro.daysLeft, runOut = ro.runOutDate;
     const who = m.for_person ? ` (${m.for_person})` : "";
     out.push({
       kind: "medicine_runs_out",
-      text: `الدوا «${m.name}»${who} هيخلص حوالي ${runOut} (الرصيد ${Number(rem)} بيكفي ${days} يوم).`,
+      text: `الدوا «${m.name}»${who} هيخلص حوالي ${runOut} (الرصيد ${rem} بيكفي ${days} يوم).`,
       source: `zad_pharmacy_items:${m.id ?? m.name}`,
     });
   }
