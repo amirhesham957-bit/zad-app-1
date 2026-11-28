@@ -267,7 +267,7 @@ import { execInventoryPharmacy } from "./execInventoryPharmacy.ts";
 import { execTransactions } from "./execTransactions.ts";
 import { execShoppingBudget } from "./execShoppingBudget.ts";
 import { execInsightsMemory } from "./execInsightsMemory.ts";
-import { SUPABASE_URL, MODEL_ROUTINE, gateCall, accountTimeZone, momentChannels } from "./brainConsts.ts";
+import { SUPABASE_URL, MODEL_ROUTINE, gateCall, accountTimeZone, momentChannels, momentInApp } from "./brainConsts.ts";
 import { handleStoreArrival } from "./storeArrival.ts";
 import { handleNotificationIngest, learnedFormats } from "./notificationIngest.ts";
 export { DIRECT_INGRESS_TOOLS, NO_SNAPSHOT_INGRESS_TOOLS };
@@ -4408,6 +4408,7 @@ async function handleRequest(req: Request): Promise<Response> {
       const sbMoments = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
       const summary = await processVoiceMoments(sbMoments, {
         hasChannel: (uid, o) => momentChannels(sbMoments, uid, o),
+        notifyInApp: (uid, title, text, key) => momentInApp(sbMoments, uid, title, text, key),
         compose: async (system, user) =>
           (await callModel({ model: MODEL_ROUTINE, system, tools: [], history: [{ role: "user", text: user }], maxTokens: 500 })).text,
         pushDevice: (userId, title, text, data, dataOnly) => pushToDevice(sbMoments, userId, title, text, data, dataOnly),
@@ -4906,6 +4907,7 @@ async function handleRequest(req: Request): Promise<Response> {
       }, { onConflict: "user_id,dedupe_key", ignoreDuplicates: true });
       const summary = await processVoiceMoments(sbPlace, {
         hasChannel: (uid, o) => momentChannels(sbPlace, uid, o),
+        notifyInApp: (uid, title, text, key) => momentInApp(sbPlace, uid, title, text, key),
         compose: async (system, user) =>
           (await callModel({ model: MODEL_ROUTINE, system, tools: [], history: [{ role: "user", text: user }], maxTokens: 500 })).text,
         pushDevice: (userId, title, text, data, dataOnly) => pushToDevice(sbPlace, userId, title, text, data, dataOnly),
@@ -4985,6 +4987,7 @@ async function handleRequest(req: Request): Promise<Response> {
       }
       const summary = await processVoiceMoments(sbEvent, {
         hasChannel: (uid, o) => momentChannels(sbEvent, uid, o),
+        notifyInApp: (uid, title, text, key) => momentInApp(sbEvent, uid, title, text, key),
         compose: async (system, user) =>
           (await callModel({ model: MODEL_ROUTINE, system, tools: [], history: [{ role: "user", text: user }], maxTokens: 500 })).text,
         pushDevice: (userId, title, text, data, dataOnly) => pushToDevice(sbEvent, userId, title, text, data, dataOnly),
