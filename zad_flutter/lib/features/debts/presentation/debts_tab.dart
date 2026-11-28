@@ -22,6 +22,7 @@ import 'package:zad/core/design/tokens/zad_icons.dart';
 import 'package:zad/core/design/tokens/zad_spacing.dart';
 import 'package:zad/core/design/tokens/zad_typography.dart';
 import 'package:zad/core/l10n/l10n.dart';
+import 'package:zad/features/debts/data/debts_door.dart';
 import 'package:zad/shared/budget/application/budget_controller.dart';
 import 'package:zad/shared/chat/data/zad_explain.dart';
 import 'package:zad/shared/inventory/application/pantry_controller.dart';
@@ -231,12 +232,7 @@ class _PlannerState extends ConsumerState<DebtPlannerCard> {
     );
     if (row == null) return;
     final client = ref.read(supabaseClientProvider);
-    await _run(
-      () => client.from('zad_debts').insert(<String, dynamic>{
-        ...row,
-        'user_id': client.auth.currentUser?.id,
-      }),
-    );
+    await _run(() => addDebt(client, row));
   }
 
   Future<void> _pay(Debt d) async {
@@ -290,11 +286,7 @@ class _PlannerState extends ConsumerState<DebtPlannerCard> {
     // Never below zero: a payment larger than what is left closes the debt.
     final left = d.remaining - paid;
     await _run(
-      () => ref
-          .read(supabaseClientProvider)
-          .from('zad_debts')
-          .update(<String, dynamic>{'remaining_balance': left < 0 ? 0 : left})
-          .eq('id', d.id),
+      () => setDebtBalance(ref.read(supabaseClientProvider), d.id, left),
     );
   }
 
@@ -323,13 +315,7 @@ class _PlannerState extends ConsumerState<DebtPlannerCard> {
       ),
     );
     if (yes != true) return;
-    await _run(
-      () => ref
-          .read(supabaseClientProvider)
-          .from('zad_debts')
-          .delete()
-          .eq('id', d.id),
-    );
+    await _run(() => deleteDebt(ref.read(supabaseClientProvider), d.id));
   }
 
   Future<void> _explain(

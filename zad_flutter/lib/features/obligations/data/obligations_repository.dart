@@ -14,12 +14,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
+import 'package:zad/core/data/commit_my_intent.dart';
+import 'package:zad/core/data/edge_client.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/data/sync/outbox.dart';
 import 'package:zad/core/data/sync/outbox_entry.dart';
+import 'package:zad/core/data/sync/sync_failure.dart';
 import 'package:zad/features/obligations/domain/obligation.dart';
 
-/// Reads and writes `zad_obligations`. RLS is `user_own_obligations`.
+/// Reads `zad_obligations` and writes it through the one door (P1.6b). RLS is
+/// `user_own_obligations`.
 abstract interface class ObligationsRemote {
   /// The account's active rows.
   Future<List<Map<String, dynamic>>> fetchActive({required String userId});
@@ -58,20 +62,85 @@ class SupabaseObligationsRemote implements ObligationsRemote {
     return rows.cast<Map<String, dynamic>>();
   }
 
+  /// What `obligation.added` reads from a row; `id` travels as `item_id`.
+  static const List<String> _addKeys = <String>[
+    'title',
+    'amount',
+    'kind',
+    'recurrence',
+    'due_day',
+    'due_date',
+    'confirmed',
+  ];
+
+  /// What `obligation.updated` accepts in a patch.
+  static const List<String> _patchKeys = <String>[
+    'title',
+    'amount',
+    'kind',
+    'recurrence',
+    'due_day',
+    'due_date',
+    'confirmed',
+    'active',
+  ];
+
   @override
   Future<Map<String, dynamic>?> upsertReturning(
     Map<String, dynamic> row,
   ) async {
-    await _client.from(_table).upsert(row, onConflict: 'id');
-    return await _client
-        .from(_table)
-        .select()
-        .eq('id', row['id'] as String)
-        .maybeSingle();
+    final id = row['id'] as String;
+    final exists =
+        await _client.from(_table).select('id').eq('id', id).maybeSingle() !=
+        null;
+    if (!exists) {
+      // A replay of the add (same event id, or the same row id under a new
+      // one) is answered by the door without a second row.
+      await commitMyIntent(
+        _client,
+        kind: 'obligation.added',
+        clientEventId: 'obligation:$id',
+        payload: <String, dynamic>{
+          'item_id': id,
+          for (final key in _addKeys)
+            if (row[key] != null) key: row[key],
+        },
+      );
+    }
+    // The door adds a row active; an edit (or an add that was already stopped)
+    // carries the rest. An edit is an absolute write, so a fresh id per attempt
+    // is safe: the same edit twice leaves the same row.
+    if (exists || row['active'] == false) {
+      await commitMyIntent(
+        _client,
+        kind: 'obligation.updated',
+        clientEventId: 'obligation_edit:$id:${newTraceId()}',
+        payload: <String, dynamic>{
+          'item_id': id,
+          'patch': <String, dynamic>{
+            for (final key in _patchKeys)
+              if (row.containsKey(key)) key: row[key],
+          },
+        },
+      );
+    }
+    return await _client.from(_table).select().eq('id', id).maybeSingle();
   }
 
   @override
-  Future<void> remove(String id) => _client.from(_table).delete().eq('id', id);
+  Future<void> remove(String id) async {
+    try {
+      await commitMyIntent(
+        _client,
+        kind: 'obligation.deleted',
+        clientEventId: 'obligation_delete:$id',
+        payload: <String, dynamic>{'item_id': id},
+      );
+    } on ServerRefusal catch (e) {
+      // Already gone: the delete has nothing left to do.
+      if (e.reason != 'item_not_found') rethrow;
+    }
+  }
 
   @override
   Future<bool> exists(String id) async =>
