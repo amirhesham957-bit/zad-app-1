@@ -5,8 +5,10 @@
 /// A number from a zad_view_* RPC: the value and where it came from.
 class ViewNumber {
   const ViewNumber({required this.value, required this.source});
-  factory ViewNumber.fromJson(Map<String, dynamic> j) =>
-      ViewNumber(value: (j['value'] as num?)?.toDouble(), source: j['source'] as String? ?? '');
+  factory ViewNumber.fromJson(Map<String, dynamic> j) => ViewNumber(
+    value: (j['value'] as num?)?.toDouble(),
+    source: j['source'] as String? ?? '',
+  );
   final double? value;
   final String source;
 }
@@ -14,8 +16,10 @@ class ViewNumber {
 /// A text value (e.g. threat) with its source.
 class ViewText {
   const ViewText({required this.value, required this.source});
-  factory ViewText.fromJson(Map<String, dynamic> j) =>
-      ViewText(value: j['value'] as String?, source: j['source'] as String? ?? '');
+  factory ViewText.fromJson(Map<String, dynamic> j) => ViewText(
+    value: j['value'] as String?,
+    source: j['source'] as String? ?? '',
+  );
   final String? value;
   final String source;
 }
@@ -23,8 +27,11 @@ class ViewText {
 /// The next upcoming appointment, as returned by home/house.
 class ViewNextAppointment {
   const ViewNextAppointment({required this.title, required this.startsAt});
-  factory ViewNextAppointment.fromJson(Map<String, dynamic> j) => ViewNextAppointment(
-      title: j['title'] as String?, startsAt: DateTime.tryParse('${j['starts_at']}'));
+  factory ViewNextAppointment.fromJson(Map<String, dynamic> j) =>
+      ViewNextAppointment(
+        title: j['title'] as String?,
+        startsAt: DateTime.tryParse('${j['starts_at']}'),
+      );
   final String? title;
   final DateTime? startsAt;
 }
@@ -46,6 +53,7 @@ enum ZadViewAction {
   addPharmacyItem('add_pharmacy_item'),
   logDose('log_dose'),
   setBudgetLimit('set_budget_limit');
+
   const ZadViewAction(this.id);
   final String id;
   static ZadViewAction? parse(String? id) {
@@ -59,8 +67,10 @@ enum ZadViewAction {
 /// One entry of available_actions.
 class ViewAction {
   const ViewAction({required this.id, required this.label});
-  factory ViewAction.fromJson(Map<String, dynamic> j) =>
-      ViewAction(id: ZadViewAction.parse(j['id'] as String?), label: j['label'] as String? ?? '');
+  factory ViewAction.fromJson(Map<String, dynamic> j) => ViewAction(
+    id: ZadViewAction.parse(j['id'] as String?),
+    label: j['label'] as String? ?? '',
+  );
   final ZadViewAction? id;
   final String label;
 }
@@ -69,8 +79,9 @@ List<ViewAction> _actions(dynamic v) => ((v as List?) ?? const [])
     .map((e) => ViewAction.fromJson(Map<String, dynamic>.from(e as Map)))
     .toList();
 
-ViewNumber? _num(Map<String, dynamic> n, String k) =>
-    n[k] is Map ? ViewNumber.fromJson(Map<String, dynamic>.from(n[k] as Map)) : null;
+ViewNumber? _num(Map<String, dynamic> n, String k) => n[k] is Map
+    ? ViewNumber.fromJson(Map<String, dynamic>.from(n[k] as Map))
+    : null;
 
 /// zad_view_home. Number sources: available=zad_budget_state.available, daily_allowance_left=zad_budget_state.daily_allowance_left, low_stock=zad_inventory.quantity<=low_stock_threshold, expiring_7d=zad_inventory.expiry_date, appointments_7d=zad_appointments.starts_at, goals_active=agent_goals.status, household_members=zad_household_members.id.
 class ZadHomeView {
@@ -96,9 +107,13 @@ class ZadHomeView {
       appointments7d: _num(n, 'appointments_7d'),
       goalsActive: _num(n, 'goals_active'),
       householdMembers: _num(n, 'household_members'),
-      threat: j['threat'] is Map ? ViewText.fromJson(Map<String, dynamic>.from(j['threat'] as Map)) : null,
+      threat: j['threat'] is Map
+          ? ViewText.fromJson(Map<String, dynamic>.from(j['threat'] as Map))
+          : null,
       nextAppointment: j['next_appointment'] is Map
-          ? ViewNextAppointment.fromJson(Map<String, dynamic>.from(j['next_appointment'] as Map))
+          ? ViewNextAppointment.fromJson(
+              Map<String, dynamic>.from(j['next_appointment'] as Map),
+            )
           : null,
       availableActions: _actions(j['available_actions']),
     );
@@ -144,7 +159,9 @@ class ZadMoneyView {
       debtsCount: _num(n, 'debts_count'),
       subscriptionsAmount: _num(n, 'subscriptions_amount'),
       subscriptionsCount: _num(n, 'subscriptions_count'),
-      threat: j['threat'] is Map ? ViewText.fromJson(Map<String, dynamic>.from(j['threat'] as Map)) : null,
+      threat: j['threat'] is Map
+          ? ViewText.fromJson(Map<String, dynamic>.from(j['threat'] as Map))
+          : null,
       availableActions: _actions(j['available_actions']),
     );
   }
@@ -182,7 +199,9 @@ class ZadHouseView {
       medicinesActive: _num(n, 'medicines_active'),
       appointments7d: _num(n, 'appointments_7d'),
       nextAppointment: j['next_appointment'] is Map
-          ? ViewNextAppointment.fromJson(Map<String, dynamic>.from(j['next_appointment'] as Map))
+          ? ViewNextAppointment.fromJson(
+              Map<String, dynamic>.from(j['next_appointment'] as Map),
+            )
           : null,
       availableActions: _actions(j['available_actions']),
     );

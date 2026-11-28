@@ -72,14 +72,16 @@ class AdMobRewardedAds implements RewardedAds {
   Future<RewardedAd?> _fetch() {
     final running = _loading;
     if (running != null) return running;
-    final next = _load().then((ad) {
-      if (ad != null) {
-        unawaited(_ready?.dispose());
-        _ready = ad;
-        _readyAt = DateTime.now();
-      }
-      return ad;
-    }).whenComplete(() => _loading = null);
+    final next = _load()
+        .then((ad) {
+          if (ad != null) {
+            unawaited(_ready?.dispose());
+            _ready = ad;
+            _readyAt = DateTime.now();
+          }
+          return ad;
+        })
+        .whenComplete(() => _loading = null);
     return _loading = next;
   }
 
