@@ -47,10 +47,10 @@ related:
 
 ## دلوقتي
 
-- **الشريحة الجاية:** P1.4 (مولّد Dart صغير لدوال العرض، من الصفر) وP1.3b.  P0.3 خلصت (جدول `zad_energy_ledger` وcron كل ٥ دقايق، تست SQL + mutation). المرحلة ١ بعد قفل P0.4 على CI حقيقي (بيلد-debug-apk مابيشتغلش على PR، بس على main أو workflow_dispatch). P0.6 خلصت، والأرقام في SESSION_LOG.md. P0.5 خلصت (٤ ميزات بملاحظات في UI_OVERHAUL_STATUS.md). P0.4 مستنية بيلد CI حقيقي. P0.1 مستنية تجربة جهاز.
+- **الشريحة الجاية:** المرحلة ٢ بالترتيب: P2.1 (فرد واحد) الأول، وبالتوازي P2.7 (مطر minutely_15) وP2.4 (حزمة البلد). بعدها P2.2 وP2.3 (بيعتمدوا على P2.1). P2.5 مستنية قرار المالك. P0 كلها اتقفلت (P0.0 وP0.1 بتأكيد المالك). P1.3b وP1.4 اتعملوا على فرعين (feat/p1-3b-view-meds، feat/p1-4-dart-gen) ومستنيين دمج المالك.
 - **شغال:** مفيش.
-- **مستني المالك:** P0.0 (`ZAD_WEATHER_ALERTS=1` في secrets، ومراجعة `app-ads.txt` ونسخة 1.1.3+16، وتأكيد إن دالة الطقس مجدولة في pg_cron/zad_jobs وإن lat/lng بيتحدّث).
-- **آخر تحديث:** ٢٠٢٦-١١-٢٧.
+- **مستني المالك:** دمج PRs P1.3b وP1.4. مراجعة allowed_actions.json. قرار ربط الأدوية (for_person بالاسم، محتاج member_id صريح؟). حد trigger اليومي (٢ للمجاني) كشريحة جديدة في zad_ai_budget.
+- **آخر تحديث:** ٢٠٢٦-١١-٢٨.
 
 ## قرارات المالك (٢٠٢٦-١١-٢٧، ماتتفتحش تاني)
 
@@ -105,8 +105,8 @@ related:
 
 | ID | الحالة | الشريحة | الملفات | التحقق |
 |---|---|---|---|---|
-| P0.0 | `[!]` | خطوة المالك: `ZAD_WEATHER_ALERTS=1`، `app-ads.txt` مطابق لناشر AdMob، 1.1.3+16 مرفوعة | Supabase secrets، `website/public/app-ads.txt` | المالك يأكد |
-| P0.1 | `[~]` | الـRewarded يتحمّل مسبقاً ويتحمّل اللي بعده بعد العرض، و`testDeviceIds` في الديباج | `zad_flutter/lib/shared/ads/data/rewarded_ads.dart` | `flutter analyze` (No issues) + `flutter test` + الإعلان يظهر فور الضغط على جهاز |
+| P0.0 | `[x]` | خطوة المالك: `ZAD_WEATHER_ALERTS=1`، `app-ads.txt` مطابق لناشر AdMob، 1.1.3+16 مرفوعة | Supabase secrets، `website/public/app-ads.txt` | المالك يأكد |
+| P0.1 | `[x]` | الـRewarded يتحمّل مسبقاً ويتحمّل اللي بعده بعد العرض، و`testDeviceIds` في الديباج | `zad_flutter/lib/shared/ads/data/rewarded_ads.dart` | `flutter analyze` (No issues) + `flutter test` + الإعلان يظهر فور الضغط على جهاز |
 | P0.2 | `[x]` | (الجدول رجع في 20260913002000، القراية سليمة، فاتضاف التست بس) إصلاح قراية `zad_waste_log` + تست CI يقارن كل `.from('x')` بالجداول الموجودة بعد كل المايجريشنز | `zad-brain/voiceMoments.ts:471`، تست جديد في `_schema/` | `deno test` أخضر، والتست يوقع لو الإصلاح اتشال |
 | P0.3 | `[x]` | تسوية الطاقة: خصم من غير نتيجة أو رجوع فاشل > ١٠ دقايق بيرجع بالـcron | مايجريشن + `zad-core-intelligence/meter.ts` | تست SQL في سلسلة `edge-functions.yml` + mutation |
 | P0.4 | `[x]` | `--obfuscate --split-debug-info` والرموز artifact في الـCI | `.github/workflows/build-debug-apk.yml:134,164` | `EXIT=0` الحقيقي للبيلد |
