@@ -1482,6 +1482,18 @@
     "window_count",
     "window_start"
   ],
+  "zad_user_budget": [
+    "balance_anchored_at",
+    "budget",
+    "cycle_anchor",
+    "cycle_start_day",
+    "emergency_fund_balance",
+    "limit_confirmed_at",
+    "monthly_limit",
+    "travel_budget",
+    "updated_at",
+    "user_id"
+  ],
   "zad_users": [
     "avatar_uri",
     "balance_anchored_at",
