@@ -950,3 +950,11 @@ Added `zad_flutter/lib/features/notification_reads` (repository interface + Supa
 - **P1.3:** `zad_view_home/money/house/family` في `20261127140000_view_rpcs.sql`. فجوة: عرض الولي مافيهوش أدوية (P1.3b).
 - **P1.4 خريطة:** مفيش مولّد ولا `*.g.dart`؛ ٥٢ `fromJson` يدوي؛ `schema.json` يدوي؛ مفيش CI لفحص الاختلاف. P1.4 بناء من الصفر.
 - **فخ:** worktrees الوكلاء ملت القرص (٣٠GB/٣٢GB) والـworktree الجديد وقع بـ"unable to write file". اتمسحت ٢٦ worktree نضيفة.
+
+## ٢٠٢٦-١١-٢٨ — P2.5 مصفوفة الرؤية + جزء P2.8 (فرع `feat/p2-5-p2-8-visibility`)
+
+- **اتعمل:** `20261128180000_visibility_matrix.sql`: قاصر أعمى عن الميزانية والصيدلية بـRLS restrictive، ودوال العرض بتخبّيهم (`zad_view_money` ترفض)، `is_private` على الأدوية من الباب، وصيدلية مفتوحة للبالغين، وولي الأمر يشوف مهام وأهداف القاصر، و`zad_view_family_home`. `_shared/or/visibilityMatrix.ts` نسخة TS نقية. `schema.json` فيه `is_private`. سطر جديد في LIST بتاع `edge-functions.yml`.
+- **اتقاس:** تست `visibility_matrix_test.sql` على Postgres 17 محلي (docker): EXIT=0 وبيطبع `all checks passed`؛ بدون المايجريشن بيقع (EXIT=1). الباك-فيل اتجرّب مرتين (التاني مابيرجّعش اللي اتفتح). `deno check` EXIT=0، و`deno test -A zad-brain/ _shared/ _schema/` EXIT=0 (٢٤٨١ نجحوا).
+- **ماتشغّلش:** CI الحقيقي، وباقي سلاسل SQL الأخرى بعد الميجريشن (مش في سلاسلها)، وe2e.
+- **فخ:** `zad_users` فيها أرقام ميزانية وصف الطفل بتاعه مقروء له؛ RLS مابتفصلش أعمدة. محتاج شريحة تفصل الميزانية عن البروفايل. والصفوف القديمة في الأدوية اتعلّمت private مرة واحدة (قرار تنفيذ، مكتوب في الخطة).
+- **فخ أداة:** التست لازم يفصل نداء الدالة عن قراية الصف في استعلامين (نفس الـstatement مابيشوفش الإدراج).
