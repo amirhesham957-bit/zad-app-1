@@ -3658,6 +3658,19 @@ class ZadL10nEn extends ZadL10n {
   String get tourMoreBody => 'Zad\'s brain, your account and every feature.';
 
   @override
+  String get tourFamilyTitle => 'My family';
+
+  @override
+  String get tourFamilyBody =>
+      'Family members, shared spending and tasks in one place.';
+
+  @override
+  String get homeQuickRecipes => 'What to cook?';
+
+  @override
+  String get homeQuickOffers => 'Today\'s offers';
+
+  @override
   String get tourBellTitle => 'Notifications';
 
   @override

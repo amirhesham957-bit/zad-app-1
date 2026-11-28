@@ -39,6 +39,7 @@ import 'package:zad/features/home/presentation/grocery_purchase_prompt.dart';
 import 'package:zad/features/home/presentation/home_activation_card.dart';
 import 'package:zad/features/home/presentation/home_amazon_strip.dart';
 import 'package:zad/features/home/presentation/home_blocks.dart';
+import 'package:zad/features/home/presentation/home_quick_cards.dart';
 import 'package:zad/features/home/presentation/home_today_card.dart';
 import 'package:zad/features/home/presentation/home_world_scene.dart';
 import 'package:zad/features/home/presentation/inventory_check_in_card.dart';
@@ -173,6 +174,9 @@ class HomeScreen extends ConsumerWidget {
                   onOpenCamera: onOpenCamera ?? () {},
                 ),
               ),
+              const SizedBox(height: ZadSpacing.lg),
+              // Cooking and offers, one tap away (owner, P1.5b).
+              const HomeQuickCards(),
               const SizedBox(height: ZadSpacing.lg),
               // The occasion's banner (app_campaigns), when one runs; the
               // balance card already wears the occasion's colours.
