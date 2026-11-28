@@ -21,6 +21,8 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:zad/core/data/commit_my_intent.dart';
+import 'package:zad/core/data/edge_client.dart';
 import 'package:zad/core/data/providers.dart';
 import 'package:zad/core/data/sync/outbox.dart';
 import 'package:zad/core/data/sync/outbox_entry.dart';
@@ -59,11 +61,44 @@ class SupabaseSettingsRemote implements SettingsRemote {
   Future<Map<String, dynamic>?> upsertReturning(
     Map<String, dynamic> row,
   ) async {
-    // upsert, not update: the row is provisioned by a trigger on auth.users
-    // (`20260815123711_provision_zad_users_row`), but a client that cannot
-    // create it when it is missing is a client that writes into nothing on any
-    // account that predates the trigger or lost the row.
-    await _client.from(_table).upsert(row, onConflict: 'id');
+    // The one door (P1.6b), never a table write: each column the queued entry
+    // carries becomes the intent that owns it. Every one is an absolute value,
+    // so a fresh event id per attempt is safe: a retry after a lost answer
+    // writes the same value again.
+    //
+    // The door updates the row; it does not create it. The row is provisioned
+    // by a trigger on auth.users (`20260815123711_provision_zad_users_row`) and
+    // backfilled, so a missing row now comes back as a refusal
+    // (`user_not_found`), which the outbox treats as permanent, instead of an
+    // upsert quietly creating it.
+    if (row.containsKey('monthly_limit')) {
+      await _send('money.limit_set', <String, dynamic>{
+        'amount': row['monthly_limit'],
+      });
+    }
+    if (row.containsKey('cycle_start_day')) {
+      await _send('settings.cycle_start_set', <String, dynamic>{
+        'day': row['cycle_start_day'],
+      });
+    }
+    if (row.containsKey('country') || row.containsKey('currency')) {
+      await _send('settings.market_set', <String, dynamic>{
+        'currency': row['currency'],
+        'country': row['country'],
+      });
+    }
+    if (row.containsKey('pet_calls_enabled')) {
+      await _send('settings.app_flag_set', <String, dynamic>{
+        'setting': 'pet_calls',
+        'on': row['pet_calls_enabled'],
+      });
+    }
+    if (row.containsKey('food_pattern_enabled')) {
+      await _send('settings.app_flag_set', <String, dynamic>{
+        'setting': 'food_pattern',
+        'on': row['food_pattern_enabled'],
+      });
+    }
 
     return await _client
         .from(_table)
@@ -71,6 +106,14 @@ class SupabaseSettingsRemote implements SettingsRemote {
         .eq('id', row['id'] as String)
         .maybeSingle();
   }
+
+  Future<void> _send(String kind, Map<String, dynamic> payload) =>
+      commitMyIntent(
+        _client,
+        kind: kind,
+        clientEventId: 'settings:${newTraceId()}',
+        payload: payload,
+      );
 }
 
 /// The account's settings, cached and queued.

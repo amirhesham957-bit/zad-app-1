@@ -1047,3 +1047,13 @@ Added `zad_flutter/lib/features/notification_reads` (repository interface + Supa
 - **فخ:** الباب بيرفض اللي الجدول كان بيقبله: اشتراك/التزام بمبلغ ٠ أو عنوان أقصر من ٢ حرف، ودين فايدته > ١٠٠٠. الزرار ده بقى رفض دايم في الـOutbox.
 - **فاضل في P1.6b:** بيت، مواعيد وأماكن، عيلة، تليجرام وإشعارات.
 
+
+
+## P1.6b مجموعة إعدادات الحساب (٢٠٢٦-١١-٢٨)
+
+- **اتعمل:** `SupabaseSettingsRemote.upsertReturning` (`shared/settings/data/settings_repository.dart`) بقى بيبعت من `zad_commit_my_intent` بدل `upsert` على `zad_users`: الرصيد `money.limit_set`، يوم الدورة `settings.cycle_start_set` (`day:null` = مسح)، البلد والعملة `settings.market_set`، فلاجات القطة والأكل `settings.app_flag_set`. الـOutbox والـAPI العام للريبو ماتغيّروش (فكل الـfakes في التستات زي ما هي). صندوق الطوارئ كان اتنقل في مجموعة الفلوس. اللي فضل مباشر: الاسم والصورة (`profile_controller`، مفيش نوع ليهم)، ختم الموقع (`place_server`)، ومزامنة النوم المتعلّم (`zad_set_sleep_window`، RPC بـ`auth.uid()`، مش زرار).
+- **ميجريشن `20261129020000`:** `zad_intent_money_core` بنسخة `20261128250000` + `money.limit_set` بيكتب `balance_anchored_at` كمان (الـupsert القديم كان بيبعته، والباب لأ، فكان هيتكسر «الرصيد بيبدأ من لحظة ما بقوله»)؛ `zad_intent_settings` بنسخة `20261122100000` + `day:null`؛ `zad_commit_my_intent` بنسخة `20261129010000` + ٣ أنواع settings. غلاف الكاش مااتلمسش.
+- **مراية P2.5b:** التريجر `zad_user_budget_mirror` على `zad_users` (after update of الأعمدة)، والباب بيكتب `zad_users`، فالمراية بتمشي لوحدها. التست بيتأكد (monthly_limit وbalance_anchored_at وcycle_start_day بعد الباب، وبعد المسح).
+- **اتقاس:** `settings_buttons_test.sql` (سطر جديد في LIST بسلسلة كاملة، أخرها مراية `20261128260000`) على postgres:16 محلي EXIT=0، وبيفشل من غير الميجريشن («confirmed and anchored»). تست Flutter `test/shared/settings_door_test.dart` (الـremote الحقيقي فوق HTTP مسجّل، مفيش كتابة جدول).
+- **فخ:** الباب بيحدّث الصف بس ومابيعملوش: صف `zad_users` ناقص = `user_not_found` رفض دايم في الـOutbox بدل ما الـupsert كان بيعمله. وuuid الحدث بيتولّد جديد لكل محاولة (القيم مطلقة فالتكرار آمن؛ `balance_anchored_at` بس بيتحرك لوقت إعادة المحاولة).
+- **فاضل في P1.6b:** بيت، مواعيد وأماكن، عيلة، تليجرام وإشعارات.
