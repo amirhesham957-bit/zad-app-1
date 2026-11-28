@@ -40,6 +40,7 @@
 - المصدر من `intentSource(scope)`: لفة شات = `model`، كرون = `cron`، زرار أو تأكيد = `manual`. أدوات الفلوس (`CONFIRM_REQUIRED_TOOLS`) بتتسجل `manual`.
 - `recordAction(...)` لازم يفضل بنفس الجدول والـid والـprevious/next، عشان `zad_agent_undo` يعرف يرجّع.
 - `member_id` إلزامي على المخزن والتفضيلات والأهداف (م٢.٦): trigger بيملاه بصف «أنا» لو مااتبعتش، و`payload.member_id` لازم يكون لنفس المستخدم وإلا `member_not_found` (بيتفحص عند إضافة صف جديد بس).
+- Flutter بيكتب من غلاف الموبايل `zad_commit_my_intent(p_kind, p_client_event_id, p_payload, p_occurred_at, p_trace_id)` (المستخدم من الـJWT، المصدر manual): مساعد `core/data/commit_my_intent.dart`. الأنواع المسموحة: المخزن، وP1.6b: `money.logged/updated/deleted/limit_set/category_budget_set` و`settings.emergency_fund_set`. نوع جديد لزرار = يتضاف في قايمة الغلاف بميجريشن + تست `money_buttons_test.sql`.
 - `oneDoor_test.ts` بيفشل لو أي ملف في `zad-brain` (أو `_shared/doseDoor.ts`) كتب مباشرة في جدول من الـ١٦ اللي ورا الباب.
 
 ## التستات (محلي، قبل أي كومِت)

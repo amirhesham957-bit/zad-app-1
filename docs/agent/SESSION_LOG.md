@@ -981,3 +981,11 @@ Added `zad_flutter/lib/features/notification_reads` (repository interface + Supa
 - **فاضل:** ربط `zad_round_mark` باتعدّل/اترجّع (مفيش مسار بيناديها لسه). القاطع المحلي بتاع الـembed لسه في الذاكرة. ConfigError (400/401/403) مش بيعدّ فشل في القاطع.
 - **فخ:** أي جدول جديد لازم يتضاف في `_schema/schema.json` بإيدك وإلا عقد الـschema يقع.
 
+
+## P1.6b مجموعة الفلوس (٢٠٢٦-١١-٢٨)
+
+- **اتعمل:** أزرار الفلوس بتكتب من `zad_commit_my_intent` بدل الجدول: إضافة/تعديل/مسح معاملة (`money.logged/updated/deleted`، `transactions_remote.dart`)، سقف فئة وشيله (`money.category_budget_set`، `category_budgets_remote.dart`، صفر بيشيل)، حفظ صندوق الطوارئ (`settings.emergency_fund_set`، `emergency_fund_remote.dart`). مساعد واحد `core/data/commit_my_intent.dart` بيبعت `p_trace_id` (P1.7) والرفض بيرمي `ServerRefusal`. الـOutbox وأشكال الـpayload زي ما هي (مدخلات قديمة متعلّقة بتتصرّف عادي).
+- **ميجريشن `20261128210000`:** `zad_commit_my_intent` بقى بـ`p_trace_id` اختياري ويقبل أنواع الفلوس + `settings.emergency_fund_set` (النسخة ذات الـ٤ بارامترات اتشالت). `zad_intent_money` نسخة `20261122020000` + `item_id` اختياري في `money.logged` (id الصف من العميل؛ صف بتاعي موجود = رجّعه من غير كتابة، بتاع حد تاني أو مش UUID = `item_not_found`) + `counts_toward_budget` و`currency`.
+- **اتقاس:** تست SQL جديد (`money_buttons_test.sql`، سطر في LIST) على postgres:16 محلي، وبيفشل من غير الميجريشن؛ `flutter analyze` No issues found؛ `flutter test` EXIT=0؛ تست `test/shared/money_door_test.dart` (٨) بيثبت لكل زرار إن الخارج RPC الباب بـp_kind وtrace وفي النفس مفيش كتابة على جدول.
+- **فاضل في الفلوس:** `zad_users` (حد الدورة `monthly_limit` وإعدادات الحساب من `settings_repository.dart`) و`purchases` (`zad_record_purchase`) و`money.limit_set` مش متوصّل بزرار لسه؛ كتابات الفلوس اللي برا الـ٣ ملفات المذكورة (الاشتراكات، `family_life_remote`) في مجموعاتها. باقي المجموعات (ديون/التزامات، بيت، مواعيد، عيلة، تليجرام) ماتلمستش.
+- **فخ:** الباب بيرفض عناوين فيها «؟» أو «?» أو «مثلا/يمكن…» (`title_guessed`) وأي مبلغ > ١٬٠٠٠٬٠٠٠: الزرار اللي كان بيعدّيها قبل كده بقى بيتحوّل رفض دايم في الـOutbox (dead). ومعرّف الحدث للتعديل وسقف الفئة وصندوق الطوارئ عشوائي لكل محاولة (كتابة مطلقة)، مش مشتق، عشان A→B→A→B ماتتحسبش تكرار.
