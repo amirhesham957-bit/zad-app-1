@@ -981,3 +981,9 @@ Added `zad_flutter/lib/features/notification_reads` (repository interface + Supa
 - **فاضل:** ربط `zad_round_mark` باتعدّل/اترجّع (مفيش مسار بيناديها لسه). القاطع المحلي بتاع الـembed لسه في الذاكرة. ConfigError (400/401/403) مش بيعدّ فشل في القاطع.
 - **فخ:** أي جدول جديد لازم يتضاف في `_schema/schema.json` بإيدك وإلا عقد الـschema يقع.
 
+
+## ٢٠٢٦-١١-٢٨ — P3.14 زر «من أمازون» مش على الطازج (فرع `feat/p3-14-amazon-button`)
+
+- **اتعمل:** `AmazonBuyChip` بقى ياخد `category` ويرجّع فاضي لو (الخضار|الفواكه|اللحوم). `pantry_view` وقايمة الشراء (سطر ومجموعة) بيمرّروا `pantryCategoryOf(category, name)` (القايمة من الاسم بس لأن `ShoppingItem` مالوش تصنيف). تستات widget في `amazon_chips_test.dart`: خضار مخفي، بقالة ظاهر (مخزن وقايمة).
+- **فاضل:** مكونات الشيف الناقصة (`recipes/`) لسه بتعرض الزرار لأي اسم لأنها مابتمرّرش تصنيف.
+- **فخ:** `dart format lib test` من غير مسار بيعدّل ملفات مالهاش علاقة (`zad_tour.dart`، `zad_views.g.dart`)؛ استعمل مسارات الملفات اللي لمستها بس.

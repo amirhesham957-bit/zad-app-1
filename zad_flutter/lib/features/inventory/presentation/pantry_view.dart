@@ -914,6 +914,10 @@ class _StockRow extends StatelessWidget {
                             padding: const EdgeInsets.only(top: ZadSpacing.xs),
                             child: AmazonBuyChip(
                               itemName: item.itemName,
+                              category: pantryCategoryOf(
+                                item.category,
+                                item.itemName,
+                              ),
                               sourceScreen: 'pantry_low',
                             ),
                           ),
